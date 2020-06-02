@@ -1,0 +1,7 @@
+{
+  "name": "lightning-talk-refactoring",
+  "version": "1.0.1",
+  "main": "index.js",
+  "author": "Naftali Lubin <naftalilubin@gmail.com>",
+  "license": "MIT"
+}
