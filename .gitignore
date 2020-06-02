@@ -1,0 +1,10 @@
+.yarn/*
+!.yarn/releases
+
+
+node_modules
+.idea
+dist
+
+.cache
+*.log
