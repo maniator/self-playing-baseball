@@ -21,17 +21,16 @@ const BaseDiv = styled.div`
   right: ${({ base }) => base === 1 || base === 0 ? 0 : null};
   bottom: ${({ base }) => base === 3 || base === 0 ? 0 : null};
   left: ${({ base }) => base === 2 ? 0 : null};
+  transform: rotate(45deg); /* Equal to rotateZ(45deg) */
 `;
 
 const Diamond: React.FunctionComponent<{}> = () => {
   const { dispatch, ...state } = React.useContext(GameContext);
 
-  React.useEffect(() => {
-    dispatch({ type: 'next' })
-  }, []);
-
   console.log(state);
-  
+
+  global.dispatch = dispatch;
+
   return (
     <DiamondDiv>
       <BaseDiv base={0} /> { /* home */ }
