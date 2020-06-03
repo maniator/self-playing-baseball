@@ -26,12 +26,10 @@ const BaseDiv = styled.div`
 const Diamond: React.FunctionComponent<{}> = () => {
   const { dispatch, ...state } = React.useContext(GameContext);
 
-  React.useEffect(() => {
-    dispatch({ type: 'next' })
-  }, []);
-
   console.log(state);
-  
+
+  global.dispatch = dispatch;
+
   return (
     <DiamondDiv>
       <BaseDiv base={0} /> { /* home */ }
