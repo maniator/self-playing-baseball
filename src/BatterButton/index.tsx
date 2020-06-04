@@ -1,8 +1,9 @@
 import * as React  from "react";
 
 import styled from "styled-components";
-import { GameContext } from "../Context";
+import { ContextValue, GameContext, State } from "../Context";
 import { Hit } from "../constants/hitTypes";
+import getRandomInt from "../utilities/getRandomInt";
 
 const Button = styled.button`
   background: aquamarine;
@@ -12,24 +13,23 @@ const Button = styled.button`
   cursor: pointer;
 `;
 
-function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
-}
-
 const BatterButton: React.FunctionComponent<{}> = () => {
-  const { dispatch, dispatchLog } = React.useContext(GameContext);
+  const { dispatch, dispatchLog, strikes }: ContextValue = React.useContext(GameContext);
   const log = (message) =>
     dispatchLog({ type: "log", payload: message });
 
   const handleClickButton = () => {
-    const base = getRandomInt(4);
-
-    log("--------");
-    log("BATTER UP!");
-    log("--------");
-    log(`Player hit a ${Hit[base]}!`);
-
-    dispatch({ type: "hit", payload: base });
+    const random = getRandomInt(1000);
+    const swingRate = 500 - (75 * strikes);
+    if (random < swingRate) {
+      dispatch({ type: "strike" });
+    } else if (random < 880) {
+      dispatch({ type: "wait" });
+    } else {
+      const base = getRandomInt(4);
+      log(`Player hit a ${Hit[base]}!`);
+      dispatch({ type: "hit", payload: base });
+    }
   };
 
   return (
