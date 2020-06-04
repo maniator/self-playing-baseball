@@ -19,12 +19,21 @@ export interface ContextValue extends State {
   dispatchLog: Function,
 }
 
+const synth = window.speechSynthesis;
+
 function logReducer(state: { announcements: string[] }, action: { type: string, payload: any }): { announcements: string[] } {
   switch (action.type) {
     case 'log':
-      console.log(action.payload);
+      const message = action.payload;
+      console.log(message);
       const newState = { ...state };
-      newState.announcements.unshift(action.payload);
+      newState.announcements.unshift(message);
+
+      const utterThis = new SpeechSynthesisUtterance(message);
+
+      utterThis.pitch = 1;
+      utterThis.rate = 1;
+      synth.speak(utterThis);
 
       return newState;
     default:
