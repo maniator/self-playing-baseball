@@ -35,9 +35,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
     newState.baseLayout[fromBase] = 1;
   }
 
-  if (Base[fromBase] !== Base[toBase]) {
-    log(`Running from ${Base[fromBase] ?? "Home"} to ${Base[toBase]}`)
-  } else {
+  if (Base[fromBase] === Base[toBase]) {
     if (toBase === Base.Home) {
       log("Player scored a run!");
       newState.score[newState.atBat] += 1;
@@ -57,7 +55,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
         newState.baseLayout[nextBase] = 0;
       }
 
-      log(`Runner keeps running on to ${Base[nextBase]}`)
+      log(`Player runs to ${Base[nextBase]}`)
       newState = moveBase(log, newState, nextBase, toBase);
   } else {
     throw new Error(`Base does not exist: ${Base[nextBase]}`);

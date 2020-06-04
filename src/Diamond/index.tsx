@@ -25,12 +25,7 @@ const BaseDiv = styled.div`
 
 const Diamond: React.FunctionComponent<{}> = () => {
   const { dispatch, ...state } = React.useContext(GameContext);
-
-  global.dispatch = dispatch;
-
   const [ first, second, third ] = state.baseLayout;
-
-  console.log({ first: Boolean(first), second: Boolean(second), third: Boolean(third), score: JSON.stringify(state.score) })
 
   return (
     <DiamondDiv>
