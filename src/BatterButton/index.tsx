@@ -32,6 +32,16 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     }
   };
 
+  const handlePitch = (event) => {
+    if (event.code === "Space") {
+      handleClickButton();
+    }
+  }
+
+  React.useEffect(() => {
+    window.addEventListener("keyup", handlePitch, false);
+  }, [])
+
   return (
     <Button onClick={handleClickButton}>Batter Up!</Button>
   );
