@@ -108,7 +108,9 @@ const initialState: State = {
   atBat: 0
 };
 
-export const GameProviderWrapper = ({ children }) => {
+type Props = {};
+
+export const GameProviderWrapper: React.FunctionComponent<Props> = ({ children }) => {
   const [state, dispatch] = React.useReducer(reducer, initialState);
 
   return (

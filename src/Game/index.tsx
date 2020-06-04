@@ -2,6 +2,7 @@ import * as React  from "react";
 
 import styled from "styled-components";
 import Diamond from "../Diamond";
+import BatterButton from "../BatterButton";
 import { GameProviderWrapper } from "../Context";
 
 const GameDiv = styled.div`
@@ -27,6 +28,8 @@ const Game: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => (
       <p>
         The match-up is between {homeTeam} and {awayTeam}!
       </p>
+
+      <BatterButton />
 
       <Diamond />
     </GameDiv>
