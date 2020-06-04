@@ -14,29 +14,30 @@ const DiamondDiv = styled.div`
 `;
 
 const BaseDiv = styled.div`
-  background: #b11c1c;
+  background: ${({ playerOnBase, isHome }) => playerOnBase ? "#7e6d3f" : isHome ? "#fff" : "#ff21b1"};
   height: 10px;
   width: 10px;
   position: absolute;
   right: ${({ base }) => base === 1 || base === 0 ? 0 : null};
   bottom: ${({ base }) => base === 3 || base === 0 ? 0 : null};
   left: ${({ base }) => base === 2 ? 0 : null};
-  transform: rotate(45deg); /* Equal to rotateZ(45deg) */
 `;
 
 const Diamond: React.FunctionComponent<{}> = () => {
   const { dispatch, ...state } = React.useContext(GameContext);
 
-  console.log(state);
-
   global.dispatch = dispatch;
+
+  const [ first, second, third ] = state.baseLayout;
+
+  console.log({ first: Boolean(first), second: Boolean(second), third: Boolean(third), score: JSON.stringify(state.score) })
 
   return (
     <DiamondDiv>
-      <BaseDiv base={0} /> { /* home */ }
-      <BaseDiv base={1} /> {/* first */}
-      <BaseDiv base={2} /> {/* second */}
-      <BaseDiv base={3} /> {/* third */}
+      <BaseDiv base={0} isHome /> { /* home */ }
+      <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
+      <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
+      <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
     </DiamondDiv>
   );
 }

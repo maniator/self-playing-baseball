@@ -23,18 +23,26 @@ enum Base {
 const moveBase = (state: State, fromBase: Base, toBase: Base): State => {
   let newState = { ...state };
 
-  const nextBase = fromBase === Base.Home ? Base.First : fromBase + 1;
-
-  console.log(`Running to ${Base[fromBase]} to ${Base[toBase]}`)
-  console.log(`Next base: ${Base[nextBase]}`)
+  const nextBase = fromBase === null ? Base.First : fromBase + 1;
 
   if (newState.baseLayout.hasOwnProperty(fromBase) && fromBase !== Base.Home) {
     newState.baseLayout[fromBase] = 1;
   }
 
-  if (fromBase === toBase && toBase === Base.Home) { //ran home
-    newState.score[newState.atBat] += 1;
-  } else if (fromBase === toBase) {
+  if (Base[fromBase] !== Base[toBase]) {
+    console.log(`Running from ${Base[fromBase] ?? "Home"} to ${Base[toBase]}`)
+  } else {
+    if (toBase === Base.Home) {
+      console.log("Player scored a run!");
+      newState.score[newState.atBat] += 1;
+    } else {
+      console.log(`Player stayed on ${Base[toBase]}`);
+    }
+
+    return newState;
+  }
+
+  if (fromBase === toBase) {
     return newState;
   } else if (newState.baseLayout.hasOwnProperty(nextBase) || nextBase === Base.Home) {
       if (newState.baseLayout[nextBase] === 1) {
@@ -61,16 +69,16 @@ const hitBall = (type: Hit, state: State): State => {
 
   switch (type) {
     case Hit.Homerun:
-      newState = moveBase(newState, Base.Home, Base.Home);
+      newState = moveBase(newState, null, Base.Home);
       break;
     case Hit.Triple:
-      newState = moveBase(newState, Base.Home, Base.Third);
+      newState = moveBase(newState, null, Base.Third);
       break;
     case Hit.Double:
-      newState = moveBase(newState, Base.Home, Base.Second);
+      newState = moveBase(newState, null, Base.Second);
       break;
     case Hit.Single:
-      newState = moveBase(newState, Base.Home, Base.First);
+      newState = moveBase(newState, null, Base.First);
       break;
     default:
       throw new Error(`Not a possible hit type: ${type}`);
