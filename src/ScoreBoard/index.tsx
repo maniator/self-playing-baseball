@@ -5,7 +5,7 @@ import { ContextValue, GameContext } from "../Context";
 
 const ScoreBoardDiv = styled.div`
   background: #fff;
-  height: 140px;
+  height: 190px;
   width: 120px;
   padding: 0 10px;
   position: absolute;
@@ -33,7 +33,7 @@ const Team = styled.div`
 `;
 
 const ScoreBoard: React.FunctionComponent<{}> = () => {
-  const { teams, score, strikes, balls, outs, atBat }: ContextValue = React.useContext(GameContext);
+  const { teams, score, strikes, balls, outs, atBat, inning }: ContextValue = React.useContext(GameContext);
 
   return (
     <ScoreBoardDiv>
@@ -46,6 +46,8 @@ const ScoreBoard: React.FunctionComponent<{}> = () => {
       <BatterStats>Strikes: {strikes}</BatterStats>
       <BatterStats>Balls: {balls}</BatterStats>
       <BatterStats>Outs: {outs}</BatterStats>
+      <hr/>
+      <BatterStats>Inning: {inning}</BatterStats>
     </ScoreBoardDiv>
   );
 }
