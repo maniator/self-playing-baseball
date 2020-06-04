@@ -1,19 +1,11 @@
 import * as React  from "react";
 
-import styled from "styled-components";
 import Diamond from "../Diamond";
 import BatterButton from "../BatterButton";
 import { GameProviderWrapper } from "../Context";
-
-const GameDiv = styled.div`
-  color: white;
-  position: relative;
-  height: 75vh;
-  width: 75vw;
-  border: 1px solid #884e4e;
-  padding: 30px;
-  margin: 0 auto;
-`;
+import Announcements from "../Announcements";
+import ScoreBoard from "../ScoreBoard";
+import GameInner from "./GameInner";
 
 type Props = {
   homeTeam: string,
@@ -22,17 +14,7 @@ type Props = {
 
 const Game: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => (
   <GameProviderWrapper>
-    <GameDiv>
-      <div>Welcome to the game!</div>
-      <div>I hope you have a great time!</div>
-      <p>
-        The match-up is between {homeTeam} and {awayTeam}!
-      </p>
-
-      <BatterButton />
-
-      <Diamond />
-    </GameDiv>
+    <GameInner homeTeam={homeTeam} awayTeam={awayTeam} />
   </GameProviderWrapper>
 );
 

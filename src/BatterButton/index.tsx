@@ -17,11 +17,18 @@ function getRandomInt(max) {
 }
 
 const BatterButton: React.FunctionComponent<{}> = () => {
-  const { dispatch } = React.useContext(GameContext);
+  const { dispatch, dispatchLog } = React.useContext(GameContext);
+  const log = (message) =>
+    dispatchLog({ type: "log", payload: message });
 
   const handleClickButton = () => {
     const base = getRandomInt(4);
-    console.log(`Player hit a ${Hit[base]}!`)
+
+    log("--------");
+    log("BATTER UP!");
+    log("--------");
+    log(`Player hit a ${Hit[base]}!`);
+
     dispatch({ type: "hit", payload: base });
   };
 
