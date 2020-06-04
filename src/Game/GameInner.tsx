@@ -22,6 +22,16 @@ const GameDiv = styled.div`
   margin: 0 auto;
   overflow: hidden;
 `;
+
+const GameInfo = styled.div`
+  height: 150px;
+  padding: 15px 0;
+  
+  & > div {
+    padding: 5px 0;
+  }
+`;
+
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
   const { dispatch } = React.useContext(GameContext);
 
@@ -36,13 +46,15 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
   return (
     <GameDiv>
-      <div>Welcome to the game!</div>
-      <div>I hope you have a great time!</div>
-      <p>
-        The match-up is between {homeTeam} and {awayTeam}!
-      </p>
+      <GameInfo>
+        <div>Welcome to the game!</div>
+        <div>I hope you have a great time!</div>
+        <div>
+          The match-up is between {homeTeam} and {awayTeam}!
+        </div>
 
-      <BatterButton/>
+        <BatterButton/>
+      </GameInfo>
       <ScoreBoard/>
       <Diamond/>
       <Announcements/>
