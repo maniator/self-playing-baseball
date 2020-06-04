@@ -4,7 +4,11 @@ import { GameContext, State } from "../Context";
 import styled from "styled-components";
 
 const AnnouncementsArea = styled.div`
-  padding: 20px;
+  padding: 15px;
+`;
+
+const Log = styled.div`
+  padding: 5px;
 `;
 
 const Announcements: React.FunctionComponent<{}> = () => {
@@ -12,7 +16,7 @@ const Announcements: React.FunctionComponent<{}> = () => {
 
   return (
     <AnnouncementsArea>
-      {log.map((announcement, idx) => <div key={idx}>{announcement}</div>)}
+      {log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)}
     </AnnouncementsArea>
   );
 }
