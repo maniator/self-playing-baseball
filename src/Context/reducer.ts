@@ -80,7 +80,7 @@ const hitBall = (type: Hit, state: State, log): State => {
 };
 
 const nextHalfInning = (state, log): State => {
-  const newState = { ...state };
+  const newState = { ...state, baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0 };
   let newHalfInning = newState.atBat + 1;
   let newInning = newState.inning;
 
@@ -91,7 +91,7 @@ const nextHalfInning = (state, log): State => {
 
   log(`${state.teams[newHalfInning]} are now up to bat!`)
 
-  return { ...newState, inning: newInning, atBat: newHalfInning, strikes: 0, outs: 0, balls: 0 };
+  return { ...newState, inning: newInning, atBat: newHalfInning };
 }
 
 const playerOut = (state, log) => {
