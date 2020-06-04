@@ -32,8 +32,13 @@ const GameInfo = styled.div`
   }
 `;
 
+const Input = styled.input`
+  background: #000;
+  color: #fff;
+`;
+
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
-  const { dispatch } = React.useContext(GameContext);
+  const { dispatch, teams } = React.useContext(GameContext);
 
   React.useEffect(() => {
     dispatch({
@@ -42,7 +47,18 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         homeTeam, awayTeam
       ]
     })
-  }, [])
+  }, []);
+
+  const handleChangeTeam = (teamIdx) => (e) => {
+    const { target: { value } } = e;
+    const newTeamNames = [ ...teams ];
+
+    newTeamNames[teamIdx] = value;
+    dispatch({
+      type: "startGame",
+      payload: newTeamNames
+    })
+  }
 
   return (
     <GameDiv>
@@ -50,7 +66,9 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         <div>Welcome to the game!</div>
         <div>I hope you have a great time!</div>
         <div>
-          The match-up is between {homeTeam} and {awayTeam}!
+          The match-up is between <br/>
+          <Input value={teams[0]} onChange={handleChangeTeam(0)} /> and
+          <Input value={teams[1]} onChange={handleChangeTeam(1)} />!
         </div>
 
         <BatterButton/>
