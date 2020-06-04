@@ -56,7 +56,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
 }
 
 const hitBall = (type: Hit, state: State, log): State => {
-  let newState = { ...state };
+  let newState = { ...state, balls: 0, strikes: 0 };
 
   switch (type) {
     case Hit.Homerun:
