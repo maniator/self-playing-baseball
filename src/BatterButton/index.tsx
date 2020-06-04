@@ -33,7 +33,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   };
 
   const handlePitch = (event) => {
-    if (event.code === "Space") {
+    if (event.target.type !== "text") {
       handleClickButton();
     }
   }

@@ -50,6 +50,7 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
   }, []);
 
   const handleChangeTeam = (teamIdx) => (e) => {
+    e.stopPropagation();
     const { target: { value } } = e;
     const newTeamNames = [ ...teams ];
 
