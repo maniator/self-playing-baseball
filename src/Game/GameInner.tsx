@@ -42,7 +42,7 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
   React.useEffect(() => {
     dispatch({
-      type: "startGame",
+      type: "setTeams",
       payload: [
         homeTeam, awayTeam
       ]
@@ -56,7 +56,7 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
     newTeamNames[teamIdx] = value;
     dispatch({
-      type: "startGame",
+      type: "setTeams",
       payload: newTeamNames
     })
   }

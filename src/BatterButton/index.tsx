@@ -4,6 +4,7 @@ import styled from "styled-components";
 import { ContextValue, GameContext, State } from "../Context";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
+import { cancelAnnouncements } from "../utilities/announce";
 
 const Button = styled.button`
   background: aquamarine;
@@ -13,6 +14,13 @@ const Button = styled.button`
   cursor: pointer;
 `;
 
+const outfield = {
+  [Hit.Homerun]: "over the fence!",
+  [Hit.Triple]: "to the back wall",
+  [Hit.Double]: "to center",
+  [Hit.Single]: "to an empty area of the field"
+}
+
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes }: ContextValue = React.useContext(GameContext);
   const log = (message) =>
@@ -21,13 +29,17 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleClickButton = () => {
     const random = getRandomInt(1000);
     const swingRate = 500 - (75 * strikes);
+
+    // cancel previous announcements
+    cancelAnnouncements();
+
     if (random < swingRate) {
       dispatch({ type: "strike" });
     } else if (random < 880) {
       dispatch({ type: "wait" });
     } else {
       const base = getRandomInt(4);
-      log(`Player hit a ${Hit[base]}!`);
+      log(`Player hit the ball ${outfield[base]}!`);
       dispatch({ type: "hit", payload: base });
     }
   };

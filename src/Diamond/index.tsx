@@ -2,6 +2,8 @@ import * as React  from "react";
 
 import styled from "styled-components";
 import { GameContext } from "../Context";
+import Announcements from "../Announcements";
+import Ball from "../Ball";
 
 const DiamondDiv = styled.div`
   background: #AAC32B;
@@ -33,6 +35,8 @@ const Diamond: React.FunctionComponent<{}> = () => {
       <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
       <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
       <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
+
+      <Ball />
     </DiamondDiv>
   );
 }

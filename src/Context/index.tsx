@@ -1,5 +1,7 @@
 import * as React from "react";
 import reducer from "./reducer";
+import { Hit } from "../constants/hitTypes";
+import { announce } from "../utilities/announce";
 
 export const GameContext = React.createContext();
 
@@ -12,14 +14,13 @@ export interface State {
   strikes: number,
   balls: number,
   atBat: number,
+  hitType?: Hit
 }
 
 export interface ContextValue extends State {
   dispatch: Function,
   dispatchLog: Function,
 }
-
-const synth = window.speechSynthesis;
 
 function logReducer(state: { announcements: string[] }, action: { type: string, payload: any }): { announcements: string[] } {
   switch (action.type) {
@@ -29,11 +30,7 @@ function logReducer(state: { announcements: string[] }, action: { type: string, 
       const newState = { ...state };
       newState.announcements.unshift(message);
 
-      const utterThis = new SpeechSynthesisUtterance(message);
-
-      utterThis.pitch = 1;
-      utterThis.rate = 1;
-      synth.speak(utterThis);
+      announce(message);
 
       return newState;
     default:

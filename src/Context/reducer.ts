@@ -42,7 +42,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
       newState.baseLayout[nextBase] = 0;
     }
 
-    log(`Player runs to ${Base[nextBase]}`)
+    // log(`Player runs to ${Base[nextBase]}`)
     newState = moveBase(log, newState, nextBase, toBase);
   } else {
     throw new Error(`Base does not exist: ${Base[nextBase]}`);
@@ -57,6 +57,12 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
 
 const hitBall = (type: Hit, state: State, log): State => {
   let newState = { ...state, balls: 0, strikes: 0 };
+  const randomNumber = getRandomInt(1000);
+
+  if (randomNumber >= 750 && type !== Hit.Homerun) {
+    log("Player popped out!")
+    return playerOut(state, log);
+  }
 
   switch (type) {
     case Hit.Homerun:
@@ -76,7 +82,11 @@ const hitBall = (type: Hit, state: State, log): State => {
       throw new Error(`Not a possible hit type: ${type}`);
   }
 
-  return newState;
+  if (type !== Hit.Walk) {
+    log(`Player hit a ${Hit[type]}`)
+  }
+
+  return { ...newState, hitType: type };
 };
 
 const nextHalfInning = (state, log): State => {
@@ -98,6 +108,7 @@ const playerOut = (state, log) => {
   const newState = { ...state };
   const newOuts = newState.outs + 1;
   log("Player is out!");
+  log("----------");
 
   if (newOuts === 3) {
     log("Team has three outs, next team is up!");
@@ -152,7 +163,7 @@ const reducer = (dispatchLogger) => {
         return { ...state, inning: state.inning + 1 };
       case 'hit':
         return hitBall(action.payload, state, log);
-      case 'startGame':
+      case 'setTeams':
         return { ...state, teams: action.payload };
       case 'strike':
         return playerStrike(state, log);
