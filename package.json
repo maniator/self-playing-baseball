@@ -6,6 +6,7 @@
   "license": "MIT",
   "scripts": {
     "dev": "parcel serve src/*.html",
+    "dev:deploy": "parcel src/*.html",
     "build": "parcel build src/*.html"
   },
   "dependencies": {
