@@ -5,18 +5,50 @@ import { GameContext } from "../Context";
 import Announcements from "../Announcements";
 import Ball from "../Ball";
 
-const DiamondDiv = styled.div`
+const OutfieldDiv = styled.div`
+  height: 300px;
+  width: 300px;
   background: #AAC32B;
+  border-radius: 100% 0 0 0;
+  position: absolute;
+  right: 35px;
+  bottom: 75px;
+  transform: rotate(45deg); /* Equal to rotateZ(45deg) */
+  z-index: -1;
+`;
+
+const DiamondDiv = styled.div`
+  background: #886c36;
+  height: 150px;
+  width: 150px;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+`;
+
+const Mound = styled.div`
   height: 100px;
   width: 100px;
-  transform: rotate(45deg); /* Equal to rotateZ(45deg) */
+  background: #AAC32B;
   position: absolute;
-  right: 55px;
-  bottom: 55px;
+  left: calc(50% - 50px);
+  top: calc(50% - 50px);
+  
+  &:after {
+    display: block;
+    content: "";
+    position: absolute;
+    height: 50px;
+    width: 50px;
+    border-radius: 100%;
+    background: #886c36;
+    left: calc(50% - 25px);
+    top: calc(50% - 25px);
+  }
 `;
 
 const BaseDiv = styled.div`
-  background: ${({ playerOnBase, isHome }) => playerOnBase ? "#7e6d3f" : isHome ? "#fff" : "#ff21b1"};
+  background: ${({ playerOnBase, isHome }) => playerOnBase ? "#3f4f7e" : isHome ? "#fff" : "#ff21b1"};
   height: 10px;
   width: 10px;
   position: absolute;
@@ -30,14 +62,18 @@ const Diamond: React.FunctionComponent<{}> = () => {
   const [ first, second, third ] = state.baseLayout;
 
   return (
-    <DiamondDiv>
-      <BaseDiv base={0} isHome /> { /* home */ }
-      <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
-      <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
-      <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
+    <OutfieldDiv>
 
-      <Ball />
-    </DiamondDiv>
+      <DiamondDiv>
+        <Mound />
+        <BaseDiv base={0} isHome /> { /* home */ }
+        <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
+        <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
+        <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
+
+        <Ball />
+      </DiamondDiv>
+    </OutfieldDiv>
   );
 }
 
