@@ -10,6 +10,7 @@
     "build": "parcel build src/*.html"
   },
   "dependencies": {
+    "github-fork-ribbon-css": "^0.2.3",
     "react": ">= 16.8.0",
     "react-dom": ">= 16.8.0",
     "react-is": ">= 16.8.0",
