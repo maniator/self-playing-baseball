@@ -1,5 +1,7 @@
 import * as React  from "react";
 
+import styled from "styled-components"
+
 import Diamond from "../Diamond";
 import BatterButton from "../BatterButton";
 import { GameProviderWrapper } from "../Context";
@@ -12,15 +14,22 @@ type Props = {
   awayTeam: string
 }
 
+const GithubRibbon = styled.a.attrs({
+  href: "https://github.com/maniator/self-playing-baseball",
+  "data-ribbon": "View on Github",
+  title: "View on Github",
+  className: "github-fork-ribbon left-bottom fixed"
+})`
+  &:before {
+   background-color: #2e8b57;
+  }
+`;
+
 const Game: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => (
   <GameProviderWrapper>
-    <a className="github-fork-ribbon left-bottom fixed"
-       href="https://github.com/maniator/self-playing-basebal"
-       data-ribbon="View on GitHub"
-       title="View on GitHub"
-    >
+    <GithubRibbon>
 	View on GitHub
-    </a>
+    </GithubRibbon>
     <GameInner homeTeam={homeTeam} awayTeam={awayTeam} />
   </GameProviderWrapper>
 );
