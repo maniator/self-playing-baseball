@@ -2727,6 +2727,11 @@ getpass@^0.1.1:
   dependencies:
     assert-plus "^1.0.0"
 
+git-cz@^4.6.2:
+  version "4.6.2"
+  resolved "https://registry.yarnpkg.com/git-cz/-/git-cz-4.6.2.tgz#ae3d02d88c2032e6ba3af6467dc08ae0cc4305bc"
+  integrity sha512-SDLLWmMmAkG33bqAMp5idrr9gbpduyaJ7JjRzC34HPpQ7UGRgG13C5hqc0S7bOTISQu0j8vD3CrK7cyCU99iFA==
+
 glob-parent@^3.1.0:
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/glob-parent/-/glob-parent-3.1.0.tgz#9e6af6299d8d3bd2bd40430832bd113df906c5ae"
