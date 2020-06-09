@@ -19,7 +19,8 @@ const GithubRibbon = styled.a.attrs({
   "data-ribbon": "View on Github",
   title: "View on Github",
   className: "github-fork-ribbon left-bottom fixed",
-  target: "_blank"
+  target: "_blank",
+  rel: "noreferrer"
 })`
   &:before {
    background-color: #2e8b57;

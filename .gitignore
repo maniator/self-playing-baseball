@@ -5,6 +5,7 @@
 node_modules
 .idea
 dist
+!dist/robots.txt
 
 .cache
 *.log
