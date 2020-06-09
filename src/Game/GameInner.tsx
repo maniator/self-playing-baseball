@@ -68,8 +68,8 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         <div>I hope you have a great time!</div>
         <div>
           The match-up is between <br/>
-          <Input value={teams[0]} onChange={handleChangeTeam(0)} /> and
-          <Input value={teams[1]} onChange={handleChangeTeam(1)} />!
+          <label><Input value={teams[0]} onChange={handleChangeTeam(0)} /></label> and
+          <label><Input value={teams[1]} onChange={handleChangeTeam(1)} /></label>!
         </div>
 
         <BatterButton/>
