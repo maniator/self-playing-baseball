@@ -3,6 +3,8 @@ import * as React  from "react";
 import styled from "styled-components";
 import { ContextValue, GameContext } from "../Context";
 
+const textColor = "#0F4880";
+
 const ScoreBoardDiv = styled.div`
   background: #fff;
   height: 190px;
@@ -17,19 +19,19 @@ const Score = styled.div`
   height: 25px;
   line-height: 25px;
   font-size: 15px;
-  color: #000;
+  color: ${textColor};
 `
 
 const BatterStats = styled.div`
   height: 25px;
   line-height: 25px;
   font-size: 15px;
-  color: #302929;
+  color: ${textColor};
 `;
 
 const Team = styled.div`
   font-weight: ${({ teamAtBat }) => teamAtBat ? "bold" : "normal"};
-  color: ${({ teamAtBat }) => teamAtBat ? "#f00" : "#000"};
+  color: ${({ teamAtBat }) => teamAtBat ? "#FF0000" : textColor};
 `;
 
 const ScoreBoard: React.FunctionComponent<{}> = () => {
