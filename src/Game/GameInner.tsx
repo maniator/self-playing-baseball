@@ -12,7 +12,7 @@ type Props = {
   awayTeam: string
 }
 
-const GameDiv = styled.div`
+const GameDiv = styled.main`
   color: white;
   position: relative;
   height: 75vh;
