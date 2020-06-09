@@ -31,7 +31,7 @@ const BatterStats = styled.div`
 
 const Team = styled.div`
   font-weight: ${({ teamAtBat }) => teamAtBat ? "bold" : "normal"};
-  color: ${({ teamAtBat }) => teamAtBat ? "#FF0000" : textColor};
+  color: ${({ teamAtBat }) => teamAtBat ? "#b381b3" : textColor};
 `;
 
 const ScoreBoard: React.FunctionComponent<{}> = () => {
