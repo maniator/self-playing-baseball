@@ -18,7 +18,8 @@ const GithubRibbon = styled.a.attrs({
   href: "https://github.com/maniator/self-playing-baseball",
   "data-ribbon": "View on Github",
   title: "View on Github",
-  className: "github-fork-ribbon left-bottom fixed"
+  className: "github-fork-ribbon left-bottom fixed",
+  target: "_blank"
 })`
   &:before {
    background-color: #2e8b57;
