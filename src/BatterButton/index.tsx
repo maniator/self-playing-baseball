@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import styled from "styled-components";
+import { useLocalStorage } from "usehooks-ts";
 import { ContextValue, GameContext, Strategy } from "../Context";
 import { detectDecision } from "../Context/reducer";
 import { Hit } from "../constants/hitTypes";
@@ -10,7 +11,6 @@ import { buildReplayUrl } from "../utilities/rng";
 import { appLog } from "../utilities/logger";
 import DecisionPanel from "../DecisionPanel";
 import { SPEED_SLOW, SPEED_NORMAL, SPEED_FAST } from "./constants";
-import { loadBool, loadInt, loadFloat, loadString } from "../utilities/localStorage";
 import ManagerModeControls from "./ManagerModeControls";
 import VolumeControls from "./VolumeControls";
 
@@ -83,13 +83,13 @@ const Select = styled.select`
 
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
-  const [autoPlay, setAutoPlay] = React.useState(() => loadBool("autoPlay", false));
-  const [speed, setSpeed] = React.useState(() => loadInt("speed", SPEED_NORMAL));
-  const [announcementVolume, setAnnouncementVolumeState] = React.useState(() => loadFloat("announcementVolume", 1));
-  const [alertVolume, setAlertVolumeState] = React.useState(() => loadFloat("alertVolume", 1));
-  const [managerMode, setManagerMode] = React.useState(() => loadBool("managerMode", false));
-  const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
-  const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) === 1 ? 1 : 0));
+  const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
+  const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
+  const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
+  const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
+  const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
+  const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
+  const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
   // Track browser notification permission so we can show an in-UI status badge.
   const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
@@ -277,15 +277,6 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     tick(speedRef.current);
     return () => clearTimeout(timerId);
   }, [autoPlay, pendingDecision, managerMode]);
-
-  // Persist settings to localStorage
-  React.useEffect(() => { localStorage.setItem("autoPlay", String(autoPlay)); }, [autoPlay]);
-  React.useEffect(() => { localStorage.setItem("speed", String(speed)); }, [speed]);
-  React.useEffect(() => { localStorage.setItem("announcementVolume", String(announcementVolume)); }, [announcementVolume]);
-  React.useEffect(() => { localStorage.setItem("alertVolume", String(alertVolume)); }, [alertVolume]);
-  React.useEffect(() => { localStorage.setItem("managerMode", String(managerMode)); }, [managerMode]);
-  React.useEffect(() => { localStorage.setItem("strategy", strategy); }, [strategy]);
-  React.useEffect(() => { localStorage.setItem("managedTeam", String(managedTeam)); }, [managedTeam]);
 
   // Sync volume states into the announce module.
   React.useEffect(() => { setAnnouncementVolume(announcementVolume); }, [announcementVolume]);
