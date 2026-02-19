@@ -1,5 +1,10 @@
 const synth = window.speechSynthesis;
-let _muted = false;
+
+// --- Volume controls (0.0 – 1.0) -------------------------------------------
+// _speechVolume: controls TTS utterance volume (announcements/play-by-play).
+// _alertVolume:  controls Web Audio API gain (chime, fanfares, 7th-inning stretch).
+let _speechVolume = 1.0;
+let _alertVolume = 1.0;
 
 // --- Best-voice selection --------------------------------------------------
 // We pick the best available English voice once (or when the voice list loads).
@@ -40,6 +45,10 @@ const toSpeechText = (msg: string): string => {
   return cleaned;
 };
 
+// Base speech rate; updated via setSpeechRate() when the autoplay speed changes.
+// Default corresponds to SPEED_NORMAL (700 ms) → 1.15.
+let _speechRate = 1.15;
+
 const flushBatch = (): void => {
   _batchTimer = null;
   const parts = _pendingMessages
@@ -49,28 +58,34 @@ const flushBatch = (): void => {
   if (parts.length === 0) return;
 
   const utterThis = new SpeechSynthesisUtterance(parts.join(". "));
-  utterThis.rate = 1.15;   // slightly faster — sounds like a live commentator
+  utterThis.rate = _speechRate;
   utterThis.pitch = 1.05;  // fractionally higher — adds energy without sounding unnatural
-  utterThis.volume = 1;
+  utterThis.volume = _speechVolume;
   if (_bestVoice) utterThis.voice = _bestVoice;
   synth.speak(utterThis);
 };
 
 // ---------------------------------------------------------------------------
 
-export const setMuted = (m: boolean): void => {
-  _muted = m;
-  if (m) {
+export const setAnnouncementVolume = (v: number): void => {
+  _speechVolume = Math.max(0, Math.min(1, v));
+  if (_speechVolume === 0) {
+    // Cancel any queued speech immediately when silenced.
     if (_batchTimer !== null) { clearTimeout(_batchTimer); _batchTimer = null; }
     _pendingMessages = [];
     synth.cancel();
   }
 };
 
-export const isMuted = (): boolean => _muted;
+export const setAlertVolume = (v: number): void => {
+  _alertVolume = Math.max(0, Math.min(1, v));
+};
+
+export const getAnnouncementVolume = (): number => _speechVolume;
+export const getAlertVolume = (): number => _alertVolume;
 
 export const announce = (message: string): void => {
-  if (_muted) return;
+  if (_speechVolume === 0) return;
   _pendingMessages.push(message);
   if (_batchTimer !== null) clearTimeout(_batchTimer);
   _batchTimer = setTimeout(flushBatch, BATCH_DELAY);
@@ -82,15 +97,31 @@ export const cancelAnnouncements = (): void => {
   synth.cancel();
 };
 
-export const canAnnounce = () => !(synth.speaking || synth.pending);
+/** Set the TTS speech rate. Call this when the autoplay speed changes.
+ *  Maps the autoplay interval (ms) to a comfortable speech rate:
+ *    1200ms (slow)   → 1.0  — clear, relaxed
+ *     700ms (normal) → 1.15 — brisk commentator
+ *     350ms (fast)   → 1.6  — excited rapid-fire
+ */
+export const setSpeechRate = (intervalMs: number): void => {
+  // Linear interpolation between slow (1200ms → 1.0) and fast (350ms → 1.6).
+  const MIN_MS = 350;
+  const MAX_MS = 1200;
+  const MIN_RATE = 1.0;
+  const MAX_RATE = 1.6;
+  const clamped = Math.max(MIN_MS, Math.min(MAX_MS, intervalMs));
+  // Faster interval = smaller ms value = higher rate.
+  const t = (MAX_MS - clamped) / (MAX_MS - MIN_MS); // 0 at slow, 1 at fast
+  _speechRate = MIN_RATE + t * (MAX_RATE - MIN_RATE);
+};
 
-/** True while a batch is pending or the synth is actively speaking. */
+export const canAnnounce = () => !(synth.speaking || synth.pending);
 export const isSpeechPending = (): boolean =>
   _batchTimer !== null || synth.speaking || synth.pending;
 
-/** Play a short two-note chime to alert the manager. Respects the mute flag. */
+/** Play a short two-note chime to alert the manager. Skips when alert volume is 0. */
 export const playDecisionChime = (): void => {
-  if (_muted) return;
+  if (_alertVolume === 0) return;
   try {
     const AudioCtxConstructor: typeof AudioContext =
       window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -105,7 +136,7 @@ export const playDecisionChime = (): void => {
       osc.type = "sine";
       osc.frequency.value = freq;
       gain.gain.setValueAtTime(0, start);
-      gain.gain.linearRampToValueAtTime(0.2, start + 0.02);
+      gain.gain.linearRampToValueAtTime(0.2 * _alertVolume, start + 0.02);
       gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
       osc.start(start);
       osc.stop(start + dur);
@@ -137,14 +168,15 @@ const makeFanfareNote = (
   osc.type = type;
   osc.frequency.value = freq;
   gain.gain.setValueAtTime(0, start);
-  gain.gain.linearRampToValueAtTime(volume, start + 0.02);
+  gain.gain.linearRampToValueAtTime(volume * _alertVolume, start + 0.02);
   gain.gain.exponentialRampToValueAtTime(0.001, start + dur);
   osc.start(start);
   osc.stop(start + dur + 0.02);
 };
 
-/** Triumphant rising fanfare played when the game ends. Ignores mute (it's the grand finale). */
+/** Triumphant rising fanfare played when the game ends. Respects alert volume. */
 export const playVictoryFanfare = (): void => {
+  if (_alertVolume === 0) return;
   try {
     const Ctx: typeof AudioContext =
       window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -166,9 +198,9 @@ export const playVictoryFanfare = (): void => {
 };
 
 /** Plays the opening bars of "Take Me Out to the Ball Game" for the 7th-inning stretch.
- *  Respects the mute flag. */
+ *  Skips when alert volume is 0. */
 export const play7thInningStretch = (): void => {
-  if (_muted) return;
+  if (_alertVolume === 0) return;
   try {
     const Ctx: typeof AudioContext =
       window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;

@@ -5,7 +5,7 @@ import { ContextValue, GameContext, Strategy, State } from "../Context";
 import { detectDecision } from "../Context/reducer";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
-import { cancelAnnouncements, setMuted, isSpeechPending, playVictoryFanfare, play7thInningStretch } from "../utilities/announce";
+import { cancelAnnouncements, setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
 import DecisionPanel from "../DecisionPanel";
 
@@ -68,6 +68,23 @@ const Select = styled.select`
   font-family: inherit;
 `;
 
+const VolumeRow = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: #cce8ff;
+  cursor: default;
+`;
+
+const RangeInput = styled.input`
+  accent-color: aquamarine;
+  cursor: pointer;
+  width: 72px;
+  height: 4px;
+  vertical-align: middle;
+`;
+
 const SPEED_SLOW = 1200;
 const SPEED_NORMAL = 700;
 const SPEED_FAST = 350;
@@ -80,6 +97,13 @@ function loadBool(key: string, fallback: boolean): boolean {
 function loadInt(key: string, fallback: number): number {
   const v = localStorage.getItem(key);
   return v === null ? fallback : parseInt(v, 10);
+}
+
+function loadFloat(key: string, fallback: number): number {
+  const v = localStorage.getItem(key);
+  if (v === null) return fallback;
+  const f = parseFloat(v);
+  return Number.isFinite(f) ? Math.max(0, Math.min(1, f)) : fallback;
 }
 
 function loadString<T extends string>(key: string, fallback: T): T {
@@ -98,7 +122,8 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
   const [autoPlay, setAutoPlay] = React.useState(() => loadBool("autoPlay", false));
   const [speed, setSpeed] = React.useState(() => loadInt("speed", SPEED_NORMAL));
-  const [muted, setMutedState] = React.useState(() => loadBool("muted", false));
+  const [announcementVolume, setAnnouncementVolumeState] = React.useState(() => loadFloat("announcementVolume", 1));
+  const [alertVolume, setAlertVolumeState] = React.useState(() => loadFloat("alertVolume", 1));
   const [managerMode, setManagerMode] = React.useState(() => loadBool("managerMode", false));
   const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
   const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) === 1 ? 1 : 0));
@@ -109,8 +134,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   autoPlayRef.current = autoPlay;
 
   // Stable refs for values needed inside the speech-gated scheduler (avoids stale closures).
-  const mutedRef = React.useRef(muted);
-  mutedRef.current = muted;
+  // mutedRef is true when announcement volume is 0 — scheduler skips speech-wait when silent.
+  const mutedRef = React.useRef(announcementVolume === 0);
+  mutedRef.current = announcementVolume === 0;
 
   const speedRef = React.useRef(speed);
   speedRef.current = speed;
@@ -273,13 +299,18 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   // Persist settings to localStorage
   React.useEffect(() => { localStorage.setItem("autoPlay", String(autoPlay)); }, [autoPlay]);
   React.useEffect(() => { localStorage.setItem("speed", String(speed)); }, [speed]);
-  React.useEffect(() => { localStorage.setItem("muted", String(muted)); }, [muted]);
+  React.useEffect(() => { localStorage.setItem("announcementVolume", String(announcementVolume)); }, [announcementVolume]);
+  React.useEffect(() => { localStorage.setItem("alertVolume", String(alertVolume)); }, [alertVolume]);
   React.useEffect(() => { localStorage.setItem("managerMode", String(managerMode)); }, [managerMode]);
   React.useEffect(() => { localStorage.setItem("strategy", strategy); }, [strategy]);
   React.useEffect(() => { localStorage.setItem("managedTeam", String(managedTeam)); }, [managedTeam]);
 
-  // Sync mute state into the announce module
-  React.useEffect(() => { setMuted(muted); }, [muted]);
+  // Sync volume states into the announce module.
+  React.useEffect(() => { setAnnouncementVolume(announcementVolume); }, [announcementVolume]);
+  React.useEffect(() => { setAlertVolume(alertVolume); }, [alertVolume]);
+
+  // Sync speed → TTS rate so the voice keeps pace with autoplay.
+  React.useEffect(() => { setSpeechRate(speed); }, [speed]);
 
   const handlePitch = React.useCallback((event: KeyboardEvent) => {
     if (autoPlayRef.current) return; // autoplay handles pitching; spacebar does nothing
@@ -310,8 +341,14 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     }
   };
 
-  const handleMuteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMutedState(e.target.checked);
+  const handleAnnouncementVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = parseFloat(e.target.value);
+    if (Number.isFinite(f)) setAnnouncementVolumeState(Math.max(0, Math.min(1, f)));
+  };
+
+  const handleAlertVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = parseFloat(e.target.value);
+    if (Number.isFinite(f)) setAlertVolumeState(Math.max(0, Math.min(1, f)));
   };
 
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -348,10 +385,30 @@ const BatterButton: React.FunctionComponent<{}> = () => {
               <option value={SPEED_FAST}>Fast</option>
             </Select>
           </ToggleLabel>
-          <ToggleLabel>
-            <input type="checkbox" checked={muted} onChange={handleMuteChange} />
-            Mute
-          </ToggleLabel>
+          <VolumeRow>
+            🔊
+            <RangeInput
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={announcementVolume}
+              onChange={handleAnnouncementVolumeChange}
+              aria-label="Announcement volume"
+            />
+          </VolumeRow>
+          <VolumeRow>
+            🔔
+            <RangeInput
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={alertVolume}
+              onChange={handleAlertVolumeChange}
+              aria-label="Alert volume"
+            />
+          </VolumeRow>
           {autoPlay && (
             <ToggleLabel>
               <input type="checkbox" checked={managerMode} onChange={handleManagerModeChange} />
