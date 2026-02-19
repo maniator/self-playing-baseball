@@ -311,6 +311,34 @@ describe("nextHalfInning", () => {
   });
 });
 
+describe("nextHalfInning – home team wins after top of 9th", () => {
+  it("ends game without bottom of 9th when home is already winning", () => {
+    const { log, logs } = makeLogs();
+    // Home leads 3-1; away just finished the top of the 9th (3 outs).
+    const state = makeState({ atBat: 0, inning: 9, score: [1, 3] as [number, number] });
+    const next = nextHalfInning(state, log);
+    expect(next.gameOver).toBe(true);
+    expect(logs.some(l => /win|9th/i.test(l))).toBe(true);
+  });
+
+  it("continues to bottom of 9th when scores are tied after top of 9th", () => {
+    const { log } = makeLogs();
+    const state = makeState({ atBat: 0, inning: 9, score: [2, 2] as [number, number] });
+    const next = nextHalfInning(state, log);
+    expect(next.gameOver).toBe(false);
+    expect(next.atBat).toBe(1);
+    expect(next.inning).toBe(9);
+  });
+
+  it("continues to bottom of 9th when away team is winning after top of 9th", () => {
+    const { log } = makeLogs();
+    const state = makeState({ atBat: 0, inning: 9, score: [4, 2] as [number, number] });
+    const next = nextHalfInning(state, log);
+    expect(next.gameOver).toBe(false);
+    expect(next.atBat).toBe(1);
+  });
+});
+
 describe("nextHalfInning – extra-inning tiebreak rule", () => {
   it("places runner on 2nd at start of top of 10th inning", () => {
     const { log, logs } = makeLogs();

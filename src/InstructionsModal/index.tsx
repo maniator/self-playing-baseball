@@ -29,8 +29,7 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
             <Li>Press <strong>Batter Up!</strong> (or Spacebar) to pitch.</Li>
             <Li>Each pitch is a swing, take, or hit — randomised but seeded so every game is repeatable.</Li>
             <Li>3 strikes = out · 4 balls = walk · 3 outs = end of half-inning.</Li>
-            <Li>The game lasts 9 innings; home team wins if they lead after the bottom of the 9th.</Li>
-            <Li>Walk-off: if the home team takes the lead in the bottom of the 9th+, the game ends immediately.</Li>
+            <Li>The game lasts 9 innings. If the home team leads after the top of the 9th, they win without batting. Walk-off: if the home team takes the lead during the bottom of the 9th+, the game ends immediately.</Li>
           </List>
         </Section>
 
