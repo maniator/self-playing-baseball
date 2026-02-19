@@ -254,6 +254,14 @@ Validate changes by:
 
 ---
 
+## Code Style & File Size
+
+- **Target file length: ≤ 200 lines.** Aim for **100 lines or fewer** in ideal cases. If a file grows beyond 200 lines it must be split into smaller, individually testable modules.
+- **How to split:** extract pure logic into separate utility/helper files, move styled-components into a companion `styles.ts`, and break large components into focused sub-components or custom hooks (following the pattern already established in `GameControls/hooks/`).
+- **Why:** smaller files are easier to review, test in isolation, and reason about. The existing codebase already follows this pattern — maintain it.
+
+---
+
 ## Common Gotchas
 
 - **No `tsconfig.json`:** TypeScript options are inferred by Parcel. Do not add a `tsconfig.json` unless also configuring Parcel to use it.
