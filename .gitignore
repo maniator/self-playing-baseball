@@ -9,7 +9,10 @@ dist
 
 .cache
 *.log
+nohup.out
 
 .env
 
 .parcel-cache
+
+coverage

@@ -1,178 +1,112 @@
 import { Hit } from "../constants/hitTypes";
-import getRandomInt from "../utilities/getRandomInt";
-import { State } from "./index";
+import { State, Strategy, DecisionType } from "./index";
+import { hitBall } from "./hitBall";
+import { playerStrike, playerWait, stealAttempt, buntAttempt } from "./playerActions";
+import { checkWalkoff } from "./gameOver";
+import { stratMod } from "./strategy";
 
-enum Base {
-  First,
-  Second,
-  Third,
-  Home
-}
+// Re-export stratMod so existing consumers (e.g. tests) can import from this module.
+export { stratMod } from "./strategy";
 
 const createLogger = (dispatchLogger) => (message) => {
   dispatchLogger({ type: "log", payload: message });
-}
-
-const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
-  let newState = { ...state };
-
-  const nextBase = fromBase === null ? Base.First : fromBase + 1;
-
-  if (newState.baseLayout.hasOwnProperty(fromBase) && fromBase !== Base.Home) {
-    newState.baseLayout[fromBase] = 1;
-  }
-
-  if (Base[fromBase] === Base[toBase]) {
-    if (toBase === Base.Home) {
-      log("Player scored a run!");
-      newState.score[newState.atBat] += 1;
-    } else {
-      log(`Player stayed on ${Base[toBase]}`);
-    }
-
-    return newState;
-  }
-
-  if (fromBase === toBase) {
-    return newState;
-  } else if (newState.baseLayout.hasOwnProperty(nextBase) || nextBase === Base.Home) {
-    if (newState.baseLayout[nextBase] === 1) {
-      log(`Already someone on ${Base[nextBase]}`)
-      newState = moveBase(log, newState, nextBase, nextBase + 1);
-      newState.baseLayout[nextBase] = 0;
-    }
-
-    // log(`Player runs to ${Base[nextBase]}`)
-    newState = moveBase(log, newState, nextBase, toBase);
-  } else {
-    throw new Error(`Base does not exist: ${Base[nextBase]}`);
-  }
-
-  if (newState.baseLayout.hasOwnProperty(fromBase) && fromBase !== Base.Home) {
-    newState.baseLayout[fromBase] = 0;
-  }
-
-  return newState;
-}
-
-const hitBall = (type: Hit, state: State, log): State => {
-  let newState = { ...state, balls: 0, strikes: 0 };
-  const randomNumber = getRandomInt(1000);
-
-  if (randomNumber >= 750 && type !== Hit.Homerun) {
-    log("Player popped out!")
-    return playerOut(state, log);
-  }
-
-  switch (type) {
-    case Hit.Homerun:
-      newState = moveBase(log, newState, null, Base.Home);
-      break;
-    case Hit.Triple:
-      newState = moveBase(log, newState, null, Base.Third);
-      break;
-    case Hit.Double:
-      newState = moveBase(log, newState, null, Base.Second);
-      break;
-    case Hit.Walk:
-    case Hit.Single:
-      newState = moveBase(log, newState, null, Base.First);
-      break;
-    default:
-      throw new Error(`Not a possible hit type: ${type}`);
-  }
-
-  if (type !== Hit.Walk) {
-    log(`Player hit a ${Hit[type]}`)
-  }
-
-  return { ...newState, hitType: type };
 };
 
-const nextHalfInning = (state, log): State => {
-  const newState = { ...state, baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0 };
-  let newHalfInning = newState.atBat + 1;
-  let newInning = newState.inning;
+const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy): number => {
+  const base_pct = base === 0 ? 70 : 60;
+  return Math.round(base_pct * stratMod(strategy, "steal"));
+};
 
-  if (newHalfInning > 1) {
-    newHalfInning = newState.atBat = 0;
-    newInning += 1;
+// Minimum steal success probability required to offer the steal decision (>72 means 73%+).
+const STEAL_MIN_PCT = 72;
+
+export const detectDecision = (state: State, strategy: Strategy, managerMode: boolean): DecisionType | null => {
+  if (!managerMode) return null;
+  if (state.gameOver) return null;
+
+  const { baseLayout, outs, balls, strikes } = state;
+  const scoreDiff = Math.abs(state.score[0] - state.score[1]);
+
+  const ibbAvailable = !baseLayout[0] && (baseLayout[1] || baseLayout[2]) && outs === 2 && state.inning >= 7 && scoreDiff <= 2;
+
+  let stealDecision: { kind: "steal"; base: 0 | 1; successPct: number } | null = null;
+  if (outs < 2) {
+    if (baseLayout[0] && !baseLayout[1]) {
+      const pct = computeStealSuccessPct(0, strategy);
+      if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 0, successPct: pct };
+    }
+    if (!stealDecision && baseLayout[1] && !baseLayout[2]) {
+      const pct = computeStealSuccessPct(1, strategy);
+      if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 1, successPct: pct };
+    }
   }
 
-  log(`${state.teams[newHalfInning]} are now up to bat!`)
-
-  return { ...newState, inning: newInning, atBat: newHalfInning };
-}
-
-const playerOut = (state, log) => {
-  const newState = { ...state };
-  const newOuts = newState.outs + 1;
-  log("Player is out!");
-  log("----------");
-
-  if (newOuts === 3) {
-    log("Team has three outs, next team is up!");
-    return nextHalfInning(newState, log);
+  if (ibbAvailable && stealDecision) {
+    return { kind: "ibb_or_steal", base: stealDecision.base, successPct: stealDecision.successPct };
   }
+  if (ibbAvailable) return { kind: "ibb" };
+  if (stealDecision) return stealDecision;
 
-  return { ...newState, strikes: 0, balls: 0, outs: newOuts }
-}
-
-const playerStrike = (state, log): State => {
-  const newStrikes = state.strikes + 1;
-
-  if (newStrikes === 3) {
-    log("Strike three! Yerrr out!")
-    return playerOut(state, log);
-  }
-
-  log(`Strike ${newStrikes}!`)
-
-  return { ...state, strikes: newStrikes };
-}
-
-const playerBall = (state, log): State => {
-  const newBalls = state.balls + 1;
-
-  if (newBalls === 4) {
-    log("Player takes his base");
-    return hitBall(Hit.Walk, state, log);
-  }
-
-  return { ...state, balls: newBalls };
-}
-
-const playerWait = (state, log): State => {
-  const random = getRandomInt(1000);
-
-  if (random % 2 === 0) {
-    log("A called strike!")
-    return playerStrike(state, log);
-  } else {
-    log("Ball has been called!")
-    return playerBall(state, log);
-  }
-}
+  if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
+  if (balls === 3 && strikes === 0) return { kind: "count30" };
+  if (balls === 0 && strikes === 2) return { kind: "count02" };
+  return null;
+};
 
 const reducer = (dispatchLogger) => {
   const log = createLogger(dispatchLogger);
 
   return function reducer(state: State, action: { type: string, payload: any }): State {
+    if (state.gameOver && !['setTeams', 'nextInning', 'reset'].includes(action.type)) {
+      return state;
+    }
+
     switch (action.type) {
       case 'nextInning':
         return { ...state, inning: state.inning + 1 };
-      case 'hit':
-        return hitBall(action.payload, state, log);
+      case 'hit': {
+        const strategy: Strategy = action.payload?.strategy ?? "balanced";
+        const hitType: Hit = action.payload?.hitType ?? action.payload;
+        return checkWalkoff(hitBall(hitType, state, log, strategy), log);
+      }
       case 'setTeams':
         return { ...state, teams: action.payload };
       case 'strike':
-        return playerStrike(state, log);
+        return playerStrike(state, log, action.payload?.swung ?? false, false);
+      case 'foul':
+        if (state.strikes < 2) return playerStrike(state, log, true, true);
+        log("Foul ball — count stays.");
+        return { ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 };
       case 'wait':
-        return playerWait(state, log);
+        return playerWait(state, log, action.payload?.strategy ?? "balanced", state.onePitchModifier);
+      case 'set_one_pitch_modifier':
+        return { ...state, onePitchModifier: action.payload, pendingDecision: null };
+      case 'steal_attempt': {
+        const { successPct, base } = action.payload;
+        return stealAttempt(state, log, successPct, base);
+      }
+      case 'bunt_attempt':
+        return checkWalkoff(buntAttempt(state, log, action.payload?.strategy ?? "balanced"), log);
+      case 'intentional_walk': {
+        log("Intentional walk issued.");
+        return checkWalkoff(hitBall(Hit.Walk, { ...state, pendingDecision: null }, log), log);
+      }
+      case 'reset':
+        return {
+          inning: 1, score: [0, 0] as [number, number], teams: state.teams,
+          baseLayout: [0, 0, 0] as [number, number, number],
+          outs: 0, strikes: 0, balls: 0, atBat: 0, hitType: undefined,
+          gameOver: false, pendingDecision: null, onePitchModifier: null,
+          pitchKey: 0, decisionLog: [],
+        };
+      case 'skip_decision':
+        return { ...state, pendingDecision: null };
+      case 'set_pending_decision':
+        return { ...state, pendingDecision: action.payload as DecisionType };
       default:
         throw new Error(`No such reducer type as ${action.type}`);
     }
-  }
-}
+  };
+};
 
 export default reducer;

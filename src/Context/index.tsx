@@ -3,7 +3,25 @@ import reducer from "./reducer";
 import { Hit } from "../constants/hitTypes";
 import { announce } from "../utilities/announce";
 
-export const GameContext = React.createContext();
+export const GameContext = React.createContext<ContextValue | undefined>(undefined);
+
+export const useGameContext = (): ContextValue => {
+  const ctx = React.useContext(GameContext);
+  if (!ctx) throw new Error("useGameContext must be used within GameProviderWrapper");
+  return ctx;
+};
+
+export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
+
+export type DecisionType =
+  | { kind: "steal"; base: 0 | 1; successPct: number }
+  | { kind: "bunt" }
+  | { kind: "count30" }
+  | { kind: "count02" }
+  | { kind: "ibb" }
+  | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number };
+
+export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
 
 export interface State {
   inning: number,
@@ -14,7 +32,12 @@ export interface State {
   strikes: number,
   balls: number,
   atBat: number,
-  hitType?: Hit
+  hitType?: Hit,
+  gameOver: boolean,
+  pendingDecision: DecisionType | null,
+  onePitchModifier: OnePitchModifier,
+  pitchKey: number,
+  decisionLog: string[],
 }
 
 export interface ContextValue extends State {
@@ -46,7 +69,12 @@ const initialState: State = {
   outs: 0,
   strikes: 0,
   balls: 0,
-  atBat: 0
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
 };
 
 type Props = {};
