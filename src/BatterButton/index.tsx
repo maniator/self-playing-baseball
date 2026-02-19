@@ -4,7 +4,7 @@ import styled from "styled-components";
 import { ContextValue, GameContext } from "../Context";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
-import { cancelAnnouncements, setMuted, isMuted } from "../utilities/announce";
+import { cancelAnnouncements, setMuted } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
 
 const Button = styled.button`
@@ -120,7 +120,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   React.useEffect(() => { setMuted(muted); }, [muted]);
 
   const handlePitch = React.useCallback((event: KeyboardEvent) => {
-    if ((event.target as HTMLElement).tagName !== 'INPUT') {
+    if ((event.target as HTMLInputElement).type !== "text") {
       handleClickRef.current();
     }
   }, []);
@@ -133,7 +133,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setAutoPlay(enabled);
-    if (enabled && !isMuted()) {
+    if (enabled && !muted) {
       setMutedState(true);
     }
   };

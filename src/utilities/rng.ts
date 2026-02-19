@@ -28,7 +28,7 @@ export function initSeedFromUrl({ writeToUrl = false }: { writeToUrl?: boolean }
       seed = parsed >>> 0;
     }
   } else {
-    seed = ((Date.now() ^ (Math.random() * 0xFFFFFFFF)) >>> 0);
+    seed = (Date.now() >>> 0);
     if (writeToUrl) {
       params.set('seed', seed.toString(36));
       history.replaceState(null, '', `${window.location.pathname}?${params.toString()}`);
