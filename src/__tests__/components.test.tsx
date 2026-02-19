@@ -1,6 +1,6 @@
 /**
  * Tests for React components:
- * Announcements, Ball, ScoreBoard, Diamond, InstructionsModal,
+ * Announcements, Ball, LineScore, Diamond, InstructionsModal,
  * DecisionPanel, GameControls, Game/GameInner
  */
 import * as React from "react";
@@ -34,6 +34,9 @@ const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue =
   log: [],
   dispatch: vi.fn(),
   dispatchLog: vi.fn(),
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
   ...overrides,
 });
 
@@ -51,31 +54,36 @@ const renderWithContext = (
 import Announcements from "../Announcements";
 
 describe("Announcements", () => {
-  it("shows empty state when log is empty", () => {
-    renderWithContext(<Announcements />, makeContextValue({ log: [] }));
-    expect(screen.getByText(/batter up/i)).toBeInTheDocument();
-  });
-
-  it("shows play-by-play heading", () => {
+  it("shows play-by-play heading always", () => {
     renderWithContext(<Announcements />);
     expect(screen.getByText(/play-by-play/i)).toBeInTheDocument();
   });
 
-  it("renders log entries when present", () => {
-    renderWithContext(
-      <Announcements />,
-      makeContextValue({ log: ["Strike one.", "Ball one."] }),
-    );
+  it("is collapsed by default — content not visible", () => {
+    renderWithContext(<Announcements />, makeContextValue({ log: ["Strike one."] }));
+    expect(screen.queryByText("Strike one.")).not.toBeInTheDocument();
+  });
+
+  it("shows content after clicking show toggle", () => {
+    renderWithContext(<Announcements />, makeContextValue({ log: ["Strike one.", "Ball one."] }));
+    fireEvent.click(screen.getByRole("button", { name: /expand play-by-play/i }));
     expect(screen.getByText("Strike one.")).toBeInTheDocument();
     expect(screen.getByText("Ball one.")).toBeInTheDocument();
   });
 
-  it("does not show empty state when log has entries", () => {
-    renderWithContext(
-      <Announcements />,
-      makeContextValue({ log: ["Strike one."] }),
-    );
-    expect(screen.queryByText(/batter up/i)).not.toBeInTheDocument();
+  it("shows empty state message when expanded and log is empty", () => {
+    renderWithContext(<Announcements />, makeContextValue({ log: [] }));
+    fireEvent.click(screen.getByRole("button", { name: /expand play-by-play/i }));
+    expect(screen.getByText(/batter up/i)).toBeInTheDocument();
+  });
+
+  it("collapses again after toggling twice", () => {
+    renderWithContext(<Announcements />, makeContextValue({ log: ["Strike one."] }));
+    const btn = screen.getByRole("button", { name: /expand play-by-play/i });
+    fireEvent.click(btn);
+    expect(screen.getByText("Strike one.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /collapse play-by-play/i }));
+    expect(screen.queryByText("Strike one.")).not.toBeInTheDocument();
   });
 });
 
@@ -119,70 +127,67 @@ describe("Ball", () => {
 });
 
 // ---------------------------------------------------------------------------
-// ScoreBoard
+// LineScore (replaces ScoreBoard)
 // ---------------------------------------------------------------------------
-import ScoreBoard from "../ScoreBoard";
+import LineScore from "../LineScore";
 
-describe("ScoreBoard", () => {
-  it("shows both team names and scores", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ teams: ["Yankees", "Red Sox"], score: [4, 2] }));
-    expect(screen.getByText(/Yankees.*4/)).toBeInTheDocument();
-    expect(screen.getByText(/Red Sox.*2/)).toBeInTheDocument();
+describe("LineScore", () => {
+  it("shows both team names", () => {
+    renderWithContext(<LineScore />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
+    expect(screen.getByText("Yankees")).toBeInTheDocument();
+    expect(screen.getByText("Red Sox")).toBeInTheDocument();
   });
 
-  it("shows strikes, balls, outs, inning", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ strikes: 2, balls: 3, outs: 1, inning: 5 }));
-    expect(screen.getByText(/Strikes: 2/)).toBeInTheDocument();
-    expect(screen.getByText(/Balls: 3/)).toBeInTheDocument();
-    expect(screen.getByText(/Outs: 1/)).toBeInTheDocument();
-    expect(screen.getByText(/Inning: 5/)).toBeInTheDocument();
+  it("shows R (runs) totals for each team", () => {
+    renderWithContext(<LineScore />, makeContextValue({ score: [4, 2] }));
+    const cells = screen.getAllByText(/^[0-9]+$/);
+    const values = cells.map(c => c.textContent);
+    expect(values).toContain("4");
+    expect(values).toContain("2");
   });
 
   it("shows FINAL banner when gameOver is true", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ gameOver: true }));
+    renderWithContext(<LineScore />, makeContextValue({ gameOver: true }));
     expect(screen.getByText("FINAL")).toBeInTheDocument();
   });
 
   it("does not show FINAL banner when game is in progress", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ gameOver: false }));
+    renderWithContext(<LineScore />, makeContextValue({ gameOver: false }));
     expect(screen.queryByText("FINAL")).not.toBeInTheDocument();
   });
 
-  it("shows ▲ top-of-inning indicator when atBat is 0", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ atBat: 0, inning: 3 }));
-    expect(screen.getByText(/▲.*Inning: 3/)).toBeInTheDocument();
+  it("renders BSO dot groups (B / S / O labels)", () => {
+    renderWithContext(<LineScore />, makeContextValue({ balls: 2, strikes: 1, outs: 1 }));
+    expect(screen.getByText("B")).toBeInTheDocument();
+    expect(screen.getByText("S")).toBeInTheDocument();
+    expect(screen.getByText("O")).toBeInTheDocument();
   });
 
-  it("shows ▼ bottom-of-inning indicator when atBat is 1", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ atBat: 1, inning: 7 }));
-    expect(screen.getByText(/▼.*Inning: 7/)).toBeInTheDocument();
+  it("shows inning numbers in header row", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 3 }));
+    // "1" and "3" appear as column headers; getAllByText handles multiple matches
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
   });
 
-  it("shows (Extra) suffix and EXTRA INNINGS banner in extra innings", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 10, gameOver: false }));
-    expect(screen.getByText(/Extra/)).toBeInTheDocument();
+  it("shows extra inning columns beyond 9 in extra innings", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10 }));
+    expect(screen.getAllByText("10").length).toBeGreaterThan(0);
+  });
+
+  it("shows EXTRA INNINGS banner when inning > 9 and game is in progress", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: false }));
     expect(screen.getByText("EXTRA INNINGS")).toBeInTheDocument();
   });
 
   it("does not show EXTRA INNINGS banner when gameOver is true", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 10, gameOver: true }));
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: true }));
     expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
   });
 
   it("does not show EXTRA INNINGS banner in inning 9 or earlier", () => {
-    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 9, gameOver: false }));
+    renderWithContext(<LineScore />, makeContextValue({ inning: 9, gameOver: false }));
     expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
-  });
-
-  it("bolds the team currently at bat", () => {
-    const { container } = renderWithContext(
-      <ScoreBoard />,
-      makeContextValue({ atBat: 1, teams: ["Away", "Home"] }),
-    );
-    // The at-bat team is styled with color #b381b3 via the $teamAtBat prop
-    // Just confirm both team names are present
-    expect(screen.getByText(/Away/)).toBeInTheDocument();
-    expect(screen.getByText(/Home/)).toBeInTheDocument();
   });
 });
 

@@ -12,8 +12,8 @@ Future improvements and known gaps documented here for tracking.
 
 - ~~**Extra-inning logic**~~ ✅ Implemented:
   - Automatic **tiebreak runner on 2nd** placed at the start of every extra-inning half (`nextHalfInning` in `gameOver.ts`), logged as "Tiebreak rule: runner placed on 2nd base."
-  - **ScoreBoard UI** now shows ▲/▼ Top/Bottom-of-inning indicator and an "EXTRA INNINGS" badge (blue) whenever `inning > 9` and the game is still in progress.
-  *(See `gameOver.ts`, `ScoreBoard/index.tsx`)*
+  - **LineScore** shows an "EXTRA INNINGS" badge (blue) whenever `inning > 9` and the game is still in progress. Extra-inning columns are added to the scoreboard automatically.
+  *(See `gameOver.ts`, `LineScore/index.tsx`)*
 
 - ~~**Pitch types**~~ ✅ Implemented in `usePitchDispatch.ts` + `playerActions.ts` + `reducer.ts`:
   - New `src/constants/pitchTypes.ts` defines `PitchType` (fastball, curveball, slider, changeup) with count-aware selection (`selectPitchType`), swing-rate modifiers, and strike-zone probability modifiers.

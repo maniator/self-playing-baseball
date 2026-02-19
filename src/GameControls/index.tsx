@@ -13,9 +13,10 @@ import { usePitchDispatch } from "./hooks/usePitchDispatch";
 import { useAutoPlayScheduler } from "./hooks/useAutoPlayScheduler";
 import { useKeyboardPitch } from "./hooks/useKeyboardPitch";
 import { usePlayerControls } from "./hooks/usePlayerControls";
+import { useReplayDecisions } from "./hooks/useReplayDecisions";
 
 const GameControls: React.FunctionComponent<{}> = () => {
-  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = useGameContext();
+  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams, decisionLog, pitchKey }: ContextValue = useGameContext();
   const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -32,6 +33,7 @@ const GameControls: React.FunctionComponent<{}> = () => {
   const handleClickRef = usePitchDispatch(dispatch, dispatchLog, gameStateRef, managerModeRef, strategyRef, managedTeamRef, skipDecisionRef, strikesRef);
   useAutoPlayScheduler(autoPlay, pendingDecision, managerMode, autoPlayRef, mutedRef, speedRef, handleClickRef, gameStateRef, betweenInningsPauseRef);
   useKeyboardPitch(autoPlayRef, handleClickRef);
+  useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
 
   React.useEffect(() => { setAnnouncementVolume(announcementVolume); }, [announcementVolume]);
   React.useEffect(() => { setAlertVolume(alertVolume); }, [alertVolume]);
@@ -41,7 +43,7 @@ const GameControls: React.FunctionComponent<{}> = () => {
     notifPermission, handleManagerModeChange, handleRequestNotifPermission,
     handleAutoPlayChange, handleAnnouncementVolumeChange, handleAlertVolumeChange,
     handleToggleAnnouncementMute, handleToggleAlertMute, handleShareReplay,
-  } = usePlayerControls({ managerMode, setManagerMode, autoPlay, setAutoPlay, announcementVolume, setAnnouncementVolumeState, alertVolume, setAlertVolumeState, setStrategy, setManagedTeam, dispatchLog });
+  } = usePlayerControls({ managerMode, setManagerMode, autoPlay, setAutoPlay, announcementVolume, setAnnouncementVolumeState, alertVolume, setAlertVolumeState, setStrategy, setManagedTeam, decisionLog, dispatchLog });
 
   return (
     <>
