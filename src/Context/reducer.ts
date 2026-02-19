@@ -98,6 +98,9 @@ const reducer = (dispatchLogger) => {
           outs: 0, strikes: 0, balls: 0, atBat: 0, hitType: undefined,
           gameOver: false, pendingDecision: null, onePitchModifier: null,
           pitchKey: 0, decisionLog: [],
+          batterIndex: [0, 0] as [number, number],
+          inningRuns: [[], []] as [number[], number[]],
+          playLog: [],
         };
       case 'skip_decision':
         return { ...state, pendingDecision: null };
