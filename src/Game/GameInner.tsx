@@ -6,6 +6,7 @@ import Diamond from "../Diamond";
 import Announcements from "../Announcements";
 import styled from "styled-components";
 import { GameContext } from "../Context";
+import { buildReplayUrl } from "../utilities/rng";
 
 type Props = {
   homeTeam: string,
@@ -37,8 +38,23 @@ const Input = styled.input`
   color: #fff;
 `;
 
+const Controls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+`;
+
+const ShareButton = styled.button`
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: #f5f5f5;
+  color: #000;
+`;
+
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
-  const { dispatch, teams } = React.useContext(GameContext);
+  const { dispatch, dispatchLog, teams } = React.useContext(GameContext);
 
   React.useEffect(() => {
     dispatch({
@@ -61,6 +77,24 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
     })
   }
 
+  const handleShareReplay = async () => {
+    const replayUrl = buildReplayUrl();
+
+    try {
+      await navigator.clipboard.writeText(replayUrl);
+
+      if (dispatchLog) {
+        dispatchLog({ type: "log", payload: "Replay link copied!" });
+      }
+    } catch (error) {
+      window.prompt("Copy this replay link", replayUrl);
+
+      if (dispatchLog) {
+        dispatchLog({ type: "log", payload: "Replay link copied!" });
+      }
+    }
+  }
+
   return (
     <GameDiv>
       <GameInfo>
@@ -72,7 +106,10 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
           <label><Input value={teams[1]} onChange={handleChangeTeam(1)} /></label>!
         </div>
 
-        <BatterButton/>
+        <Controls>
+          <BatterButton/>
+          <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
+        </Controls>
       </GameInfo>
       <ScoreBoard/>
       <Diamond/>
