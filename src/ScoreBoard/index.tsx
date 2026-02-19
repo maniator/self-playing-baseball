@@ -7,16 +7,10 @@ const textColor = "#0F4880";
 
 const ScoreBoardDiv = styled.div`
   background: #fff;
-  min-height: 190px;
-  width: 140px;
   padding: 6px 10px;
-  position: absolute;
-  right: 30px;
-  top: 40px;
+  width: 100%;
 
   @media (max-width: 800px) {
-    position: static;
-    width: auto;
     flex: 1;
     min-height: auto;
     margin: 0;

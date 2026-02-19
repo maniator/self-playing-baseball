@@ -4,27 +4,33 @@ import styled from "styled-components";
 import { GameContext } from "../Context";
 import Ball from "../Ball";
 
+const FieldWrapper = styled.div`
+  position: relative;
+  overflow: hidden;
+  height: 280px;
+  width: 100%;
+  flex-shrink: 0;
+
+  @media (max-width: 800px) {
+    height: 200px;
+    flex: 1;
+  }
+`;
+
 const OutfieldDiv = styled.div`
   height: 300px;
   width: 300px;
   background: #AAC32B;
   border-radius: 100% 0 0 0;
   position: absolute;
-  right: 35px;
-  bottom: 75px;
+  right: 0;
+  bottom: 65px;
   transform: rotate(45deg);
-  z-index: -1;
 
   @media (max-width: 800px) {
-    position: relative;
-    right: auto;
-    bottom: auto;
     height: 160px;
     width: 160px;
-    margin: 0;
-    transform: rotate(45deg);
-    flex-shrink: 0;
-    z-index: 0;
+    bottom: 30px;
   }
 `;
 
@@ -92,17 +98,19 @@ const Diamond: React.FunctionComponent<{}> = () => {
   const [first, second, third] = state.baseLayout;
 
   return (
-    <OutfieldDiv>
-      <DiamondDiv>
-        <Mound />
-        <BaseDiv base={0} isHome />
-        <BaseDiv base={1} playerOnBase={Boolean(first)} />
-        <BaseDiv base={2} playerOnBase={Boolean(second)} />
-        <BaseDiv base={3} playerOnBase={Boolean(third)} />
+    <FieldWrapper>
+      <OutfieldDiv>
+        <DiamondDiv>
+          <Mound />
+          <BaseDiv base={0} isHome />
+          <BaseDiv base={1} playerOnBase={Boolean(first)} />
+          <BaseDiv base={2} playerOnBase={Boolean(second)} />
+          <BaseDiv base={3} playerOnBase={Boolean(third)} />
 
-        <Ball />
-      </DiamondDiv>
-    </OutfieldDiv>
+          <Ball />
+        </DiamondDiv>
+      </OutfieldDiv>
+    </FieldWrapper>
   );
 };
 

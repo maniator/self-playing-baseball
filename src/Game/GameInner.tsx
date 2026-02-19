@@ -14,13 +14,12 @@ type Props = {
 
 const GameDiv = styled.main`
   color: white;
-  position: relative;
-  min-height: 75vh;
+  display: flex;
+  flex-direction: column;
   width: min(960px, 94vw);
   border: 1px solid #884e4e;
   padding: 20px;
   margin: 0 auto;
-  overflow: hidden;
 
   @media (max-width: 800px) {
     min-height: auto;
@@ -32,7 +31,6 @@ const GameDiv = styled.main`
 `;
 
 const GameInfo = styled.div`
-  min-height: 150px;
   padding: 15px 0;
 
   & > div {
@@ -40,7 +38,6 @@ const GameInfo = styled.div`
   }
 
   @media (max-width: 800px) {
-    min-height: auto;
     margin-bottom: 8px;
   }
 `;
@@ -56,12 +53,46 @@ const Input = styled.input`
   font-family: inherit;
 `;
 
-const SidePanel = styled.div`
+const GameBody = styled.div`
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+  margin-top: 8px;
+
   @media (max-width: 800px) {
-    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+  }
+`;
+
+const LeftPanel = styled.div`
+  flex: 1;
+  min-width: 0;
+  padding-right: 16px;
+  border-right: 1px solid #2a2a2a;
+
+  @media (max-width: 800px) {
+    min-width: auto;
+    padding-right: 0;
+    border-right: none;
+    border-bottom: 1px solid #2a2a2a;
+    padding-bottom: 8px;
+  }
+`;
+
+const RightPanel = styled.div`
+  width: 310px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (max-width: 800px) {
+    width: 100%;
+    flex-direction: row;
     align-items: flex-start;
     gap: 8px;
-    margin: 8px 0;
   }
 `;
 
@@ -100,11 +131,15 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
         <BatterButton />
       </GameInfo>
-      <SidePanel>
-        <ScoreBoard />
-        <Diamond />
-      </SidePanel>
-      <Announcements />
+      <GameBody>
+        <LeftPanel>
+          <Announcements />
+        </LeftPanel>
+        <RightPanel>
+          <ScoreBoard />
+          <Diamond />
+        </RightPanel>
+      </GameBody>
     </GameDiv>
   );
 };
