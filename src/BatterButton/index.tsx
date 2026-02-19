@@ -1,85 +1,18 @@
 import * as React from "react";
-
-import styled from "styled-components";
 import { useLocalStorage } from "usehooks-ts";
 import { ContextValue, GameContext, Strategy } from "../Context";
-import { detectDecision } from "../Context/reducer";
-import { Hit } from "../constants/hitTypes";
-import getRandomInt from "../utilities/getRandomInt";
-import { setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
-import { buildReplayUrl } from "../utilities/rng";
-import { appLog } from "../utilities/logger";
+import { setAnnouncementVolume, setAlertVolume, setSpeechRate } from "../utilities/announce";
 import DecisionPanel from "../DecisionPanel";
 import { SPEED_SLOW, SPEED_NORMAL, SPEED_FAST } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
 import VolumeControls from "./VolumeControls";
-
-const Controls = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-`;
-
-const Button = styled.button`
-  background: aquamarine;
-  color: darkblue;
-  padding: 12px 18px;
-  border-radius: 30px;
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  font-size: 14px;
-`;
-
-const ShareButton = styled(Button)`
-  background: #2f3f69;
-  color: #fff;
-`;
-
-const NewGameButton = styled(Button)`
-  background: #22c55e;
-  color: #fff;
-  font-weight: bold;
-`;
-
-const AutoPlayGroup = styled.div`
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-  background: rgba(47, 63, 105, 0.5);
-  border-radius: 10px;
-  padding: 5px 10px;
-`;
-
-const ToggleLabel = styled.label`
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  cursor: pointer;
-
-  & input[type="checkbox"] {
-    accent-color: aquamarine;
-    cursor: pointer;
-    width: 14px;
-    height: 14px;
-  }
-`;
-
-const Select = styled.select`
-  background: #1a2440;
-  border: 1px solid #4a6090;
-  color: #fff;
-  border-radius: 8px;
-  padding: 3px 6px;
-  cursor: pointer;
-  font-size: 13px;
-  font-family: inherit;
-`;
-
-
+import { Controls, Button, ShareButton, NewGameButton, AutoPlayGroup, ToggleLabel, Select } from "./styles";
+import { useGameRefs } from "./hooks/useGameRefs";
+import { useGameAudio } from "./hooks/useGameAudio";
+import { usePitchDispatch } from "./hooks/usePitchDispatch";
+import { useAutoPlayScheduler } from "./hooks/useAutoPlayScheduler";
+import { useKeyboardPitch } from "./hooks/useKeyboardPitch";
+import { usePlayerControls } from "./hooks/usePlayerControls";
 
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
@@ -91,310 +24,29 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
-  // Track browser notification permission so we can show an in-UI status badge.
-  const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
-    if (typeof Notification === "undefined") return "unavailable";
-    return Notification.permission;
-  });
+  const gameSnapshot = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams };
+  const { autoPlayRef, mutedRef, speedRef, strikesRef, managerModeRef, strategyRef, managedTeamRef, gameStateRef, skipDecisionRef } =
+    useGameRefs(autoPlay, announcementVolume, speed, strikes, managerMode, strategy, managedTeam, gameSnapshot, pendingDecision);
 
-  // Keep autoPlay accessible as a ref so the keyboard handler can read the latest value
-  // without needing to re-register on every autoPlay change.
-  const autoPlayRef = React.useRef(autoPlay);
-  autoPlayRef.current = autoPlay;
+  const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
+  const handleClickRef = usePitchDispatch(dispatch, dispatchLog, gameStateRef, managerModeRef, strategyRef, managedTeamRef, skipDecisionRef, strikesRef);
+  useAutoPlayScheduler(autoPlay, pendingDecision, managerMode, autoPlayRef, mutedRef, speedRef, handleClickRef, gameStateRef, betweenInningsPauseRef);
+  useKeyboardPitch(autoPlayRef, handleClickRef);
 
-  // Stable refs for values needed inside the speech-gated scheduler (avoids stale closures).
-  // mutedRef is true when announcement volume is 0 — scheduler skips speech-wait when silent.
-  const mutedRef = React.useRef(announcementVolume === 0);
-  mutedRef.current = announcementVolume === 0;
-
-  const speedRef = React.useRef(speed);
-  speedRef.current = speed;
-
-  const log = (message: string) => dispatchLog({ type: "log", payload: message });
-
-  // Keep a ref so the autoplay interval always uses the latest strikes value
-  const strikesRef = React.useRef(strikes);
-  strikesRef.current = strikes;
-
-  // Keep refs for values used inside the interval callback
-  const managerModeRef = React.useRef(managerMode);
-  managerModeRef.current = managerMode;
-
-  const strategyRef = React.useRef(strategy);
-  strategyRef.current = strategy;
-
-  const managedTeamRef = React.useRef(managedTeam);
-  managedTeamRef.current = managedTeam;
-
-  const gameStateRef = React.useRef({ strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams });
-  gameStateRef.current = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams };
-
-  // Detect inning/half-inning transitions for the between-innings pause and 7th-inning stretch.
-  const betweenInningsPauseRef = React.useRef(false);
-  const prevInningSignatureRef = React.useRef(`${inning}-${atBat}`);
-  React.useEffect(() => {
-    const sig = `${inning}-${atBat}`;
-    if (sig !== prevInningSignatureRef.current) {
-      betweenInningsPauseRef.current = true;
-      prevInningSignatureRef.current = sig;
-      if (inning === 7 && atBat === 1) {
-        log("⚾ Seventh inning stretch! Take me out to the ball game!");
-        play7thInningStretch();
-      }
-    }
-  }, [inning, atBat]);
-
-  // Play victory fanfare once when the game ends.
-  const prevGameOverRef = React.useRef(gameOver);
-  React.useEffect(() => {
-    if (!prevGameOverRef.current && gameOver) {
-      playVictoryFanfare();
-    }
-    prevGameOverRef.current = gameOver;
-  }, [gameOver]);
-
-  // After a decision is resolved (pending → null), skip detection for the very next pitch
-  const skipDecisionRef = React.useRef(false);
-  const prevPendingDecision = React.useRef(pendingDecision);
-  React.useEffect(() => {
-    if (prevPendingDecision.current !== null && pendingDecision === null) {
-      skipDecisionRef.current = true;
-    }
-    prevPendingDecision.current = pendingDecision;
-  }, [pendingDecision]);
-
-  const handleClickButton = React.useCallback(() => {
-    const currentState = gameStateRef.current;
-
-    // Don't pitch if game is over
-    if (currentState.gameOver) return;
-
-    // If there's a pending decision, don't auto-pitch — wait for user action
-    if (managerModeRef.current && currentState.pendingDecision) return;
-
-    // In manager mode, detect decision points only when the managed team is at bat
-    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
-      const decision = detectDecision(
-        currentState as State,
-        strategyRef.current,
-        true
-      );
-      if (decision) {
-        dispatch({ type: "set_pending_decision", payload: decision });
-        return;
-      }
-    }
-    // Reset skip flag — we're about to pitch (with or without a modifier)
-    skipDecisionRef.current = false;
-
-    const random = getRandomInt(1000);
-    const currentStrikes = strikesRef.current;
-    const onePitchMod = currentState.onePitchModifier;
-
-    // Apply "protect" one-pitch modifier (0-2 count): reduce swing rate → more contact
-    const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
-    // Apply strategy swing rate modifier
-    const contactMod = strategyRef.current === "contact" ? 1.15 : strategyRef.current === "power" ? 0.9 : 1;
-    const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
-
-    // "swing" modifier: batter commits to swinging — override the take range so no
-    // called balls are possible (the batter literally swings at everything < 920).
-    const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
-
-    if (random < effectiveSwingRate) {
-      // Swing — 30% of swings are fouls (can't strike out on a foul ball)
-      if (getRandomInt(100) < 30) {
-        dispatch({ type: "foul" });
-      } else {
-        dispatch({ type: "strike", payload: { swung: true } });
-      }
-    } else if (random < 920) {
-      // Take the pitch — umpire calls ball or strike
-      dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
-    } else {
-      // Ball in play — determine hit type with realistic MLB distribution
-      const strat = strategyRef.current;
-      const hitRoll = getRandomInt(100);
-      let base: Hit;
-      if (strat === "power") {
-        // Power: more HRs/doubles, fewer singles
-        base = hitRoll < 20 ? Hit.Homerun : hitRoll < 23 ? Hit.Triple : hitRoll < 43 ? Hit.Double : Hit.Single;
-      } else if (strat === "contact") {
-        // Contact: more singles, fewer HRs
-        base = hitRoll < 8 ? Hit.Homerun : hitRoll < 10 ? Hit.Triple : hitRoll < 28 ? Hit.Double : Hit.Single;
-      } else {
-        // Balanced (and aggressive/patient): MLB-realistic distribution
-        // ~13% HR, ~2% triple, ~20% double, ~65% single
-        base = hitRoll < 13 ? Hit.Homerun : hitRoll < 15 ? Hit.Triple : hitRoll < 35 ? Hit.Double : Hit.Single;
-      }
-      // Hit callout is logged inside the reducer (hitBall) after pop-out check — no log here.
-      dispatch({ type: "hit", payload: { hitType: base, strategy: strat } });
-    }
-  }, [dispatch, dispatchLog]);
-
-  // Stable ref so the interval always calls the latest handler without stale closures
-  const handleClickRef = React.useRef(handleClickButton);
-  handleClickRef.current = handleClickButton;
-
-  // Auto-play scheduler — speech-gated: waits for the current announcement to finish
-  // before firing the next pitch, so nothing gets cut off. Also adds a brief pause at
-  // inning/half-inning transitions when muted (speech naturally provides one when unmuted).
-  React.useEffect(() => {
-    if (!autoPlay) return;
-    if (pendingDecision && managerMode) return; // paused at a manager decision
-
-    let timerId: ReturnType<typeof setTimeout>;
-    let extraWait = 0;
-    const MAX_SPEECH_WAIT_MS = 8000;
-    const SPEECH_POLL_MS = 300;
-
-    const tick = (delay: number) => {
-      timerId = setTimeout(() => {
-        if (!autoPlayRef.current || gameStateRef.current.gameOver) return;
-
-        // When unmuted, wait for any ongoing speech to finish before pitching.
-        if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
-          extraWait += SPEECH_POLL_MS;
-          tick(SPEECH_POLL_MS);
-          return;
-        }
-
-        // When muted, still hold briefly at inning/half-inning transitions.
-        if (mutedRef.current && betweenInningsPauseRef.current) {
-          betweenInningsPauseRef.current = false;
-          extraWait = 0;
-          tick(1500);
-          return;
-        }
-
-        betweenInningsPauseRef.current = false;
-        extraWait = 0;
-        handleClickRef.current();
-        tick(speedRef.current);
-      }, delay);
-    };
-
-    tick(speedRef.current);
-    return () => clearTimeout(timerId);
-  }, [autoPlay, pendingDecision, managerMode]);
-
-  // Sync volume states into the announce module.
   React.useEffect(() => { setAnnouncementVolume(announcementVolume); }, [announcementVolume]);
   React.useEffect(() => { setAlertVolume(alertVolume); }, [alertVolume]);
-
-  // Sync speed → TTS rate so the voice keeps pace with autoplay.
   React.useEffect(() => { setSpeechRate(speed); }, [speed]);
 
-  const handlePitch = React.useCallback((event: KeyboardEvent) => {
-    if (autoPlayRef.current) return; // autoplay handles pitching; spacebar does nothing
-    if ((event.target as HTMLInputElement).type !== "text") {
-      handleClickRef.current();
-    }
-  }, []);
-
-  React.useEffect(() => {
-    window.addEventListener("keyup", handlePitch, false);
-    return () => window.removeEventListener("keyup", handlePitch, false);
-  }, [handlePitch]);
-
-  const handleManagerModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = e.target.checked;
-    setManagerMode(enabled);
-    if (!enabled) return;
-    if (typeof Notification === "undefined") {
-      appLog.warn("Manager Mode enabled — Notification API not available in this browser");
-      return;
-    }
-    appLog.log(`Manager Mode enabled — current permission="${Notification.permission}"`);
-    if (Notification.permission === "default") {
-      appLog.log("Requesting notification permission…");
-      Notification.requestPermission().then(result => {
-        appLog.log(`Notification permission result="${result}"`);
-        setNotifPermission(result);
-      });
-    } else {
-      setNotifPermission(Notification.permission);
-    }
-  };
-
-  const handleRequestNotifPermission = React.useCallback(() => {
-    if (typeof Notification === "undefined") return;
-    Notification.requestPermission().then(result => {
-      appLog.log(`Notification permission result="${result}"`);
-      setNotifPermission(result);
-    });
-  }, []);
-
-  const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = e.target.checked;
-    setAutoPlay(enabled);
-    // Manager Mode requires autoplay — turn it off when autoplay is disabled.
-    if (!enabled && managerMode) {
-      setManagerMode(false);
-    }
-  };
-
-  const handleAnnouncementVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = parseFloat(e.target.value);
-    if (Number.isFinite(f)) setAnnouncementVolumeState(Math.max(0, Math.min(1, f)));
-  };
-
-  const handleAlertVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = parseFloat(e.target.value);
-    if (Number.isFinite(f)) setAlertVolumeState(Math.max(0, Math.min(1, f)));
-  };
-
-  const prevAnnouncementVolumeRef = React.useRef(announcementVolume);
-  const handleToggleAnnouncementMute = React.useCallback(() => {
-    if (announcementVolume > 0) {
-      prevAnnouncementVolumeRef.current = announcementVolume;
-      setAnnouncementVolumeState(0);
-    } else {
-      setAnnouncementVolumeState(prevAnnouncementVolumeRef.current > 0 ? prevAnnouncementVolumeRef.current : 1);
-    }
-  }, [announcementVolume]);
-
-  const prevAlertVolumeRef = React.useRef(alertVolume);
-  const handleToggleAlertMute = React.useCallback(() => {
-    if (alertVolume > 0) {
-      prevAlertVolumeRef.current = alertVolume;
-      setAlertVolumeState(0);
-    } else {
-      setAlertVolumeState(prevAlertVolumeRef.current > 0 ? prevAlertVolumeRef.current : 1);
-    }
-  }, [alertVolume]);
-
-  const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSpeed(parseInt(e.target.value, 10));
-  };
-
-  const handleStrategyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStrategy(e.target.value as Strategy);
-  };
-
-  const handleManagedTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setManagedTeam(Number(e.target.value) === 1 ? 1 : 0);
-  };
-
-  const handleShareReplay = () => {
-    const url = buildReplayUrl();
-    const managerNote = managerMode
-      ? "\n\nNote: Manager Mode decisions are not included in the replay — the same pitches will occur, but you'll need to make the same decisions again."
-      : "";
-    if (navigator.clipboard) {
-      navigator.clipboard
-        .writeText(url)
-        .then(() => log(managerMode ? "Replay link copied! (Manager decisions not included)" : "Replay link copied!"))
-        .catch(() => window.prompt(`Copy this replay link:${managerNote}`, url));
-    } else {
-      window.prompt(`Copy this replay link:${managerNote}`, url);
-    }
-  };
+  const {
+    notifPermission, handleManagerModeChange, handleRequestNotifPermission,
+    handleAutoPlayChange, handleAnnouncementVolumeChange, handleAlertVolumeChange,
+    handleToggleAnnouncementMute, handleToggleAlertMute, handleShareReplay,
+  } = usePlayerControls({ managerMode, setManagerMode, autoPlay, setAutoPlay, announcementVolume, setAnnouncementVolumeState, alertVolume, setAlertVolumeState, setStrategy, setManagedTeam, dispatchLog });
 
   return (
     <>
       <Controls>
-        {!autoPlay && <Button onClick={handleClickButton} disabled={gameOver}>Batter Up!</Button>}
+        {!autoPlay && <Button onClick={handleClickRef.current} disabled={gameOver}>Batter Up!</Button>}
         {gameOver && <NewGameButton onClick={() => dispatch({ type: "reset" })}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
@@ -404,7 +56,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
           </ToggleLabel>
           <ToggleLabel>
             Speed
-            <Select value={speed} onChange={handleSpeedChange}>
+            <Select value={speed} onChange={(e) => setSpeed(parseInt(e.target.value, 10))}>
               <option value={SPEED_SLOW}>Slow</option>
               <option value={SPEED_NORMAL}>Normal</option>
               <option value={SPEED_FAST}>Fast</option>
@@ -426,8 +78,8 @@ const BatterButton: React.FunctionComponent<{}> = () => {
               teams={teams}
               notifPermission={notifPermission}
               onManagerModeChange={handleManagerModeChange}
-              onStrategyChange={handleStrategyChange}
-              onManagedTeamChange={handleManagedTeamChange}
+              onStrategyChange={(e) => setStrategy(e.target.value as Strategy)}
+              onManagedTeamChange={(e) => setManagedTeam(Number(e.target.value) === 1 ? 1 : 0)}
               onRequestNotifPermission={handleRequestNotifPermission}
             />
           )}
@@ -439,4 +91,3 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 };
 
 export default BatterButton;
-
