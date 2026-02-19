@@ -101,6 +101,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [muted, setMutedState] = React.useState(() => loadBool("muted", false));
   const [managerMode, setManagerMode] = React.useState(() => loadBool("managerMode", false));
   const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
+  const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) as 0 | 1));
 
   // Tracks the mute state that was active before autoplay started, so we can
   // restore it when autoplay is turned off (even if the user toggled mute mid-play).
@@ -118,6 +119,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 
   const strategyRef = React.useRef(strategy);
   strategyRef.current = strategy;
+
+  const managedTeamRef = React.useRef(managedTeam);
+  managedTeamRef.current = managedTeam;
 
   const gameStateRef = React.useRef({ strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams });
   gameStateRef.current = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams };
@@ -141,8 +145,8 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     // If there's a pending decision, don't auto-pitch — wait for user action
     if (managerModeRef.current && currentState.pendingDecision) return;
 
-    // In manager mode, detect decision points (unless we just resolved one)
-    if (managerModeRef.current && !skipDecisionRef.current) {
+    // In manager mode, detect decision points only when the managed team is at bat
+    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
       const decision = detectDecision(
         currentState as State,
         strategyRef.current,
@@ -209,6 +213,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   React.useEffect(() => { localStorage.setItem("muted", String(muted)); }, [muted]);
   React.useEffect(() => { localStorage.setItem("managerMode", String(managerMode)); }, [managerMode]);
   React.useEffect(() => { localStorage.setItem("strategy", strategy); }, [strategy]);
+  React.useEffect(() => { localStorage.setItem("managedTeam", String(managedTeam)); }, [managedTeam]);
 
   // Sync mute state into the announce module
   React.useEffect(() => { setMuted(muted); }, [muted]);
@@ -289,16 +294,25 @@ const BatterButton: React.FunctionComponent<{}> = () => {
             Manager Mode
           </ToggleLabel>
           {managerMode && (
-            <ToggleLabel>
-              Strategy
-              <Select value={strategy} onChange={e => setStrategy(e.target.value as Strategy)}>
-                <option value="balanced">Balanced</option>
-                <option value="aggressive">Aggressive</option>
-                <option value="patient">Patient</option>
-                <option value="contact">Contact</option>
-                <option value="power">Power</option>
-              </Select>
-            </ToggleLabel>
+            <>
+              <ToggleLabel>
+                Team
+                <Select value={managedTeam} onChange={e => setManagedTeam(Number(e.target.value) as 0 | 1)}>
+                  <option value={0}>{teams[0]}</option>
+                  <option value={1}>{teams[1]}</option>
+                </Select>
+              </ToggleLabel>
+              <ToggleLabel>
+                Strategy
+                <Select value={strategy} onChange={e => setStrategy(e.target.value as Strategy)}>
+                  <option value="balanced">Balanced</option>
+                  <option value="aggressive">Aggressive</option>
+                  <option value="patient">Patient</option>
+                  <option value="contact">Contact</option>
+                  <option value="power">Power</option>
+                </Select>
+              </ToggleLabel>
+            </>
           )}
         </AutoPlayGroup>
       </Controls>
