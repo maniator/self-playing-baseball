@@ -6,9 +6,9 @@ Future improvements and known gaps documented here for tracking.
 
 ## Game Logic
 
-- **Grounder / double-play logic** — Currently all hits use simplified base advancement.  
-  Adding directional-hit runner-advancement, grounder outs, and caught-at-first-with-trailing-runner scenarios requires tracking ball direction and individual runner speeds, which is a larger state change.  
-  *(See `reducer.ts` `advanceRunners`)*
+- ~~**Grounder / double-play logic**~~ ✅ Implemented in `hitBall.ts` (`handleGrounder`):  
+  ~40% of non-HR ball-in-play outs are now ground balls. With a runner on 1st and fewer than 2 outs, 65% of grounders turn into a double play (2 outs, runner removed). The remaining 35% are fielder's-choice plays (lead runner out, batter safe at 1st). Without a force play the batter is simply thrown out at first.  
+  *(See `hitBall.ts` `handleGrounder`, `advanceRunners.ts`)*
 
 - **Extra-inning logic** — The game correctly continues past 9 innings when tied, but walk-off / tie-break rules could be more explicit in the UI.
 
