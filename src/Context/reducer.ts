@@ -115,7 +115,7 @@ const checkGameOver = (state: State, log): State => {
     const [away, home] = state.score;
     if (away !== home) {
       const winner = away > home ? state.teams[0] : state.teams[1];
-      log(`That's the ball game! ${winner} wins!`);
+      log(`That's the ball game! ${winner} win!`);
       return { ...state, gameOver: true };
     }
   }
@@ -266,7 +266,7 @@ const checkWalkoff = (state: State, log): State => {
   if (state.inning >= 9 && state.atBat === 1) {
     const [away, home] = state.score;
     if (home > away) {
-      log(`Walk-off! ${state.teams[1]} wins!`);
+      log(`Walk-off! ${state.teams[1]} win!`);
       return { ...state, gameOver: true };
     }
   }
@@ -320,7 +320,10 @@ const reducer = (dispatchLogger) => {
           return { ...newState, pendingDecision: null, onePitchModifier: null };
         } else {
           log("Caught stealing!");
-          return playerOut({ ...state, pendingDecision: null }, log);
+          // Remove the runner from their original base before recording the out.
+          const clearedBases: [number, number, number] = [...state.baseLayout] as [number, number, number];
+          clearedBases[base] = 0;
+          return playerOut({ ...state, pendingDecision: null, baseLayout: clearedBases }, log);
         }
       }
 

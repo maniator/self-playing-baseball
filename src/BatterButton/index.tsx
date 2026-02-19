@@ -5,7 +5,7 @@ import { ContextValue, GameContext, Strategy, State } from "../Context";
 import { detectDecision } from "../Context/reducer";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
-import { cancelAnnouncements, setMuted } from "../utilities/announce";
+import { cancelAnnouncements, setMuted, isSpeechPending, playVictoryFanfare, play7thInningStretch } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
 import DecisionPanel from "../DecisionPanel";
 
@@ -108,9 +108,12 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const autoPlayRef = React.useRef(autoPlay);
   autoPlayRef.current = autoPlay;
 
-  // Tracks the mute state that was active before autoplay started, so we can
-  // restore it when autoplay is turned off (even if the user toggled mute mid-play).
-  const previousMuteRef = React.useRef<boolean | null>(null);
+  // Stable refs for values needed inside the speech-gated scheduler (avoids stale closures).
+  const mutedRef = React.useRef(muted);
+  mutedRef.current = muted;
+
+  const speedRef = React.useRef(speed);
+  speedRef.current = speed;
 
   const log = (message: string) => dispatchLog({ type: "log", payload: message });
 
@@ -130,6 +133,30 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 
   const gameStateRef = React.useRef({ strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams });
   gameStateRef.current = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams };
+
+  // Detect inning/half-inning transitions for the between-innings pause and 7th-inning stretch.
+  const betweenInningsPauseRef = React.useRef(false);
+  const prevInningSignatureRef = React.useRef(`${inning}-${atBat}`);
+  React.useEffect(() => {
+    const sig = `${inning}-${atBat}`;
+    if (sig !== prevInningSignatureRef.current) {
+      betweenInningsPauseRef.current = true;
+      prevInningSignatureRef.current = sig;
+      if (inning === 7 && atBat === 1) {
+        log("⚾ Seventh inning stretch! Take me out to the ball game!");
+        play7thInningStretch();
+      }
+    }
+  }, [inning, atBat]);
+
+  // Play victory fanfare once when the game ends.
+  const prevGameOverRef = React.useRef(gameOver);
+  React.useEffect(() => {
+    if (!prevGameOverRef.current && gameOver) {
+      playVictoryFanfare();
+    }
+    prevGameOverRef.current = gameOver;
+  }, [gameOver]);
 
   // After a decision is resolved (pending → null), skip detection for the very next pitch
   const skipDecisionRef = React.useRef(false);
@@ -201,16 +228,47 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleClickRef = React.useRef(handleClickButton);
   handleClickRef.current = handleClickButton;
 
-  // Auto-play interval — restarts when enabled or speed changes; pauses when pendingDecision in manager mode
+  // Auto-play scheduler — speech-gated: waits for the current announcement to finish
+  // before firing the next pitch, so nothing gets cut off. Also adds a brief pause at
+  // inning/half-inning transitions when muted (speech naturally provides one when unmuted).
   React.useEffect(() => {
     if (!autoPlay) return;
-    if (pendingDecision && managerMode) {
-      // Paused — no interval
-      return;
-    }
-    const id = setInterval(() => handleClickRef.current(), speed);
-    return () => clearInterval(id);
-  }, [autoPlay, speed, pendingDecision, managerMode]);
+    if (pendingDecision && managerMode) return; // paused at a manager decision
+
+    let timerId: ReturnType<typeof setTimeout>;
+    let extraWait = 0;
+    const MAX_SPEECH_WAIT_MS = 8000;
+    const SPEECH_POLL_MS = 300;
+
+    const tick = (delay: number) => {
+      timerId = setTimeout(() => {
+        if (!autoPlayRef.current || gameStateRef.current.gameOver) return;
+
+        // When unmuted, wait for any ongoing speech to finish before pitching.
+        if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
+          extraWait += SPEECH_POLL_MS;
+          tick(SPEECH_POLL_MS);
+          return;
+        }
+
+        // When muted, still hold briefly at inning/half-inning transitions.
+        if (mutedRef.current && betweenInningsPauseRef.current) {
+          betweenInningsPauseRef.current = false;
+          extraWait = 0;
+          tick(1500);
+          return;
+        }
+
+        betweenInningsPauseRef.current = false;
+        extraWait = 0;
+        handleClickRef.current();
+        tick(speedRef.current);
+      }, delay);
+    };
+
+    tick(speedRef.current);
+    return () => clearTimeout(timerId);
+  }, [autoPlay, pendingDecision, managerMode]);
 
   // Persist settings to localStorage
   React.useEffect(() => { localStorage.setItem("autoPlay", String(autoPlay)); }, [autoPlay]);
@@ -224,6 +282,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   React.useEffect(() => { setMuted(muted); }, [muted]);
 
   const handlePitch = React.useCallback((event: KeyboardEvent) => {
+    if (autoPlayRef.current) return; // autoplay handles pitching; spacebar does nothing
     if ((event.target as HTMLInputElement).type !== "text") {
       handleClickRef.current();
     }
@@ -245,18 +304,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setAutoPlay(enabled);
-    if (enabled) {
-      // Save whatever mute state the user had, then auto-mute for autoplay.
-      previousMuteRef.current = muted;
-      if (!muted) {
-        setMutedState(true);
-      }
-    } else {
-      // Restore the mute state the user had before autoplay started.
-      if (previousMuteRef.current !== null) {
-        setMutedState(previousMuteRef.current);
-        previousMuteRef.current = null;
-      }
+    // Manager Mode requires autoplay — turn it off when autoplay is disabled.
+    if (!enabled && managerMode) {
+      setManagerMode(false);
     }
   };
 
@@ -283,7 +333,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   return (
     <>
       <Controls>
-        <Button onClick={handleClickButton} disabled={gameOver}>Batter Up!</Button>
+        {!autoPlay && <Button onClick={handleClickButton} disabled={gameOver}>Batter Up!</Button>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
@@ -302,11 +352,13 @@ const BatterButton: React.FunctionComponent<{}> = () => {
             <input type="checkbox" checked={muted} onChange={handleMuteChange} />
             Mute
           </ToggleLabel>
-          <ToggleLabel>
-            <input type="checkbox" checked={managerMode} onChange={handleManagerModeChange} />
-            Manager Mode
-          </ToggleLabel>
-          {managerMode && (
+          {autoPlay && (
+            <ToggleLabel>
+              <input type="checkbox" checked={managerMode} onChange={handleManagerModeChange} />
+              Manager Mode
+            </ToggleLabel>
+          )}
+          {autoPlay && managerMode && (
             <>
               <ToggleLabel>
                 Team
@@ -329,7 +381,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
           )}
         </AutoPlayGroup>
       </Controls>
-      {managerMode && <DecisionPanel strategy={strategy} />}
+      {autoPlay && managerMode && <DecisionPanel strategy={strategy} />}
     </>
   );
 };
