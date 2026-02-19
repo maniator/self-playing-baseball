@@ -1,7 +1,7 @@
 /**
  * Tests for src/utilities/announce.ts
  */
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
 // announce.ts accesses window.speechSynthesis at module load time.
 // setup.ts installs the mock before this import.
@@ -261,5 +261,106 @@ describe("play7thInningStretch", () => {
     (window.AudioContext as ReturnType<typeof vi.fn>).mockClear();
     play7thInningStretch();
     expect(window.AudioContext).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// pickVoice / voice selection
+// Simulate voiceschanged firing (the handler was registered at module-load time).
+// We capture the reference during describe-block setup (collection phase), before
+// vi.clearAllMocks() in the outer beforeEach can wipe the mock call history.
+// ---------------------------------------------------------------------------
+describe("pickVoice — voice selection", () => {
+  // Capture the registered pickVoice handler BEFORE vi.clearAllMocks() runs.
+  const _synthAddEvent = window.speechSynthesis.addEventListener as ReturnType<typeof vi.fn>;
+  const _registeredPickVoice = (() => {
+    const call = _synthAddEvent.mock.calls.find(([e]) => e === "voiceschanged");
+    return call ? (call[1] as () => void) : null;
+  })();
+
+  const makeVoice = (
+    name: string,
+    lang: string,
+    isDefault = false,
+  ): SpeechSynthesisVoice =>
+    ({ name, lang, default: isDefault, voiceURI: name, localService: false } as SpeechSynthesisVoice);
+
+  /** Re-trigger the voiceschanged handler that announce.ts registered. */
+  const fireVoicesChanged = () => _registeredPickVoice?.();
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    (synth.speak as ReturnType<typeof vi.fn>).mockClear();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    // Reset getVoices to empty so other tests are unaffected
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([]);
+    fireVoicesChanged();
+  });
+
+  it("picks a known named male voice (Google US English) over generic male label", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google UK English Female", "en-GB"),
+      makeVoice("Google UK English Male", "en-GB"),
+      makeVoice("Google US English", "en-US", true),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.voice?.name).toBe("Google US English");
+  });
+
+  it("picks a voice with 'Male' in the name when no exact name match", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google UK English Female", "en-GB"),
+      makeVoice("Google UK English Male", "en-GB"),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.voice?.name).toBe("Google UK English Male");
+  });
+
+  it("excludes voices with 'female' in the name; picks non-female default", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google UK English Female", "en-GB"),
+      makeVoice("Samantha", "en-US", true),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    // Samantha does not have "female" in its name → chosen over Female-labelled voice
+    expect(utterance.voice?.name).toBe("Samantha");
+  });
+
+  it("falls back to default female voice when only female-labelled voices exist (Android edge case)", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google UK English Female", "en-GB"),
+      makeVoice("Google US English Female", "en-US", true),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    // All English voices are female-labelled; fallback picks the default
+    expect(utterance.voice?.name).toBe("Google US English Female");
+  });
+
+  it("returns no voice when there are no English voices at all", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("French Female", "fr-FR"),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    // No English voices at all → _bestVoice = null → voice stays null from the mock
+    expect(utterance.voice).toBeNull();
   });
 });

@@ -13,11 +13,18 @@ let _bestVoice: SpeechSynthesisVoice | null = null;
 const pickVoice = (): void => {
   if (typeof synth.getVoices !== "function") return;
   const voices = synth.getVoices();
-  const en = voices.filter(v => v.lang.startsWith("en"));
-  if (en.length === 0) return;
-  // Prefer voices that sound natural / deep for sports commentary.
+  // Only consider English voices; exclude voices explicitly labelled "female".
+  const en = voices.filter(v => v.lang.startsWith("en") && !/female/i.test(v.name));
+  if (en.length === 0) {
+    // All English voices are female-labelled — fall back to any English voice.
+    const fallback = voices.filter(v => v.lang.startsWith("en"));
+    _bestVoice = fallback.find(v => v.default) ?? fallback[0] ?? null;
+    return;
+  }
+  // Prefer well-known deep/natural male voices for sports commentary.
   _bestVoice =
     en.find(v => /daniel|david|james|fred|ralph|alex|google\s+us\s+english/i.test(v.name)) ??
+    en.find(v => /\bmale\b/i.test(v.name)) ??
     en.find(v => v.default) ??
     en[0];
 };

@@ -74,11 +74,14 @@ const LeftPanel = styled.div`
   border-right: 1px solid #2a2a2a;
 
   @media (max-width: 800px) {
+    order: 2;
     min-width: auto;
     padding-right: 0;
     border-right: none;
-    border-bottom: 1px solid #2a2a2a;
-    padding-bottom: 8px;
+    border-top: 1px solid #2a2a2a;
+    border-bottom: none;
+    padding-top: 8px;
+    padding-bottom: 0;
   }
 `;
 
@@ -90,6 +93,7 @@ const RightPanel = styled.div`
   gap: 12px;
 
   @media (max-width: 800px) {
+    order: 1;
     width: 100%;
     flex-direction: row;
     align-items: flex-start;
