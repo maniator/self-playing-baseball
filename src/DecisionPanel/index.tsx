@@ -34,10 +34,11 @@ interface ServiceWorkerNotificationOptions extends NotificationOptions {
 }
 
 /** Show a service-worker notification with action buttons.
- *  Shown regardless of tab visibility so the user can verify the feature works.
+ *  Only shown when the tab is hidden so notifications are not intrusive.
  *  Falls back to a plain Notification if the SW path fails. */
 const showManagerNotification = (d: DecisionType): void => {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  if (typeof document !== "undefined" && !document.hidden) return;
 
   const title = "⚾ Your turn, Manager!";
   const body = getNotificationBody(d);
@@ -156,10 +157,12 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
   const { dispatch, pendingDecision }: ContextValue = React.useContext(GameContext);
   const [secondsLeft, setSecondsLeft] = React.useState(DECISION_TIMEOUT_SEC);
 
-  // Listen for actions dispatched from the service worker (notification button taps)
+  // Listen for actions dispatched from the service worker (notification button taps).
+  // Validate the message origin so only same-origin SW messages are processed.
   React.useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     const handler = (event: MessageEvent) => {
+      if (typeof window !== "undefined" && event.origin !== window.location.origin) return;
       if (event.data?.type !== "NOTIFICATION_ACTION") return;
       const { action, payload } = event.data;
       switch (action) {

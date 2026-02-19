@@ -30,13 +30,15 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     │   └── hitTypes.ts         # Hit enum: Single, Double, Triple, Homerun, Walk
     ├── utilities/
     │   ├── announce.ts         # Web Speech API + Web Audio API; exports announce, cancelAnnouncements,
-    │   │                       #   setMuted, isMuted, playDecisionChime
+    │   │                       #   setAnnouncementVolume, getAnnouncementVolume, setAlertVolume,
+    │   │                       #   getAlertVolume, setSpeechRate, isSpeechPending, playDecisionChime
     │   ├── getRandomInt.ts     # Random number helper — delegates to rng.ts random()
     │   └── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed
     ├── Context/
     │   ├── index.tsx           # GameContext, State interface, GameProviderWrapper
     │   │                       #   State fields: strikes, balls, outs, inning, score, atBat, teams,
-    │   │                       #   baseLayout, hitType, log, gameOver, pendingDecision, onePitchModifier
+    │   │                       #   baseLayout, hitType, log, gameOver, pendingDecision, onePitchModifier,
+    │   │                       #   pitchKey, decisionLog
     │   └── reducer.ts          # All game logic; exports detectDecision(); strategy modifiers via stratMod()
     ├── Announcements/          # Play-by-play log with "PLAY-BY-PLAY" heading + empty-state placeholder
     ├── Ball/                   # Ball animation component
