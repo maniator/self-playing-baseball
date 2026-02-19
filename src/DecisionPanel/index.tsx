@@ -1,8 +1,20 @@
 import * as React from "react";
 import styled from "styled-components";
-import { ContextValue, GameContext, Strategy } from "../Context";
+import { ContextValue, GameContext, DecisionType, Strategy } from "../Context";
+import { playDecisionChime } from "../utilities/announce";
 
 const DECISION_TIMEOUT_SEC = 10;
+
+const getNotificationBody = (d: DecisionType): string => {
+  switch (d.kind) {
+    case "steal": return `Steal from ${d.base === 0 ? "1st" : "2nd"} base? (${d.successPct}% success)`;
+    case "bunt": return "Sacrifice bunt opportunity";
+    case "count30": return "Count is 3-0 — Take or swing?";
+    case "count02": return "Count is 0-2 — Protect or swing?";
+    case "ibb": return "Intentional walk opportunity";
+    default: return "Manager decision needed";
+  }
+};
 
 const Panel = styled.div`
   background: rgba(0, 30, 60, 0.92);
@@ -91,6 +103,18 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
       return;
     }
     setSecondsLeft(DECISION_TIMEOUT_SEC);
+
+    // Sound alert (respects mute)
+    playDecisionChime();
+
+    // Browser notification when the tab is not visible
+    if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
+      const n = new Notification("Your turn, Manager!", {
+        body: getNotificationBody(pendingDecision),
+      });
+      setTimeout(() => n.close(), 8000);
+    }
+
     const id = setInterval(() => {
       setSecondsLeft(s => {
         if (s <= 1) {

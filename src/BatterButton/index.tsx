@@ -229,6 +229,14 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     return () => window.removeEventListener("keyup", handlePitch, false);
   }, [handlePitch]);
 
+  const handleManagerModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const enabled = e.target.checked;
+    setManagerMode(enabled);
+    if (enabled && typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  };
+
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setAutoPlay(enabled);
@@ -290,7 +298,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
             Mute
           </ToggleLabel>
           <ToggleLabel>
-            <input type="checkbox" checked={managerMode} onChange={e => setManagerMode(e.target.checked)} />
+            <input type="checkbox" checked={managerMode} onChange={handleManagerModeChange} />
             Manager Mode
           </ToggleLabel>
           {managerMode && (
