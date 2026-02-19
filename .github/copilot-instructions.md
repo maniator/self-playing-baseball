@@ -4,7 +4,7 @@
 
 This is a **self-playing baseball game simulator** built as a single-page React/TypeScript web application. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation.
 
-**Repository size:** Small (~20 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn (classic).
+**Repository size:** Small (~35 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn (classic).
 
 ---
 
@@ -33,6 +33,7 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     │   │                       #   setAnnouncementVolume, getAnnouncementVolume, setAlertVolume,
     │   │                       #   getAlertVolume, setSpeechRate, isSpeechPending, playDecisionChime
     │   ├── getRandomInt.ts     # Random number helper — delegates to rng.ts random()
+    │   ├── localStorage.ts     # localStorage helpers: loadBool, loadInt, loadFloat, loadString
     │   ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │   └── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed
     ├── Context/
@@ -42,12 +43,19 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     │   │                       #   pitchKey, decisionLog
     │   └── reducer.ts          # All game logic; exports detectDecision(); strategy modifiers via stratMod()
     ├── Announcements/          # Play-by-play log with "PLAY-BY-PLAY" heading + empty-state placeholder
-    ├── Ball/                   # Ball animation component
+    ├── Ball/
+    │   ├── constants.ts        # hitDistances: pixel travel distance per Hit type for animation
+    │   └── index.tsx           # Ball animation component; key={pitchKey} restarts CSS animation each pitch
     ├── BatterButton/
-    │   └── index.tsx           # "Batter Up!" + "Share replay" + auto-play/speed/mute/manager controls
+    │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms)
+    │   └── index.tsx           # "Batter Up!" + "Share replay" + auto-play/speed/volume/manager controls
     ├── DecisionPanel/
+    │   ├── constants.ts        # DECISION_TIMEOUT_SEC (10), NOTIF_TAG ("manager-decision")
+    │   ├── notificationHelpers.ts  # showManagerNotification, closeManagerNotification,
+    │   │                           #   getNotificationBody, getNotificationActions,
+    │   │                           #   ServiceWorkerNotificationOptions interface
     │   └── index.tsx           # Manager decision UI: prompt, action buttons, 10s countdown bar,
-    │   │                       #   auto-skip timer, notification actions listener (SW messages)
+    │                           #   auto-skip timer, notification actions listener (SW messages)
     ├── Diamond/                # Baseball diamond — self-contained with FieldWrapper container
     ├── Game/
     │   ├── index.tsx           # Wraps children in GameProviderWrapper + GitHub ribbon
