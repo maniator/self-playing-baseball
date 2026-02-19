@@ -196,13 +196,13 @@ describe("GameControls – event handlers", () => {
   });
 
   it("Batter Up! dispatches strike when random produces a strike outcome", () => {
-    // call 1: getRandomInt(100) → 30 → fastball (swingRateMod 1.0)
-    // call 2: getRandomInt(1000) → 300 < swingRate(500) → swing
-    // call 3: getRandomInt(100) → 70 ≥ 30 → miss → strike
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 300 → swing range
+    // 3rd call: foul/strike roll (getRandomInt(100)) → 70 ≥ 30 → swing-miss → strike
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.3)   // pitch type roll → 30 → fastball
-      .mockReturnValueOnce(0.3)   // main outcome → 300 → swing
-      .mockReturnValueOnce(0.7);  // foul/miss → 70 ≥ 30 → strike
+      .mockReturnValueOnce(0.0)   // pitch type roll
+      .mockReturnValueOnce(0.3)   // main outcome → 300 < swingRate(500) → swing
+      .mockReturnValueOnce(0.7);  // 70 ≥ 30 → swing-miss → strike
     const dispatch = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
@@ -212,13 +212,11 @@ describe("GameControls – event handlers", () => {
 
   it("swing modifier: random in take zone still produces a swing (never a called ball)", () => {
     // With onePitchModifier === "swing", effectiveSwingRate = 920
-    // call 1: pitch type roll → 50 → fastball
-    // call 2: getRandomInt(1000) → 700 — in normal take zone, but swing override → swing
-    // call 3: getRandomInt(100) → 70 ≥ 30 → miss → strike
+    // 1st call: pitch type roll, 2nd call: main outcome → 700, swing override, 3rd call: foul/strike
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.5)   // pitch type roll → fastball
-      .mockReturnValueOnce(0.7)   // main → 700, effectiveSwingRate=920 → swing
-      .mockReturnValueOnce(0.7);  // foul/miss → 70 ≥ 30 → miss → strike
+      .mockReturnValueOnce(0.0)   // pitch type roll
+      .mockReturnValueOnce(0.7)   // 700 — in normal take zone but with swing modifier → swing
+      .mockReturnValueOnce(0.7);  // 70 ≥ 30 → swing-miss → strike (not a ball)
     const dispatch = vi.fn();
     renderWithContext(
       <GameControls />,
@@ -234,13 +232,11 @@ describe("GameControls – event handlers", () => {
   });
 
   it("Batter Up! dispatches foul when random produces a foul outcome", () => {
-    // call 1: pitch type roll → 30 → fastball
-    // call 2: main → 300 < 500 → swing
-    // call 3: foul check → 10 < 30 → foul
+    // 1st call: pitch type roll, 2nd call: main outcome → swing, 3rd call: foul/strike → foul
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.3)   // pitch type roll
-      .mockReturnValueOnce(0.3)   // main → swing
-      .mockReturnValueOnce(0.1);  // foul check → foul
+      .mockReturnValueOnce(0.0)   // pitch type roll
+      .mockReturnValueOnce(0.3)   // 300 < 500 → swing
+      .mockReturnValueOnce(0.1);  // 10 < 30 → foul
     const dispatch = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
@@ -249,13 +245,11 @@ describe("GameControls – event handlers", () => {
   });
 
   it("Batter Up! dispatches hit when random >= 920", () => {
-    // call 1: pitch type roll → 50 → fastball (swingRateMod 1.0)
-    // call 2: main → 930 ≥ 920 → hit branch
-    // call 3: hit type roll → 50 → single (balanced: ≥35)
+    // 1st call: pitch type roll, 2nd call: main outcome → hit branch, 3rd call: hit type
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.5)   // pitch type roll → fastball
-      .mockReturnValueOnce(0.93)  // main → 930 ≥ 920 → hit
-      .mockReturnValueOnce(0.5);  // hit type → single
+      .mockReturnValueOnce(0.0)   // pitch type roll
+      .mockReturnValueOnce(0.93)  // 930 >= 920 → hit branch
+      .mockReturnValueOnce(0.5);  // hit type roll → 50 → single (balanced: ≥35)
     const dispatch = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
@@ -265,6 +259,7 @@ describe("GameControls – event handlers", () => {
 
   it("Batter Up! dispatches wait when random is in the take range", () => {
     vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0)   // pitch type roll
       .mockReturnValueOnce(0.7)   // 700 >= 500 (swingRate) and < 920 → wait
       .mockReturnValue(0.5);
     const dispatch = vi.fn();

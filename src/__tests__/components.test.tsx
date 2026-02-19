@@ -1,6 +1,6 @@
 /**
  * Tests for React components:
- * Announcements, Ball, LineScore, Diamond, InstructionsModal,
+ * Announcements, Ball, ScoreBoard, Diamond, InstructionsModal,
  * DecisionPanel, GameControls, Game/GameInner
  */
 import * as React from "react";

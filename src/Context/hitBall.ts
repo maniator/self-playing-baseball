@@ -17,9 +17,8 @@ const HIT_CALLOUTS: Record<Hit, string> = {
 /**
  * Handle a ground ball out. Implements three scenarios:
  *   1. Double play — runner on 1st with <2 outs: two outs recorded, runner on 1st removed.
- *   2. Fielder's choice — runner on 1st with <2 outs, DP not turned: lead runner thrown out
- *      going to 2nd while batter safely reaches 1st.
- *   3. Simple ground out — no force play available: batter thrown out at 1st.
+ *   2. Fielder's choice — runner on 1st with <2 outs, DP not turned: lead runner out, batter safe.
+ *   3. Simple ground out — no force play: batter thrown out at 1st.
  */
 const handleGrounder = (state: State, log, pitchKey: number): State => {
   const { baseLayout, outs } = state;
@@ -27,27 +26,22 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
 
   if (baseLayout[0] && outs < 2) {
     if (getRandomInt(100) < 65) {
-      // 6-4-3 / 5-4-3 double play: runner on 1st forced out at 2nd, batter out at 1st.
       log("Ground ball to the infield — double play!");
       const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
-      // batterCompleted=true: batter's at-bat is over; first out removes runner at 2nd.
       const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log, true);
       return playerOut(afterFirst, log);
     }
-    // Fielder's choice: throw to 2nd for the force out; batter safely reaches 1st.
     log("Ground ball to the infield — fielder's choice.");
     const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
     return playerOut({ ...groundedState, baseLayout: fcBase }, log);
   }
 
   log("Ground ball to the infield — out at first.");
-  // batterCompleted=true: batter thrown out, at-bat is over.
   return playerOut(groundedState, log, true);
 };
 
 /** Accumulate runs into the sparse inningRuns array for the current team/inning. */
 const addInningRuns = (state: State, runs: number): State => {
-  if (runs === 0) return state;
   const idx = state.inning - 1;
   const newInningRuns: [number[], number[]] = [
     [...state.inningRuns[0]],
@@ -77,7 +71,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
       type = Hit.Homerun;
       log("Power hitter turns it around — Home Run!");
     } else if (getRandomInt(100) < 40) {
-      // ~40% of non-HR outs are ground balls; the rest are fly balls / pop-ups.
+      // ~40% of non-HR outs are ground balls; rest are fly balls / pop-ups.
       return handleGrounder(state, log, pitchKey);
     } else {
       log("Popped it up — that's an out.");

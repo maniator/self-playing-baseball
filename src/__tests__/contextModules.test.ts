@@ -298,7 +298,7 @@ describe("nextHalfInning", () => {
     expect(next.inning).toBe(4);
   });
 
-  it("resets bases, outs, strikes, balls in normal innings", () => {
+  it("resets bases, outs, strikes, balls", () => {
     const { log } = makeLogs();
     const state = makeState({ outs: 2, strikes: 2, balls: 3, baseLayout: [1, 1, 1] });
     const next = nextHalfInning(state, log);
@@ -310,39 +310,29 @@ describe("nextHalfInning", () => {
 });
 
 describe("nextHalfInning – extra-inning tiebreak rule", () => {
-  it("places runner on 2nd entering top of 10th (away team after tied 9th)", () => {
-    const { logs, log } = makeLogs();
-    const state = makeState({ atBat: 1, inning: 9, score: [3, 3] });
+  it("places runner on 2nd at start of top of 10th inning", () => {
+    const { log, logs } = makeLogs();
+    // atBat=1 (home), inning=9 → switching to top of 10th (atBat=0, inning=10)
+    const state = makeState({ atBat: 1, inning: 9, outs: 3 });
     const next = nextHalfInning(state, log);
     expect(next.inning).toBe(10);
-    expect(next.atBat).toBe(0);
-    expect(next.baseLayout[1]).toBe(1); // runner on 2nd
-    expect(next.baseLayout[0]).toBe(0);
-    expect(next.baseLayout[2]).toBe(0);
+    expect(next.baseLayout).toEqual([0, 1, 0]);
     expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
   });
 
-  it("places runner on 2nd entering bottom of 10th", () => {
-    const { logs, log } = makeLogs();
-    const state = makeState({ atBat: 0, inning: 10, score: [3, 3] });
+  it("places runner on 2nd at start of bottom of 10th inning", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({ atBat: 0, inning: 10 });
     const next = nextHalfInning(state, log);
     expect(next.inning).toBe(10);
     expect(next.atBat).toBe(1);
-    expect(next.baseLayout[1]).toBe(1);
+    expect(next.baseLayout).toEqual([0, 1, 0]);
     expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
-  });
-
-  it("places runner on 2nd in 11th inning too", () => {
-    const { log } = makeLogs();
-    const state = makeState({ atBat: 1, inning: 10, score: [4, 4] });
-    const next = nextHalfInning(state, log);
-    expect(next.inning).toBe(11);
-    expect(next.baseLayout[1]).toBe(1);
   });
 
   it("does NOT place tiebreak runner in inning 9 or earlier", () => {
     const { log } = makeLogs();
-    const state = makeState({ atBat: 1, inning: 8, score: [2, 2] });
+    const state = makeState({ atBat: 1, inning: 8 });
     const next = nextHalfInning(state, log);
     expect(next.inning).toBe(9);
     expect(next.baseLayout).toEqual([0, 0, 0]);

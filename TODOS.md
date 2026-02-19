@@ -6,21 +6,16 @@ Future improvements and known gaps documented here for tracking.
 
 ## Game Logic
 
-- ~~**Grounder / double-play logic**~~ ✅ Implemented in `hitBall.ts` (`handleGrounder`):  
-  ~40% of non-HR ball-in-play outs are now ground balls. With a runner on 1st and fewer than 2 outs, 65% of grounders turn into a double play (2 outs, runner removed). The remaining 35% are fielder's-choice plays (lead runner out, batter safe at 1st). Without a force play the batter is simply thrown out at first.  
-  *(See `hitBall.ts` `handleGrounder`, `advanceRunners.ts`)*
+- ~~**Grounder / double-play logic**~~ ✅ Implemented in `hitBall.ts` (`handleGrounder`):
+  ~40% of non-HR ball-in-play outs are ground balls. With a runner on 1st and fewer than 2 outs, 65% turn into a double play; the remaining 35% are fielder's-choice plays. Without a force play the batter is thrown out at first.
 
 - ~~**Extra-inning logic**~~ ✅ Implemented:
-  - Automatic **tiebreak runner on 2nd** placed at the start of every extra-inning half (`nextHalfInning` in `gameOver.ts`), logged as "Tiebreak rule: runner placed on 2nd base."
-  - **LineScore** shows an "EXTRA INNINGS" badge (blue) whenever `inning > 9` and the game is still in progress. Extra-inning columns are added to the scoreboard automatically.
-  *(See `gameOver.ts`, `LineScore/index.tsx`)*
+  - Automatic tiebreak runner on 2nd placed at the start of every extra-inning half (`nextHalfInning` in `gameOver.ts`).
+  - `LineScore` shows an "EXTRA INNINGS" badge when `inning > 9` and game is in progress; extra-inning columns expand automatically.
 
-- ~~**Pitch types**~~ ✅ Implemented in `usePitchDispatch.ts` + `playerActions.ts` + `reducer.ts`:
-  - New `src/constants/pitchTypes.ts` defines `PitchType` (fastball, curveball, slider, changeup) with count-aware selection (`selectPitchType`), swing-rate modifiers, and strike-zone probability modifiers.
-  - Each pitch selects the type based on the current count (0-2 count → more breaking balls; 3-0 → mostly fastballs; full count → balanced mix).
-  - Swing rate and strike-zone probability are adjusted per pitch type (slider induces more chases; curveball breaks out of zone more).
-  - Play-by-play log messages are enriched with the pitch name ("Slider — swing and a miss! Strike 2.", "Curveball — ball 2.", etc.).
-  *(See `constants/pitchTypes.ts`, `playerActions.ts`, `reducer.ts`, `usePitchDispatch.ts`)*
+- ~~**Pitch types**~~ ✅ Implemented (`constants/pitchTypes.ts`, `playerActions.ts`, `reducer.ts`, `usePitchDispatch.ts`):
+  - Four pitch types (fastball, curveball, slider, changeup) with count-aware selection and per-type swing/zone modifiers.
+  - Play-by-play enriched: "Slider — swing and a miss — strike 2.", "Curveball — ball 2.", etc.
 
 ---
 

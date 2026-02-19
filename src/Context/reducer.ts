@@ -4,8 +4,8 @@ import { hitBall } from "./hitBall";
 import { playerStrike, playerWait, stealAttempt, buntAttempt } from "./playerActions";
 import { checkWalkoff } from "./gameOver";
 import { stratMod } from "./strategy";
-import { pitchName } from "../constants/pitchTypes";
 import type { PitchType } from "../constants/pitchTypes";
+import { pitchName } from "../constants/pitchTypes";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
 export { stratMod } from "./strategy";

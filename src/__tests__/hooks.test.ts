@@ -158,13 +158,11 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // call 1: getRandomInt(100) for pitch type → 50 → fastball (swingRateMod 1.0)
-    // call 2: getRandomInt(1000) → 1 < swingRate(500) → swing
-    // call 3: getRandomInt(100) → 50 ≥ 30 → miss → strike
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.5)    // pitch type roll
-      .mockReturnValueOnce(0.001)  // main outcome
-      .mockReturnValueOnce(0.5);   // foul/miss roll
+    // swingRate with 0 strikes, balanced = round((500 - 75*0) * 1 * 1) = 500
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 1 < 500 → swing
+    // 3rd call: foul/strike roll (getRandomInt(100)) → 50 → 50 >= 30 → strike
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
@@ -181,13 +179,10 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // call 1: getRandomInt(100) for pitch type → 50 → fastball (swingRateMod 1.0)
-    // call 2: getRandomInt(1000) → 999 ≥ 920 → hit
-    // call 3: getRandomInt(100) → 10 → hit type roll
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.5)    // pitch type roll
-      .mockReturnValueOnce(0.999)  // main outcome
-      .mockReturnValueOnce(0.1);   // hit type roll
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 999 >= 920 → hit
+    // 3rd call: hitRoll (getRandomInt(100)) → 10
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
