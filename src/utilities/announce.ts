@@ -1,9 +1,15 @@
 const synth = window.speechSynthesis;
 const MUTE_KEY = "baseball.mute";
 
-const isMuted = () => localStorage.getItem(MUTE_KEY) === "true";
+const isMuted = () => {
+  try {
+    return localStorage.getItem(MUTE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
 
-export const announce = (message) => {
+export const announce = (message: string) => {
   if (isMuted()) {
     return;
   }

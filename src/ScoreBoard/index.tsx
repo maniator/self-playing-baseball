@@ -16,6 +16,8 @@ const ScoreBoardDiv = styled.div`
 
   @media (max-width: 800px) {
     position: static;
+    right: auto;
+    top: auto;
     width: auto;
     flex: 1;
     min-height: auto;

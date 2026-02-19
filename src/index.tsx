@@ -6,6 +6,12 @@ import "./index.scss";
 import Game from "./Game";
 import { initSeedFromUrl } from "./utilities/rng";
 
-initSeedFromUrl({ writeToUrl: true });
+const Root: React.FC = () => {
+  React.useEffect(() => {
+    initSeedFromUrl({ writeToUrl: true });
+  }, []);
 
-ReactDom.render(<Game homeTeam="Yankees" awayTeam="Mets" />, document.getElementById("game"));
+  return <Game homeTeam="Yankees" awayTeam="Mets" />;
+};
+
+ReactDom.render(<Root />, document.getElementById("game"));

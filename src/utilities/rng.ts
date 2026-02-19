@@ -31,12 +31,22 @@ const getSeedFromUrl = (): number | null => {
   }
 
   const parsedBase10 = Number.parseInt(seedParam, 10);
-  if (!Number.isNaN(parsedBase10)) {
+  if (
+    !Number.isNaN(parsedBase10) &&
+    Number.isSafeInteger(parsedBase10) &&
+    parsedBase10 >= 0 &&
+    parsedBase10 <= MAX_UINT32
+  ) {
     return parsedBase10 >>> 0;
   }
 
   const parsedBase36 = Number.parseInt(seedParam, 36);
-  if (!Number.isNaN(parsedBase36)) {
+  if (
+    !Number.isNaN(parsedBase36) &&
+    Number.isSafeInteger(parsedBase36) &&
+    parsedBase36 >= 0 &&
+    parsedBase36 <= MAX_UINT32
+  ) {
     return parsedBase36 >>> 0;
   }
 
@@ -46,7 +56,7 @@ const getSeedFromUrl = (): number | null => {
 const writeSeedToUrl = (seed: number) => {
   const nextUrl = new URL(window.location.href);
   nextUrl.searchParams.set(SEED_QUERY_PARAM, seed.toString(36));
-  window.history.replaceState({}, "", nextUrl.toString());
+  window.history.replaceState(null, "", nextUrl.toString());
 };
 
 const createSeed = () => Math.floor(Math.random() * MAX_UINT32) >>> 0;
@@ -72,6 +82,9 @@ const ensureInitialized = () => {
 
 export const random = (): number => {
   ensureInitialized();
+  if (!generator) {
+    throw new Error("RNG not initialized");
+  }
   return generator();
 };
 

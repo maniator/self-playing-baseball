@@ -28,8 +28,6 @@ const Button = styled.button`
 const SubtleButton = styled(Button)`
   background: #2f3f69;
   color: #fff;
-  border-radius: 30px;
-  padding: 12px 18px;
 `;
 
 const AutoPlayGroup = styled.div`
@@ -83,11 +81,22 @@ const outfield = {
 
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes }: ContextValue = React.useContext(GameContext);
-  const [autoPlayEnabled, setAutoPlayEnabled] = React.useState(localStorage.getItem(STORAGE_KEYS.autoPlay) === "true");
-  const [speed, setSpeed] = React.useState(localStorage.getItem(STORAGE_KEYS.speed) || "1200");
-  const [mute, setMute] = React.useState(localStorage.getItem(STORAGE_KEYS.mute) === "true");
+  const [autoPlayEnabled, setAutoPlayEnabled] = React.useState(() => {
+    try { return localStorage.getItem(STORAGE_KEYS.autoPlay) === "true"; } catch { return false; }
+  });
+  const [speed, setSpeed] = React.useState(() => {
+    try { return localStorage.getItem(STORAGE_KEYS.speed) || "1200"; } catch { return "1200"; }
+  });
+  const [mute, setMute] = React.useState(() => {
+    try { return localStorage.getItem(STORAGE_KEYS.mute) === "true"; } catch { return false; }
+  });
 
-  const log = (message) => dispatchLog({ type: "log", payload: message });
+  const previousMuteRef = React.useRef<boolean | null>(null);
+
+  const log = React.useCallback((message: string) => {
+    if (!dispatchLog) return;
+    dispatchLog({ type: "log", payload: message });
+  }, [dispatchLog]);
 
   const handleClickButton = React.useCallback(() => {
     const random = getRandomInt(1000);
@@ -104,43 +113,41 @@ const BatterButton: React.FunctionComponent<{}> = () => {
       log(`Player hit the ball ${outfield[base]}!`);
       dispatch({ type: "hit", payload: base });
     }
-  }, [dispatch, strikes]);
+  }, [dispatch, log, strikes]);
 
   const handleShareReplay = async () => {
     const replayUrl = buildReplayUrl();
 
     try {
       await navigator.clipboard.writeText(replayUrl);
-      if (dispatchLog) {
-        log("Replay link copied!");
-      }
+      log("Replay link copied!");
     } catch (error) {
       window.prompt("Copy your replay URL", replayUrl);
     }
   };
 
-  const handlePitch = (event) => {
+  const handlePitch = React.useCallback((event) => {
     if (event.target.type !== "text") {
       handleClickButton();
     }
-  };
+  }, [handleClickButton]);
 
   React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.autoPlay, String(autoPlayEnabled));
+    try { localStorage.setItem(STORAGE_KEYS.autoPlay, String(autoPlayEnabled)); } catch {}
   }, [autoPlayEnabled]);
 
   React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.speed, speed);
+    try { localStorage.setItem(STORAGE_KEYS.speed, speed); } catch {}
   }, [speed]);
 
   React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.mute, String(mute));
+    try { localStorage.setItem(STORAGE_KEYS.mute, String(mute)); } catch {}
   }, [mute]);
 
   React.useEffect(() => {
     window.addEventListener("keyup", handlePitch, false);
     return () => window.removeEventListener("keyup", handlePitch, false);
-  }, [handleClickButton]);
+  }, [handlePitch]);
 
   React.useEffect(() => {
     if (!autoPlayEnabled) {
@@ -155,10 +162,16 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   }, [autoPlayEnabled, speed, handleClickButton]);
 
   React.useEffect(() => {
-    if (autoPlayEnabled && !mute) {
-      setMute(true);
+    if (autoPlayEnabled) {
+      if (!mute) {
+        previousMuteRef.current = mute;
+        setMute(true);
+      }
+    } else if (previousMuteRef.current !== null) {
+      setMute(previousMuteRef.current);
+      previousMuteRef.current = null;
     }
-  }, [autoPlayEnabled]);
+  }, [autoPlayEnabled, mute]);
 
   return (
     <Controls>
@@ -169,9 +182,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
           <input type="checkbox" checked={autoPlayEnabled} onChange={() => setAutoPlayEnabled(!autoPlayEnabled)} />
           Auto-play
         </ToggleLabel>
-        <ToggleLabel>
+        <ToggleLabel htmlFor="speed-select">
           Speed
-          <Select value={speed} onChange={(event) => setSpeed(event.target.value)}>
+          <Select id="speed-select" value={speed} onChange={(event) => setSpeed(event.target.value)}>
             <option value="1200">Slow</option>
             <option value="700">Normal</option>
             <option value="350">Fast</option>
