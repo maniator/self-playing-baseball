@@ -87,11 +87,11 @@ function loadString<T extends string>(key: string, fallback: T): T {
   return v === null ? fallback : (v as T);
 }
 
-const outfield = {
-  [Hit.Homerun]: "over the fence!",
-  [Hit.Triple]: "to the back wall",
-  [Hit.Double]: "to center",
-  [Hit.Single]: "to an empty area of the field"
+const hitCallouts = {
+  [Hit.Single]:  "He lines it into the outfield — base hit!",
+  [Hit.Double]:  "Into the gap — that's a double!",
+  [Hit.Triple]:  "Deep drive to the warning track — he's in with a triple!",
+  [Hit.Homerun]: "That ball is GONE — home run!",
 };
 
 const BatterButton: React.FunctionComponent<{}> = () => {
@@ -177,7 +177,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
 
     if (random < swingRate) {
-      dispatch({ type: "strike" });
+      dispatch({ type: "strike", payload: { swung: true } });
     } else if (random < 880) {
       dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
     } else {
@@ -192,7 +192,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
       } else {
         base = getRandomInt(4) as Hit;
       }
-      log(`Player hit the ball ${outfield[base]}!`);
+      log(hitCallouts[base]);
       dispatch({ type: "hit", payload: { hitType: base, strategy: strat } });
     }
   }, [dispatch, dispatchLog]);

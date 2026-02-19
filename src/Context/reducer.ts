@@ -26,9 +26,8 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
     if (toBase === Base.Home) {
       log("Player scored a run!");
       newState.score[newState.atBat] += 1;
-    } else {
-      log(`Player stayed on ${Base[toBase]}`);
     }
+    // "stayed on base" — internal bookkeeping, not worth announcing
 
     return newState;
   }
@@ -37,7 +36,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
     return newState;
   } else if (newState.baseLayout.hasOwnProperty(nextBase) || nextBase === Base.Home) {
     if (newState.baseLayout[nextBase] === 1) {
-      log(`Already someone on ${Base[nextBase]}`)
+      // runner being bumped ahead — no announcement needed
       newState = moveBase(log, newState, nextBase, nextBase + 1);
       newState.baseLayout[nextBase] = 0;
     }
@@ -81,7 +80,7 @@ const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"):
       newState = moveBase(log, newState, null, Base.Home);
       return { ...newState, hitType: Hit.Homerun };
     }
-    log("Player popped out!")
+    log("Popped it up — that's an out.")
     return playerOut(state, log);
   }
 
@@ -103,9 +102,7 @@ const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"):
       throw new Error(`Not a possible hit type: ${type}`);
   }
 
-  if (type !== Hit.Walk) {
-    log(`Player hit a ${Hit[type]}`)
-  }
+  // Hit type is announced by BatterButton before dispatching; no duplicate log here.
 
   return { ...newState, hitType: type };
 };
@@ -117,9 +114,8 @@ const checkGameOver = (state: State, log): State => {
   if (state.inning >= 9) {
     const [away, home] = state.score;
     if (away !== home) {
-      log("=== GAME OVER ===");
       const winner = away > home ? state.teams[0] : state.teams[1];
-      log(`${winner} wins!`);
+      log(`That's the ball game! ${winner} wins!`);
       return { ...state, gameOver: true };
     }
   }
@@ -153,11 +149,9 @@ const nextHalfInning = (state: State, log): State => {
 const playerOut = (state: State, log): State => {
   const newState = { ...state };
   const newOuts = newState.outs + 1;
-  log("Player is out!");
-  log("----------");
 
   if (newOuts === 3) {
-    log("Team has three outs, next team is up!");
+    // nextHalfInning announces who bats next — no need to repeat "three outs" here
     const afterHalf = nextHalfInning(newState, log);
     if (afterHalf.gameOver) return afterHalf;
 
@@ -170,18 +164,19 @@ const playerOut = (state: State, log): State => {
     return afterHalf;
   }
 
+  log(newOuts === 1 ? "One out." : "Two outs.");
   return { ...newState, strikes: 0, balls: 0, outs: newOuts, pendingDecision: null, onePitchModifier: null }
 }
 
-const playerStrike = (state: State, log): State => {
+const playerStrike = (state: State, log, swung = false): State => {
   const newStrikes = state.strikes + 1;
 
   if (newStrikes === 3) {
-    log("Strike three! Yerrr out!")
+    log(swung ? "Swing and a miss — strike three! He's out!" : "Called strike three! He's out!");
     return playerOut(state, log);
   }
 
-  log(`Strike ${newStrikes}!`)
+  log(swung ? `Swing and a miss — strike ${newStrikes}.` : `Called strike ${newStrikes}.`);
 
   return { ...state, strikes: newStrikes, pendingDecision: null, onePitchModifier: null };
 }
@@ -190,10 +185,11 @@ const playerBall = (state: State, log): State => {
   const newBalls = state.balls + 1;
 
   if (newBalls === 4) {
-    log("Player takes his base");
+    log("Ball four — take your base!");
     return hitBall(Hit.Walk, state, log);
   }
 
+  log(`Ball ${newBalls}.`);
   return { ...state, balls: newBalls, pendingDecision: null, onePitchModifier: null };
 }
 
@@ -204,20 +200,16 @@ const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier
   if (modifier === "take") {
     const walkChance = Math.min(950, Math.round(750 * stratMod(strategy, "walk")));
     if (random < walkChance) {
-      log("Ball has been called!")
       return playerBall(state, log);
     }
-    log("A called strike!")
-    return playerStrike(state, log);
+    return playerStrike(state, log, false);
   }
 
   // Strategy modifies the called-strike/ball split (threshold out of 1000)
   const strikeThreshold = Math.round(500 / stratMod(strategy, "walk"));
   if (random < strikeThreshold) {
-    log("A called strike!")
-    return playerStrike(state, log);
+    return playerStrike(state, log, false);
   } else {
-    log("Ball has been called!")
     return playerBall(state, log);
   }
 }
@@ -274,8 +266,7 @@ const checkWalkoff = (state: State, log): State => {
   if (state.inning >= 9 && state.atBat === 1) {
     const [away, home] = state.score;
     if (home > away) {
-      log("=== WALK-OFF! GAME OVER ===");
-      log(`${state.teams[1]} wins!`);
+      log(`Walk-off! ${state.teams[1]} wins!`);
       return { ...state, gameOver: true };
     }
   }
@@ -305,8 +296,10 @@ const reducer = (dispatchLogger) => {
       case 'setTeams':
         return { ...state, teams: action.payload };
 
-      case 'strike':
-        return playerStrike(state, log);
+      case 'strike': {
+        const swung = action.payload?.swung ?? false;
+        return playerStrike(state, log, swung);
+      }
 
       case 'wait': {
         const strategy: Strategy = action.payload?.strategy ?? "balanced";
