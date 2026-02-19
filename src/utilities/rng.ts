@@ -71,7 +71,7 @@ export const random = (): number => {
   return rng();
 };
 
-export const buildReplayUrl = (): string => {
+export const buildReplayUrl = (decisionLog?: string[]): string => {
   const currentSeed = getSeed();
   if (typeof window === "undefined" || typeof window.location === "undefined") {
     return "";
@@ -80,5 +80,19 @@ export const buildReplayUrl = (): string => {
   if (currentSeed !== null) {
     url.searchParams.set("seed", currentSeed.toString(36));
   }
+  if (decisionLog && decisionLog.length > 0) {
+    url.searchParams.set("decisions", decisionLog.join(","));
+  } else {
+    url.searchParams.delete("decisions");
+  }
   return url.toString();
+};
+
+export const getDecisionsFromUrl = (): string[] => {
+  if (typeof window === "undefined" || typeof window.location === "undefined") {
+    return [];
+  }
+  const param = new URL(window.location.href).searchParams.get("decisions");
+  if (!param) return [];
+  return param.split(",").filter(Boolean);
 };
