@@ -3,15 +3,7 @@ import * as React from "react";
 import styled, { keyframes, css } from "styled-components";
 import { Hit } from "../constants/hitTypes";
 import { ContextValue, GameContext } from "../Context";
-
-// Distance the ball travels for each hit type (pixels)
-const hitDistances: Record<Hit, number> = {
-  [Hit.Single]:  120,
-  [Hit.Double]:  200,
-  [Hit.Triple]:  280,
-  [Hit.Homerun]: 400,
-  [Hit.Walk]:    0,
-};
+import { hitDistances } from "./constants";
 
 // Pitch animation: ball travels from the pitcher's mound toward home plate, then fades.
 const pitchAnim = keyframes`

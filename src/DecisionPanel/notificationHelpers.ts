@@ -1,0 +1,95 @@
+import { DecisionType } from "../Context";
+import { appLog } from "../utilities/logger";
+import { NOTIF_TAG } from "./constants";
+
+export interface ServiceWorkerNotificationOptions extends NotificationOptions {
+  actions?: { action: string; title: string }[];
+  data?: unknown;
+}
+
+export const getNotificationBody = (d: DecisionType): string => {
+  switch (d.kind) {
+    case "steal": return `Steal from ${d.base === 0 ? "1st" : "2nd"} base? (${d.successPct}% success)`;
+    case "bunt": return "Sacrifice bunt opportunity";
+    case "count30": return "Count is 3-0 — Take or swing?";
+    case "count02": return "Count is 0-2 — Protect or swing?";
+    case "ibb": return "Intentional walk opportunity";
+    default: return "Manager decision needed";
+  }
+};
+
+export const getNotificationActions = (d: DecisionType): { action: string; title: string }[] => {
+  switch (d.kind) {
+    case "steal":  return [{ action: "steal",   title: "⚾ Yes, steal!" }, { action: "skip", title: "⏭ Skip" }];
+    case "bunt":   return [{ action: "bunt",    title: "✅ Bunt!"       }, { action: "skip", title: "⏭ Skip" }];
+    case "count30":return [{ action: "take",    title: "🤚 Take"        }, { action: "swing",  title: "⚾ Swing" }];
+    case "count02":return [{ action: "protect", title: "🛡 Protect"     }, { action: "normal", title: "⚾ Normal" }];
+    case "ibb":    return [{ action: "ibb",     title: "✅ Yes, IBB"    }, { action: "skip", title: "⏭ Skip" }];
+    default:       return [{ action: "skip",    title: "⏭ Skip" }];
+  }
+};
+
+/** Show a service-worker notification with action buttons.
+ *  Always sent (regardless of tab visibility) so the user receives an alert
+ *  both when they are watching the game and after they switch away.
+ *  requireInteraction: true keeps the notification visible until acted upon.
+ *  Falls back to a plain Notification if the SW path fails. */
+export const showManagerNotification = (d: DecisionType): void => {
+  const permission = typeof Notification !== "undefined" ? Notification.permission : "unavailable";
+  appLog.log(`showManagerNotification — kind="${d.kind}" permission="${permission}"`);
+
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    appLog.warn(`showManagerNotification — skipped (permission="${permission}")`);
+    return;
+  }
+
+  const title = "⚾ Your turn, Manager!";
+  const body = getNotificationBody(d);
+
+  if ("serviceWorker" in navigator) {
+    appLog.log("showManagerNotification — awaiting navigator.serviceWorker.ready");
+    navigator.serviceWorker.ready
+      .then(reg => {
+        appLog.log("SW ready — calling reg.showNotification");
+        return reg.showNotification(title, {
+          body,
+          tag: NOTIF_TAG,
+          actions: getNotificationActions(d),
+          data: d,
+          requireInteraction: true,
+        } as ServiceWorkerNotificationOptions);
+      })
+      .then(() => appLog.log("showNotification resolved — notification delivered to OS"))
+      .catch((err) => {
+        appLog.error("SW showNotification failed:", err, "— falling back to plain Notification");
+        try {
+          new Notification(title, { body, tag: NOTIF_TAG });
+          appLog.log("plain Notification fallback sent");
+        } catch (e) {
+          appLog.error("plain Notification fallback also failed:", e);
+        }
+      });
+  } else {
+    appLog.log("showManagerNotification — no SW support, using plain Notification");
+    try {
+      new Notification(title, { body });
+      appLog.log("plain Notification sent");
+    } catch (e) {
+      appLog.error("plain Notification failed:", e);
+    }
+  }
+};
+
+/** Close any open manager-decision notification (called when decision resolves). */
+export const closeManagerNotification = (): void => {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready
+    .then(reg => reg.getNotifications({ tag: NOTIF_TAG }))
+    .then(list => {
+      if (list.length > 0) {
+        appLog.log(`closeManagerNotification — closing ${list.length} notification(s)`);
+        list.forEach(n => n.close());
+      }
+    })
+    .catch(() => {});
+};

@@ -9,6 +9,8 @@ import { setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanf
 import { buildReplayUrl } from "../utilities/rng";
 import { appLog } from "../utilities/logger";
 import DecisionPanel from "../DecisionPanel";
+import { SPEED_SLOW, SPEED_NORMAL, SPEED_FAST } from "./constants";
+import { loadBool, loadInt, loadFloat, loadString } from "../utilities/localStorage";
 
 const Controls = styled.div`
   display: flex;
@@ -110,31 +112,7 @@ const NotifBadge = styled.span<{ $ok: boolean }>`
   white-space: nowrap;
 `;
 
-const SPEED_SLOW = 1200;
-const SPEED_NORMAL = 700;
-const SPEED_FAST = 350;
 
-function loadBool(key: string, fallback: boolean): boolean {
-  const v = localStorage.getItem(key);
-  return v === null ? fallback : v === "true";
-}
-
-function loadInt(key: string, fallback: number): number {
-  const v = localStorage.getItem(key);
-  return v === null ? fallback : parseInt(v, 10);
-}
-
-function loadFloat(key: string, fallback: number): number {
-  const v = localStorage.getItem(key);
-  if (v === null) return fallback;
-  const f = parseFloat(v);
-  return Number.isFinite(f) ? Math.max(0, Math.min(1, f)) : fallback;
-}
-
-function loadString<T extends string>(key: string, fallback: T): T {
-  const v = localStorage.getItem(key);
-  return v === null ? fallback : (v as T);
-}
 
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
