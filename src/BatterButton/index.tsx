@@ -69,13 +69,29 @@ const SPEED_NORMAL = 700;
 const SPEED_FAST = 350;
 
 function loadBool(key: string, fallback: boolean): boolean {
-  const v = localStorage.getItem(key);
-  return v === null ? fallback : v === 'true';
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : v === 'true';
+  } catch {
+    return fallback;
+  }
 }
 
 function loadInt(key: string, fallback: number): number {
-  const v = localStorage.getItem(key);
-  return v === null ? fallback : parseInt(v, 10);
+  try {
+    const v = localStorage.getItem(key);
+    return v === null ? fallback : parseInt(v, 10);
+  } catch {
+    return fallback;
+  }
+}
+
+function saveToStorage(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // storage unavailable (e.g. private browsing with storage disabled)
+  }
 }
 
 const BatterButton: React.FunctionComponent<{}> = () => {
@@ -120,15 +136,16 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   }, [autoPlay, speed]);
 
   // Persist settings
-  React.useEffect(() => { localStorage.setItem('autoPlay', String(autoPlay)); }, [autoPlay]);
-  React.useEffect(() => { localStorage.setItem('speed', String(speed)); }, [speed]);
-  React.useEffect(() => { localStorage.setItem('muted', String(muted)); }, [muted]);
+  React.useEffect(() => { saveToStorage('autoPlay', String(autoPlay)); }, [autoPlay]);
+  React.useEffect(() => { saveToStorage('speed', String(speed)); }, [speed]);
+  React.useEffect(() => { saveToStorage('muted', String(muted)); }, [muted]);
 
   // Sync mute state into announce module
   React.useEffect(() => { setMuted(muted); }, [muted]);
 
   const handlePitch = React.useCallback((event: KeyboardEvent) => {
-    if ((event.target as HTMLInputElement).type !== "text") {
+    const target = event.target as HTMLElement | null;
+    if (!target || target.tagName !== 'INPUT' || (target as HTMLInputElement).type !== 'text') {
       handleClickRef.current();
     }
   }, []);
@@ -142,7 +159,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     const enabled = e.target.checked;
     setAutoPlay(enabled);
     if (enabled && !muted) {
+      // Sync mute immediately so the first interval tick is already silent
       setMutedState(true);
+      setMuted(true);
     }
   };
 
@@ -159,7 +178,10 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     if (navigator.clipboard) {
       navigator.clipboard.writeText(url)
         .then(() => log("Replay link copied!"))
-        .catch(() => window.prompt("Copy this replay link:", url));
+        .catch((err) => {
+          console.error('Clipboard write failed:', err);
+          window.prompt("Copy this replay link:", url);
+        });
     } else {
       window.prompt("Copy this replay link:", url);
     }
@@ -170,20 +192,30 @@ const BatterButton: React.FunctionComponent<{}> = () => {
       <Button onClick={handleClickButton}>Batter Up!</Button>
       <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
       <Controls>
-        <ControlLabel>
-          <input type="checkbox" checked={autoPlay} onChange={handleAutoPlayChange} />
+        <ControlLabel htmlFor="auto-play-checkbox">
+          <input
+            id="auto-play-checkbox"
+            type="checkbox"
+            checked={autoPlay}
+            onChange={handleAutoPlayChange}
+          />
           Auto-play
         </ControlLabel>
-        <ControlLabel>
+        <ControlLabel htmlFor="speed-select">
           Speed:
-          <Select value={speed} onChange={handleSpeedChange}>
+          <Select id="speed-select" value={speed} onChange={handleSpeedChange}>
             <option value={SPEED_SLOW}>Slow</option>
             <option value={SPEED_NORMAL}>Normal</option>
             <option value={SPEED_FAST}>Fast</option>
           </Select>
         </ControlLabel>
-        <ControlLabel>
-          <input type="checkbox" checked={muted} onChange={handleMuteChange} />
+        <ControlLabel htmlFor="mute-checkbox">
+          <input
+            id="mute-checkbox"
+            type="checkbox"
+            checked={muted}
+            onChange={handleMuteChange}
+          />
           Mute
         </ControlLabel>
       </Controls>

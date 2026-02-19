@@ -6,8 +6,6 @@ export const setMuted = (m: boolean): void => {
   if (m) synth.cancel();
 };
 
-export const isMuted = (): boolean => _muted;
-
 export const announce = (message: string): void => {
   if (_muted) return;
   const utterThis = new SpeechSynthesisUtterance(message);

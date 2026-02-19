@@ -17,11 +17,9 @@ const OutfieldDiv = styled.div`
   z-index: -1;
 
   @media (max-width: 600px) {
-    position: static;
-    transform: rotate(45deg);
+    position: relative;
+    display: block;
     margin: 20px auto;
-    height: 180px;
-    width: 180px;
   }
 `;
 
