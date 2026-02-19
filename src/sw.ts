@@ -1,10 +1,12 @@
 /// <reference lib="webworker" />
 
 // Increment this tag whenever the SW changes so logs identify the active build.
-const SW_VERSION = "1.2.0";
+const SW_VERSION = "1.3.0";
 
-// CSS-styled colored logging — visible in DevTools → Application → Service Workers → Inspect.
-// Green for normal events, amber for warnings, red for errors.
+// CSS badge styles for colored console logging.
+// Visible in DevTools → Application → Service Workers → Inspect.
+// IMPORTANT: keep in sync with LOG_STYLES in src/utilities/logger.ts.
+// (The SW is a classic script and cannot import modules, so these are duplicated here.)
 const STYLE_TAG   = "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
 const STYLE_WARN  = "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
 const STYLE_ERR   = "background:#4a0000;color:#f87171;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";

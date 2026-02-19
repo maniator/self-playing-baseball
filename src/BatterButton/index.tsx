@@ -7,7 +7,10 @@ import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
 import { setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
+import { createLogger } from "../utilities/logger";
 import DecisionPanel from "../DecisionPanel";
+
+const appLog = createLogger("app");
 
 const Controls = styled.div`
   display: flex;
@@ -85,6 +88,13 @@ const RangeInput = styled.input`
   vertical-align: middle;
 `;
 
+const NotifBadge = styled.span<{ $ok: boolean }>`
+  font-size: 11px;
+  color: ${({ $ok }) => ($ok ? "#4ade80" : "#fbbf24")};
+  cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
+  white-space: nowrap;
+`;
+
 const SPEED_SLOW = 1200;
 const SPEED_NORMAL = 700;
 const SPEED_FAST = 350;
@@ -120,6 +130,12 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [managerMode, setManagerMode] = React.useState(() => loadBool("managerMode", false));
   const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
   const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) === 1 ? 1 : 0));
+
+  // Track browser notification permission so we can show an in-UI status badge.
+  const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
+    if (typeof Notification === "undefined") return "unavailable";
+    return Notification.permission;
+  });
 
   // Keep autoPlay accessible as a ref so the keyboard handler can read the latest value
   // without needing to re-register on every autoPlay change.

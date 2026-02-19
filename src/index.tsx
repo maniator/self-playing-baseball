@@ -6,14 +6,17 @@ import "./index.scss";
 
 import Game from "./Game";
 import { initSeedFromUrl } from "./utilities/rng";
+import { createLogger } from "./utilities/logger";
+
+const appLog = createLogger("app");
 
 initSeedFromUrl({ writeToUrl: true });
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register(new URL("./sw.ts", import.meta.url))
-    .then((reg) => console.log("[app] SW registered — scope:", reg.scope))
-    .catch((err) => console.error("[app] SW registration failed:", err));
+    .then((reg) => appLog.log("SW registered — scope:", reg.scope))
+    .catch((err) => appLog.error("SW registration failed:", err));
 }
 
 createRoot(document.getElementById("game")!).render(<Game homeTeam="Yankees" awayTeam="Mets" />);

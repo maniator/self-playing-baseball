@@ -2,6 +2,9 @@ import * as React from "react";
 import styled from "styled-components";
 import { ContextValue, GameContext, DecisionType, Strategy } from "../Context";
 import { playDecisionChime } from "../utilities/announce";
+import { createLogger } from "../utilities/logger";
+
+const appLog = createLogger("app");
 
 const DECISION_TIMEOUT_SEC = 10;
 const NOTIF_TAG = "manager-decision";
@@ -39,30 +42,48 @@ interface ServiceWorkerNotificationOptions extends NotificationOptions {
  *  requireInteraction: true keeps the notification visible until acted upon.
  *  Falls back to a plain Notification if the SW path fails. */
 const showManagerNotification = (d: DecisionType): void => {
-  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+  const permission = typeof Notification !== "undefined" ? Notification.permission : "unavailable";
+  appLog.log(`showManagerNotification — kind="${d.kind}" permission="${permission}"`);
+
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") {
+    appLog.warn(`showManagerNotification — skipped (permission="${permission}")`);
+    return;
+  }
 
   const title = "⚾ Your turn, Manager!";
   const body = getNotificationBody(d);
 
   if ("serviceWorker" in navigator) {
+    appLog.log("showManagerNotification — awaiting navigator.serviceWorker.ready");
     navigator.serviceWorker.ready
-      .then(reg => reg.showNotification(title, {
-        body,
-        tag: NOTIF_TAG,
-        actions: getNotificationActions(d),
-        data: d,
-        requireInteraction: true,
-      } as ServiceWorkerNotificationOptions))
-      .catch(() => {
-        // SW notification failed (e.g. browser doesn't support actions) — fall back
+      .then(reg => {
+        appLog.log("SW ready — calling reg.showNotification");
+        return reg.showNotification(title, {
+          body,
+          tag: NOTIF_TAG,
+          actions: getNotificationActions(d),
+          data: d,
+          requireInteraction: true,
+        } as ServiceWorkerNotificationOptions);
+      })
+      .then(() => appLog.log("showNotification resolved — notification delivered to OS"))
+      .catch((err) => {
+        appLog.error("SW showNotification failed:", err, "— falling back to plain Notification");
         try {
           new Notification(title, { body, tag: NOTIF_TAG });
-        } catch (_) {}
+          appLog.log("plain Notification fallback sent");
+        } catch (e) {
+          appLog.error("plain Notification fallback also failed:", e);
+        }
       });
   } else {
+    appLog.log("showManagerNotification — no SW support, using plain Notification");
     try {
       new Notification(title, { body });
-    } catch (_) {}
+      appLog.log("plain Notification sent");
+    } catch (e) {
+      appLog.error("plain Notification failed:", e);
+    }
   }
 };
 
@@ -71,7 +92,12 @@ const closeManagerNotification = (): void => {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.ready
     .then(reg => reg.getNotifications({ tag: NOTIF_TAG }))
-    .then(list => list.forEach(n => n.close()))
+    .then(list => {
+      if (list.length > 0) {
+        appLog.log(`closeManagerNotification — closing ${list.length} notification(s)`);
+        list.forEach(n => n.close());
+      }
+    })
     .catch(() => {});
 };
 
@@ -189,6 +215,7 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
       closeManagerNotification();
       return;
     }
+    appLog.log("pendingDecision set:", pendingDecision.kind);
     setSecondsLeft(DECISION_TIMEOUT_SEC);
 
     // Sound alert (respects mute)
@@ -201,7 +228,10 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
     // Re-send if the user switches away while the decision is still pending
     // (e.g. they saw the in-page panel but then tabbed away).
     const handleVisibility = () => {
-      if (document.hidden) showManagerNotification(pendingDecision);
+      if (document.hidden) {
+        appLog.log("visibilitychange — tab hidden, re-sending notification for:", pendingDecision.kind);
+        showManagerNotification(pendingDecision);
+      }
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
