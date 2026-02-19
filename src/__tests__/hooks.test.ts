@@ -394,7 +394,7 @@ describe("useShareReplay", () => {
     vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() => useShareReplay({ managerMode: false, dispatchLog }));
+    const { result } = renderHook(() => useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }));
     await act(async () => { result.current.handleShareReplay(); });
     expect(writeText).toHaveBeenCalledWith("https://example.com?seed=abc");
   });
@@ -405,8 +405,114 @@ describe("useShareReplay", () => {
     vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() => useShareReplay({ managerMode: false, dispatchLog }));
+    const { result } = renderHook(() => useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }));
     await act(async () => { result.current.handleShareReplay(); });
     expect(dispatchLog).toHaveBeenCalledWith(expect.objectContaining({ type: "log" }));
+  });
+
+  it("passes decisionLog to buildReplayUrl when managerMode is true", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, writable: true, configurable: true });
+    const spy = vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc&decisions=1:skip");
+    const dispatchLog = vi.fn();
+
+    const { result } = renderHook(() =>
+      useShareReplay({ managerMode: true, decisionLog: ["1:skip"], dispatchLog })
+    );
+    await act(async () => { result.current.handleShareReplay(); });
+    expect(spy).toHaveBeenCalledWith(["1:skip"]);
+  });
+
+  it("does NOT pass decisionLog to buildReplayUrl when managerMode is false", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", { value: { writeText }, writable: true, configurable: true });
+    const spy = vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc");
+    const dispatchLog = vi.fn();
+
+    const { result } = renderHook(() =>
+      useShareReplay({ managerMode: false, decisionLog: ["1:skip"], dispatchLog })
+    );
+    await act(async () => { result.current.handleShareReplay(); });
+    expect(spy).toHaveBeenCalledWith(undefined);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// useReplayDecisions
+// ---------------------------------------------------------------------------
+import { useReplayDecisions } from "../GameControls/hooks/useReplayDecisions";
+import * as rngModuleExtra from "../utilities/rng";
+
+describe("useReplayDecisions", () => {
+  it("dispatches skip_decision when entry matches pitchKey", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:skip"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "bunt" as const };
+
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "skip_decision" });
+  });
+
+  it("does not dispatch when pitchKey does not match", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:skip"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "bunt" as const };
+
+    renderHook(() => useReplayDecisions(dispatch, pending, 3, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does not dispatch when pendingDecision is null", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:skip"]);
+    const dispatch = vi.fn();
+
+    renderHook(() => useReplayDecisions(dispatch, null, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("dispatches bunt_attempt for bunt entries", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["7:bunt"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "bunt" as const };
+
+    renderHook(() => useReplayDecisions(dispatch, pending, 7, "contact"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "bunt_attempt", payload: { strategy: "contact" } });
+  });
+
+  it("dispatches set_one_pitch_modifier for take entries", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["2:take"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "count30" as const };
+
+    renderHook(() => useReplayDecisions(dispatch, pending, 2, "patient"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_one_pitch_modifier", payload: "take" });
+  });
+
+  it("dispatches steal_attempt with correct base and successPct", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["9:steal:1:80"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "steal" as const, base: 1 as const, successPct: 80 };
+
+    renderHook(() => useReplayDecisions(dispatch, pending, 9, "aggressive"));
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "steal_attempt",
+      payload: { base: 1, successPct: 80 },
+    });
+  });
+
+  it("skips stale entries when pitchKey has advanced past entry (out-of-sync recovery)", () => {
+    // Entry is at pitchKey 3, but we're now at pitchKey 8 — stale entry should be skipped
+    // and the second entry at pitchKey 8 should fire.
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["3:skip", "8:skip"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "bunt" as const };
+
+    const { rerender } = renderHook(
+      ({ pk }) => useReplayDecisions(dispatch, pending, pk, "balanced"),
+      { initialProps: { pk: 8 } },
+    );
+    rerender({ pk: 8 });
+    expect(dispatch).toHaveBeenCalledWith({ type: "skip_decision" });
+    expect(dispatch).toHaveBeenCalledTimes(1);
   });
 });
