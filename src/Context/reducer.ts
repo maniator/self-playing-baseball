@@ -145,13 +145,17 @@ const reducer = (dispatchLogger) => {
       case 'set_pinch_hitter_strategy': {
         const ph = action.payload as Strategy;
         log(`Pinch hitter in — playing ${ph} strategy.`);
-        return { ...state, pinchHitterStrategy: ph, pendingDecision: null };
+        const entry = state.pendingDecision ? `${state.pitchKey}:pinch:${ph}` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, pinchHitterStrategy: ph, pendingDecision: null, decisionLog };
       }
       case 'set_defensive_shift': {
         const shiftOn = action.payload as boolean;
         if (shiftOn) log("Defensive shift deployed — outfield repositioned.");
         else log("Normal alignment set.");
-        return { ...state, defensiveShift: shiftOn, pendingDecision: null };
+        const entry = state.pendingDecision ? `${state.pitchKey}:shift:${shiftOn ? 'on' : 'off'}` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, defensiveShift: shiftOn, pendingDecision: null, decisionLog };
       }
       default:
         throw new Error(`No such reducer type as ${action.type}`);

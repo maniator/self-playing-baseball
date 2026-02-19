@@ -50,6 +50,7 @@ export const usePitchDispatch = (
     }
     skipDecisionRef.current = false;
 
+
     const effectiveStrategy = currentState.pinchHitterStrategy ?? strategyRef.current;
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
