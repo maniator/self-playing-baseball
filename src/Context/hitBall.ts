@@ -1,7 +1,7 @@
 import { Hit } from "../constants/hitTypes";
-import { State, Strategy, DecisionType, OnePitchModifier } from "./index";
+import { State, Strategy, DecisionType, OnePitchModifier, PlayLogEntry } from "./index";
 import { advanceRunners } from "./advanceRunners";
-import { playerOut } from "./playerOut";
+import { playerOut, nextBatter } from "./playerOut";
 import { stratMod } from "./strategy";
 import getRandomInt from "../utilities/getRandomInt";
 
@@ -12,6 +12,19 @@ const HIT_CALLOUTS: Record<Hit, string> = {
   [Hit.Triple]:  "Deep drive to the warning track — he's in with a triple!",
   [Hit.Homerun]: "That ball is GONE — home run!",
   [Hit.Walk]:    "",
+};
+
+/** Accumulate runs into the sparse inningRuns array for the current team/inning. */
+const addInningRuns = (state: State, runs: number): State => {
+  if (runs === 0) return state;
+  const idx = state.inning - 1;
+  const newInningRuns: [number[], number[]] = [
+    [...state.inningRuns[0]],
+    [...state.inningRuns[1]],
+  ];
+  newInningRuns[state.atBat as 0 | 1][idx] =
+    (newInningRuns[state.atBat as 0 | 1][idx] ?? 0) + runs;
+  return { ...state, inningRuns: newInningRuns };
 };
 
 export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"): State => {
@@ -38,7 +51,8 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
       log("Power hitter turns it around — Home Run!");
     } else {
       log("Popped it up — that's an out.");
-      return playerOut({ ...state, pitchKey, hitType: undefined }, log);
+      // batterCompleted=true: the batter's at-bat ended with a pop-out.
+      return playerOut({ ...state, pitchKey, hitType: undefined }, log, true);
     }
   } else if (HIT_CALLOUTS[type]) {
     log(HIT_CALLOUTS[type]);
@@ -50,5 +64,26 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
 
   if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
 
-  return { ...base, baseLayout: newBase, score: newScore, hitType: type };
+  // Record this at-bat in the play log (batter reached base).
+  const batterNum = state.batterIndex[state.atBat as 0 | 1] + 1;
+  const playEntry: PlayLogEntry = {
+    inning: state.inning,
+    half: state.atBat as 0 | 1,
+    batterNum,
+    team: state.atBat as 0 | 1,
+    event: type,
+    runs: runsScored,
+  };
+
+  const withRuns = addInningRuns(
+    { ...base, baseLayout: newBase, score: newScore, hitType: type },
+    runsScored,
+  );
+
+  // nextBatter: batter reached base, rotate lineup to next batter.
+  return nextBatter({
+    ...withRuns,
+    playLog: [...state.playLog, playEntry],
+  });
 };
+

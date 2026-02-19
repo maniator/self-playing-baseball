@@ -85,17 +85,35 @@ const reducer = (dispatchLogger) => {
         return { ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 };
       case 'wait':
         return playerWait(state, log, action.payload?.strategy ?? "balanced", state.onePitchModifier);
-      case 'set_one_pitch_modifier':
-        return { ...state, onePitchModifier: action.payload, pendingDecision: null };
+      case 'set_one_pitch_modifier': {
+        const result = { ...state, onePitchModifier: action.payload, pendingDecision: null };
+        if (state.pendingDecision) {
+          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:${action.payload}`] };
+        }
+        return result;
+      }
       case 'steal_attempt': {
         const { successPct, base } = action.payload;
-        return stealAttempt(state, log, successPct, base);
+        const result = stealAttempt(state, log, successPct, base);
+        if (state.pendingDecision) {
+          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:steal:${base}:${successPct}`] };
+        }
+        return result;
       }
-      case 'bunt_attempt':
-        return checkWalkoff(buntAttempt(state, log, action.payload?.strategy ?? "balanced"), log);
+      case 'bunt_attempt': {
+        const result = checkWalkoff(buntAttempt(state, log, action.payload?.strategy ?? "balanced"), log);
+        if (state.pendingDecision) {
+          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:bunt`] };
+        }
+        return result;
+      }
       case 'intentional_walk': {
         log("Intentional walk issued.");
-        return checkWalkoff(hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log), log);
+        const result = checkWalkoff(hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log), log);
+        if (state.pendingDecision) {
+          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:ibb`] };
+        }
+        return result;
       }
       case 'reset':
         return {
@@ -106,9 +124,15 @@ const reducer = (dispatchLogger) => {
           pitchKey: 0, decisionLog: [],
           suppressNextDecision: false, pinchHitterStrategy: null,
           defensiveShift: false, defensiveShiftOffered: false,
+          batterIndex: [0, 0] as [number, number],
+          inningRuns: [[], []] as [number[], number[]],
+          playLog: [],
         };
-      case 'skip_decision':
-        return { ...state, pendingDecision: null };
+      case 'skip_decision': {
+        const entry = state.pendingDecision ? `${state.pitchKey}:skip` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, pendingDecision: null, decisionLog };
+      }
       case 'set_pending_decision': {
         const newState: State = { ...state, pendingDecision: action.payload as DecisionType };
         if ((action.payload as DecisionType).kind === 'defensive_shift') {

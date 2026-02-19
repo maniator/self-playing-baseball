@@ -3,6 +3,15 @@ import reducer from "./reducer";
 import { Hit } from "../constants/hitTypes";
 import { announce } from "../utilities/announce";
 
+export type PlayLogEntry = {
+  inning: number;
+  half: 0 | 1;       // 0 = top (away bats), 1 = bottom (home bats)
+  batterNum: number;  // 1–9
+  team: 0 | 1;
+  event: Hit;         // hit type (includes Walk)
+  runs: number;       // runs scored on this play
+};
+
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
 
 export const useGameContext = (): ContextValue => {
@@ -44,6 +53,9 @@ export interface State {
   pinchHitterStrategy: Strategy | null,
   defensiveShift: boolean,
   defensiveShiftOffered: boolean,
+  batterIndex: [number, number],    // 0–8 position in the 9-batter lineup per team
+  inningRuns: [number[], number[]], // runs scored per inning index per team (sparse)
+  playLog: PlayLogEntry[],          // record of every hit/walk with batter attribution
 }
 
 export interface ContextValue extends State {
@@ -85,6 +97,9 @@ const initialState: State = {
   pinchHitterStrategy: null,
   defensiveShift: false,
   defensiveShiftOffered: false,
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
 };
 
 type Props = {};

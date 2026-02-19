@@ -14,6 +14,7 @@ interface PlayerControlsArgs {
   setAlertVolumeState: (v: number) => void;
   setStrategy: (v: Strategy) => void;
   setManagedTeam: (v: 0 | 1) => void;
+  decisionLog: string[];
   dispatchLog: Function;
 }
 
@@ -23,11 +24,12 @@ export const usePlayerControls = ({
   announcementVolume, setAnnouncementVolumeState,
   alertVolume, setAlertVolumeState,
   setStrategy, setManagedTeam,
+  decisionLog,
   dispatchLog,
 }: PlayerControlsArgs) => {
   const log = (message: string) => dispatchLog({ type: "log", payload: message });
 
-  const { handleShareReplay } = useShareReplay({ managerMode, dispatchLog });
+  const { handleShareReplay } = useShareReplay({ managerMode, decisionLog, dispatchLog });
 
   const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
     if (typeof Notification === "undefined") return "unavailable";
