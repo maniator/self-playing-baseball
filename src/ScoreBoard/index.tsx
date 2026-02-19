@@ -31,9 +31,9 @@ const BatterStats = styled.div`
   color: ${textColor};
 `;
 
-const Team = styled.div<{ teamAtBat: boolean }>`
-  font-weight: ${({ teamAtBat }) => teamAtBat ? "bold" : "normal"};
-  color: ${({ teamAtBat }) => teamAtBat ? "#b381b3" : textColor};
+const Team = styled.div<{ $teamAtBat: boolean }>`
+  font-weight: ${({ $teamAtBat }) => $teamAtBat ? "bold" : "normal"};
+  color: ${({ $teamAtBat }) => $teamAtBat ? "#b381b3" : textColor};
 `;
 
 const GameOverBanner = styled.div`
@@ -54,7 +54,7 @@ const ScoreBoard: React.FunctionComponent<{}> = () => {
     <ScoreBoardDiv>
       {score.map((s, idx) => (
         <Score key={idx}>
-          <Team teamAtBat={atBat === idx}>{teams[idx]}: {s}</Team>
+          <Team $teamAtBat={atBat === idx}>{teams[idx]}: {s}</Team>
         </Score>
       ))}
       <hr />

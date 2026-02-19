@@ -66,6 +66,8 @@ const initialState: State = {
   gameOver: false,
   pendingDecision: null,
   onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
 };
 
 type Props = {};

@@ -5,7 +5,7 @@ import { ContextValue, GameContext, Strategy, State } from "../Context";
 import { detectDecision } from "../Context/reducer";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
-import { cancelAnnouncements, setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
+import { setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
 import DecisionPanel from "../DecisionPanel";
 
@@ -111,13 +111,6 @@ function loadString<T extends string>(key: string, fallback: T): T {
   return v === null ? fallback : (v as T);
 }
 
-const hitCallouts = {
-  [Hit.Single]:  "He lines it into the outfield — base hit!",
-  [Hit.Double]:  "Into the gap — that's a double!",
-  [Hit.Triple]:  "Deep drive to the warning track — he's in with a triple!",
-  [Hit.Homerun]: "That ball is GONE — home run!",
-};
-
 const BatterButton: React.FunctionComponent<{}> = () => {
   const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
   const [autoPlay, setAutoPlay] = React.useState(() => loadBool("autoPlay", false));
@@ -221,8 +214,6 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
 
-    cancelAnnouncements();
-
     // Apply "protect" one-pitch modifier (0-2 count): reduce swing rate → more contact
     const protectBonus = currentState.onePitchModifier === "protect" ? 0.7 : 1;
     // Apply strategy swing rate modifier
@@ -230,22 +221,32 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
 
     if (random < swingRate) {
-      dispatch({ type: "strike", payload: { swung: true } });
-    } else if (random < 880) {
+      // Swing — 30% of swings are fouls (can't strike out on a foul ball)
+      if (getRandomInt(100) < 30) {
+        dispatch({ type: "foul" });
+      } else {
+        dispatch({ type: "strike", payload: { swung: true } });
+      }
+    } else if (random < 920) {
+      // Take the pitch — umpire calls ball or strike
       dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
     } else {
-      // Apply strategy to hit type probabilities
+      // Ball in play — determine hit type with realistic MLB distribution
       const strat = strategyRef.current;
       const hitRoll = getRandomInt(100);
       let base: Hit;
       if (strat === "power") {
-        base = hitRoll < 30 ? Hit.Homerun : hitRoll < 50 ? Hit.Triple : hitRoll < 70 ? Hit.Double : Hit.Single;
+        // Power: more HRs/doubles, fewer singles
+        base = hitRoll < 20 ? Hit.Homerun : hitRoll < 23 ? Hit.Triple : hitRoll < 43 ? Hit.Double : Hit.Single;
       } else if (strat === "contact") {
-        base = hitRoll < 5 ? Hit.Homerun : hitRoll < 15 ? Hit.Triple : hitRoll < 35 ? Hit.Double : Hit.Single;
+        // Contact: more singles, fewer HRs
+        base = hitRoll < 8 ? Hit.Homerun : hitRoll < 10 ? Hit.Triple : hitRoll < 28 ? Hit.Double : Hit.Single;
       } else {
-        base = getRandomInt(4) as Hit;
+        // Balanced (and aggressive/patient): MLB-realistic distribution
+        // ~13% HR, ~2% triple, ~20% double, ~65% single
+        base = hitRoll < 13 ? Hit.Homerun : hitRoll < 15 ? Hit.Triple : hitRoll < 35 ? Hit.Double : Hit.Single;
       }
-      log(hitCallouts[base]);
+      // Hit callout is logged inside the reducer (hitBall) after pop-out check — no log here.
       dispatch({ type: "hit", payload: { hitType: base, strategy: strat } });
     }
   }, [dispatch, dispatchLog]);
@@ -357,13 +358,16 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 
   const handleShareReplay = () => {
     const url = buildReplayUrl();
+    const managerNote = managerMode
+      ? "\n\nNote: Manager Mode decisions are not included in the replay — the same pitches will occur, but you'll need to make the same decisions again."
+      : "";
     if (navigator.clipboard) {
       navigator.clipboard
         .writeText(url)
-        .then(() => log("Replay link copied!"))
-        .catch(() => window.prompt("Copy this replay link:", url));
+        .then(() => log(managerMode ? "Replay link copied! (Manager decisions not included)" : "Replay link copied!"))
+        .catch(() => window.prompt(`Copy this replay link:${managerNote}`, url));
     } else {
-      window.prompt("Copy this replay link:", url);
+      window.prompt(`Copy this replay link:${managerNote}`, url);
     }
   };
 

@@ -4,6 +4,7 @@ import BatterButton from "../BatterButton";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
+import InstructionsModal from "../InstructionsModal";
 import styled from "styled-components";
 import { GameContext } from "../Context";
 
@@ -130,6 +131,7 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         </div>
 
         <BatterButton />
+        <InstructionsModal />
       </GameInfo>
       <GameBody>
         <LeftPanel>
