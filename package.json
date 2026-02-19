@@ -4,6 +4,9 @@
   "main": "index.js",
   "author": "Naftali Lubin <naftalilubin@gmail.com>",
   "license": "MIT",
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
     "dev": "parcel serve src/*.html",
     "dev:deploy": "parcel src/*.html",
