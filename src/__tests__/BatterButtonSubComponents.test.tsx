@@ -2,8 +2,8 @@ import * as React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import VolumeControls from "../BatterButton/VolumeControls";
-import ManagerModeControls from "../BatterButton/ManagerModeControls";
+import VolumeControls from "../GameControls/VolumeControls";
+import ManagerModeControls from "../GameControls/ManagerModeControls";
 
 const noop = () => {};
 

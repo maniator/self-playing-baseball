@@ -1,11 +1,11 @@
 import * as React from "react";
 
-import BatterButton from "../BatterButton";
+import BatterButton from "../GameControls";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
 import InstructionsModal from "../InstructionsModal";
-import { GameContext } from "../Context";
+import { GameContext, useGameContext } from "../Context";
 import { GameDiv, GameInfo, Input, GameBody, LeftPanel, RightPanel } from "./styles";
 
 type Props = {
@@ -14,7 +14,7 @@ type Props = {
 };
 
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
-  const { dispatch, teams } = React.useContext(GameContext);
+  const { dispatch, teams } = useGameContext();
 
   React.useEffect(() => {
     dispatch({

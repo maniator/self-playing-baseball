@@ -1,5 +1,5 @@
 import * as React from "react";
-import { GameContext } from "../Context";
+import { GameContext, useGameContext } from "../Context";
 
 import styled from "styled-components";
 
@@ -36,7 +36,7 @@ const Log = styled.div`
 `;
 
 const Announcements: React.FunctionComponent<{}> = () => {
-  const { log }: { log: string[] } = React.useContext(GameContext);
+  const { log } = useGameContext();
 
   return (
     <>

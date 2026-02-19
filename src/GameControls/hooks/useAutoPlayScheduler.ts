@@ -25,11 +25,13 @@ export const useAutoPlayScheduler = (
 
     let timerId: ReturnType<typeof setTimeout>;
     let extraWait = 0;
+    let cancelled = false;
     const MAX_SPEECH_WAIT_MS = 8000;
     const SPEECH_POLL_MS = 300;
 
     const tick = (delay: number) => {
       timerId = setTimeout(() => {
+        if (cancelled) return;
         if (!autoPlayRef.current || gameStateRef.current.gameOver) return;
 
         if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
@@ -53,6 +55,9 @@ export const useAutoPlayScheduler = (
     };
 
     tick(speedRef.current);
-    return () => clearTimeout(timerId);
+    return () => {
+      cancelled = true;
+      clearTimeout(timerId);
+    };
   }, [autoPlay, pendingDecision, managerMode]);
 };

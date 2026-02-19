@@ -60,7 +60,7 @@ const renderWithContext = (ui: React.ReactElement, ctxValue: ContextValue = make
 // ---------------------------------------------------------------------------
 // Import components
 // ---------------------------------------------------------------------------
-import BatterButton from "../BatterButton";
+import BatterButton from "../GameControls";
 import DecisionPanel from "../DecisionPanel";
 import GameInner from "../Game/GameInner";
 

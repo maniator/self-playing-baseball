@@ -2,7 +2,7 @@ import * as React from "react";
 
 import styled, { keyframes, css } from "styled-components";
 import { Hit } from "../constants/hitTypes";
-import { ContextValue, GameContext } from "../Context";
+import { useGameContext } from "../Context";
 import { hitDistances } from "./constants";
 
 // Pitch animation: ball travels from the pitcher's mound toward home plate, then fades.
@@ -35,7 +35,7 @@ const Baseball = styled.div<{ $isHit: boolean; $dist: number }>`
 `;
 
 const Ball: React.FunctionComponent<{}> = () => {
-  const { hitType, pitchKey }: ContextValue = React.useContext(GameContext);
+  const { hitType, pitchKey } = useGameContext();
 
   const isHit = hitType !== undefined && hitType !== Hit.Walk;
   const dist = isHit ? hitDistances[hitType!] : 0;

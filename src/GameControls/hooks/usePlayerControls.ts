@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Strategy } from "../../Context";
-import { buildReplayUrl } from "../../utilities/rng";
 import { appLog } from "../../utilities/logger";
+import { useShareReplay } from "./useShareReplay";
 
 interface PlayerControlsArgs {
   managerMode: boolean;
@@ -26,6 +26,8 @@ export const usePlayerControls = ({
   dispatchLog,
 }: PlayerControlsArgs) => {
   const log = (message: string) => dispatchLog({ type: "log", payload: message });
+
+  const { handleShareReplay } = useShareReplay({ managerMode, dispatchLog });
 
   const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
     if (typeof Notification === "undefined") return "unavailable";
@@ -95,21 +97,6 @@ export const usePlayerControls = ({
       setAlertVolumeState(prevAlertVolumeRef.current > 0 ? prevAlertVolumeRef.current : 1);
     }
   }, [alertVolume]);
-
-  const handleShareReplay = () => {
-    const url = buildReplayUrl();
-    const managerNote = managerMode
-      ? "\n\nNote: Manager Mode decisions are not included in the replay — the same pitches will occur, but you'll need to make the same decisions again."
-      : "";
-    if (navigator.clipboard) {
-      navigator.clipboard
-        .writeText(url)
-        .then(() => log(managerMode ? "Replay link copied! (Manager decisions not included)" : "Replay link copied!"))
-        .catch(() => window.prompt(`Copy this replay link:${managerNote}`, url));
-    } else {
-      window.prompt(`Copy this replay link:${managerNote}`, url);
-    }
-  };
 
   return {
     notifPermission,

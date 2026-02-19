@@ -436,7 +436,7 @@ describe("DecisionPanel", () => {
 // ---------------------------------------------------------------------------
 // BatterButton
 // ---------------------------------------------------------------------------
-import BatterButton from "../BatterButton";
+import BatterButton from "../GameControls";
 
 describe("BatterButton", () => {
   beforeEach(() => {

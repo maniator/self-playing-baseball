@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import styled from "styled-components";
-import { ContextValue, GameContext } from "../Context";
+import { ContextValue, GameContext, useGameContext } from "../Context";
 
 const textColor = "#0F4880";
 
@@ -48,7 +48,7 @@ const GameOverBanner = styled.div`
 `;
 
 const ScoreBoard: React.FunctionComponent<{}> = () => {
-  const { teams, score, strikes, balls, outs, atBat, inning, gameOver }: ContextValue = React.useContext(GameContext);
+  const { teams, score, strikes, balls, outs, atBat, inning, gameOver }: ContextValue = useGameContext();
 
   return (
     <ScoreBoardDiv>

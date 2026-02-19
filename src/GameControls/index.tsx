@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useLocalStorage } from "usehooks-ts";
-import { ContextValue, GameContext, Strategy } from "../Context";
+import { ContextValue, GameContext, Strategy, useGameContext } from "../Context";
 import { setAnnouncementVolume, setAlertVolume, setSpeechRate } from "../utilities/announce";
 import DecisionPanel from "../DecisionPanel";
 import { SPEED_SLOW, SPEED_NORMAL, SPEED_FAST } from "./constants";
@@ -14,8 +14,8 @@ import { useAutoPlayScheduler } from "./hooks/useAutoPlayScheduler";
 import { useKeyboardPitch } from "./hooks/useKeyboardPitch";
 import { usePlayerControls } from "./hooks/usePlayerControls";
 
-const BatterButton: React.FunctionComponent<{}> = () => {
-  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = React.useContext(GameContext);
+const GameControls: React.FunctionComponent<{}> = () => {
+  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams }: ContextValue = useGameContext();
   const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -90,4 +90,4 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   );
 };
 
-export default BatterButton;
+export default GameControls;

@@ -1,34 +1,6 @@
 import * as React from "react";
-import styled from "styled-components";
 import { DecisionType, Strategy } from "../Context";
-
-const ActionButton = styled.button`
-  background: aquamarine;
-  color: darkblue;
-  padding: 7px 14px;
-  border-radius: 20px;
-  cursor: pointer;
-  border: none;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-`;
-
-const SkipButton = styled(ActionButton)`
-  background: #3a4a6a;
-  color: #ccc;
-`;
-
-const Prompt = styled.span`
-  flex: 1 1 auto;
-  color: #e0f8f0;
-  font-weight: 600;
-`;
-
-const Odds = styled.span`
-  color: #aaffcc;
-  font-size: 13px;
-`;
+import { ActionButton, SkipButton, Prompt, Odds } from "./DecisionButtonStyles";
 
 type Props = {
   pendingDecision: DecisionType;
@@ -103,6 +75,20 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
           <SkipButton onClick={onSkip}>Skip</SkipButton>
         </>
       );
+    case "ibb_or_steal": {
+      const { base, successPct } = pendingDecision;
+      return (
+        <>
+          <Prompt>Issue intentional walk (IBB) or steal?</Prompt>
+          <Odds>Steal success: {successPct}%</Odds>
+          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Issue IBB</ActionButton>
+          <ActionButton onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}>
+            ⚡ Steal! ({successPct}%)
+          </ActionButton>
+          <SkipButton onClick={onSkip}>⏭ Skip</SkipButton>
+        </>
+      );
+    }
     default:
       return null;
   }

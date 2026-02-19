@@ -14,6 +14,7 @@ export const getNotificationBody = (d: DecisionType): string => {
     case "count30": return "Count is 3-0 — Take or swing?";
     case "count02": return "Count is 0-2 — Protect or swing?";
     case "ibb": return "Intentional walk opportunity";
+    case "ibb_or_steal": return `IBB or steal from ${d.base === 0 ? "1st" : "2nd"}? (${d.successPct}% steal success)`;
     default: return "Manager decision needed";
   }
 };
@@ -25,6 +26,7 @@ export const getNotificationActions = (d: DecisionType): { action: string; title
     case "count30":return [{ action: "take",    title: "🤚 Take"        }, { action: "swing",  title: "⚾ Swing" }];
     case "count02":return [{ action: "protect", title: "🛡 Protect"     }, { action: "normal", title: "⚾ Normal" }];
     case "ibb":    return [{ action: "ibb",     title: "✅ Yes, IBB"    }, { action: "skip", title: "⏭ Skip" }];
+    case "ibb_or_steal": return [{ action: "ibb", title: "🥾 Issue IBB" }, { action: "steal", title: `⚡ Steal! (${(d as { successPct: number }).successPct}%)` }, { action: "skip", title: "⏭ Skip" }];
     default:       return [{ action: "skip",    title: "⏭ Skip" }];
   }
 };

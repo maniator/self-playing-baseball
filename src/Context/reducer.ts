@@ -35,20 +35,25 @@ export const detectDecision = (state: State, strategy: Strategy, managerMode: bo
   const { baseLayout, outs, balls, strikes } = state;
   const scoreDiff = Math.abs(state.score[0] - state.score[1]);
 
-  if (!baseLayout[0] && (baseLayout[1] || baseLayout[2]) && outs === 2 && state.inning >= 7 && scoreDiff <= 2) {
-    return { kind: "ibb" };
-  }
+  const ibbAvailable = !baseLayout[0] && (baseLayout[1] || baseLayout[2]) && outs === 2 && state.inning >= 7 && scoreDiff <= 2;
 
+  let stealDecision: { kind: "steal"; base: 0 | 1; successPct: number } | null = null;
   if (outs < 2) {
     if (baseLayout[0] && !baseLayout[1]) {
       const pct = computeStealSuccessPct(0, strategy);
-      if (pct > STEAL_MIN_PCT) return { kind: "steal", base: 0, successPct: pct };
+      if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 0, successPct: pct };
     }
-    if (baseLayout[1] && !baseLayout[2]) {
+    if (!stealDecision && baseLayout[1] && !baseLayout[2]) {
       const pct = computeStealSuccessPct(1, strategy);
-      if (pct > STEAL_MIN_PCT) return { kind: "steal", base: 1, successPct: pct };
+      if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 1, successPct: pct };
     }
   }
+
+  if (ibbAvailable && stealDecision) {
+    return { kind: "ibb_or_steal", base: stealDecision.base, successPct: stealDecision.successPct };
+  }
+  if (ibbAvailable) return { kind: "ibb" };
+  if (stealDecision) return stealDecision;
 
   if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
   if (balls === 3 && strikes === 0) return { kind: "count30" };

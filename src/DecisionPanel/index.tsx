@@ -1,63 +1,19 @@
 import * as React from "react";
-import styled from "styled-components";
-import { ContextValue, GameContext, Strategy } from "../Context";
+import { useGameContext } from "../Context";
+import { Strategy } from "../Context";
 import { playDecisionChime } from "../utilities/announce";
 import { appLog } from "../utilities/logger";
 import { DECISION_TIMEOUT_SEC } from "./constants";
 import { showManagerNotification, closeManagerNotification } from "./notificationHelpers";
 import DecisionButtons from "./DecisionButtons";
-
-const Panel = styled.div`
-  background: rgba(0, 30, 60, 0.92);
-  border: 2px solid aquamarine;
-  border-radius: 12px;
-  padding: 14px 18px 10px;
-  margin-top: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  font-size: 14px;
-`;
-
-const CountdownRow = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  margin-top: 4px;
-`;
-
-const CountdownTrack = styled.div`
-  flex: 1;
-  height: 4px;
-  background: #1a2e1a;
-  border-radius: 2px;
-  overflow: hidden;
-`;
-
-const CountdownFill = styled.div<{ $pct: number }>`
-  height: 100%;
-  width: ${({ $pct }) => $pct}%;
-  background: ${({ $pct }) => $pct > 50 ? "#44cc88" : $pct > 25 ? "#ffaa33" : "#ff4444"};
-  border-radius: 2px;
-  transition: width 0.95s linear, background 0.5s ease;
-`;
-
-const CountdownLabel = styled.span`
-  color: #888;
-  font-size: 11px;
-  white-space: nowrap;
-  min-width: 52px;
-  text-align: right;
-`;
+import { Panel, CountdownRow, CountdownTrack, CountdownFill, CountdownLabel } from "./styles";
 
 type Props = {
   strategy: Strategy;
 };
 
 const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
-  const { dispatch, pendingDecision }: ContextValue = React.useContext(GameContext);
+  const { dispatch, pendingDecision } = useGameContext();
   const [secondsLeft, setSecondsLeft] = React.useState(DECISION_TIMEOUT_SEC);
 
   // Listen for actions dispatched from the service worker (notification button taps).

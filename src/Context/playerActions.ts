@@ -124,21 +124,17 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
   return playerOut({ ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 }, log);
 };
 
-export const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier: OnePitchModifier = null): State => {
-  const random = getRandomInt(1000);
-
+const computeWaitOutcome = (random: number, strategy: Strategy, modifier: OnePitchModifier): "ball" | "strike" => {
   if (modifier === "take") {
     const walkChance = Math.min(950, Math.round(750 * stratMod(strategy, "walk")));
-    if (random < walkChance) {
-      return playerBall(state, log);
-    }
-    return playerStrike(state, log, false);
+    return random < walkChance ? "ball" : "strike";
   }
-
   const strikeThreshold = Math.round(500 / stratMod(strategy, "walk"));
-  if (random < strikeThreshold) {
-    return playerStrike(state, log, false);
-  } else {
-    return playerBall(state, log);
-  }
+  return random < strikeThreshold ? "strike" : "ball";
+};
+
+export const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier: OnePitchModifier = null): State => {
+  const random = getRandomInt(1000);
+  const outcome = computeWaitOutcome(random, strategy, modifier);
+  return outcome === "ball" ? playerBall(state, log) : playerStrike(state, log, false);
 };
