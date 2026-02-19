@@ -11,7 +11,7 @@ const hitLengths = {
   [Hit.Triple]: 750
 }
 
-const rotate = ({ hit }) => keyframes`
+const rotate = ({ $hit }: { $hit: Hit }) => keyframes`
   from {
     transform: rotate(0deg)
     translate(0)
@@ -19,12 +19,12 @@ const rotate = ({ hit }) => keyframes`
   }
   to {
     transform: rotate(180deg)
-    translate(-${hitLengths[hit]}px)
+    translate(-${hitLengths[$hit]}px)
     rotate(-180deg);
   }
 `
 
-const Baseball = styled.div`
+const Baseball = styled.div<{ $hit: Hit }>`
   animation: ${rotate} 3s normal ease-in;
   display: block;
   position: absolute;
@@ -41,7 +41,7 @@ const Ball: React.FunctionComponent<{}> = () => {
   const { hitType }: ContextValue = React.useContext(GameContext);
 
   return (
-    <Baseball hit={hitType} />
+    <Baseball $hit={hitType} />
   );
 }
 

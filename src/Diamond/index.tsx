@@ -53,14 +53,14 @@ const Mound = styled.div`
   }
 `;
 
-const BaseDiv = styled.div`
-  background: ${({ playerOnBase, isHome }) => playerOnBase ? "#3f4f7e" : isHome ? "#fff" : "#ff21b1"};
+const BaseDiv = styled.div<{ $playerOnBase?: boolean; $isHome?: boolean; $base: number }>`
+  background: ${({ $playerOnBase, $isHome }) => $playerOnBase ? "#3f4f7e" : $isHome ? "#fff" : "#ff21b1"};
   height: 10px;
   width: 10px;
   position: absolute;
-  right: ${({ base }) => base === 1 || base === 0 ? 0 : null};
-  bottom: ${({ base }) => base === 3 || base === 0 ? 0 : null};
-  left: ${({ base }) => base === 2 ? 0 : null};
+  right: ${({ $base }) => $base === 1 || $base === 0 ? 0 : null};
+  bottom: ${({ $base }) => $base === 3 || $base === 0 ? 0 : null};
+  left: ${({ $base }) => $base === 2 ? 0 : null};
 `;
 
 const Diamond: React.FunctionComponent<{}> = () => {
@@ -72,10 +72,10 @@ const Diamond: React.FunctionComponent<{}> = () => {
 
       <DiamondDiv>
         <Mound />
-        <BaseDiv base={0} isHome /> { /* home */ }
-        <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
-        <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
-        <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
+        <BaseDiv $base={0} $isHome /> { /* home */ }
+        <BaseDiv $base={1} $playerOnBase={Boolean(first)} /> {/* first */}
+        <BaseDiv $base={2} $playerOnBase={Boolean(second)} /> {/* second */}
+        <BaseDiv $base={3} $playerOnBase={Boolean(third)} /> {/* third */}
 
         <Ball />
       </DiamondDiv>
