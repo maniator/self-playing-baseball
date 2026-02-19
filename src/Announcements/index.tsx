@@ -5,7 +5,7 @@ import styled from "styled-components";
 
 const AnnouncementsArea = styled.div`
   height: calc(100% - 150px);
-  overflow: scroll;
+  overflow-y: auto;
 `;
 
 const Log = styled.div`

@@ -3,13 +3,19 @@
 * {
   font-family: Lucida Console, monospace;
   color: #FFF;
+  box-sizing: border-box;
 }
 
 body {
   background: black;
+  margin: 0;
 }
 
 @media (max-width: 600px) {
+  body {
+    overflow: hidden;
+  }
+
   .github-fork-ribbon {
     display: none;
   }

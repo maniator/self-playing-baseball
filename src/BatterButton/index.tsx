@@ -16,37 +16,45 @@ const Button = styled.button`
 `;
 
 const ShareButton = styled.button`
-  background: #2e8b57;
-  color: #fff;
+  background: transparent;
+  color: aquamarine;
   padding: 10px 16px;
-  border-radius: 20px;
+  border-radius: 30px;
+  border: 1px solid aquamarine;
   cursor: pointer;
   margin-left: 10px;
   font-size: 0.85em;
+  font-family: inherit;
 `;
 
 const Controls = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  margin-top: 8px;
+  gap: 10px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(127, 255, 212, 0.2);
 `;
 
 const ControlLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.85em;
+  gap: 6px;
+  font-size: 0.8em;
   cursor: pointer;
+  color: rgba(255, 255, 255, 0.8);
 `;
 
 const Select = styled.select`
-  background: #111;
-  color: #fff;
-  border: 1px solid #555;
+  background: #000;
+  color: aquamarine;
+  border: 1px solid rgba(127, 255, 212, 0.4);
   border-radius: 4px;
-  padding: 2px 4px;
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
 `;
 
 const outfield = {

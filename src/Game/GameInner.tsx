@@ -23,12 +23,13 @@ const GameDiv = styled.main`
   overflow: hidden;
 
   @media (max-width: 600px) {
-    width: 95vw;
-    height: auto;
-    min-height: 100vh;
-    overflow: visible;
-    padding: 15px;
+    width: 100vw;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 10px;
     box-sizing: border-box;
+    margin: 0;
   }
 `;
 
