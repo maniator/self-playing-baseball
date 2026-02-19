@@ -6,6 +6,10 @@ import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
 import { cancelAnnouncements } from "../utilities/announce";
 
+type BatterButtonHandle = {
+  trigger: () => void
+}
+
 const Button = styled.button`
   background: aquamarine;
   color: darkblue;
@@ -21,7 +25,7 @@ const outfield = {
   [Hit.Single]: "to an empty area of the field"
 }
 
-const BatterButton: React.FunctionComponent<{}> = () => {
+const BatterButton = React.forwardRef<BatterButtonHandle, {}>((_, ref) => {
   const { dispatch, dispatchLog, strikes }: ContextValue = React.useContext(GameContext);
   const log = (message) =>
     dispatchLog({ type: "log", payload: message });
@@ -54,9 +58,13 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     window.addEventListener("keyup", handlePitch, false);
   }, [])
 
+  React.useImperativeHandle(ref, () => ({
+    trigger: handleClickButton
+  }));
+
   return (
     <Button onClick={handleClickButton}>Batter Up!</Button>
   );
-}
+});
 
 export default BatterButton;

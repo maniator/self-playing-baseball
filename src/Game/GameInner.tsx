@@ -7,6 +7,7 @@ import Announcements from "../Announcements";
 import styled from "styled-components";
 import { GameContext } from "../Context";
 import { buildReplayUrl } from "../utilities/rng";
+import { setAnnouncementsMuted, cancelAnnouncements } from "../utilities/announce";
 
 type Props = {
   homeTeam: string,
@@ -55,6 +56,22 @@ const ShareButton = styled.button`
 
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
   const { dispatch, dispatchLog, teams } = React.useContext(GameContext);
+  const batterRef = React.useRef<{ trigger: () => void } | null>(null);
+  const [autoPlay, setAutoPlay] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem("autoPlayEnabled");
+    return stored ? stored === "true" : false;
+  });
+  const [autoPlaySpeed, setAutoPlaySpeed] = React.useState<"slow" | "normal" | "fast">(() => {
+    if (typeof window === "undefined") return "normal";
+    const stored = window.localStorage.getItem("autoPlaySpeed");
+    return stored === "slow" || stored === "fast" ? stored : "normal";
+  });
+  const [muted, setMuted] = React.useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const stored = window.localStorage.getItem("announcementsMuted");
+    return stored ? stored === "true" : false;
+  });
 
   React.useEffect(() => {
     dispatch({
@@ -75,6 +92,47 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
       type: "setTeams",
       payload: newTeamNames
     })
+  }
+
+  React.useEffect(() => {
+    window.localStorage.setItem("autoPlayEnabled", autoPlay ? "true" : "false");
+    window.localStorage.setItem("autoPlaySpeed", autoPlaySpeed);
+    window.localStorage.setItem("announcementsMuted", muted ? "true" : "false");
+    setAnnouncementsMuted(muted);
+  }, [autoPlay, autoPlaySpeed, muted]);
+
+  React.useEffect(() => {
+    if (!autoPlay) {
+      return;
+    }
+
+    const speedMap = {
+      slow: 1200,
+      normal: 700,
+      fast: 350
+    };
+
+    const interval = window.setInterval(() => {
+      batterRef.current?.trigger();
+    }, speedMap[autoPlaySpeed]);
+
+    return () => window.clearInterval(interval);
+  }, [autoPlay, autoPlaySpeed]);
+
+  const handleToggleAutoPlay = () => {
+    const next = !autoPlay;
+    setAutoPlay(next);
+    cancelAnnouncements();
+
+    if (next) {
+      setMuted(true);
+    }
+  }
+
+  const handleMutedToggle = () => {
+    const next = !muted;
+    setMuted(next);
+    cancelAnnouncements();
   }
 
   const handleShareReplay = async () => {
@@ -107,7 +165,21 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         </div>
 
         <Controls>
-          <BatterButton/>
+          <BatterButton ref={batterRef}/>
+          <label>
+            <input type="checkbox" checked={autoPlay} onChange={handleToggleAutoPlay} /> Auto-play
+          </label>
+          <label>
+            Speed{" "}
+            <select value={autoPlaySpeed} onChange={(e) => setAutoPlaySpeed(e.target.value as "slow" | "normal" | "fast")}>
+              <option value="slow">Slow (1200ms)</option>
+              <option value="normal">Normal (700ms)</option>
+              <option value="fast">Fast (350ms)</option>
+            </select>
+          </label>
+          <label>
+            <input type="checkbox" checked={muted} onChange={handleMutedToggle} /> Mute
+          </label>
           <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         </Controls>
       </GameInfo>
