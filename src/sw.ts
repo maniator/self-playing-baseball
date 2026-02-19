@@ -42,15 +42,7 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Log every page-controlled fetch so it's clear the SW is alive and intercepting.
-// We do NOT modify any responses — just pass everything through.
-self.addEventListener("fetch", (event) => {
-  const fe = event as FetchEvent;
-  swLog(`fetch intercepted — ${fe.request.method} ${fe.request.url}`);
-  // No respondWith() call: the browser uses its normal network path.
-});
-
-// Log messages sent from the page to the SW (rare, but good to surface).
+// Log messages sent from the page to the SW (rare, but useful for debugging).
 self.addEventListener("message", (event) => {
   const me = event as ExtendableMessageEvent;
   swLog("message received from page:", me.data);

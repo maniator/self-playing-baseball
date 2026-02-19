@@ -110,7 +110,7 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 
 `DecisionPanel/index.tsx` renders the panel and:
 1. Plays a two-note chime via `playDecisionChime()` (Web Audio API, respects mute).
-2. Shows a browser notification with action buttons when the tab is hidden (via service worker — see below).
+2. Shows a browser notification with action buttons **always** (regardless of tab visibility) via service worker. Also adds a `visibilitychange` listener that re-sends the notification if the user switches away while the decision is still pending.
 3. Runs a 10-second countdown bar (green→orange→red). Auto-skips when it reaches zero.
 4. Closes the notification when the decision resolves.
 5. Listens for `NOTIFICATION_ACTION` messages from the service worker and dispatches the matching reducer action.
@@ -121,15 +121,15 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 
 `src/sw.ts` is a classic-script service worker (no `export`/`import`, bundled by Parcel as `dist/sw.js`):
 
-- Registered in `src/index.tsx` via `navigator.serviceWorker.register(new URL('./sw.ts', import.meta.url))`.
+- Registered in `src/index.tsx` via `navigator.serviceWorker.register(new URL('./sw.ts', import.meta.url))`. Registration success and failure are both logged to the main-page console (`[app] SW registered — scope: …`).
 - Listens for `notificationclick` events (both notification-body click and action-button click).
 - Posts `{ type: 'NOTIFICATION_ACTION', action: string, payload: DecisionType }` to the first available `WindowClient`.
 - Always calls `client.focus()` to bring the tab to the foreground.
-- **Logging**: every lifecycle event (`install`, `activate`, `notificationclick`) emits `[SW vX.Y.Z]` prefixed `console.log` / `console.error` messages. These appear in DevTools → Application → Service Workers → **Inspect** console. Increment `SW_VERSION` at the top of `sw.ts` whenever the file changes so logs identify which build is active.
+- **Logging**: every lifecycle event (`install`, `activate`, `notificationclick`, `message`) emits CSS-colored `console.log` messages (green tag, amber warn, red error). These appear in DevTools → Application → Service Workers → **Inspect** console. Increment `SW_VERSION` at the top of `sw.ts` whenever the file changes so logs identify which build is active.
 
 **Action strings** match reducer action identifiers: `steal`, `bunt`, `take`, `swing`, `protect`, `normal`, `ibb`, `skip`, `focus` (focus-only, no game action).
 
-Notifications are only shown when `document.hidden` is true (tab not visible). The `requireInteraction: false` setting allows OS to auto-dismiss them. Tagged `"manager-decision"` so duplicate notifications are replaced and they can be closed programmatically when the decision resolves.
+Notifications use `requireInteraction: true` so they stay visible until the user acts. Tagged `"manager-decision"` so duplicate notifications replace the previous one and they can be closed programmatically when the decision resolves.
 
 **Graceful degradation:** if the SW or Notifications API is unavailable, the chime and in-page panel still work normally; the notification step is silently skipped.
 

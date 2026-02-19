@@ -34,11 +34,12 @@ interface ServiceWorkerNotificationOptions extends NotificationOptions {
 }
 
 /** Show a service-worker notification with action buttons.
- *  Only shown when the tab is hidden so notifications are not intrusive.
+ *  Always sent (regardless of tab visibility) so the user receives an alert
+ *  both when they are watching the game and after they switch away.
+ *  requireInteraction: true keeps the notification visible until acted upon.
  *  Falls back to a plain Notification if the SW path fails. */
 const showManagerNotification = (d: DecisionType): void => {
   if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
-  if (typeof document !== "undefined" && !document.hidden) return;
 
   const title = "⚾ Your turn, Manager!";
   const body = getNotificationBody(d);
@@ -50,19 +51,17 @@ const showManagerNotification = (d: DecisionType): void => {
         tag: NOTIF_TAG,
         actions: getNotificationActions(d),
         data: d,
-        requireInteraction: false,
+        requireInteraction: true,
       } as ServiceWorkerNotificationOptions))
       .catch(() => {
         // SW notification failed (e.g. browser doesn't support actions) — fall back
         try {
-          const n = new Notification(title, { body, tag: NOTIF_TAG });
-          setTimeout(() => n.close(), 8000);
+          new Notification(title, { body, tag: NOTIF_TAG });
         } catch (_) {}
       });
   } else {
     try {
-      const n = new Notification(title, { body });
-      setTimeout(() => n.close(), 8000);
+      new Notification(title, { body });
     } catch (_) {}
   }
 };
@@ -159,10 +158,12 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
 
   // Listen for actions dispatched from the service worker (notification button taps).
   // Validate the message origin so only same-origin SW messages are processed.
+  // SW-to-page postMessages have event.origin === "" (empty string), so we only
+  // reject messages whose origin is explicitly a different, non-empty origin.
   React.useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     const handler = (event: MessageEvent) => {
-      if (typeof window !== "undefined" && event.origin !== window.location.origin) return;
+      if (event.origin && typeof window !== "undefined" && event.origin !== window.location.origin) return;
       if (event.data?.type !== "NOTIFICATION_ACTION") return;
       const { action, payload } = event.data;
       switch (action) {
@@ -193,8 +194,16 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
     // Sound alert (respects mute)
     playDecisionChime();
 
-    // Browser notification with action buttons when tab is not visible
+    // Browser notification — always send immediately so the user is alerted
+    // whether they are on the tab or have switched away.
     showManagerNotification(pendingDecision);
+
+    // Re-send if the user switches away while the decision is still pending
+    // (e.g. they saw the in-page panel but then tabbed away).
+    const handleVisibility = () => {
+      if (document.hidden) showManagerNotification(pendingDecision);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
 
     const id = setInterval(() => {
       setSecondsLeft(s => {
@@ -205,7 +214,10 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
         return s - 1;
       });
     }, 1000);
-    return () => clearInterval(id);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
   }, [pendingDecision, dispatch]);
 
   if (!pendingDecision) return null;

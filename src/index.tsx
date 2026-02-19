@@ -12,7 +12,8 @@ initSeedFromUrl({ writeToUrl: true });
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
     .register(new URL("./sw.ts", import.meta.url))
-    .catch(() => {/* SW not supported or blocked — graceful degradation */});
+    .then((reg) => console.log("[app] SW registered — scope:", reg.scope))
+    .catch((err) => console.error("[app] SW registration failed:", err));
 }
 
 createRoot(document.getElementById("game")!).render(<Game homeTeam="Yankees" awayTeam="Mets" />);
