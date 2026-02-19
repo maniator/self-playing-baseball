@@ -346,7 +346,7 @@ const reducer = (dispatchLogger) => {
   const log = createLogger(dispatchLogger);
 
   return function reducer(state: State, action: { type: string, payload: any }): State {
-    if (state.gameOver && !['setTeams', 'nextInning'].includes(action.type)) {
+    if (state.gameOver && !['setTeams', 'nextInning', 'reset'].includes(action.type)) {
       return state;
     }
 
@@ -472,6 +472,22 @@ const reducer = (dispatchLogger) => {
         const result = hitBall(Hit.Walk, { ...state, pendingDecision: null }, log);
         return checkWalkoff(result, log);
       }
+
+      case 'reset':
+        return {
+          inning: 1,
+          score: [0, 0] as [number, number],
+          teams: state.teams,
+          baseLayout: [0, 0, 0] as [number, number, number],
+          outs: 0, strikes: 0, balls: 0,
+          atBat: 0,
+          hitType: undefined,
+          gameOver: false,
+          pendingDecision: null,
+          onePitchModifier: null,
+          pitchKey: 0,
+          decisionLog: [],
+        };
 
       case 'skip_decision':
         return { ...state, pendingDecision: null };

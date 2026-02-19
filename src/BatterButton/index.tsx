@@ -33,6 +33,12 @@ const ShareButton = styled(Button)`
   color: #fff;
 `;
 
+const NewGameButton = styled(Button)`
+  background: #22c55e;
+  color: #fff;
+  font-weight: bold;
+`;
+
 const AutoPlayGroup = styled.div`
   display: inline-flex;
   flex-wrap: wrap;
@@ -76,6 +82,17 @@ const VolumeRow = styled.label`
   font-size: 12px;
   color: #cce8ff;
   cursor: default;
+`;
+
+const VolumeIcon = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+  color: inherit;
+  &:hover { opacity: 0.75; }
 `;
 
 const RangeInput = styled.input`
@@ -364,48 +381,12 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     }
   };
 
-  /** Send a test notification so the user can verify the full pipeline works. */
-  const handleTestNotification = React.useCallback(() => {
-    appLog.log("Test notification button clicked");
-    if (typeof Notification === "undefined") {
-      appLog.warn("Test notification — Notification API unavailable");
-      return;
-    }
-    const send = () => {
-      if ("serviceWorker" in navigator) {
-        appLog.log("Test — awaiting navigator.serviceWorker.ready");
-        navigator.serviceWorker.ready
-          .then(reg => {
-            appLog.log("SW ready — calling showNotification");
-            return reg.showNotification("⚾ Test — Self-Playing Baseball", {
-              body: "Notifications are working! You will see this for every Manager decision.",
-              tag: "test-notification",
-              requireInteraction: true,
-            });
-          })
-          .then(() => appLog.log("Test notification delivered to OS"))
-          .catch(err => {
-            appLog.error("SW showNotification failed:", err);
-            try { new Notification("⚾ Test — Self-Playing Baseball", { body: "Notifications are working!" }); }
-            catch (e) { appLog.error("Plain Notification fallback also failed:", e); }
-          });
-      } else {
-        try { new Notification("⚾ Test — Self-Playing Baseball", { body: "Notifications are working!" }); }
-        catch (e) { appLog.error("Plain Notification failed:", e); }
-      }
-    };
-    if (Notification.permission === "granted") {
-      send();
-    } else if (Notification.permission === "default") {
-      appLog.log("Test — requesting permission first");
-      Notification.requestPermission().then(result => {
-        appLog.log(`Permission result="${result}"`);
-        setNotifPermission(result);
-        if (result === "granted") send();
-      });
-    } else {
-      appLog.warn("Notifications blocked — user must enable in browser settings");
-    }
+  const handleRequestNotifPermission = React.useCallback(() => {
+    if (typeof Notification === "undefined") return;
+    Notification.requestPermission().then(result => {
+      appLog.log(`Notification permission result="${result}"`);
+      setNotifPermission(result);
+    });
   }, []);
 
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -450,6 +431,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     <>
       <Controls>
         {!autoPlay && <Button onClick={handleClickButton} disabled={gameOver}>Batter Up!</Button>}
+        {gameOver && <NewGameButton onClick={() => dispatch({ type: "reset" })}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
@@ -513,9 +495,6 @@ const BatterButton: React.FunctionComponent<{}> = () => {
                   <option value="power">Power</option>
                 </Select>
               </ToggleLabel>
-              <Button onClick={handleTestNotification} title="Send a test browser notification to verify the pipeline">
-                Test 🔔
-              </Button>
               {notifPermission === "granted" && (
                 <NotifBadge $ok={true}>🔔 on</NotifBadge>
               )}
@@ -525,7 +504,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
                 </NotifBadge>
               )}
               {notifPermission === "default" && (
-                <NotifBadge $ok={false} onClick={handleTestNotification} title="Click to grant notification permission">
+                <NotifBadge $ok={false} onClick={handleRequestNotifPermission} title="Click to grant notification permission">
                   🔔 click to enable
                 </NotifBadge>
               )}
