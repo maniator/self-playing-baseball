@@ -268,7 +268,6 @@ describe("DecisionButtons", () => {
     );
     expect(container.firstChild).toBeNull();
   });
-});
 
   // ---------------------------------------------------------------------------
   // pinch_hitter
@@ -364,3 +363,4 @@ describe("DecisionButtons", () => {
       });
     });
   });
+});
