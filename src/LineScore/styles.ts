@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const Wrapper = styled.div`
   overflow-x: auto;
-  margin: 8px 0 4px;
+  margin: 8px 0 0;
 `;
 
 export const Table = styled.table`
@@ -12,7 +12,6 @@ export const Table = styled.table`
   background: #0a1628;
   color: #e8d5a3;
   width: 100%;
-  min-width: 340px;
 `;
 
 export const Th = styled.th<{ $accent?: boolean }>`
@@ -59,4 +58,41 @@ export const DividerTd = styled.td`
   border-left: 1px solid #1e3a5f;
   padding: 0;
   width: 4px;
+`;
+
+export const BsoRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 8px 4px;
+  background: #0a1628;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  color: #8abadf;
+  letter-spacing: 0.5px;
+`;
+
+export const BsoGroup = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 5px;
+`;
+
+export const Dot = styled.span<{ $on: boolean; $color: string }>`
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: ${({ $on, $color }) => ($on ? $color : "#1e3a5f")};
+  border: 1px solid ${({ $on, $color }) => ($on ? $color : "#2e4a6f")};
+`;
+
+export const GameOverBanner = styled.div`
+  background: #b30000;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 8px;
+  letter-spacing: 1px;
 `;

@@ -13,23 +13,33 @@ const EVENT_LABEL: Record<Hit, string> = {
 
 const HALF_ARROW = ["▲", "▼"] as const;
 
-const Heading = styled.div`
+const HeadingRow = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
   color: #888;
-  margin: 12px 0 6px;
+  margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
+`;
+
+const Toggle = styled.button`
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 0 2px;
+  &:hover { color: #aaa; }
 `;
 
 const Area = styled.div`
   overflow-y: auto;
   max-height: 200px;
-
-  @media (max-width: 800px) {
-    max-height: 120px;
-  }
+  @media (max-width: 800px) { max-height: 120px; }
 `;
 
 const Entry = styled.div`
@@ -60,29 +70,31 @@ const EmptyState = styled.div`
 
 const HitLog: React.FunctionComponent<{}> = () => {
   const { playLog, teams } = useGameContext();
+  const [collapsed, setCollapsed] = React.useState(false);
 
   return (
     <>
-      <Heading>Hit Log</Heading>
-      <Area>
-        {playLog.length === 0 ? (
-          <EmptyState>No hits yet.</EmptyState>
-        ) : (
-          [...playLog].reverse().map((entry, idx) => (
-            <Entry key={idx}>
-              <Label $hr={entry.event === Hit.Homerun}>
-                {EVENT_LABEL[entry.event]}
-              </Label>
-              <span>
-                {HALF_ARROW[entry.half]}{entry.inning} — {teams[entry.team]} #{entry.batterNum}
-              </span>
-              {entry.runs > 0 && (
-                <Runs>+{entry.runs} run{entry.runs !== 1 ? "s" : ""}</Runs>
-              )}
-            </Entry>
-          ))
-        )}
-      </Area>
+      <HeadingRow>
+        <span>Hit Log</span>
+        <Toggle onClick={() => setCollapsed(c => !c)} aria-label={collapsed ? "Expand hit log" : "Collapse hit log"}>
+          {collapsed ? "▶ show" : "▼ hide"}
+        </Toggle>
+      </HeadingRow>
+      {!collapsed && (
+        <Area>
+          {playLog.length === 0 ? (
+            <EmptyState>No hits yet.</EmptyState>
+          ) : (
+            [...playLog].reverse().map((entry, idx) => (
+              <Entry key={idx}>
+                <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
+                <span>{HALF_ARROW[entry.half]}{entry.inning} — {teams[entry.team]} #{entry.batterNum}</span>
+                {entry.runs > 0 && <Runs>+{entry.runs} run{entry.runs !== 1 ? "s" : ""}</Runs>}
+              </Entry>
+            ))
+          )}
+        </Area>
+      )}
     </>
   );
 };
