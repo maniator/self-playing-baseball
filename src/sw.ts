@@ -1,13 +1,23 @@
 /// <reference lib="webworker" />
 
-// Increment this tag whenever the SW changes so logs show the active version.
-const SW_VERSION = "1.1.0";
+// Increment this tag whenever the SW changes so logs identify the active build.
+const SW_VERSION = "1.2.0";
 
-const swLog = (...args: unknown[]): void =>
-  console.log(`[SW v${SW_VERSION}]`, ...args);
+// CSS-styled colored logging — visible in DevTools → Application → Service Workers → Inspect.
+// Green for normal events, amber for warnings, red for errors.
+const STYLE_TAG   = "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
+const STYLE_WARN  = "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
+const STYLE_ERR   = "background:#4a0000;color:#f87171;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
+const STYLE_RESET = "color:inherit;font-weight:normal";
 
-const swError = (...args: unknown[]): void =>
-  console.error(`[SW v${SW_VERSION}]`, ...args);
+const swLog = (msg: string, ...args: unknown[]): void =>
+  console.log(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_TAG, STYLE_RESET, ...args);
+
+const swWarn = (msg: string, ...args: unknown[]): void =>
+  console.warn(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_WARN, STYLE_RESET, ...args);
+
+const swError = (msg: string, ...args: unknown[]): void =>
+  console.error(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_ERR, STYLE_RESET, ...args);
 
 // Activate immediately on install so navigator.serviceWorker.ready resolves
 // on the very first page load without requiring a reload.
@@ -32,6 +42,20 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+// Log every page-controlled fetch so it's clear the SW is alive and intercepting.
+// We do NOT modify any responses — just pass everything through.
+self.addEventListener("fetch", (event) => {
+  const fe = event as FetchEvent;
+  swLog(`fetch intercepted — ${fe.request.method} ${fe.request.url}`);
+  // No respondWith() call: the browser uses its normal network path.
+});
+
+// Log messages sent from the page to the SW (rare, but good to surface).
+self.addEventListener("message", (event) => {
+  const me = event as ExtendableMessageEvent;
+  swLog("message received from page:", me.data);
+});
+
 // Handle notification action button clicks and notification body clicks.
 // Posts a NOTIFICATION_ACTION message back to the game page so it can
 // dispatch the correct reducer action without the user needing to open the tab.
@@ -50,19 +74,22 @@ self.addEventListener("notificationclick", (event) => {
 
         const client = windowClients[0];
         if (!client) {
-          swError("No window clients found — cannot deliver NOTIFICATION_ACTION");
+          swWarn("No window clients found — cannot deliver NOTIFICATION_ACTION; user may need to re-open the tab");
           return;
         }
 
-        swLog(`Posting NOTIFICATION_ACTION action="${action}" to client url="${client.url}"`);
-        // action is '' when the user clicks the notification body (not a button)
+        swLog(`Posting NOTIFICATION_ACTION action="${action}" to client — url="${client.url}"`);
+        // action is '' when the user clicks the notification body (not an action button)
         client.postMessage({
           type: "NOTIFICATION_ACTION",
           action,
           payload: ne.notification.data,
         });
 
-        return client.focus().then(() => swLog("client.focus() resolved"));
+        return client
+          .focus()
+          .then(() => swLog("client.focus() resolved — tab brought to foreground"))
+          .catch((err) => swWarn("client.focus() failed (may be blocked by browser):", err));
       })
       .catch((err) => swError("notificationclick handler failed:", err))
   );
