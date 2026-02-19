@@ -1,8 +1,7 @@
-import * as React  from "react";
+import * as React from "react";
 
 import styled from "styled-components";
 import { GameContext } from "../Context";
-import Announcements from "../Announcements";
 import Ball from "../Ball";
 
 const OutfieldDiv = styled.div`
@@ -13,8 +12,20 @@ const OutfieldDiv = styled.div`
   position: absolute;
   right: 35px;
   bottom: 75px;
-  transform: rotate(45deg); /* Equal to rotateZ(45deg) */
+  transform: rotate(45deg);
   z-index: -1;
+
+  @media (max-width: 800px) {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    height: 160px;
+    width: 160px;
+    margin: 0;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+    z-index: 0;
+  }
 `;
 
 const DiamondDiv = styled.div`
@@ -24,6 +35,11 @@ const DiamondDiv = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
+
+  @media (max-width: 800px) {
+    height: 80px;
+    width: 80px;
+  }
 `;
 
 const Mound = styled.div`
@@ -33,7 +49,7 @@ const Mound = styled.div`
   position: absolute;
   left: calc(50% - 50px);
   top: calc(50% - 50px);
-  
+
   &:after {
     display: block;
     content: "";
@@ -45,9 +61,23 @@ const Mound = styled.div`
     left: calc(50% - 25px);
     top: calc(50% - 25px);
   }
+
+  @media (max-width: 800px) {
+    height: 53px;
+    width: 53px;
+    left: calc(50% - 27px);
+    top: calc(50% - 27px);
+
+    &:after {
+      height: 27px;
+      width: 27px;
+      left: calc(50% - 14px);
+      top: calc(50% - 14px);
+    }
+  }
 `;
 
-const BaseDiv = styled.div`
+const BaseDiv = styled.div<{ playerOnBase?: boolean; isHome?: boolean; base: number }>`
   background: ${({ playerOnBase, isHome }) => playerOnBase ? "#3f4f7e" : isHome ? "#fff" : "#ff21b1"};
   height: 10px;
   width: 10px;
@@ -58,23 +88,22 @@ const BaseDiv = styled.div`
 `;
 
 const Diamond: React.FunctionComponent<{}> = () => {
-  const { dispatch, ...state } = React.useContext(GameContext);
-  const [ first, second, third ] = state.baseLayout;
+  const { ...state } = React.useContext(GameContext);
+  const [first, second, third] = state.baseLayout;
 
   return (
     <OutfieldDiv>
-
       <DiamondDiv>
         <Mound />
-        <BaseDiv base={0} isHome /> { /* home */ }
-        <BaseDiv base={1} playerOnBase={Boolean(first)} /> {/* first */}
-        <BaseDiv base={2} playerOnBase={Boolean(second)} /> {/* second */}
-        <BaseDiv base={3} playerOnBase={Boolean(third)} /> {/* third */}
+        <BaseDiv base={0} isHome />
+        <BaseDiv base={1} playerOnBase={Boolean(first)} />
+        <BaseDiv base={2} playerOnBase={Boolean(second)} />
+        <BaseDiv base={3} playerOnBase={Boolean(third)} />
 
         <Ball />
       </DiamondDiv>
     </OutfieldDiv>
   );
-}
+};
 
 export default Diamond;

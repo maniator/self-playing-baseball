@@ -1,11 +1,17 @@
-import * as React  from "react";
-import { GameContext, State } from "../Context";
+import * as React from "react";
+import { GameContext } from "../Context";
 
 import styled from "styled-components";
 
 const AnnouncementsArea = styled.div`
-  height: calc(100% - 150px);
-  overflow: scroll;
+  height: calc(100% - 190px);
+  overflow-y: auto;
+  padding-right: 8px;
+
+  @media (max-width: 800px) {
+    height: auto;
+    max-height: 35vh;
+  }
 `;
 
 const Log = styled.div`
@@ -20,6 +26,6 @@ const Announcements: React.FunctionComponent<{}> = () => {
       {log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)}
     </AnnouncementsArea>
   );
-}
+};
 
 export default Announcements;

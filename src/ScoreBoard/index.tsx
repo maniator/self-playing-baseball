@@ -1,4 +1,4 @@
-import * as React  from "react";
+import * as React from "react";
 
 import styled from "styled-components";
 import { ContextValue, GameContext } from "../Context";
@@ -7,29 +7,37 @@ const textColor = "#0F4880";
 
 const ScoreBoardDiv = styled.div`
   background: #fff;
-  height: 190px;
-  width: 120px;
-  padding: 0 10px;
+  min-height: 190px;
+  width: 140px;
+  padding: 6px 10px;
   position: absolute;
-  right: 55px;
-  top: 55px;
+  right: 30px;
+  top: 40px;
+
+  @media (max-width: 800px) {
+    position: static;
+    width: auto;
+    flex: 1;
+    min-height: auto;
+    margin: 0;
+  }
 `;
 
 const Score = styled.div`
-  height: 25px;
-  line-height: 25px;
-  font-size: 15px;
-  color: ${textColor};
-`
-
-const BatterStats = styled.div`
-  height: 25px;
+  min-height: 25px;
   line-height: 25px;
   font-size: 15px;
   color: ${textColor};
 `;
 
-const Team = styled.div`
+const BatterStats = styled.div`
+  min-height: 25px;
+  line-height: 25px;
+  font-size: 15px;
+  color: ${textColor};
+`;
+
+const Team = styled.div<{ teamAtBat: boolean }>`
   font-weight: ${({ teamAtBat }) => teamAtBat ? "bold" : "normal"};
   color: ${({ teamAtBat }) => teamAtBat ? "#b381b3" : textColor};
 `;
@@ -44,14 +52,14 @@ const ScoreBoard: React.FunctionComponent<{}> = () => {
           <Team teamAtBat={atBat === idx}>{teams[idx]}: {s}</Team>
         </Score>
       ))}
-      <hr/>
+      <hr />
       <BatterStats>Strikes: {strikes}</BatterStats>
       <BatterStats>Balls: {balls}</BatterStats>
       <BatterStats>Outs: {outs}</BatterStats>
-      <hr/>
+      <hr />
       <BatterStats>Inning: {inning}</BatterStats>
     </ScoreBoardDiv>
   );
-}
+};
 
 export default ScoreBoard;
