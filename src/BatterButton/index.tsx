@@ -7,10 +7,8 @@ import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
 import { setAnnouncementVolume, setAlertVolume, isSpeechPending, playVictoryFanfare, play7thInningStretch, setSpeechRate } from "../utilities/announce";
 import { buildReplayUrl } from "../utilities/rng";
-import { createLogger } from "../utilities/logger";
+import { appLog } from "../utilities/logger";
 import DecisionPanel from "../DecisionPanel";
-
-const appLog = createLogger("app");
 
 const Controls = styled.div`
   display: flex;
@@ -349,10 +347,66 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleManagerModeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setManagerMode(enabled);
-    if (enabled && typeof Notification !== "undefined" && Notification.permission === "default") {
-      Notification.requestPermission();
+    if (!enabled) return;
+    if (typeof Notification === "undefined") {
+      appLog.warn("Manager Mode enabled — Notification API not available in this browser");
+      return;
+    }
+    appLog.log(`Manager Mode enabled — current permission="${Notification.permission}"`);
+    if (Notification.permission === "default") {
+      appLog.log("Requesting notification permission…");
+      Notification.requestPermission().then(result => {
+        appLog.log(`Notification permission result="${result}"`);
+        setNotifPermission(result);
+      });
+    } else {
+      setNotifPermission(Notification.permission);
     }
   };
+
+  /** Send a test notification so the user can verify the full pipeline works. */
+  const handleTestNotification = React.useCallback(() => {
+    appLog.log("Test notification button clicked");
+    if (typeof Notification === "undefined") {
+      appLog.warn("Test notification — Notification API unavailable");
+      return;
+    }
+    const send = () => {
+      if ("serviceWorker" in navigator) {
+        appLog.log("Test — awaiting navigator.serviceWorker.ready");
+        navigator.serviceWorker.ready
+          .then(reg => {
+            appLog.log("SW ready — calling showNotification");
+            return reg.showNotification("⚾ Test — Self-Playing Baseball", {
+              body: "Notifications are working! You will see this for every Manager decision.",
+              tag: "test-notification",
+              requireInteraction: true,
+            });
+          })
+          .then(() => appLog.log("Test notification delivered to OS"))
+          .catch(err => {
+            appLog.error("SW showNotification failed:", err);
+            try { new Notification("⚾ Test — Self-Playing Baseball", { body: "Notifications are working!" }); }
+            catch (e) { appLog.error("Plain Notification fallback also failed:", e); }
+          });
+      } else {
+        try { new Notification("⚾ Test — Self-Playing Baseball", { body: "Notifications are working!" }); }
+        catch (e) { appLog.error("Plain Notification failed:", e); }
+      }
+    };
+    if (Notification.permission === "granted") {
+      send();
+    } else if (Notification.permission === "default") {
+      appLog.log("Test — requesting permission first");
+      Notification.requestPermission().then(result => {
+        appLog.log(`Permission result="${result}"`);
+        setNotifPermission(result);
+        if (result === "granted") send();
+      });
+    } else {
+      appLog.warn("Notifications blocked — user must enable in browser settings");
+    }
+  }, []);
 
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
@@ -459,6 +513,22 @@ const BatterButton: React.FunctionComponent<{}> = () => {
                   <option value="power">Power</option>
                 </Select>
               </ToggleLabel>
+              <Button onClick={handleTestNotification} title="Send a test browser notification to verify the pipeline">
+                Test 🔔
+              </Button>
+              {notifPermission === "granted" && (
+                <NotifBadge $ok={true}>🔔 on</NotifBadge>
+              )}
+              {notifPermission === "denied" && (
+                <NotifBadge $ok={false} title="Enable notifications in your browser settings">
+                  🔕 blocked
+                </NotifBadge>
+              )}
+              {notifPermission === "default" && (
+                <NotifBadge $ok={false} onClick={handleTestNotification} title="Click to grant notification permission">
+                  🔔 click to enable
+                </NotifBadge>
+              )}
             </>
           )}
         </AutoPlayGroup>

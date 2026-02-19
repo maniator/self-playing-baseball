@@ -6,15 +6,13 @@ import "./index.scss";
 
 import Game from "./Game";
 import { initSeedFromUrl } from "./utilities/rng";
-import { createLogger } from "./utilities/logger";
-
-const appLog = createLogger("app");
+import { appLog } from "./utilities/logger";
 
 initSeedFromUrl({ writeToUrl: true });
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
-    .register(new URL("./sw.ts", import.meta.url))
+    .register(new URL("./sw.ts", import.meta.url), { type: "module" })
     .then((reg) => appLog.log("SW registered — scope:", reg.scope))
     .catch((err) => appLog.error("SW registration failed:", err));
 }

@@ -33,6 +33,7 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     │   │                       #   setAnnouncementVolume, getAnnouncementVolume, setAlertVolume,
     │   │                       #   getAlertVolume, setSpeechRate, isSpeechPending, playDecisionChime
     │   ├── getRandomInt.ts     # Random number helper — delegates to rng.ts random()
+    │   ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │   └── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed
     ├── Context/
     │   ├── index.tsx           # GameContext, State interface, GameProviderWrapper
@@ -80,12 +81,12 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 
 `BatterButton/index.tsx` includes a fully self-contained auto-play system:
 
-- **Auto-play checkbox** — starts/stops a `setInterval` that calls the same `handleClickButton` used by manual play. Uses a `handleClickRef` so speed changes restart the interval cleanly without stale closures.
-- **`strikesRef`** — keeps the latest `strikes` value accessible to the interval without adding it to the `useEffect` dependency array, preventing interval restarts on every pitch.
-- **Speed selector** — Slow (1200 ms), Normal (700 ms), Fast (350 ms).
-- **Mute toggle** — calls `setMuted()` from `announce.ts` to suppress Web Speech API. Auto-enabled when auto-play is turned on.
-- **Manager Mode pausing** — when Manager Mode is ON and a `pendingDecision` is set, the auto-play `useEffect` returns early (no interval created). The interval restarts automatically once the decision is resolved (pendingDecision → null).
-- All settings are persisted in `localStorage` (`autoPlay`, `speed`, `muted`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
+- **Auto-play checkbox** — starts/stops a speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickButton`. Uses `handleClickRef` so speed changes take effect immediately without stale closures.
+- **`strikesRef`** — keeps the latest `strikes` value accessible without re-running the scheduler effect.
+- **Speed selector** — Slow (1200 ms), Normal (700 ms), Fast (350 ms). Speech rate scales with speed via `setSpeechRate()`.
+- **Volume sliders** — separate range inputs for 🔊 announcement (TTS) volume and 🔔 alert (chime/fanfare) volume (both 0–1, persisted to localStorage). `mutedRef` tracks `announcementVolume === 0` so the scheduler skips speech-wait when silent.
+- **Manager Mode pausing** — when Manager Mode is ON and a `pendingDecision` is set, the scheduler effect returns early. It restarts automatically once the decision is resolved (`pendingDecision → null`).
+- All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
 
 ---
 
@@ -119,19 +120,37 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 
 ## Notification System (Service Worker)
 
-`src/sw.ts` is a classic-script service worker (no `export`/`import`, bundled by Parcel as `dist/sw.js`):
+`src/sw.ts` is a **module service worker** registered with `{ type: "module" }` (Parcel 2.16.4+ compiles it to a non-module worker automatically when needed for older targets):
 
-- Registered in `src/index.tsx` via `navigator.serviceWorker.register(new URL('./sw.ts', import.meta.url))`. Registration success and failure are both logged to the main-page console (`[app] SW registered — scope: …`).
+- Registered in `src/index.tsx` via `navigator.serviceWorker.register(new URL('./sw.ts', import.meta.url), { type: "module" })`. Registration success/failure are both logged via `appLog`.
+- Imports `@parcel/service-worker` for `manifest` (list of all bundle URLs) and `version` (hash that changes each build). Uses these to pre-cache all bundles on `install` and clean stale caches on `activate`.
+- Implements a **network-first + cache fallback** fetch handler for same-origin GET requests.
 - Listens for `notificationclick` events (both notification-body click and action-button click).
 - Posts `{ type: 'NOTIFICATION_ACTION', action: string, payload: DecisionType }` to the first available `WindowClient`.
 - Always calls `client.focus()` to bring the tab to the foreground.
-- **Logging**: every lifecycle event (`install`, `activate`, `notificationclick`, `message`) emits CSS-colored `console.log` messages (green tag, amber warn, red error). These appear in DevTools → Application → Service Workers → **Inspect** console. Increment `SW_VERSION` at the top of `sw.ts` whenever the file changes so logs identify which build is active.
+- **Logging**: imports `createLogger` from `utilities/logger.ts` and creates its own `log` singleton tagged with the Parcel `version` hash (first 8 chars). Every lifecycle event (`install`, `activate`, `fetch`, `notificationclick`, `message`) emits CSS-colored console messages visible in DevTools → Application → Service Workers → **Inspect** console.
 
 **Action strings** match reducer action identifiers: `steal`, `bunt`, `take`, `swing`, `protect`, `normal`, `ibb`, `skip`, `focus` (focus-only, no game action).
 
 Notifications use `requireInteraction: true` so they stay visible until the user acts. Tagged `"manager-decision"` so duplicate notifications replace the previous one and they can be closed programmatically when the decision resolves.
 
 **Graceful degradation:** if the SW or Notifications API is unavailable, the chime and in-page panel still work normally; the notification step is silently skipped.
+
+---
+
+## Shared Logger (`src/utilities/logger.ts`)
+
+Two singletons are vended from this module — one per runtime context:
+
+- **`appLog`** — pre-created singleton exported from `logger.ts`. Import this directly in all main-app files. The ES module cache guarantees exactly one instance per page load.
+- **SW logger** — `sw.ts` imports `createLogger` and creates its own singleton: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)`.
+
+Both produce identical CSS `%c` badge output:
+- 🟢 Green tag — normal log events
+- 🟡 Amber tag — warnings  
+- 🔴 Red tag — errors
+
+**Do not** call `createLogger("app")` in individual app files — import `{ appLog }` from `utilities/logger` instead.
 
 ---
 
@@ -196,7 +215,7 @@ Since there are no automated tests or linters, validate changes by:
 
 - **No `tsconfig.json`:** TypeScript options are inferred by Parcel. Do not add a `tsconfig.json` unless also configuring Parcel to use it.
 - **Parcel v2 (not v1):** The bundler is now `parcel` (not `parcel-bundler`). Use Parcel v2 conventions: the HTML `<script>` tag requires `type="module"`, node_modules CSS must be imported from JS/TS (not SCSS `@import`), and there is no `"main"` field in `package.json`.
-- **Service worker must be a classic script:** `src/sw.ts` must NOT use `export` or `import` statements (Parcel will error: "Service workers cannot have imports or exports without the `type: 'module'` option"). Use `/// <reference lib="webworker" />` for types only.
+- **Service worker is a module worker:** `src/sw.ts` uses `import`/`export` and is registered with `{ type: "module" }`. Parcel 2.16.4 bundles it correctly and downgrades to a classic worker automatically when the browserslist targets require it. The `/// <reference lib="webworker" />` directive at the top provides TypeScript types for `self`, `clients`, `ExtendableEvent`, `NotificationEvent`, etc.
 - **React 19:** Entry point uses `createRoot` from `react-dom/client` (not the old `ReactDOM.render`).
 - **React import style:** Files use `import * as React from "react"` (not the default import). Follow this pattern.
 - **Styled-components v6:** Use the v6 API. Custom props on styled components **must** be typed via generics, e.g. `styled.div<{ teamAtBat: boolean }>`. Use `$propName` (transient props) for non-HTML props to prevent DOM forwarding warnings.

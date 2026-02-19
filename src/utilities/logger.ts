@@ -1,21 +1,16 @@
 /**
- * Shared colored console logger for the main app.
+ * Shared colored console logger.
  *
- * Usage:
- *   import { createLogger } from "../utilities/logger";
- *   const log = createLogger("app");
- *   log.log("SW registered — scope:", reg.scope);
- *   log.warn("permission denied");
- *   log.error("fatal:", err);
+ * Two singletons are vended from this module:
+ *   - `appLog` — singleton for the main-app context (imported directly by app files).
+ *     The ES module cache ensures it is created exactly once per page load.
+ *   - SW logger — the service worker imports `createLogger` and creates its own
+ *     singleton tagged with its version: `createLogger(\`SW v${SW_VERSION}\`)`.
  *
- * Produces a coloured badge in DevTools that looks identical to the SW logger.
- *
- * NOTE: src/sw.ts is a classic service-worker script and cannot import modules.
- *       The CSS constants below are therefore duplicated there.
- *       If you change the colours here, update sw.ts to match.
+ * Both produce the same styled badge output in DevTools.
+ * To view SW logs: DevTools → Application → Service Workers → Inspect.
  */
 
-// CSS badge styles — keep in sync with STYLE_* constants in src/sw.ts.
 export const LOG_STYLES = {
   info:  "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
   warn:  "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
@@ -30,10 +25,10 @@ export interface AppLogger {
 }
 
 /**
- * Creates a coloured console logger that prefixes every message with a
- * styled `tag` badge — identical in appearance to the SW logger in sw.ts.
+ * Creates a coloured console logger whose every message is prefixed with a
+ * styled `tag` badge.
  *
- * @param tag  Short label shown in the badge, e.g. "app" or "DecisionPanel".
+ * @param tag  Short label shown in the badge, e.g. "app" or "SW v1.3.0".
  */
 export const createLogger = (tag: string): AppLogger => ({
   log: (msg: string, ...rest: unknown[]) =>
@@ -43,3 +38,9 @@ export const createLogger = (tag: string): AppLogger => ({
   error: (msg: string, ...rest: unknown[]) =>
     console.error(`%c ${tag} %c ${msg}`, LOG_STYLES.error, LOG_STYLES.reset, ...rest),
 });
+
+/**
+ * Singleton logger for the main-app context.
+ * Import this directly — do not call `createLogger("app")` again in app files.
+ */
+export const appLog: AppLogger = createLogger("app");

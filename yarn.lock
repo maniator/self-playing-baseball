@@ -879,6 +879,11 @@
     "@parcel/rust-linux-x64-musl" "2.16.4"
     "@parcel/rust-win32-x64-msvc" "2.16.4"
 
+"@parcel/service-worker@^2.16.4":
+  version "2.16.4"
+  resolved "https://registry.yarnpkg.com/@parcel/service-worker/-/service-worker-2.16.4.tgz#b79d7b41b80d5f8472624da3a17b3024b700de54"
+  integrity sha512-VCTFi4eWh/5Fxi7oiVqNQRNSIJhTdQVc4cO8hWg3FF8VURIkOjYFaWNp/1HAjkdb3CxiA5E9UBTDmll329IrNA==
+
 "@parcel/source-map@^2.1.1":
   version "2.1.1"
   resolved "https://registry.yarnpkg.com/@parcel/source-map/-/source-map-2.1.1.tgz#fb193b82dba6dd62cc7a76b326f57bb35000a782"

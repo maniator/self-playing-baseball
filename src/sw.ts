@@ -1,62 +1,90 @@
 /// <reference lib="webworker" />
+import { manifest, version } from "@parcel/service-worker";
+import { createLogger } from "./utilities/logger";
 
-// Increment this tag whenever the SW changes so logs identify the active build.
-const SW_VERSION = "1.3.0";
+// Singleton logger for the service worker.
+// The main app uses the `appLog` singleton exported from utilities/logger.ts.
+// `version` comes from @parcel/service-worker and changes every time the bundle changes,
+// so it serves as a built-in version tag (no manual SW_VERSION constant needed).
+const log = createLogger(`SW ${version.slice(0, 8)}`);
 
-// CSS badge styles for colored console logging.
-// Visible in DevTools → Application → Service Workers → Inspect.
-// IMPORTANT: keep in sync with LOG_STYLES in src/utilities/logger.ts.
-// (The SW is a classic script and cannot import modules, so these are duplicated here.)
-const STYLE_TAG   = "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
-const STYLE_WARN  = "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
-const STYLE_ERR   = "background:#4a0000;color:#f87171;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px";
-const STYLE_RESET = "color:inherit;font-weight:normal";
+// ---------------------------------------------------------------------------
+// Pre-caching — install all bundles from the Parcel manifest into a versioned
+// cache so the app works offline and upgrades atomically.
+// ---------------------------------------------------------------------------
+async function install() {
+  log.log(`install — pre-caching ${manifest.length} bundle(s)`);
+  const cache = await caches.open(version);
+  await cache.addAll(manifest);
+  log.log("install — pre-cache complete, calling skipWaiting()");
+  await (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+  log.log("skipWaiting() resolved — SW will activate immediately");
+}
 
-const swLog = (msg: string, ...args: unknown[]): void =>
-  console.log(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_TAG, STYLE_RESET, ...args);
+async function activate() {
+  log.log("activate — cleaning up old caches");
+  const keys = await caches.keys();
+  const deleted = await Promise.all(
+    keys.map(key => {
+      if (key !== version) {
+        log.log(`activate — deleting stale cache "${key}"`);
+        return caches.delete(key);
+      }
+      return Promise.resolve(false);
+    })
+  );
+  const count = deleted.filter(Boolean).length;
+  log.log(`activate — removed ${count} stale cache(s), calling clients.claim()`);
+  await (clients as Clients).claim();
+  log.log("clients.claim() resolved — SW is now controlling all clients");
+}
 
-const swWarn = (msg: string, ...args: unknown[]): void =>
-  console.warn(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_WARN, STYLE_RESET, ...args);
+self.addEventListener("install",  (e) => (e as ExtendableEvent).waitUntil(install()));
+self.addEventListener("activate", (e) => (e as ExtendableEvent).waitUntil(activate()));
 
-const swError = (msg: string, ...args: unknown[]): void =>
-  console.error(`%c SW v${SW_VERSION} %c ${msg}`, STYLE_ERR, STYLE_RESET, ...args);
+// ---------------------------------------------------------------------------
+// Network-first fetch with cache fallback for navigation requests.
+// ---------------------------------------------------------------------------
+self.addEventListener("fetch", (event) => {
+  const fe = event as FetchEvent;
+  // Only handle same-origin GET requests; let everything else pass through.
+  if (fe.request.method !== "GET") return;
+  try {
+    const url = new URL(fe.request.url);
+    if (url.origin !== location.origin) return;
+  } catch {
+    return;
+  }
 
-// Activate immediately on install so navigator.serviceWorker.ready resolves
-// on the very first page load without requiring a reload.
-self.addEventListener("install", (event) => {
-  swLog("install event fired — calling skipWaiting()");
-  (event as ExtendableEvent).waitUntil(
-    (self as unknown as ServiceWorkerGlobalScope)
-      .skipWaiting()
-      .then(() => swLog("skipWaiting() resolved — SW will activate immediately"))
-      .catch((err) => swError("skipWaiting() failed:", err))
+  fe.respondWith(
+    fetch(fe.request)
+      .then(response => {
+        // Update the cache with the fresh response.
+        const clone = response.clone();
+        caches.open(version).then(cache => cache.put(fe.request, clone));
+        return response;
+      })
+      .catch(() => caches.match(fe.request).then(r => r ?? Response.error()))
   );
 });
 
-// Claim all open windows so this SW controls them right away.
-self.addEventListener("activate", (event) => {
-  swLog("activate event fired — calling clients.claim()");
-  (event as ExtendableEvent).waitUntil(
-    (clients as Clients)
-      .claim()
-      .then(() => swLog("clients.claim() resolved — SW is now controlling all clients"))
-      .catch((err) => swError("clients.claim() failed:", err))
-  );
-});
-
+// ---------------------------------------------------------------------------
 // Log messages sent from the page to the SW (rare, but useful for debugging).
+// ---------------------------------------------------------------------------
 self.addEventListener("message", (event) => {
   const me = event as ExtendableMessageEvent;
-  swLog("message received from page:", me.data);
+  log.log("message received from page:", me.data);
 });
 
+// ---------------------------------------------------------------------------
 // Handle notification action button clicks and notification body clicks.
 // Posts a NOTIFICATION_ACTION message back to the game page so it can
 // dispatch the correct reducer action without the user needing to open the tab.
+// ---------------------------------------------------------------------------
 self.addEventListener("notificationclick", (event) => {
   const ne = event as NotificationEvent;
   const action = ne.action || "focus";
-  swLog(`notificationclick fired — action="${action}", tag="${ne.notification.tag}"`);
+  log.log(`notificationclick fired — action="${action}", tag="${ne.notification.tag}"`);
   ne.notification.close();
 
   ne.waitUntil(
@@ -64,16 +92,15 @@ self.addEventListener("notificationclick", (event) => {
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         const windowClients = clientList as WindowClient[];
-        swLog(`matchAll found ${windowClients.length} window client(s)`);
+        log.log(`matchAll found ${windowClients.length} window client(s)`);
 
         const client = windowClients[0];
         if (!client) {
-          swWarn("No window clients found — cannot deliver NOTIFICATION_ACTION; user may need to re-open the tab");
+          log.warn("No window clients found — cannot deliver NOTIFICATION_ACTION; user may need to re-open the tab");
           return;
         }
 
-        swLog(`Posting NOTIFICATION_ACTION action="${action}" to client — url="${client.url}"`);
-        // action is '' when the user clicks the notification body (not an action button)
+        log.log(`Posting NOTIFICATION_ACTION action="${action}" to client — url="${client.url}"`);
         client.postMessage({
           type: "NOTIFICATION_ACTION",
           action,
@@ -82,9 +109,10 @@ self.addEventListener("notificationclick", (event) => {
 
         return client
           .focus()
-          .then(() => swLog("client.focus() resolved — tab brought to foreground"))
-          .catch((err) => swWarn("client.focus() failed (may be blocked by browser):", err));
+          .then(() => log.log("client.focus() resolved — tab brought to foreground"))
+          .catch((err) => log.warn("client.focus() failed (may be blocked by browser):", err));
       })
-      .catch((err) => swError("notificationclick handler failed:", err))
+      .catch((err) => log.error("notificationclick handler failed:", err))
   );
 });
+

@@ -2,9 +2,7 @@ import * as React from "react";
 import styled from "styled-components";
 import { ContextValue, GameContext, DecisionType, Strategy } from "../Context";
 import { playDecisionChime } from "../utilities/announce";
-import { createLogger } from "../utilities/logger";
-
-const appLog = createLogger("app");
+import { appLog } from "../utilities/logger";
 
 const DECISION_TIMEOUT_SEC = 10;
 const NOTIF_TAG = "manager-decision";
