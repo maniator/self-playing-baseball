@@ -1,6 +1,6 @@
 import * as React  from "react";
 
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { ContextValue, GameContext, State } from "../Context";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
@@ -27,7 +27,7 @@ const outfield = {
 
 const BatterButton = React.forwardRef<BatterButtonHandle, {}>((_, ref) => {
   const { dispatch, dispatchLog, strikes }: ContextValue = React.useContext(GameContext);
-  const log = (message) =>
+  const log = (message: string) =>
     dispatchLog({ type: "log", payload: message });
 
   const handleClickButton = () => {
@@ -56,7 +56,11 @@ const BatterButton = React.forwardRef<BatterButtonHandle, {}>((_, ref) => {
 
   React.useEffect(() => {
     window.addEventListener("keyup", handlePitch, false);
-  }, [])
+
+    return () => {
+      window.removeEventListener("keyup", handlePitch, false);
+    }
+  }, [handlePitch])
 
   React.useImperativeHandle(ref, () => ({
     trigger: handleClickButton

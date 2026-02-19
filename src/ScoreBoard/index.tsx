@@ -1,6 +1,6 @@
 import * as React  from "react";
 
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { ContextValue, GameContext } from "../Context";
 
 const textColor = "#0F4880";

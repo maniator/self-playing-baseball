@@ -19,8 +19,17 @@ const parseSeed = (seedString: string): number | null => {
     return null;
   }
 
-  const radix = /[a-z]/i.test(trimmed) ? 36 : 10;
-  const parsed = parseInt(trimmed, radix);
+  const isBase36 = /^[0-9a-z]+$/i.test(trimmed);
+  const isDecimal = /^[0-9]+$/.test(trimmed);
+  let parsed: number;
+
+  if (isBase36) {
+    parsed = parseInt(trimmed, 36);
+  } else if (isDecimal) {
+    parsed = parseInt(trimmed, 10);
+  } else {
+    return null;
+  }
 
   if (!Number.isFinite(parsed)) {
     return null;
@@ -29,6 +38,8 @@ const parseSeed = (seedString: string): number | null => {
   return parsed >>> 0;
 };
 
+// Note: Math.random is intentionally only used here to create a new seed when
+// none is provided. All gameplay randomness comes from the deterministic PRNG.
 const generateSeed = (): number => (
   ((Math.random() * 0xffffffff) ^ Date.now()) >>> 0
 );
@@ -39,7 +50,16 @@ export const initSeedFromUrl = ({ writeToUrl = false }: SeedInitOptions = {}): n
   }
 
   if (seed !== null && rng) {
-    return seed;
+    const url = new URL(window.location.href);
+    const seedParam = url.searchParams.get("seed");
+    const parsedFromUrl = seedParam ? parseSeed(seedParam) : null;
+
+    if (parsedFromUrl !== null && parsedFromUrl !== seed) {
+      seed = null;
+      rng = null;
+    } else {
+      return seed;
+    }
   }
 
   const url = new URL(window.location.href);

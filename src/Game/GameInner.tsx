@@ -4,7 +4,7 @@ import BatterButton from "../BatterButton";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
-import styled from "styled-components";
+import { styled } from "styled-components";
 import { GameContext } from "../Context";
 import { buildReplayUrl } from "../utilities/rng";
 import { setAnnouncementsMuted, cancelAnnouncements } from "../utilities/announce";
@@ -23,7 +23,7 @@ const GameDiv = styled.main`
   border: 1px solid #884e4e;
   padding: 30px;
   margin: 0 auto;
-  overflow: visible;
+  overflow-x: hidden;
 
   @media (max-width: 768px) {
     min-height: auto;
@@ -60,7 +60,6 @@ const Input = styled.input`
 
 const Controls = styled.div`
   display: flex;
-  align-items: center;
   gap: 10px;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -79,18 +78,30 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
   const batterRef = React.useRef<{ trigger: () => void } | null>(null);
   const [autoPlay, setAutoPlay] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const stored = window.localStorage.getItem("autoPlayEnabled");
-    return stored ? stored === "true" : false;
+    try {
+      const stored = window.localStorage.getItem("autoPlayEnabled");
+      return stored ? stored === "true" : false;
+    } catch {
+      return false;
+    }
   });
   const [autoPlaySpeed, setAutoPlaySpeed] = React.useState<"slow" | "normal" | "fast">(() => {
     if (typeof window === "undefined") return "normal";
-    const stored = window.localStorage.getItem("autoPlaySpeed");
-    return stored === "slow" || stored === "fast" ? stored : "normal";
+    try {
+      const stored = window.localStorage.getItem("autoPlaySpeed");
+      return stored === "slow" || stored === "fast" ? stored : "normal";
+    } catch {
+      return "normal";
+    }
   });
   const [muted, setMuted] = React.useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    const stored = window.localStorage.getItem("announcementsMuted");
-    return stored ? stored === "true" : false;
+    try {
+      const stored = window.localStorage.getItem("announcementsMuted");
+      return stored ? stored === "true" : false;
+    } catch {
+      return false;
+    }
   });
 
   React.useEffect(() => {
@@ -115,9 +126,14 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
   }
 
   React.useEffect(() => {
-    window.localStorage.setItem("autoPlayEnabled", autoPlay ? "true" : "false");
-    window.localStorage.setItem("autoPlaySpeed", autoPlaySpeed);
-    window.localStorage.setItem("announcementsMuted", muted ? "true" : "false");
+    try {
+      window.localStorage.setItem("autoPlayEnabled", autoPlay ? "true" : "false");
+      window.localStorage.setItem("autoPlaySpeed", autoPlaySpeed);
+      window.localStorage.setItem("announcementsMuted", muted ? "true" : "false");
+    } catch {
+      // Ignore persistence errors (e.g., private mode)
+    }
+
     setAnnouncementsMuted(muted);
   }, [autoPlay, autoPlaySpeed, muted]);
 
@@ -133,7 +149,13 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
     };
 
     const interval = window.setInterval(() => {
-      batterRef.current?.trigger();
+      if (!batterRef.current) {
+        window.clearInterval(interval);
+        setAutoPlay(false);
+        return;
+      }
+
+      batterRef.current.trigger();
     }, speedMap[autoPlaySpeed]);
 
     return () => window.clearInterval(interval);
@@ -145,7 +167,16 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
     cancelAnnouncements();
 
     if (next) {
-      setMuted(true);
+      try {
+        const hasAutoMuted = window.localStorage.getItem("autoPlayHasAutoMuted");
+
+        if (!hasAutoMuted) {
+          setMuted(true);
+          window.localStorage.setItem("autoPlayHasAutoMuted", "true");
+        }
+      } catch {
+        setMuted(true);
+      }
     }
   }
 
@@ -161,15 +192,11 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
     try {
       await navigator.clipboard.writeText(replayUrl);
 
-      if (dispatchLog) {
-        dispatchLog({ type: "log", payload: "Replay link copied!" });
-      }
+      dispatchLog({ type: "log", payload: "Replay link copied!" });
     } catch (error) {
       window.prompt("Copy this replay link", replayUrl);
 
-      if (dispatchLog) {
-        dispatchLog({ type: "log", payload: "Replay link copied!" });
-      }
+      dispatchLog({ type: "log", payload: "Replay link could not be copied automatically. Please copy from the prompt." });
     }
   }
 

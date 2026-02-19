@@ -1,7 +1,7 @@
 import * as React  from "react";
 import { GameContext, State } from "../Context";
 
-import styled from "styled-components";
+import { styled } from "styled-components";
 
 const AnnouncementsArea = styled.div`
   height: calc(100% - 150px);
