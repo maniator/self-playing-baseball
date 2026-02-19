@@ -6,7 +6,7 @@ import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
 import { cancelAnnouncements } from "../utilities/announce";
 
-export const runBatterUp = (dispatch: Function, dispatchLog: Function, strikes: number) => {
+export const runBatterUp = (dispatch: React.Dispatch<any>, dispatchLog: React.Dispatch<any>, strikes: number) => {
   const log = (message: string) =>
     dispatchLog({ type: "log", payload: message });
 
@@ -48,8 +48,9 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     runBatterUp(dispatch, dispatchLog, strikes);
   };
 
-  const handlePitch = (event: any) => {
-    if (event.target.type !== "text") {
+  const handlePitch = (event: KeyboardEvent) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement) || target.type !== "text") {
       handleClickButton();
     }
   }

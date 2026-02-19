@@ -1,7 +1,7 @@
 const synth = window.speechSynthesis;
 let announcementsMuted = false;
 
-export const announce = (message) => {
+export const announce = (message: string) => {
   if (announcementsMuted) {
     return;
   }
@@ -17,7 +17,7 @@ export const cancelAnnouncements = () => synth.cancel();
 
 export const canAnnounce = () => !(synth.speaking || synth.pending);
 
-export const setAnnouncementsMuted = (muted) => {
+export const setAnnouncementsMuted = (muted: boolean) => {
   announcementsMuted = muted;
 };
 

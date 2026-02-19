@@ -121,6 +121,12 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
     window.localStorage.setItem(AUTOPLAY_SPEED_STORAGE_KEY, autoPlaySpeed);
   }, [autoPlaySpeed]);
 
+  const strikesRef = React.useRef(strikes);
+
+  React.useEffect(() => {
+    strikesRef.current = strikes;
+  }, [strikes]);
+
   React.useEffect(() => {
     if (!isAutoPlayEnabled) {
       return;
@@ -128,13 +134,13 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
     const intervalMs = AUTOPLAY_SPEEDS[autoPlaySpeed];
     const intervalId = window.setInterval(() => {
-      runBatterUp(dispatch, dispatchLog, strikes);
+      runBatterUp(dispatch, dispatchLog, strikesRef.current);
     }, intervalMs);
 
     return () => {
       window.clearInterval(intervalId);
     };
-  }, [isAutoPlayEnabled, autoPlaySpeed, dispatch, dispatchLog, strikes]);
+  }, [isAutoPlayEnabled, autoPlaySpeed, dispatch, dispatchLog]);
 
   React.useEffect(() => {
     return () => {
