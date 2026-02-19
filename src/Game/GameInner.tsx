@@ -23,8 +23,10 @@ const GameDiv = styled.main`
   overflow: hidden;
 
   @media (max-width: 800px) {
+    min-height: auto;
     overflow: auto;
-    padding-bottom: 28px;
+    padding: 12px;
+    padding-bottom: 16px;
   }
 `;
 
@@ -42,6 +44,19 @@ const Input = styled.input`
   color: #fff;
   width: 120px;
   margin: 0 5px;
+  border: 1px solid #555;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: inherit;
+`;
+
+const SidePanel = styled.div`
+  @media (max-width: 800px) {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin: 8px 0;
+  }
 `;
 
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
@@ -81,8 +96,10 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
         <BatterButton />
       </GameInfo>
-      <ScoreBoard />
-      <Diamond />
+      <SidePanel>
+        <ScoreBoard />
+        <Diamond />
+      </SidePanel>
       <Announcements />
     </GameDiv>
   );

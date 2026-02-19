@@ -16,8 +16,10 @@ const ScoreBoardDiv = styled.div`
 
   @media (max-width: 800px) {
     position: static;
-    width: 100%;
-    margin: 10px 0;
+    width: auto;
+    flex: 1;
+    min-height: auto;
+    margin: 0;
   }
 `;
 

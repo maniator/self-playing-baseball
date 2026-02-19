@@ -19,8 +19,12 @@ const OutfieldDiv = styled.div`
     position: relative;
     right: auto;
     bottom: auto;
-    margin: 10px auto;
-    transform: rotate(45deg) scale(0.8);
+    height: 160px;
+    width: 160px;
+    margin: 0;
+    transform: rotate(45deg);
+    flex-shrink: 0;
+    z-index: 0;
   }
 `;
 
@@ -31,6 +35,11 @@ const DiamondDiv = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
+
+  @media (max-width: 800px) {
+    height: 80px;
+    width: 80px;
+  }
 `;
 
 const Mound = styled.div`
@@ -51,6 +60,21 @@ const Mound = styled.div`
     background: #886c36;
     left: calc(50% - 25px);
     top: calc(50% - 25px);
+  }
+
+  @media (max-width: 800px) {
+    /* scaled ~0.53× from desktop (160px outfield vs 300px) */
+    height: 53px;
+    width: 53px;
+    left: calc(50% - 27px);
+    top: calc(50% - 27px);
+
+    &:after {
+      height: 27px;
+      width: 27px;
+      left: calc(50% - 14px);
+      top: calc(50% - 14px);
+    }
   }
 `;
 

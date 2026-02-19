@@ -21,13 +21,25 @@ const Button = styled.button`
   border-radius: 30px;
   cursor: pointer;
   border: none;
+  font-family: inherit;
+  font-size: 14px;
 `;
 
 const SubtleButton = styled(Button)`
   background: #2f3f69;
   color: #fff;
-  border-radius: 16px;
-  padding: 8px 12px;
+  border-radius: 30px;
+  padding: 12px 18px;
+`;
+
+const AutoPlayGroup = styled.div`
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  background: rgba(47, 63, 105, 0.5);
+  border-radius: 10px;
+  padding: 5px 10px;
 `;
 
 const ToggleLabel = styled.label`
@@ -35,12 +47,25 @@ const ToggleLabel = styled.label`
   align-items: center;
   gap: 6px;
   font-size: 13px;
+  cursor: pointer;
+
+  & input[type="checkbox"] {
+    accent-color: aquamarine;
+    cursor: pointer;
+    width: 14px;
+    height: 14px;
+  }
 `;
 
 const Select = styled.select`
-  background: #000;
-  border: 1px solid #666;
+  background: #1a2440;
+  border: 1px solid #4a6090;
   color: #fff;
+  border-radius: 8px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 13px;
+  font-family: inherit;
 `;
 
 const STORAGE_KEYS = {
@@ -139,22 +164,24 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     <Controls>
       <Button onClick={handleClickButton}>Batter Up!</Button>
       <SubtleButton onClick={handleShareReplay}>Share replay</SubtleButton>
-      <ToggleLabel>
-        <input type="checkbox" checked={autoPlayEnabled} onChange={() => setAutoPlayEnabled(!autoPlayEnabled)} />
-        Auto-play
-      </ToggleLabel>
-      <ToggleLabel>
-        Speed
-        <Select value={speed} onChange={(event) => setSpeed(event.target.value)}>
-          <option value="1200">Slow</option>
-          <option value="700">Normal</option>
-          <option value="350">Fast</option>
-        </Select>
-      </ToggleLabel>
-      <ToggleLabel>
-        <input type="checkbox" checked={mute} onChange={() => setMute(!mute)} />
-        Mute
-      </ToggleLabel>
+      <AutoPlayGroup>
+        <ToggleLabel>
+          <input type="checkbox" checked={autoPlayEnabled} onChange={() => setAutoPlayEnabled(!autoPlayEnabled)} />
+          Auto-play
+        </ToggleLabel>
+        <ToggleLabel>
+          Speed
+          <Select value={speed} onChange={(event) => setSpeed(event.target.value)}>
+            <option value="1200">Slow</option>
+            <option value="700">Normal</option>
+            <option value="350">Fast</option>
+          </Select>
+        </ToggleLabel>
+        <ToggleLabel>
+          <input type="checkbox" checked={mute} onChange={() => setMute(!mute)} />
+          Mute
+        </ToggleLabel>
+      </AutoPlayGroup>
     </Controls>
   );
 };
