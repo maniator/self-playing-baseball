@@ -4,8 +4,9 @@ import { GameContext, State } from "../Context";
 import styled from "styled-components";
 
 const AnnouncementsArea = styled.div`
-  height: calc(100% - 150px);
-  overflow: scroll;
+  min-height: 180px;
+  max-height: 320px;
+  overflow: auto;
 `;
 
 const Log = styled.div`

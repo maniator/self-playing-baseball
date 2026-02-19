@@ -10,11 +10,15 @@ const OutfieldDiv = styled.div`
   width: 300px;
   background: #AAC32B;
   border-radius: 100% 0 0 0;
-  position: absolute;
-  right: 35px;
-  bottom: 75px;
+  position: relative;
+  margin-left: auto;
   transform: rotate(45deg); /* Equal to rotateZ(45deg) */
-  z-index: -1;
+
+  @media (max-width: 700px) {
+    margin: 0 auto;
+    height: 220px;
+    width: 220px;
+  }
 `;
 
 const DiamondDiv = styled.div`
@@ -24,6 +28,11 @@ const DiamondDiv = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
+
+  @media (max-width: 700px) {
+    height: 120px;
+    width: 120px;
+  }
 `;
 
 const Mound = styled.div`

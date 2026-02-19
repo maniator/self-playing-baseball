@@ -7,12 +7,14 @@ const textColor = "#0F4880";
 
 const ScoreBoardDiv = styled.div`
   background: #fff;
-  height: 190px;
-  width: 120px;
+  min-height: 190px;
+  width: 180px;
   padding: 0 10px;
-  position: absolute;
-  right: 55px;
-  top: 55px;
+
+  @media (max-width: 700px) {
+    width: 100%;
+    box-sizing: border-box;
+  }
 `;
 
 const Score = styled.div`

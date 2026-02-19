@@ -13,9 +13,14 @@ type BatterButtonHandle = {
 const Button = styled.button`
   background: aquamarine;
   color: darkblue;
-  padding: 20px;
+  padding: 14px 18px;
   border-radius: 30px;
   cursor: pointer;
+
+  @media (max-width: 700px) {
+    width: 100%;
+    text-align: center;
+  }
 `;
 
 const outfield = {
