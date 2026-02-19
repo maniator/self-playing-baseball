@@ -33,22 +33,36 @@ interface ServiceWorkerNotificationOptions extends NotificationOptions {
   data?: unknown;
 }
 
-/** Show a service-worker notification with action buttons. Falls back to plain Notification. */
+/** Show a service-worker notification with action buttons.
+ *  Shown regardless of tab visibility so the user can verify the feature works.
+ *  Falls back to a plain Notification if the SW path fails. */
 const showManagerNotification = (d: DecisionType): void => {
-  if (typeof Notification === "undefined" || Notification.permission !== "granted" || !document.hidden) return;
+  if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+
+  const title = "⚾ Your turn, Manager!";
+  const body = getNotificationBody(d);
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.ready
-      .then(reg => reg.showNotification("Your turn, Manager!", {
-        body: getNotificationBody(d),
+      .then(reg => reg.showNotification(title, {
+        body,
         tag: NOTIF_TAG,
         actions: getNotificationActions(d),
         data: d,
         requireInteraction: false,
       } as ServiceWorkerNotificationOptions))
-      .catch(() => {});
+      .catch(() => {
+        // SW notification failed (e.g. browser doesn't support actions) — fall back
+        try {
+          const n = new Notification(title, { body, tag: NOTIF_TAG });
+          setTimeout(() => n.close(), 8000);
+        } catch (_) {}
+      });
   } else {
-    const n = new Notification("Your turn, Manager!", { body: getNotificationBody(d) });
-    setTimeout(() => n.close(), 8000);
+    try {
+      const n = new Notification(title, { body });
+      setTimeout(() => n.close(), 8000);
+    } catch (_) {}
   }
 };
 
