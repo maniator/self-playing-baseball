@@ -4,6 +4,8 @@ import GameControls from "../GameControls";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
+import HitLog from "../HitLog";
+import LineScore from "../LineScore";
 import InstructionsModal from "../InstructionsModal";
 import { GameContext, useGameContext } from "../Context";
 import { GameDiv, GameInfo, Input, GameBody, LeftPanel, RightPanel } from "./styles";
@@ -48,9 +50,11 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         <GameControls />
         <InstructionsModal />
       </GameInfo>
+      <LineScore />
       <GameBody>
         <LeftPanel>
           <Announcements />
+          <HitLog />
         </LeftPanel>
         <RightPanel>
           <ScoreBoard />
