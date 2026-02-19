@@ -36,7 +36,6 @@ export const usePitchDispatch = (
         return;
       }
     }
-    skipDecisionRef.current = false;
 
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
