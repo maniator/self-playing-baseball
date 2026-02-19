@@ -6,6 +6,7 @@
   "engines": {
     "node": "24.x"
   },
+  "browserslist": "> 0.5%, last 2 versions, not dead",
   "scripts": {
     "dev": "parcel src/index.html",
     "dev:deploy": "parcel src/index.html",
