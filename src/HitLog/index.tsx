@@ -85,13 +85,16 @@ const HitLog: React.FunctionComponent<{}> = () => {
           {playLog.length === 0 ? (
             <EmptyState>No hits yet.</EmptyState>
           ) : (
-            [...playLog].reverse().map((entry, idx) => (
-              <Entry key={idx}>
-                <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
-                <span>{HALF_ARROW[entry.half]}{entry.inning} — {teams[entry.team]} #{entry.batterNum}</span>
-                {entry.runs > 0 && <Runs>+{entry.runs} run{entry.runs !== 1 ? "s" : ""}</Runs>}
-              </Entry>
-            ))
+            [...playLog].reverse().map((entry, idx) => {
+              const key = `${entry.inning}-${entry.half}-${entry.team}-${entry.batterNum}-${idx}`;
+              return (
+                <Entry key={key}>
+                  <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
+                  <span>{HALF_ARROW[entry.half]}{entry.inning} — {teams[entry.team]} #{entry.batterNum}</span>
+                  {entry.runs > 0 && <Runs>+{entry.runs} run{entry.runs !== 1 ? "s" : ""}</Runs>}
+                </Entry>
+              );
+            })
           )}
         </Area>
       )}

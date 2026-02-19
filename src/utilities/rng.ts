@@ -81,7 +81,7 @@ export const buildReplayUrl = (decisionLog?: string[]): string => {
     url.searchParams.set("seed", currentSeed.toString(36));
   }
   if (decisionLog && decisionLog.length > 0) {
-    url.searchParams.set("decisions", decisionLog.join(","));
+    url.searchParams.set("decisions", encodeURIComponent(decisionLog.join(",")));
   } else {
     url.searchParams.delete("decisions");
   }
@@ -94,5 +94,5 @@ export const getDecisionsFromUrl = (): string[] => {
   }
   const param = new URL(window.location.href).searchParams.get("decisions");
   if (!param) return [];
-  return param.split(",").filter(Boolean);
+  return decodeURIComponent(param).split(",").filter(Boolean);
 };

@@ -499,4 +499,20 @@ describe("useReplayDecisions", () => {
       payload: { base: 1, successPct: 80 },
     });
   });
+
+  it("skips stale entries when pitchKey has advanced past entry (out-of-sync recovery)", () => {
+    // Entry is at pitchKey 3, but we're now at pitchKey 8 — stale entry should be skipped
+    // and the second entry at pitchKey 8 should fire.
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["3:skip", "8:skip"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "bunt" as const };
+
+    const { rerender } = renderHook(
+      ({ pk }) => useReplayDecisions(dispatch, pending, pk, "balanced"),
+      { initialProps: { pk: 8 } },
+    );
+    rerender({ pk: 8 });
+    expect(dispatch).toHaveBeenCalledWith({ type: "skip_decision" });
+    expect(dispatch).toHaveBeenCalledTimes(1);
+  });
 });

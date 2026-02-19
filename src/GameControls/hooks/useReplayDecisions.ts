@@ -53,11 +53,16 @@ export const useReplayDecisions = (
 
   React.useEffect(() => {
     if (!pendingDecision) return;
+    // Skip any stale entries whose pitchKey is behind the current one.
+    while (indexRef.current < entries.current.length &&
+           Number(entries.current[indexRef.current].split(":")[0]) < pitchKey) {
+      indexRef.current += 1;
+    }
     if (indexRef.current >= entries.current.length) return;
     const entry = entries.current[indexRef.current];
     if (Number(entry.split(":")[0]) === pitchKey) {
       indexRef.current += 1;
       applyEntry(entry, dispatch, strategy);
     }
-  }, [pendingDecision, pitchKey]);
+  }, [pendingDecision, pitchKey, strategy]);
 };

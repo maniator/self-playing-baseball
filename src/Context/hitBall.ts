@@ -61,7 +61,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
 
   // Record this at-bat in the play log (batter reached base).
-  const batterNum = (state.batterIndex[state.atBat as 0 | 1] % 9) + 1;
+  const batterNum = state.batterIndex[state.atBat as 0 | 1] + 1;
   const playEntry: PlayLogEntry = {
     inning: state.inning,
     half: state.atBat as 0 | 1,
