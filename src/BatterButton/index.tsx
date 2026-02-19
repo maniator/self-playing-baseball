@@ -103,6 +103,11 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
   const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) === 1 ? 1 : 0));
 
+  // Keep autoPlay accessible as a ref so the keyboard handler can read the latest value
+  // without needing to re-register on every autoPlay change.
+  const autoPlayRef = React.useRef(autoPlay);
+  autoPlayRef.current = autoPlay;
+
   // Tracks the mute state that was active before autoplay started, so we can
   // restore it when autoplay is turned off (even if the user toggled mute mid-play).
   const previousMuteRef = React.useRef<boolean | null>(null);

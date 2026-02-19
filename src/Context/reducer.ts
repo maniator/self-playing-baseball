@@ -234,8 +234,16 @@ export const detectDecision = (state: State, strategy: Strategy, managerMode: bo
 
   const { baseLayout, outs, balls, strikes } = state;
 
-  // IBB: runner on 2nd or 3rd, 1st base open
-  if (!baseLayout[0] && (baseLayout[1] || baseLayout[2])) {
+  // IBB: runner on 2nd or 3rd, 1st base open — only a realistic option in late innings
+  // (7th+), close game (≤2 runs apart), and with 2 outs to set up a force play.
+  const scoreDiff = Math.abs(state.score[0] - state.score[1]);
+  if (
+    !baseLayout[0] &&
+    (baseLayout[1] || baseLayout[2]) &&
+    outs === 2 &&
+    state.inning >= 7 &&
+    scoreDiff <= 2
+  ) {
     return { kind: "ibb" };
   }
 
