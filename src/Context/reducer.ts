@@ -24,7 +24,7 @@ const moveBase = (log, state: State, fromBase: Base, toBase: Base): State => {
 
   if (Base[fromBase] === Base[toBase]) {
     if (toBase === Base.Home) {
-      log("Player scored a run!");
+      // Run scored — caller logs the consolidated total after moveBase returns.
       newState.score[newState.atBat] += 1;
     }
     // "stayed on base" — internal bookkeeping, not worth announcing
@@ -77,12 +77,17 @@ const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"):
     // Power strategy: on "pop out" roll, small chance to turn it into HR
     if (strategy === "power" && getRandomInt(100) < 15) {
       log("Power hitter turns it around — Home Run!")
+      const scoreBefore = newState.score[newState.atBat];
       newState = moveBase(log, newState, null, Base.Home);
+      const runsScored = newState.score[newState.atBat] - scoreBefore;
+      if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
       return { ...newState, hitType: Hit.Homerun };
     }
     log("Popped it up — that's an out.")
     return playerOut(state, log);
   }
+
+  const scoreBefore = newState.score[newState.atBat];
 
   switch (type) {
     case Hit.Homerun:
@@ -101,6 +106,9 @@ const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"):
     default:
       throw new Error(`Not a possible hit type: ${type}`);
   }
+
+  const runsScored = newState.score[newState.atBat] - scoreBefore;
+  if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
 
   // Hit type is announced by BatterButton before dispatching; no duplicate log here.
 
