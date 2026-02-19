@@ -92,6 +92,8 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   });
 
   const previousMuteRef = React.useRef<boolean | null>(null);
+  const muteRef = React.useRef(mute);
+  React.useEffect(() => { muteRef.current = mute; }, [mute]);
 
   const log = React.useCallback((message: string) => {
     if (!dispatchLog) return;
@@ -163,15 +165,15 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 
   React.useEffect(() => {
     if (autoPlayEnabled) {
-      if (!mute) {
-        previousMuteRef.current = mute;
+      if (!muteRef.current) {
+        previousMuteRef.current = muteRef.current;
         setMute(true);
       }
     } else if (previousMuteRef.current !== null) {
       setMute(previousMuteRef.current);
       previousMuteRef.current = null;
     }
-  }, [autoPlayEnabled, mute]);
+  }, [autoPlayEnabled]);
 
   return (
     <Controls>
