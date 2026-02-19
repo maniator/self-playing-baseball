@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import styled from "styled-components";
-import { ContextValue, GameContext, Strategy, State } from "../Context";
+import { ContextValue, GameContext, Strategy } from "../Context";
 import { detectDecision } from "../Context/reducer";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
@@ -11,6 +11,8 @@ import { appLog } from "../utilities/logger";
 import DecisionPanel from "../DecisionPanel";
 import { SPEED_SLOW, SPEED_NORMAL, SPEED_FAST } from "./constants";
 import { loadBool, loadInt, loadFloat, loadString } from "../utilities/localStorage";
+import ManagerModeControls from "./ManagerModeControls";
+import VolumeControls from "./VolumeControls";
 
 const Controls = styled.div`
   display: flex;
@@ -75,41 +77,6 @@ const Select = styled.select`
   cursor: pointer;
   font-size: 13px;
   font-family: inherit;
-`;
-
-const VolumeRow = styled.label`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: #cce8ff;
-  cursor: default;
-`;
-
-const VolumeIcon = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  color: inherit;
-  &:hover { opacity: 0.75; }
-`;
-
-const RangeInput = styled.input`
-  accent-color: aquamarine;
-  cursor: pointer;
-  width: 72px;
-  height: 4px;
-  vertical-align: middle;
-`;
-
-const NotifBadge = styled.span<{ $ok: boolean }>`
-  font-size: 11px;
-  color: ${({ $ok }) => ($ok ? "#4ade80" : "#fbbf24")};
-  cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
-  white-space: nowrap;
 `;
 
 
@@ -386,8 +353,36 @@ const BatterButton: React.FunctionComponent<{}> = () => {
     if (Number.isFinite(f)) setAlertVolumeState(Math.max(0, Math.min(1, f)));
   };
 
+  const prevAnnouncementVolumeRef = React.useRef(announcementVolume);
+  const handleToggleAnnouncementMute = React.useCallback(() => {
+    if (announcementVolume > 0) {
+      prevAnnouncementVolumeRef.current = announcementVolume;
+      setAnnouncementVolumeState(0);
+    } else {
+      setAnnouncementVolumeState(prevAnnouncementVolumeRef.current > 0 ? prevAnnouncementVolumeRef.current : 1);
+    }
+  }, [announcementVolume]);
+
+  const prevAlertVolumeRef = React.useRef(alertVolume);
+  const handleToggleAlertMute = React.useCallback(() => {
+    if (alertVolume > 0) {
+      prevAlertVolumeRef.current = alertVolume;
+      setAlertVolumeState(0);
+    } else {
+      setAlertVolumeState(prevAlertVolumeRef.current > 0 ? prevAlertVolumeRef.current : 1);
+    }
+  }, [alertVolume]);
+
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSpeed(parseInt(e.target.value, 10));
+  };
+
+  const handleStrategyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStrategy(e.target.value as Strategy);
+  };
+
+  const handleManagedTeamChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setManagedTeam(Number(e.target.value) === 1 ? 1 : 0);
   };
 
   const handleShareReplay = () => {
@@ -424,69 +419,26 @@ const BatterButton: React.FunctionComponent<{}> = () => {
               <option value={SPEED_FAST}>Fast</option>
             </Select>
           </ToggleLabel>
-          <VolumeRow>
-            🔊
-            <RangeInput
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={announcementVolume}
-              onChange={handleAnnouncementVolumeChange}
-              aria-label="Announcement volume"
-            />
-          </VolumeRow>
-          <VolumeRow>
-            🔔
-            <RangeInput
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={alertVolume}
-              onChange={handleAlertVolumeChange}
-              aria-label="Alert volume"
-            />
-          </VolumeRow>
+          <VolumeControls
+            announcementVolume={announcementVolume}
+            alertVolume={alertVolume}
+            onAnnouncementVolumeChange={handleAnnouncementVolumeChange}
+            onAlertVolumeChange={handleAlertVolumeChange}
+            onToggleAnnouncementMute={handleToggleAnnouncementMute}
+            onToggleAlertMute={handleToggleAlertMute}
+          />
           {autoPlay && (
-            <ToggleLabel>
-              <input type="checkbox" checked={managerMode} onChange={handleManagerModeChange} />
-              Manager Mode
-            </ToggleLabel>
-          )}
-          {autoPlay && managerMode && (
-            <>
-              <ToggleLabel>
-                Team
-                <Select value={managedTeam} onChange={e => setManagedTeam(Number(e.target.value) === 1 ? 1 : 0)}>
-                  <option value={0}>{teams[0]}</option>
-                  <option value={1}>{teams[1]}</option>
-                </Select>
-              </ToggleLabel>
-              <ToggleLabel>
-                Strategy
-                <Select value={strategy} onChange={e => setStrategy(e.target.value as Strategy)}>
-                  <option value="balanced">Balanced</option>
-                  <option value="aggressive">Aggressive</option>
-                  <option value="patient">Patient</option>
-                  <option value="contact">Contact</option>
-                  <option value="power">Power</option>
-                </Select>
-              </ToggleLabel>
-              {notifPermission === "granted" && (
-                <NotifBadge $ok={true}>🔔 on</NotifBadge>
-              )}
-              {notifPermission === "denied" && (
-                <NotifBadge $ok={false} title="Enable notifications in your browser settings">
-                  🔕 blocked
-                </NotifBadge>
-              )}
-              {notifPermission === "default" && (
-                <NotifBadge $ok={false} onClick={handleRequestNotifPermission} title="Click to grant notification permission">
-                  🔔 click to enable
-                </NotifBadge>
-              )}
-            </>
+            <ManagerModeControls
+              managerMode={managerMode}
+              strategy={strategy}
+              managedTeam={managedTeam}
+              teams={teams}
+              notifPermission={notifPermission}
+              onManagerModeChange={handleManagerModeChange}
+              onStrategyChange={handleStrategyChange}
+              onManagedTeamChange={handleManagedTeamChange}
+              onRequestNotifPermission={handleRequestNotifPermission}
+            />
           )}
         </AutoPlayGroup>
       </Controls>

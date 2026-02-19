@@ -124,7 +124,7 @@ const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"):
   // Contact strategy reduces pop-out chance
   const popOutThreshold = Math.round(750 * stratMod(strategy, "contact"));
 
-  if (randomNumber >= popOutThreshold && type !== Hit.Homerun) {
+  if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
     // Power strategy: rare chance to turn pop-out into HR
     if (strategy === "power" && getRandomInt(100) < 15) {
       type = Hit.Homerun;

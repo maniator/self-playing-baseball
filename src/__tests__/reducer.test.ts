@@ -172,6 +172,24 @@ describe("hit - walk", () => {
     expect(state.score[0]).toBe(1);
     expect(state.baseLayout).toEqual([1, 1, 1]);
   });
+  it("walk is NEVER turned into a pop-out even when random is high (regression)", () => {
+    // randomNumber = 900 >= 750 (popOutThreshold) — old bug: this became a pop-out
+    vi.spyOn(rngModule, "random").mockReturnValue(0.9);
+    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 0, 0] }), "hit", { hitType: Hit.Walk });
+    // Batter must be on 1st — NOT an out
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.outs).toBe(0);
+    expect(logs.some(l => /pop|out/i.test(l))).toBe(false);
+  });
+  it("ball 4 walk with high random: runner reaches base (regression)", () => {
+    // Simulate: first random call (wait→ball path) → 0.9 (high → ball), then hitBall
+    // gets another high random → old code would have produced a pop-out
+    vi.spyOn(rngModule, "random").mockReturnValue(0.9);
+    const { state, logs } = dispatchAction(makeState({ balls: 3 }), "wait", { strategy: "balanced" });
+    expect(logs.some(l => l.toLowerCase().includes("ball four"))).toBe(true);
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.outs).toBe(0);
+  });
 });
 
 // foul ball
