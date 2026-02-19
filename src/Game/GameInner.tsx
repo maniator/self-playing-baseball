@@ -1,4 +1,4 @@
-import * as React  from "react";
+import * as React from "react";
 
 import BatterButton from "../BatterButton";
 import ScoreBoard from "../ScoreBoard";
@@ -10,23 +10,28 @@ import { GameContext } from "../Context";
 type Props = {
   homeTeam: string,
   awayTeam: string
-}
+};
 
 const GameDiv = styled.main`
   color: white;
   position: relative;
-  height: 75vh;
-  width: 75vw;
+  min-height: 75vh;
+  width: min(960px, 94vw);
   border: 1px solid #884e4e;
-  padding: 30px;
+  padding: 20px;
   margin: 0 auto;
   overflow: hidden;
+
+  @media (max-width: 800px) {
+    overflow: auto;
+    padding-bottom: 28px;
+  }
 `;
 
 const GameInfo = styled.div`
-  height: 150px;
+  min-height: 150px;
   padding: 15px 0;
-  
+
   & > div {
     padding: 5px 0;
   }
@@ -35,6 +40,8 @@ const GameInfo = styled.div`
 const Input = styled.input`
   background: #000;
   color: #fff;
+  width: 120px;
+  margin: 0 5px;
 `;
 
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
@@ -46,20 +53,20 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
       payload: [
         homeTeam, awayTeam
       ]
-    })
+    });
   }, []);
 
   const handleChangeTeam = (teamIdx) => (e) => {
     e.stopPropagation();
     const { target: { value } } = e;
-    const newTeamNames = [ ...teams ];
+    const newTeamNames = [...teams];
 
     newTeamNames[teamIdx] = value;
     dispatch({
       type: "setTeams",
       payload: newTeamNames
-    })
-  }
+    });
+  };
 
   return (
     <GameDiv>
@@ -67,19 +74,18 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         <div>Welcome to the game!</div>
         <div>I hope you have a great time!</div>
         <div>
-          The match-up is between <br/>
+          The match-up is between <br />
           <label><Input value={teams[0]} onChange={handleChangeTeam(0)} /></label> and
           <label><Input value={teams[1]} onChange={handleChangeTeam(1)} /></label>!
         </div>
 
-        <BatterButton/>
+        <BatterButton />
       </GameInfo>
-      <ScoreBoard/>
-      <Diamond/>
-      <Announcements/>
+      <ScoreBoard />
+      <Diamond />
+      <Announcements />
     </GameDiv>
   );
-}
-
+};
 
 export default GameInner;

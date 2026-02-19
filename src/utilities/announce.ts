@@ -1,6 +1,13 @@
 const synth = window.speechSynthesis;
+const MUTE_KEY = "baseball.mute";
+
+const isMuted = () => localStorage.getItem(MUTE_KEY) === "true";
 
 export const announce = (message) => {
+  if (isMuted()) {
+    return;
+  }
+
   const utterThis = new SpeechSynthesisUtterance(message);
 
   utterThis.pitch = 1;

@@ -11,3 +11,5 @@ dist
 *.log
 
 .env
+
+.parcel-cache
