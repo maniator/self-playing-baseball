@@ -358,7 +358,7 @@ describe("DecisionPanel", () => {
       makeContextValue({ pendingDecision: { kind: "ibb" } }),
     );
     expect(screen.getByText(/intentional walk/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /yes, ibb/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /yes, walk them/i })).toBeInTheDocument();
   });
 
   it("shows countdown bar and auto-skip label", () => {
@@ -450,7 +450,7 @@ describe("DecisionPanel", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "ibb" }, dispatch }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /yes, ibb/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yes, walk them/i }));
     expect(dispatch).toHaveBeenCalledWith({ type: "intentional_walk" });
   });
 

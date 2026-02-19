@@ -35,6 +35,16 @@ export const nextHalfInning = (state: State, log): State => {
 
   const next = { ...newState, inning: newInning, atBat: newHalfInning };
 
+  // Standard rule: if the home team is already winning at the start of the bottom
+  // of the 9th (or later), they win — no need to play the bottom half.
+  if (newHalfInning === 1 && newInning >= 9) {
+    const [away, home] = next.score;
+    if (home > away) {
+      log(`${next.teams[1]} win! No need to play the bottom of the ${newInning}th.`);
+      return { ...next, gameOver: true };
+    }
+  }
+
   if (newHalfInning === 0 && newInning > 9) {
     const maybe = checkGameOver(next, log);
     if (maybe.gameOver) return maybe;

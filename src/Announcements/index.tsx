@@ -60,7 +60,7 @@ const Announcements: React.FunctionComponent<{}> = () => {
         </Toggle>
       </HeadingRow>
       {expanded && (
-        <AnnouncementsArea>
+        <AnnouncementsArea aria-live="polite" aria-atomic="false">
           {log.length === 0
             ? <EmptyState>Press "Batter Up!" to start the game.</EmptyState>
             : log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)

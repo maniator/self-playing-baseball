@@ -234,7 +234,7 @@ describe("DecisionButtons", () => {
         />
       );
       expect(screen.getByText(/intentional walk/i)).toBeTruthy();
-      expect(screen.getByRole("button", { name: /yes, ibb/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /yes, walk them/i })).toBeTruthy();
       expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
     });
 
@@ -248,7 +248,7 @@ describe("DecisionButtons", () => {
           onDispatch={onDispatch}
         />
       );
-      await userEvent.click(screen.getByRole("button", { name: /yes, ibb/i }));
+      await userEvent.click(screen.getByRole("button", { name: /yes, walk them/i }));
       expect(onDispatch).toHaveBeenCalledWith({ type: "intentional_walk" });
     });
   });

@@ -10,6 +10,10 @@ export const ActionButton = styled.button`
   font-family: inherit;
   font-size: 13px;
   font-weight: 600;
+  &:focus-visible {
+    outline: 3px solid #fff;
+    outline-offset: 2px;
+  }
 `;
 
 export const SkipButton = styled(ActionButton)`

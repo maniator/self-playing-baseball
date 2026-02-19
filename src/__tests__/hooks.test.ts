@@ -37,7 +37,7 @@ describe("useGameRefs", () => {
   it("returns refs with correct initial values", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: null })
     );
     expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
@@ -52,7 +52,7 @@ describe("useGameRefs", () => {
   it("mutedRef is true when announcementVolume is 0", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 0, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs({ autoPlay: false, announcementVolume: 0, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: null })
     );
     expect(result.current.mutedRef.current).toBe(true);
   });
@@ -61,7 +61,7 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd }) => useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, pd),
+      ({ pd }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null } }
     );
     expect(result.current.skipDecisionRef.current).toBe(false);
@@ -75,7 +75,7 @@ describe("useGameRefs", () => {
     const pending = { kind: "bunt" as const };
     // Start with non-zero count so we can test reset detection
     const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      ({ pd, strikes, balls }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes, balls, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
     );
     // Trigger skip (decision resolved)
@@ -91,7 +91,7 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      ({ pd, strikes, balls }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes, balls, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
     );
     // Trigger skip

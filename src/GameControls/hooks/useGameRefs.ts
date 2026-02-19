@@ -8,22 +8,35 @@ export type GameStateSnapshot = Pick<
 
 export type GameStateRef = React.MutableRefObject<GameStateSnapshot>;
 
+export interface UseGameRefsOptions {
+  autoPlay: boolean;
+  announcementVolume: number;
+  speed: number;
+  strikes: number;
+  balls: number;
+  managerMode: boolean;
+  strategy: Strategy;
+  managedTeam: 0 | 1;
+  gameSnapshot: GameStateSnapshot;
+  pendingDecision: DecisionType | null;
+}
+
 /**
  * Syncs all stable refs used by the pitch dispatcher and auto-play scheduler.
  * Returns refs + skipDecisionRef (which tracks pending-decision transitions).
  */
-export const useGameRefs = (
-  autoPlay: boolean,
-  announcementVolume: number,
-  speed: number,
-  strikes: number,
-  balls: number,
-  managerMode: boolean,
-  strategy: Strategy,
-  managedTeam: 0 | 1,
-  gameSnapshot: GameStateSnapshot,
-  pendingDecision: DecisionType | null,
-) => {
+export const useGameRefs = ({
+  autoPlay,
+  announcementVolume,
+  speed,
+  strikes,
+  balls,
+  managerMode,
+  strategy,
+  managedTeam,
+  gameSnapshot,
+  pendingDecision,
+}: UseGameRefsOptions) => {
   const autoPlayRef = React.useRef(autoPlay);
   autoPlayRef.current = autoPlay;
 

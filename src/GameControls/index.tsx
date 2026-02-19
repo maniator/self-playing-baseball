@@ -27,7 +27,7 @@ const GameControls: React.FunctionComponent<{}> = () => {
 
   const gameSnapshot = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams, suppressNextDecision, pinchHitterStrategy, defensiveShift, defensiveShiftOffered };
   const { autoPlayRef, mutedRef, speedRef, strikesRef, managerModeRef, strategyRef, managedTeamRef, gameStateRef, skipDecisionRef } =
-    useGameRefs(autoPlay, announcementVolume, speed, strikes, balls, managerMode, strategy, managedTeam, gameSnapshot, pendingDecision);
+    useGameRefs({ autoPlay, announcementVolume, speed, strikes, balls, managerMode, strategy, managedTeam, gameSnapshot, pendingDecision });
 
   const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
   const handleClickRef = usePitchDispatch(dispatch, dispatchLog, gameStateRef, managerModeRef, strategyRef, managedTeamRef, skipDecisionRef, strikesRef);

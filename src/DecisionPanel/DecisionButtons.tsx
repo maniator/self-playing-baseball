@@ -70,7 +70,7 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         <>
           <Prompt>Issue an intentional walk?</Prompt>
           <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>
-            Yes, IBB
+            Yes, walk them
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
         </>

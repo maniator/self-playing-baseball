@@ -26,14 +26,18 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
 
   if (baseLayout[0] && outs < 2) {
     if (getRandomInt(100) < 65) {
+      // 6-4-3 / 5-4-3 double play: runner from 1st forced out at 2nd, batter out at 1st.
       log("Ground ball to the infield — double play!");
       const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
-      const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log, true);
-      return playerOut(afterFirst, log);
+      // First out: runner from 1st forced out at 2nd (no lineup advance yet).
+      const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log);
+      // Second out: batter thrown out at 1st, at-bat is over (advance lineup).
+      return playerOut(afterFirst, log, true);
     }
     log("Ground ball to the infield — fielder's choice.");
     const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
-    return playerOut({ ...groundedState, baseLayout: fcBase }, log);
+    // Batter reaches 1st safely; at-bat complete, so advance lineup.
+    return playerOut({ ...groundedState, baseLayout: fcBase }, log, true);
   }
 
   log("Ground ball to the infield — out at first.");
