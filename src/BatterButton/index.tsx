@@ -25,15 +25,9 @@ const Button = styled.button`
   font-size: 14px;
 `;
 
-const ShareButton = styled.button`
-  background: transparent;
-  color: aquamarine;
-  padding: 12px 18px;
-  border-radius: 30px;
-  border: 1px solid aquamarine;
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 14px;
+const ShareButton = styled(Button)`
+  background: #2f3f69;
+  color: #fff;
 `;
 
 const AutoPlayGroup = styled.div`
@@ -99,6 +93,10 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [speed, setSpeed] = React.useState(() => loadInt("speed", SPEED_NORMAL));
   const [muted, setMutedState] = React.useState(() => loadBool("muted", false));
 
+  // Tracks the mute state that was active before autoplay started, so we can
+  // restore it when autoplay is turned off (even if the user toggled mute mid-play).
+  const previousMuteRef = React.useRef<boolean | null>(null);
+
   const log = (message: string) => dispatchLog({ type: "log", payload: message });
 
   // Keep a ref so the autoplay interval always uses the latest strikes value
@@ -155,8 +153,18 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const enabled = e.target.checked;
     setAutoPlay(enabled);
-    if (enabled && !muted) {
-      setMutedState(true);
+    if (enabled) {
+      // Save whatever mute state the user had, then auto-mute for autoplay.
+      previousMuteRef.current = muted;
+      if (!muted) {
+        setMutedState(true);
+      }
+    } else {
+      // Restore the mute state the user had before autoplay started.
+      if (previousMuteRef.current !== null) {
+        setMutedState(previousMuteRef.current);
+        previousMuteRef.current = null;
+      }
     }
   };
 
