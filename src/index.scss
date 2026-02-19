@@ -8,3 +8,9 @@
 body {
   background: black;
 }
+
+@media (max-width: 600px) {
+  .github-fork-ribbon {
+    display: none;
+  }
+}

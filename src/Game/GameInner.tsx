@@ -21,6 +21,15 @@ const GameDiv = styled.main`
   padding: 30px;
   margin: 0 auto;
   overflow: hidden;
+
+  @media (max-width: 600px) {
+    width: 95vw;
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding: 15px;
+    box-sizing: border-box;
+  }
 `;
 
 const GameInfo = styled.div`
@@ -29,6 +38,11 @@ const GameInfo = styled.div`
   
   & > div {
     padding: 5px 0;
+  }
+
+  @media (max-width: 600px) {
+    height: auto;
+    margin-bottom: 10px;
   }
 `;
 
