@@ -29,6 +29,8 @@ export interface State {
   gameOver: boolean,
   pendingDecision: DecisionType | null,
   onePitchModifier: OnePitchModifier,
+  pitchKey: number,
+  decisionLog: string[],
 }
 
 export interface ContextValue extends State {
