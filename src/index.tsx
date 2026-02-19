@@ -1,6 +1,5 @@
 import * as React from "react";
-
-import * as ReactDom from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import "./index.scss";
 
@@ -9,4 +8,9 @@ import { initSeedFromUrl } from "./utilities/rng";
 
 initSeedFromUrl({ writeToUrl: true });
 
-ReactDom.render(<Game homeTeam="Yankees" awayTeam="Mets" />, document.getElementById("game"));
+const container = document.getElementById("game");
+
+if (container) {
+  const root = createRoot(container);
+  root.render(<Game homeTeam="Yankees" awayTeam="Mets" />);
+}
