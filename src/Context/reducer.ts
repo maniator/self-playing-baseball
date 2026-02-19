@@ -50,7 +50,7 @@ export const detectDecision = (state: State, strategy: Strategy, managerMode: bo
 
   if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
 
-  if (state.inning >= 7 && outs < 2 && (baseLayout[1] || baseLayout[2]) && !state.pinchHitterStrategy) {
+  if (state.inning >= 7 && outs < 2 && (baseLayout[1] || baseLayout[2]) && !state.pinchHitterStrategy && balls === 0 && strikes === 0) {
     return { kind: "pinch_hitter" };
   }
 

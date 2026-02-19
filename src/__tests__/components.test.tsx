@@ -34,6 +34,10 @@ const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue =
   log: [],
   dispatch: vi.fn(),
   dispatchLog: vi.fn(),
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
   ...overrides,
 });
 

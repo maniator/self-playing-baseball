@@ -19,7 +19,10 @@ const makeState = (overrides: Partial<State> = {}): State => ({
   inning: 1, score: [0, 0], teams: ["Away", "Home"],
   baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
   gameOver: false, pendingDecision: null, onePitchModifier: null,
-  pitchKey: 0, decisionLog: [], ...overrides,
+  pitchKey: 0, decisionLog: [],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
+  ...overrides,
 });
 
 const makeLogs = () => {

@@ -25,6 +25,8 @@ const makeGameSnapshot = (overrides = {}) => ({
   outs: 0, inning: 1, score: [0, 0] as [number, number],
   atBat: 0, pendingDecision: null, gameOver: false,
   onePitchModifier: null, teams: ["Away", "Home"] as [string, string],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
   ...overrides,
 });
 

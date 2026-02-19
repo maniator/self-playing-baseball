@@ -750,6 +750,22 @@ describe("pinch_hitter decision", () => {
     expect(d?.kind).not.toBe("pinch_hitter");
   });
 
+  it("detectDecision does NOT offer pinch_hitter mid-count (balls > 0)", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7, balls: 1, strikes: 0 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter mid-count (strikes > 0)", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7, balls: 0, strikes: 1 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
   it("set_pinch_hitter_strategy stores strategy and clears pending decision", () => {
     const { state, logs } = dispatchAction(
       makeState({ pendingDecision: { kind: "pinch_hitter" } }),
