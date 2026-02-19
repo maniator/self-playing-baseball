@@ -42,8 +42,19 @@ const Team = styled.div<{ teamAtBat: boolean }>`
   color: ${({ teamAtBat }) => teamAtBat ? "#b381b3" : textColor};
 `;
 
+const GameOverBanner = styled.div`
+  background: #b30000;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 4px 2px;
+  border-radius: 4px;
+  margin-top: 6px;
+`;
+
 const ScoreBoard: React.FunctionComponent<{}> = () => {
-  const { teams, score, strikes, balls, outs, atBat, inning }: ContextValue = React.useContext(GameContext);
+  const { teams, score, strikes, balls, outs, atBat, inning, gameOver }: ContextValue = React.useContext(GameContext);
 
   return (
     <ScoreBoardDiv>
@@ -58,6 +69,7 @@ const ScoreBoard: React.FunctionComponent<{}> = () => {
       <BatterStats>Outs: {outs}</BatterStats>
       <hr />
       <BatterStats>Inning: {inning}</BatterStats>
+      {gameOver && <GameOverBanner>FINAL</GameOverBanner>}
     </ScoreBoardDiv>
   );
 };

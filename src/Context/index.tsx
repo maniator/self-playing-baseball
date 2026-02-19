@@ -5,6 +5,17 @@ import { announce } from "../utilities/announce";
 
 export const GameContext = React.createContext();
 
+export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
+
+export type DecisionType =
+  | { kind: "steal"; base: 0 | 1; successPct: number }
+  | { kind: "bunt" }
+  | { kind: "count30" }
+  | { kind: "count02" }
+  | { kind: "ibb" };
+
+export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
+
 export interface State {
   inning: number,
   score: [number, number],
@@ -14,7 +25,10 @@ export interface State {
   strikes: number,
   balls: number,
   atBat: number,
-  hitType?: Hit
+  hitType?: Hit,
+  gameOver: boolean,
+  pendingDecision: DecisionType | null,
+  onePitchModifier: OnePitchModifier,
 }
 
 export interface ContextValue extends State {
@@ -46,7 +60,10 @@ const initialState: State = {
   outs: 0,
   strikes: 0,
   balls: 0,
-  atBat: 0
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
 };
 
 type Props = {};
