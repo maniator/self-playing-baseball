@@ -51,7 +51,7 @@ const initialState: State = {
 
 type Props = {};
 
-export const GameProviderWrapper: React.FunctionComponent<Props> = ({ children }) => {
+export const GameProviderWrapper: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ children }) => {
   const [logState, dispatchLogger] = React.useReducer(logReducer, { announcements: [] });
   const [state, dispatch] = React.useReducer(reducer(dispatchLogger), initialState);
 

@@ -1,7 +1,8 @@
 import * as React from "react";
-import * as ReactDom from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import "./index.scss";
+import "github-fork-ribbon-css/gh-fork-ribbon.css";
 
 import Game from "./Game";
 import { initSeedFromUrl } from "./utilities/rng";
@@ -14,4 +15,5 @@ const Root: React.FC = () => {
   return <Game homeTeam="Yankees" awayTeam="Mets" />;
 };
 
-ReactDom.render(<Root />, document.getElementById("game"));
+const container = document.getElementById("game");
+createRoot(container!).render(<Root />);
