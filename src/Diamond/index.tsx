@@ -15,6 +15,17 @@ const OutfieldDiv = styled.div`
   bottom: 75px;
   transform: rotate(45deg); /* Equal to rotateZ(45deg) */
   z-index: -1;
+
+  @media (max-width: 768px) {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    transform: none;
+    margin: 20px auto 0;
+    height: 220px;
+    width: 220px;
+    z-index: 0;
+  }
 `;
 
 const DiamondDiv = styled.div`
@@ -24,6 +35,14 @@ const DiamondDiv = styled.div`
   position: absolute;
   bottom: 0;
   right: 0;
+
+  @media (max-width: 768px) {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    height: 120px;
+    width: 120px;
+  }
 `;
 
 const Mound = styled.div`
@@ -45,6 +64,18 @@ const Mound = styled.div`
     left: calc(50% - 25px);
     top: calc(50% - 25px);
   }
+
+  @media (max-width: 768px) {
+    height: 80px;
+    width: 80px;
+
+    &:after {
+      height: 40px;
+      width: 40px;
+      left: calc(50% - 20px);
+      top: calc(50% - 20px);
+    }
+  }
 `;
 
 const BaseDiv = styled.div`
@@ -55,6 +86,11 @@ const BaseDiv = styled.div`
   right: ${({ base }) => base === 1 || base === 0 ? 0 : null};
   bottom: ${({ base }) => base === 3 || base === 0 ? 0 : null};
   left: ${({ base }) => base === 2 ? 0 : null};
+
+  @media (max-width: 768px) {
+    height: 8px;
+    width: 8px;
+  }
 `;
 
 const Diamond: React.FunctionComponent<{}> = () => {

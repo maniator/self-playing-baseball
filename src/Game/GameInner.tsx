@@ -17,26 +17,45 @@ type Props = {
 const GameDiv = styled.main`
   color: white;
   position: relative;
-  height: 75vh;
-  width: 75vw;
+  min-height: 75vh;
+  width: 100%;
+  max-width: 1100px;
   border: 1px solid #884e4e;
   padding: 30px;
   margin: 0 auto;
-  overflow: hidden;
+  overflow: visible;
+
+  @media (max-width: 768px) {
+    min-height: auto;
+    height: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
 `;
 
 const GameInfo = styled.div`
-  height: 150px;
+  min-height: 150px;
   padding: 15px 0;
   
   & > div {
     padding: 5px 0;
+  }
+
+  @media (max-width: 768px) {
+    min-height: auto;
   }
 `;
 
 const Input = styled.input`
   background: #000;
   color: #fff;
+  max-width: 160px;
+
+  @media (max-width: 768px) {
+    width: 100%;
+  }
 `;
 
 const Controls = styled.div`
@@ -44,6 +63,7 @@ const Controls = styled.div`
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: flex-start;
 `;
 
 const ShareButton = styled.button`

@@ -13,6 +13,16 @@ const ScoreBoardDiv = styled.div`
   position: absolute;
   right: 55px;
   top: 55px;
+
+  @media (max-width: 768px) {
+    position: relative;
+    right: auto;
+    top: auto;
+    margin: 10px auto 0;
+    width: 100%;
+    max-width: 260px;
+    height: auto;
+  }
 `;
 
 const Score = styled.div`
