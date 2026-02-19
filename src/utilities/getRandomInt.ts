@@ -1,3 +1,5 @@
-export default function getRandomInt(max) {
-  return Math.floor(Math.random() * Math.floor(max));
+import { random } from "./rng";
+
+export default function getRandomInt(max: number): number {
+  return Math.floor(random() * Math.floor(max));
 }

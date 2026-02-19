@@ -1,10 +1,22 @@
-@import "github-fork-ribbon-css/gh-fork-ribbon.css";
-
 * {
   font-family: Lucida Console, monospace;
   color: #FFF;
+  box-sizing: border-box;
 }
 
 body {
   background: black;
+  margin: 0;
+  padding: 16px 0;
+}
+
+@media (max-width: 800px) {
+  body {
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .github-fork-ribbon {
+    display: none;
+  }
 }

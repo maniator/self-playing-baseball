@@ -1,6 +1,15 @@
 const synth = window.speechSynthesis;
+let _muted = false;
 
-export const announce = (message) => {
+export const setMuted = (m: boolean): void => {
+  _muted = m;
+  if (m) synth.cancel();
+};
+
+export const isMuted = (): boolean => _muted;
+
+export const announce = (message: string): void => {
+  if (_muted) return;
   const utterThis = new SpeechSynthesisUtterance(message);
 
   utterThis.pitch = 1;

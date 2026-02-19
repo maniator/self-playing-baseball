@@ -1,9 +1,12 @@
+import "github-fork-ribbon-css/gh-fork-ribbon.css";
 import * as React from "react";
-
-import * as ReactDom from "react-dom";
+import { createRoot } from "react-dom/client";
 
 import "./index.scss";
 
 import Game from "./Game";
+import { initSeedFromUrl } from "./utilities/rng";
 
-ReactDom.render(<Game homeTeam="Yankees" awayTeam="Mets" />, document.getElementById("game"));
+initSeedFromUrl({ writeToUrl: true });
+
+createRoot(document.getElementById("game")!).render(<Game homeTeam="Yankees" awayTeam="Mets" />);
