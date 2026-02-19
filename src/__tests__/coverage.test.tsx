@@ -207,6 +207,26 @@ describe("BatterButton – event handlers", () => {
     vi.restoreAllMocks();
   });
 
+  it("swing modifier: random in take zone still produces a swing (never a called ball)", () => {
+    // With onePitchModifier === "swing", effectiveSwingRate = 920
+    // random=0.7 → 700, normally take zone (500–919), but with swing modifier → swing
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.7)   // 700 — in normal take zone but swing override → swing
+      .mockReturnValueOnce(0.7);  // 70 ≥ 30 → swing-miss → strike (not a ball)
+    const dispatch = vi.fn();
+    renderWithContext(
+      <BatterButton />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0, onePitchModifier: "swing" }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    // Must be a swing (strike or foul), NOT a wait/ball
+    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/strike|foul/) }),
+    );
+    vi.restoreAllMocks();
+  });
+
   it("Batter Up! dispatches foul when random produces a foul outcome", () => {
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.3)   // 300 < 500 → swing
@@ -273,7 +293,9 @@ describe("DecisionPanel – service worker notification paths", () => {
   };
 
   // Use beforeAll/afterAll so the mock persists through React cleanup (which
-  // runs after each test's afterEach, but before afterAll).
+  // runs after each test's afterEach, but before afterAll). The afterAll
+  // restores navigator.serviceWorker to undefined once all tests in this
+  // block — and their associated React cleanup — have completed.
   beforeAll(() => {
     Object.defineProperty(navigator, "serviceWorker", {
       value: mockSW,
@@ -295,6 +317,13 @@ describe("DecisionPanel – service worker notification paths", () => {
     // Re-attach a fresh resolved promise so tests get the mock reg
     mockSW.ready = Promise.resolve(mockReg) as unknown as typeof mockSW.ready;
   });
+
+  /** Helper: get the "message" event handler registered by DecisionPanel. */
+  const getRegisteredMessageHandler = (): ((e: MessageEvent) => void) => {
+    const found = mockSW.addEventListener.mock.calls.find(([event]) => event === "message");
+    if (!found) throw new Error("No 'message' event handler was registered on navigator.serviceWorker");
+    return found[1] as (e: MessageEvent) => void;
+  };
 
   it("registers service worker message listener on mount", () => {
     renderWithContext(
@@ -335,14 +364,9 @@ describe("DecisionPanel – service worker notification paths", () => {
       makeContextValue({ pendingDecision: decision, dispatch }),
     );
 
-    // Simulate SW posting a NOTIFICATION_ACTION message
-    const handler = mockSW.addEventListener.mock.calls.find(
-      ([event]) => event === "message",
-    )?.[1];
-    expect(handler).toBeDefined();
-
+    const handler = getRegisteredMessageHandler();
     act(() => {
-      handler!({ data: { type: "NOTIFICATION_ACTION", action: "steal", payload: { base: 0, successPct: 80 } } });
+      handler({ data: { type: "NOTIFICATION_ACTION", action: "steal", payload: { base: 0, successPct: 80 } } } as MessageEvent);
     });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "steal_attempt" }));
   });
@@ -353,11 +377,9 @@ describe("DecisionPanel – service worker notification paths", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "bunt" }, dispatch }),
     );
-    const handler = mockSW.addEventListener.mock.calls.find(
-      ([event]) => event === "message",
-    )?.[1];
+    const handler = getRegisteredMessageHandler();
     act(() => {
-      handler!({ data: { type: "NOTIFICATION_ACTION", action: "bunt", payload: {} } });
+      handler({ data: { type: "NOTIFICATION_ACTION", action: "bunt", payload: {} } } as MessageEvent);
     });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "bunt_attempt" }));
   });
@@ -368,9 +390,7 @@ describe("DecisionPanel – service worker notification paths", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "count30" }, dispatch }),
     );
-    const handler = mockSW.addEventListener.mock.calls.find(
-      ([event]) => event === "message",
-    )?.[1];
+    const handler = getRegisteredMessageHandler();
 
     const actions = [
       { action: "take",    expected: { type: "set_one_pitch_modifier", payload: "take" } },
@@ -384,7 +404,7 @@ describe("DecisionPanel – service worker notification paths", () => {
     for (const { action, expected } of actions) {
       dispatch.mockClear();
       act(() => {
-        handler!({ data: { type: "NOTIFICATION_ACTION", action, payload: {} } });
+        handler({ data: { type: "NOTIFICATION_ACTION", action, payload: {} } } as MessageEvent);
       });
       expect(dispatch).toHaveBeenCalledWith(expected);
     }
@@ -396,11 +416,9 @@ describe("DecisionPanel – service worker notification paths", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "bunt" }, dispatch }),
     );
-    const handler = mockSW.addEventListener.mock.calls.find(
-      ([event]) => event === "message",
-    )?.[1];
+    const handler = getRegisteredMessageHandler();
     act(() => {
-      handler!({ data: { type: "NOTIFICATION_ACTION", action: "focus", payload: {} } });
+      handler({ data: { type: "NOTIFICATION_ACTION", action: "focus", payload: {} } } as MessageEvent);
     });
     expect(dispatch).not.toHaveBeenCalled();
   });
@@ -411,11 +429,9 @@ describe("DecisionPanel – service worker notification paths", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "bunt" }, dispatch }),
     );
-    const handler = mockSW.addEventListener.mock.calls.find(
-      ([event]) => event === "message",
-    )?.[1];
+    const handler = getRegisteredMessageHandler();
     act(() => {
-      handler!({ data: { type: "SOME_OTHER_MESSAGE", action: "skip" } });
+      handler({ data: { type: "SOME_OTHER_MESSAGE", action: "skip" } } as MessageEvent);
     });
     expect(dispatch).not.toHaveBeenCalled();
   });

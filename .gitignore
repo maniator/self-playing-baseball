@@ -14,3 +14,5 @@ nohup.out
 .env
 
 .parcel-cache
+
+coverage

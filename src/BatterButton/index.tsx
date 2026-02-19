@@ -213,14 +213,19 @@ const BatterButton: React.FunctionComponent<{}> = () => {
 
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
+    const onePitchMod = currentState.onePitchModifier;
 
     // Apply "protect" one-pitch modifier (0-2 count): reduce swing rate → more contact
-    const protectBonus = currentState.onePitchModifier === "protect" ? 0.7 : 1;
+    const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
     // Apply strategy swing rate modifier
     const contactMod = strategyRef.current === "contact" ? 1.15 : strategyRef.current === "power" ? 0.9 : 1;
     const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
 
-    if (random < swingRate) {
+    // "swing" modifier: batter commits to swinging — override the take range so no
+    // called balls are possible (the batter literally swings at everything < 920).
+    const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
+
+    if (random < effectiveSwingRate) {
       // Swing — 30% of swings are fouls (can't strike out on a foul ball)
       if (getRandomInt(100) < 30) {
         dispatch({ type: "foul" });

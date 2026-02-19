@@ -621,7 +621,7 @@ describe("detectDecision – additional branches", () => {
     expect(d?.kind).toBe("ibb");
   });
 
-  it("does NOT offer IBB when score tied (diff = 0 ≤ 2) — actually DOES offer (≤2)", () => {
+  it("offers IBB when score is tied (diff = 0, within ≤2 threshold)", () => {
     const d = detectDecision(
       makeState({ baseLayout: [0, 1, 0], outs: 2, inning: 9, score: [3, 3] }),
       "balanced", true
