@@ -93,6 +93,8 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     const afterBunt = {
       ...state, baseLayout: newBase, score: newScore,
       pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
+      pinchHitterStrategy: null as Strategy | null,
+      defensiveShift: false, defensiveShiftOffered: false,
       strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
     };
     return checkWalkoff(playerOut(afterBunt, log), log);

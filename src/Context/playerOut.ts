@@ -1,4 +1,4 @@
-import { State, DecisionType, OnePitchModifier } from "./index";
+import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
 import { nextHalfInning, checkGameOver } from "./gameOver";
 
 export const playerOut = (state: State, log): State => {
@@ -18,5 +18,8 @@ export const playerOut = (state: State, log): State => {
     strikes: 0, balls: 0, outs: newOuts,
     pendingDecision: null, onePitchModifier: null,
     hitType: undefined,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
   };
 };

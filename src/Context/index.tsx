@@ -19,7 +19,9 @@ export type DecisionType =
   | { kind: "count30" }
   | { kind: "count02" }
   | { kind: "ibb" }
-  | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number };
+  | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number }
+  | { kind: "pinch_hitter" }
+  | { kind: "defensive_shift" };
 
 export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
 
@@ -38,6 +40,10 @@ export interface State {
   onePitchModifier: OnePitchModifier,
   pitchKey: number,
   decisionLog: string[],
+  suppressNextDecision: boolean,
+  pinchHitterStrategy: Strategy | null,
+  defensiveShift: boolean,
+  defensiveShiftOffered: boolean,
 }
 
 export interface ContextValue extends State {
@@ -75,6 +81,10 @@ const initialState: State = {
   onePitchModifier: null,
   pitchKey: 0,
   decisionLog: [],
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
 };
 
 type Props = {};

@@ -25,25 +25,38 @@ export const usePitchDispatch = (
     if (currentState.gameOver) return;
     if (managerModeRef.current && currentState.pendingDecision) return;
 
-    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
-      const decision = detectDecision(
-        currentState as State,
-        strategyRef.current,
-        true
-      );
-      if (decision) {
-        dispatch({ type: "set_pending_decision", payload: decision });
+    // Defensive shift: offered once per at-bat when the managed team is FIELDING
+    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat !== managedTeamRef.current) {
+      if (!currentState.defensiveShiftOffered && currentState.balls === 0 && currentState.strikes === 0) {
+        dispatch({ type: "set_pending_decision", payload: { kind: "defensive_shift" } });
         return;
+      }
+    }
+
+    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
+      if (currentState.suppressNextDecision) {
+        dispatch({ type: "clear_suppress_decision" });
+      } else {
+        const decision = detectDecision(
+          currentState as State,
+          strategyRef.current,
+          true
+        );
+        if (decision) {
+          dispatch({ type: "set_pending_decision", payload: decision });
+          return;
+        }
       }
     }
     skipDecisionRef.current = false;
 
+    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategyRef.current;
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
     const onePitchMod = currentState.onePitchModifier;
 
     const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
-    const contactMod = strategyRef.current === "contact" ? 1.15 : strategyRef.current === "power" ? 0.9 : 1;
+    const contactMod = effectiveStrategy === "contact" ? 1.15 : effectiveStrategy === "power" ? 0.9 : 1;
     const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
     const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
 
@@ -54,9 +67,9 @@ export const usePitchDispatch = (
         dispatch({ type: "strike", payload: { swung: true } });
       }
     } else if (random < 920) {
-      dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
+      dispatch({ type: "wait", payload: { strategy: effectiveStrategy } });
     } else {
-      const strat = strategyRef.current;
+      const strat = effectiveStrategy;
       const hitRoll = getRandomInt(100);
       let base: Hit;
       if (strat === "power") {

@@ -3,7 +3,7 @@ import { Strategy, DecisionType, OnePitchModifier, State } from "../../Context";
 
 export type GameStateSnapshot = Pick<
   State,
-  "strikes" | "balls" | "baseLayout" | "outs" | "inning" | "score" | "atBat" | "pendingDecision" | "gameOver" | "onePitchModifier" | "teams"
+  "strikes" | "balls" | "baseLayout" | "outs" | "inning" | "score" | "atBat" | "pendingDecision" | "gameOver" | "onePitchModifier" | "teams" | "suppressNextDecision" | "pinchHitterStrategy" | "defensiveShift" | "defensiveShiftOffered"
 >;
 
 export type GameStateRef = React.MutableRefObject<GameStateSnapshot>;

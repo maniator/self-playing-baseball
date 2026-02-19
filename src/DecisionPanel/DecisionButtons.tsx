@@ -89,6 +89,31 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         </>
       );
     }
+    case "pinch_hitter":
+      return (
+        <>
+          <Prompt>Send up a pinch hitter? Pick a strategy:</Prompt>
+          {(["contact", "patient", "power", "aggressive", "balanced"] as Strategy[]).map(s => (
+            <ActionButton key={s} onClick={() => onDispatch({ type: "set_pinch_hitter_strategy", payload: s })}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </ActionButton>
+          ))}
+          <SkipButton onClick={onSkip}>Skip</SkipButton>
+        </>
+      );
+    case "defensive_shift":
+      return (
+        <>
+          <Prompt>Deploy defensive shift for this batter?</Prompt>
+          <ActionButton onClick={() => onDispatch({ type: "set_defensive_shift", payload: true })}>
+            Shift On (pop-outs ↑)
+          </ActionButton>
+          <ActionButton onClick={() => onDispatch({ type: "set_defensive_shift", payload: false })}>
+            Normal Alignment
+          </ActionButton>
+          <SkipButton onClick={onSkip}>Skip</SkipButton>
+        </>
+      );
     default:
       return null;
   }

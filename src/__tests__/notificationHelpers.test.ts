@@ -127,3 +127,33 @@ describe("closeManagerNotification", () => {
     expect(mockClose).toHaveBeenCalled();
   });
 });
+
+describe("getNotificationBody – new decision types", () => {
+  it("returns pinch_hitter message", () => {
+    expect(getNotificationBody({ kind: "pinch_hitter" })).toBe("Pinch hitter opportunity");
+  });
+
+  it("returns defensive_shift message", () => {
+    expect(getNotificationBody({ kind: "defensive_shift" })).toBe("Deploy defensive shift? (pop-outs ↑)");
+  });
+});
+
+describe("getNotificationActions – new decision types", () => {
+  it("returns pinch_hitter actions with contact, power, and skip", () => {
+    const actions = getNotificationActions({ kind: "pinch_hitter" });
+    expect(actions).toEqual([
+      { action: "ph_contact", title: "🎯 Contact" },
+      { action: "ph_power",   title: "💪 Power" },
+      { action: "skip",       title: "⏭ Skip" },
+    ]);
+  });
+
+  it("returns defensive_shift actions with shift_on, shift_off, and skip", () => {
+    const actions = getNotificationActions({ kind: "defensive_shift" });
+    expect(actions).toEqual([
+      { action: "shift_on",  title: "📐 Shift On" },
+      { action: "shift_off", title: "🏟 Normal" },
+      { action: "skip",      title: "⏭ Skip" },
+    ]);
+  });
+});
