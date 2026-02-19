@@ -9,4 +9,10 @@ import { initSeedFromUrl } from "./utilities/rng";
 
 initSeedFromUrl({ writeToUrl: true });
 
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker
+    .register(new URL("./sw.ts", import.meta.url))
+    .catch(() => {/* SW not supported or blocked — graceful degradation */});
+}
+
 createRoot(document.getElementById("game")!).render(<Game homeTeam="Yankees" awayTeam="Mets" />);

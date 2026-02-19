@@ -25,9 +25,10 @@ export const canAnnounce = () => !(synth.speaking || synth.pending);
 export const playDecisionChime = (): void => {
   if (_muted) return;
   try {
-    const AudioCtx = window.AudioContext ?? (window as any).webkitAudioContext;
-    if (!AudioCtx) return;
-    const ctx: AudioContext = new AudioCtx();
+    const AudioCtxConstructor: typeof AudioContext =
+      window.AudioContext ?? (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtxConstructor) return;
+    const ctx = new AudioCtxConstructor();
 
     const playNote = (freq: number, start: number, dur: number) => {
       const osc = ctx.createOscillator();

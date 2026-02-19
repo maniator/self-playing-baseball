@@ -101,7 +101,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
   const [muted, setMutedState] = React.useState(() => loadBool("muted", false));
   const [managerMode, setManagerMode] = React.useState(() => loadBool("managerMode", false));
   const [strategy, setStrategy] = React.useState<Strategy>(() => loadString<Strategy>("strategy", "balanced"));
-  const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) as 0 | 1));
+  const [managedTeam, setManagedTeam] = React.useState<0 | 1>(() => (loadInt("managedTeam", 0) === 1 ? 1 : 0));
 
   // Tracks the mute state that was active before autoplay started, so we can
   // restore it when autoplay is turned off (even if the user toggled mute mid-play).
@@ -305,7 +305,7 @@ const BatterButton: React.FunctionComponent<{}> = () => {
             <>
               <ToggleLabel>
                 Team
-                <Select value={managedTeam} onChange={e => setManagedTeam(Number(e.target.value) as 0 | 1)}>
+                <Select value={managedTeam} onChange={e => setManagedTeam(Number(e.target.value) === 1 ? 1 : 0)}>
                   <option value={0}>{teams[0]}</option>
                   <option value={1}>{teams[1]}</option>
                 </Select>

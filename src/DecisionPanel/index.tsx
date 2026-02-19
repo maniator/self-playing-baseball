@@ -4,6 +4,7 @@ import { ContextValue, GameContext, DecisionType, Strategy } from "../Context";
 import { playDecisionChime } from "../utilities/announce";
 
 const DECISION_TIMEOUT_SEC = 10;
+const NOTIF_TAG = "manager-decision";
 
 const getNotificationBody = (d: DecisionType): string => {
   switch (d.kind) {
@@ -14,6 +15,50 @@ const getNotificationBody = (d: DecisionType): string => {
     case "ibb": return "Intentional walk opportunity";
     default: return "Manager decision needed";
   }
+};
+
+const getNotificationActions = (d: DecisionType): { action: string; title: string }[] => {
+  switch (d.kind) {
+    case "steal":  return [{ action: "steal",   title: "⚾ Yes, steal!" }, { action: "skip", title: "⏭ Skip" }];
+    case "bunt":   return [{ action: "bunt",    title: "✅ Bunt!"       }, { action: "skip", title: "⏭ Skip" }];
+    case "count30":return [{ action: "take",    title: "🤚 Take"        }, { action: "swing",  title: "⚾ Swing" }];
+    case "count02":return [{ action: "protect", title: "🛡 Protect"     }, { action: "normal", title: "⚾ Normal" }];
+    case "ibb":    return [{ action: "ibb",     title: "✅ Yes, IBB"    }, { action: "skip", title: "⏭ Skip" }];
+    default:       return [{ action: "skip",    title: "⏭ Skip" }];
+  }
+};
+
+interface ServiceWorkerNotificationOptions extends NotificationOptions {
+  actions?: { action: string; title: string }[];
+  data?: unknown;
+}
+
+/** Show a service-worker notification with action buttons. Falls back to plain Notification. */
+const showManagerNotification = (d: DecisionType): void => {
+  if (typeof Notification === "undefined" || Notification.permission !== "granted" || !document.hidden) return;
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.ready
+      .then(reg => reg.showNotification("Your turn, Manager!", {
+        body: getNotificationBody(d),
+        tag: NOTIF_TAG,
+        actions: getNotificationActions(d),
+        data: d,
+        requireInteraction: false,
+      } as ServiceWorkerNotificationOptions))
+      .catch(() => {});
+  } else {
+    const n = new Notification("Your turn, Manager!", { body: getNotificationBody(d) });
+    setTimeout(() => n.close(), 8000);
+  }
+};
+
+/** Close any open manager-decision notification (called when decision resolves). */
+const closeManagerNotification = (): void => {
+  if (!("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready
+    .then(reg => reg.getNotifications({ tag: NOTIF_TAG }))
+    .then(list => list.forEach(n => n.close()))
+    .catch(() => {});
 };
 
 const Panel = styled.div`
@@ -97,9 +142,33 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
   const { dispatch, pendingDecision }: ContextValue = React.useContext(GameContext);
   const [secondsLeft, setSecondsLeft] = React.useState(DECISION_TIMEOUT_SEC);
 
+  // Listen for actions dispatched from the service worker (notification button taps)
+  React.useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type !== "NOTIFICATION_ACTION") return;
+      const { action, payload } = event.data;
+      switch (action) {
+        case "steal":   dispatch({ type: "steal_attempt", payload }); break;
+        case "bunt":    dispatch({ type: "bunt_attempt", payload }); break;
+        case "take":    dispatch({ type: "set_one_pitch_modifier", payload: "take" }); break;
+        case "swing":   dispatch({ type: "set_one_pitch_modifier", payload: "swing" }); break;
+        case "protect": dispatch({ type: "set_one_pitch_modifier", payload: "protect" }); break;
+        case "normal":  dispatch({ type: "set_one_pitch_modifier", payload: "normal" }); break;
+        case "ibb":     dispatch({ type: "intentional_walk" }); break;
+        case "skip":    dispatch({ type: "skip_decision" }); break;
+        default: break; // "focus" — just brings tab to front, no game action needed
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [dispatch]);
+
+  // Countdown timer + chime + notification on new decision
   React.useEffect(() => {
     if (!pendingDecision) {
       setSecondsLeft(DECISION_TIMEOUT_SEC);
+      closeManagerNotification();
       return;
     }
     setSecondsLeft(DECISION_TIMEOUT_SEC);
@@ -107,13 +176,8 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
     // Sound alert (respects mute)
     playDecisionChime();
 
-    // Browser notification when the tab is not visible
-    if (typeof Notification !== "undefined" && Notification.permission === "granted" && document.hidden) {
-      const n = new Notification("Your turn, Manager!", {
-        body: getNotificationBody(pendingDecision),
-      });
-      setTimeout(() => n.close(), 8000);
-    }
+    // Browser notification with action buttons when tab is not visible
+    showManagerNotification(pendingDecision);
 
     const id = setInterval(() => {
       setSecondsLeft(s => {
