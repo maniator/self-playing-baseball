@@ -17,7 +17,6 @@ export const useGameRefs = (
   announcementVolume: number,
   speed: number,
   strikes: number,
-  balls: number,
   managerMode: boolean,
   strategy: Strategy,
   managedTeam: 0 | 1,
@@ -56,17 +55,6 @@ export const useGameRefs = (
     }
     prevPendingDecision.current = pendingDecision;
   }, [pendingDecision]);
-
-  // Reset skip when a new batter comes to the plate (count returns to 0-0 from non-zero).
-  // This allows decisions to be re-evaluated for each new at-bat.
-  const prevCountRef = React.useRef({ balls, strikes });
-  React.useEffect(() => {
-    const prev = prevCountRef.current;
-    if (balls === 0 && strikes === 0 && (prev.balls > 0 || prev.strikes > 0)) {
-      skipDecisionRef.current = false;
-    }
-    prevCountRef.current = { balls, strikes };
-  }, [balls, strikes]);
 
   return {
     autoPlayRef,

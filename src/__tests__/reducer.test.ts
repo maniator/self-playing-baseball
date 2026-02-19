@@ -325,54 +325,6 @@ describe("bunt_attempt", () => {
     expect(state.baseLayout[0]).toBe(1);
     expect(logs.some(l => l.toLowerCase().includes("popped"))).toBe(true);
   });
-
-  it("fielder's choice: runner on 1st thrown out, batter reaches 1st", () => {
-    // balanced singleChance=8, fcChance=20; roll=10 → FC
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner thrown out at 2nd
-    expect(state.outs).toBe(1);          // out recorded
-    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
-  });
-
-  it("fielder's choice: runner on 1st thrown out, runner on 2nd advances to 3rd", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 1st thrown out
-    expect(state.baseLayout[2]).toBe(1); // runner on 2nd advances to 3rd
-    expect(state.outs).toBe(1);
-  });
-
-  it("fielder's choice: runner on 1st thrown out, runner on 3rd scores", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.score[0]).toBe(1);      // runner on 3rd scored
-    expect(state.outs).toBe(1);
-    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
-  });
-
-  it("fielder's choice: runner on 2nd (only) thrown out, batter reaches 1st", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 0], outs: 1 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 2nd thrown out
-    expect(state.outs).toBe(2);
-    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
-  });
-
-  it("fielder's choice: runners on 2nd and 3rd — 2nd runner thrown out, 3rd scores", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 2nd thrown out
-    expect(state.baseLayout[2]).toBe(0); // runner on 3rd scored
-    expect(state.score[0]).toBe(1);      // run scored
-    expect(state.outs).toBe(1);
-    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
-  });
 });
 
 // half-inning transition

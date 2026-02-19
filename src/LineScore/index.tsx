@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useGameContext } from "../Context";
 import { Hit } from "../constants/hitTypes";
-import { Wrapper, Table, Th, TeamTh, Td, TeamTd, DividerTd, BsoRow, BsoGroup, Dot, GameOverBanner } from "./styles";
+import { Wrapper, Table, Th, TeamTh, Td, TeamTd, DividerTd, BsoRow, BsoGroup, Dot, GameOverBanner, ExtraInningsBanner } from "./styles";
 
 /** Returns the run display for a given team/inning cell. */
 function getCellValue(
@@ -74,6 +74,7 @@ const LineScore: React.FunctionComponent<{}> = () => {
           O
           {[0, 1].map(i => <Dot key={i} $on={i < outs} $color="#e05050" />)}
         </BsoGroup>
+        {inning > 9 && !gameOver && <ExtraInningsBanner>EXTRA INNINGS</ExtraInningsBanner>}
         {gameOver && <GameOverBanner>FINAL</GameOverBanner>}
       </BsoRow>
     </Wrapper>

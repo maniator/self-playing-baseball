@@ -2,11 +2,7 @@ import * as React  from "react";
 
 import styled from "styled-components"
 
-import Diamond from "../Diamond";
-import GameControls from "../GameControls";
 import { GameProviderWrapper } from "../Context";
-import Announcements from "../Announcements";
-import ScoreBoard from "../ScoreBoard";
 import GameInner from "./GameInner";
 
 type Props = {

@@ -169,6 +169,26 @@ describe("LineScore", () => {
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("3").length).toBeGreaterThan(0);
   });
+
+  it("shows extra inning columns beyond 9 in extra innings", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10 }));
+    expect(screen.getAllByText("10").length).toBeGreaterThan(0);
+  });
+
+  it("shows EXTRA INNINGS banner when inning > 9 and game is in progress", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: false }));
+    expect(screen.getByText("EXTRA INNINGS")).toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner when gameOver is true", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: true }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner in inning 9 or earlier", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 9, gameOver: false }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
+  });
 });
 
 // ---------------------------------------------------------------------------

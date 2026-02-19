@@ -308,3 +308,33 @@ describe("nextHalfInning", () => {
     expect(next.baseLayout).toEqual([0, 0, 0]);
   });
 });
+
+describe("nextHalfInning – extra-inning tiebreak rule", () => {
+  it("places runner on 2nd at start of top of 10th inning", () => {
+    const { log, logs } = makeLogs();
+    // atBat=1 (home), inning=9 → switching to top of 10th (atBat=0, inning=10)
+    const state = makeState({ atBat: 1, inning: 9, outs: 3 });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(10);
+    expect(next.baseLayout).toEqual([0, 1, 0]);
+    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+  });
+
+  it("places runner on 2nd at start of bottom of 10th inning", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({ atBat: 0, inning: 10 });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(10);
+    expect(next.atBat).toBe(1);
+    expect(next.baseLayout).toEqual([0, 1, 0]);
+    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+  });
+
+  it("does NOT place tiebreak runner in inning 9 or earlier", () => {
+    const { log } = makeLogs();
+    const state = makeState({ atBat: 1, inning: 8 });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(9);
+    expect(next.baseLayout).toEqual([0, 0, 0]);
+  });
+});

@@ -6,13 +6,16 @@ Future improvements and known gaps documented here for tracking.
 
 ## Game Logic
 
-- **Grounder / double-play logic** — Currently all hits use simplified base advancement.  
-  Adding directional-hit runner-advancement, grounder outs, and caught-at-first-with-trailing-runner scenarios requires tracking ball direction and individual runner speeds, which is a larger state change.  
-  *(See `reducer.ts` `advanceRunners`)*
+- ~~**Grounder / double-play logic**~~ ✅ Implemented in `hitBall.ts` (`handleGrounder`):
+  ~40% of non-HR ball-in-play outs are ground balls. With a runner on 1st and fewer than 2 outs, 65% turn into a double play; the remaining 35% are fielder's-choice plays. Without a force play the batter is thrown out at first.
 
-- **Extra-inning logic** — The game correctly continues past 9 innings when tied, but walk-off / tie-break rules could be more explicit in the UI.
+- ~~**Extra-inning logic**~~ ✅ Implemented:
+  - Automatic tiebreak runner on 2nd placed at the start of every extra-inning half (`nextHalfInning` in `gameOver.ts`).
+  - `LineScore` shows an "EXTRA INNINGS" badge when `inning > 9` and game is in progress; extra-inning columns expand automatically.
 
-- **Pitch types** — All pitches are abstracted into swing/take/hit. Modelling fastballs, curves, sliders etc. would add depth to the count-based strategy decisions.
+- ~~**Pitch types**~~ ✅ Implemented (`constants/pitchTypes.ts`, `playerActions.ts`, `reducer.ts`, `usePitchDispatch.ts`):
+  - Four pitch types (fastball, curveball, slider, changeup) with count-aware selection and per-type swing/zone modifiers.
+  - Play-by-play enriched: "Slider — swing and a miss — strike 2.", "Curveball — ball 2.", etc.
 
 ---
 

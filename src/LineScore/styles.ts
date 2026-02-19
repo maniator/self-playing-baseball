@@ -87,6 +87,16 @@ export const Dot = styled.span<{ $on: boolean; $color: string }>`
   border: 1px solid ${({ $on, $color }) => ($on ? $color : "#2e4a6f")};
 `;
 
+export const ExtraInningsBanner = styled.div`
+  background: #0f4880;
+  color: #fff;
+  font-weight: bold;
+  font-size: 11px;
+  padding: 2px 8px;
+  letter-spacing: 1px;
+  margin-left: auto;
+`;
+
 export const GameOverBanner = styled.div`
   background: #b30000;
   color: #fff;

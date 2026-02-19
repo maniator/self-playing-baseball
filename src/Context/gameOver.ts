@@ -36,8 +36,14 @@ export const nextHalfInning = (state: State, log): State => {
     if (maybe.gameOver) return maybe;
   }
 
+  const isExtra = newInning > 9;
+  const nextWithBase = isExtra
+    ? { ...next, baseLayout: [0, 1, 0] as [number, number, number] }
+    : next;
+
   log(`${state.teams[newHalfInning]} are now up to bat!`);
-  return next;
+  if (isExtra) log("Tiebreak rule: runner placed on 2nd base.");
+  return nextWithBase;
 };
 
 export const checkWalkoff = (state: State, log): State => {

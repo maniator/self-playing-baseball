@@ -14,9 +14,34 @@ const HIT_CALLOUTS: Record<Hit, string> = {
   [Hit.Walk]:    "",
 };
 
+/**
+ * Handle a ground ball out. Implements three scenarios:
+ *   1. Double play — runner on 1st with <2 outs: two outs recorded, runner on 1st removed.
+ *   2. Fielder's choice — runner on 1st with <2 outs, DP not turned: lead runner out, batter safe.
+ *   3. Simple ground out — no force play: batter thrown out at 1st.
+ */
+const handleGrounder = (state: State, log, pitchKey: number): State => {
+  const { baseLayout, outs } = state;
+  const groundedState = { ...state, pitchKey, hitType: undefined as Hit | undefined };
+
+  if (baseLayout[0] && outs < 2) {
+    if (getRandomInt(100) < 65) {
+      log("Ground ball to the infield — double play!");
+      const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
+      const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log, true);
+      return playerOut(afterFirst, log);
+    }
+    log("Ground ball to the infield — fielder's choice.");
+    const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
+    return playerOut({ ...groundedState, baseLayout: fcBase }, log);
+  }
+
+  log("Ground ball to the infield — out at first.");
+  return playerOut(groundedState, log, true);
+};
+
 /** Accumulate runs into the sparse inningRuns array for the current team/inning. */
 const addInningRuns = (state: State, runs: number): State => {
-  if (runs === 0) return state;
   const idx = state.inning - 1;
   const newInningRuns: [number[], number[]] = [
     [...state.inningRuns[0]],
@@ -45,6 +70,9 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     if (strategy === "power" && getRandomInt(100) < 15) {
       type = Hit.Homerun;
       log("Power hitter turns it around — Home Run!");
+    } else if (getRandomInt(100) < 40) {
+      // ~40% of non-HR outs are ground balls; rest are fly balls / pop-ups.
+      return handleGrounder(state, log, pitchKey);
     } else {
       log("Popped it up — that's an out.");
       // batterCompleted=true: the batter's at-bat ended with a pop-out.

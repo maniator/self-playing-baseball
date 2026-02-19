@@ -35,7 +35,7 @@ describe("useGameRefs", () => {
   it("returns refs with correct initial values", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs(false, 1, 700, 0, false, "balanced", 0, snap, null)
     );
     expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
@@ -50,7 +50,7 @@ describe("useGameRefs", () => {
   it("mutedRef is true when announcementVolume is 0", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 0, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs(false, 0, 700, 0, false, "balanced", 0, snap, null)
     );
     expect(result.current.mutedRef.current).toBe(true);
   });
@@ -59,46 +59,13 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd }) => useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, pd),
+      ({ pd }) => useGameRefs(false, 1, 700, 0, false, "balanced", 0, snap, pd),
       { initialProps: { pd: null as typeof pending | null } }
     );
     expect(result.current.skipDecisionRef.current).toBe(false);
     rerender({ pd: pending });
     rerender({ pd: null });
     expect(result.current.skipDecisionRef.current).toBe(true);
-  });
-
-  it("skipDecisionRef persists across pitches (not reset after one pitch)", () => {
-    const snap = makeGameSnapshot();
-    const pending = { kind: "bunt" as const };
-    // Start with non-zero count so we can test reset detection
-    const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
-      { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
-    );
-    // Trigger skip (decision resolved)
-    rerender({ pd: pending, strikes: 1, balls: 0 });
-    rerender({ pd: null, strikes: 1, balls: 0 });
-    expect(result.current.skipDecisionRef.current).toBe(true);
-    // Another pitch — count changes but NOT back to 0-0 → skip should persist
-    rerender({ pd: null, strikes: 2, balls: 0 });
-    expect(result.current.skipDecisionRef.current).toBe(true);
-  });
-
-  it("skipDecisionRef resets to false when new batter detected (count back to 0-0)", () => {
-    const snap = makeGameSnapshot();
-    const pending = { kind: "bunt" as const };
-    const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
-      { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
-    );
-    // Trigger skip
-    rerender({ pd: pending, strikes: 1, balls: 0 });
-    rerender({ pd: null, strikes: 1, balls: 0 });
-    expect(result.current.skipDecisionRef.current).toBe(true);
-    // New batter: count resets to 0-0
-    rerender({ pd: null, strikes: 0, balls: 0 });
-    expect(result.current.skipDecisionRef.current).toBe(false);
   });
 });
 
@@ -192,8 +159,10 @@ describe("usePitchDispatch", () => {
     const dispatchLog = vi.fn();
     const refs = makeRefs();
     // swingRate with 0 strikes, balanced = round((500 - 75*0) * 1 * 1) = 500
-    // random 0.001 → getRandomInt(1000) = 1 < 500 → swing
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 1 < 500 → swing
+    // 3rd call: foul/strike roll (getRandomInt(100)) → 50 → 50 >= 30 → strike
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
@@ -210,8 +179,10 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // random 0.999 → getRandomInt(1000) = 999 >= 920 → hit
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 999 >= 920 → hit
+    // 3rd call: hitRoll (getRandomInt(100)) → 10
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
