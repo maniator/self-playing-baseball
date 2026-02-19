@@ -120,8 +120,11 @@ const reducer = (dispatchLogger) => {
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
         };
-      case 'skip_decision':
-        return { ...state, pendingDecision: null };
+      case 'skip_decision': {
+        const entry = state.pendingDecision ? `${state.pitchKey}:skip` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, pendingDecision: null, decisionLog };
+      }
       case 'set_pending_decision':
         return { ...state, pendingDecision: action.payload as DecisionType };
       default:
