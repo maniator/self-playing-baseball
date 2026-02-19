@@ -125,6 +125,7 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 - Listens for `notificationclick` events (both notification-body click and action-button click).
 - Posts `{ type: 'NOTIFICATION_ACTION', action: string, payload: DecisionType }` to the first available `WindowClient`.
 - Always calls `client.focus()` to bring the tab to the foreground.
+- **Logging**: every lifecycle event (`install`, `activate`, `notificationclick`) emits `[SW vX.Y.Z]` prefixed `console.log` / `console.error` messages. These appear in DevTools → Application → Service Workers → **Inspect** console. Increment `SW_VERSION` at the top of `sw.ts` whenever the file changes so logs identify which build is active.
 
 **Action strings** match reducer action identifiers: `steal`, `bunt`, `take`, `swing`, `protect`, `normal`, `ibb`, `skip`, `focus` (focus-only, no game action).
 
