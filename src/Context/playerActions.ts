@@ -11,21 +11,17 @@ import getRandomInt from "../utilities/getRandomInt";
 export const playerStrike = (state: State, log, swung = false, foul = false, pitchType?: PitchType): State => {
   const newStrikes = state.strikes + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
-  const p = pitchType ? `${pitchName(pitchType)} — ` : "";
+  const msg = (text: string) => pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
   if (newStrikes === 3) {
-    log(swung
-      ? `${p}swing and a miss — strike three! He's out!`
-      : `${p}called strike three! He's out!`);
+    log(swung ? msg("swing and a miss — strike three! He's out!") : msg("called strike three! He's out!"));
     return playerOut({ ...state, pitchKey }, log);
   }
 
   if (foul) {
-    log(`${p}foul ball — strike ${newStrikes}.`);
+    log(msg(`foul ball — strike ${newStrikes}.`));
   } else {
-    log(swung
-      ? `${p}swing and a miss — strike ${newStrikes}.`
-      : `${p}called strike ${newStrikes}.`);
+    log(swung ? msg(`swing and a miss — strike ${newStrikes}.`) : msg(`called strike ${newStrikes}.`));
   }
 
   return {
@@ -40,14 +36,14 @@ export const playerStrike = (state: State, log, swung = false, foul = false, pit
 export const playerBall = (state: State, log, pitchType?: PitchType): State => {
   const newBalls = state.balls + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
-  const p = pitchType ? `${pitchName(pitchType)} — ` : "";
+  const msg = (text: string) => pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
   if (newBalls === 4) {
-    log(`${p}ball four — take your base!`);
+    log(msg("ball four — take your base!"));
     return hitBall(Hit.Walk, { ...state, pitchKey }, log);
   }
 
-  log(`${p}ball ${newBalls}.`);
+  log(msg(`ball ${newBalls}.`));
   return {
     ...state,
     balls: newBalls,

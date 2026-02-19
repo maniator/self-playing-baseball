@@ -21,7 +21,7 @@ const HIT_CALLOUTS: Record<Hit, string> = {
  *      going to 2nd while batter safely reaches 1st.
  *   3. Simple ground out — no force play available: batter thrown out at 1st.
  */
-const handleGrounder = (state: State, log, pitchKey: number, strategy: Strategy): State => {
+const handleGrounder = (state: State, log, pitchKey: number): State => {
   const { baseLayout, outs } = state;
   const groundedState = { ...state, pitchKey, hitType: undefined as Hit | undefined };
 
@@ -63,7 +63,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
       log("Power hitter turns it around — Home Run!");
     } else if (getRandomInt(100) < 40) {
       // ~40% of non-HR outs are ground balls; the rest are fly balls / pop-ups.
-      return handleGrounder(state, log, pitchKey, strategy);
+      return handleGrounder(state, log, pitchKey);
     } else {
       log("Popped it up — that's an out.");
       return playerOut({ ...state, pitchKey, hitType: undefined }, log);
