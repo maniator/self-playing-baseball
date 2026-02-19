@@ -48,6 +48,7 @@ export const useAutoPlayScheduler = (
         }
 
         betweenInningsPauseRef.current = false;
+        // Reset extraWait so the next speech-wait window starts fresh for the new pitch.
         extraWait = 0;
         handleClickRef.current();
         tick(speedRef.current);

@@ -1,8 +1,8 @@
 import { Hit } from "../constants/hitTypes";
 import { State, Strategy, DecisionType, OnePitchModifier } from "./index";
 import { advanceRunners } from "./advanceRunners";
-import { playerOut } from "./playerActions";
-import { stratMod } from "./reducer";
+import { playerOut } from "./playerOut";
+import { stratMod } from "./strategy";
 import getRandomInt from "../utilities/getRandomInt";
 
 // Vivid hit callouts — logged inside hitBall AFTER the pop-out check passes.

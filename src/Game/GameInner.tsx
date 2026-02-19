@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import BatterButton from "../GameControls";
+import GameControls from "../GameControls";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
@@ -45,7 +45,7 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
           <label><Input value={teams[1]} onChange={handleChangeTeam(1)} /></label>!
         </div>
 
-        <BatterButton />
+        <GameControls />
         <InstructionsModal />
       </GameInfo>
       <GameBody>

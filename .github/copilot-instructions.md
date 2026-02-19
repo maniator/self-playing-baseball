@@ -4,7 +4,7 @@
 
 This is a **self-playing baseball game simulator** built as a single-page React/TypeScript web application. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation.
 
-**Repository size:** Small (~35 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn (classic).
+**Repository size:** Small (~55 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn (classic).
 
 ---
 
@@ -29,46 +29,78 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     ├── constants/
     │   └── hitTypes.ts         # Hit enum: Single, Double, Triple, Homerun, Walk
     ├── utilities/
-    │   ├── announce.ts         # Web Speech API + Web Audio API; exports announce, cancelAnnouncements,
-    │   │                       #   setAnnouncementVolume, getAnnouncementVolume, setAlertVolume,
-    │   │                       #   getAlertVolume, setSpeechRate, isSpeechPending, playDecisionChime
+    │   ├── announce.ts         # Barrel re-export: re-exports everything from tts.ts and audio.ts
+    │   ├── audio.ts            # Web Audio API: setAlertVolume, getAlertVolume, playDecisionChime,
+    │   │                       #   playVictoryFanfare, play7thInningStretch
+    │   ├── tts.ts              # Web Speech API: announce, cancelAnnouncements, setAnnouncementVolume,
+    │   │                       #   getAnnouncementVolume, setSpeechRate, isSpeechPending
     │   ├── getRandomInt.ts     # Random number helper — delegates to rng.ts random()
     │   ├── localStorage.ts     # localStorage helpers: loadBool, loadInt, loadFloat, loadString
     │   ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │   └── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed
     ├── Context/
-    │   ├── index.tsx           # GameContext, State interface, GameProviderWrapper
+    │   ├── index.tsx           # GameContext (typed createContext<ContextValue | undefined>(undefined)),
+    │   │                       #   useGameContext() hook, State interface, GameProviderWrapper
     │   │                       #   State fields: strikes, balls, outs, inning, score, atBat, teams,
-    │   │                       #   baseLayout, hitType, log, gameOver, pendingDecision, onePitchModifier,
+    │   │                       #   baseLayout, hitType, gameOver, pendingDecision, onePitchModifier,
     │   │                       #   pitchKey, decisionLog
-    │   └── reducer.ts          # All game logic; exports detectDecision(); strategy modifiers via stratMod()
+    │   ├── strategy.ts         # stratMod(strategy, stat) — returns probability multiplier per strategy
+    │   ├── advanceRunners.ts   # advanceRunners(type, baseLayout) — pure baseball base-advancement logic
+    │   ├── gameOver.ts         # checkGameOver, checkWalkoff, nextHalfInning
+    │   ├── playerOut.ts        # playerOut — handles out count, 3-out half-inning transitions
+    │   ├── hitBall.ts          # hitBall — pop-out check, callout log, run scoring
+    │   ├── playerActions.ts    # playerStrike, playerBall, playerWait, stealAttempt, buntAttempt
+    │   └── reducer.ts          # Reducer factory; exports detectDecision(), re-exports stratMod
     ├── Announcements/          # Play-by-play log with "PLAY-BY-PLAY" heading + empty-state placeholder
     ├── Ball/
     │   ├── constants.ts        # hitDistances: pixel travel distance per Hit type for animation
     │   └── index.tsx           # Ball animation component; key={pitchKey} restarts CSS animation each pitch
-    ├── BatterButton/
-    │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms)
-    │   └── index.tsx           # "Batter Up!" + "Share replay" + auto-play/speed/volume/manager controls
     ├── DecisionPanel/
     │   ├── constants.ts        # DECISION_TIMEOUT_SEC (10), NOTIF_TAG ("manager-decision")
+    │   ├── DecisionButtonStyles.ts  # Styled-component button variants for decision actions
+    │   ├── DecisionButtons.tsx # Decision action button groups per decision kind
     │   ├── notificationHelpers.ts  # showManagerNotification, closeManagerNotification,
     │   │                           #   getNotificationBody, getNotificationActions,
     │   │                           #   ServiceWorkerNotificationOptions interface
+    │   ├── styles.ts           # Styled components for DecisionPanel layout
     │   └── index.tsx           # Manager decision UI: prompt, action buttons, 10s countdown bar,
     │                           #   auto-skip timer, notification actions listener (SW messages)
-    ├── Diamond/                # Baseball diamond — self-contained with FieldWrapper container
+    ├── Diamond/
+    │   ├── index.tsx           # Baseball diamond — self-contained with FieldWrapper container
+    │   └── styles.ts           # Styled components for diamond layout
     ├── Game/
     │   ├── index.tsx           # Wraps children in GameProviderWrapper + GitHub ribbon
-    │   └── GameInner.tsx       # Two-column layout: left (play-by-play), right (ScoreBoard + Diamond)
+    │   ├── GameInner.tsx       # Two-column layout: left (play-by-play), right (ScoreBoard + Diamond)
+    │   └── styles.ts           # Styled components for game layout
+    ├── GameControls/           # Formerly BatterButton — all game-control UI and logic
+    │   ├── index.tsx           # GameControls component — wires all hooks + renders controls
+    │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms)
+    │   ├── styles.ts           # Styled components for controls layout
+    │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
+    │   ├── ManagerModeStyles.ts    # Styled components for manager mode controls
+    │   ├── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
+    │   └── hooks/
+    │       ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
+    │       ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
+    │       ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
+    │       ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; cancelled flag + extraWait reset
+    │       ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
+    │       ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
+    │       └── useShareReplay.ts       # Clipboard copy of replay URL
+    ├── InstructionsModal/
+    │   ├── index.tsx           # Instructions modal component
+    │   └── styles.ts           # Styled components for modal
     └── ScoreBoard/             # Score/inning/strikes/balls/outs + FINAL banner when gameOver
 ```
 
 **Key architectural notes:**
 - All game state lives in `Context/index.tsx` (`State` interface) and is mutated by `Context/reducer.ts`.
-- `BatterButton/index.tsx` dispatches all pitch actions (`strike`, `wait`, `hit`) and all manager/decision actions. It also owns auto-play, speed, mute, manager mode, team selection, strategy, and share-replay controls.
-- Reducer action types: `nextInning`, `hit`, `setTeams`, `strike`, `wait`, `steal_attempt`, `bunt_attempt`, `intentional_walk`, `set_one_pitch_modifier`, `set_pending_decision`, `skip_decision`.
-- `Hit` enum values correspond directly to base advancement in `reducer.ts` (`moveBase`).
-- `detectDecision(state, strategy, managerMode)` is exported from `reducer.ts` and called in `BatterButton` to detect decision points before each pitch.
+- `GameControls/index.tsx` (formerly `BatterButton`) dispatches all pitch actions and owns auto-play, speed, mute, manager mode, team selection, strategy, and share-replay controls. All stateful logic is split into focused hooks under `GameControls/hooks/`.
+- `GameContext` is typed `createContext<ContextValue | undefined>(undefined)`. Always consume it via the `useGameContext()` hook exported from `Context/index.tsx` — **never** call `React.useContext(GameContext)` directly in components.
+- Reducer action types: `nextInning`, `hit`, `setTeams`, `strike`, `foul`, `wait`, `steal_attempt`, `bunt_attempt`, `intentional_walk`, `set_one_pitch_modifier`, `set_pending_decision`, `skip_decision`, `reset`.
+- `Hit` enum values correspond directly to base advancement in `advanceRunners.ts`.
+- `detectDecision(state, strategy, managerMode)` is exported from `reducer.ts` and called in `usePitchDispatch` to detect decision points before each pitch.
+- **Context module dependency order (no cycles):** `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `playerActions` → `reducer`
 
 ---
 
@@ -87,25 +119,27 @@ The same seed produces identical play-by-play sequences. Sharing the URL with `?
 
 ## Auto-play Mode
 
-`BatterButton/index.tsx` includes a fully self-contained auto-play system:
+Auto-play is implemented in `GameControls/hooks/useAutoPlayScheduler.ts`:
 
-- **Auto-play checkbox** — starts/stops a speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickButton`. Uses `handleClickRef` so speed changes take effect immediately without stale closures.
+- **Auto-play checkbox** — starts/stops a speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses `handleClickRef` so speed changes take effect immediately without stale closures.
 - **`strikesRef`** — keeps the latest `strikes` value accessible without re-running the scheduler effect.
 - **Speed selector** — Slow (1200 ms), Normal (700 ms), Fast (350 ms). Speech rate scales with speed via `setSpeechRate()`.
 - **Volume sliders** — separate range inputs for 🔊 announcement (TTS) volume and 🔔 alert (chime/fanfare) volume (both 0–1, persisted to localStorage). `mutedRef` tracks `announcementVolume === 0` so the scheduler skips speech-wait when silent.
 - **Manager Mode pausing** — when Manager Mode is ON and a `pendingDecision` is set, the scheduler effect returns early. It restarts automatically once the decision is resolved (`pendingDecision → null`).
+- **`cancelled` flag** — set in the effect cleanup function; every scheduled `tick` callback checks this flag before proceeding, preventing stale callbacks from running after unmount or re-render.
+- **`extraWait` reset** — `extraWait` is reset to `0` immediately before `handleClickRef.current()` is called, ensuring the speech-wait budget starts fresh for each new pitch.
 - All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
 
 ---
 
 ## Manager Mode & Decision System
 
-`BatterButton/index.tsx` owns the Manager Mode feature:
+`GameControls/index.tsx` and its hooks own the Manager Mode feature:
 
 - **Manager Mode toggle** — when ON, exposes Team and Strategy selectors and activates the decision pipeline.
 - **Team selector** — the user picks which team (index `0` or `1`) they manage. Decisions are only detected when `atBat === managedTeam`; the opponent's at-bats auto-play normally.
-- **Strategy selector** — Balanced / Aggressive / Patient / Contact / Power. Applied via `stratMod(strategy, key)` in `reducer.ts` to bias probabilities (walk chance, strikeout, HR, contact, steal success, runner advancement).
-- **Decision detection** (`detectDecision` from `reducer.ts`) — evaluated before each pitch when the managed team is at bat. Returns one of: `steal`, `bunt`, `count30`, `count02`, `ibb`, or `null`.
+- **Strategy selector** — Balanced / Aggressive / Patient / Contact / Power. Applied via `stratMod(strategy, key)` in `strategy.ts` to bias probabilities (walk chance, strikeout, HR, contact, steal success, runner advancement).
+- **Decision detection** (`detectDecision` from `reducer.ts`) — evaluated before each pitch (in `usePitchDispatch`) when the managed team is at bat. Returns one of: `steal`, `bunt`, `count30`, `count02`, `ibb`, `ibb_or_steal`, or `null`.
 - **`skipDecisionRef`** — after a decision is resolved the next pitch skips re-detection to prevent an immediate repeat decision on the same pitch.
 
 **Decision types and conditions:**
@@ -166,7 +200,7 @@ Both produce identical CSS `%c` badge output:
 
 `GameInner.tsx` uses a **two-column flex layout** (no absolute positioning for game elements):
 
-- **Top:** `GameInfo` — welcome text, team name inputs, `BatterButton` (controls + decision panel).
+- **Top:** `GameInfo` — welcome text, team name inputs, `GameControls` (controls + decision panel).
 - **Body (`GameBody`):** `align-items: flex-start` flex row:
   - **Left panel (`LeftPanel`):** `flex: 1` — `Announcements` with "PLAY-BY-PLAY" heading, empty-state prompt, `max-height: 500px` scroll. Separated from right column by a subtle `border-right`.
   - **Right panel (`RightPanel`):** `width: 310px` — `ScoreBoard` stacked above `Diamond`.
@@ -182,9 +216,9 @@ Both produce identical CSS `%c` badge output:
 
 ## Game-Over Logic
 
-- **Bottom of 9th (no tie):** `checkGameOver` in `reducer.ts` is called inside `nextHalfInning`. If `inning >= 9` and the home team is leading at the end of their half-inning, `gameOver: true` is set.
+- **Bottom of 9th (no tie):** `checkGameOver` in `gameOver.ts` is called inside `nextHalfInning`. If `inning >= 9` and the home team is leading at the end of their half-inning, `gameOver: true` is set.
 - **Walk-off:** `checkWalkoff` is called after every `hit`, `bunt_attempt`, and `intentional_walk`. If the home team takes the lead during the bottom of the 9th+, the game ends immediately.
-- When `gameOver` is true, the reducer returns the current state unchanged for all actions except `setTeams` and `nextInning`. `BatterButton` disables the "Batter Up!" button and the auto-play interval stops pitching.
+- When `gameOver` is true, the reducer returns the current state unchanged for all actions except `setTeams`, `nextInning`, and `reset`. `GameControls` disables the "Batter Up!" button and the auto-play interval stops pitching.
 
 ---
 
@@ -203,7 +237,7 @@ yarn dev          # parcel serve src/*.html
 yarn build        # parcel build src/*.html
 ```
 
-**There are no lint or test scripts.** The project has no ESLint, Prettier, Jest, or other testing/linting configuration. Do not attempt to run `yarn lint`, `yarn test`, or similar — they do not exist.
+**There are test scripts.** The project uses Vitest with `@testing-library/react`. Run `yarn test` for a one-shot pass and `yarn test:coverage` for the coverage report (thresholds: lines/functions/statements 90%, branches 80%).
 
 **TypeScript** is compiled by Parcel (no standalone `tsc` build step and no `tsconfig.json`). TypeScript errors will surface as Parcel build errors.
 
@@ -213,9 +247,10 @@ yarn build        # parcel build src/*.html
 
 ## Validation
 
-Since there are no automated tests or linters, validate changes by:
+Validate changes by:
 1. Running `yarn build` — a successful exit with output in `dist/` confirms TypeScript compiles and the bundle is valid.
-2. Running `yarn dev` and opening the browser to verify runtime behaviour if a UI change was made.
+2. Running `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds.
+3. Running `yarn dev` and opening the browser to verify runtime behaviour if a UI change was made.
 
 ---
 
@@ -228,6 +263,9 @@ Since there are no automated tests or linters, validate changes by:
 - **React import style:** Files use `import * as React from "react"` (not the default import). Follow this pattern.
 - **Styled-components v6:** Use the v6 API. Custom props on styled components **must** be typed via generics, e.g. `styled.div<{ teamAtBat: boolean }>`. Use `$propName` (transient props) for non-HTML props to prevent DOM forwarding warnings.
 - **Node version:** The project targets Node 24.x (see `.nvmrc`). Use `nvm use` to switch if needed.
-- **No test infrastructure:** Do not add tests unless the issue explicitly requests it.
+- **No test infrastructure:** Do not add tests unless the issue explicitly requests it. Test files live in `src/__tests__/`; the vitest config excludes entry points (`index.tsx`, `sw.ts`).
 - **`browserslist`** is set in `package.json` (`> 0.5%, last 2 versions, not dead`). This is required for Parcel v2 to bundle all dependencies (including React) into the output JS file for the browser.
 - **`webkitAudioContext`** — use `(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext` rather than `(window as any)` for the Safari fallback in `announce.ts`.
+- **Never import GameContext directly** — always consume it via the `useGameContext()` hook exported from `Context/index.tsx`. Direct `React.useContext(GameContext)` calls will throw if used outside the provider and lose type safety.
+- **`announce.ts` is a barrel re-export** — it simply re-exports everything from `tts.ts` and `audio.ts`. Always import from `utilities/announce` as the public API; never import directly from `tts.ts` or `audio.ts`.
+- **Context module cycle-free order** — when adding new Context modules, respect the dependency order: `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `playerActions` → `reducer`. No module may import from a module later in this chain.

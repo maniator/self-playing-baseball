@@ -1,7 +1,7 @@
 /**
  * Tests for React components:
  * Announcements, Ball, ScoreBoard, Diamond, InstructionsModal,
- * DecisionPanel, BatterButton, Game/GameInner
+ * DecisionPanel, GameControls, Game/GameInner
  */
 import * as React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -434,45 +434,45 @@ describe("DecisionPanel", () => {
 });
 
 // ---------------------------------------------------------------------------
-// BatterButton
+// GameControls
 // ---------------------------------------------------------------------------
-import BatterButton from "../GameControls";
+import GameControls from "../GameControls";
 
-describe("BatterButton", () => {
+describe("GameControls", () => {
   beforeEach(() => {
     localStorage.clear();
   });
 
   it("shows Batter Up! button when autoplay is off", () => {
-    renderWithContext(<BatterButton />, makeContextValue({ gameOver: false }));
+    renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
     expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
   });
 
   it("Batter Up! button is disabled when game is over", () => {
-    renderWithContext(<BatterButton />, makeContextValue({ gameOver: true }));
+    renderWithContext(<GameControls />, makeContextValue({ gameOver: true }));
     expect(screen.getByRole("button", { name: /batter up/i })).toBeDisabled();
   });
 
   it("shows Share replay button", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.getByRole("button", { name: /share replay/i })).toBeInTheDocument();
   });
 
   it("shows auto-play checkbox", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.getByRole("checkbox", { name: /auto-play/i })).toBeInTheDocument();
   });
 
   it("dispatches a game action when Batter Up! is clicked", () => {
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalled();
   });
 
   it("does not dispatch when game is over and Batter Up! is clicked", () => {
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: true }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: true }));
     // button is disabled so click won't fire
     const btn = screen.getByRole("button", { name: /batter up/i });
     expect(btn).toBeDisabled();
@@ -480,30 +480,30 @@ describe("BatterButton", () => {
 
   it("hides Batter Up! when autoplay is enabled", () => {
     localStorage.setItem("autoPlay", "true");
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
   it("shows Manager Mode checkbox when autoplay is on", () => {
     localStorage.setItem("autoPlay", "true");
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
   });
 
   it("does NOT show Manager Mode checkbox when autoplay is off", () => {
     localStorage.setItem("autoPlay", "false");
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
   });
 
   it("shows volume sliders", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: /alert volume/i })).toBeInTheDocument();
   });
 
   it("shows speed selector", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 });

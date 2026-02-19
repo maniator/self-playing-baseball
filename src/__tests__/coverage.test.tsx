@@ -1,5 +1,5 @@
 /**
- * Additional coverage tests targeting BatterButton event handlers,
+ * Additional coverage tests targeting GameControls event handlers,
  * DecisionPanel service-worker paths, Context logReducer,
  * and rng.ts edge cases.
  */
@@ -60,21 +60,21 @@ const renderWithContext = (ui: React.ReactElement, ctxValue: ContextValue = make
 // ---------------------------------------------------------------------------
 // Import components
 // ---------------------------------------------------------------------------
-import BatterButton from "../GameControls";
+import GameControls from "../GameControls";
 import DecisionPanel from "../DecisionPanel";
 import GameInner from "../Game/GameInner";
 
 // ---------------------------------------------------------------------------
-// BatterButton – event handler coverage
+// GameControls – event handler coverage
 // ---------------------------------------------------------------------------
-describe("BatterButton – event handlers", () => {
+describe("GameControls – event handlers", () => {
   beforeEach(() => {
     localStorage.clear();
     // Notification mock is set in setup.ts
   });
 
   it("toggling auto-play on reveals Manager Mode checkbox", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     const autoPlayCb = screen.getByRole("checkbox", { name: /auto-play/i });
     fireEvent.click(autoPlayCb); // turn autoPlay ON
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
@@ -84,7 +84,7 @@ describe("BatterButton – event handlers", () => {
     // Start with both on
     localStorage.setItem("autoPlay", "true");
     localStorage.setItem("managerMode", "true");
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     // Turn off autoplay
     const autoPlayCb = screen.getByRole("checkbox", { name: /auto-play/i });
     fireEvent.click(autoPlayCb);
@@ -97,7 +97,7 @@ describe("BatterButton – event handlers", () => {
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as unknown as { requestPermission: () => Promise<NotificationPermission> }).requestPermission = requestPermission;
 
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     fireEvent.click(screen.getByRole("checkbox", { name: /manager mode/i }));
     expect(requestPermission).toHaveBeenCalled();
 
@@ -107,21 +107,21 @@ describe("BatterButton – event handlers", () => {
 
   it("changing speed select updates the value", () => {
     localStorage.setItem("autoPlay", "false");
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     const select = screen.getByRole("combobox");
     fireEvent.change(select, { target: { value: "350" } });
     expect((select as HTMLSelectElement).value).toBe("350");
   });
 
   it("changing announcement volume slider fires handler", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     const slider = screen.getByRole("slider", { name: /announcement volume/i });
     fireEvent.change(slider, { target: { value: "0.5" } });
     expect((slider as HTMLInputElement).value).toBe("0.5");
   });
 
   it("changing alert volume slider fires handler", () => {
-    renderWithContext(<BatterButton />);
+    renderWithContext(<GameControls />);
     const slider = screen.getByRole("slider", { name: /alert volume/i });
     fireEvent.change(slider, { target: { value: "0.3" } });
     expect((slider as HTMLInputElement).value).toBe("0.3");
@@ -136,7 +136,7 @@ describe("BatterButton – event handlers", () => {
     });
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, dispatchLog }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, dispatchLog }));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /share replay/i }));
     });
@@ -153,7 +153,7 @@ describe("BatterButton – event handlers", () => {
       configurable: true,
     });
     const dispatchLog = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatchLog }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatchLog }));
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /share replay/i }));
     });
@@ -164,7 +164,7 @@ describe("BatterButton – event handlers", () => {
     localStorage.setItem("autoPlay", "true");
     localStorage.setItem("managerMode", "true");
     renderWithContext(
-      <BatterButton />,
+      <GameControls />,
       makeContextValue({ teams: ["Yankees", "Red Sox"] }),
     );
     // At least one select (Team and/or Strategy)
@@ -175,7 +175,7 @@ describe("BatterButton – event handlers", () => {
 
   it("spacebar press triggers a pitch when autoPlay is off", () => {
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     // Only triggers on non-text elements
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true }));
@@ -186,7 +186,7 @@ describe("BatterButton – event handlers", () => {
   it("spacebar press does NOT pitch when autoPlay is on", () => {
     localStorage.setItem("autoPlay", "true");
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true }));
     });
@@ -201,7 +201,7 @@ describe("BatterButton – event handlers", () => {
       .mockReturnValueOnce(0.3)   // first getRandomInt(1000) → 300 → swing range
       .mockReturnValueOnce(0.7);  // second getRandomInt(100) → 70 ≥ 30 → swing-miss → strike
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "strike" }));
     vi.restoreAllMocks();
@@ -215,7 +215,7 @@ describe("BatterButton – event handlers", () => {
       .mockReturnValueOnce(0.7);  // 70 ≥ 30 → swing-miss → strike (not a ball)
     const dispatch = vi.fn();
     renderWithContext(
-      <BatterButton />,
+      <GameControls />,
       makeContextValue({ dispatch, gameOver: false, strikes: 0, onePitchModifier: "swing" }),
     );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
@@ -232,7 +232,7 @@ describe("BatterButton – event handlers", () => {
       .mockReturnValueOnce(0.3)   // 300 < 500 → swing
       .mockReturnValueOnce(0.1);  // 10 < 30 → foul
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith({ type: "foul" });
     vi.restoreAllMocks();
@@ -243,7 +243,7 @@ describe("BatterButton – event handlers", () => {
       .mockReturnValueOnce(0.93)  // 930 >= 920 → hit branch
       .mockReturnValueOnce(0.5);  // hit type roll → 50 → single (balanced: ≥35)
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "hit" }));
     vi.restoreAllMocks();
@@ -254,7 +254,7 @@ describe("BatterButton – event handlers", () => {
       .mockReturnValueOnce(0.7)   // 700 >= 500 (swingRate) and < 920 → wait
       .mockReturnValue(0.5);
     const dispatch = vi.fn();
-    renderWithContext(<BatterButton />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
     vi.restoreAllMocks();
@@ -268,7 +268,7 @@ describe("BatterButton – event handlers", () => {
     // The easiest way: just confirm the decision detection path doesn't crash.
     const dispatch = vi.fn();
     renderWithContext(
-      <BatterButton />,
+      <GameControls />,
       makeContextValue({ dispatch, gameOver: false, atBat: 0 }),
     );
     // Just firing Batter Up! should work

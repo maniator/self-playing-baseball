@@ -1,33 +1,10 @@
 import { State, Strategy, OnePitchModifier, DecisionType } from "./index";
-import { nextHalfInning, checkGameOver, checkWalkoff } from "./gameOver";
-import { stratMod } from "./reducer";
+import { checkWalkoff } from "./gameOver";
+import { stratMod } from "./strategy";
+import { playerOut } from "./playerOut";
 import { hitBall } from "./hitBall";
 import { Hit } from "../constants/hitTypes";
 import getRandomInt from "../utilities/getRandomInt";
-
-export const playerOut = (state: State, log): State => {
-  const newOuts = state.outs + 1;
-
-  if (newOuts === 3) {
-    const afterHalf = nextHalfInning(state, log);
-    if (afterHalf.gameOver) return afterHalf;
-
-    if (state.atBat === 1 && state.inning >= 9) {
-      const maybe = checkGameOver(afterHalf, log);
-      if (maybe.gameOver) return maybe;
-    }
-
-    return afterHalf;
-  }
-
-  log(newOuts === 1 ? "One out." : "Two outs.");
-  return {
-    ...state,
-    strikes: 0, balls: 0, outs: newOuts,
-    pendingDecision: null, onePitchModifier: null,
-    hitType: undefined,
-  };
-};
 
 export const playerStrike = (state: State, log, swung = false, foul = false): State => {
   const newStrikes = state.strikes + 1;
