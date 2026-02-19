@@ -282,7 +282,7 @@ const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy): number => {
 };
 
 // Minimum steal success probability required to offer the steal decision.
-// > 72 means effectively 73%+, matching the real-baseball break-even point.
+// > 72 means effectively 73%+.
 const STEAL_MIN_PCT = 72;
 
 export const detectDecision = (state: State, strategy: Strategy, managerMode: boolean): DecisionType | null => {
