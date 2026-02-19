@@ -49,10 +49,10 @@ export interface State {
   onePitchModifier: OnePitchModifier,
   pitchKey: number,
   decisionLog: string[],
-  suppressNextDecision: boolean,
-  pinchHitterStrategy: Strategy | null,
-  defensiveShift: boolean,
-  defensiveShiftOffered: boolean,
+  suppressNextDecision: boolean,    // true after an intentional walk; clears on next pitch
+  pinchHitterStrategy: Strategy | null, // overrides manager strategy for one batter
+  defensiveShift: boolean,          // pop-out threshold multiplied by 0.85 when true
+  defensiveShiftOffered: boolean,   // prevents re-offering shift for the same batter
   batterIndex: [number, number],    // 0–8 position in the 9-batter lineup per team
   inningRuns: [number[], number[]], // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[],          // record of every hit/walk with batter attribution
