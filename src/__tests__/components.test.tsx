@@ -148,6 +148,32 @@ describe("ScoreBoard", () => {
     expect(screen.queryByText("FINAL")).not.toBeInTheDocument();
   });
 
+  it("shows ▲ top-of-inning indicator when atBat is 0", () => {
+    renderWithContext(<ScoreBoard />, makeContextValue({ atBat: 0, inning: 3 }));
+    expect(screen.getByText(/▲.*Inning: 3/)).toBeInTheDocument();
+  });
+
+  it("shows ▼ bottom-of-inning indicator when atBat is 1", () => {
+    renderWithContext(<ScoreBoard />, makeContextValue({ atBat: 1, inning: 7 }));
+    expect(screen.getByText(/▼.*Inning: 7/)).toBeInTheDocument();
+  });
+
+  it("shows (Extra) suffix and EXTRA INNINGS banner in extra innings", () => {
+    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 10, gameOver: false }));
+    expect(screen.getByText(/Extra/)).toBeInTheDocument();
+    expect(screen.getByText("EXTRA INNINGS")).toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner when gameOver is true", () => {
+    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 10, gameOver: true }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner in inning 9 or earlier", () => {
+    renderWithContext(<ScoreBoard />, makeContextValue({ inning: 9, gameOver: false }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
+  });
+
   it("bolds the team currently at bat", () => {
     const { container } = renderWithContext(
       <ScoreBoard />,

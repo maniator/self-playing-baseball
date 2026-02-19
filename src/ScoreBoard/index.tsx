@@ -47,6 +47,17 @@ const GameOverBanner = styled.div`
   margin-top: 6px;
 `;
 
+const ExtraInningsBanner = styled.div`
+  background: #0f4880;
+  color: #fff;
+  text-align: center;
+  font-weight: bold;
+  font-size: 12px;
+  padding: 3px 2px;
+  border-radius: 4px;
+  margin-top: 4px;
+`;
+
 const ScoreBoard: React.FunctionComponent<{}> = () => {
   const { teams, score, strikes, balls, outs, atBat, inning, gameOver }: ContextValue = useGameContext();
 
@@ -62,7 +73,8 @@ const ScoreBoard: React.FunctionComponent<{}> = () => {
       <BatterStats>Balls: {balls}</BatterStats>
       <BatterStats>Outs: {outs}</BatterStats>
       <hr />
-      <BatterStats>Inning: {inning}</BatterStats>
+      <BatterStats>{atBat === 0 ? "▲" : "▼"} Inning: {inning}{inning > 9 ? " (Extra)" : ""}</BatterStats>
+      {inning > 9 && !gameOver && <ExtraInningsBanner>EXTRA INNINGS</ExtraInningsBanner>}
       {gameOver && <GameOverBanner>FINAL</GameOverBanner>}
     </ScoreBoardDiv>
   );

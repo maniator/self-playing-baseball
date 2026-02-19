@@ -4,6 +4,8 @@ import { hitBall } from "./hitBall";
 import { playerStrike, playerWait, stealAttempt, buntAttempt } from "./playerActions";
 import { checkWalkoff } from "./gameOver";
 import { stratMod } from "./strategy";
+import { pitchName } from "../constants/pitchTypes";
+import type { PitchType } from "../constants/pitchTypes";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
 export { stratMod } from "./strategy";
@@ -72,13 +74,16 @@ const reducer = (dispatchLogger) => {
       case 'setTeams':
         return { ...state, teams: action.payload };
       case 'strike':
-        return playerStrike(state, log, action.payload?.swung ?? false, false);
-      case 'foul':
-        if (state.strikes < 2) return playerStrike(state, log, true, true);
-        log("Foul ball — count stays.");
+        return playerStrike(state, log, action.payload?.swung ?? false, false, action.payload?.pitchType as PitchType | undefined);
+      case 'foul': {
+        const pt = action.payload?.pitchType as PitchType | undefined;
+        if (state.strikes < 2) return playerStrike(state, log, true, true, pt);
+        const msg = pt ? `${pitchName(pt)} — foul ball — count stays.` : "Foul ball — count stays.";
+        log(msg);
         return { ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 };
+      }
       case 'wait':
-        return playerWait(state, log, action.payload?.strategy ?? "balanced", state.onePitchModifier);
+        return playerWait(state, log, action.payload?.strategy ?? "balanced", state.onePitchModifier, action.payload?.pitchType as PitchType | undefined);
       case 'set_one_pitch_modifier':
         return { ...state, onePitchModifier: action.payload, pendingDecision: null };
       case 'steal_attempt': {

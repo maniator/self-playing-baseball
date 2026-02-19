@@ -158,9 +158,13 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // swingRate with 0 strikes, balanced = round((500 - 75*0) * 1 * 1) = 500
-    // random 0.001 → getRandomInt(1000) = 1 < 500 → swing
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
+    // call 1: getRandomInt(100) for pitch type → 50 → fastball (swingRateMod 1.0)
+    // call 2: getRandomInt(1000) → 1 < swingRate(500) → swing
+    // call 3: getRandomInt(100) → 50 ≥ 30 → miss → strike
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.5)    // pitch type roll
+      .mockReturnValueOnce(0.001)  // main outcome
+      .mockReturnValueOnce(0.5);   // foul/miss roll
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
@@ -177,8 +181,13 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // random 0.999 → getRandomInt(1000) = 999 >= 920 → hit
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
+    // call 1: getRandomInt(100) for pitch type → 50 → fastball (swingRateMod 1.0)
+    // call 2: getRandomInt(1000) → 999 ≥ 920 → hit
+    // call 3: getRandomInt(100) → 10 → hit type roll
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.5)    // pitch type roll
+      .mockReturnValueOnce(0.999)  // main outcome
+      .mockReturnValueOnce(0.1);   // hit type roll
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,

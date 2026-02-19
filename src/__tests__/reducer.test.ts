@@ -255,6 +255,55 @@ describe("ball", () => {
   });
 });
 
+// pitch type – log message enrichment
+describe("pitch type – log message enrichment", () => {
+  it("strike dispatch with pitchType prefixes the log message", () => {
+    const { logs } = dispatchAction(makeState({ strikes: 0 }), "strike", { swung: true, pitchType: "slider" });
+    expect(logs.some(l => l.startsWith("Slider"))).toBe(true);
+  });
+
+  it("called strike with pitchType includes pitch name", () => {
+    const { logs } = dispatchAction(makeState({ strikes: 1 }), "strike", { swung: false, pitchType: "fastball" });
+    expect(logs.some(l => l.startsWith("Fastball"))).toBe(true);
+  });
+
+  it("foul (2 strikes, count stays) with pitchType includes pitch name", () => {
+    const { logs } = dispatchAction(makeState({ strikes: 2 }), "foul", { pitchType: "curveball" });
+    expect(logs.some(l => l.toLowerCase().includes("foul"))).toBe(true);
+    expect(logs.some(l => l.includes("Curveball"))).toBe(true);
+  });
+
+  it("foul (0 strikes) with pitchType includes pitch name", () => {
+    const { logs } = dispatchAction(makeState({ strikes: 0 }), "foul", { pitchType: "changeup" });
+    expect(logs.some(l => l.includes("Changeup"))).toBe(true);
+  });
+
+  it("wait with pitchType produces ball message with pitch name", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.9);
+    const { logs } = dispatchAction(makeState({ balls: 0 }), "wait", { strategy: "balanced", pitchType: "slider" });
+    expect(logs.some(l => l.includes("Slider"))).toBe(true);
+  });
+
+  it("strikeout via wait with pitchType includes pitch name", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.1);
+    const { logs } = dispatchAction(makeState({ strikes: 2 }), "wait", { strategy: "balanced", pitchType: "curveball" });
+    expect(logs.some(l => l.includes("Curveball"))).toBe(true);
+  });
+
+  it("strike dispatch WITHOUT pitchType keeps original message format", () => {
+    const { logs } = dispatchAction(makeState({ strikes: 0 }), "strike", { swung: true });
+    expect(logs.some(l => /swing and a miss/i.test(l))).toBe(true);
+    expect(logs.some(l => /^(Fastball|Curveball|Slider|Changeup)/.test(l))).toBe(false);
+  });
+
+  it("ball 4 (walk) with pitchType includes pitch name in message", () => {
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.9).mockReturnValue(0);
+    const { logs } = dispatchAction(makeState({ balls: 3 }), "wait", { strategy: "balanced", pitchType: "fastball" });
+    expect(logs.some(l => l.includes("Fastball"))).toBe(true);
+    expect(logs.some(l => /ball four/i.test(l))).toBe(true);
+  });
+});
+
 // steal attempt (bug fix)
 describe("steal_attempt", () => {
   it("successful steal from 1st: runner moves to 2nd, 1st cleared", () => {

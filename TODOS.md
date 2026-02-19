@@ -10,9 +10,17 @@ Future improvements and known gaps documented here for tracking.
   ~40% of non-HR ball-in-play outs are now ground balls. With a runner on 1st and fewer than 2 outs, 65% of grounders turn into a double play (2 outs, runner removed). The remaining 35% are fielder's-choice plays (lead runner out, batter safe at 1st). Without a force play the batter is simply thrown out at first.  
   *(See `hitBall.ts` `handleGrounder`, `advanceRunners.ts`)*
 
-- **Extra-inning logic** — The game correctly continues past 9 innings when tied, but walk-off / tie-break rules could be more explicit in the UI.
+- ~~**Extra-inning logic**~~ ✅ Implemented:
+  - Automatic **tiebreak runner on 2nd** placed at the start of every extra-inning half (`nextHalfInning` in `gameOver.ts`), logged as "Tiebreak rule: runner placed on 2nd base."
+  - **ScoreBoard UI** now shows ▲/▼ Top/Bottom-of-inning indicator and an "EXTRA INNINGS" badge (blue) whenever `inning > 9` and the game is still in progress.
+  *(See `gameOver.ts`, `ScoreBoard/index.tsx`)*
 
-- **Pitch types** — All pitches are abstracted into swing/take/hit. Modelling fastballs, curves, sliders etc. would add depth to the count-based strategy decisions.
+- ~~**Pitch types**~~ ✅ Implemented in `usePitchDispatch.ts` + `playerActions.ts` + `reducer.ts`:
+  - New `src/constants/pitchTypes.ts` defines `PitchType` (fastball, curveball, slider, changeup) with count-aware selection (`selectPitchType`), swing-rate modifiers, and strike-zone probability modifiers.
+  - Each pitch selects the type based on the current count (0-2 count → more breaking balls; 3-0 → mostly fastballs; full count → balanced mix).
+  - Swing rate and strike-zone probability are adjusted per pitch type (slider induces more chases; curveball breaks out of zone more).
+  - Play-by-play log messages are enriched with the pitch name ("Slider — swing and a miss! Strike 2.", "Curveball — ball 2.", etc.).
+  *(See `constants/pitchTypes.ts`, `playerActions.ts`, `reducer.ts`, `usePitchDispatch.ts`)*
 
 ---
 

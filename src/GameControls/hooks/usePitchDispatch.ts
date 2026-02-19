@@ -2,6 +2,7 @@ import * as React from "react";
 import { Strategy, State } from "../../Context";
 import { detectDecision } from "../../Context/reducer";
 import { Hit } from "../../constants/hitTypes";
+import { selectPitchType, pitchSwingRateMod } from "../../constants/pitchTypes";
 import getRandomInt from "../../utilities/getRandomInt";
 import { GameStateRef } from "./useGameRefs";
 
@@ -38,23 +39,26 @@ export const usePitchDispatch = (
     }
     skipDecisionRef.current = false;
 
+    const pitchRoll = getRandomInt(100);
+    const pitchType = selectPitchType(currentState.balls, currentState.strikes, pitchRoll);
+
     const random = getRandomInt(1000);
     const currentStrikes = strikesRef.current;
     const onePitchMod = currentState.onePitchModifier;
 
     const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
     const contactMod = strategyRef.current === "contact" ? 1.15 : strategyRef.current === "power" ? 0.9 : 1;
-    const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
+    const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus * pitchSwingRateMod(pitchType));
     const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
 
     if (random < effectiveSwingRate) {
       if (getRandomInt(100) < 30) {
-        dispatch({ type: "foul" });
+        dispatch({ type: "foul", payload: { pitchType } });
       } else {
-        dispatch({ type: "strike", payload: { swung: true } });
+        dispatch({ type: "strike", payload: { swung: true, pitchType } });
       }
     } else if (random < 920) {
-      dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
+      dispatch({ type: "wait", payload: { strategy: strategyRef.current, pitchType } });
     } else {
       const strat = strategyRef.current;
       const hitRoll = getRandomInt(100);

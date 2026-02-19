@@ -4,21 +4,28 @@ import { stratMod } from "./strategy";
 import { playerOut } from "./playerOut";
 import { hitBall } from "./hitBall";
 import { Hit } from "../constants/hitTypes";
+import type { PitchType } from "../constants/pitchTypes";
+import { pitchName, pitchStrikeZoneMod } from "../constants/pitchTypes";
 import getRandomInt from "../utilities/getRandomInt";
 
-export const playerStrike = (state: State, log, swung = false, foul = false): State => {
+export const playerStrike = (state: State, log, swung = false, foul = false, pitchType?: PitchType): State => {
   const newStrikes = state.strikes + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
+  const p = pitchType ? `${pitchName(pitchType)} — ` : "";
 
   if (newStrikes === 3) {
-    log(swung ? "Swing and a miss — strike three! He's out!" : "Called strike three! He's out!");
+    log(swung
+      ? `${p}swing and a miss — strike three! He's out!`
+      : `${p}called strike three! He's out!`);
     return playerOut({ ...state, pitchKey }, log);
   }
 
   if (foul) {
-    log(`Foul ball — strike ${newStrikes}.`);
+    log(`${p}foul ball — strike ${newStrikes}.`);
   } else {
-    log(swung ? `Swing and a miss — strike ${newStrikes}.` : `Called strike ${newStrikes}.`);
+    log(swung
+      ? `${p}swing and a miss — strike ${newStrikes}.`
+      : `${p}called strike ${newStrikes}.`);
   }
 
   return {
@@ -30,16 +37,17 @@ export const playerStrike = (state: State, log, swung = false, foul = false): St
   };
 };
 
-export const playerBall = (state: State, log): State => {
+export const playerBall = (state: State, log, pitchType?: PitchType): State => {
   const newBalls = state.balls + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
+  const p = pitchType ? `${pitchName(pitchType)} — ` : "";
 
   if (newBalls === 4) {
-    log("Ball four — take your base!");
+    log(`${p}ball four — take your base!`);
     return hitBall(Hit.Walk, { ...state, pitchKey }, log);
   }
 
-  log(`Ball ${newBalls}.`);
+  log(`${p}ball ${newBalls}.`);
   return {
     ...state,
     balls: newBalls,
@@ -101,17 +109,18 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
   return playerOut({ ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 }, log);
 };
 
-const computeWaitOutcome = (random: number, strategy: Strategy, modifier: OnePitchModifier): "ball" | "strike" => {
+const computeWaitOutcome = (random: number, strategy: Strategy, modifier: OnePitchModifier, pitchType?: PitchType): "ball" | "strike" => {
+  const zoneMod = pitchType ? pitchStrikeZoneMod(pitchType) : 1.0;
   if (modifier === "take") {
-    const walkChance = Math.min(950, Math.round(750 * stratMod(strategy, "walk")));
+    const walkChance = Math.min(950, Math.round(750 * stratMod(strategy, "walk") / zoneMod));
     return random < walkChance ? "ball" : "strike";
   }
-  const strikeThreshold = Math.round(500 / stratMod(strategy, "walk"));
+  const strikeThreshold = Math.round(500 * zoneMod / stratMod(strategy, "walk"));
   return random < strikeThreshold ? "strike" : "ball";
 };
 
-export const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier: OnePitchModifier = null): State => {
+export const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier: OnePitchModifier = null, pitchType?: PitchType): State => {
   const random = getRandomInt(1000);
-  const outcome = computeWaitOutcome(random, strategy, modifier);
-  return outcome === "ball" ? playerBall(state, log) : playerStrike(state, log, false);
+  const outcome = computeWaitOutcome(random, strategy, modifier, pitchType);
+  return outcome === "ball" ? playerBall(state, log, pitchType) : playerStrike(state, log, false, false, pitchType);
 };

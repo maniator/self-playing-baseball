@@ -296,13 +296,53 @@ describe("nextHalfInning", () => {
     expect(next.inning).toBe(4);
   });
 
-  it("resets bases, outs, strikes, balls", () => {
+  it("resets bases, outs, strikes, balls in normal innings", () => {
     const { log } = makeLogs();
     const state = makeState({ outs: 2, strikes: 2, balls: 3, baseLayout: [1, 1, 1] });
     const next = nextHalfInning(state, log);
     expect(next.outs).toBe(0);
     expect(next.strikes).toBe(0);
     expect(next.balls).toBe(0);
+    expect(next.baseLayout).toEqual([0, 0, 0]);
+  });
+});
+
+describe("nextHalfInning – extra-inning tiebreak rule", () => {
+  it("places runner on 2nd entering top of 10th (away team after tied 9th)", () => {
+    const { logs, log } = makeLogs();
+    const state = makeState({ atBat: 1, inning: 9, score: [3, 3] });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(10);
+    expect(next.atBat).toBe(0);
+    expect(next.baseLayout[1]).toBe(1); // runner on 2nd
+    expect(next.baseLayout[0]).toBe(0);
+    expect(next.baseLayout[2]).toBe(0);
+    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+  });
+
+  it("places runner on 2nd entering bottom of 10th", () => {
+    const { logs, log } = makeLogs();
+    const state = makeState({ atBat: 0, inning: 10, score: [3, 3] });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(10);
+    expect(next.atBat).toBe(1);
+    expect(next.baseLayout[1]).toBe(1);
+    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+  });
+
+  it("places runner on 2nd in 11th inning too", () => {
+    const { log } = makeLogs();
+    const state = makeState({ atBat: 1, inning: 10, score: [4, 4] });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(11);
+    expect(next.baseLayout[1]).toBe(1);
+  });
+
+  it("does NOT place tiebreak runner in inning 9 or earlier", () => {
+    const { log } = makeLogs();
+    const state = makeState({ atBat: 1, inning: 8, score: [2, 2] });
+    const next = nextHalfInning(state, log);
+    expect(next.inning).toBe(9);
     expect(next.baseLayout).toEqual([0, 0, 0]);
   });
 });
