@@ -68,9 +68,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
     case "ibb":
       return (
         <>
-          <Prompt>Issue an intentional walk (IBB)?</Prompt>
+          <Prompt>Issue an intentional walk?</Prompt>
           <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>
-            Yes, IBB
+            Yes, walk them
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
         </>
@@ -79,9 +79,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       const { base, successPct } = pendingDecision;
       return (
         <>
-          <Prompt>Issue intentional walk (IBB) or steal?</Prompt>
+          <Prompt>Intentional walk or steal?</Prompt>
           <Odds>Steal success: {successPct}%</Odds>
-          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Issue IBB</ActionButton>
+          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Intentional Walk</ActionButton>
           <ActionButton onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}>
             ⚡ Steal! ({successPct}%)
           </ActionButton>

@@ -323,7 +323,7 @@ describe("DecisionPanel", () => {
       makeContextValue({ pendingDecision: { kind: "ibb" } }),
     );
     expect(screen.getByText(/intentional walk/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /yes, ibb/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /yes, walk them/i })).toBeInTheDocument();
   });
 
   it("shows countdown bar and auto-skip label", () => {
@@ -409,13 +409,13 @@ describe("DecisionPanel", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "set_one_pitch_modifier", payload: "normal" });
   });
 
-  it("dispatches intentional_walk on IBB Yes click", () => {
+  it("dispatches intentional_walk on intentional walk Yes click", () => {
     const dispatch = vi.fn();
     renderWithContext(
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "ibb" }, dispatch }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /yes, ibb/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yes, walk them/i }));
     expect(dispatch).toHaveBeenCalledWith({ type: "intentional_walk" });
   });
 

@@ -72,7 +72,7 @@ describe("getNotificationActions", () => {
   it("returns ibb actions", () => {
     const actions = getNotificationActions({ kind: "ibb" });
     expect(actions).toEqual([
-      { action: "ibb",  title: "✅ Yes, IBB" },
+      { action: "ibb",  title: "✅ Walk Them" },
       { action: "skip", title: "⏭ Skip" },
     ]);
   });
@@ -139,12 +139,15 @@ describe("getNotificationBody – new decision types", () => {
 });
 
 describe("getNotificationActions – new decision types", () => {
-  it("returns pinch_hitter actions with contact, power, and skip", () => {
+  it("returns pinch_hitter actions with all 5 strategies and skip", () => {
     const actions = getNotificationActions({ kind: "pinch_hitter" });
     expect(actions).toEqual([
-      { action: "ph_contact", title: "🎯 Contact" },
-      { action: "ph_power",   title: "💪 Power" },
-      { action: "skip",       title: "⏭ Skip" },
+      { action: "ph_contact",    title: "🎯 Contact" },
+      { action: "ph_patient",    title: "👀 Patient" },
+      { action: "ph_power",      title: "💪 Power" },
+      { action: "ph_aggressive", title: "🔥 Aggressive" },
+      { action: "ph_balanced",   title: "⚖️ Balanced" },
+      { action: "skip",          title: "⏭ Skip" },
     ]);
   });
 

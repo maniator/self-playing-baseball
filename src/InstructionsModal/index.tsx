@@ -47,11 +47,11 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
           <SectionHeading>Manager Mode (requires Auto-play)</SectionHeading>
           <List>
             <Li>Pick which team you manage and a <strong>Strategy</strong> (Balanced / Aggressive / Patient / Contact / Power).</Li>
-            <Li>At key moments the game pauses and asks for your decision — steal, bunt, IBB, or count-based choices.</Li>
+            <Li>At key moments the game pauses and asks for your decision — steal, bunt, intentional walk, or count-based choices.</Li>
             <Li>A chime sounds and a browser notification appears (if allowed) when a decision is ready.</Li>
             <Li>A 10-second countdown auto-skips if you don't choose in time.</Li>
             <Li>Steals are only offered when the odds are ≥ 73 %.</Li>
-            <Li>IBB is only offered in the 7th inning or later, close game, with 2 outs.</Li>
+            <Li>Intentional walk is only offered in the 7th inning or later, close game, with 2 outs.</Li>
           </List>
         </Section>
 
@@ -70,7 +70,7 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
             <Li><strong>Double</strong> — batter to 2nd; runners on 2nd/3rd score; runner on 1st to 3rd.</Li>
             <Li><strong>Triple</strong> — batter to 3rd; all runners score.</Li>
             <Li><strong>Home run</strong> — everyone scores.</Li>
-            <Li><strong>Walk / IBB</strong> — batter to 1st; force advancement only.</Li>
+            <Li><strong>Walk</strong> — batter to 1st; force advancement only.</Li>
           </List>
         </Section>
 
