@@ -39,6 +39,7 @@ describe("useGameRefs", () => {
     const { result } = renderHook(() =>
       useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, null)
     );
+    expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
     expect(result.current.speedRef.current).toBe(700);
     expect(result.current.strikesRef.current).toBe(0);
