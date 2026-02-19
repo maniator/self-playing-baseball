@@ -1,17 +1,28 @@
 import * as React  from "react";
 
-import BatterButton from "../BatterButton";
+import BatterButton, { runBatterUp } from "../BatterButton";
 import ScoreBoard from "../ScoreBoard";
 import Diamond from "../Diamond";
 import Announcements from "../Announcements";
 import styled from "styled-components";
 import { GameContext } from "../Context";
 import { buildReplayUrl } from "../utilities/rng";
+import { cancelAnnouncements, setAnnouncementsMuted } from "../utilities/announce";
 
 type Props = {
   homeTeam: string,
   awayTeam: string
 }
+
+const AUTOPLAY_STORAGE_KEY = "spb-autoplay-enabled";
+const AUTOPLAY_SPEED_STORAGE_KEY = "spb-autoplay-speed";
+const AUTOPLAY_SPEEDS = {
+  slow: 1200,
+  normal: 700,
+  fast: 350
+};
+
+type AutoPlaySpeed = keyof typeof AUTOPLAY_SPEEDS;
 
 const GameDiv = styled.main`
   color: white;
@@ -53,8 +64,42 @@ const ShareButton = styled.button`
   color: #000;
 `;
 
+const AutoPlayLabel = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+`;
+
+const SpeedSelect = styled.select`
+  background: #000;
+  color: #fff;
+`;
+
+const getStoredAutoPlay = () => {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return window.localStorage.getItem(AUTOPLAY_STORAGE_KEY) === "true";
+};
+
+const getStoredAutoPlaySpeed = (): AutoPlaySpeed => {
+  if (typeof window === "undefined") {
+    return "normal";
+  }
+
+  const speed = window.localStorage.getItem(AUTOPLAY_SPEED_STORAGE_KEY) as AutoPlaySpeed;
+  if (speed && AUTOPLAY_SPEEDS[speed]) {
+    return speed;
+  }
+
+  return "normal";
+};
+
 const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
-  const { dispatch, dispatchLog, teams } = React.useContext(GameContext);
+  const { dispatch, dispatchLog, teams, strikes } = React.useContext(GameContext);
+  const [isAutoPlayEnabled, setAutoPlayEnabled] = React.useState<boolean>(getStoredAutoPlay);
+  const [autoPlaySpeed, setAutoPlaySpeed] = React.useState<AutoPlaySpeed>(getStoredAutoPlaySpeed);
 
   React.useEffect(() => {
     dispatch({
@@ -63,6 +108,39 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
         homeTeam, awayTeam
       ]
     })
+  }, []);
+
+  React.useEffect(() => {
+    window.localStorage.setItem(AUTOPLAY_STORAGE_KEY, `${isAutoPlayEnabled}`);
+
+    setAnnouncementsMuted(isAutoPlayEnabled);
+    cancelAnnouncements();
+  }, [isAutoPlayEnabled]);
+
+  React.useEffect(() => {
+    window.localStorage.setItem(AUTOPLAY_SPEED_STORAGE_KEY, autoPlaySpeed);
+  }, [autoPlaySpeed]);
+
+  React.useEffect(() => {
+    if (!isAutoPlayEnabled) {
+      return;
+    }
+
+    const intervalMs = AUTOPLAY_SPEEDS[autoPlaySpeed];
+    const intervalId = window.setInterval(() => {
+      runBatterUp(dispatch, dispatchLog, strikes);
+    }, intervalMs);
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, [isAutoPlayEnabled, autoPlaySpeed, dispatch, dispatchLog, strikes]);
+
+  React.useEffect(() => {
+    return () => {
+      setAnnouncementsMuted(false);
+      cancelAnnouncements();
+    };
   }, []);
 
   const handleChangeTeam = (teamIdx) => (e) => {
@@ -108,6 +186,18 @@ const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
 
         <Controls>
           <BatterButton/>
+          <AutoPlayLabel>
+            <input type="checkbox" checked={isAutoPlayEnabled} onChange={() => setAutoPlayEnabled(!isAutoPlayEnabled)} />
+            Auto-play
+          </AutoPlayLabel>
+          <label>
+            Speed
+            <SpeedSelect value={autoPlaySpeed} onChange={(event) => setAutoPlaySpeed(event.target.value as AutoPlaySpeed)}>
+              <option value="slow">Slow</option>
+              <option value="normal">Normal</option>
+              <option value="fast">Fast</option>
+            </SpeedSelect>
+          </label>
           <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         </Controls>
       </GameInfo>

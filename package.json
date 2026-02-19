@@ -37,5 +37,6 @@
     "commitizen": {
       "path": "git-cz"
     }
-  }
+  },
+  "packageManager": "npm@11.4.2"
 }
