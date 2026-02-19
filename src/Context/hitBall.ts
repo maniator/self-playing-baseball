@@ -60,11 +60,14 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     strikes: 0,
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
     pitchKey,
   };
   const randomNumber = getRandomInt(1000);
 
-  const popOutThreshold = Math.round(750 * stratMod(strategy, "contact"));
+  const popOutThreshold = Math.round(750 * stratMod(strategy, "contact") * (state.defensiveShift ? 0.85 : 1));
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
     if (strategy === "power" && getRandomInt(100) < 15) {

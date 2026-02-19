@@ -27,14 +27,21 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
       if (event.data?.type !== "NOTIFICATION_ACTION") return;
       const { action, payload } = event.data;
       switch (action) {
-        case "steal":   dispatch({ type: "steal_attempt", payload }); break;
-        case "bunt":    dispatch({ type: "bunt_attempt", payload }); break;
-        case "take":    dispatch({ type: "set_one_pitch_modifier", payload: "take" }); break;
-        case "swing":   dispatch({ type: "set_one_pitch_modifier", payload: "swing" }); break;
-        case "protect": dispatch({ type: "set_one_pitch_modifier", payload: "protect" }); break;
-        case "normal":  dispatch({ type: "set_one_pitch_modifier", payload: "normal" }); break;
-        case "ibb":     dispatch({ type: "intentional_walk" }); break;
-        case "skip":    dispatch({ type: "skip_decision" }); break;
+        case "steal":      dispatch({ type: "steal_attempt", payload }); break;
+        case "bunt":       dispatch({ type: "bunt_attempt", payload }); break;
+        case "take":       dispatch({ type: "set_one_pitch_modifier", payload: "take" }); break;
+        case "swing":      dispatch({ type: "set_one_pitch_modifier", payload: "swing" }); break;
+        case "protect":    dispatch({ type: "set_one_pitch_modifier", payload: "protect" }); break;
+        case "normal":     dispatch({ type: "set_one_pitch_modifier", payload: "normal" }); break;
+        case "ibb":        dispatch({ type: "intentional_walk" }); break;
+        case "skip":       dispatch({ type: "skip_decision" }); break;
+        case "ph_contact":    dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" }); break;
+        case "ph_patient":    dispatch({ type: "set_pinch_hitter_strategy", payload: "patient" }); break;
+        case "ph_power":      dispatch({ type: "set_pinch_hitter_strategy", payload: "power" }); break;
+        case "ph_aggressive": dispatch({ type: "set_pinch_hitter_strategy", payload: "aggressive" }); break;
+        case "ph_balanced":   dispatch({ type: "set_pinch_hitter_strategy", payload: "balanced" }); break;
+        case "shift_on":   dispatch({ type: "set_defensive_shift", payload: true }); break;
+        case "shift_off":  dispatch({ type: "set_defensive_shift", payload: false }); break;
         default: break; // "focus" — just brings tab to front, no game action needed
       }
     };

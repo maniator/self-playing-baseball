@@ -25,6 +25,7 @@ const STEAL_MIN_PCT = 72;
 export const detectDecision = (state: State, strategy: Strategy, managerMode: boolean): DecisionType | null => {
   if (!managerMode) return null;
   if (state.gameOver) return null;
+  if (state.suppressNextDecision) return null;
 
   const { baseLayout, outs, balls, strikes } = state;
   const scoreDiff = Math.abs(state.score[0] - state.score[1]);
@@ -50,6 +51,11 @@ export const detectDecision = (state: State, strategy: Strategy, managerMode: bo
   if (stealDecision) return stealDecision;
 
   if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
+
+  if (state.inning >= 7 && outs < 2 && (baseLayout[1] || baseLayout[2]) && !state.pinchHitterStrategy && balls === 0 && strikes === 0) {
+    return { kind: "pinch_hitter" };
+  }
+
   if (balls === 3 && strikes === 0) return { kind: "count30" };
   if (balls === 0 && strikes === 2) return { kind: "count02" };
   return null;
@@ -108,7 +114,7 @@ const reducer = (dispatchLogger) => {
       }
       case 'intentional_walk': {
         log("Intentional walk issued.");
-        const result = checkWalkoff(hitBall(Hit.Walk, { ...state, pendingDecision: null }, log), log);
+        const result = checkWalkoff(hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log), log);
         if (state.pendingDecision) {
           return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:ibb`] };
         }
@@ -121,6 +127,8 @@ const reducer = (dispatchLogger) => {
           outs: 0, strikes: 0, balls: 0, atBat: 0, hitType: undefined,
           gameOver: false, pendingDecision: null, onePitchModifier: null,
           pitchKey: 0, decisionLog: [],
+          suppressNextDecision: false, pinchHitterStrategy: null,
+          defensiveShift: false, defensiveShiftOffered: false,
           batterIndex: [0, 0] as [number, number],
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
@@ -130,8 +138,30 @@ const reducer = (dispatchLogger) => {
         const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
         return { ...state, pendingDecision: null, decisionLog };
       }
-      case 'set_pending_decision':
-        return { ...state, pendingDecision: action.payload as DecisionType };
+      case 'set_pending_decision': {
+        const newState: State = { ...state, pendingDecision: action.payload as DecisionType };
+        if ((action.payload as DecisionType).kind === 'defensive_shift') {
+          newState.defensiveShiftOffered = true;
+        }
+        return newState;
+      }
+      case 'clear_suppress_decision':
+        return { ...state, suppressNextDecision: false };
+      case 'set_pinch_hitter_strategy': {
+        const ph = action.payload as Strategy;
+        log(`Pinch hitter in — playing ${ph} strategy.`);
+        const entry = state.pendingDecision ? `${state.pitchKey}:pinch:${ph}` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, pinchHitterStrategy: ph, pendingDecision: null, decisionLog };
+      }
+      case 'set_defensive_shift': {
+        const shiftOn = action.payload as boolean;
+        if (shiftOn) log("Defensive shift deployed — outfield repositioned.");
+        else log("Normal alignment set.");
+        const entry = state.pendingDecision ? `${state.pitchKey}:shift:${shiftOn ? 'on' : 'off'}` : null;
+        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
+        return { ...state, defensiveShift: shiftOn, pendingDecision: null, decisionLog };
+      }
       default:
         throw new Error(`No such reducer type as ${action.type}`);
     }

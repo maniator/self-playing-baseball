@@ -1,4 +1,4 @@
-import { State, DecisionType, OnePitchModifier } from "./index";
+import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
 import { nextHalfInning, checkGameOver } from "./gameOver";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
@@ -34,5 +34,8 @@ export const playerOut = (state: State, log, batterCompleted = false): State => 
     strikes: 0, balls: 0, outs: newOuts,
     pendingDecision: null, onePitchModifier: null,
     hitType: undefined,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
   };
 };

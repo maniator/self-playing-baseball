@@ -1,4 +1,4 @@
-import { State, DecisionType, OnePitchModifier } from "./index";
+import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
 
 export const checkGameOver = (state: State, log): State => {
   if (state.inning >= 9) {
@@ -20,6 +20,10 @@ export const nextHalfInning = (state: State, log): State => {
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
     hitType: undefined,
+    suppressNextDecision: false,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
   };
   let newHalfInning = newState.atBat + 1;
   let newInning = newState.inning;

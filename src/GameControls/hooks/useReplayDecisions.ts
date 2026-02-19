@@ -11,6 +11,8 @@ import { DecisionType, Strategy } from "../../Context";
  *   bunt                       → bunt_attempt
  *   ibb                        → intentional_walk
  *   take/swing/protect/normal  → set_one_pitch_modifier
+ *   pinch:<strategy>           → set_pinch_hitter_strategy
+ *   shift:<on|off>             → set_defensive_shift
  *   skip                       → skip_decision
  */
 function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void {
@@ -28,6 +30,12 @@ function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void
       break;
     case "take": case "swing": case "protect": case "normal":
       dispatch({ type: "set_one_pitch_modifier", payload: action });
+      break;
+    case "pinch":
+      dispatch({ type: "set_pinch_hitter_strategy", payload: parts[2] as Strategy });
+      break;
+    case "shift":
+      dispatch({ type: "set_defensive_shift", payload: parts[2] === "on" });
       break;
     case "skip":
       dispatch({ type: "skip_decision" });

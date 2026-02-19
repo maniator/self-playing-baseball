@@ -268,4 +268,99 @@ describe("DecisionButtons", () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  // ---------------------------------------------------------------------------
+  // pinch_hitter
+  // ---------------------------------------------------------------------------
+  describe("pinch_hitter", () => {
+    const decision: DecisionType = { kind: "pinch_hitter" };
+
+    it("renders pinch hitter prompt and strategy buttons", () => {
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={noop}
+        />
+      );
+      expect(screen.getByText(/send up a pinch hitter/i)).toBeTruthy();
+      expect(screen.getByRole("button", { name: /contact/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /power/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
+    });
+
+    it("calls onDispatch with set_pinch_hitter_strategy on strategy click", async () => {
+      const onDispatch = vi.fn();
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={onDispatch}
+        />
+      );
+      await userEvent.click(screen.getByRole("button", { name: /^contact$/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "set_pinch_hitter_strategy",
+        payload: "contact",
+      });
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // defensive_shift
+  // ---------------------------------------------------------------------------
+  describe("defensive_shift", () => {
+    const decision: DecisionType = { kind: "defensive_shift" };
+
+    it("renders defensive shift prompt and Shift On / Normal Alignment buttons", () => {
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={noop}
+        />
+      );
+      expect(screen.getByText(/deploy defensive shift/i)).toBeTruthy();
+      expect(screen.getByRole("button", { name: /shift on/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /normal alignment/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
+    });
+
+    it("calls onDispatch with set_defensive_shift true on Shift On click", async () => {
+      const onDispatch = vi.fn();
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={onDispatch}
+        />
+      );
+      await userEvent.click(screen.getByRole("button", { name: /shift on/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "set_defensive_shift",
+        payload: true,
+      });
+    });
+
+    it("calls onDispatch with set_defensive_shift false on Normal Alignment click", async () => {
+      const onDispatch = vi.fn();
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={onDispatch}
+        />
+      );
+      await userEvent.click(screen.getByRole("button", { name: /normal alignment/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "set_defensive_shift",
+        payload: false,
+      });
+    });
+  });
 });

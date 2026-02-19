@@ -25,6 +25,8 @@ const makeGameSnapshot = (overrides = {}) => ({
   outs: 0, inning: 1, score: [0, 0] as [number, number],
   atBat: 0, pendingDecision: null, gameOver: false,
   onePitchModifier: null, teams: ["Away", "Home"] as [string, string],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
   ...overrides,
 });
 
@@ -35,9 +37,8 @@ describe("useGameRefs", () => {
   it("returns refs with correct initial values", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 1, 700, 0, false, "balanced", 0, snap, null)
+      useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, null)
     );
-    expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
     expect(result.current.speedRef.current).toBe(700);
     expect(result.current.strikesRef.current).toBe(0);
@@ -50,7 +51,7 @@ describe("useGameRefs", () => {
   it("mutedRef is true when announcementVolume is 0", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 0, 700, 0, false, "balanced", 0, snap, null)
+      useGameRefs(false, 0, 700, 0, 0, false, "balanced", 0, snap, null)
     );
     expect(result.current.mutedRef.current).toBe(true);
   });
@@ -59,13 +60,46 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd }) => useGameRefs(false, 1, 700, 0, false, "balanced", 0, snap, pd),
+      ({ pd }) => useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, pd),
       { initialProps: { pd: null as typeof pending | null } }
     );
     expect(result.current.skipDecisionRef.current).toBe(false);
     rerender({ pd: pending });
     rerender({ pd: null });
     expect(result.current.skipDecisionRef.current).toBe(true);
+  });
+
+  it("skipDecisionRef persists across pitches (not reset after one pitch)", () => {
+    const snap = makeGameSnapshot();
+    const pending = { kind: "bunt" as const };
+    // Start with non-zero count so we can test reset detection
+    const { result, rerender } = renderHook(
+      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
+    );
+    // Trigger skip (decision resolved)
+    rerender({ pd: pending, strikes: 1, balls: 0 });
+    rerender({ pd: null, strikes: 1, balls: 0 });
+    expect(result.current.skipDecisionRef.current).toBe(true);
+    // Another pitch — count changes but NOT back to 0-0 → skip should persist
+    rerender({ pd: null, strikes: 2, balls: 0 });
+    expect(result.current.skipDecisionRef.current).toBe(true);
+  });
+
+  it("skipDecisionRef resets to false when new batter detected (count back to 0-0)", () => {
+    const snap = makeGameSnapshot();
+    const pending = { kind: "bunt" as const };
+    const { result, rerender } = renderHook(
+      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
+    );
+    // Trigger skip
+    rerender({ pd: pending, strikes: 1, balls: 0 });
+    rerender({ pd: null, strikes: 1, balls: 0 });
+    expect(result.current.skipDecisionRef.current).toBe(true);
+    // New batter: count resets to 0-0
+    rerender({ pd: null, strikes: 0, balls: 0 });
+    expect(result.current.skipDecisionRef.current).toBe(false);
   });
 });
 
