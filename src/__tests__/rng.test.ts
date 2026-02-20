@@ -119,3 +119,93 @@ describe("getRandomInt", () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// Isolated module instances (reset module registry for each test)
+// ---------------------------------------------------------------------------
+describe("rng.ts — isolated module instances", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("parseSeed handles base36 seed in URL", async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", "1z4k");
+    window.history.replaceState(null, "", url.toString());
+    const rng = await import("../utilities/rng");
+    const result = rng.initSeedFromUrl({ writeToUrl: false });
+    expect(typeof result).toBe("number");
+    expect(result).toBeGreaterThan(0);
+    url.searchParams.delete("seed");
+    window.history.replaceState(null, "", url.toString());
+  });
+
+  it("parseSeed handles empty seed param (generates new seed)", async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", "   ");
+    window.history.replaceState(null, "", url.toString());
+    const rng = await import("../utilities/rng");
+    const result = rng.initSeedFromUrl({ writeToUrl: false });
+    expect(typeof result).toBe("number");
+    url.searchParams.delete("seed");
+    window.history.replaceState(null, "", url.toString());
+  });
+
+  it("initSeedFromUrl with writeToUrl: true calls history.replaceState", async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.delete("seed");
+    window.history.replaceState(null, "", url.toString());
+    const spy = vi.spyOn(window.history, "replaceState");
+    const rng = await import("../utilities/rng");
+    rng.initSeedFromUrl({ writeToUrl: true });
+    expect(spy).toHaveBeenCalled();
+    spy.mockRestore();
+  });
+
+  it("getSeed() before initSeedFromUrl still returns a number (auto-initialises)", async () => {
+    const rng = await import("../utilities/rng");
+    expect(typeof rng.getSeed()).toBe("number");
+  });
+
+  it("random() before initSeedFromUrl auto-initialises", async () => {
+    const rng = await import("../utilities/rng");
+    const result = rng.random();
+    expect(result).toBeGreaterThanOrEqual(0);
+    expect(result).toBeLessThan(1);
+  });
+
+  it("buildReplayUrl returns URL with seed= after initialising", async () => {
+    const rng = await import("../utilities/rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+    expect(rng.buildReplayUrl()).toContain("seed=");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// decisions URL encoding round-trip
+// ---------------------------------------------------------------------------
+import { buildReplayUrl, getDecisionsFromUrl } from "../utilities/rng";
+
+describe("decisions URL encoding round-trip", () => {
+  it("buildReplayUrl encodes decisions and getDecisionsFromUrl decodes them correctly", () => {
+    Object.defineProperty(window, "location", {
+      value: { href: "https://example.com/?seed=abc" },
+      writable: true, configurable: true,
+    });
+    const log = ["5:steal:0:78", "12:bunt", "20:skip"];
+    const url = buildReplayUrl(log);
+    Object.defineProperty(window, "location", {
+      value: { href: url },
+      writable: true, configurable: true,
+    });
+    expect(getDecisionsFromUrl()).toEqual(log);
+  });
+
+  it("getDecisionsFromUrl returns [] when no decisions param present", () => {
+    Object.defineProperty(window, "location", {
+      value: { href: "https://example.com/?seed=abc" },
+      writable: true, configurable: true,
+    });
+    expect(getDecisionsFromUrl()).toEqual([]);
+  });
+});

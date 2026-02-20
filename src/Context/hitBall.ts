@@ -45,7 +45,7 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
 };
 
 /** Accumulate runs into the sparse inningRuns array for the current team/inning. */
-const addInningRuns = (state: State, runs: number): State => {
+export const addInningRuns = (state: State, runs: number): State => {
   if (runs === 0) return state;
   const idx = state.inning - 1;
   const newInningRuns: [number[], number[]] = [

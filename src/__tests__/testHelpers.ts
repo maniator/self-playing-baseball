@@ -1,0 +1,55 @@
+import { vi } from "vitest";
+import type { State, ContextValue } from "../Context";
+import * as rngModule from "../utilities/rng";
+
+/** Creates a full default State with optional field overrides. */
+export const makeState = (overrides: Partial<State> = {}): State => ({
+  inning: 1, score: [0, 0], teams: ["Away", "Home"],
+  baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
+  gameOver: false, pendingDecision: null, onePitchModifier: null,
+  pitchKey: 0, decisionLog: [],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
+  batterIndex: [0, 0], inningRuns: [[], []], playLog: [],
+  ...overrides,
+});
+
+/** Creates a full default ContextValue with optional field overrides. */
+export const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue => ({
+  inning: 1,
+  score: [3, 2],
+  teams: ["Away", "Home"],
+  baseLayout: [0, 0, 0],
+  outs: 1,
+  strikes: 2,
+  balls: 1,
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
+  hitType: undefined,
+  log: [],
+  dispatch: vi.fn(),
+  dispatchLog: vi.fn(),
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
+  ...overrides,
+});
+
+/** Creates a log array and a log-function that appends to it. */
+export const makeLogs = () => {
+  const logs: string[] = [];
+  const log = (msg: string) => logs.push(msg);
+  return { logs, log };
+};
+
+/** Mocks rng.random to return a fixed value for all calls. */
+export const mockRandom = (value: number) =>
+  vi.spyOn(rngModule, "random").mockReturnValue(value);

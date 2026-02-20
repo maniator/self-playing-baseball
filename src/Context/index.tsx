@@ -61,19 +61,19 @@ export interface State {
 export interface ContextValue extends State {
   dispatch: Function,
   dispatchLog: Function,
+  /** Play-by-play announcement log (most recent first). */
+  log: string[],
 }
 
 function logReducer(state: { announcements: string[] }, action: { type: string, payload: any }): { announcements: string[] } {
   switch (action.type) {
-    case 'log':
+    case 'log': {
       const message = action.payload;
-      console.log(message);
       const newState = { ...state };
       newState.announcements.unshift(message);
-
       announce(message);
-
       return newState;
+    }
     default:
       throw new Error(`No such reducer type as ${action.type}`);
   }
@@ -102,9 +102,7 @@ const initialState: State = {
   playLog: [],
 };
 
-type Props = {};
-
-export const GameProviderWrapper: React.FunctionComponent<Props> = ({ children }) => {
+export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {
   const [logState, dispatchLogger] = React.useReducer(logReducer, { announcements: [] });
   const [state, dispatch] = React.useReducer(reducer(dispatchLogger), initialState);
 

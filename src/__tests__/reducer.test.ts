@@ -5,22 +5,12 @@
 import { describe, it, expect, afterEach, vi } from "vitest";
 import { Hit } from "../constants/hitTypes";
 import type { State, DecisionType } from "../Context/index";
-import { detectDecision, stratMod } from "../Context/reducer";
+import { detectDecision } from "../Context/reducer";
 import reducerFactory from "../Context/reducer";
 import * as rngModule from "../utilities/rng";
+import { makeState } from "./testHelpers";
 
 afterEach(() => vi.restoreAllMocks());
-
-const makeState = (overrides: Partial<State> = {}): State => ({
-  inning: 1, score: [0, 0], teams: ["Away", "Home"],
-  baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
-  gameOver: false, pendingDecision: null, onePitchModifier: null,
-  pitchKey: 0, decisionLog: [],
-  suppressNextDecision: false, pinchHitterStrategy: null,
-  defensiveShift: false, defensiveShiftOffered: false,
-  batterIndex: [0, 0], inningRuns: [[], []], playLog: [],
-  ...overrides,
-});
 
 const makeReducer = () => {
   const logs: string[] = [];
@@ -39,20 +29,6 @@ const dispatchAction = (state: State, type: string, payload?: any) => {
 
 const mockRandom = (value: number) =>
   vi.spyOn(rngModule, "random").mockReturnValue(value);
-
-// stratMod
-describe("stratMod", () => {
-  it("balanced returns 1.0 for walk", () => expect(stratMod("balanced", "walk")).toBe(1.0));
-  it("balanced returns 1.0 for strikeout", () => expect(stratMod("balanced", "strikeout")).toBe(1.0));
-  it("balanced returns 1.0 for homerun", () => expect(stratMod("balanced", "homerun")).toBe(1.0));
-  it("balanced returns 1.0 for contact", () => expect(stratMod("balanced", "contact")).toBe(1.0));
-  it("balanced returns 1.0 for steal", () => expect(stratMod("balanced", "steal")).toBe(1.0));
-  it("balanced returns 1.0 for advance", () => expect(stratMod("balanced", "advance")).toBe(1.0));
-  it("aggressive boosts steal", () => expect(stratMod("aggressive", "steal")).toBeGreaterThan(1));
-  it("patient boosts walk", () => expect(stratMod("patient", "walk")).toBeGreaterThan(1));
-  it("power boosts homerun", () => expect(stratMod("power", "homerun")).toBeGreaterThan(1));
-  it("contact reduces strikeout", () => expect(stratMod("contact", "strikeout")).toBeLessThan(1));
-});
 
 // triple scoring (bug fix)
 describe("hit - triple runner scoring", () => {

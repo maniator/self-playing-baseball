@@ -2,7 +2,7 @@ import { State, Strategy, OnePitchModifier, DecisionType } from "./index";
 import { checkWalkoff } from "./gameOver";
 import { stratMod } from "./strategy";
 import { playerOut } from "./playerOut";
-import { hitBall } from "./hitBall";
+import { hitBall, addInningRuns } from "./hitBall";
 import { Hit } from "../constants/hitTypes";
 import type { PitchType } from "../constants/pitchTypes";
 import { pitchName, pitchStrikeZoneMod } from "../constants/pitchTypes";
@@ -103,21 +103,11 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
-    const inningIdx = state.inning - 1;
-    const newInningRuns: [number[], number[]] = [
-      [...state.inningRuns[0]],
-      [...state.inningRuns[1]],
-    ];
-    if (runsScored > 0) {
-      newInningRuns[state.atBat as 0 | 1][inningIdx] =
-        (newInningRuns[state.atBat as 0 | 1][inningIdx] ?? 0) + runsScored;
-    }
-    const afterFC = {
+    const afterFC = addInningRuns({
       ...state, baseLayout: newBase, score: newScore,
       pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
       strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
-      inningRuns: newInningRuns,
-    };
+    }, runsScored);
     return checkWalkoff(playerOut(afterFC, log, true), log);
   }
   if (roll < 80) {
@@ -131,26 +121,13 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
-
-    // Update inning runs for any sac-bunt runs scored.
-    const inningIdx = state.inning - 1;
-    const newInningRuns: [number[], number[]] = [
-      [...state.inningRuns[0]],
-      [...state.inningRuns[1]],
-    ];
-    if (runsScored > 0) {
-      newInningRuns[state.atBat as 0 | 1][inningIdx] =
-        (newInningRuns[state.atBat as 0 | 1][inningIdx] ?? 0) + runsScored;
-    }
-
-    const afterBunt = {
+    const afterBunt = addInningRuns({
       ...state, baseLayout: newBase, score: newScore,
       pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
       pinchHitterStrategy: null as Strategy | null,
       defensiveShift: false, defensiveShiftOffered: false,
       strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
-      inningRuns: newInningRuns,
-    };
+    }, runsScored);
     return checkWalkoff(playerOut(afterBunt, log, true), log);
   }
   log("Bunt popped up — out!");
