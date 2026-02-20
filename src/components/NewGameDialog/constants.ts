@@ -1,7 +1,9 @@
 export const DEFAULT_AL_TEAM = "New York Yankees";
 export const DEFAULT_NL_TEAM = "New York Mets";
 
-export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
+import type { ModPreset } from "@context/index";
+
+export type { ModPreset } from "@context/index";
 
 export const MOD_OPTIONS: ReadonlyArray<{ readonly label: string; readonly value: ModPreset }> = [
   { label: "Elite", value: 20 },

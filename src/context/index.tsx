@@ -29,14 +29,16 @@ export const useGameContext = (): ContextValue => {
 
 export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
 
+export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
+
 export type PlayerCustomization = {
   nickname?: string;
-  contactMod?: number;
-  powerMod?: number;
-  speedMod?: number;
-  controlMod?: number;
-  velocityMod?: number;
-  staminaMod?: number;
+  contactMod?: ModPreset;
+  powerMod?: ModPreset;
+  speedMod?: ModPreset;
+  controlMod?: ModPreset;
+  velocityMod?: ModPreset;
+  staminaMod?: ModPreset;
 };
 
 export type TeamCustomPlayerOverrides = Record<string, PlayerCustomization>;
