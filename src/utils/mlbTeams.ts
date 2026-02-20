@@ -88,6 +88,10 @@ export async function fetchMlbTeams(): Promise<{ al: MlbTeam[]; nl: MlbTeam[] }>
       .filter((t) => t.league?.id === NL_ID)
       .map(toTeam)
       .sort(sort);
+    if (al.length === 0 || nl.length === 0) {
+      // If league filtering yields no teams for either league, treat as an error so we can fall back.
+      throw new Error("MLB teams data missing league information");
+    }
     if (al.length > 0 && nl.length > 0) saveCache(al, nl);
     return { al, nl };
   } catch {
