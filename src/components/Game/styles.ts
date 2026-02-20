@@ -2,6 +2,13 @@ import styled from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
+/**
+ * Height of the fixed log panel on mobile.  Must stay in sync between
+ * `LogPanel` (height) and `GameDiv` (padding-bottom) so the field area
+ * is never obscured by the log.
+ */
+const MOBILE_LOG_HEIGHT = "33vh";
+
 export const GameDiv = styled.main`
   color: white;
   display: flex;
@@ -16,7 +23,7 @@ export const GameDiv = styled.main`
     overflow: hidden;
     overflow-anchor: none;
     padding: 12px 16px;
-    padding-bottom: calc(33vh + env(safe-area-inset-bottom));
+    padding-bottom: calc(${MOBILE_LOG_HEIGHT} + env(safe-area-inset-bottom));
   }
 `;
 
@@ -70,7 +77,7 @@ export const LogPanel = styled.div`
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 33vh;
+    height: ${MOBILE_LOG_HEIGHT};
     overflow-y: auto;
     background: #000;
     border-top: 1px solid #333;

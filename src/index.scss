@@ -1,4 +1,7 @@
 // Breakpoint variables — keep in sync with src/utils/mediaQueries.ts
+// $bp-mobile is the *inclusive* upper bound of the mobile range (≤ 768 px).
+// The tablet range in mediaQueries.ts starts at $bp-mobile + 1 (769 px),
+// so there is no overlap between mobile and tablet viewport ranges.
 $bp-mobile: 768px;
 $bp-desktop: 1024px;
 
