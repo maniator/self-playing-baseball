@@ -27,6 +27,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-is": "^19.2.4",
+    "rxdb": "^16.21.1",
+    "rxjs": "^7.8.2",
     "styled-components": "^6.3.10",
     "usehooks-ts": "^3.1.1"
   },
@@ -47,6 +49,7 @@
     "eslint-plugin-react": "^7",
     "eslint-plugin-react-hooks": "^7",
     "eslint-plugin-simple-import-sort": "^12",
+    "fake-indexeddb": "^6.2.5",
     "git-cz": "^4.6.2",
     "globals": "^16",
     "husky": "^4.2.5",
