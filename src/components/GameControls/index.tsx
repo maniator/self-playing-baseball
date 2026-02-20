@@ -2,6 +2,7 @@ import * as React from "react";
 
 import DecisionPanel from "@components/DecisionPanel";
 import InstructionsModal from "@components/InstructionsModal";
+import SavesModal from "@components/SavesModal";
 import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
@@ -46,6 +47,8 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
     handleShareReplay,
+    currentSaveId,
+    setCurrentSaveId,
   } = useGameControls();
 
   return (
@@ -57,7 +60,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
           </Button>
         )}
         {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
-        <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
+        <SavesModal
+          strategy={strategy}
+          managedTeam={managedTeam}
+          currentSaveId={currentSaveId}
+          onSaveIdChange={setCurrentSaveId}
+        />
+        <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
             <input type="checkbox" checked={autoPlay} onChange={handleAutoPlayChange} />

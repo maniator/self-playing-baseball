@@ -30,7 +30,6 @@ export const useGameControls = () => {
     gameOver,
     onePitchModifier,
     teams,
-    decisionLog,
     pitchKey,
     suppressNextDecision,
     pinchHitterStrategy,
@@ -45,6 +44,7 @@ export const useGameControls = () => {
   const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+  const [currentSaveId, setCurrentSaveId] = React.useState<string | null>(null);
 
   const gameSnapshot = {
     strikes,
@@ -130,7 +130,6 @@ export const useGameControls = () => {
     setAnnouncementVolumeState,
     alertVolume,
     setAlertVolumeState,
-    decisionLog,
     dispatchLog,
   });
 
@@ -149,6 +148,8 @@ export const useGameControls = () => {
     teams,
     gameOver,
     handleClickRef,
+    currentSaveId,
+    setCurrentSaveId,
     ...playerControls,
   };
 };

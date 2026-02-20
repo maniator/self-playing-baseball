@@ -1,24 +1,22 @@
 import { LogAction } from "@context/index";
 import { buildReplayUrl } from "@utils/rng";
 
-interface ShareReplayArgs {
-  managerMode: boolean;
-  decisionLog: string[];
+interface ShareSeedArgs {
   dispatchLog: (action: LogAction) => void;
 }
 
-export const useShareReplay = ({ managerMode, decisionLog, dispatchLog }: ShareReplayArgs) => {
+export const useShareReplay = ({ dispatchLog }: ShareSeedArgs) => {
   const log = (message: string) => dispatchLog({ type: "log", payload: message });
 
   const handleShareReplay = () => {
-    const url = buildReplayUrl(managerMode && decisionLog.length > 0 ? decisionLog : undefined);
+    const url = buildReplayUrl();
     if (navigator.clipboard) {
       navigator.clipboard
         .writeText(url)
-        .then(() => log("Replay link copied!"))
-        .catch(() => window.prompt("Copy this replay link:", url));
+        .then(() => log("Seed link copied!"))
+        .catch(() => window.prompt("Copy this seed link:", url));
     } else {
-      window.prompt("Copy this replay link:", url);
+      window.prompt("Copy this seed link:", url);
     }
   };
 

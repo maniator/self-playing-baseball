@@ -99,14 +99,21 @@ const InstructionsModal: React.FunctionComponent = () => {
         </Section>
 
         <Section>
-          <SectionHeading>Sharing</SectionHeading>
+          <SectionHeading>Saves &amp; Sharing</SectionHeading>
           <List>
             <Li>
-              Click <strong>Share replay</strong> to copy a link containing the random seed.
+              Click <strong>💾 Saves</strong> to save, load, export, or import a game.
             </Li>
             <Li>
-              Anyone with the link will see identical pitches — but Manager decisions are yours to
-              make again.
+              <strong>Export save</strong> downloads a JSON file you can share with others or keep
+              as a backup. <strong>Import save</strong> restores a game from that file.
+            </Li>
+            <Li>
+              Click <strong>Share seed</strong> to copy a link containing only the random seed.
+            </Li>
+            <Li>
+              Anyone with the seed link will see identical pitches — but Manager decisions are yours
+              to make again.
             </Li>
           </List>
         </Section>

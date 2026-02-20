@@ -13,7 +13,6 @@ interface PlayerControlsArgs {
   setAnnouncementVolumeState: (v: number) => void;
   alertVolume: number;
   setAlertVolumeState: (v: number) => void;
-  decisionLog: string[];
   dispatchLog: (action: LogAction) => void;
 }
 
@@ -25,10 +24,9 @@ export const usePlayerControls = ({
   setAnnouncementVolumeState,
   alertVolume,
   setAlertVolumeState,
-  decisionLog,
   dispatchLog,
 }: PlayerControlsArgs) => {
-  const { handleShareReplay } = useShareReplay({ managerMode, decisionLog, dispatchLog });
+  const { handleShareReplay } = useShareReplay({ dispatchLog });
 
   const [notifPermission, setNotifPermission] = React.useState<
     NotificationPermission | "unavailable"

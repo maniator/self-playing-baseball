@@ -43,9 +43,9 @@ describe("GameControls", () => {
     expect(screen.getByRole("button", { name: /batter up/i })).toBeDisabled();
   });
 
-  it("shows Share replay button", () => {
+  it("shows Share seed button", () => {
     renderWithContext(<GameControls />);
-    expect(screen.getByRole("button", { name: /share replay/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /share seed/i })).toBeInTheDocument();
   });
 
   it("shows auto-play checkbox", () => {
@@ -141,7 +141,7 @@ describe("GameControls", () => {
     expect((slider as HTMLInputElement).value).toBe("0.3");
   });
 
-  it("Share replay button copies URL to clipboard", async () => {
+  it("Share seed button copies URL to clipboard", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -151,7 +151,7 @@ describe("GameControls", () => {
     const dispatchLog = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatchLog }));
     await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /share replay/i }));
+      fireEvent.click(screen.getByRole("button", { name: /share seed/i }));
     });
     expect(writeText).toHaveBeenCalled();
   });
