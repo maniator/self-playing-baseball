@@ -1,5 +1,5 @@
 import { checkGameOver, nextHalfInning } from "./gameOver";
-import { State, Strategy } from "./index";
+import type { State, Strategy } from "./index";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
 export const nextBatter = (state: State): State => {

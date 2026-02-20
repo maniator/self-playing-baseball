@@ -1,4 +1,4 @@
-import { DecisionType, OnePitchModifier, State, Strategy } from "./index";
+import type { DecisionType, OnePitchModifier, State, Strategy } from "./index";
 
 export const checkGameOver = (state: State, log): State => {
   if (state.inning >= 9) {

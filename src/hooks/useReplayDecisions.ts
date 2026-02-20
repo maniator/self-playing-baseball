@@ -26,12 +26,17 @@ function applyEntry(
   const parts = entry.split(":");
   const action = parts[1];
   switch (action) {
-    case "steal":
+    case "steal": {
+      if (parts.length < 4) break;
+      const base = Number(parts[2]);
+      const successPct = Number(parts[3]);
+      if ((base !== 0 && base !== 1) || !Number.isFinite(successPct)) break;
       dispatch({
         type: "steal_attempt",
-        payload: { base: Number(parts[2]) as 0 | 1, successPct: Number(parts[3]) },
+        payload: { base: base as 0 | 1, successPct },
       });
       break;
+    }
     case "bunt":
       dispatch({ type: "bunt_attempt", payload: { strategy } });
       break;

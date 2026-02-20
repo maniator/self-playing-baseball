@@ -77,10 +77,8 @@ function logReducer(
   switch (action.type) {
     case "log": {
       const message = action.payload;
-      const newState = { ...state };
-      newState.announcements.unshift(message);
       announce(message);
-      return newState;
+      return { ...state, announcements: [message, ...state.announcements] };
     }
     default:
       throw new Error(`No such reducer type as ${action.type}`);

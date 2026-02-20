@@ -1,4 +1,4 @@
-import { Strategy } from "./index";
+import type { Strategy } from "./index";
 
 export const stratMod = (
   strategy: Strategy,

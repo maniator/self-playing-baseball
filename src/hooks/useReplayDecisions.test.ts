@@ -75,6 +75,48 @@ describe("useReplayDecisions", () => {
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
 
+  it("ignores malformed steal entry with missing parts", () => {
+    vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:steal:1"]);
+    const dispatch = vi.fn();
+    renderHook(() =>
+      useReplayDecisions(
+        dispatch,
+        { kind: "steal" as const, base: 1 as const, successPct: 80 },
+        5,
+        "balanced",
+      ),
+    );
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed steal entry with invalid base", () => {
+    vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:steal:2:80"]);
+    const dispatch = vi.fn();
+    renderHook(() =>
+      useReplayDecisions(
+        dispatch,
+        { kind: "steal" as const, base: 1 as const, successPct: 80 },
+        5,
+        "balanced",
+      ),
+    );
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed steal entry with NaN successPct", () => {
+    vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:steal:0:abc"]);
+    const dispatch = vi.fn();
+    renderHook(() =>
+      useReplayDecisions(
+        dispatch,
+        { kind: "steal" as const, base: 0 as const, successPct: 80 },
+        5,
+        "balanced",
+      ),
+    );
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
   it("ignores malformed pinch entry with missing strategy part", () => {
     vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:pinch"]);
     const dispatch = vi.fn();
