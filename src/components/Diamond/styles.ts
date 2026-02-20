@@ -26,7 +26,7 @@ export const OutfieldDiv = styled.div`
   @media (max-width: 800px) {
     height: 140px;
     width: 140px;
-    bottom: 20px;
+    bottom: 70px;
     right: auto;
     left: 50%;
     transform: translateX(-50%) rotate(45deg);
