@@ -9,21 +9,17 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { arrayMove, SortableContext, sortableKeyboardCoordinates } from "@dnd-kit/sortable";
+import { verticalListSortingStrategy } from "@dnd-kit/sortable";
 
 import type { PlayerCustomization, TeamCustomPlayerOverrides } from "@context/index";
-import type { Player } from "@utils/roster";
 import { generateRoster } from "@utils/roster";
 
+import { MOD_OPTIONS, PITCHER_MOD_FIELDS, PITCHER_STAT_LABELS } from "./constants";
+export type { ModPreset } from "./constants";
+export { MOD_OPTIONS } from "./constants";
 import {
-  DragHandle,
+  BaseStat,
   ModLabel,
   ModSelect,
   NicknameInput,
@@ -32,26 +28,13 @@ import {
   PitcherDivider,
   PitcherRow,
   PlayerList,
-  PlayerRow,
   PosTag,
   Tab,
   TabBar,
-} from "./styles";
+} from "./PlayerCustomizationPanel.styles";
+import SortableBatterRow from "./SortableBatterRow";
 
-export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
-
-export const MOD_OPTIONS: ReadonlyArray<{ readonly label: string; readonly value: ModPreset }> = [
-  { label: "Elite", value: 20 },
-  { label: "High", value: 10 },
-  { label: "Above", value: 5 },
-  { label: "Avg", value: 0 },
-  { label: "Below", value: -5 },
-  { label: "Low", value: -10 },
-  { label: "Poor", value: -20 },
-];
-
-const BATTER_MOD_LABELS = ["CON", "PWR", "SPD"] as const;
-const PITCHER_MOD_LABELS = ["CTL", "VEL", "STM"] as const;
+const PITCHER_BASE_KEYS = ["control", "velocity", "stamina"] as const;
 
 type Props = {
   awayTeam: string;
@@ -64,64 +47,6 @@ type Props = {
   homeOrder: string[];
   onAwayOrderChange: (order: string[]) => void;
   onHomeOrderChange: (order: string[]) => void;
-};
-
-type BatterRowProps = {
-  player: Player;
-  overrides: TeamCustomPlayerOverrides;
-  onFieldChange: (id: string, field: keyof PlayerCustomization, raw: string) => void;
-};
-
-const SortableBatterRow: React.FunctionComponent<BatterRowProps> = ({
-  player,
-  overrides,
-  onFieldChange,
-}) => {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: player.id,
-  });
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  const nick = (overrides[player.id]?.nickname as string | undefined) ?? "";
-  const getMod = (field: keyof PlayerCustomization) => {
-    const v = overrides[player.id]?.[field];
-    return v === undefined ? "0" : String(v);
-  };
-  return (
-    <PlayerRow ref={setNodeRef} style={style}>
-      <DragHandle {...attributes} {...listeners} aria-label={`Drag ${player.position}`}>
-        ⠿
-      </DragHandle>
-      <PosTag>{player.position}</PosTag>
-      <NicknameInput
-        type="text"
-        placeholder="Nickname"
-        maxLength={20}
-        value={nick}
-        onChange={(e) => onFieldChange(player.id, "nickname", e.target.value)}
-        aria-label={`${player.position} nickname`}
-      />
-      {(["contactMod", "powerMod", "speedMod"] as const).map((field, i) => (
-        <ModLabel key={field}>
-          {BATTER_MOD_LABELS[i]}
-          <ModSelect
-            value={getMod(field)}
-            onChange={(e) => onFieldChange(player.id, field, e.target.value)}
-            aria-label={`${player.position} ${BATTER_MOD_LABELS[i]}`}
-          >
-            {MOD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </ModSelect>
-        </ModLabel>
-      ))}
-    </PlayerRow>
-  );
 };
 
 const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
@@ -155,11 +80,11 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = activeOrder.indexOf(active.id as string);
-      const newIndex = activeOrder.indexOf(over.id as string);
-      onActiveOrderChange(arrayMove(activeOrder, oldIndex, newIndex));
-    }
+    if (!over || active.id === over.id) return;
+    const oldIndex = activeOrder.indexOf(active.id as string);
+    const newIndex = activeOrder.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onActiveOrderChange(arrayMove(activeOrder, oldIndex, newIndex));
   };
 
   const updateField = (playerId: string, field: keyof PlayerCustomization, raw: string) => {
@@ -169,21 +94,24 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
       value = raw || undefined;
     } else {
       const n = parseInt(raw, 10);
-      // Store 0 as undefined so the override stays sparse (Avg = no override)
       value = isNaN(n) || n === 0 ? undefined : n;
     }
     const updated: PlayerCustomization = { ...current, [field]: value };
     (Object.keys(updated) as (keyof PlayerCustomization)[]).forEach((k) => {
       if (updated[k] === undefined) delete updated[k];
     });
-    onActiveChange({ ...activeOverrides, [playerId]: updated });
+    const nextOverrides: TeamCustomPlayerOverrides = { ...activeOverrides };
+    if (Object.keys(updated).length === 0) {
+      delete nextOverrides[playerId];
+    } else {
+      nextOverrides[playerId] = updated;
+    }
+    onActiveChange(nextOverrides);
   };
 
-  const getNick = (playerId: string) =>
-    (activeOverrides[playerId]?.nickname as string | undefined) ?? "";
-
-  const getMod = (playerId: string, field: keyof PlayerCustomization) => {
-    const v = activeOverrides[playerId]?.[field];
+  const getNick = (id: string) => (activeOverrides[id]?.nickname as string | undefined) ?? "";
+  const getMod = (id: string, field: keyof PlayerCustomization) => {
+    const v = activeOverrides[id]?.[field];
     return v === undefined ? "0" : String(v);
   };
 
@@ -236,13 +164,14 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
                 onChange={(e) => updateField(pitcher.id, "nickname", e.target.value)}
                 aria-label={`${pitcher.position} nickname`}
               />
-              {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
+              {PITCHER_MOD_FIELDS.map((field, i) => (
                 <ModLabel key={field}>
-                  {PITCHER_MOD_LABELS[i]}
+                  {PITCHER_STAT_LABELS[i]}
+                  <BaseStat>{pitcher.baseStats[PITCHER_BASE_KEYS[i]]}</BaseStat>
                   <ModSelect
                     value={getMod(pitcher.id, field)}
                     onChange={(e) => updateField(pitcher.id, field, e.target.value)}
-                    aria-label={`${pitcher.position} ${PITCHER_MOD_LABELS[i]}`}
+                    aria-label={`${pitcher.position} ${PITCHER_STAT_LABELS[i]}`}
                   >
                     {MOD_OPTIONS.map((opt) => (
                       <option key={opt.value} value={opt.value}>

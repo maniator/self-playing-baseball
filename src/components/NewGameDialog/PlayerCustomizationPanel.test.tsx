@@ -125,8 +125,8 @@ describe("PlayerCustomizationPanel", () => {
     expect(options).toEqual(MOD_OPTIONS.map((o) => o.label));
   });
 
-  it("selecting Avg (0) removes the override entry for that field (stays sparse)", () => {
-    // Pre-seed an override so we can observe it being cleared.
+  it("selecting Avg (0) removes the whole player override entry when no other fields are set", () => {
+    // Pre-seed a single-field override so we can observe the whole entry being cleared.
     const onAwayChange = vi.fn();
     const awayOverrides = {
       [awayOrder[0]]: { contactMod: 10 },
@@ -141,12 +141,12 @@ describe("PlayerCustomizationPanel", () => {
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
-    // Select "Avg" (value "0") — should clear contactMod
     act(() => {
       fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "0" } });
     });
     const newOverrides = onAwayChange.mock.calls[0][0] as TeamCustomPlayerOverrides;
-    expect(Object.values(newOverrides)[0]?.contactMod).toBeUndefined();
+    // Entire player entry should be deleted when all fields are cleared
+    expect(newOverrides[awayOrder[0]]).toBeUndefined();
   });
 
   it("calls onAwayChange with nickname when nickname input is changed", () => {
@@ -198,5 +198,27 @@ describe("PlayerCustomizationPanel", () => {
     });
     expect(screen.getByLabelText(/^drag C$/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^drag DH$/i)).toBeInTheDocument();
+  });
+
+  it("shows base stat values for each batter (contact, power, speed)", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    // The C row has a CON label — verify the Catcher's contact base stat (60) appears near it
+    const conLabels = screen.getAllByLabelText(/C CON/i);
+    const cConSelect = conLabels[0];
+    // Walk up to the ModLabel wrapper and check its text content includes the base stat
+    expect(cConSelect.closest("label")?.textContent).toContain("60");
+  });
+
+  it("shows pitcher base stat values (control, velocity, stamina)", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    // SP CTL select — its ModLabel wrapper should show the SP control base stat (65)
+    const ctlSelect = screen.getByLabelText(/SP CTL/i);
+    expect(ctlSelect.closest("label")?.textContent).toContain("65");
   });
 });

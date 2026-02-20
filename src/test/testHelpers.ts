@@ -3,7 +3,10 @@ import { vi } from "vitest";
 import type { ContextValue, State, TeamCustomPlayerOverrides } from "@context/index";
 import * as rngModule from "@utils/rng";
 
-const emptyOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides] = [{}, {}];
+const emptyOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides] = [
+  Object.freeze({}) as TeamCustomPlayerOverrides,
+  Object.freeze({}) as TeamCustomPlayerOverrides,
+];
 
 /** Creates a full default State with optional field overrides. */
 export const makeState = (overrides: Partial<State> = {}): State => ({

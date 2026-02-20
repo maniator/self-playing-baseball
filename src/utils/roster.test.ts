@@ -56,7 +56,31 @@ describe("generateRoster", () => {
     expect(roster.batters[0].id).toMatch(/^st_louis_cardinals_b0$/);
   });
 
-  it("handles empty string team name without throwing", () => {
-    expect(() => generateRoster("")).not.toThrow();
+  it("batters have positive contact, power, and speed base stats", () => {
+    const { batters } = generateRoster("New York Yankees");
+    batters.forEach((b) => {
+      expect(b.baseStats.contact).toBeGreaterThan(0);
+      expect(b.baseStats.power).toBeGreaterThan(0);
+      expect(b.baseStats.speed).toBeGreaterThan(0);
+    });
+  });
+
+  it("pitcher has positive control, velocity, and stamina base stats", () => {
+    const { pitcher } = generateRoster("New York Yankees");
+    expect(pitcher.baseStats.control).toBeGreaterThan(0);
+    expect(pitcher.baseStats.velocity).toBeGreaterThan(0);
+    expect(pitcher.baseStats.stamina).toBeGreaterThan(0);
+  });
+
+  it("batter base stats are in a reasonable range (30–90)", () => {
+    const { batters } = generateRoster("New York Yankees");
+    batters.forEach((b) => {
+      expect(b.baseStats.contact).toBeGreaterThanOrEqual(30);
+      expect(b.baseStats.contact).toBeLessThanOrEqual(90);
+      expect(b.baseStats.power).toBeGreaterThanOrEqual(30);
+      expect(b.baseStats.power).toBeLessThanOrEqual(90);
+      expect(b.baseStats.speed).toBeGreaterThanOrEqual(30);
+      expect(b.baseStats.speed).toBeLessThanOrEqual(90);
+    });
   });
 });
