@@ -3,8 +3,9 @@ import styled from "styled-components";
 export const Controls = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
+  padding: 8px 0;
 `;
 
 export const Button = styled.button`
@@ -32,11 +33,11 @@ export const NewGameButton = styled(Button)`
 export const AutoPlayGroup = styled.div`
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
   align-items: center;
   background: rgba(47, 63, 105, 0.5);
   border-radius: 10px;
-  padding: 5px 10px;
+  padding: 8px 12px;
 `;
 
 export const ToggleLabel = styled.label`

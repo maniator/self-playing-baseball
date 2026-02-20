@@ -82,7 +82,7 @@ export const useReplayDecisions = (
   strategy: Strategy,
 ): void => {
   const entries = React.useRef<string[] | null>(null);
-  if (entries.current === null) entries.current = getDecisionsFromUrl();
+  entries.current ??= getDecisionsFromUrl();
   const indexRef = React.useRef(0);
 
   React.useEffect(() => {

@@ -12,7 +12,10 @@ import { usePlayerControls } from "@hooks/usePlayerControls";
 import { useReplayDecisions } from "@hooks/useReplayDecisions";
 import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
 
-import { SPEED_NORMAL } from "./constants";
+import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
+
+const VALID_STRATEGIES: Strategy[] = ["balanced", "aggressive", "patient", "contact", "power"];
+const VALID_SPEEDS = [SPEED_SLOW, SPEED_NORMAL, SPEED_FAST];
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
 export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean } = {}) => {
@@ -45,6 +48,31 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [currentSaveId, setCurrentSaveId] = React.useState<string | null>(null);
 
+  // Sanitize values read from localStorage — invalid entries are coerced to safe defaults
+  // and immediately written back so the bad value is evicted on first render.
+  const safeStrategy: Strategy = VALID_STRATEGIES.includes(strategy) ? strategy : "balanced";
+  const safeManagedTeam: 0 | 1 = managedTeam === 0 || managedTeam === 1 ? managedTeam : 0;
+  const safeSpeed = VALID_SPEEDS.includes(speed) ? speed : SPEED_NORMAL;
+  const safeManagerMode = typeof managerMode === "boolean" ? managerMode : false;
+  const safeAnnouncementVolume =
+    typeof announcementVolume === "number" && announcementVolume >= 0 && announcementVolume <= 1
+      ? announcementVolume
+      : 1;
+  const safeAlertVolume =
+    typeof alertVolume === "number" && alertVolume >= 0 && alertVolume <= 1 ? alertVolume : 1;
+
+  // Write back corrected values so localStorage self-heals on first bad render.
+  React.useEffect(() => {
+    if (!VALID_STRATEGIES.includes(strategy)) setStrategy("balanced");
+    if (managedTeam !== 0 && managedTeam !== 1) setManagedTeam(0);
+    if (!VALID_SPEEDS.includes(speed)) setSpeed(SPEED_NORMAL);
+    if (typeof managerMode !== "boolean") setManagerMode(false);
+    if (typeof announcementVolume !== "number" || announcementVolume < 0 || announcementVolume > 1)
+      setAnnouncementVolumeState(1);
+    if (typeof alertVolume !== "number" || alertVolume < 0 || alertVolume > 1)
+      setAlertVolumeState(1);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const gameSnapshot = {
     strikes,
     balls,
@@ -73,13 +101,13 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     gameStateRef,
     skipDecisionRef,
   } = useGameRefs({
-    announcementVolume,
-    speed,
+    announcementVolume: safeAnnouncementVolume,
+    speed: safeSpeed,
     strikes,
     balls,
-    managerMode,
-    strategy,
-    managedTeam,
+    managerMode: safeManagerMode,
+    strategy: safeStrategy,
+    managedTeam: safeManagedTeam,
     gameSnapshot,
     pendingDecision,
   });
@@ -98,45 +126,45 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
   useAutoPlayScheduler(
     gameStarted,
     pendingDecision,
-    managerMode,
+    safeManagerMode,
     mutedRef,
     speedRef,
     handleClickRef,
     gameStateRef,
     betweenInningsPauseRef,
   );
-  useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
-  useAutoSave(strategy, managedTeam);
+  useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
+  useAutoSave(safeStrategy, safeManagedTeam);
 
   React.useEffect(() => {
-    setAnnouncementVolume(announcementVolume);
-  }, [announcementVolume]);
+    setAnnouncementVolume(safeAnnouncementVolume);
+  }, [safeAnnouncementVolume]);
   React.useEffect(() => {
-    setAlertVolume(alertVolume);
-  }, [alertVolume]);
+    setAlertVolume(safeAlertVolume);
+  }, [safeAlertVolume]);
   React.useEffect(() => {
-    setSpeechRate(speed);
-  }, [speed]);
+    setSpeechRate(safeSpeed);
+  }, [safeSpeed]);
 
   const playerControls = usePlayerControls({
     setManagerMode,
-    announcementVolume,
+    announcementVolume: safeAnnouncementVolume,
     setAnnouncementVolumeState,
-    alertVolume,
+    alertVolume: safeAlertVolume,
     setAlertVolumeState,
     dispatchLog,
   });
 
   return {
     dispatch,
-    speed,
+    speed: safeSpeed,
     setSpeed,
-    announcementVolume,
-    alertVolume,
-    managerMode,
-    strategy,
+    announcementVolume: safeAnnouncementVolume,
+    alertVolume: safeAlertVolume,
+    managerMode: safeManagerMode,
+    strategy: safeStrategy,
     setStrategy,
-    managedTeam,
+    managedTeam: safeManagedTeam,
     setManagedTeam,
     teams,
     gameOver,

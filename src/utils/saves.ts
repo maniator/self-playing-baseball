@@ -55,18 +55,36 @@ export interface ExportedSave {
   save: SaveSlot;
 }
 
+/** Minimal structural check — ensures a parsed object is safe to use as SaveSlot. */
+const isValidSaveSlot = (slot: unknown): slot is SaveSlot => {
+  if (!slot || typeof slot !== "object") return false;
+  const s = slot as Record<string, unknown>;
+  return typeof s.id === "string" && typeof s.seed === "string" && s.state != null;
+};
+
+/** localStorage.setItem wrapper that silently drops QuotaExceededError. */
+const safeSetItem = (key: string, value: string): void => {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    // storage full or unavailable — ignore
+  }
+};
+
 export const loadSaves = (): SaveSlot[] => {
   try {
     const raw = localStorage.getItem(SAVES_KEY);
     if (!raw) return [];
-    return JSON.parse(raw) as SaveSlot[];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(isValidSaveSlot);
   } catch {
     return [];
   }
 };
 
 const persistSaves = (saves: SaveSlot[]): void => {
-  localStorage.setItem(SAVES_KEY, JSON.stringify(saves));
+  safeSetItem(SAVES_KEY, JSON.stringify(saves));
 };
 
 export const saveGame = (
@@ -117,7 +135,8 @@ export const loadAutoSave = (): SaveSlot | null => {
   try {
     const raw = localStorage.getItem(AUTO_SAVE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as SaveSlot;
+    const parsed = JSON.parse(raw);
+    return isValidSaveSlot(parsed) ? parsed : null;
   } catch {
     return null;
   }

@@ -6,7 +6,7 @@ export const GameDiv = styled.main`
   flex-direction: column;
   width: min(960px, 94vw);
   border: 1px solid #884e4e;
-  padding: 20px;
+  padding: 24px;
   margin: 0 auto;
 
   @media (max-width: 800px) {
@@ -15,7 +15,7 @@ export const GameDiv = styled.main`
     overflow-y: auto;
     overflow-x: hidden;
     overflow-anchor: none;
-    padding: 12px;
+    padding: 16px;
   }
 `;
 
@@ -23,11 +23,11 @@ export const GameBody = styled.div`
   display: flex;
   gap: 20px;
   align-items: flex-start;
-  margin-top: 8px;
+  margin-top: 14px;
 
   @media (max-width: 800px) {
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     align-items: stretch;
   }
 `;

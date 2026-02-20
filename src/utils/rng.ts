@@ -38,12 +38,7 @@ export const initSeedFromUrl = ({ writeToUrl = false }: SeedInitOptions = {}): n
 
   const url = new URL(window.location.href);
   const seedParam = url.searchParams.get("seed");
-  let nextSeed = seedParam ? parseSeed(seedParam) : null;
-
-  if (nextSeed === null) {
-    nextSeed = generateSeed();
-  }
-
+  const nextSeed = parseSeed(seedParam ?? "") ?? generateSeed();
   seed = nextSeed;
   rng = mulberry32(seed);
   rngInternalA = seed; // pre-call state

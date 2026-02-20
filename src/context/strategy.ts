@@ -11,5 +11,5 @@ export const stratMod = (
     contact: { walk: 1.0, strikeout: 0.7, homerun: 0.7, contact: 1.4, steal: 1.0, advance: 1.1 },
     power: { walk: 0.9, strikeout: 1.3, homerun: 1.6, contact: 0.8, steal: 0.8, advance: 1.0 },
   };
-  return table[strategy][stat];
+  return (table[strategy] ?? table["balanced"])[stat];
 };

@@ -4,11 +4,11 @@ export const SavesButton = styled.button`
   background: #1a3a2a;
   color: #6effc0;
   border: 1px solid #3a7a5a;
-  padding: 8px 14px;
-  border-radius: 20px;
+  padding: 12px 18px;
+  border-radius: 30px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 13px;
+  font-size: 14px;
 
   &:hover {
     background: #254f38;
