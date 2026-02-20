@@ -49,7 +49,6 @@ export const usePitchDispatch = (
         }
       }
     }
-    skipDecisionRef.current = false;
 
     // Select pitch type based on current count, then roll main outcome.
     const currentStrikes = strikesRef.current;

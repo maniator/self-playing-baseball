@@ -86,6 +86,40 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     // hitBall handles batter advancement and play log recording.
     return hitBall(Hit.Single, { ...state, pendingDecision: null }, log, strategy);
   }
+  const fcChance = singleChance + 12;
+  if (roll < fcChance) {
+    log("Fielder's choice! Lead runner thrown out — batter reaches first safely.");
+    const oldBase = state.baseLayout;
+    const newBase: [number, number, number] = [1, 0, 0]; // batter to 1st
+    let runsScored = 0;
+    if (oldBase[0]) {
+      // Runner on 1st forced to 2nd and thrown out; advance runners on 2nd/3rd
+      if (oldBase[2]) runsScored++;
+      if (oldBase[1]) newBase[2] = 1;
+    } else if (oldBase[1]) {
+      // Runner on 2nd thrown out at 3rd; runner on 3rd scores
+      if (oldBase[2]) runsScored++;
+    }
+    const newScore: [number, number] = [state.score[0], state.score[1]];
+    newScore[state.atBat] += runsScored;
+    if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
+    const inningIdx = state.inning - 1;
+    const newInningRuns: [number[], number[]] = [
+      [...state.inningRuns[0]],
+      [...state.inningRuns[1]],
+    ];
+    if (runsScored > 0) {
+      newInningRuns[state.atBat as 0 | 1][inningIdx] =
+        (newInningRuns[state.atBat as 0 | 1][inningIdx] ?? 0) + runsScored;
+    }
+    const afterFC = {
+      ...state, baseLayout: newBase, score: newScore,
+      pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
+      strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
+      inningRuns: newInningRuns,
+    };
+    return checkWalkoff(playerOut(afterFC, log, true), log);
+  }
   if (roll < 80) {
     log("Sacrifice bunt! Runner(s) advance.");
     const oldBase = state.baseLayout;

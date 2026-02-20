@@ -239,6 +239,34 @@ describe("usePitchDispatch", () => {
     act(() => { result.current.current(); });
     expect(dispatch).not.toHaveBeenCalled();
   });
+
+  it("does NOT re-offer bunt after skip — skipDecisionRef stays set until new batter", () => {
+    const dispatch = vi.fn();
+    const dispatchLog = vi.fn();
+    // Runner on 1st, 0 outs, manager mode on, managed team is at bat → bunt offered
+    const refs = makeRefs({
+      managerMode: true, managedTeam: 0,
+      snap: { atBat: 0, baseLayout: [1, 0, 0] as [number,number,number], outs: 0, balls: 0, strikes: 0 },
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
+        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+    );
+    // First pitch → bunt offered, skipDecisionRef not yet set
+    act(() => { result.current.current(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_pending_decision", payload: { kind: "bunt" } });
+    dispatch.mockClear();
+
+    // Simulate skip: skipDecisionRef set to true (as useGameRefs does after decision resolves)
+    refs.skipDecisionRef.current = true;
+
+    // Second pitch — still same batter count (not 0-0 new batter), skip should hold
+    act(() => { result.current.current(); });
+    // Should NOT dispatch another bunt decision
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "set_pending_decision", payload: expect.objectContaining({ kind: "bunt" }) })
+    );
+  });
 });
 
 // ---------------------------------------------------------------------------
