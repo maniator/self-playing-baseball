@@ -32,13 +32,14 @@ describe("GameControls", () => {
     localStorage.clear();
   });
 
-  it("shows Batter Up! button when game has not started", () => {
-    renderWithContext(<GameControls gameStarted={false} />, makeContextValue({ gameOver: false }));
+  it("shows Batter Up! button on initial render", () => {
+    renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
     expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
   });
 
-  it("hides Batter Up! when game has started", () => {
-    renderWithContext(<GameControls gameStarted={true} />);
+  it("hides Batter Up! after it is clicked", () => {
+    renderWithContext(<GameControls />);
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
@@ -47,40 +48,22 @@ describe("GameControls", () => {
     expect(screen.getByRole("button", { name: /share replay/i })).toBeInTheDocument();
   });
 
-  it("shows Manager Mode checkbox after game starts (autoplay enabled)", () => {
-    renderWithContext(<GameControls gameStarted={false} />);
+  it("shows Manager Mode checkbox after Batter Up is clicked", () => {
+    renderWithContext(<GameControls />);
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
   });
 
-  it("does NOT show Manager Mode checkbox before game starts", () => {
-    renderWithContext(<GameControls gameStarted={false} />);
+  it("does NOT show Manager Mode checkbox before Batter Up is clicked", () => {
+    renderWithContext(<GameControls />);
     expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
   });
 
-  it("clicking Batter Up! calls onBatterUp callback", () => {
-    const onBatterUp = vi.fn();
-    renderWithContext(
-      <GameControls gameStarted={false} onBatterUp={onBatterUp} />,
-      makeContextValue({ gameOver: false }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(onBatterUp).toHaveBeenCalled();
-  });
-
-  it("Batter Up! button does not dispatch game actions when clicked (starts autoplay instead)", () => {
+  it("clicking Batter Up! does not dispatch game actions (starts autoplay instead)", () => {
     const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls gameStarted={false} />,
-      makeContextValue({ dispatch, gameOver: false }),
-    );
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).not.toHaveBeenCalled();
-  });
-
-  it("hides Batter Up! when game has started (gameStarted prop)", () => {
-    renderWithContext(<GameControls gameStarted={true} />);
-    expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
   it("shows volume sliders", () => {
@@ -98,7 +81,7 @@ describe("GameControls", () => {
     (Notification as any).permission = "default";
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).requestPermission = requestPermission;
-    renderWithContext(<GameControls gameStarted={false} />);
+    renderWithContext(<GameControls />);
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: /manager mode/i }));
     expect(requestPermission).toHaveBeenCalled();
@@ -143,25 +126,10 @@ describe("GameControls", () => {
 
   it("renders team and strategy selectors in manager mode", () => {
     localStorage.setItem("managerMode", "true");
-    renderWithContext(
-      <GameControls gameStarted={false} />,
-      makeContextValue({ teams: ["Yankees", "Red Sox"] }),
-    );
+    renderWithContext(<GameControls />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Yankees")).toBeInTheDocument();
-  });
-
-  it("spacebar does NOT trigger a pitch when game has not started", () => {
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls gameStarted={false} />,
-      makeContextValue({ dispatch, gameOver: false }),
-    );
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true }));
-    });
-    expect(dispatch).not.toHaveBeenCalled();
   });
 });

@@ -15,7 +15,7 @@ import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 const GameInner: React.FunctionComponent = () => {
   const { dispatch, teams } = useGameContext();
   const [dialogOpen, setDialogOpen] = React.useState(true);
-  const [gameStarted, setGameStarted] = React.useState(false);
+  const [gameKey, setGameKey] = React.useState(0);
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
@@ -26,12 +26,13 @@ const GameInner: React.FunctionComponent = () => {
     }
     dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });
-    setGameStarted(false);
+    setGameKey((k) => k + 1);
     setDialogOpen(false);
   };
 
   const handleNewGame = () => {
     dispatch({ type: "reset" });
+    setGameKey((k) => k + 1);
     setDialogOpen(true);
   };
 
@@ -45,11 +46,7 @@ const GameInner: React.FunctionComponent = () => {
         />
       )}
       <LineScore />
-      <GameControls
-        onNewGame={handleNewGame}
-        gameStarted={gameStarted}
-        onBatterUp={() => setGameStarted(true)}
-      />
+      <GameControls key={gameKey} onNewGame={handleNewGame} />
       <GameBody>
         <LeftPanel>
           <HitLog />

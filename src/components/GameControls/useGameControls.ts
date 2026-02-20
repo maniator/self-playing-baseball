@@ -6,7 +6,6 @@ import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
-import { useKeyboardPitch } from "@hooks/useKeyboardPitch";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";
 import { usePlayerControls } from "@hooks/usePlayerControls";
 import { useReplayDecisions } from "@hooks/useReplayDecisions";
@@ -15,7 +14,7 @@ import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/ann
 import { SPEED_NORMAL } from "./constants";
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
-export const useGameControls = (gameStarted: boolean) => {
+export const useGameControls = () => {
   const {
     dispatch,
     dispatchLog,
@@ -39,6 +38,7 @@ export const useGameControls = (gameStarted: boolean) => {
   }: ContextValue = useGameContext();
 
   const [autoPlay, setAutoPlay] = React.useState(false);
+  const [gameStarted, setGameStarted] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
   const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
@@ -100,10 +100,8 @@ export const useGameControls = (gameStarted: boolean) => {
 
   const handleBatterUp = React.useCallback(() => {
     setAutoPlay(true);
-  }, [setAutoPlay]);
-
-  const gameStartedRef = React.useRef(gameStarted);
-  gameStartedRef.current = gameStarted;
+    setGameStarted(true);
+  }, []);
 
   useAutoPlayScheduler(
     autoPlay && gameStarted,
@@ -116,7 +114,6 @@ export const useGameControls = (gameStarted: boolean) => {
     gameStateRef,
     betweenInningsPauseRef,
   );
-  useKeyboardPitch(autoPlayRef, handleClickRef, gameStartedRef);
   useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
 
   React.useEffect(() => {
@@ -144,6 +141,7 @@ export const useGameControls = (gameStarted: boolean) => {
   return {
     dispatch,
     autoPlay,
+    gameStarted,
     speed,
     setSpeed,
     announcementVolume,

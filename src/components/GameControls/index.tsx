@@ -20,17 +20,12 @@ import VolumeControls from "./VolumeControls";
 
 type Props = {
   onNewGame?: () => void;
-  gameStarted?: boolean;
-  onBatterUp?: () => void;
 };
 
-const GameControls: React.FunctionComponent<Props> = ({
-  onNewGame,
-  gameStarted = false,
-  onBatterUp,
-}) => {
+const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   const {
     autoPlay,
+    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
@@ -51,21 +46,12 @@ const GameControls: React.FunctionComponent<Props> = ({
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
     handleShareReplay,
-  } = useGameControls(gameStarted);
+  } = useGameControls();
 
   return (
     <>
       <Controls>
-        {!gameStarted && (
-          <BatterUpButton
-            onClick={() => {
-              handleBatterUp();
-              onBatterUp?.();
-            }}
-          >
-            Batter Up!
-          </BatterUpButton>
-        )}
+        {!gameStarted && <BatterUpButton onClick={handleBatterUp}>Batter Up!</BatterUpButton>}
         {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
