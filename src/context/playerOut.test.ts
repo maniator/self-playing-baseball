@@ -1,6 +1,8 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
-import { playerOut, nextBatter } from "./playerOut";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { makeLogs, makeState } from "@test/testHelpers";
+
+import { nextBatter, playerOut } from "./playerOut";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -55,7 +57,8 @@ describe("playerOut", () => {
     const { log } = makeLogs();
     const next = playerOut(
       makeState({ outs: 2, atBat: 0, inning: 1, batterIndex: [5, 0] }),
-      log, true,
+      log,
+      true,
     );
     expect(next.atBat).toBe(1);
     expect(next.batterIndex[0]).toBe(6);

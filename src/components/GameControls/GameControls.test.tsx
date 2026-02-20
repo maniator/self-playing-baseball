@@ -1,10 +1,13 @@
 import * as React from "react";
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
-import { GameContext } from "@context/index";
+
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { ContextValue } from "@context/index";
-import * as rngModule from "@utils/rng";
+import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
+import * as rngModule from "@utils/rng";
+
 import GameControls from ".";
 
 vi.mock("@utils/announce", () => ({
@@ -26,7 +29,9 @@ const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeConte
   render(<GameContext.Provider value={ctx}>{ui}</GameContext.Provider>);
 
 describe("GameControls", () => {
-  beforeEach(() => { localStorage.clear(); });
+  beforeEach(() => {
+    localStorage.clear();
+  });
 
   it("shows Batter Up! button when autoplay is off", () => {
     renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
@@ -138,10 +143,16 @@ describe("GameControls", () => {
 
   it("Share replay button copies URL to clipboard", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", { value: { writeText }, writable: true, configurable: true });
+    Object.defineProperty(navigator, "clipboard", {
+      value: { writeText },
+      writable: true,
+      configurable: true,
+    });
     const dispatchLog = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatchLog }));
-    await act(async () => { fireEvent.click(screen.getByRole("button", { name: /share replay/i })); });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /share replay/i }));
+    });
     expect(writeText).toHaveBeenCalled();
   });
 
@@ -157,7 +168,9 @@ describe("GameControls", () => {
   it("spacebar press triggers a pitch when autoPlay is off", () => {
     const dispatch = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
-    act(() => { window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true })); });
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true }));
+    });
     expect(dispatch).toHaveBeenCalled();
   });
 
@@ -167,7 +180,10 @@ describe("GameControls", () => {
       .mockReturnValueOnce(0.3)
       .mockReturnValueOnce(0.7);
     const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(
+      <GameControls />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "strike" }));
     vi.restoreAllMocks();
@@ -179,7 +195,10 @@ describe("GameControls", () => {
       .mockReturnValueOnce(0.3)
       .mockReturnValueOnce(0.1);
     const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(
+      <GameControls />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "foul" }));
     vi.restoreAllMocks();
@@ -191,7 +210,10 @@ describe("GameControls", () => {
       .mockReturnValueOnce(0.93)
       .mockReturnValueOnce(0.5);
     const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(
+      <GameControls />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "hit" }));
     vi.restoreAllMocks();
@@ -203,7 +225,10 @@ describe("GameControls", () => {
       .mockReturnValueOnce(0.7)
       .mockReturnValue(0.5);
     const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0 }));
+    renderWithContext(
+      <GameControls />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
     vi.restoreAllMocks();
@@ -215,10 +240,15 @@ describe("GameControls", () => {
       .mockReturnValueOnce(0.7)
       .mockReturnValueOnce(0.7);
     const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false, strikes: 0, onePitchModifier: "swing" }));
+    renderWithContext(
+      <GameControls />,
+      makeContextValue({ dispatch, gameOver: false, strikes: 0, onePitchModifier: "swing" }),
+    );
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: expect.stringMatching(/strike|foul/) }));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/strike|foul/) }),
+    );
     vi.restoreAllMocks();
   });
 });

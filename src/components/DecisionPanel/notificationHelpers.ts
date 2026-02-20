@@ -1,5 +1,6 @@
 import { DecisionType } from "@context/index";
 import { appLog } from "@utils/logger";
+
 import { NOTIF_TAG } from "./constants";
 
 export interface ServiceWorkerNotificationOptions extends NotificationOptions {
@@ -9,36 +10,77 @@ export interface ServiceWorkerNotificationOptions extends NotificationOptions {
 
 export const getNotificationBody = (d: DecisionType): string => {
   switch (d.kind) {
-    case "steal": return `Steal from ${d.base === 0 ? "1st" : "2nd"} base? (${d.successPct}% success)`;
-    case "bunt": return "Sacrifice bunt opportunity";
-    case "count30": return "Count is 3-0 — Take or swing?";
-    case "count02": return "Count is 0-2 — Protect or swing?";
-    case "ibb": return "Intentional walk opportunity";
-    case "ibb_or_steal": return `Intentional walk or steal from ${d.base === 0 ? "1st" : "2nd"}? (${d.successPct}% steal success)`;
-    case "pinch_hitter": return "Pinch hitter opportunity";
-    case "defensive_shift": return "Deploy defensive shift? (pop-outs ↑)";
-    default: return "Manager decision needed";
+    case "steal":
+      return `Steal from ${d.base === 0 ? "1st" : "2nd"} base? (${d.successPct}% success)`;
+    case "bunt":
+      return "Sacrifice bunt opportunity";
+    case "count30":
+      return "Count is 3-0 — Take or swing?";
+    case "count02":
+      return "Count is 0-2 — Protect or swing?";
+    case "ibb":
+      return "Intentional walk opportunity";
+    case "ibb_or_steal":
+      return `Intentional walk or steal from ${d.base === 0 ? "1st" : "2nd"}? (${d.successPct}% steal success)`;
+    case "pinch_hitter":
+      return "Pinch hitter opportunity";
+    case "defensive_shift":
+      return "Deploy defensive shift? (pop-outs ↑)";
+    default:
+      return "Manager decision needed";
   }
 };
 
 export const getNotificationActions = (d: DecisionType): { action: string; title: string }[] => {
   switch (d.kind) {
-    case "steal":  return [{ action: "steal",   title: "⚾ Yes, steal!" }, { action: "skip", title: "⏭ Skip" }];
-    case "bunt":   return [{ action: "bunt",    title: "✅ Bunt!"       }, { action: "skip", title: "⏭ Skip" }];
-    case "count30":return [{ action: "take",    title: "🤚 Take"        }, { action: "swing",  title: "⚾ Swing" }];
-    case "count02":return [{ action: "protect", title: "🛡 Protect"     }, { action: "normal", title: "⚾ Normal" }];
-    case "ibb":    return [{ action: "ibb",     title: "✅ Walk Them"   }, { action: "skip", title: "⏭ Skip" }];
-    case "ibb_or_steal": return [{ action: "ibb", title: "🥾 Walk Them" }, { action: "steal", title: `⚡ Steal! (${(d as { successPct: number }).successPct}%)` }, { action: "skip", title: "⏭ Skip" }];
-    case "pinch_hitter": return [
-      { action: "ph_contact",    title: "🎯 Contact" },
-      { action: "ph_patient",    title: "👀 Patient" },
-      { action: "ph_power",      title: "💪 Power" },
-      { action: "ph_aggressive", title: "🔥 Aggressive" },
-      { action: "ph_balanced",   title: "⚖️ Balanced" },
-      { action: "skip",          title: "⏭ Skip" },
-    ];
-    case "defensive_shift": return [{ action: "shift_on", title: "📐 Shift On" }, { action: "shift_off", title: "🏟 Normal" }, { action: "skip", title: "⏭ Skip" }];
-    default:       return [{ action: "skip",    title: "⏭ Skip" }];
+    case "steal":
+      return [
+        { action: "steal", title: "⚾ Yes, steal!" },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    case "bunt":
+      return [
+        { action: "bunt", title: "✅ Bunt!" },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    case "count30":
+      return [
+        { action: "take", title: "🤚 Take" },
+        { action: "swing", title: "⚾ Swing" },
+      ];
+    case "count02":
+      return [
+        { action: "protect", title: "🛡 Protect" },
+        { action: "normal", title: "⚾ Normal" },
+      ];
+    case "ibb":
+      return [
+        { action: "ibb", title: "✅ Walk Them" },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    case "ibb_or_steal":
+      return [
+        { action: "ibb", title: "🥾 Walk Them" },
+        { action: "steal", title: `⚡ Steal! (${(d as { successPct: number }).successPct}%)` },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    case "pinch_hitter":
+      return [
+        { action: "ph_contact", title: "🎯 Contact" },
+        { action: "ph_patient", title: "👀 Patient" },
+        { action: "ph_power", title: "💪 Power" },
+        { action: "ph_aggressive", title: "🔥 Aggressive" },
+        { action: "ph_balanced", title: "⚖️ Balanced" },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    case "defensive_shift":
+      return [
+        { action: "shift_on", title: "📐 Shift On" },
+        { action: "shift_off", title: "🏟 Normal" },
+        { action: "skip", title: "⏭ Skip" },
+      ];
+    default:
+      return [{ action: "skip", title: "⏭ Skip" }];
   }
 };
 
@@ -62,7 +104,7 @@ export const showManagerNotification = (d: DecisionType): void => {
   if ("serviceWorker" in navigator) {
     appLog.log("showManagerNotification — awaiting navigator.serviceWorker.ready");
     navigator.serviceWorker.ready
-      .then(reg => {
+      .then((reg) => {
         appLog.log("SW ready — calling reg.showNotification");
         return reg.showNotification(title, {
           body,
@@ -97,11 +139,11 @@ export const showManagerNotification = (d: DecisionType): void => {
 export const closeManagerNotification = (): void => {
   if (!("serviceWorker" in navigator)) return;
   navigator.serviceWorker.ready
-    .then(reg => reg.getNotifications({ tag: NOTIF_TAG }))
-    .then(list => {
+    .then((reg) => reg.getNotifications({ tag: NOTIF_TAG }))
+    .then((list) => {
       if (list.length > 0) {
         appLog.log(`closeManagerNotification — closing ${list.length} notification(s)`);
-        list.forEach(n => n.close());
+        list.forEach((n) => n.close());
       }
     })
     .catch(() => {});

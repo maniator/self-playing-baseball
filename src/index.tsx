@@ -1,12 +1,12 @@
 import "github-fork-ribbon-css/gh-fork-ribbon.css";
+import "./index.scss";
+
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
-import "./index.scss";
-
 import Game from "@components/Game";
-import { initSeedFromUrl } from "@utils/rng";
 import { appLog } from "@utils/logger";
+import { initSeedFromUrl } from "@utils/rng";
 
 initSeedFromUrl({ writeToUrl: true });
 

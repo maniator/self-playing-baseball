@@ -1,9 +1,12 @@
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { GameContext } from "@context/index";
+
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
 import type { ContextValue } from "@context/index";
+import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
+
 import Announcements from ".";
 
 const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeContextValue()) =>

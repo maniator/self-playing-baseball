@@ -21,8 +21,7 @@ const parseSeed = (seedString: string): number | null => {
   return parsed >>> 0;
 };
 
-const generateSeed = (): number =>
-  (((Math.random() * 0xffffffff) ^ Date.now()) >>> 0);
+const generateSeed = (): number => ((Math.random() * 0xffffffff) ^ Date.now()) >>> 0;
 
 export const initSeedFromUrl = ({ writeToUrl = false }: SeedInitOptions = {}): number | null => {
   if (typeof window === "undefined" || typeof window.location === "undefined") {

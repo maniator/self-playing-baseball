@@ -1,9 +1,12 @@
 import * as React from "react";
-import { describe, it, expect } from "vitest";
+
 import { render, screen } from "@testing-library/react";
-import { GameContext } from "@context/index";
+import { describe, expect, it } from "vitest";
+
 import type { ContextValue } from "@context/index";
+import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
+
 import LineScore from ".";
 
 const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeContextValue()) =>
@@ -76,7 +79,10 @@ describe("getCellValue — home team (bottom of inning)", () => {
 
 describe("getCellValue — extra innings", () => {
   it("shows runs scored in inning 10 (extra innings)", () => {
-    const runs: [number[], number[]] = [[0, 0, 0, 0, 0, 0, 0, 0, 0, 1], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]];
+    const runs: [number[], number[]] = [
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+      [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ];
     expect(getCellValue(0, 10, 10, 0, false, runs)).toBe(1);
   });
 });
@@ -93,7 +99,7 @@ describe("LineScore", () => {
 
   it("shows R (runs) totals for each team", () => {
     renderWithContext(<LineScore />, makeContextValue({ score: [4, 2] }));
-    const values = screen.getAllByText(/^[0-9]+$/).map(c => c.textContent);
+    const values = screen.getAllByText(/^[0-9]+$/).map((c) => c.textContent);
     expect(values).toContain("4");
     expect(values).toContain("2");
   });

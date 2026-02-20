@@ -1,5 +1,7 @@
 import * as React from "react";
-import { playVictoryFanfare, play7thInningStretch } from "@utils/announce";
+
+import { LogAction } from "@context/index";
+import { play7thInningStretch, playVictoryFanfare } from "@utils/announce";
 
 /**
  * Handles between-inning pause detection and victory fanfare.
@@ -10,9 +12,12 @@ export const useGameAudio = (
   inning: number,
   atBat: number,
   gameOver: boolean,
-  dispatchLog: Function,
+  dispatchLog: (action: LogAction) => void,
 ): React.MutableRefObject<boolean> => {
-  const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
+  const log = React.useCallback(
+    (msg: string) => dispatchLog({ type: "log", payload: msg }),
+    [dispatchLog],
+  );
 
   const betweenInningsPauseRef = React.useRef(false);
   const prevInningSignatureRef = React.useRef(`${inning}-${atBat}`);
@@ -27,7 +32,7 @@ export const useGameAudio = (
         play7thInningStretch();
       }
     }
-  }, [inning, atBat]);
+  }, [inning, atBat, log]);
 
   const prevGameOverRef = React.useRef(gameOver);
   React.useEffect(() => {

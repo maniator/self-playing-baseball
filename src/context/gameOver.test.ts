@@ -1,6 +1,8 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
-import { checkGameOver, checkWalkoff, nextHalfInning } from "./gameOver";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { makeLogs, makeState } from "@test/testHelpers";
+
+import { checkGameOver, checkWalkoff, nextHalfInning } from "./gameOver";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -9,7 +11,7 @@ describe("checkGameOver", () => {
     const { logs, log } = makeLogs();
     const next = checkGameOver(makeState({ inning: 9, score: [3, 1] }), log);
     expect(next.gameOver).toBe(true);
-    expect(logs.some(l => l.includes("ball game"))).toBe(true);
+    expect(logs.some((l) => l.includes("ball game"))).toBe(true);
   });
 
   it("does not trigger when inning >= 9 but tied", () => {
@@ -25,7 +27,7 @@ describe("checkGameOver", () => {
   it("away team wins when they have more runs", () => {
     const { logs, log } = makeLogs();
     checkGameOver(makeState({ inning: 9, score: [5, 3], teams: ["Visitors", "Home"] }), log);
-    expect(logs.some(l => l.includes("Visitors"))).toBe(true);
+    expect(logs.some((l) => l.includes("Visitors"))).toBe(true);
   });
 });
 
@@ -34,24 +36,28 @@ describe("checkWalkoff", () => {
     const { logs, log } = makeLogs();
     const next = checkWalkoff(makeState({ inning: 9, atBat: 1, score: [2, 3] }), log);
     expect(next.gameOver).toBe(true);
-    expect(logs.some(l => l.includes("Walk-off"))).toBe(true);
+    expect(logs.some((l) => l.includes("Walk-off"))).toBe(true);
   });
 
   it("does not trigger walk-off if home team is not leading", () => {
     const { log } = makeLogs();
-    expect(checkWalkoff(makeState({ inning: 9, atBat: 1, score: [3, 2] }), log).gameOver).toBe(false);
+    expect(checkWalkoff(makeState({ inning: 9, atBat: 1, score: [3, 2] }), log).gameOver).toBe(
+      false,
+    );
   });
 
   it("does not trigger walk-off when inning < 9", () => {
     const { log } = makeLogs();
-    expect(checkWalkoff(makeState({ inning: 8, atBat: 1, score: [1, 5] }), log).gameOver).toBe(false);
+    expect(checkWalkoff(makeState({ inning: 8, atBat: 1, score: [1, 5] }), log).gameOver).toBe(
+      false,
+    );
   });
 
   it("triggers walk-off in extra innings (inning 10)", () => {
     const { logs, log } = makeLogs();
     const next = checkWalkoff(makeState({ inning: 10, atBat: 1, score: [4, 5] }), log);
     expect(next.gameOver).toBe(true);
-    expect(logs.some(l => l.includes("Walk-off"))).toBe(true);
+    expect(logs.some((l) => l.includes("Walk-off"))).toBe(true);
   });
 });
 
@@ -72,7 +78,10 @@ describe("nextHalfInning", () => {
 
   it("resets bases, outs, strikes, balls", () => {
     const { log } = makeLogs();
-    const next = nextHalfInning(makeState({ outs: 2, strikes: 2, balls: 3, baseLayout: [1, 1, 1] }), log);
+    const next = nextHalfInning(
+      makeState({ outs: 2, strikes: 2, balls: 3, baseLayout: [1, 1, 1] }),
+      log,
+    );
     expect(next.outs).toBe(0);
     expect(next.strikes).toBe(0);
     expect(next.balls).toBe(0);
@@ -85,7 +94,7 @@ describe("nextHalfInning — home team wins after top of 9th", () => {
     const { logs, log } = makeLogs();
     const next = nextHalfInning(makeState({ atBat: 0, inning: 9, score: [1, 3] }), log);
     expect(next.gameOver).toBe(true);
-    expect(logs.some(l => /win|9th/i.test(l))).toBe(true);
+    expect(logs.some((l) => /win|9th/i.test(l))).toBe(true);
   });
 
   it("continues to bottom of 9th when scores are tied after top of 9th", () => {
@@ -110,7 +119,7 @@ describe("nextHalfInning — extra-inning tiebreak rule", () => {
     const next = nextHalfInning(makeState({ atBat: 1, inning: 9, outs: 3 }), log);
     expect(next.inning).toBe(10);
     expect(next.baseLayout).toEqual([0, 1, 0]);
-    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+    expect(logs.some((l) => /tiebreak/i.test(l))).toBe(true);
   });
 
   it("places runner on 2nd at start of bottom of 10th inning", () => {
@@ -119,7 +128,7 @@ describe("nextHalfInning — extra-inning tiebreak rule", () => {
     expect(next.inning).toBe(10);
     expect(next.atBat).toBe(1);
     expect(next.baseLayout).toEqual([0, 1, 0]);
-    expect(logs.some(l => /tiebreak/i.test(l))).toBe(true);
+    expect(logs.some((l) => /tiebreak/i.test(l))).toBe(true);
   });
 
   it("does NOT place tiebreak runner in inning 9 or earlier", () => {

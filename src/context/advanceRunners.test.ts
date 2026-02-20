@@ -1,5 +1,7 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+
 import { Hit } from "@constants/hitTypes";
+
 import { advanceRunners } from "./advanceRunners";
 
 describe("advanceRunners", () => {

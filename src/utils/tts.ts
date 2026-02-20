@@ -7,16 +7,16 @@ let _bestVoice: SpeechSynthesisVoice | null = null;
 const pickVoice = (): void => {
   if (typeof synth.getVoices !== "function") return;
   const voices = synth.getVoices();
-  const en = voices.filter(v => v.lang.startsWith("en") && !/female/i.test(v.name));
+  const en = voices.filter((v) => v.lang.startsWith("en") && !/female/i.test(v.name));
   if (en.length === 0) {
-    const fallback = voices.filter(v => v.lang.startsWith("en"));
-    _bestVoice = fallback.find(v => v.default) ?? fallback[0] ?? null;
+    const fallback = voices.filter((v) => v.lang.startsWith("en"));
+    _bestVoice = fallback.find((v) => v.default) ?? fallback[0] ?? null;
     return;
   }
   _bestVoice =
-    en.find(v => /daniel|david|james|fred|ralph|alex|google\s+us\s+english/i.test(v.name)) ??
-    en.find(v => /\bmale\b/i.test(v.name)) ??
-    en.find(v => v.default) ??
+    en.find((v) => /daniel|david|james|fred|ralph|alex|google\s+us\s+english/i.test(v.name)) ??
+    en.find((v) => /\bmale\b/i.test(v.name)) ??
+    en.find((v) => v.default) ??
     en[0];
 };
 
@@ -58,7 +58,10 @@ const flushBatch = (): void => {
 export const setAnnouncementVolume = (v: number): void => {
   _speechVolume = Math.max(0, Math.min(1, v));
   if (_speechVolume === 0) {
-    if (_batchTimer !== null) { clearTimeout(_batchTimer); _batchTimer = null; }
+    if (_batchTimer !== null) {
+      clearTimeout(_batchTimer);
+      _batchTimer = null;
+    }
     _pendingMessages = [];
     synth.cancel();
   }
@@ -74,7 +77,10 @@ export const announce = (message: string): void => {
 };
 
 export const cancelAnnouncements = (): void => {
-  if (_batchTimer !== null) { clearTimeout(_batchTimer); _batchTimer = null; }
+  if (_batchTimer !== null) {
+    clearTimeout(_batchTimer);
+    _batchTimer = null;
+  }
   _pendingMessages = [];
   synth.cancel();
 };

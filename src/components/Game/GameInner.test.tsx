@@ -1,9 +1,12 @@
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent, act } from "@testing-library/react";
+
+import { act, fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
 import { GameProviderWrapper } from "@context/index";
-import GameInner from "./GameInner";
+
 import Game from ".";
+import GameInner from "./GameInner";
 
 vi.mock("@utils/announce", () => ({
   playDecisionChime: vi.fn(),
@@ -58,7 +61,9 @@ describe("GameInner", () => {
       </GameProviderWrapper>,
     );
     const batterUp = screen.getByRole("button", { name: /batter up/i });
-    act(() => { fireEvent.click(batterUp); });
+    act(() => {
+      fireEvent.click(batterUp);
+    });
     const pbpElements = screen.getAllByText(/play-by-play/i);
     expect(pbpElements.length).toBeGreaterThan(0);
   });

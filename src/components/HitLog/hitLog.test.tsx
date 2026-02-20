@@ -2,31 +2,57 @@
  * Tests for HitLog component (src/HitLog/index.tsx)
  */
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { GameContext } from "@context/index";
-import type { ContextValue } from "@context/index";
+
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+
 import { Hit } from "@constants/hitTypes";
+import type { ContextValue } from "@context/index";
 import type { PlayLogEntry } from "@context/index";
+import { GameContext } from "@context/index";
+
 import HitLog from ".";
 
 const noop = () => {};
 
 const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
-  inning: 1, score: [0, 0], teams: ["Away", "Home"],
-  baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
-  gameOver: false, pendingDecision: null, onePitchModifier: null,
-  pitchKey: 0, decisionLog: [], hitType: undefined, log: [],
-  batterIndex: [0, 0], inningRuns: [[], []], playLog: [],
-  dispatch: vi.fn(), dispatchLog: vi.fn(),
+  inning: 1,
+  score: [0, 0],
+  teams: ["Away", "Home"],
+  baseLayout: [0, 0, 0],
+  outs: 0,
+  strikes: 0,
+  balls: 0,
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
+  hitType: undefined,
+  log: [],
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
+  dispatch: vi.fn(),
+  dispatchLog: vi.fn(),
   ...overrides,
 });
 
 const renderHitLog = (ctx: ContextValue = makeCtx()) =>
-  render(<GameContext.Provider value={ctx}><HitLog /></GameContext.Provider>);
+  render(
+    <GameContext.Provider value={ctx}>
+      <HitLog />
+    </GameContext.Provider>,
+  );
 
 const makeEntry = (overrides: Partial<PlayLogEntry> = {}): PlayLogEntry => ({
-  inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0,
+  inning: 1,
+  half: 0,
+  batterNum: 1,
+  team: 0,
+  event: Hit.Single,
+  runs: 0,
   ...overrides,
 });
 
@@ -42,7 +68,9 @@ describe("HitLog", () => {
   });
 
   it("shows an entry for a single", () => {
-    const ctx = makeCtx({ playLog: [makeEntry({ event: Hit.Single, batterNum: 3, inning: 2, half: 0, team: 0 })] });
+    const ctx = makeCtx({
+      playLog: [makeEntry({ event: Hit.Single, batterNum: 3, inning: 2, half: 0, team: 0 })],
+    });
     renderHitLog(ctx);
     expect(screen.getByText("1B")).toBeInTheDocument();
     expect(screen.getByText(/Away #3/)).toBeInTheDocument();

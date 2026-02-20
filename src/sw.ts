@@ -1,5 +1,6 @@
 /// <reference lib="webworker" />
 import { manifest, version } from "@parcel/service-worker";
+
 import { createLogger } from "@utils/logger";
 
 // Singleton logger for the service worker.
@@ -25,13 +26,13 @@ async function activate() {
   log.log("activate — cleaning up old caches");
   const keys = await caches.keys();
   const deleted = await Promise.all(
-    keys.map(key => {
+    keys.map((key) => {
       if (key !== version) {
         log.log(`activate — deleting stale cache "${key}"`);
         return caches.delete(key);
       }
       return Promise.resolve(false);
-    })
+    }),
   );
   const count = deleted.filter(Boolean).length;
   log.log(`activate — removed ${count} stale cache(s), calling clients.claim()`);
@@ -39,7 +40,7 @@ async function activate() {
   log.log("clients.claim() resolved — SW is now controlling all clients");
 }
 
-self.addEventListener("install",  (e) => (e as ExtendableEvent).waitUntil(install()));
+self.addEventListener("install", (e) => (e as ExtendableEvent).waitUntil(install()));
 self.addEventListener("activate", (e) => (e as ExtendableEvent).waitUntil(activate()));
 
 // ---------------------------------------------------------------------------
@@ -58,13 +59,13 @@ self.addEventListener("fetch", (event) => {
 
   fe.respondWith(
     fetch(fe.request)
-      .then(response => {
+      .then((response) => {
         // Update the cache with the fresh response.
         const clone = response.clone();
-        caches.open(version).then(cache => cache.put(fe.request, clone));
+        caches.open(version).then((cache) => cache.put(fe.request, clone));
         return response;
       })
-      .catch(() => caches.match(fe.request).then(r => r ?? Response.error()))
+      .catch(() => caches.match(fe.request).then((r) => r ?? Response.error())),
   );
 });
 
@@ -96,7 +97,9 @@ self.addEventListener("notificationclick", (event) => {
 
         const client = windowClients[0];
         if (!client) {
-          log.warn("No window clients found — cannot deliver NOTIFICATION_ACTION; user may need to re-open the tab");
+          log.warn(
+            "No window clients found — cannot deliver NOTIFICATION_ACTION; user may need to re-open the tab",
+          );
           return;
         }
 
@@ -112,7 +115,6 @@ self.addEventListener("notificationclick", (event) => {
           .then(() => log.log("client.focus() resolved — tab brought to foreground"))
           .catch((err) => log.warn("client.focus() failed (may be blocked by browser):", err));
       })
-      .catch((err) => log.error("notificationclick handler failed:", err))
+      .catch((err) => log.error("notificationclick handler failed:", err)),
   );
 });
-

@@ -1,9 +1,10 @@
+import { LogAction } from "@context/index";
 import { buildReplayUrl } from "@utils/rng";
 
 interface ShareReplayArgs {
   managerMode: boolean;
   decisionLog: string[];
-  dispatchLog: Function;
+  dispatchLog: (action: LogAction) => void;
 }
 
 export const useShareReplay = ({ managerMode, decisionLog, dispatchLog }: ShareReplayArgs) => {

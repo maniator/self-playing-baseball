@@ -1,4 +1,4 @@
-import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
+import { DecisionType, OnePitchModifier, State, Strategy } from "./index";
 
 export const checkGameOver = (state: State, log): State => {
   if (state.inning >= 9) {
@@ -16,7 +16,9 @@ export const nextHalfInning = (state: State, log): State => {
   const newState = {
     ...state,
     baseLayout: [0, 0, 0] as [number, number, number],
-    outs: 0, strikes: 0, balls: 0,
+    outs: 0,
+    strikes: 0,
+    balls: 0,
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
     hitType: undefined,

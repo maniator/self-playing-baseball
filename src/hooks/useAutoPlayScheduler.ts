@@ -1,6 +1,8 @@
 import * as React from "react";
+
 import { DecisionType } from "@context/index";
 import { isSpeechPending } from "@utils/announce";
+
 import { GameStateRef } from "./useGameRefs";
 
 /**
@@ -60,5 +62,15 @@ export const useAutoPlayScheduler = (
       cancelled = true;
       clearTimeout(timerId);
     };
-  }, [autoPlay, pendingDecision, managerMode]);
+  }, [
+    autoPlay,
+    pendingDecision,
+    managerMode,
+    autoPlayRef,
+    betweenInningsPauseRef,
+    gameStateRef,
+    handleClickRef,
+    mutedRef,
+    speedRef,
+  ]);
 };

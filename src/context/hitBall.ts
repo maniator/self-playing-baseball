@@ -1,17 +1,18 @@
 import { Hit } from "@constants/hitTypes";
-import { State, Strategy, DecisionType, OnePitchModifier, PlayLogEntry } from "./index";
-import { advanceRunners } from "./advanceRunners";
-import { playerOut, nextBatter } from "./playerOut";
-import { stratMod } from "./strategy";
 import getRandomInt from "@utils/getRandomInt";
+
+import { advanceRunners } from "./advanceRunners";
+import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
+import { nextBatter, playerOut } from "./playerOut";
+import { stratMod } from "./strategy";
 
 // Vivid hit callouts — logged inside hitBall AFTER the pop-out check passes.
 const HIT_CALLOUTS: Record<Hit, string> = {
-  [Hit.Single]:  "He lines it into the outfield — base hit!",
-  [Hit.Double]:  "Into the gap — that's a double!",
-  [Hit.Triple]:  "Deep drive to the warning track — he's in with a triple!",
+  [Hit.Single]: "He lines it into the outfield — base hit!",
+  [Hit.Double]: "Into the gap — that's a double!",
+  [Hit.Triple]: "Deep drive to the warning track — he's in with a triple!",
   [Hit.Homerun]: "That ball is GONE — home run!",
-  [Hit.Walk]:    "",
+  [Hit.Walk]: "",
 };
 
 /**
@@ -48,12 +49,8 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
 export const addInningRuns = (state: State, runs: number): State => {
   if (runs === 0) return state;
   const idx = state.inning - 1;
-  const newInningRuns: [number[], number[]] = [
-    [...state.inningRuns[0]],
-    [...state.inningRuns[1]],
-  ];
-  newInningRuns[state.atBat as 0 | 1][idx] =
-    (newInningRuns[state.atBat as 0 | 1][idx] ?? 0) + runs;
+  const newInningRuns: [number[], number[]] = [[...state.inningRuns[0]], [...state.inningRuns[1]]];
+  newInningRuns[state.atBat as 0 | 1][idx] = (newInningRuns[state.atBat as 0 | 1][idx] ?? 0) + runs;
   return { ...state, inningRuns: newInningRuns };
 };
 
@@ -72,7 +69,9 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   };
   const randomNumber = getRandomInt(1000);
 
-  const popOutThreshold = Math.round(750 * stratMod(strategy, "contact") * (state.defensiveShift ? 0.85 : 1));
+  const popOutThreshold = Math.round(
+    750 * stratMod(strategy, "contact") * (state.defensiveShift ? 0.85 : 1),
+  );
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
     if (strategy === "power" && getRandomInt(100) < 15) {
@@ -118,4 +117,3 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     playLog: [...state.playLog, playEntry],
   });
 };
-

@@ -1,23 +1,23 @@
 /**
  * Tests for src/utilities/announce.ts
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // announce.ts accesses window.speechSynthesis at module load time.
 // setup.ts installs the mock before this import.
 import {
   announce,
-  cancelAnnouncements,
-  setAnnouncementVolume,
-  setAlertVolume,
-  getAnnouncementVolume,
-  getAlertVolume,
-  isSpeechPending,
   canAnnounce,
-  setSpeechRate,
+  cancelAnnouncements,
+  getAlertVolume,
+  getAnnouncementVolume,
+  isSpeechPending,
+  play7thInningStretch,
   playDecisionChime,
   playVictoryFanfare,
-  play7thInningStretch,
+  setAlertVolume,
+  setAnnouncementVolume,
+  setSpeechRate,
 } from "./announce";
 
 const synth = window.speechSynthesis;
@@ -278,12 +278,14 @@ describe("pickVoice — voice selection", () => {
     return call ? (call[1] as () => void) : null;
   })();
 
-  const makeVoice = (
-    name: string,
-    lang: string,
-    isDefault = false,
-  ): SpeechSynthesisVoice =>
-    ({ name, lang, default: isDefault, voiceURI: name, localService: false } as SpeechSynthesisVoice);
+  const makeVoice = (name: string, lang: string, isDefault = false): SpeechSynthesisVoice =>
+    ({
+      name,
+      lang,
+      default: isDefault,
+      voiceURI: name,
+      localService: false,
+    }) as SpeechSynthesisVoice;
 
   /** Re-trigger the voiceschanged handler that announce.ts registered. */
   const fireVoicesChanged = () => _registeredPickVoice?.();

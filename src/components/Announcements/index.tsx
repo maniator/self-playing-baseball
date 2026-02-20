@@ -1,6 +1,8 @@
 import * as React from "react";
-import { useGameContext } from "@context/index";
+
 import styled from "styled-components";
+
+import { useGameContext } from "@context/index";
 
 const HeadingRow = styled.div`
   display: flex;
@@ -23,7 +25,9 @@ const Toggle = styled.button`
   font-size: 11px;
   cursor: pointer;
   padding: 0 2px;
-  &:hover { color: #aaa; }
+  &:hover {
+    color: #aaa;
+  }
 `;
 
 const AnnouncementsArea = styled.div`
@@ -47,7 +51,7 @@ const Log = styled.div`
   padding: 5px;
 `;
 
-const Announcements: React.FunctionComponent<{}> = () => {
+const Announcements: React.FunctionComponent = () => {
   const { log } = useGameContext();
   const [expanded, setExpanded] = React.useState(false);
 
@@ -55,16 +59,20 @@ const Announcements: React.FunctionComponent<{}> = () => {
     <>
       <HeadingRow>
         <span>Play-by-play</span>
-        <Toggle onClick={() => setExpanded(e => !e)} aria-label={expanded ? "Collapse play-by-play" : "Expand play-by-play"}>
+        <Toggle
+          onClick={() => setExpanded((e) => !e)}
+          aria-label={expanded ? "Collapse play-by-play" : "Expand play-by-play"}
+        >
           {expanded ? "▼ hide" : "▶ show"}
         </Toggle>
       </HeadingRow>
       {expanded && (
         <AnnouncementsArea aria-live="polite" aria-atomic="false">
-          {log.length === 0
-            ? <EmptyState>Press "Batter Up!" to start the game.</EmptyState>
-            : log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)
-          }
+          {log.length === 0 ? (
+            <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
+          ) : (
+            log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)
+          )}
         </AnnouncementsArea>
       )}
     </>

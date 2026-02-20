@@ -1,8 +1,10 @@
 import * as React from "react";
 
-import styled, { keyframes, css } from "styled-components";
+import styled, { css, keyframes } from "styled-components";
+
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
+
 import { hitDistances } from "./constants";
 
 // Pitch animation: ball travels from the pitcher's mound toward home plate, then fades.
@@ -30,11 +32,15 @@ const Baseball = styled.div<{ $isHit: boolean; $dist: number }>`
   right: 0;
   ${({ $isHit, $dist }) =>
     $isHit
-      ? css`animation: ${makeHitAnim($dist)} 1.4s ease-out forwards;`
-      : css`animation: ${pitchAnim} 0.9s ease-in forwards;`}
+      ? css`
+          animation: ${makeHitAnim($dist)} 1.4s ease-out forwards;
+        `
+      : css`
+          animation: ${pitchAnim} 0.9s ease-in forwards;
+        `}
 `;
 
-const Ball: React.FunctionComponent<{}> = () => {
+const Ball: React.FunctionComponent = () => {
   const { hitType, pitchKey } = useGameContext();
 
   const isHit = hitType !== undefined && hitType !== Hit.Walk;

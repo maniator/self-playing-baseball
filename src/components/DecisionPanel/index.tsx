@@ -1,12 +1,14 @@
 import * as React from "react";
+
 import { useGameContext } from "@context/index";
 import { Strategy } from "@context/index";
 import { playDecisionChime } from "@utils/announce";
 import { appLog } from "@utils/logger";
+
 import { DECISION_TIMEOUT_SEC } from "./constants";
-import { showManagerNotification, closeManagerNotification } from "./notificationHelpers";
 import DecisionButtons from "./DecisionButtons";
-import { Panel, CountdownRow, CountdownTrack, CountdownFill, CountdownLabel } from "./styles";
+import { closeManagerNotification, showManagerNotification } from "./notificationHelpers";
+import { CountdownFill, CountdownLabel, CountdownRow, CountdownTrack, Panel } from "./styles";
 
 type Props = {
   strategy: Strategy;
@@ -23,26 +25,58 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
   React.useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
     const handler = (event: MessageEvent) => {
-      if (event.origin && typeof window !== "undefined" && event.origin !== window.location.origin) return;
+      if (event.origin && typeof window !== "undefined" && event.origin !== window.location.origin)
+        return;
       if (event.data?.type !== "NOTIFICATION_ACTION") return;
       const { action, payload } = event.data;
       switch (action) {
-        case "steal":      dispatch({ type: "steal_attempt", payload }); break;
-        case "bunt":       dispatch({ type: "bunt_attempt", payload }); break;
-        case "take":       dispatch({ type: "set_one_pitch_modifier", payload: "take" }); break;
-        case "swing":      dispatch({ type: "set_one_pitch_modifier", payload: "swing" }); break;
-        case "protect":    dispatch({ type: "set_one_pitch_modifier", payload: "protect" }); break;
-        case "normal":     dispatch({ type: "set_one_pitch_modifier", payload: "normal" }); break;
-        case "ibb":        dispatch({ type: "intentional_walk" }); break;
-        case "skip":       dispatch({ type: "skip_decision" }); break;
-        case "ph_contact":    dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" }); break;
-        case "ph_patient":    dispatch({ type: "set_pinch_hitter_strategy", payload: "patient" }); break;
-        case "ph_power":      dispatch({ type: "set_pinch_hitter_strategy", payload: "power" }); break;
-        case "ph_aggressive": dispatch({ type: "set_pinch_hitter_strategy", payload: "aggressive" }); break;
-        case "ph_balanced":   dispatch({ type: "set_pinch_hitter_strategy", payload: "balanced" }); break;
-        case "shift_on":   dispatch({ type: "set_defensive_shift", payload: true }); break;
-        case "shift_off":  dispatch({ type: "set_defensive_shift", payload: false }); break;
-        default: break; // "focus" — just brings tab to front, no game action needed
+        case "steal":
+          dispatch({ type: "steal_attempt", payload });
+          break;
+        case "bunt":
+          dispatch({ type: "bunt_attempt", payload });
+          break;
+        case "take":
+          dispatch({ type: "set_one_pitch_modifier", payload: "take" });
+          break;
+        case "swing":
+          dispatch({ type: "set_one_pitch_modifier", payload: "swing" });
+          break;
+        case "protect":
+          dispatch({ type: "set_one_pitch_modifier", payload: "protect" });
+          break;
+        case "normal":
+          dispatch({ type: "set_one_pitch_modifier", payload: "normal" });
+          break;
+        case "ibb":
+          dispatch({ type: "intentional_walk" });
+          break;
+        case "skip":
+          dispatch({ type: "skip_decision" });
+          break;
+        case "ph_contact":
+          dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
+          break;
+        case "ph_patient":
+          dispatch({ type: "set_pinch_hitter_strategy", payload: "patient" });
+          break;
+        case "ph_power":
+          dispatch({ type: "set_pinch_hitter_strategy", payload: "power" });
+          break;
+        case "ph_aggressive":
+          dispatch({ type: "set_pinch_hitter_strategy", payload: "aggressive" });
+          break;
+        case "ph_balanced":
+          dispatch({ type: "set_pinch_hitter_strategy", payload: "balanced" });
+          break;
+        case "shift_on":
+          dispatch({ type: "set_defensive_shift", payload: true });
+          break;
+        case "shift_off":
+          dispatch({ type: "set_defensive_shift", payload: false });
+          break;
+        default:
+          break; // "focus" — just brings tab to front, no game action needed
       }
     };
     navigator.serviceWorker.addEventListener("message", handler);
@@ -70,14 +104,17 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
     // (e.g. they saw the in-page panel but then tabbed away).
     const handleVisibility = () => {
       if (document.hidden) {
-        appLog.log("visibilitychange — tab hidden, re-sending notification for:", pendingDecision.kind);
+        appLog.log(
+          "visibilitychange — tab hidden, re-sending notification for:",
+          pendingDecision.kind,
+        );
         showManagerNotification(pendingDecision);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
 
     const id = setInterval(() => {
-      setSecondsLeft(s => {
+      setSecondsLeft((s) => {
         if (s <= 1) {
           dispatch({ type: "skip_decision" });
           return DECISION_TIMEOUT_SEC;

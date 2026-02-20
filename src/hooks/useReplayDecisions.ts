@@ -1,6 +1,7 @@
 import * as React from "react";
+
+import { DecisionType, GameAction, Strategy } from "@context/index";
 import { getDecisionsFromUrl } from "@utils/rng";
-import { DecisionType, Strategy } from "@context/index";
 
 /**
  * Parses a serialized decision entry (produced by the reducer's decisionLog)
@@ -17,12 +18,19 @@ import { DecisionType, Strategy } from "@context/index";
  */
 const VALID_STRATEGIES = new Set<string>(["balanced", "aggressive", "patient", "contact", "power"]);
 
-function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void {
+function applyEntry(
+  entry: string,
+  dispatch: (action: GameAction) => void,
+  strategy: Strategy,
+): void {
   const parts = entry.split(":");
   const action = parts[1];
   switch (action) {
     case "steal":
-      dispatch({ type: "steal_attempt", payload: { base: Number(parts[2]) as 0 | 1, successPct: Number(parts[3]) } });
+      dispatch({
+        type: "steal_attempt",
+        payload: { base: Number(parts[2]) as 0 | 1, successPct: Number(parts[3]) },
+      });
       break;
     case "bunt":
       dispatch({ type: "bunt_attempt", payload: { strategy } });
@@ -30,7 +38,10 @@ function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void
     case "ibb":
       dispatch({ type: "intentional_walk" });
       break;
-    case "take": case "swing": case "protect": case "normal":
+    case "take":
+    case "swing":
+    case "protect":
+    case "normal":
       dispatch({ type: "set_one_pitch_modifier", payload: action });
       break;
     case "pinch": {
@@ -49,7 +60,8 @@ function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void
     case "skip":
       dispatch({ type: "skip_decision" });
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -59,20 +71,23 @@ function applyEntry(entry: string, dispatch: Function, strategy: Strategy): void
  * action automatically — reproducing a full managed-game replay.
  */
 export const useReplayDecisions = (
-  dispatch: Function,
+  dispatch: (action: GameAction) => void,
   pendingDecision: DecisionType | null,
   pitchKey: number,
   strategy: Strategy,
 ): void => {
-  const entries = React.useRef<string[]>(null as any);
+  const entries = React.useRef<string[] | null>(null);
   if (entries.current === null) entries.current = getDecisionsFromUrl();
   const indexRef = React.useRef(0);
 
   React.useEffect(() => {
     if (!pendingDecision) return;
+    if (!entries.current) return;
     // Skip any stale entries whose pitchKey is behind the current one.
-    while (indexRef.current < entries.current.length &&
-           Number(entries.current[indexRef.current].split(":")[0]) < pitchKey) {
+    while (
+      indexRef.current < entries.current.length &&
+      Number(entries.current[indexRef.current].split(":")[0]) < pitchKey
+    ) {
       indexRef.current += 1;
     }
     if (indexRef.current >= entries.current.length) return;
@@ -81,5 +96,5 @@ export const useReplayDecisions = (
       indexRef.current += 1;
       applyEntry(entry, dispatch, strategy);
     }
-  }, [pendingDecision, pitchKey, strategy]);
+  }, [pendingDecision, pitchKey, strategy, dispatch]);
 };

@@ -1,9 +1,11 @@
 import * as React from "react";
-import { useGameContext } from "@context/index";
-import Ball from "@components/Ball";
-import { FieldWrapper, OutfieldDiv, DiamondDiv, Mound, BaseDiv } from "./styles";
 
-const Diamond: React.FunctionComponent<{}> = () => {
+import Ball from "@components/Ball";
+import { useGameContext } from "@context/index";
+
+import { BaseDiv, DiamondDiv, FieldWrapper, Mound, OutfieldDiv } from "./styles";
+
+const Diamond: React.FunctionComponent = () => {
   const { baseLayout } = useGameContext();
   const [first, second, third] = baseLayout;
 

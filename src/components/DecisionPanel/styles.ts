@@ -32,9 +32,11 @@ export const CountdownTrack = styled.div`
 export const CountdownFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
-  background: ${({ $pct }) => $pct > 50 ? "#44cc88" : $pct > 25 ? "#ffaa33" : "#ff4444"};
+  background: ${({ $pct }) => ($pct > 50 ? "#44cc88" : $pct > 25 ? "#ffaa33" : "#ff4444")};
   border-radius: 2px;
-  transition: width 0.95s linear, background 0.5s ease;
+  transition:
+    width 0.95s linear,
+    background 0.5s ease;
 `;
 
 export const CountdownLabel = styled.span`

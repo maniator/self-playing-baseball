@@ -1,6 +1,8 @@
 import * as React from "react";
+
 import { Strategy } from "@context/index";
-import { ToggleLabel, Select, NotifBadge } from "./ManagerModeStyles";
+
+import { NotifBadge, Select, ToggleLabel } from "./ManagerModeStyles";
 
 type Props = {
   managerMode: boolean;
@@ -49,16 +51,18 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
             <option value="power">Power</option>
           </Select>
         </ToggleLabel>
-        {notifPermission === "granted" && (
-          <NotifBadge $ok={true}>🔔 on</NotifBadge>
-        )}
+        {notifPermission === "granted" && <NotifBadge $ok={true}>🔔 on</NotifBadge>}
         {notifPermission === "denied" && (
           <NotifBadge $ok={false} title="Enable notifications in your browser settings">
             🔕 blocked
           </NotifBadge>
         )}
         {notifPermission === "default" && (
-          <NotifBadge $ok={false} onClick={onRequestNotifPermission} title="Click to grant notification permission">
+          <NotifBadge
+            $ok={false}
+            onClick={onRequestNotifPermission}
+            title="Click to grant notification permission"
+          >
             🔔 click to enable
           </NotifBadge>
         )}

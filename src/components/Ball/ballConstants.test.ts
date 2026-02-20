@@ -1,6 +1,8 @@
-import { describe, it, expect } from "vitest";
-import { hitDistances } from "./constants";
+import { describe, expect, it } from "vitest";
+
 import { Hit } from "@constants/hitTypes";
+
+import { hitDistances } from "./constants";
 
 describe("hitDistances", () => {
   it("Walk distance is 0", () => {

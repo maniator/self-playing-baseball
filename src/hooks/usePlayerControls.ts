@@ -1,37 +1,38 @@
 import * as React from "react";
-import { Strategy } from "@context/index";
+
+import { LogAction } from "@context/index";
 import { appLog } from "@utils/logger";
+
 import { useShareReplay } from "./useShareReplay";
 
 interface PlayerControlsArgs {
   managerMode: boolean;
   setManagerMode: (v: boolean) => void;
-  autoPlay: boolean;
   setAutoPlay: (v: boolean) => void;
   announcementVolume: number;
   setAnnouncementVolumeState: (v: number) => void;
   alertVolume: number;
   setAlertVolumeState: (v: number) => void;
-  setStrategy: (v: Strategy) => void;
-  setManagedTeam: (v: 0 | 1) => void;
   decisionLog: string[];
-  dispatchLog: Function;
+  dispatchLog: (action: LogAction) => void;
 }
 
 export const usePlayerControls = ({
-  managerMode, setManagerMode,
-  autoPlay, setAutoPlay,
-  announcementVolume, setAnnouncementVolumeState,
-  alertVolume, setAlertVolumeState,
-  setStrategy, setManagedTeam,
+  managerMode,
+  setManagerMode,
+  setAutoPlay,
+  announcementVolume,
+  setAnnouncementVolumeState,
+  alertVolume,
+  setAlertVolumeState,
   decisionLog,
   dispatchLog,
 }: PlayerControlsArgs) => {
-  const log = (message: string) => dispatchLog({ type: "log", payload: message });
-
   const { handleShareReplay } = useShareReplay({ managerMode, decisionLog, dispatchLog });
 
-  const [notifPermission, setNotifPermission] = React.useState<NotificationPermission | "unavailable">(() => {
+  const [notifPermission, setNotifPermission] = React.useState<
+    NotificationPermission | "unavailable"
+  >(() => {
     if (typeof Notification === "undefined") return "unavailable";
     return Notification.permission;
   });
@@ -47,7 +48,7 @@ export const usePlayerControls = ({
     appLog.log(`Manager Mode enabled — current permission="${Notification.permission}"`);
     if (Notification.permission === "default") {
       appLog.log("Requesting notification permission…");
-      Notification.requestPermission().then(result => {
+      Notification.requestPermission().then((result) => {
         appLog.log(`Notification permission result="${result}"`);
         setNotifPermission(result);
       });
@@ -58,7 +59,7 @@ export const usePlayerControls = ({
 
   const handleRequestNotifPermission = React.useCallback(() => {
     if (typeof Notification === "undefined") return;
-    Notification.requestPermission().then(result => {
+    Notification.requestPermission().then((result) => {
       appLog.log(`Notification permission result="${result}"`);
       setNotifPermission(result);
     });
@@ -86,9 +87,11 @@ export const usePlayerControls = ({
       prevAnnouncementVolumeRef.current = announcementVolume;
       setAnnouncementVolumeState(0);
     } else {
-      setAnnouncementVolumeState(prevAnnouncementVolumeRef.current > 0 ? prevAnnouncementVolumeRef.current : 1);
+      setAnnouncementVolumeState(
+        prevAnnouncementVolumeRef.current > 0 ? prevAnnouncementVolumeRef.current : 1,
+      );
     }
-  }, [announcementVolume]);
+  }, [announcementVolume, setAnnouncementVolumeState]);
 
   const prevAlertVolumeRef = React.useRef(alertVolume);
   const handleToggleAlertMute = React.useCallback(() => {
@@ -98,7 +101,7 @@ export const usePlayerControls = ({
     } else {
       setAlertVolumeState(prevAlertVolumeRef.current > 0 ? prevAlertVolumeRef.current : 1);
     }
-  }, [alertVolume]);
+  }, [alertVolume, setAlertVolumeState]);
 
   return {
     notifPermission,

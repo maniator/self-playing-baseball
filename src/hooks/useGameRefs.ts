@@ -1,9 +1,24 @@
 import * as React from "react";
-import { Strategy, DecisionType, OnePitchModifier, State } from "@context/index";
+
+import { DecisionType, State, Strategy } from "@context/index";
 
 export type GameStateSnapshot = Pick<
   State,
-  "strikes" | "balls" | "baseLayout" | "outs" | "inning" | "score" | "atBat" | "pendingDecision" | "gameOver" | "onePitchModifier" | "teams" | "suppressNextDecision" | "pinchHitterStrategy" | "defensiveShift" | "defensiveShiftOffered"
+  | "strikes"
+  | "balls"
+  | "baseLayout"
+  | "outs"
+  | "inning"
+  | "score"
+  | "atBat"
+  | "pendingDecision"
+  | "gameOver"
+  | "onePitchModifier"
+  | "teams"
+  | "suppressNextDecision"
+  | "pinchHitterStrategy"
+  | "defensiveShift"
+  | "defensiveShiftOffered"
 >;
 
 export type GameStateRef = React.MutableRefObject<GameStateSnapshot>;

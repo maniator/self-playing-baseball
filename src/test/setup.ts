@@ -1,9 +1,9 @@
 import "@testing-library/jest-dom";
+
 import * as React from "react";
 
 // styled-components v6 references React at module load time; make it globally available.
 (globalThis as typeof globalThis & { React: unknown }).React = React;
-
 
 // ---------------------------------------------------------------------------
 // Mock window.speechSynthesis so announce.ts can be imported without errors.
@@ -18,8 +18,9 @@ const mockUtterance = {
   text: "",
 };
 
-(global as typeof globalThis & { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance =
-  vi.fn().mockImplementation((text: string) => ({ ...mockUtterance, text }));
+(global as typeof globalThis & { SpeechSynthesisUtterance: unknown }).SpeechSynthesisUtterance = vi
+  .fn()
+  .mockImplementation((text: string) => ({ ...mockUtterance, text }));
 
 const mockSynth = {
   speak: vi.fn(),
@@ -63,12 +64,14 @@ const mockAudioCtx = {
   currentTime: 0,
 };
 
-(global as typeof globalThis & { AudioContext: unknown }).AudioContext =
-  vi.fn().mockImplementation(() => mockAudioCtx);
+(global as typeof globalThis & { AudioContext: unknown }).AudioContext = vi
+  .fn()
+  .mockImplementation(() => mockAudioCtx);
 
 // Mock Notification API
-(global as typeof globalThis & { Notification: unknown }).Notification = vi.fn().mockImplementation(() => ({
-  close: vi.fn(),
-})) as unknown as typeof Notification;
+(global as typeof globalThis & { Notification: unknown }).Notification = vi
+  .fn()
+  .mockImplementation(() => ({
+    close: vi.fn(),
+  })) as unknown as typeof Notification;
 (Notification as unknown as { permission: NotificationPermission }).permission = "granted";
-

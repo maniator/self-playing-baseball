@@ -16,7 +16,7 @@ export const FieldWrapper = styled.div`
 export const OutfieldDiv = styled.div`
   height: 300px;
   width: 300px;
-  background: #AAC32B;
+  background: #aac32b;
   border-radius: 100% 0 0 0;
   position: absolute;
   right: 0;
@@ -47,7 +47,7 @@ export const DiamondDiv = styled.div`
 export const Mound = styled.div`
   height: 100px;
   width: 100px;
-  background: #AAC32B;
+  background: #aac32b;
   position: absolute;
   left: calc(50% - 50px);
   top: calc(50% - 50px);
@@ -80,11 +80,12 @@ export const Mound = styled.div`
 `;
 
 export const BaseDiv = styled.div<{ $playerOnBase?: boolean; $isHome?: boolean; $base: number }>`
-  background: ${({ $playerOnBase, $isHome }) => $playerOnBase ? "#3f4f7e" : $isHome ? "#fff" : "#ff21b1"};
+  background: ${({ $playerOnBase, $isHome }) =>
+    $playerOnBase ? "#3f4f7e" : $isHome ? "#fff" : "#ff21b1"};
   height: 10px;
   width: 10px;
   position: absolute;
-  right: ${({ $base }) => $base === 1 || $base === 0 ? 0 : null};
-  bottom: ${({ $base }) => $base === 3 || $base === 0 ? 0 : null};
-  left: ${({ $base }) => $base === 2 ? 0 : null};
+  right: ${({ $base }) => ($base === 1 || $base === 0 ? 0 : null)};
+  bottom: ${({ $base }) => ($base === 3 || $base === 0 ? 0 : null)};
+  left: ${({ $base }) => ($base === 2 ? 0 : null)};
 `;

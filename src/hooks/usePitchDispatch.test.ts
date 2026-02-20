@@ -1,18 +1,30 @@
 import * as React from "react";
-import { describe, it, expect, vi, afterEach } from "vitest";
-import { renderHook, act } from "@testing-library/react";
+
+import { act, renderHook } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import * as rngModule from "@utils/rng";
+
 import { usePitchDispatch } from "./usePitchDispatch";
 
 afterEach(() => vi.restoreAllMocks());
 
 const makeGameSnapshot = (overrides: Record<string, any> = {}) => ({
-  strikes: 0, balls: 0, baseLayout: [0, 0, 0] as [number, number, number],
-  outs: 0, inning: 1, score: [0, 0] as [number, number],
-  atBat: 0, pendingDecision: null, gameOver: false,
-  onePitchModifier: null, teams: ["Away", "Home"] as [string, string],
-  suppressNextDecision: false, pinchHitterStrategy: null,
-  defensiveShift: false, defensiveShiftOffered: false,
+  strikes: 0,
+  balls: 0,
+  baseLayout: [0, 0, 0] as [number, number, number],
+  outs: 0,
+  inning: 1,
+  score: [0, 0] as [number, number],
+  atBat: 0,
+  pendingDecision: null,
+  gameOver: false,
+  onePitchModifier: null,
+  teams: ["Away", "Home"] as [string, string],
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
   ...overrides,
 });
 
@@ -23,7 +35,9 @@ const makeRefs = (overrides: Record<string, any> = {}) => {
     managerModeRef: { current: overrides.managerMode ?? false } as React.MutableRefObject<boolean>,
     strategyRef: { current: overrides.strategy ?? "balanced" } as React.MutableRefObject<any>,
     managedTeamRef: { current: overrides.managedTeam ?? 0 } as React.MutableRefObject<0 | 1>,
-    skipDecisionRef: { current: overrides.skipDecision ?? false } as React.MutableRefObject<boolean>,
+    skipDecisionRef: {
+      current: overrides.skipDecision ?? false,
+    } as React.MutableRefObject<boolean>,
     strikesRef: { current: overrides.strikes ?? 0 } as React.MutableRefObject<number>,
   };
 };
@@ -38,11 +52,22 @@ describe("usePitchDispatch", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(dispatch, vi.fn(), refs.gameStateRef, refs.managerModeRef,
-        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
     );
-    act(() => { result.current.current(); });
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "set_pending_decision" }));
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "set_pending_decision" }),
+    );
   });
 
   it("dispatches strike when swing (random < swingRate)", () => {
@@ -54,12 +79,21 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.5);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(dispatch, vi.fn(), refs.gameStateRef, refs.managerModeRef,
-        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
     );
-    act(() => { result.current.current(); });
+    act(() => {
+      result.current.current();
+    });
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul)$/) })
+      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul)$/) }),
     );
   });
 
@@ -72,10 +106,19 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.1);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(dispatch, vi.fn(), refs.gameStateRef, refs.managerModeRef,
-        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
     );
-    act(() => { result.current.current(); });
+    act(() => {
+      result.current.current();
+    });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "hit" }));
   });
 
@@ -84,32 +127,65 @@ describe("usePitchDispatch", () => {
     const refs = makeRefs({ snap: { gameOver: true } });
 
     const { result } = renderHook(() =>
-      usePitchDispatch(dispatch, vi.fn(), refs.gameStateRef, refs.managerModeRef,
-        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
     );
-    act(() => { result.current.current(); });
+    act(() => {
+      result.current.current();
+    });
     expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("does NOT re-offer bunt after skip — skipDecisionRef stays set until new batter", () => {
     const dispatch = vi.fn();
     const refs = makeRefs({
-      managerMode: true, managedTeam: 0,
-      snap: { atBat: 0, baseLayout: [1, 0, 0] as [number, number, number], outs: 0, balls: 0, strikes: 0 },
+      managerMode: true,
+      managedTeam: 0,
+      snap: {
+        atBat: 0,
+        baseLayout: [1, 0, 0] as [number, number, number],
+        outs: 0,
+        balls: 0,
+        strikes: 0,
+      },
     });
     const { result } = renderHook(() =>
-      usePitchDispatch(dispatch, vi.fn(), refs.gameStateRef, refs.managerModeRef,
-        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
     );
-    act(() => { result.current.current(); });
-    expect(dispatch).toHaveBeenCalledWith({ type: "set_pending_decision", payload: { kind: "bunt" } });
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "set_pending_decision",
+      payload: { kind: "bunt" },
+    });
     dispatch.mockClear();
 
     refs.skipDecisionRef.current = true;
 
-    act(() => { result.current.current(); });
+    act(() => {
+      result.current.current();
+    });
     expect(dispatch).not.toHaveBeenCalledWith(
-      expect.objectContaining({ type: "set_pending_decision", payload: expect.objectContaining({ kind: "bunt" }) })
+      expect.objectContaining({
+        type: "set_pending_decision",
+        payload: expect.objectContaining({ kind: "bunt" }),
+      }),
     );
   });
 });

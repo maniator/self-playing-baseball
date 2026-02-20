@@ -1,16 +1,30 @@
 import { vi } from "vitest";
-import type { State, ContextValue } from "@context/index";
+
+import type { ContextValue, State } from "@context/index";
 import * as rngModule from "@utils/rng";
 
 /** Creates a full default State with optional field overrides. */
 export const makeState = (overrides: Partial<State> = {}): State => ({
-  inning: 1, score: [0, 0], teams: ["Away", "Home"],
-  baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
-  gameOver: false, pendingDecision: null, onePitchModifier: null,
-  pitchKey: 0, decisionLog: [],
-  suppressNextDecision: false, pinchHitterStrategy: null,
-  defensiveShift: false, defensiveShiftOffered: false,
-  batterIndex: [0, 0], inningRuns: [[], []], playLog: [],
+  inning: 1,
+  score: [0, 0],
+  teams: ["Away", "Home"],
+  baseLayout: [0, 0, 0],
+  outs: 0,
+  strikes: 0,
+  balls: 0,
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
   ...overrides,
 });
 
@@ -51,5 +65,4 @@ export const makeLogs = () => {
 };
 
 /** Mocks rng.random to return a fixed value for all calls. */
-export const mockRandom = (value: number) =>
-  vi.spyOn(rngModule, "random").mockReturnValue(value);
+export const mockRandom = (value: number) => vi.spyOn(rngModule, "random").mockReturnValue(value);

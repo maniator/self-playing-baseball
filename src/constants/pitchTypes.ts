@@ -38,10 +38,14 @@ export const selectPitchType = (balls: number, strikes: number, roll: number): P
  */
 export const pitchSwingRateMod = (pitch: PitchType): number => {
   switch (pitch) {
-    case "fastball":  return 1.00;
-    case "curveball": return 0.90;
-    case "slider":    return 1.10;
-    case "changeup":  return 1.05;
+    case "fastball":
+      return 1.0;
+    case "curveball":
+      return 0.9;
+    case "slider":
+      return 1.1;
+    case "changeup":
+      return 1.05;
   }
 };
 
@@ -51,19 +55,27 @@ export const pitchSwingRateMod = (pitch: PitchType): number => {
  */
 export const pitchStrikeZoneMod = (pitch: PitchType): number => {
   switch (pitch) {
-    case "fastball":  return 1.00;
-    case "curveball": return 0.85;
-    case "slider":    return 0.75;
-    case "changeup":  return 0.90;
+    case "fastball":
+      return 1.0;
+    case "curveball":
+      return 0.85;
+    case "slider":
+      return 0.75;
+    case "changeup":
+      return 0.9;
   }
 };
 
 /** Short display name used in play-by-play log messages. */
 export const pitchName = (pitch: PitchType): string => {
   switch (pitch) {
-    case "fastball":  return "Fastball";
-    case "curveball": return "Curveball";
-    case "slider":    return "Slider";
-    case "changeup":  return "Changeup";
+    case "fastball":
+      return "Fastball";
+    case "curveball":
+      return "Curveball";
+    case "slider":
+      return "Slider";
+    case "changeup":
+      return "Changeup";
   }
 };

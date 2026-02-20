@@ -12,15 +12,16 @@
  */
 
 export const LOG_STYLES = {
-  info:  "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
-  warn:  "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
-  error: "background:#4a0000;color:#f87171;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
+  info: "background:#0f4c2a;color:#4ade80;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
+  warn: "background:#4a3500;color:#fbbf24;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
+  error:
+    "background:#4a0000;color:#f87171;font-weight:bold;padding:1px 5px;border-radius:3px;font-size:11px",
   reset: "color:inherit;font-weight:normal",
 } as const;
 
 export interface AppLogger {
-  log:   (msg: string, ...args: unknown[]) => void;
-  warn:  (msg: string, ...args: unknown[]) => void;
+  log: (msg: string, ...args: unknown[]) => void;
+  warn: (msg: string, ...args: unknown[]) => void;
   error: (msg: string, ...args: unknown[]) => void;
 }
 

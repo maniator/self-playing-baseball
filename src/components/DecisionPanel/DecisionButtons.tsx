@@ -1,6 +1,8 @@
 import * as React from "react";
+
 import { DecisionType, Strategy } from "@context/index";
-import { ActionButton, SkipButton, Prompt, Odds } from "./DecisionButtonStyles";
+
+import { ActionButton, Odds, Prompt, SkipButton } from "./DecisionButtonStyles";
 
 type Props = {
   pendingDecision: DecisionType;
@@ -22,7 +24,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         <>
           <Prompt>Steal attempt from {base === 0 ? "1st" : "2nd"} base?</Prompt>
           <Odds>Est. success: {successPct}%</Odds>
-          <ActionButton onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}>
+          <ActionButton
+            onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}
+          >
             Yes, steal!
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
@@ -43,10 +47,14 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       return (
         <>
           <Prompt>Count is 3-0. Take or swing?</Prompt>
-          <ActionButton onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "take" })}>
+          <ActionButton
+            onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "take" })}
+          >
             Take (walk odds ↑)
           </ActionButton>
-          <ActionButton onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "swing" })}>
+          <ActionButton
+            onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "swing" })}
+          >
             Swing away
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
@@ -56,10 +64,14 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       return (
         <>
           <Prompt>Count is 0-2. Protect or normal swing?</Prompt>
-          <ActionButton onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "protect" })}>
+          <ActionButton
+            onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "protect" })}
+          >
             Protect (contact ↑)
           </ActionButton>
-          <ActionButton onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "normal" })}>
+          <ActionButton
+            onClick={() => onDispatch({ type: "set_one_pitch_modifier", payload: "normal" })}
+          >
             Normal swing
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
@@ -81,8 +93,12 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         <>
           <Prompt>Intentional walk or steal?</Prompt>
           <Odds>Steal success: {successPct}%</Odds>
-          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Intentional Walk</ActionButton>
-          <ActionButton onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}>
+          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>
+            🥾 Intentional Walk
+          </ActionButton>
+          <ActionButton
+            onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}
+          >
             ⚡ Steal! ({successPct}%)
           </ActionButton>
           <SkipButton onClick={onSkip}>⏭ Skip</SkipButton>
@@ -93,8 +109,11 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       return (
         <>
           <Prompt>Send up a pinch hitter? Pick a strategy:</Prompt>
-          {(["contact", "patient", "power", "aggressive", "balanced"] as Strategy[]).map(s => (
-            <ActionButton key={s} onClick={() => onDispatch({ type: "set_pinch_hitter_strategy", payload: s })}>
+          {(["contact", "patient", "power", "aggressive", "balanced"] as Strategy[]).map((s) => (
+            <ActionButton
+              key={s}
+              onClick={() => onDispatch({ type: "set_pinch_hitter_strategy", payload: s })}
+            >
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </ActionButton>
           ))}

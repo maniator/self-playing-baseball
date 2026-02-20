@@ -1,7 +1,9 @@
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+
 import ManagerModeControls from "./ManagerModeControls";
 
 const noop = () => {};
@@ -43,8 +45,8 @@ describe("ManagerModeControls", () => {
 
   it("renders all 5 strategy options", () => {
     render(<ManagerModeControls {...defaultProps} managerMode={true} />);
-    ["balanced", "aggressive", "patient", "contact", "power"].forEach(s =>
-      expect(screen.getByText(new RegExp(s, "i"))).toBeTruthy()
+    ["balanced", "aggressive", "patient", "contact", "power"].forEach((s) =>
+      expect(screen.getByText(new RegExp(s, "i"))).toBeTruthy(),
     );
   });
 
@@ -73,14 +75,21 @@ describe("ManagerModeControls", () => {
   it("calls onRequestNotifPermission when click-to-enable badge is clicked", async () => {
     const onRequest = vi.fn();
     render(
-      <ManagerModeControls {...defaultProps} managerMode={true} notifPermission="default" onRequestNotifPermission={onRequest} />
+      <ManagerModeControls
+        {...defaultProps}
+        managerMode={true}
+        notifPermission="default"
+        onRequestNotifPermission={onRequest}
+      />,
     );
     await userEvent.click(screen.getByText(/click to enable/i));
     expect(onRequest).toHaveBeenCalledOnce();
   });
 
   it("does not show notification badge when notifPermission is unavailable", () => {
-    render(<ManagerModeControls {...defaultProps} managerMode={true} notifPermission="unavailable" />);
+    render(
+      <ManagerModeControls {...defaultProps} managerMode={true} notifPermission="unavailable" />,
+    );
     expect(screen.queryByText(/🔔 on/)).toBeNull();
     expect(screen.queryByText(/blocked/)).toBeNull();
     expect(screen.queryByText(/click to enable/)).toBeNull();

@@ -1,15 +1,17 @@
 import * as React from "react";
-import reducer from "./reducer";
+
 import { Hit } from "@constants/hitTypes";
 import { announce } from "@utils/announce";
 
+import reducer from "./reducer";
+
 export type PlayLogEntry = {
   inning: number;
-  half: 0 | 1;       // 0 = top (away bats), 1 = bottom (home bats)
-  batterNum: number;  // 1–9
+  half: 0 | 1; // 0 = top (away bats), 1 = bottom (home bats)
+  batterNum: number; // 1–9
   team: 0 | 1;
-  event: Hit;         // hit type (includes Walk)
-  runs: number;       // runs scored on this play
+  event: Hit; // hit type (includes Walk)
+  runs: number; // runs scored on this play
 };
 
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
@@ -35,39 +37,45 @@ export type DecisionType =
 export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
 
 export interface State {
-  inning: number,
-  score: [number, number],
-  teams: [string, string],
-  baseLayout: [number, number, number],
-  outs: number,
-  strikes: number,
-  balls: number,
-  atBat: number,
-  hitType?: Hit,
-  gameOver: boolean,
-  pendingDecision: DecisionType | null,
-  onePitchModifier: OnePitchModifier,
-  pitchKey: number,
-  decisionLog: string[],
-  suppressNextDecision: boolean,    // true after an intentional walk; clears on next pitch
-  pinchHitterStrategy: Strategy | null, // overrides manager strategy for one batter
-  defensiveShift: boolean,          // pop-out threshold multiplied by 0.85 when true
-  defensiveShiftOffered: boolean,   // prevents re-offering shift for the same batter
-  batterIndex: [number, number],    // 0–8 position in the 9-batter lineup per team
-  inningRuns: [number[], number[]], // runs scored per inning index per team (sparse)
-  playLog: PlayLogEntry[],          // record of every hit/walk with batter attribution
+  inning: number;
+  score: [number, number];
+  teams: [string, string];
+  baseLayout: [number, number, number];
+  outs: number;
+  strikes: number;
+  balls: number;
+  atBat: number;
+  hitType?: Hit;
+  gameOver: boolean;
+  pendingDecision: DecisionType | null;
+  onePitchModifier: OnePitchModifier;
+  pitchKey: number;
+  decisionLog: string[];
+  suppressNextDecision: boolean; // true after an intentional walk; clears on next pitch
+  pinchHitterStrategy: Strategy | null; // overrides manager strategy for one batter
+  defensiveShift: boolean; // pop-out threshold multiplied by 0.85 when true
+  defensiveShiftOffered: boolean; // prevents re-offering shift for the same batter
+  batterIndex: [number, number]; // 0–8 position in the 9-batter lineup per team
+  inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
+  playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
 }
 
 export interface ContextValue extends State {
-  dispatch: Function,
-  dispatchLog: Function,
+  dispatch: React.Dispatch<GameAction>;
+  dispatchLog: React.Dispatch<LogAction>;
   /** Play-by-play announcement log (most recent first). */
-  log: string[],
+  log: string[];
 }
 
-function logReducer(state: { announcements: string[] }, action: { type: string, payload: any }): { announcements: string[] } {
+export type LogAction = { type: "log"; payload: string };
+export type GameAction = { type: string; payload?: unknown };
+
+function logReducer(
+  state: { announcements: string[] },
+  action: LogAction,
+): { announcements: string[] } {
   switch (action.type) {
-    case 'log': {
+    case "log": {
       const message = action.payload;
       const newState = { ...state };
       newState.announcements.unshift(message);
@@ -107,13 +115,15 @@ export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {
   const [state, dispatch] = React.useReducer(reducer(dispatchLogger), initialState);
 
   return (
-    <GameContext.Provider value={{
-      ...state,
-      dispatch,
-      log: logState.announcements,
-      dispatchLog: dispatchLogger
-    }}>
+    <GameContext.Provider
+      value={{
+        ...state,
+        dispatch,
+        log: logState.announcements,
+        dispatchLog: dispatchLogger,
+      }}
+    >
       {children}
     </GameContext.Provider>
   );
-}
+};

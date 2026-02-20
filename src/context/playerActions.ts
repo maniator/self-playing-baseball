@@ -1,20 +1,32 @@
-import { State, Strategy, OnePitchModifier, DecisionType } from "./index";
-import { checkWalkoff } from "./gameOver";
-import { stratMod } from "./strategy";
-import { playerOut } from "./playerOut";
-import { hitBall, addInningRuns } from "./hitBall";
 import { Hit } from "@constants/hitTypes";
 import type { PitchType } from "@constants/pitchTypes";
 import { pitchName, pitchStrikeZoneMod } from "@constants/pitchTypes";
 import getRandomInt from "@utils/getRandomInt";
 
-export const playerStrike = (state: State, log, swung = false, foul = false, pitchType?: PitchType): State => {
+import { checkWalkoff } from "./gameOver";
+import { addInningRuns, hitBall } from "./hitBall";
+import { DecisionType, OnePitchModifier, State, Strategy } from "./index";
+import { playerOut } from "./playerOut";
+import { stratMod } from "./strategy";
+
+export const playerStrike = (
+  state: State,
+  log,
+  swung = false,
+  foul = false,
+  pitchType?: PitchType,
+): State => {
   const newStrikes = state.strikes + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
-  const msg = (text: string) => pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
+  const msg = (text: string) =>
+    pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
   if (newStrikes === 3) {
-    log(swung ? msg("swing and a miss — strike three! He's out!") : msg("called strike three! He's out!"));
+    log(
+      swung
+        ? msg("swing and a miss — strike three! He's out!")
+        : msg("called strike three! He's out!"),
+    );
     // batterCompleted=true: batter's at-bat ended with a strikeout.
     return playerOut({ ...state, pitchKey }, log, true);
   }
@@ -22,13 +34,16 @@ export const playerStrike = (state: State, log, swung = false, foul = false, pit
   if (foul) {
     log(msg(`foul ball — strike ${newStrikes}.`));
   } else {
-    log(swung ? msg(`swing and a miss — strike ${newStrikes}.`) : msg(`called strike ${newStrikes}.`));
+    log(
+      swung ? msg(`swing and a miss — strike ${newStrikes}.`) : msg(`called strike ${newStrikes}.`),
+    );
   }
 
   return {
     ...state,
     strikes: newStrikes,
-    pendingDecision: null, onePitchModifier: null,
+    pendingDecision: null,
+    onePitchModifier: null,
     hitType: undefined,
     pitchKey,
   };
@@ -37,7 +52,8 @@ export const playerStrike = (state: State, log, swung = false, foul = false, pit
 export const playerBall = (state: State, log, pitchType?: PitchType): State => {
   const newBalls = state.balls + 1;
   const pitchKey = (state.pitchKey ?? 0) + 1;
-  const msg = (text: string) => pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
+  const msg = (text: string) =>
+    pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
   if (newBalls === 4) {
     log(msg("ball four — take your base!"));
@@ -48,7 +64,8 @@ export const playerBall = (state: State, log, pitchType?: PitchType): State => {
   return {
     ...state,
     balls: newBalls,
-    pendingDecision: null, onePitchModifier: null,
+    pendingDecision: null,
+    onePitchModifier: null,
     hitType: undefined,
     pitchKey,
   };
@@ -65,7 +82,8 @@ export const stealAttempt = (state: State, log, successPct: number, base: 0 | 1)
     return {
       ...state,
       baseLayout: newBase,
-      pendingDecision: null, onePitchModifier: null,
+      pendingDecision: null,
+      onePitchModifier: null,
       pitchKey: (state.pitchKey ?? 0) + 1,
     };
   }
@@ -73,7 +91,16 @@ export const stealAttempt = (state: State, log, successPct: number, base: 0 | 1)
   const clearedBases: [number, number, number] = [...state.baseLayout] as [number, number, number];
   clearedBases[base] = 0;
   // batterCompleted=false (default): a runner was put out; the same batter remains at the plate.
-  return playerOut({ ...state, pendingDecision: null, baseLayout: clearedBases, pitchKey: (state.pitchKey ?? 0) + 1 }, log, false);
+  return playerOut(
+    {
+      ...state,
+      pendingDecision: null,
+      baseLayout: clearedBases,
+      pitchKey: (state.pitchKey ?? 0) + 1,
+    },
+    log,
+    false,
+  );
 };
 
 export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"): State => {
@@ -103,11 +130,20 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
-    const afterFC = addInningRuns({
-      ...state, baseLayout: newBase, score: newScore,
-      pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
-      strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
-    }, runsScored);
+    const afterFC = addInningRuns(
+      {
+        ...state,
+        baseLayout: newBase,
+        score: newScore,
+        pendingDecision: null as DecisionType | null,
+        onePitchModifier: null as OnePitchModifier,
+        strikes: 0,
+        balls: 0,
+        hitType: undefined,
+        pitchKey: (state.pitchKey ?? 0) + 1,
+      },
+      runsScored,
+    );
     return checkWalkoff(playerOut(afterFC, log, true), log);
   }
   if (roll < 80) {
@@ -121,13 +157,23 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
-    const afterBunt = addInningRuns({
-      ...state, baseLayout: newBase, score: newScore,
-      pendingDecision: null as DecisionType | null, onePitchModifier: null as OnePitchModifier,
-      pinchHitterStrategy: null as Strategy | null,
-      defensiveShift: false, defensiveShiftOffered: false,
-      strikes: 0, balls: 0, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1,
-    }, runsScored);
+    const afterBunt = addInningRuns(
+      {
+        ...state,
+        baseLayout: newBase,
+        score: newScore,
+        pendingDecision: null as DecisionType | null,
+        onePitchModifier: null as OnePitchModifier,
+        pinchHitterStrategy: null as Strategy | null,
+        defensiveShift: false,
+        defensiveShiftOffered: false,
+        strikes: 0,
+        balls: 0,
+        hitType: undefined,
+        pitchKey: (state.pitchKey ?? 0) + 1,
+      },
+      runsScored,
+    );
     return checkWalkoff(playerOut(afterBunt, log, true), log);
   }
   log("Bunt popped up — out!");
@@ -139,18 +185,31 @@ export const buntAttempt = (state: State, log, strategy: Strategy = "balanced"):
   );
 };
 
-const computeWaitOutcome = (random: number, strategy: Strategy, modifier: OnePitchModifier, pitchType?: PitchType): "ball" | "strike" => {
+const computeWaitOutcome = (
+  random: number,
+  strategy: Strategy,
+  modifier: OnePitchModifier,
+  pitchType?: PitchType,
+): "ball" | "strike" => {
   const zoneMod = pitchType ? pitchStrikeZoneMod(pitchType) : 1.0;
   if (modifier === "take") {
-    const walkChance = Math.min(950, Math.round(750 * stratMod(strategy, "walk") / zoneMod));
+    const walkChance = Math.min(950, Math.round((750 * stratMod(strategy, "walk")) / zoneMod));
     return random < walkChance ? "ball" : "strike";
   }
-  const strikeThreshold = Math.round(500 * zoneMod / stratMod(strategy, "walk"));
+  const strikeThreshold = Math.round((500 * zoneMod) / stratMod(strategy, "walk"));
   return random < strikeThreshold ? "strike" : "ball";
 };
 
-export const playerWait = (state: State, log, strategy: Strategy = "balanced", modifier: OnePitchModifier = null, pitchType?: PitchType): State => {
+export const playerWait = (
+  state: State,
+  log,
+  strategy: Strategy = "balanced",
+  modifier: OnePitchModifier = null,
+  pitchType?: PitchType,
+): State => {
   const random = getRandomInt(1000);
   const outcome = computeWaitOutcome(random, strategy, modifier, pitchType);
-  return outcome === "ball" ? playerBall(state, log, pitchType) : playerStrike(state, log, false, false, pitchType);
+  return outcome === "ball"
+    ? playerBall(state, log, pitchType)
+    : playerStrike(state, log, false, false, pitchType);
 };

@@ -8,12 +8,15 @@ export const useKeyboardPitch = (
   autoPlayRef: React.MutableRefObject<boolean>,
   handleClickRef: React.MutableRefObject<() => void>,
 ): void => {
-  const handlePitch = React.useCallback((event: KeyboardEvent) => {
-    if (autoPlayRef.current) return;
-    if ((event.target as HTMLInputElement).type !== "text") {
-      handleClickRef.current();
-    }
-  }, []);
+  const handlePitch = React.useCallback(
+    (event: KeyboardEvent) => {
+      if (autoPlayRef.current) return;
+      if ((event.target as HTMLInputElement).type !== "text") {
+        handleClickRef.current();
+      }
+    },
+    [autoPlayRef, handleClickRef],
+  );
 
   React.useEffect(() => {
     window.addEventListener("keyup", handlePitch, false);

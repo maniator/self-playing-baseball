@@ -1,14 +1,10 @@
 /**
  * Tests for src/constants/pitchTypes.ts
  */
-import { describe, it, expect } from "vitest";
-import {
-  selectPitchType,
-  pitchSwingRateMod,
-  pitchStrikeZoneMod,
-  pitchName,
-} from "./pitchTypes";
+import { describe, expect, it } from "vitest";
+
 import type { PitchType } from "./pitchTypes";
+import { pitchName, pitchStrikeZoneMod, pitchSwingRateMod, selectPitchType } from "./pitchTypes";
 
 describe("selectPitchType – 0-2 count (expand zone with breaking balls)", () => {
   it("roll < 35 → slider", () => {
@@ -61,24 +57,27 @@ describe("selectPitchType – default / early count", () => {
 });
 
 describe("pitchSwingRateMod", () => {
-  it("fastball: 1.0 (baseline)", () => expect(pitchSwingRateMod("fastball")).toBe(1.00));
-  it("curveball: 0.9 (harder to pick up)", () => expect(pitchSwingRateMod("curveball")).toBe(0.90));
-  it("slider: 1.1 (induces chases)", () => expect(pitchSwingRateMod("slider")).toBe(1.10));
-  it("changeup: 1.05 (batter out in front)", () => expect(pitchSwingRateMod("changeup")).toBe(1.05));
+  it("fastball: 1.0 (baseline)", () => expect(pitchSwingRateMod("fastball")).toBe(1.0));
+  it("curveball: 0.9 (harder to pick up)", () => expect(pitchSwingRateMod("curveball")).toBe(0.9));
+  it("slider: 1.1 (induces chases)", () => expect(pitchSwingRateMod("slider")).toBe(1.1));
+  it("changeup: 1.05 (batter out in front)", () =>
+    expect(pitchSwingRateMod("changeup")).toBe(1.05));
   it("all values are positive numbers", () => {
     const types: PitchType[] = ["fastball", "curveball", "slider", "changeup"];
-    types.forEach(t => expect(pitchSwingRateMod(t)).toBeGreaterThan(0));
+    types.forEach((t) => expect(pitchSwingRateMod(t)).toBeGreaterThan(0));
   });
 });
 
 describe("pitchStrikeZoneMod", () => {
-  it("fastball: 1.0 (full zone)", () => expect(pitchStrikeZoneMod("fastball")).toBe(1.00));
-  it("curveball: 0.85 (breaks out of zone)", () => expect(pitchStrikeZoneMod("curveball")).toBe(0.85));
-  it("slider: 0.75 (lowest zone probability)", () => expect(pitchStrikeZoneMod("slider")).toBe(0.75));
-  it("changeup: 0.90", () => expect(pitchStrikeZoneMod("changeup")).toBe(0.90));
+  it("fastball: 1.0 (full zone)", () => expect(pitchStrikeZoneMod("fastball")).toBe(1.0));
+  it("curveball: 0.85 (breaks out of zone)", () =>
+    expect(pitchStrikeZoneMod("curveball")).toBe(0.85));
+  it("slider: 0.75 (lowest zone probability)", () =>
+    expect(pitchStrikeZoneMod("slider")).toBe(0.75));
+  it("changeup: 0.90", () => expect(pitchStrikeZoneMod("changeup")).toBe(0.9));
   it("slider has lowest zone mod of all pitch types", () => {
     const types: PitchType[] = ["fastball", "curveball", "changeup"];
-    types.forEach(t => expect(pitchStrikeZoneMod("slider")).toBeLessThan(pitchStrikeZoneMod(t)));
+    types.forEach((t) => expect(pitchStrikeZoneMod("slider")).toBeLessThan(pitchStrikeZoneMod(t)));
   });
 });
 

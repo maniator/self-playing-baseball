@@ -1,8 +1,10 @@
-import { describe, it, expect, afterEach, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { Hit } from "@constants/hitTypes";
-import { hitBall } from "./hitBall";
 import { makeLogs, makeState, mockRandom } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
+
+import { hitBall } from "./hitBall";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -14,17 +16,15 @@ describe("hitBall", () => {
     const { logs, log } = makeLogs();
     const next = hitBall(Hit.Single, makeState({ score: [0, 0], atBat: 0 }), log);
     expect(next.baseLayout[0]).toBe(1);
-    expect(logs.some(l => l.includes("base hit"))).toBe(true);
+    expect(logs.some((l) => l.includes("base hit"))).toBe(true);
   });
 
   it("pop-out: randomNumber >= popOutThreshold causes out", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.999)
-      .mockReturnValueOnce(0.5);
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.999).mockReturnValueOnce(0.5);
     const { logs, log } = makeLogs();
     const next = hitBall(Hit.Single, makeState({ outs: 0 }), log);
     expect(next.outs).toBe(1);
-    expect(logs.some(l => l.includes("out"))).toBe(true);
+    expect(logs.some((l) => l.includes("out"))).toBe(true);
   });
 
   it("homerun is never popped out", () => {
@@ -38,7 +38,11 @@ describe("hitBall", () => {
   it("runsScored updates score correctly", () => {
     mockRandom(0);
     const { log } = makeLogs();
-    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 1], score: [2, 0], atBat: 0 }), log);
+    const next = hitBall(
+      Hit.Single,
+      makeState({ baseLayout: [0, 0, 1], score: [2, 0], atBat: 0 }),
+      log,
+    );
     expect(next.score[0]).toBe(3);
   });
 });
@@ -80,21 +84,37 @@ describe("hitBall — play log recording", () => {
 describe("hitBall — inningRuns tracking", () => {
   it("records runs scored by team in the correct inning slot", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0);
-    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 3 }), noop);
+    const next = hitBall(
+      Hit.Single,
+      makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 3 }),
+      noop,
+    );
     expect(next.inningRuns[0][2]).toBe(1);
   });
 
   it("does not mutate other inning slots", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0);
-    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 5 }), noop);
+    const next = hitBall(
+      Hit.Single,
+      makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 5 }),
+      noop,
+    );
     expect(next.inningRuns[0][0]).toBeUndefined();
     expect(next.inningRuns[1][4]).toBeUndefined();
   });
 
   it("accumulates runs across multiple hits in the same inning", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0);
-    const mid = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 2 }), noop);
-    const final = hitBall(Hit.Single, { ...mid, baseLayout: [0, 0, 1] as [number, number, number] }, noop);
+    const mid = hitBall(
+      Hit.Single,
+      makeState({ baseLayout: [0, 0, 1], atBat: 0, inning: 2 }),
+      noop,
+    );
+    const final = hitBall(
+      Hit.Single,
+      { ...mid, baseLayout: [0, 0, 1] as [number, number, number] },
+      noop,
+    );
     expect(final.inningRuns[0][1]).toBe(2);
   });
 });

@@ -2,9 +2,10 @@
  * Tests for src/utilities/rng.ts and getRandomInt.ts
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
-import { initSeedFromUrl, random, buildReplayUrl, getSeed } from "./rng";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import getRandomInt from "./getRandomInt";
+import { buildReplayUrl, getSeed, initSeedFromUrl, random } from "./rng";
 
 // rng keeps module-level state, so we cannot easily reinitialise between tests.
 // Instead we test that:
@@ -119,7 +120,6 @@ describe("getRandomInt", () => {
   });
 });
 
-
 // ---------------------------------------------------------------------------
 // Isolated module instances (reset module registry for each test)
 // ---------------------------------------------------------------------------
@@ -190,13 +190,15 @@ describe("decisions URL encoding round-trip", () => {
   it("buildReplayUrl encodes decisions and getDecisionsFromUrl decodes them correctly", () => {
     Object.defineProperty(window, "location", {
       value: { href: "https://example.com/?seed=abc" },
-      writable: true, configurable: true,
+      writable: true,
+      configurable: true,
     });
     const log = ["5:steal:0:78", "12:bunt", "20:skip"];
     const url = buildReplayUrl(log);
     Object.defineProperty(window, "location", {
       value: { href: url },
-      writable: true, configurable: true,
+      writable: true,
+      configurable: true,
     });
     expect(getDecisionsFromUrl()).toEqual(log);
   });
@@ -204,7 +206,8 @@ describe("decisions URL encoding round-trip", () => {
   it("getDecisionsFromUrl returns [] when no decisions param present", () => {
     Object.defineProperty(window, "location", {
       value: { href: "https://example.com/?seed=abc" },
-      writable: true, configurable: true,
+      writable: true,
+      configurable: true,
     });
     expect(getDecisionsFromUrl()).toEqual([]);
   });

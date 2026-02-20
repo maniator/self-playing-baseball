@@ -1,5 +1,5 @@
-import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
-import { nextHalfInning, checkGameOver } from "./gameOver";
+import { checkGameOver, nextHalfInning } from "./gameOver";
+import { State, Strategy } from "./index";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
 export const nextBatter = (state: State): State => {
@@ -34,13 +34,18 @@ export const playerOut = (state: State, log, batterCompleted = false): State => 
   // plate, so pinchHitterStrategy / defensiveShift must persist for that at-bat.
   return {
     ...stateAfterBatter,
-    strikes: 0, balls: 0, outs: newOuts,
-    pendingDecision: null, onePitchModifier: null,
+    strikes: 0,
+    balls: 0,
+    outs: newOuts,
+    pendingDecision: null,
+    onePitchModifier: null,
     hitType: undefined,
-    ...(batterCompleted ? {
-      pinchHitterStrategy: null as Strategy | null,
-      defensiveShift: false,
-      defensiveShiftOffered: false,
-    } : {}),
+    ...(batterCompleted
+      ? {
+          pinchHitterStrategy: null as Strategy | null,
+          defensiveShift: false,
+          defensiveShiftOffered: false,
+        }
+      : {}),
   };
 };

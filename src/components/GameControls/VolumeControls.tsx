@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import styled from "styled-components";
 
 const VolumeRow = styled.label`
@@ -18,7 +19,9 @@ const VolumeIcon = styled.button`
   font-size: 14px;
   line-height: 1;
   color: inherit;
-  &:hover { opacity: 0.75; }
+  &:hover {
+    opacity: 0.75;
+  }
 `;
 
 const RangeInput = styled.input`

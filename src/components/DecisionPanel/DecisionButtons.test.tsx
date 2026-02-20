@@ -1,9 +1,12 @@
 import * as React from "react";
-import { describe, it, expect, vi } from "vitest";
+
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import DecisionButtons from "./DecisionButtons";
+import { describe, expect, it, vi } from "vitest";
+
 import { DecisionType } from "@context/index";
+
+import DecisionButtons from "./DecisionButtons";
 
 const noop = () => {};
 
@@ -21,7 +24,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/steal attempt from 1st base/i)).toBeTruthy();
       expect(screen.getByText(/est\. success: 75%/i)).toBeTruthy();
@@ -32,7 +35,7 @@ describe("DecisionButtons", () => {
     it("renders 2nd base label for steal from base 1", () => {
       const d: DecisionType = { kind: "steal", base: 1, successPct: 80 };
       render(
-        <DecisionButtons pendingDecision={d} strategy="balanced" onSkip={noop} onDispatch={noop} />
+        <DecisionButtons pendingDecision={d} strategy="balanced" onSkip={noop} onDispatch={noop} />,
       );
       expect(screen.getByText(/steal attempt from 2nd base/i)).toBeTruthy();
     });
@@ -45,7 +48,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /yes, steal!/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -62,7 +65,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={onSkip}
           onDispatch={noop}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /skip/i }));
       expect(onSkip).toHaveBeenCalledOnce();
@@ -82,7 +85,7 @@ describe("DecisionButtons", () => {
           strategy="contact"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/sacrifice bunt\?/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /yes, bunt!/i })).toBeTruthy();
@@ -97,7 +100,7 @@ describe("DecisionButtons", () => {
           strategy="contact"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /yes, bunt!/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -120,7 +123,7 @@ describe("DecisionButtons", () => {
           strategy="patient"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/count is 3-0/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /take/i })).toBeTruthy();
@@ -136,7 +139,7 @@ describe("DecisionButtons", () => {
           strategy="patient"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /take/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -153,7 +156,7 @@ describe("DecisionButtons", () => {
           strategy="patient"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /swing away/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -176,7 +179,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/count is 0-2/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /protect/i })).toBeTruthy();
@@ -191,7 +194,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /protect/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -208,7 +211,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /normal swing/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -231,7 +234,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/intentional walk/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /yes, walk them/i })).toBeTruthy();
@@ -246,7 +249,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /yes, walk them/i }));
       expect(onDispatch).toHaveBeenCalledWith({ type: "intentional_walk" });
@@ -264,7 +267,7 @@ describe("DecisionButtons", () => {
         strategy="balanced"
         onSkip={noop}
         onDispatch={noop}
-      />
+      />,
     );
     expect(container.firstChild).toBeNull();
   });
@@ -282,7 +285,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/send up a pinch hitter/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /contact/i })).toBeTruthy();
@@ -298,7 +301,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /^contact$/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -321,7 +324,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={noop}
-        />
+        />,
       );
       expect(screen.getByText(/deploy defensive shift/i)).toBeTruthy();
       expect(screen.getByRole("button", { name: /shift on/i })).toBeTruthy();
@@ -337,7 +340,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /shift on/i }));
       expect(onDispatch).toHaveBeenCalledWith({
@@ -354,7 +357,7 @@ describe("DecisionButtons", () => {
           strategy="balanced"
           onSkip={noop}
           onDispatch={onDispatch}
-        />
+        />,
       );
       await userEvent.click(screen.getByRole("button", { name: /normal alignment/i }));
       expect(onDispatch).toHaveBeenCalledWith({

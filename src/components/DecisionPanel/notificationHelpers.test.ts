@@ -1,6 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getNotificationBody, getNotificationActions, showManagerNotification, closeManagerNotification } from "./notificationHelpers";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import type { DecisionType } from "@context/index";
+
+import {
+  closeManagerNotification,
+  getNotificationActions,
+  getNotificationBody,
+  showManagerNotification,
+} from "./notificationHelpers";
 
 // appLog is a module-level singleton; mock it so tests don't emit console output.
 vi.mock("../utilities/logger", () => ({
@@ -41,7 +48,7 @@ describe("getNotificationActions", () => {
     const actions = getNotificationActions({ kind: "steal", base: 0, successPct: 50 });
     expect(actions).toEqual([
       { action: "steal", title: "⚾ Yes, steal!" },
-      { action: "skip",  title: "⏭ Skip" },
+      { action: "skip", title: "⏭ Skip" },
     ]);
   });
 
@@ -56,7 +63,7 @@ describe("getNotificationActions", () => {
   it("returns count30 actions", () => {
     const actions = getNotificationActions({ kind: "count30" });
     expect(actions).toEqual([
-      { action: "take",  title: "🤚 Take" },
+      { action: "take", title: "🤚 Take" },
       { action: "swing", title: "⚾ Swing" },
     ]);
   });
@@ -65,14 +72,14 @@ describe("getNotificationActions", () => {
     const actions = getNotificationActions({ kind: "count02" });
     expect(actions).toEqual([
       { action: "protect", title: "🛡 Protect" },
-      { action: "normal",  title: "⚾ Normal" },
+      { action: "normal", title: "⚾ Normal" },
     ]);
   });
 
   it("returns ibb actions", () => {
     const actions = getNotificationActions({ kind: "ibb" });
     expect(actions).toEqual([
-      { action: "ibb",  title: "✅ Walk Them" },
+      { action: "ibb", title: "✅ Walk Them" },
       { action: "skip", title: "⏭ Skip" },
     ]);
   });
@@ -103,10 +110,10 @@ describe("showManagerNotification", () => {
       configurable: true,
     });
     showManagerNotification({ kind: "bunt" });
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     expect(showNotification).toHaveBeenCalledWith(
       "⚾ Your turn, Manager!",
-      expect.objectContaining({ body: "Sacrifice bunt opportunity", tag: "manager-decision" })
+      expect.objectContaining({ body: "Sacrifice bunt opportunity", tag: "manager-decision" }),
     );
   });
 });
@@ -122,7 +129,7 @@ describe("closeManagerNotification", () => {
       configurable: true,
     });
     closeManagerNotification();
-    await new Promise(r => setTimeout(r, 10));
+    await new Promise((r) => setTimeout(r, 10));
     expect(getNotifications).toHaveBeenCalledWith({ tag: "manager-decision" });
     expect(mockClose).toHaveBeenCalled();
   });
@@ -134,7 +141,9 @@ describe("getNotificationBody – new decision types", () => {
   });
 
   it("returns defensive_shift message", () => {
-    expect(getNotificationBody({ kind: "defensive_shift" })).toBe("Deploy defensive shift? (pop-outs ↑)");
+    expect(getNotificationBody({ kind: "defensive_shift" })).toBe(
+      "Deploy defensive shift? (pop-outs ↑)",
+    );
   });
 });
 
@@ -142,21 +151,21 @@ describe("getNotificationActions – new decision types", () => {
   it("returns pinch_hitter actions with all 5 strategies and skip", () => {
     const actions = getNotificationActions({ kind: "pinch_hitter" });
     expect(actions).toEqual([
-      { action: "ph_contact",    title: "🎯 Contact" },
-      { action: "ph_patient",    title: "👀 Patient" },
-      { action: "ph_power",      title: "💪 Power" },
+      { action: "ph_contact", title: "🎯 Contact" },
+      { action: "ph_patient", title: "👀 Patient" },
+      { action: "ph_power", title: "💪 Power" },
       { action: "ph_aggressive", title: "🔥 Aggressive" },
-      { action: "ph_balanced",   title: "⚖️ Balanced" },
-      { action: "skip",          title: "⏭ Skip" },
+      { action: "ph_balanced", title: "⚖️ Balanced" },
+      { action: "skip", title: "⏭ Skip" },
     ]);
   });
 
   it("returns defensive_shift actions with shift_on, shift_off, and skip", () => {
     const actions = getNotificationActions({ kind: "defensive_shift" });
     expect(actions).toEqual([
-      { action: "shift_on",  title: "📐 Shift On" },
+      { action: "shift_on", title: "📐 Shift On" },
       { action: "shift_off", title: "🏟 Normal" },
-      { action: "skip",      title: "⏭ Skip" },
+      { action: "skip", title: "⏭ Skip" },
     ]);
   });
 });
