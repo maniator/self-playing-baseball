@@ -12,6 +12,13 @@ export const FieldWrapper = styled.div`
   ${mq.mobile} {
     flex: 1;
     height: auto;
+    /*
+     * Cap the wrapper at the field's natural content height so it doesn't
+     * grow into a tall black void.  Derived from OutfieldDiv size × 1.007
+     * (rotated-square bounding box) + a small breathing gap.
+     * min(62vw, 282px) ≈ min(59vw, 260px) × 1.06 + a few pixels.
+     */
+    max-height: min(62vw, 282px);
   }
 `;
 
@@ -27,8 +34,14 @@ export const OutfieldDiv = styled.div`
   transform: translateX(-50%) rotate(45deg);
 
   ${mq.mobile} {
-    height: 140px;
-    width: 140px;
+    /*
+     * --mobile-field scales the whole field with the viewport width and is
+     * inherited by DiamondDiv, Mound, and their children via CSS cascade.
+     * At 320 px → 189 px; 375 px → 221 px; 414 px → 244 px; capped at 260 px.
+     */
+    --mobile-field: min(59vw, 260px);
+    height: var(--mobile-field);
+    width: var(--mobile-field);
     top: 0;
     bottom: auto;
     transform: translateX(-50%) translateY(-20%) rotate(45deg);
@@ -44,8 +57,9 @@ export const DiamondDiv = styled.div`
   right: 0;
 
   ${mq.mobile} {
-    height: 70px;
-    width: 70px;
+    /* 50% of OutfieldDiv — same ratio as desktop (150/300) */
+    height: calc(var(--mobile-field, 140px) / 2);
+    width: calc(var(--mobile-field, 140px) / 2);
   }
 `;
 
@@ -70,16 +84,18 @@ export const Mound = styled.div`
   }
 
   ${mq.mobile} {
-    height: 46px;
-    width: 46px;
-    left: calc(50% - 23px);
-    top: calc(50% - 23px);
+    /* ~1/3 of OutfieldDiv — same ratio as desktop (100/300) */
+    height: calc(var(--mobile-field, 140px) / 3);
+    width: calc(var(--mobile-field, 140px) / 3);
+    left: calc(50% - var(--mobile-field, 140px) / 6);
+    top: calc(50% - var(--mobile-field, 140px) / 6);
 
     &:after {
-      height: 23px;
-      width: 23px;
-      left: calc(50% - 12px);
-      top: calc(50% - 12px);
+      /* ~1/6 of OutfieldDiv — same ratio as desktop (50/300) */
+      height: calc(var(--mobile-field, 140px) / 6);
+      width: calc(var(--mobile-field, 140px) / 6);
+      left: calc(50% - var(--mobile-field, 140px) / 12);
+      top: calc(50% - var(--mobile-field, 140px) / 12);
     }
   }
 `;

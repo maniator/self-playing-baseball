@@ -1,11 +1,18 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const Controls = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   padding: 8px 0;
+
+  ${mq.mobile} {
+    gap: 6px;
+    padding: 4px 0;
+  }
 `;
 
 export const Button = styled.button`
@@ -17,6 +24,11 @@ export const Button = styled.button`
   border: none;
   font-family: inherit;
   font-size: 14px;
+
+  ${mq.mobile} {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
 `;
 
 export const ShareButton = styled(Button)`
@@ -38,6 +50,11 @@ export const AutoPlayGroup = styled.div`
   background: rgba(47, 63, 105, 0.5);
   border-radius: 10px;
   padding: 8px 12px;
+
+  ${mq.mobile} {
+    padding: 5px 8px;
+    gap: 6px;
+  }
 `;
 
 export const ToggleLabel = styled.label`
