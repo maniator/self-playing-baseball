@@ -77,8 +77,8 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ initialHome, initialAwa
               {v === "none"
                 ? "None — just watch"
                 : v === "0"
-                  ? `Home (${homeLabel})`
-                  : `Away (${awayLabel})`}
+                  ? `Away (${awayLabel})`
+                  : `Home (${homeLabel})`}
             </RadioLabel>
           ))}
         </FieldGroup>
