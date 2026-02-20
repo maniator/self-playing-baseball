@@ -8,7 +8,7 @@ export const FieldWrapper = styled.div`
   flex-shrink: 0;
 
   @media (max-width: 800px) {
-    height: 200px;
+    height: 180px;
     flex: 1;
   }
 `;
@@ -24,9 +24,12 @@ export const OutfieldDiv = styled.div`
   transform: rotate(45deg);
 
   @media (max-width: 800px) {
-    height: 160px;
-    width: 160px;
-    bottom: 30px;
+    height: 140px;
+    width: 140px;
+    bottom: 20px;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
   }
 `;
 
@@ -39,8 +42,8 @@ export const DiamondDiv = styled.div`
   right: 0;
 
   @media (max-width: 800px) {
-    height: 80px;
-    width: 80px;
+    height: 70px;
+    width: 70px;
   }
 `;
 
@@ -65,16 +68,16 @@ export const Mound = styled.div`
   }
 
   @media (max-width: 800px) {
-    height: 53px;
-    width: 53px;
-    left: calc(50% - 27px);
-    top: calc(50% - 27px);
+    height: 46px;
+    width: 46px;
+    left: calc(50% - 23px);
+    top: calc(50% - 23px);
 
     &:after {
-      height: 27px;
-      width: 27px;
-      left: calc(50% - 14px);
-      top: calc(50% - 14px);
+      height: 23px;
+      width: 23px;
+      left: calc(50% - 12px);
+      top: calc(50% - 12px);
     }
   }
 `;

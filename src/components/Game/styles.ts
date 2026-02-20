@@ -14,6 +14,7 @@ export const GameDiv = styled.main`
     height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
+    overflow-anchor: none;
     padding: 12px;
   }
 `;
