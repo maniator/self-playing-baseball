@@ -31,7 +31,9 @@ export const playerOut = (state: State, log, batterCompleted = false): State => 
   log(newOuts === 1 ? "One out." : "Two outs.");
   // Only clear per-batter state when the batter's at-bat is actually over.
   // When batterCompleted=false (caught stealing), the same batter stays at the
-  // plate, so pinchHitterStrategy / defensiveShift must persist for that at-bat.
+  // plate, so pinchHitterStrategy must persist for that at-bat.
+  // defensiveShift and defensiveShiftOffered persist for the whole half-inning
+  // and are reset in nextHalfInning.
   return {
     ...stateAfterBatter,
     strikes: 0,
@@ -43,8 +45,6 @@ export const playerOut = (state: State, log, batterCompleted = false): State => 
     ...(batterCompleted
       ? {
           pinchHitterStrategy: null as Strategy | null,
-          defensiveShift: false,
-          defensiveShiftOffered: false,
         }
       : {}),
   };

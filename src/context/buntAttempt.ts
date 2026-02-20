@@ -71,8 +71,6 @@ export const buntAttempt = (
         pendingDecision: null as DecisionType | null,
         onePitchModifier: null as OnePitchModifier,
         pinchHitterStrategy: null as Strategy | null,
-        defensiveShift: false,
-        defensiveShiftOffered: false,
         strikes: 0,
         balls: 0,
         hitType: undefined,

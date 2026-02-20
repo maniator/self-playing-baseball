@@ -63,8 +63,6 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
     pinchHitterStrategy: null as Strategy | null,
-    defensiveShift: false,
-    defensiveShiftOffered: false,
     pitchKey,
   };
   const randomNumber = getRandomInt(1000);

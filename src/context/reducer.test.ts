@@ -1118,7 +1118,19 @@ describe("defensive_shift decision", () => {
     expect(state.outs).toBe(0);
   });
 
-  it("defensiveShift and defensiveShiftOffered cleared after half-inning transition", () => {
+  it("defensiveShiftOffered persists across batters in the same half-inning (no re-prompt)", () => {
+    // Simulate: shift was offered and accepted for batter 1, batter 1 struck out.
+    // defensiveShiftOffered should still be true so the next batter is not re-prompted.
+    const { state } = dispatchAction(
+      makeState({ outs: 0, strikes: 2, defensiveShift: true, defensiveShiftOffered: true }),
+      "strike",
+      { swung: true },
+    );
+    expect(state.defensiveShiftOffered).toBe(true);
+    expect(state.defensiveShift).toBe(true);
+  });
+
+  it("defensiveShift and defensiveShiftOffered both cleared after half-inning transition", () => {
     const { state } = dispatchAction(
       makeState({
         outs: 2,
@@ -1135,25 +1147,25 @@ describe("defensive_shift decision", () => {
     expect(state.defensiveShiftOffered).toBe(false);
   });
 
-  it("defensiveShift cleared after hit ends at-bat", () => {
+  it("defensiveShift persists after hit ends at-bat (shift stays for half-inning)", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0);
     const { state } = dispatchAction(
       makeState({ defensiveShift: true, defensiveShiftOffered: true }),
       "hit",
       { hitType: Hit.Single, strategy: "balanced" },
     );
-    expect(state.defensiveShift).toBe(false);
-    expect(state.defensiveShiftOffered).toBe(false);
+    expect(state.defensiveShift).toBe(true);
+    expect(state.defensiveShiftOffered).toBe(true);
   });
 
-  it("defensiveShift and defensiveShiftOffered cleared after non-3rd-out", () => {
+  it("defensiveShift and defensiveShiftOffered persist after non-3rd-out (stay for half-inning)", () => {
     const { state } = dispatchAction(
       makeState({ outs: 0, strikes: 2, defensiveShift: true, defensiveShiftOffered: true }),
       "strike",
       { swung: true },
     );
-    expect(state.defensiveShift).toBe(false);
-    expect(state.defensiveShiftOffered).toBe(false);
+    expect(state.defensiveShift).toBe(true);
+    expect(state.defensiveShiftOffered).toBe(true);
   });
 
   it("reset clears defensive shift fields", () => {
