@@ -2,6 +2,7 @@ import * as React from "react";
 import { Strategy, State } from "../../Context";
 import { detectDecision } from "../../Context/reducer";
 import { Hit } from "../../constants/hitTypes";
+import { selectPitchType, pitchSwingRateMod } from "../../constants/pitchTypes";
 import getRandomInt from "../../utilities/getRandomInt";
 import { GameStateRef } from "./useGameRefs";
 
@@ -25,37 +26,55 @@ export const usePitchDispatch = (
     if (currentState.gameOver) return;
     if (managerModeRef.current && currentState.pendingDecision) return;
 
-    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
-      const decision = detectDecision(
-        currentState as State,
-        strategyRef.current,
-        true
-      );
-      if (decision) {
-        dispatch({ type: "set_pending_decision", payload: decision });
+    // Defensive shift: offered once per at-bat when the managed team is FIELDING
+    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat !== managedTeamRef.current) {
+      if (!currentState.defensiveShiftOffered && currentState.balls === 0 && currentState.strikes === 0) {
+        dispatch({ type: "set_pending_decision", payload: { kind: "defensive_shift" } });
         return;
       }
     }
 
-    const random = getRandomInt(1000);
+    if (managerModeRef.current && !skipDecisionRef.current && currentState.atBat === managedTeamRef.current) {
+      if (currentState.suppressNextDecision) {
+        dispatch({ type: "clear_suppress_decision" });
+      } else {
+        const decision = detectDecision(
+          currentState as State,
+          strategyRef.current,
+          true
+        );
+        if (decision) {
+          dispatch({ type: "set_pending_decision", payload: decision });
+          return;
+        }
+      }
+    }
+
+    // Select pitch type based on current count, then roll main outcome.
     const currentStrikes = strikesRef.current;
+    const currentBalls = (currentState as State).balls;
+    const pitchType = selectPitchType(currentBalls, currentStrikes, getRandomInt(100));
+
+    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategyRef.current;
+    const random = getRandomInt(1000);
     const onePitchMod = currentState.onePitchModifier;
 
     const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
-    const contactMod = strategyRef.current === "contact" ? 1.15 : strategyRef.current === "power" ? 0.9 : 1;
-    const swingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
+    const contactMod = effectiveStrategy === "contact" ? 1.15 : effectiveStrategy === "power" ? 0.9 : 1;
+    const baseSwingRate = Math.round((500 - (75 * currentStrikes)) * contactMod * protectBonus);
+    const swingRate = Math.round(baseSwingRate * pitchSwingRateMod(pitchType));
     const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
 
     if (random < effectiveSwingRate) {
       if (getRandomInt(100) < 30) {
-        dispatch({ type: "foul" });
+        dispatch({ type: "foul", payload: { pitchType } });
       } else {
-        dispatch({ type: "strike", payload: { swung: true } });
+        dispatch({ type: "strike", payload: { swung: true, pitchType } });
       }
     } else if (random < 920) {
-      dispatch({ type: "wait", payload: { strategy: strategyRef.current } });
+      dispatch({ type: "wait", payload: { strategy: effectiveStrategy, pitchType } });
     } else {
-      const strat = strategyRef.current;
+      const strat = effectiveStrategy;
       const hitRoll = getRandomInt(100);
       let base: Hit;
       if (strat === "power") {

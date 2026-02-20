@@ -11,9 +11,9 @@ import { Hit } from "../constants/hitTypes";
  *   Single – runner on 3rd scores; runner on 2nd to 3rd; runner on 1st to 2nd; batter to 1st
  *   Walk   – force advancement only (batter to 1st, each runner advances only if forced)
  *
- * TODO (future PR): Add grounder / double-play logic, directional-hit runner-advancement,
- * and caught-at-first-with-trailing-runner scenarios.  These require tracking ball direction
- * and individual runner speeds, which is a larger state change.
+ * Grounder / double-play scenarios are handled in hitBall.ts (handleGrounder):
+ * ground outs, double plays, and fielder's-choice plays are resolved there before
+ * advanceRunners is called, so this function only needs to handle clean hit advancement.
  */
 export const advanceRunners = (
   type: Hit,

@@ -34,6 +34,10 @@ const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue =
   log: [],
   dispatch: vi.fn(),
   dispatchLog: vi.fn(),
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
@@ -168,6 +172,26 @@ describe("LineScore", () => {
     // "1" and "3" appear as column headers; getAllByText handles multiple matches
     expect(screen.getAllByText("1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("3").length).toBeGreaterThan(0);
+  });
+
+  it("shows extra inning columns beyond 9 in extra innings", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10 }));
+    expect(screen.getAllByText("10").length).toBeGreaterThan(0);
+  });
+
+  it("shows EXTRA INNINGS banner when inning > 9 and game is in progress", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: false }));
+    expect(screen.getByText("EXTRA INNINGS")).toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner when gameOver is true", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 10, gameOver: true }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
+  });
+
+  it("does not show EXTRA INNINGS banner in inning 9 or earlier", () => {
+    renderWithContext(<LineScore />, makeContextValue({ inning: 9, gameOver: false }));
+    expect(screen.queryByText("EXTRA INNINGS")).not.toBeInTheDocument();
   });
 });
 
@@ -334,7 +358,7 @@ describe("DecisionPanel", () => {
       makeContextValue({ pendingDecision: { kind: "ibb" } }),
     );
     expect(screen.getByText(/intentional walk/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /yes, ibb/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /yes, walk them/i })).toBeInTheDocument();
   });
 
   it("shows countdown bar and auto-skip label", () => {
@@ -426,7 +450,7 @@ describe("DecisionPanel", () => {
       <DecisionPanel strategy="balanced" />,
       makeContextValue({ pendingDecision: { kind: "ibb" }, dispatch }),
     );
-    fireEvent.click(screen.getByRole("button", { name: /yes, ibb/i }));
+    fireEvent.click(screen.getByRole("button", { name: /yes, walk them/i }));
     expect(dispatch).toHaveBeenCalledWith({ type: "intentional_walk" });
   });
 

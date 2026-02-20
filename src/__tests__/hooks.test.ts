@@ -25,6 +25,8 @@ const makeGameSnapshot = (overrides = {}) => ({
   outs: 0, inning: 1, score: [0, 0] as [number, number],
   atBat: 0, pendingDecision: null, gameOver: false,
   onePitchModifier: null, teams: ["Away", "Home"] as [string, string],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
   ...overrides,
 });
 
@@ -35,7 +37,7 @@ describe("useGameRefs", () => {
   it("returns refs with correct initial values", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: null })
     );
     expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
@@ -50,7 +52,7 @@ describe("useGameRefs", () => {
   it("mutedRef is true when announcementVolume is 0", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
-      useGameRefs(false, 0, 700, 0, 0, false, "balanced", 0, snap, null)
+      useGameRefs({ autoPlay: false, announcementVolume: 0, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: null })
     );
     expect(result.current.mutedRef.current).toBe(true);
   });
@@ -59,7 +61,7 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd }) => useGameRefs(false, 1, 700, 0, 0, false, "balanced", 0, snap, pd),
+      ({ pd }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes: 0, balls: 0, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null } }
     );
     expect(result.current.skipDecisionRef.current).toBe(false);
@@ -73,7 +75,7 @@ describe("useGameRefs", () => {
     const pending = { kind: "bunt" as const };
     // Start with non-zero count so we can test reset detection
     const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      ({ pd, strikes, balls }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes, balls, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
     );
     // Trigger skip (decision resolved)
@@ -89,7 +91,7 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const pending = { kind: "bunt" as const };
     const { result, rerender } = renderHook(
-      ({ pd, strikes, balls }) => useGameRefs(false, 1, 700, strikes, balls, false, "balanced", 0, snap, pd),
+      ({ pd, strikes, balls }) => useGameRefs({ autoPlay: false, announcementVolume: 1, speed: 700, strikes, balls, managerMode: false, strategy: "balanced", managedTeam: 0, gameSnapshot: snap, pendingDecision: pd }),
       { initialProps: { pd: null as typeof pending | null, strikes: 1, balls: 0 } }
     );
     // Trigger skip
@@ -192,8 +194,10 @@ describe("usePitchDispatch", () => {
     const dispatchLog = vi.fn();
     const refs = makeRefs();
     // swingRate with 0 strikes, balanced = round((500 - 75*0) * 1 * 1) = 500
-    // random 0.001 → getRandomInt(1000) = 1 < 500 → swing
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 1 < 500 → swing
+    // 3rd call: foul/strike roll (getRandomInt(100)) → 50 → 50 >= 30 → strike
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.001).mockReturnValueOnce(0.5);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
@@ -210,8 +214,10 @@ describe("usePitchDispatch", () => {
     const dispatch = vi.fn();
     const dispatchLog = vi.fn();
     const refs = makeRefs();
-    // random 0.999 → getRandomInt(1000) = 999 >= 920 → hit
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
+    // 1st call: selectPitchType roll (getRandomInt(100)) → 0 (fastball)
+    // 2nd call: main outcome roll (getRandomInt(1000)) → 999 >= 920 → hit
+    // 3rd call: hitRoll (getRandomInt(100)) → 10
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.0).mockReturnValueOnce(0.999).mockReturnValueOnce(0.1);
 
     const { result } = renderHook(() =>
       usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
@@ -232,6 +238,34 @@ describe("usePitchDispatch", () => {
     );
     act(() => { result.current.current(); });
     expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("does NOT re-offer bunt after skip — skipDecisionRef stays set until new batter", () => {
+    const dispatch = vi.fn();
+    const dispatchLog = vi.fn();
+    // Runner on 1st, 0 outs, manager mode on, managed team is at bat → bunt offered
+    const refs = makeRefs({
+      managerMode: true, managedTeam: 0,
+      snap: { atBat: 0, baseLayout: [1, 0, 0] as [number,number,number], outs: 0, balls: 0, strikes: 0 },
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch(dispatch, dispatchLog, refs.gameStateRef, refs.managerModeRef,
+        refs.strategyRef, refs.managedTeamRef, refs.skipDecisionRef, refs.strikesRef)
+    );
+    // First pitch → bunt offered, skipDecisionRef not yet set
+    act(() => { result.current.current(); });
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_pending_decision", payload: { kind: "bunt" } });
+    dispatch.mockClear();
+
+    // Simulate skip: skipDecisionRef set to true (as useGameRefs does after decision resolves)
+    refs.skipDecisionRef.current = true;
+
+    // Second pitch — still same batter count (not 0-0 new batter), skip should hold
+    act(() => { result.current.current(); });
+    // Should NOT dispatch another bunt decision
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: "set_pending_decision", payload: expect.objectContaining({ kind: "bunt" }) })
+    );
   });
 });
 
@@ -547,5 +581,45 @@ describe("useReplayDecisions", () => {
     rerender({ pk: 8 });
     expect(dispatch).toHaveBeenCalledWith({ type: "skip_decision" });
     expect(dispatch).toHaveBeenCalledTimes(1);
+  });
+
+  it("ignores malformed pinch entry with missing strategy part", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed pinch entry with invalid strategy value", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch:invalid"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed shift entry with missing direction part", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:shift"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "defensive_shift" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("dispatches set_defensive_shift false for shift:off entry", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:shift:off"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "defensive_shift" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_defensive_shift", payload: false });
+  });
+
+  it("dispatches set_pinch_hitter_strategy for valid pinch entry", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch:power"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_pinch_hitter_strategy", payload: "power" });
   });
 });

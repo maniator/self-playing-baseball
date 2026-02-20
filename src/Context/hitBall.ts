@@ -14,6 +14,36 @@ const HIT_CALLOUTS: Record<Hit, string> = {
   [Hit.Walk]:    "",
 };
 
+/**
+ * Handle a ground ball out. Implements three scenarios:
+ *   1. Double play — runner on 1st with <2 outs: two outs recorded, runner on 1st removed.
+ *   2. Fielder's choice — runner on 1st with <2 outs, DP not turned: lead runner out, batter safe.
+ *   3. Simple ground out — no force play: batter thrown out at 1st.
+ */
+const handleGrounder = (state: State, log, pitchKey: number): State => {
+  const { baseLayout, outs } = state;
+  const groundedState = { ...state, pitchKey, hitType: undefined as Hit | undefined };
+
+  if (baseLayout[0] && outs < 2) {
+    if (getRandomInt(100) < 65) {
+      // 6-4-3 / 5-4-3 double play: runner from 1st forced out at 2nd, batter out at 1st.
+      log("Ground ball to the infield — double play!");
+      const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
+      // First out: runner from 1st forced out at 2nd (no lineup advance yet).
+      const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log);
+      // Second out: batter thrown out at 1st, at-bat is over (advance lineup).
+      return playerOut(afterFirst, log, true);
+    }
+    log("Ground ball to the infield — fielder's choice.");
+    const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
+    // Batter reaches 1st safely; at-bat complete, so advance lineup.
+    return playerOut({ ...groundedState, baseLayout: fcBase }, log, true);
+  }
+
+  log("Ground ball to the infield — out at first.");
+  return playerOut(groundedState, log, true);
+};
+
 /** Accumulate runs into the sparse inningRuns array for the current team/inning. */
 const addInningRuns = (state: State, runs: number): State => {
   if (runs === 0) return state;
@@ -35,16 +65,22 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     strikes: 0,
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
     pitchKey,
   };
   const randomNumber = getRandomInt(1000);
 
-  const popOutThreshold = Math.round(750 * stratMod(strategy, "contact"));
+  const popOutThreshold = Math.round(750 * stratMod(strategy, "contact") * (state.defensiveShift ? 0.85 : 1));
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
     if (strategy === "power" && getRandomInt(100) < 15) {
       type = Hit.Homerun;
       log("Power hitter turns it around — Home Run!");
+    } else if (getRandomInt(100) < 40) {
+      // ~40% of non-HR outs are ground balls; rest are fly balls / pop-ups.
+      return handleGrounder(state, log, pitchKey);
     } else {
       log("Popped it up — that's an out.");
       // batterCompleted=true: the batter's at-bat ended with a pop-out.

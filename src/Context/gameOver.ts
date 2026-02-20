@@ -1,4 +1,4 @@
-import { State, DecisionType, OnePitchModifier } from "./index";
+import { State, DecisionType, OnePitchModifier, Strategy } from "./index";
 
 export const checkGameOver = (state: State, log): State => {
   if (state.inning >= 9) {
@@ -20,6 +20,10 @@ export const nextHalfInning = (state: State, log): State => {
     pendingDecision: null as DecisionType | null,
     onePitchModifier: null as OnePitchModifier,
     hitType: undefined,
+    suppressNextDecision: false,
+    pinchHitterStrategy: null as Strategy | null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
   };
   let newHalfInning = newState.atBat + 1;
   let newInning = newState.inning;
@@ -31,13 +35,29 @@ export const nextHalfInning = (state: State, log): State => {
 
   const next = { ...newState, inning: newInning, atBat: newHalfInning };
 
+  // Standard rule: if the home team is already winning at the start of the bottom
+  // of the 9th (or later), they win — no need to play the bottom half.
+  if (newHalfInning === 1 && newInning >= 9) {
+    const [away, home] = next.score;
+    if (home > away) {
+      log(`${next.teams[1]} win! No need to play the bottom of the ${newInning}th.`);
+      return { ...next, gameOver: true };
+    }
+  }
+
   if (newHalfInning === 0 && newInning > 9) {
     const maybe = checkGameOver(next, log);
     if (maybe.gameOver) return maybe;
   }
 
+  const isExtra = newInning > 9;
+  const nextWithBase = isExtra
+    ? { ...next, baseLayout: [0, 1, 0] as [number, number, number] }
+    : next;
+
   log(`${state.teams[newHalfInning]} are now up to bat!`);
-  return next;
+  if (isExtra) log("Tiebreak rule: runner placed on 2nd base.");
+  return nextWithBase;
 };
 
 export const checkWalkoff = (state: State, log): State => {

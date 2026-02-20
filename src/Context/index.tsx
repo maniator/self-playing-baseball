@@ -28,7 +28,9 @@ export type DecisionType =
   | { kind: "count30" }
   | { kind: "count02" }
   | { kind: "ibb" }
-  | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number };
+  | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number }
+  | { kind: "pinch_hitter" }
+  | { kind: "defensive_shift" };
 
 export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
 
@@ -47,6 +49,10 @@ export interface State {
   onePitchModifier: OnePitchModifier,
   pitchKey: number,
   decisionLog: string[],
+  suppressNextDecision: boolean,    // true after an intentional walk; clears on next pitch
+  pinchHitterStrategy: Strategy | null, // overrides manager strategy for one batter
+  defensiveShift: boolean,          // pop-out threshold multiplied by 0.85 when true
+  defensiveShiftOffered: boolean,   // prevents re-offering shift for the same batter
   batterIndex: [number, number],    // 0–8 position in the 9-batter lineup per team
   inningRuns: [number[], number[]], // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[],          // record of every hit/walk with batter attribution
@@ -87,6 +93,10 @@ const initialState: State = {
   onePitchModifier: null,
   pitchKey: 0,
   decisionLog: [],
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],

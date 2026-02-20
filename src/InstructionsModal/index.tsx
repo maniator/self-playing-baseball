@@ -29,8 +29,7 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
             <Li>Press <strong>Batter Up!</strong> (or Spacebar) to pitch.</Li>
             <Li>Each pitch is a swing, take, or hit — randomised but seeded so every game is repeatable.</Li>
             <Li>3 strikes = out · 4 balls = walk · 3 outs = end of half-inning.</Li>
-            <Li>The game lasts 9 innings; home team wins if they lead after the bottom of the 9th.</Li>
-            <Li>Walk-off: if the home team takes the lead in the bottom of the 9th+, the game ends immediately.</Li>
+            <Li>The game lasts 9 innings. If the home team leads after the top of the 9th, they win without batting. Walk-off: if the home team takes the lead during the bottom of the 9th+, the game ends immediately.</Li>
           </List>
         </Section>
 
@@ -47,11 +46,13 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
           <SectionHeading>Manager Mode (requires Auto-play)</SectionHeading>
           <List>
             <Li>Pick which team you manage and a <strong>Strategy</strong> (Balanced / Aggressive / Patient / Contact / Power).</Li>
-            <Li>At key moments the game pauses and asks for your decision — steal, bunt, IBB, or count-based choices.</Li>
+            <Li>At key moments the game pauses and asks for your decision — steal, bunt, intentional walk, pinch-hitter, defensive shift, or count-based choices.</Li>
             <Li>A chime sounds and a browser notification appears (if allowed) when a decision is ready.</Li>
             <Li>A 10-second countdown auto-skips if you don't choose in time.</Li>
             <Li>Steals are only offered when the odds are ≥ 73 %.</Li>
-            <Li>IBB is only offered in the 7th inning or later, close game, with 2 outs.</Li>
+            <Li>Intentional walk is only offered in the 7th inning or later, close game, with 2 outs.</Li>
+            <Li>Pinch-hitter is only offered in the 7th inning or later, with a runner on 2nd or 3rd, fewer than 2 outs, at the start of an at-bat.</Li>
+            <Li>Defensive shift is only offered when your team is in the field, at the start of the opponent's at-bat.</Li>
           </List>
         </Section>
 
@@ -70,7 +71,7 @@ const InstructionsModal: React.FunctionComponent<{}> = () => {
             <Li><strong>Double</strong> — batter to 2nd; runners on 2nd/3rd score; runner on 1st to 3rd.</Li>
             <Li><strong>Triple</strong> — batter to 3rd; all runners score.</Li>
             <Li><strong>Home run</strong> — everyone scores.</Li>
-            <Li><strong>Walk / IBB</strong> — batter to 1st; force advancement only.</Li>
+            <Li><strong>Walk</strong> — batter to 1st; force advancement only.</Li>
           </List>
         </Section>
 

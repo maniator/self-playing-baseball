@@ -68,9 +68,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
     case "ibb":
       return (
         <>
-          <Prompt>Issue an intentional walk (IBB)?</Prompt>
+          <Prompt>Issue an intentional walk?</Prompt>
           <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>
-            Yes, IBB
+            Yes, walk them
           </ActionButton>
           <SkipButton onClick={onSkip}>Skip</SkipButton>
         </>
@@ -79,9 +79,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       const { base, successPct } = pendingDecision;
       return (
         <>
-          <Prompt>Issue intentional walk (IBB) or steal?</Prompt>
+          <Prompt>Intentional walk or steal?</Prompt>
           <Odds>Steal success: {successPct}%</Odds>
-          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Issue IBB</ActionButton>
+          <ActionButton onClick={() => onDispatch({ type: "intentional_walk" })}>🥾 Intentional Walk</ActionButton>
           <ActionButton onClick={() => onDispatch({ type: "steal_attempt", payload: { base, successPct } })}>
             ⚡ Steal! ({successPct}%)
           </ActionButton>
@@ -89,6 +89,31 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         </>
       );
     }
+    case "pinch_hitter":
+      return (
+        <>
+          <Prompt>Send up a pinch hitter? Pick a strategy:</Prompt>
+          {(["contact", "patient", "power", "aggressive", "balanced"] as Strategy[]).map(s => (
+            <ActionButton key={s} onClick={() => onDispatch({ type: "set_pinch_hitter_strategy", payload: s })}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </ActionButton>
+          ))}
+          <SkipButton onClick={onSkip}>Skip</SkipButton>
+        </>
+      );
+    case "defensive_shift":
+      return (
+        <>
+          <Prompt>Deploy defensive shift for this batter?</Prompt>
+          <ActionButton onClick={() => onDispatch({ type: "set_defensive_shift", payload: true })}>
+            Shift On (pop-outs ↑)
+          </ActionButton>
+          <ActionButton onClick={() => onDispatch({ type: "set_defensive_shift", payload: false })}>
+            Normal Alignment
+          </ActionButton>
+          <SkipButton onClick={onSkip}>Skip</SkipButton>
+        </>
+      );
     default:
       return null;
   }

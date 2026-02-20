@@ -16,7 +16,7 @@ import { usePlayerControls } from "./hooks/usePlayerControls";
 import { useReplayDecisions } from "./hooks/useReplayDecisions";
 
 const GameControls: React.FunctionComponent<{}> = () => {
-  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams, decisionLog, pitchKey }: ContextValue = useGameContext();
+  const { dispatch, dispatchLog, strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams, decisionLog, pitchKey, suppressNextDecision, pinchHitterStrategy, defensiveShift, defensiveShiftOffered }: ContextValue = useGameContext();
   const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -25,9 +25,9 @@ const GameControls: React.FunctionComponent<{}> = () => {
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
-  const gameSnapshot = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams };
+  const gameSnapshot = { strikes, balls, baseLayout, outs, inning, score, atBat, pendingDecision, gameOver, onePitchModifier, teams, suppressNextDecision, pinchHitterStrategy, defensiveShift, defensiveShiftOffered };
   const { autoPlayRef, mutedRef, speedRef, strikesRef, managerModeRef, strategyRef, managedTeamRef, gameStateRef, skipDecisionRef } =
-    useGameRefs(autoPlay, announcementVolume, speed, strikes, balls, managerMode, strategy, managedTeam, gameSnapshot, pendingDecision);
+    useGameRefs({ autoPlay, announcementVolume, speed, strikes, balls, managerMode, strategy, managedTeam, gameSnapshot, pendingDecision });
 
   const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
   const handleClickRef = usePitchDispatch(dispatch, dispatchLog, gameStateRef, managerModeRef, strategyRef, managedTeamRef, skipDecisionRef, strikesRef);

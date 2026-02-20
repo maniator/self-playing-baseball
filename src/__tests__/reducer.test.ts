@@ -16,6 +16,8 @@ const makeState = (overrides: Partial<State> = {}): State => ({
   baseLayout: [0, 0, 0], outs: 0, strikes: 0, balls: 0, atBat: 0,
   gameOver: false, pendingDecision: null, onePitchModifier: null,
   pitchKey: 0, decisionLog: [],
+  suppressNextDecision: false, pinchHitterStrategy: null,
+  defensiveShift: false, defensiveShiftOffered: false,
   batterIndex: [0, 0], inningRuns: [[], []], playLog: [],
   ...overrides,
 });
@@ -325,54 +327,6 @@ describe("bunt_attempt", () => {
     expect(state.baseLayout[0]).toBe(1);
     expect(logs.some(l => l.toLowerCase().includes("popped"))).toBe(true);
   });
-
-  it("fielder's choice: runner on 1st thrown out, batter reaches 1st", () => {
-    // balanced singleChance=8, fcChance=20; roll=10 → FC
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner thrown out at 2nd
-    expect(state.outs).toBe(1);          // out recorded
-    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
-  });
-
-  it("fielder's choice: runner on 1st thrown out, runner on 2nd advances to 3rd", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 1st thrown out
-    expect(state.baseLayout[2]).toBe(1); // runner on 2nd advances to 3rd
-    expect(state.outs).toBe(1);
-  });
-
-  it("fielder's choice: runner on 1st thrown out, runner on 3rd scores", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.score[0]).toBe(1);      // runner on 3rd scored
-    expect(state.outs).toBe(1);
-    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
-  });
-
-  it("fielder's choice: runner on 2nd (only) thrown out, batter reaches 1st", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 0], outs: 1 }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 2nd thrown out
-    expect(state.outs).toBe(2);
-    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
-  });
-
-  it("fielder's choice: runners on 2nd and 3rd — 2nd runner thrown out, 3rd scores", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
-    expect(state.baseLayout[0]).toBe(1); // batter on 1st
-    expect(state.baseLayout[1]).toBe(0); // runner on 2nd thrown out
-    expect(state.baseLayout[2]).toBe(0); // runner on 3rd scored
-    expect(state.score[0]).toBe(1);      // run scored
-    expect(state.outs).toBe(1);
-    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
-  });
 });
 
 // half-inning transition
@@ -642,6 +596,56 @@ describe("bunt_attempt – bunt single", () => {
   });
 });
 
+describe("bunt_attempt – fielder's choice", () => {
+  it("FC: runner on 1st thrown out, batter reaches 1st", () => {
+    // balanced singleChance=8, fcChance=20; roll=10 → FC
+    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
+    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
+    expect(state.baseLayout[0]).toBe(1); // batter on 1st
+    expect(state.baseLayout[1]).toBe(0); // runner thrown out at 2nd
+    expect(state.outs).toBe(1);
+    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
+  });
+
+  it("FC: runner on 1st thrown out, runner on 2nd advances to 3rd", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
+    const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 0], outs: 0 }), "bunt_attempt", { strategy: "balanced" });
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.baseLayout[1]).toBe(0);
+    expect(state.baseLayout[2]).toBe(1);
+    expect(state.outs).toBe(1);
+  });
+
+  it("FC: runner on 1st thrown out, runner on 3rd scores", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
+    const { state, logs } = dispatchAction(makeState({ baseLayout: [1, 0, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.score[0]).toBe(1);
+    expect(state.outs).toBe(1);
+    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
+  });
+
+  it("FC: runner on 2nd (only) thrown out, batter reaches 1st", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
+    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 0], outs: 1 }), "bunt_attempt", { strategy: "balanced" });
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.baseLayout[1]).toBe(0);
+    expect(state.outs).toBe(2);
+    expect(logs.some(l => l.toLowerCase().includes("fielder's choice"))).toBe(true);
+  });
+
+  it("FC: runners on 2nd and 3rd — 2nd runner thrown out, 3rd scores", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.10);
+    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 1, 1], outs: 0, score: [0, 0] }), "bunt_attempt", { strategy: "balanced" });
+    expect(state.baseLayout[0]).toBe(1);
+    expect(state.baseLayout[1]).toBe(0);
+    expect(state.baseLayout[2]).toBe(0);
+    expect(state.score[0]).toBe(1);
+    expect(state.outs).toBe(1);
+    expect(logs.some(l => l.toLowerCase().includes("run scores"))).toBe(true);
+  });
+});
+
 // Lines 471-474: intentional_walk
 describe("intentional_walk", () => {
   it("issues an intentional walk: batter to 1st", () => {
@@ -722,3 +726,264 @@ describe("hit - walk with runner on 1st and 3rd", () => {
   });
 });
 
+
+// ---------------------------------------------------------------------------
+// IBB follow-through: suppressNextDecision
+// ---------------------------------------------------------------------------
+describe("IBB follow-through — suppressNextDecision", () => {
+  it("intentional_walk sets suppressNextDecision to true", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const { state } = dispatchAction(makeState(), "intentional_walk");
+    expect(state.suppressNextDecision).toBe(true);
+  });
+
+  it("clear_suppress_decision clears the flag", () => {
+    const { state } = dispatchAction(makeState({ suppressNextDecision: true }), "clear_suppress_decision");
+    expect(state.suppressNextDecision).toBe(false);
+  });
+
+  it("detectDecision returns null when suppressNextDecision is true", () => {
+    const state = makeState({ baseLayout: [1, 0, 0], outs: 0, suppressNextDecision: true });
+    expect(detectDecision(state, "aggressive", true)).toBeNull();
+  });
+
+  it("suppressNextDecision resets after half-inning transition", () => {
+    const { state } = dispatchAction(
+      makeState({ outs: 2, strikes: 2, atBat: 0, inning: 1, suppressNextDecision: true }),
+      "strike", { swung: true }
+    );
+    expect(state.suppressNextDecision).toBe(false);
+  });
+
+  it("suppressNextDecision persists on the IBB walk result (cleared by usePitchDispatch, not hitBall)", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    // After an IBB, the walk result state should still have suppressNextDecision: true
+    // so the NEXT batter's first pitch can clear it via clear_suppress_decision.
+    const { state } = dispatchAction(makeState(), "intentional_walk");
+    expect(state.suppressNextDecision).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pinch-hitter / substitution
+// ---------------------------------------------------------------------------
+describe("pinch_hitter decision", () => {
+  it("detectDecision offers pinch_hitter when runner on 3rd, outs < 2, inning >= 7", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7 }),
+      "balanced", true
+    );
+    expect(d?.kind).toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter before inning 7", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 6 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter with 2 outs", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 2, inning: 7 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter when pinchHitterStrategy already set", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7, pinchHitterStrategy: "contact" }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter mid-count (balls > 0)", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7, balls: 1, strikes: 0 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision does NOT offer pinch_hitter mid-count (strikes > 0)", () => {
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 0, 1], outs: 0, inning: 7, balls: 0, strikes: 1 }),
+      "balanced", true
+    );
+    expect(d?.kind).not.toBe("pinch_hitter");
+  });
+
+  it("detectDecision offers pinch_hitter with runner on 2nd (inning 7, 0-0 count) — not preempted by bunt", () => {
+    // Before fix: bunt check fired first because baseLayout[1]=1 satisfied it.
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 1, 0], outs: 0, inning: 7, balls: 0, strikes: 0 }),
+      "balanced", true
+    );
+    expect(d?.kind).toBe("pinch_hitter");
+  });
+
+  it("set_pinch_hitter_strategy stores strategy and clears pending decision", () => {
+    const { state, logs } = dispatchAction(
+      makeState({ pendingDecision: { kind: "pinch_hitter" } }),
+      "set_pinch_hitter_strategy", "contact"
+    );
+    expect(state.pinchHitterStrategy).toBe("contact");
+    expect(state.pendingDecision).toBeNull();
+    expect(logs.some(l => /pinch hitter/i.test(l))).toBe(true);
+  });
+
+  it("pinchHitterStrategy cleared after hit ends at-bat", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const { state } = dispatchAction(
+      makeState({ pinchHitterStrategy: "power" }),
+      "hit", { hitType: Hit.Single, strategy: "balanced" }
+    );
+    expect(state.pinchHitterStrategy).toBeNull();
+  });
+
+  it("pinchHitterStrategy cleared after strikeout (half-inning transition)", () => {
+    const { state } = dispatchAction(
+      makeState({ outs: 2, strikes: 2, pinchHitterStrategy: "contact" }),
+      "strike", { swung: true }
+    );
+    expect(state.pinchHitterStrategy).toBeNull();
+  });
+
+  it("pinchHitterStrategy cleared after non-3rd-out", () => {
+    const { state } = dispatchAction(
+      makeState({ outs: 0, strikes: 2, pinchHitterStrategy: "contact" }),
+      "strike", { swung: true }
+    );
+    expect(state.pinchHitterStrategy).toBeNull();
+  });
+
+  it("pinchHitterStrategy persists on caught-stealing (batterCompleted=false, same batter stays up)", () => {
+    // Caught stealing only records a runner out; the batter's at-bat is not over.
+    // The active pinch-hitter strategy must remain for the batter's remaining pitches.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.99); // 99 ≥ successPct → caught stealing
+    const { state } = dispatchAction(
+      makeState({ baseLayout: [1, 0, 0], outs: 0, pinchHitterStrategy: "power" }),
+      "steal_attempt", { base: 0, successPct: 70 }
+    );
+    expect(state.pinchHitterStrategy).toBe("power");
+  });
+
+  it("pinchHitterStrategy cleared after sac bunt", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5); // roll=50 → sac
+    const { state } = dispatchAction(
+      makeState({ baseLayout: [1, 0, 0], pinchHitterStrategy: "patient" }),
+      "bunt_attempt", { strategy: "balanced" }
+    );
+    expect(state.pinchHitterStrategy).toBeNull();
+  });
+
+  it("reset clears pinchHitterStrategy", () => {
+    const { state } = dispatchAction(makeState({ pinchHitterStrategy: "power" }), "reset");
+    expect(state.pinchHitterStrategy).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Defensive shifting
+// ---------------------------------------------------------------------------
+describe("defensive_shift decision", () => {
+  it("set_defensive_shift true sets defensiveShift and clears pendingDecision", () => {
+    const { state, logs } = dispatchAction(
+      makeState({ pendingDecision: { kind: "defensive_shift" } }),
+      "set_defensive_shift", true
+    );
+    expect(state.defensiveShift).toBe(true);
+    expect(state.pendingDecision).toBeNull();
+    expect(logs.some(l => /shift/i.test(l))).toBe(true);
+  });
+
+  it("set_defensive_shift false sets defensiveShift to false", () => {
+    const { state, logs } = dispatchAction(
+      makeState({ defensiveShift: true, pendingDecision: { kind: "defensive_shift" } }),
+      "set_defensive_shift", false
+    );
+    expect(state.defensiveShift).toBe(false);
+    expect(state.pendingDecision).toBeNull();
+    expect(logs.some(l => /normal alignment/i.test(l))).toBe(true);
+  });
+
+  it("set_pending_decision with defensive_shift sets defensiveShiftOffered to true", () => {
+    const { state } = dispatchAction(
+      makeState(),
+      "set_pending_decision", { kind: "defensive_shift" }
+    );
+    expect(state.defensiveShiftOffered).toBe(true);
+    expect(state.pendingDecision).toEqual({ kind: "defensive_shift" });
+  });
+
+  it("set_pending_decision with other kinds does NOT set defensiveShiftOffered", () => {
+    const { state } = dispatchAction(
+      makeState(),
+      "set_pending_decision", { kind: "bunt" }
+    );
+    expect(state.defensiveShiftOffered).toBe(false);
+  });
+
+  it("defensive shift lowers pop-out threshold (more pop-outs)", () => {
+    // With shift on: threshold = round(750 * 1.0 * 0.85) = 638
+    // random = 0.65 (650) >= 638 → pop-out
+    vi.spyOn(rngModule, "random").mockReturnValue(0.65);
+    const { state, logs } = dispatchAction(
+      makeState({ defensiveShift: true }),
+      "hit", { hitType: Hit.Single, strategy: "balanced" }
+    );
+    expect(logs.some(l => /popped it up/i.test(l))).toBe(true);
+    expect(state.outs).toBe(1);
+  });
+
+  it("without defensive shift, same random does NOT pop out", () => {
+    // Without shift: threshold = 750. random 0.65 (650) < 750 → no pop-out
+    vi.spyOn(rngModule, "random").mockReturnValue(0.65);
+    const { state, logs } = dispatchAction(
+      makeState({ defensiveShift: false }),
+      "hit", { hitType: Hit.Single, strategy: "balanced" }
+    );
+    expect(logs.some(l => /popped it up/i.test(l))).toBe(false);
+    expect(state.outs).toBe(0);
+  });
+
+  it("defensiveShift and defensiveShiftOffered cleared after half-inning transition", () => {
+    const { state } = dispatchAction(
+      makeState({ outs: 2, strikes: 2, atBat: 0, inning: 1, defensiveShift: true, defensiveShiftOffered: true }),
+      "strike", { swung: true }
+    );
+    expect(state.defensiveShift).toBe(false);
+    expect(state.defensiveShiftOffered).toBe(false);
+  });
+
+  it("defensiveShift cleared after hit ends at-bat", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const { state } = dispatchAction(
+      makeState({ defensiveShift: true, defensiveShiftOffered: true }),
+      "hit", { hitType: Hit.Single, strategy: "balanced" }
+    );
+    expect(state.defensiveShift).toBe(false);
+    expect(state.defensiveShiftOffered).toBe(false);
+  });
+
+  it("defensiveShift and defensiveShiftOffered cleared after non-3rd-out", () => {
+    const { state } = dispatchAction(
+      makeState({ outs: 0, strikes: 2, defensiveShift: true, defensiveShiftOffered: true }),
+      "strike", { swung: true }
+    );
+    expect(state.defensiveShift).toBe(false);
+    expect(state.defensiveShiftOffered).toBe(false);
+  });
+
+  it("reset clears defensive shift fields", () => {
+    const { state } = dispatchAction(
+      makeState({ defensiveShift: true, defensiveShiftOffered: true }),
+      "reset"
+    );
+    expect(state.defensiveShift).toBe(false);
+    expect(state.defensiveShiftOffered).toBe(false);
+  });
+});
