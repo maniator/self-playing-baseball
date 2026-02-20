@@ -8,6 +8,7 @@ import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
+import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import { type Strategy, useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
 import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
@@ -99,6 +100,7 @@ const GameInner: React.FunctionComponent = () => {
       <GameBody>
         <LeftPanel>
           <HitLog />
+          <PlayerStatsPanel />
           <Announcements />
         </LeftPanel>
         <RightPanel>

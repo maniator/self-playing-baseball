@@ -14,6 +14,11 @@ export type PlayLogEntry = {
   runs: number; // runs scored on this play
 };
 
+export type StrikeoutEntry = {
+  team: 0 | 1;
+  batterNum: number; // 1–9
+};
+
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
 
 export const useGameContext = (): ContextValue => {
@@ -70,6 +75,7 @@ export interface State {
   batterIndex: [number, number]; // 0–8 position in the 9-batter lineup per team
   inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
+  strikeoutLog: StrikeoutEntry[]; // record of every strikeout with batter attribution
   playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
   lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
 }
@@ -120,6 +126,7 @@ const initialState: State = {
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
+  strikeoutLog: [],
   playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
   lineupOrder: [[], []] as [string[], string[]],
 };

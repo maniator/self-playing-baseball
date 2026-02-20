@@ -1177,3 +1177,54 @@ describe("defensive_shift decision", () => {
     expect(state.defensiveShiftOffered).toBe(false);
   });
 });
+
+describe("strikeout tracking", () => {
+  it("strike on 2-strike count appends to strikeoutLog", () => {
+    const { state } = dispatchAction(
+      makeState({ strikes: 2, atBat: 0, batterIndex: [2, 0] }),
+      "strike",
+      { swung: true },
+    );
+    expect(state.strikeoutLog).toHaveLength(1);
+    expect(state.strikeoutLog[0]).toEqual({ team: 0, batterNum: 3 });
+  });
+
+  it("strike on 0-strike count does NOT append to strikeoutLog", () => {
+    const { state } = dispatchAction(
+      makeState({ strikes: 0, atBat: 0 }),
+      "strike",
+      { swung: true },
+    );
+    expect(state.strikeoutLog).toHaveLength(0);
+  });
+
+  it("wait resulting in a strikeout appends to strikeoutLog", () => {
+    // Force a strike outcome by making random always return a value in strike range
+    vi.spyOn(rngModule, "random").mockReturnValue(0); // 0/1000 < 500 → strike
+    const { state } = dispatchAction(
+      makeState({ strikes: 2, atBat: 1, batterIndex: [0, 4] }),
+      "wait",
+    );
+    expect(state.strikeoutLog).toHaveLength(1);
+    expect(state.strikeoutLog[0]).toEqual({ team: 1, batterNum: 5 });
+  });
+
+  it("wait resulting in a walk (ball 4) on 2-strike count does NOT add a K", () => {
+    // Force a ball outcome: random = 999 (> 500 threshold → ball)
+    vi.spyOn(rngModule, "random").mockReturnValue(0.999);
+    const { state } = dispatchAction(
+      makeState({ strikes: 2, balls: 3, atBat: 0, batterIndex: [0, 0] }),
+      "wait",
+    );
+    // Walk occurred — strikeoutLog should still be empty
+    expect(state.strikeoutLog).toHaveLength(0);
+  });
+
+  it("reset clears strikeoutLog", () => {
+    const { state } = dispatchAction(
+      makeState({ strikeoutLog: [{ team: 0, batterNum: 1 }] }),
+      "reset",
+    );
+    expect(state.strikeoutLog).toHaveLength(0);
+  });
+});

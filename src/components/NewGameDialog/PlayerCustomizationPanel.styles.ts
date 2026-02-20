@@ -97,9 +97,9 @@ export const ModLabel = styled.label`
   text-transform: uppercase;
 `;
 
-export const BaseStat = styled.span`
+export const BaseStat = styled.span<{ $modified: boolean }>`
   font-size: 8px;
-  color: #4a6090;
+  color: ${({ $modified }) => ($modified ? "#6effc0" : "#4a6090")};
   font-weight: 700;
   line-height: 1.2;
 `;
