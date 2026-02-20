@@ -8,18 +8,10 @@ export const FieldWrapper = styled.div`
   height: 280px;
   width: 100%;
   flex-shrink: 0;
-  /* Green background fills the full container so no black void shows on wide screens */
-  background: #aac32b;
 
   ${mq.mobile} {
-    height: 100%;
-    /*
-     * 210px ensures the rotated OutfieldDiv is fully contained.
-     * The 140×140 square rotated 45° has a bounding box of ≈ 198×198px.
-     * With the element centred at y=100px (top: 30px + half-height 70px),
-     * the bounding box spans y ≈ 1px to 199px — safely within 210px.
-     */
-    min-height: 210px;
+    height: 140px;
+    flex: 1;
   }
 `;
 
@@ -36,17 +28,10 @@ export const OutfieldDiv = styled.div`
   ${mq.mobile} {
     height: 140px;
     width: 140px;
-    /*
-     * top: 30px shifts the element down so the bounding box of the rotated
-     * square (≈ ±99px from its centre) starts at ~1px inside FieldWrapper.
-     * Without this offset the rotation pushes ~57px of the element above the
-     * top edge where overflow: hidden clips it.
-     * translateY(-20%) was removed for the same reason.
-     */
-    top: 30px;
+    top: 0;
     right: auto;
     left: 50%;
-    transform: translateX(-50%) rotate(45deg);
+    transform: translateX(-50%) translateY(-20%) rotate(45deg);
   }
 `;
 
