@@ -69,6 +69,7 @@ const GameInner: React.FunctionComponent = () => {
       payload: {
         teams: [awayTeam, homeTeam],
         playerOverrides: [playerOverrides.away, playerOverrides.home],
+        lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
       },
     });
     setGameActive(true);

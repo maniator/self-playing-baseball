@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { AL_FALLBACK, NL_FALLBACK } from "@utils/mlbTeams";
 import * as mlbTeamsModule from "@utils/mlbTeams";
+import { generateRoster } from "@utils/roster";
 
 vi.mock("@utils/mlbTeams", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
@@ -21,6 +22,13 @@ HTMLDialogElement.prototype.showModal = vi.fn();
 HTMLDialogElement.prototype.close = vi.fn();
 
 const noop = vi.fn();
+
+const expectedOverrides = () => ({
+  away: {},
+  home: {},
+  awayOrder: generateRoster(DEFAULT_NL_TEAM).batters.map((b) => b.id),
+  homeOrder: generateRoster(DEFAULT_AL_TEAM).batters.map((b) => b.id),
+});
 
 describe("NewGameDialog", () => {
   it("calls showModal on mount", () => {
@@ -46,10 +54,12 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, null, {
-      away: {},
-      home: {},
-    });
+    expect(onStart).toHaveBeenCalledWith(
+      DEFAULT_AL_TEAM,
+      DEFAULT_NL_TEAM,
+      null,
+      expectedOverrides(),
+    );
   });
 
   it("calls onStart with managedTeam=0 when Away is selected", () => {
@@ -59,10 +69,7 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0, {
-      away: {},
-      home: {},
-    });
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0, expectedOverrides());
   });
 
   it("calls onStart with managedTeam=1 when Home is selected", () => {
@@ -72,10 +79,7 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1, {
-      away: {},
-      home: {},
-    });
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1, expectedOverrides());
   });
 
   it("prevents dialog from being cancelled via keyboard escape", () => {

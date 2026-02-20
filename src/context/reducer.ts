@@ -114,6 +114,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           | {
               teams: [string, string];
               playerOverrides?: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
+              lineupOrder?: [string[], string[]];
             };
         if (Array.isArray(p)) {
           return { ...state, teams: p };
@@ -122,6 +123,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           ...state,
           teams: p.teams,
           ...(p.playerOverrides ? { playerOverrides: p.playerOverrides } : {}),
+          ...(p.lineupOrder ? { lineupOrder: p.lineupOrder } : {}),
         };
       }
       case "strike": {
@@ -219,6 +221,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
           playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
+          lineupOrder: [[], []] as [string[], string[]],
         };
       case "skip_decision": {
         const entry = state.pendingDecision ? `${state.pitchKey}:skip` : null;
@@ -256,6 +259,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
         return {
           ...restored,
           playerOverrides: restored.playerOverrides ?? [{}, {}],
+          lineupOrder: restored.lineupOrder ?? [[], []],
         };
       }
       default:

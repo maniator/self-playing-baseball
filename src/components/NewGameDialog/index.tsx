@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { TeamCustomPlayerOverrides } from "@context/index";
 import { AL_FALLBACK, fetchMlbTeams, NL_FALLBACK } from "@utils/mlbTeams";
+import { generateRoster } from "@utils/roster";
 
 import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
@@ -22,7 +23,12 @@ import {
 type ManagedTeam = 0 | 1 | null;
 type MatchupMode = "al" | "nl" | "interleague";
 
-export type PlayerOverrides = { away: TeamCustomPlayerOverrides; home: TeamCustomPlayerOverrides };
+export type PlayerOverrides = {
+  away: TeamCustomPlayerOverrides;
+  home: TeamCustomPlayerOverrides;
+  awayOrder: string[];
+  homeOrder: string[];
+};
 
 type Props = {
   onStart: (
@@ -35,6 +41,8 @@ type Props = {
   onResume?: () => void;
 };
 
+const defaultOrder = (teamName: string) => generateRoster(teamName).batters.map((b) => b.id);
+
 const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [teams, setTeams] = React.useState({ al: AL_FALLBACK, nl: NL_FALLBACK });
@@ -45,6 +53,8 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
   const [homeOverrides, setHomeOverrides] = React.useState<TeamCustomPlayerOverrides>({});
   const [awayOverrides, setAwayOverrides] = React.useState<TeamCustomPlayerOverrides>({});
+  const [homeOrder, setHomeOrder] = React.useState<string[]>(() => defaultOrder(DEFAULT_AL_TEAM));
+  const [awayOrder, setAwayOrder] = React.useState<string[]>(() => defaultOrder(DEFAULT_NL_TEAM));
 
   React.useEffect(() => {
     if (!ref.current?.open) ref.current?.showModal();
@@ -81,18 +91,20 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
     }
   }, [awayList, away]);
 
-  // Reset player overrides when the selected team changes
+  // Reset player overrides and lineup order when the selected team changes
   const prevHome = React.useRef(home);
   const prevAway = React.useRef(away);
   React.useEffect(() => {
     if (prevHome.current !== home) {
       setHomeOverrides({});
+      setHomeOrder(defaultOrder(home));
       prevHome.current = home;
     }
   }, [home]);
   React.useEffect(() => {
     if (prevAway.current !== away) {
       setAwayOverrides({});
+      setAwayOrder(defaultOrder(away));
       prevAway.current = away;
     }
   }, [away]);
@@ -126,7 +138,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
-    onStart(home, away, mt, { away: awayOverrides, home: homeOverrides });
+    onStart(home, away, mt, {
+      away: awayOverrides,
+      home: homeOverrides,
+      awayOrder,
+      homeOrder,
+    });
     ref.current?.close();
   };
 
@@ -227,6 +244,10 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
           homeOverrides={homeOverrides}
           onAwayChange={setAwayOverrides}
           onHomeChange={setHomeOverrides}
+          awayOrder={awayOrder}
+          homeOrder={homeOrder}
+          onAwayOrderChange={setAwayOrder}
+          onHomeOrderChange={setHomeOrder}
         />
         <PlayBallButton type="submit">Play Ball!</PlayBallButton>
       </form>

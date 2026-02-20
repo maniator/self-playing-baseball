@@ -28,6 +28,7 @@ export const makeState = (overrides: Partial<State> = {}): State => ({
   inningRuns: [[], []],
   playLog: [],
   playerOverrides: emptyOverrides,
+  lineupOrder: [[], []] as [string[], string[]],
   ...overrides,
 });
 
@@ -58,6 +59,7 @@ export const makeContextValue = (overrides: Partial<ContextValue> = {}): Context
   inningRuns: [[], []],
   playLog: [],
   playerOverrides: emptyOverrides,
+  lineupOrder: [[], []] as [string[], string[]],
   ...overrides,
 });
 

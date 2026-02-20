@@ -1,14 +1,35 @@
 import * as React from "react";
 
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
 import type { PlayerCustomization, TeamCustomPlayerOverrides } from "@context/index";
+import type { Player } from "@utils/roster";
 import { generateRoster } from "@utils/roster";
 
 import {
+  DragHandle,
   ModInput,
   ModLabel,
   NicknameInput,
   PanelSection,
   PanelToggle,
+  PitcherDivider,
   PitcherRow,
   PlayerList,
   PlayerRow,
@@ -19,6 +40,8 @@ import {
 
 const MOD_MIN = -20;
 const MOD_MAX = 20;
+const BATTER_MOD_LABELS = ["CON", "PWR", "SPD"] as const;
+const PITCHER_MOD_LABELS = ["CTL", "VEL", "STM"] as const;
 
 type Props = {
   awayTeam: string;
@@ -27,9 +50,68 @@ type Props = {
   homeOverrides: TeamCustomPlayerOverrides;
   onAwayChange: (overrides: TeamCustomPlayerOverrides) => void;
   onHomeChange: (overrides: TeamCustomPlayerOverrides) => void;
+  awayOrder: string[];
+  homeOrder: string[];
+  onAwayOrderChange: (order: string[]) => void;
+  onHomeOrderChange: (order: string[]) => void;
 };
 
 const clampMod = (val: number) => Math.max(MOD_MIN, Math.min(MOD_MAX, Math.round(val)));
+
+type BatterRowProps = {
+  player: Player;
+  overrides: TeamCustomPlayerOverrides;
+  onFieldChange: (id: string, field: keyof PlayerCustomization, raw: string) => void;
+};
+
+const SortableBatterRow: React.FunctionComponent<BatterRowProps> = ({
+  player,
+  overrides,
+  onFieldChange,
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: player.id,
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  const nick = (overrides[player.id]?.nickname as string | undefined) ?? "";
+  const getNum = (field: keyof PlayerCustomization) => {
+    const v = overrides[player.id]?.[field];
+    return v === undefined ? "0" : String(v);
+  };
+  return (
+    <PlayerRow ref={setNodeRef} style={style}>
+      <DragHandle {...attributes} {...listeners} aria-label={`Drag ${player.position}`}>
+        ⠿
+      </DragHandle>
+      <PosTag>{player.position}</PosTag>
+      <NicknameInput
+        type="text"
+        placeholder="Nickname"
+        maxLength={20}
+        value={nick}
+        onChange={(e) => onFieldChange(player.id, "nickname", e.target.value)}
+        aria-label={`${player.position} nickname`}
+      />
+      {(["contactMod", "powerMod", "speedMod"] as const).map((field, i) => (
+        <ModLabel key={field}>
+          {BATTER_MOD_LABELS[i]}
+          <ModInput
+            type="number"
+            min={MOD_MIN}
+            max={MOD_MAX}
+            value={getNum(field)}
+            onChange={(e) => onFieldChange(player.id, field, e.target.value)}
+            aria-label={`${player.position} ${BATTER_MOD_LABELS[i]}`}
+          />
+        </ModLabel>
+      ))}
+    </PlayerRow>
+  );
+};
 
 const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
   awayTeam,
@@ -38,6 +120,10 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
   homeOverrides,
   onAwayChange,
   onHomeChange,
+  awayOrder,
+  homeOrder,
+  onAwayOrderChange,
+  onHomeOrderChange,
 }) => {
   const [open, setOpen] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<"away" | "home">("away");
@@ -48,6 +134,22 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
   const activeRoster = activeTab === "away" ? awayRoster : homeRoster;
   const activeOverrides = activeTab === "away" ? awayOverrides : homeOverrides;
   const onActiveChange = activeTab === "away" ? onAwayChange : onHomeChange;
+  const activeOrder = activeTab === "away" ? awayOrder : homeOrder;
+  const onActiveOrderChange = activeTab === "away" ? onAwayOrderChange : onHomeOrderChange;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = activeOrder.indexOf(active.id as string);
+      const newIndex = activeOrder.indexOf(over.id as string);
+      onActiveOrderChange(arrayMove(activeOrder, oldIndex, newIndex));
+    }
+  };
 
   const updateField = (playerId: string, field: keyof PlayerCustomization, raw: string) => {
     const current = activeOverrides[playerId] ?? {};
@@ -59,22 +161,24 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
       value = isNaN(n) ? undefined : clampMod(n);
     }
     const updated: PlayerCustomization = { ...current, [field]: value };
-    // Remove keys with undefined values to keep the override object sparse
     (Object.keys(updated) as (keyof PlayerCustomization)[]).forEach((k) => {
       if (updated[k] === undefined) delete updated[k];
     });
     onActiveChange({ ...activeOverrides, [playerId]: updated });
   };
 
-  const getNum = (playerId: string, field: keyof PlayerCustomization): string => {
+  const getNick = (playerId: string) =>
+    (activeOverrides[playerId]?.nickname as string | undefined) ?? "";
+
+  const getNum = (playerId: string, field: keyof PlayerCustomization) => {
     const v = activeOverrides[playerId]?.[field];
     return v === undefined ? "0" : String(v);
   };
 
-  const getNick = (playerId: string): string =>
-    (activeOverrides[playerId]?.nickname as string | undefined) ?? "";
-
-  const allPlayers = [...activeRoster.batters, activeRoster.pitcher];
+  const orderedBatters = [...activeRoster.batters].sort(
+    (a, b) => activeOrder.indexOf(a.id) - activeOrder.indexOf(b.id),
+  );
+  const { pitcher } = activeRoster;
 
   return (
     <PanelSection>
@@ -92,59 +196,48 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
             </Tab>
           </TabBar>
           <PlayerList>
-            {allPlayers.map((player) =>
-              player.isPitcher ? (
-                <PitcherRow key={player.id}>
-                  <PosTag>{player.position}</PosTag>
-                  <NicknameInput
-                    type="text"
-                    placeholder="Nickname"
-                    maxLength={20}
-                    value={getNick(player.id)}
-                    onChange={(e) => updateField(player.id, "nickname", e.target.value)}
-                    aria-label={`${player.position} nickname`}
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext items={activeOrder} strategy={verticalListSortingStrategy}>
+                {orderedBatters.map((player) => (
+                  <SortableBatterRow
+                    key={player.id}
+                    player={player}
+                    overrides={activeOverrides}
+                    onFieldChange={updateField}
                   />
-                  {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
-                    <ModLabel key={field}>
-                      {["CTL", "VEL", "STM"][i]}
-                      <ModInput
-                        type="number"
-                        min={MOD_MIN}
-                        max={MOD_MAX}
-                        value={getNum(player.id, field)}
-                        onChange={(e) => updateField(player.id, field, e.target.value)}
-                        aria-label={`${player.position} ${["CTL", "VEL", "STM"][i]}`}
-                      />
-                    </ModLabel>
-                  ))}
-                </PitcherRow>
-              ) : (
-                <PlayerRow key={player.id}>
-                  <PosTag>{player.position}</PosTag>
-                  <NicknameInput
-                    type="text"
-                    placeholder="Nickname"
-                    maxLength={20}
-                    value={getNick(player.id)}
-                    onChange={(e) => updateField(player.id, "nickname", e.target.value)}
-                    aria-label={`${player.position} nickname`}
+                ))}
+              </SortableContext>
+            </DndContext>
+            <PitcherDivider>Starting Pitcher</PitcherDivider>
+            <PitcherRow>
+              <span />
+              <PosTag>{pitcher.position}</PosTag>
+              <NicknameInput
+                type="text"
+                placeholder="Nickname"
+                maxLength={20}
+                value={getNick(pitcher.id)}
+                onChange={(e) => updateField(pitcher.id, "nickname", e.target.value)}
+                aria-label={`${pitcher.position} nickname`}
+              />
+              {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
+                <ModLabel key={field}>
+                  {PITCHER_MOD_LABELS[i]}
+                  <ModInput
+                    type="number"
+                    min={MOD_MIN}
+                    max={MOD_MAX}
+                    value={getNum(pitcher.id, field)}
+                    onChange={(e) => updateField(pitcher.id, field, e.target.value)}
+                    aria-label={`${pitcher.position} ${PITCHER_MOD_LABELS[i]}`}
                   />
-                  {(["contactMod", "powerMod", "speedMod"] as const).map((field, i) => (
-                    <ModLabel key={field}>
-                      {["CNT", "PWR", "SPD"][i]}
-                      <ModInput
-                        type="number"
-                        min={MOD_MIN}
-                        max={MOD_MAX}
-                        value={getNum(player.id, field)}
-                        onChange={(e) => updateField(player.id, field, e.target.value)}
-                        aria-label={`${player.position} ${["CNT", "PWR", "SPD"][i]}`}
-                      />
-                    </ModLabel>
-                  ))}
-                </PlayerRow>
-              ),
-            )}
+                </ModLabel>
+              ))}
+            </PitcherRow>
           </PlayerList>
         </>
       )}

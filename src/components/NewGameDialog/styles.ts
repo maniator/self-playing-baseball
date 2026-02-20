@@ -171,14 +171,14 @@ export const PlayerList = styled.div`
 
 export const PlayerRow = styled.div`
   display: grid;
-  grid-template-columns: 30px 1fr repeat(3, 44px);
+  grid-template-columns: 20px 30px 1fr repeat(3, 44px);
   gap: 4px;
   align-items: center;
 `;
 
 export const PitcherRow = styled.div`
   display: grid;
-  grid-template-columns: 30px 1fr repeat(3, 44px);
+  grid-template-columns: 20px 30px 1fr repeat(3, 44px);
   gap: 4px;
   align-items: center;
   margin-top: 2px;
@@ -238,4 +238,38 @@ export const PanelSection = styled.div`
   border: 1px solid #2a4060;
   border-radius: 8px;
   padding: 10px 12px 12px;
+`;
+
+export const DragHandle = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #4a6090;
+  cursor: grab;
+  font-size: 13px;
+  line-height: 1;
+  touch-action: none;
+
+  &:active {
+    cursor: grabbing;
+    color: #88bbee;
+  }
+`;
+
+export const PitcherDivider = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 6px 0 4px;
+  color: #6a8aae;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+
+  &::before,
+  &::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid #2a4060;
+  }
 `;

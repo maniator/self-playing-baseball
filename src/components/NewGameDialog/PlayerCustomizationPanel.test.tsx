@@ -4,10 +4,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import type { TeamCustomPlayerOverrides } from "@context/index";
+import { generateRoster } from "@utils/roster";
 
 import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 
 const noop = vi.fn();
+
+const awayOrder = generateRoster("New York Mets").batters.map((b) => b.id);
+const homeOrder = generateRoster("New York Yankees").batters.map((b) => b.id);
 
 const defaultProps = {
   awayTeam: "New York Mets",
@@ -16,6 +20,10 @@ const defaultProps = {
   homeOverrides: {} as TeamCustomPlayerOverrides,
   onAwayChange: noop,
   onHomeChange: noop,
+  awayOrder,
+  homeOrder,
+  onAwayOrderChange: noop,
+  onHomeOrderChange: noop,
 };
 
 describe("PlayerCustomizationPanel", () => {
@@ -54,8 +62,7 @@ describe("PlayerCustomizationPanel", () => {
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
-    const awayTab = screen.getByRole("button", { name: /away: new york mets/i });
-    expect(awayTab).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /away: new york mets/i })).toBeInTheDocument();
   });
 
   it("switches to Home tab when clicked", () => {
@@ -66,17 +73,15 @@ describe("PlayerCustomizationPanel", () => {
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /home: new york yankees/i }));
     });
-    // SP is pitcher-only row; check that pitcher CTL input is visible
     expect(screen.getByLabelText(/SP CTL/i)).toBeInTheDocument();
   });
 
-  it("shows 9 batter rows and 1 pitcher row", () => {
+  it("shows 9 batter rows (CON label) and 1 pitcher row", () => {
     render(<PlayerCustomizationPanel {...defaultProps} />);
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
-    // Each batter has 3 mod inputs (CNT, PWR, SPD)
-    expect(screen.getAllByLabelText(/CNT/i)).toHaveLength(9);
+    expect(screen.getAllByLabelText(/CON/i)).toHaveLength(9);
   });
 
   it("calls onAwayChange when a batter modifier is changed", () => {
@@ -86,7 +91,7 @@ describe("PlayerCustomizationPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
     act(() => {
-      fireEvent.change(screen.getAllByLabelText(/C CNT/i)[0], { target: { value: "5" } });
+      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "5" } });
     });
     expect(onAwayChange).toHaveBeenCalled();
     const newOverrides = onAwayChange.mock.calls[0][0] as TeamCustomPlayerOverrides;
@@ -104,7 +109,7 @@ describe("PlayerCustomizationPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /home: new york yankees/i }));
     });
     act(() => {
-      fireEvent.change(screen.getAllByLabelText(/C CNT/i)[0], { target: { value: "3" } });
+      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "3" } });
     });
     expect(onHomeChange).toHaveBeenCalled();
   });
@@ -116,7 +121,7 @@ describe("PlayerCustomizationPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
     act(() => {
-      fireEvent.change(screen.getAllByLabelText(/C CNT/i)[0], { target: { value: "99" } });
+      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "99" } });
     });
     const newOverrides = onAwayChange.mock.calls[0][0] as TeamCustomPlayerOverrides;
     expect(Object.values(newOverrides)[0]?.contactMod).toBe(20);
@@ -135,7 +140,7 @@ describe("PlayerCustomizationPanel", () => {
     expect(Object.values(newOverrides)[0]?.nickname).toBe("Speedy");
   });
 
-  it("shows pitcher CTL, VEL, STM inputs (not CNT/PWR/SPD) for SP row", () => {
+  it("shows pitcher CTL, VEL, STM inputs (not CON/PWR/SPD) for SP row", () => {
     render(<PlayerCustomizationPanel {...defaultProps} />);
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
@@ -143,6 +148,33 @@ describe("PlayerCustomizationPanel", () => {
     expect(screen.getByLabelText(/SP CTL/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/SP VEL/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/SP STM/i)).toBeInTheDocument();
-    expect(screen.queryByLabelText(/SP CNT/i)).not.toBeInTheDocument();
+    expect(screen.queryByLabelText(/SP CON/i)).not.toBeInTheDocument();
+  });
+
+  it("shows a 'Starting Pitcher' divider label above the pitcher row", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    expect(screen.getByText(/starting pitcher/i)).toBeInTheDocument();
+  });
+
+  it("pitcher row has no drag handle (cannot be reordered)", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    // 9 batters have drag handles; pitcher does not
+    expect(screen.getAllByLabelText(/^drag /i)).toHaveLength(9);
+    expect(screen.queryByLabelText(/drag sp/i)).not.toBeInTheDocument();
+  });
+
+  it("renders a drag handle for each batter", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    expect(screen.getByLabelText(/^drag C$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^drag DH$/i)).toBeInTheDocument();
   });
 });

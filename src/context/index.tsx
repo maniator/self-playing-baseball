@@ -71,6 +71,7 @@ export interface State {
   inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
   playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
+  lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
 }
 
 export interface ContextValue extends State {
@@ -120,6 +121,7 @@ const initialState: State = {
   inningRuns: [[], []],
   playLog: [],
   playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
+  lineupOrder: [[], []] as [string[], string[]],
 };
 
 export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {
