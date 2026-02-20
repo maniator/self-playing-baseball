@@ -12,8 +12,7 @@ export const GameDiv = styled.main`
   @media (max-width: 800px) {
     min-height: auto;
     height: 100dvh;
-    overflow-y: auto;
-    overflow-x: hidden;
+    overflow: hidden;
     overflow-anchor: none;
     padding: 16px;
   }
@@ -29,6 +28,9 @@ export const GameBody = styled.div`
     flex-direction: column;
     gap: 12px;
     align-items: stretch;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 `;
 
