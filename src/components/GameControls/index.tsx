@@ -56,6 +56,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
           }}
         />
         <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
+        <InstructionsModal />
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
@@ -87,7 +88,6 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             />
           )}
         </AutoPlayGroup>
-        <InstructionsModal />
       </Controls>
       {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
     </>
