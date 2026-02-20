@@ -6,6 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 import type { TeamCustomPlayerOverrides } from "@context/index";
 import { generateRoster } from "@utils/roster";
 
+import { MOD_OPTIONS } from "./PlayerCustomizationPanel";
 import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 
 const noop = vi.fn();
@@ -109,22 +110,43 @@ describe("PlayerCustomizationPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /home: new york yankees/i }));
     });
     act(() => {
-      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "3" } });
+      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "10" } });
     });
     expect(onHomeChange).toHaveBeenCalled();
   });
 
-  it("clamps modifier values to [-20, 20]", () => {
-    const onAwayChange = vi.fn();
-    render(<PlayerCustomizationPanel {...defaultProps} onAwayChange={onAwayChange} />);
+  it("each batter CON modifier renders all preset options", () => {
+    render(<PlayerCustomizationPanel {...defaultProps} />);
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
     });
+    const selects = screen.getAllByLabelText(/C CON/i);
+    const options = Array.from((selects[0] as HTMLSelectElement).options).map((o) => o.text);
+    expect(options).toEqual(MOD_OPTIONS.map((o) => o.label));
+  });
+
+  it("selecting Avg (0) removes the override entry for that field (stays sparse)", () => {
+    // Pre-seed an override so we can observe it being cleared.
+    const onAwayChange = vi.fn();
+    const awayOverrides = {
+      [awayOrder[0]]: { contactMod: 10 },
+    } as TeamCustomPlayerOverrides;
+    render(
+      <PlayerCustomizationPanel
+        {...defaultProps}
+        awayOverrides={awayOverrides}
+        onAwayChange={onAwayChange}
+      />,
+    );
     act(() => {
-      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "99" } });
+      fireEvent.click(screen.getByRole("button", { name: /customize players/i }));
+    });
+    // Select "Avg" (value "0") — should clear contactMod
+    act(() => {
+      fireEvent.change(screen.getAllByLabelText(/C CON/i)[0], { target: { value: "0" } });
     });
     const newOverrides = onAwayChange.mock.calls[0][0] as TeamCustomPlayerOverrides;
-    expect(Object.values(newOverrides)[0]?.contactMod).toBe(20);
+    expect(Object.values(newOverrides)[0]?.contactMod).toBeUndefined();
   });
 
   it("calls onAwayChange with nickname when nickname input is changed", () => {

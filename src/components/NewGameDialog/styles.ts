@@ -171,14 +171,14 @@ export const PlayerList = styled.div`
 
 export const PlayerRow = styled.div`
   display: grid;
-  grid-template-columns: 20px 30px 1fr repeat(3, 44px);
+  grid-template-columns: 20px 30px 1fr repeat(3, 56px);
   gap: 4px;
   align-items: center;
 `;
 
 export const PitcherRow = styled.div`
   display: grid;
-  grid-template-columns: 20px 30px 1fr repeat(3, 44px);
+  grid-template-columns: 20px 30px 1fr repeat(3, 56px);
   gap: 4px;
   align-items: center;
   margin-top: 2px;
@@ -214,23 +214,16 @@ export const ModLabel = styled.label`
   text-transform: uppercase;
 `;
 
-export const ModInput = styled.input`
+export const ModSelect = styled.select`
   background: #1a2e4a;
   border: 1px solid #4a6090;
   color: #e0f0ff;
   border-radius: 4px;
-  padding: 2px 2px;
+  padding: 2px 1px;
   font-family: inherit;
-  font-size: 11px;
+  font-size: 10px;
   width: 100%;
-  text-align: center;
-  appearance: textfield;
-  -moz-appearance: textfield;
-  &::-webkit-outer-spin-button,
-  &::-webkit-inner-spin-button {
-    -webkit-appearance: none;
-    margin: 0;
-  }
+  cursor: pointer;
 `;
 
 export const PanelSection = styled.div`

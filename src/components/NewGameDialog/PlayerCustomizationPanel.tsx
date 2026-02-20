@@ -24,8 +24,8 @@ import { generateRoster } from "@utils/roster";
 
 import {
   DragHandle,
-  ModInput,
   ModLabel,
+  ModSelect,
   NicknameInput,
   PanelSection,
   PanelToggle,
@@ -38,8 +38,18 @@ import {
   TabBar,
 } from "./styles";
 
-const MOD_MIN = -20;
-const MOD_MAX = 20;
+export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
+
+export const MOD_OPTIONS: ReadonlyArray<{ readonly label: string; readonly value: ModPreset }> = [
+  { label: "Elite", value: 20 },
+  { label: "High", value: 10 },
+  { label: "Above", value: 5 },
+  { label: "Avg", value: 0 },
+  { label: "Below", value: -5 },
+  { label: "Low", value: -10 },
+  { label: "Poor", value: -20 },
+];
+
 const BATTER_MOD_LABELS = ["CON", "PWR", "SPD"] as const;
 const PITCHER_MOD_LABELS = ["CTL", "VEL", "STM"] as const;
 
@@ -55,8 +65,6 @@ type Props = {
   onAwayOrderChange: (order: string[]) => void;
   onHomeOrderChange: (order: string[]) => void;
 };
-
-const clampMod = (val: number) => Math.max(MOD_MIN, Math.min(MOD_MAX, Math.round(val)));
 
 type BatterRowProps = {
   player: Player;
@@ -78,7 +86,7 @@ const SortableBatterRow: React.FunctionComponent<BatterRowProps> = ({
     opacity: isDragging ? 0.5 : 1,
   };
   const nick = (overrides[player.id]?.nickname as string | undefined) ?? "";
-  const getNum = (field: keyof PlayerCustomization) => {
+  const getMod = (field: keyof PlayerCustomization) => {
     const v = overrides[player.id]?.[field];
     return v === undefined ? "0" : String(v);
   };
@@ -99,14 +107,17 @@ const SortableBatterRow: React.FunctionComponent<BatterRowProps> = ({
       {(["contactMod", "powerMod", "speedMod"] as const).map((field, i) => (
         <ModLabel key={field}>
           {BATTER_MOD_LABELS[i]}
-          <ModInput
-            type="number"
-            min={MOD_MIN}
-            max={MOD_MAX}
-            value={getNum(field)}
+          <ModSelect
+            value={getMod(field)}
             onChange={(e) => onFieldChange(player.id, field, e.target.value)}
             aria-label={`${player.position} ${BATTER_MOD_LABELS[i]}`}
-          />
+          >
+            {MOD_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </ModSelect>
         </ModLabel>
       ))}
     </PlayerRow>
@@ -158,7 +169,8 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
       value = raw || undefined;
     } else {
       const n = parseInt(raw, 10);
-      value = isNaN(n) ? undefined : clampMod(n);
+      // Store 0 as undefined so the override stays sparse (Avg = no override)
+      value = isNaN(n) || n === 0 ? undefined : n;
     }
     const updated: PlayerCustomization = { ...current, [field]: value };
     (Object.keys(updated) as (keyof PlayerCustomization)[]).forEach((k) => {
@@ -170,7 +182,7 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
   const getNick = (playerId: string) =>
     (activeOverrides[playerId]?.nickname as string | undefined) ?? "";
 
-  const getNum = (playerId: string, field: keyof PlayerCustomization) => {
+  const getMod = (playerId: string, field: keyof PlayerCustomization) => {
     const v = activeOverrides[playerId]?.[field];
     return v === undefined ? "0" : String(v);
   };
@@ -227,14 +239,17 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
               {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
                 <ModLabel key={field}>
                   {PITCHER_MOD_LABELS[i]}
-                  <ModInput
-                    type="number"
-                    min={MOD_MIN}
-                    max={MOD_MAX}
-                    value={getNum(pitcher.id, field)}
+                  <ModSelect
+                    value={getMod(pitcher.id, field)}
                     onChange={(e) => updateField(pitcher.id, field, e.target.value)}
                     aria-label={`${pitcher.position} ${PITCHER_MOD_LABELS[i]}`}
-                  />
+                  >
+                    {MOD_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </ModSelect>
                 </ModLabel>
               ))}
             </PitcherRow>
