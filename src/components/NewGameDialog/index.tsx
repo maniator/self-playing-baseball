@@ -1,9 +1,11 @@
 import * as React from "react";
 
+import type { TeamCustomPlayerOverrides } from "@context/index";
 import { AL_FALLBACK, fetchMlbTeams, NL_FALLBACK } from "@utils/mlbTeams";
 
 import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
+import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 import {
   Dialog,
   Divider,
@@ -20,8 +22,15 @@ import {
 type ManagedTeam = 0 | 1 | null;
 type MatchupMode = "al" | "nl" | "interleague";
 
+export type PlayerOverrides = { away: TeamCustomPlayerOverrides; home: TeamCustomPlayerOverrides };
+
 type Props = {
-  onStart: (homeTeam: string, awayTeam: string, managedTeam: ManagedTeam) => void;
+  onStart: (
+    homeTeam: string,
+    awayTeam: string,
+    managedTeam: ManagedTeam,
+    playerOverrides: PlayerOverrides,
+  ) => void;
   autoSaveName?: string;
   onResume?: () => void;
 };
@@ -34,6 +43,8 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
   const [home, setHome] = React.useState(DEFAULT_AL_TEAM);
   const [away, setAway] = React.useState(DEFAULT_NL_TEAM);
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
+  const [homeOverrides, setHomeOverrides] = React.useState<TeamCustomPlayerOverrides>({});
+  const [awayOverrides, setAwayOverrides] = React.useState<TeamCustomPlayerOverrides>({});
 
   React.useEffect(() => {
     if (!ref.current?.open) ref.current?.showModal();
@@ -70,6 +81,22 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
     }
   }, [awayList, away]);
 
+  // Reset player overrides when the selected team changes
+  const prevHome = React.useRef(home);
+  const prevAway = React.useRef(away);
+  React.useEffect(() => {
+    if (prevHome.current !== home) {
+      setHomeOverrides({});
+      prevHome.current = home;
+    }
+  }, [home]);
+  React.useEffect(() => {
+    if (prevAway.current !== away) {
+      setAwayOverrides({});
+      prevAway.current = away;
+    }
+  }, [away]);
+
   const handleModeChange = (m: MatchupMode) => {
     setMode(m);
     if (m === "al") {
@@ -99,7 +126,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
-    onStart(home, away, mt);
+    onStart(home, away, mt, { away: awayOverrides, home: homeOverrides });
     ref.current?.close();
   };
 
@@ -193,6 +220,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
             </RadioLabel>
           ))}
         </FieldGroup>
+        <PlayerCustomizationPanel
+          awayTeam={away}
+          homeTeam={home}
+          awayOverrides={awayOverrides}
+          homeOverrides={homeOverrides}
+          onAwayChange={setAwayOverrides}
+          onHomeChange={setHomeOverrides}
+        />
         <PlayBallButton type="submit">Play Ball!</PlayBallButton>
       </form>
     </Dialog>

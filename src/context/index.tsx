@@ -24,6 +24,18 @@ export const useGameContext = (): ContextValue => {
 
 export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
 
+export type PlayerCustomization = {
+  nickname?: string;
+  contactMod?: number;
+  powerMod?: number;
+  speedMod?: number;
+  controlMod?: number;
+  velocityMod?: number;
+  staminaMod?: number;
+};
+
+export type TeamCustomPlayerOverrides = Record<string, PlayerCustomization>;
+
 export type DecisionType =
   | { kind: "steal"; base: 0 | 1; successPct: number }
   | { kind: "bunt" }
@@ -58,6 +70,7 @@ export interface State {
   batterIndex: [number, number]; // 0–8 position in the 9-batter lineup per team
   inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
+  playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
 }
 
 export interface ContextValue extends State {
@@ -106,6 +119,7 @@ const initialState: State = {
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
+  playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
 };
 
 export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {

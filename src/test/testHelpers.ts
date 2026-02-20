@@ -1,7 +1,9 @@
 import { vi } from "vitest";
 
-import type { ContextValue, State } from "@context/index";
+import type { ContextValue, State, TeamCustomPlayerOverrides } from "@context/index";
 import * as rngModule from "@utils/rng";
+
+const emptyOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides] = [{}, {}];
 
 /** Creates a full default State with optional field overrides. */
 export const makeState = (overrides: Partial<State> = {}): State => ({
@@ -25,6 +27,7 @@ export const makeState = (overrides: Partial<State> = {}): State => ({
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
+  playerOverrides: emptyOverrides,
   ...overrides,
 });
 
@@ -54,6 +57,7 @@ export const makeContextValue = (overrides: Partial<ContextValue> = {}): Context
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
+  playerOverrides: emptyOverrides,
   ...overrides,
 });
 

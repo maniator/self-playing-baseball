@@ -46,7 +46,10 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, null);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, null, {
+      away: {},
+      home: {},
+    });
   });
 
   it("calls onStart with managedTeam=0 when Away is selected", () => {
@@ -56,7 +59,10 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0, {
+      away: {},
+      home: {},
+    });
   });
 
   it("calls onStart with managedTeam=1 when Home is selected", () => {
@@ -66,7 +72,10 @@ describe("NewGameDialog", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1, {
+      away: {},
+      home: {},
+    });
   });
 
   it("prevents dialog from being cancelled via keyboard escape", () => {

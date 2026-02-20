@@ -4,7 +4,15 @@ import { pitchName } from "@constants/pitchTypes";
 
 import { checkWalkoff } from "./gameOver";
 import { hitBall } from "./hitBall";
-import { DecisionType, GameAction, LogAction, OnePitchModifier, State, Strategy } from "./index";
+import {
+  DecisionType,
+  GameAction,
+  LogAction,
+  OnePitchModifier,
+  State,
+  Strategy,
+  TeamCustomPlayerOverrides,
+} from "./index";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "./playerActions";
 import { stratMod } from "./strategy";
 
@@ -100,8 +108,22 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
         const hitType: Hit = p?.hitType ?? (action.payload as Hit);
         return checkWalkoff(hitBall(hitType, state, log, strategy), log);
       }
-      case "setTeams":
-        return { ...state, teams: action.payload as [string, string] };
+      case "setTeams": {
+        const p = action.payload as
+          | [string, string]
+          | {
+              teams: [string, string];
+              playerOverrides?: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
+            };
+        if (Array.isArray(p)) {
+          return { ...state, teams: p };
+        }
+        return {
+          ...state,
+          teams: p.teams,
+          ...(p.playerOverrides ? { playerOverrides: p.playerOverrides } : {}),
+        };
+      }
       case "strike": {
         const sp = action.payload as { swung?: boolean; pitchType?: PitchType };
         return playerStrike(state, log, sp?.swung ?? false, false, sp?.pitchType);
@@ -196,6 +218,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           batterIndex: [0, 0] as [number, number],
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
+          playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
         };
       case "skip_decision": {
         const entry = state.pendingDecision ? `${state.pitchKey}:skip` : null;
@@ -228,8 +251,13 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
         const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
         return { ...state, defensiveShift: shiftOn, pendingDecision: null, decisionLog };
       }
-      case "restore_game":
-        return action.payload as State;
+      case "restore_game": {
+        const restored = action.payload as State;
+        return {
+          ...restored,
+          playerOverrides: restored.playerOverrides ?? [{}, {}],
+        };
+      }
       default:
         throw new Error(`No such reducer type as ${action.type}`);
     }

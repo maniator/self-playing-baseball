@@ -8,6 +8,8 @@ export const Dialog = styled.dialog`
   padding: 28px 32px 24px;
   max-width: min(420px, 92vw);
   width: 100%;
+  max-height: min(90dvh, 820px);
+  overflow-y: auto;
   font-family: inherit;
   font-size: 14px;
 
@@ -120,4 +122,120 @@ export const PlayBallButton = styled.button`
   font-weight: 700;
   cursor: pointer;
   margin-top: 20px;
+`;
+
+export const PanelToggle = styled.button`
+  background: none;
+  border: none;
+  color: #88bbee;
+  font-family: inherit;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+`;
+
+export const TabBar = styled.div`
+  display: flex;
+  gap: 4px;
+  margin-bottom: 10px;
+`;
+
+export const Tab = styled.button<{ $active: boolean }>`
+  flex: 1;
+  background: ${({ $active }) => ($active ? "#1a4a6a" : "#0d1b2e")};
+  border: 1px solid ${({ $active }) => ($active ? "#6ab0e0" : "#4a6090")};
+  color: ${({ $active }) => ($active ? "#e0f0ff" : "#88bbee")};
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
+`;
+
+export const PlayerList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+`;
+
+export const PlayerRow = styled.div`
+  display: grid;
+  grid-template-columns: 30px 1fr repeat(3, 44px);
+  gap: 4px;
+  align-items: center;
+`;
+
+export const PitcherRow = styled.div`
+  display: grid;
+  grid-template-columns: 30px 1fr repeat(3, 44px);
+  gap: 4px;
+  align-items: center;
+  margin-top: 2px;
+`;
+
+export const PosTag = styled.span`
+  font-size: 10px;
+  font-weight: 700;
+  color: #6ab0e0;
+  text-transform: uppercase;
+  text-align: center;
+`;
+
+export const NicknameInput = styled.input`
+  background: #1a2e4a;
+  border: 1px solid #4a6090;
+  color: #fff;
+  border-radius: 4px;
+  padding: 3px 5px;
+  font-family: inherit;
+  font-size: 11px;
+  width: 100%;
+  min-width: 0;
+`;
+
+export const ModLabel = styled.label`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  font-size: 9px;
+  color: #6a8aae;
+  text-transform: uppercase;
+`;
+
+export const ModInput = styled.input`
+  background: #1a2e4a;
+  border: 1px solid #4a6090;
+  color: #e0f0ff;
+  border-radius: 4px;
+  padding: 2px 2px;
+  font-family: inherit;
+  font-size: 11px;
+  width: 100%;
+  text-align: center;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+`;
+
+export const PanelSection = styled.div`
+  margin-bottom: 16px;
+  border: 1px solid #2a4060;
+  border-radius: 8px;
+  padding: 10px 12px 12px;
 `;
