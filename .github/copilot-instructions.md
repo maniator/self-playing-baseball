@@ -257,7 +257,9 @@ Validate changes by:
 ## Code Style & File Size
 
 - **Target file length: ≤ 200 lines.** Aim for **100 lines or fewer** in ideal cases. If a file grows beyond 200 lines it must be split into smaller, individually testable modules.
-- **Test files are exempt from the 200-line limit.** Test files in `src/__tests__/` may be as long as needed — accumulating many test cases in one file is expected and acceptable.
+- **Test files are exempt from the 200-line limit.** Test files in `src/__tests__/` may be as long as needed.
+- **One test file per source file.** Each source file has a corresponding test file in `src/__tests__/` with the same name (e.g. `hitBall.ts` → `hitBall.test.ts`, `Announcements/index.tsx` → `Announcements.test.tsx`). Do not aggregate tests for multiple source files into one test file.
+- **Shared test helpers live in `src/__tests__/testHelpers.ts`** and export `makeState`, `makeContextValue`, `makeLogs`, and `mockRandom`. Import these instead of redeclaring them in each test file.
 - **How to split:** extract pure logic into separate utility/helper files, move styled-components into a companion `styles.ts`, and break large components into focused sub-components or custom hooks (following the pattern already established in `GameControls/hooks/`).
 - **Why:** smaller files are easier to review, test in isolation, and reason about. The existing codebase already follows this pattern — maintain it.
 
@@ -276,5 +278,6 @@ Validate changes by:
 - **`browserslist`** is set in `package.json` (`> 0.5%, last 2 versions, not dead`). This is required for Parcel v2 to bundle all dependencies (including React) into the output JS file for the browser.
 - **`webkitAudioContext`** — use `(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext` rather than `(window as any)` for the Safari fallback in `announce.ts`.
 - **Never import GameContext directly** — always consume it via the `useGameContext()` hook exported from `Context/index.tsx`. Direct `React.useContext(GameContext)` calls will throw if used outside the provider and lose type safety.
+- **`ContextValue` extends `State`** and adds `dispatch: Function`, `dispatchLog: Function`, and `log: string[]` (play-by-play announcement log, most recent first). All three are provided by `GameProviderWrapper`.
 - **`announce.ts` is a barrel re-export** — it simply re-exports everything from `tts.ts` and `audio.ts`. Always import from `utilities/announce` as the public API; never import directly from `tts.ts` or `audio.ts`.
 - **Context module cycle-free order** — when adding new Context modules, respect the dependency order: `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `playerActions` → `reducer`. No module may import from a module later in this chain.
