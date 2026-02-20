@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { render, screen, fireEvent, act } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
@@ -59,9 +59,7 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("counts walks separately from hits", () => {
-    const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Walk, runs: 0 },
-    ];
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Walk, runs: 0 }];
     renderWithContext({ playLog });
     // batter #1: 0 hits (–), 1 walk
     const rows = screen.getAllByRole("row");
@@ -83,9 +81,7 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("does not mix team stats — away stats excluded when viewing home tab", () => {
-    const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 },
-    ];
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] });
     // Switch to home tab
     act(() => {
@@ -96,18 +92,14 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("shows 9 batter rows when there is activity", () => {
-    const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 },
-    ];
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
     // 1 header row + 9 data rows
     expect(screen.getAllByRole("row")).toHaveLength(10);
   });
 
   it("collapses and hides the table when toggle is clicked", () => {
-    const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 },
-    ];
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));

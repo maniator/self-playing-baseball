@@ -1190,11 +1190,9 @@ describe("strikeout tracking", () => {
   });
 
   it("strike on 0-strike count does NOT append to strikeoutLog", () => {
-    const { state } = dispatchAction(
-      makeState({ strikes: 0, atBat: 0 }),
-      "strike",
-      { swung: true },
-    );
+    const { state } = dispatchAction(makeState({ strikes: 0, atBat: 0 }), "strike", {
+      swung: true,
+    });
     expect(state.strikeoutLog).toHaveLength(0);
   });
 

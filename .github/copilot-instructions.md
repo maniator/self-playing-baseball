@@ -237,10 +237,14 @@ yarn format:check     # Prettier check
 
 ## Validation
 
+**Always run all validation steps locally and confirm they pass before using `report_progress` to commit and push.** CI failures on the branch are not acceptable.
+
 Validate changes by:
-1. `yarn lint` — zero errors/warnings required.
+1. `yarn lint` — zero errors/warnings required. Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
-3. `yarn test` — all 535 tests must pass. Run `yarn test:coverage` to verify coverage thresholds.
+3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
+
+**Do not call `report_progress` until all three steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
 ---
 
