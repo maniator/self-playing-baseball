@@ -28,7 +28,13 @@ const makeSlot = (
   seed: "abc",
   progress: 5,
   managerActions: [],
-  setup: { homeTeam: "Home", awayTeam: "Away", strategy: "balanced", managedTeam: 0 },
+  setup: {
+    homeTeam: "Home",
+    awayTeam: "Away",
+    strategy: "balanced",
+    managedTeam: 0,
+    managerMode: false,
+  },
   state: makeState(),
   ...overrides,
 });
@@ -176,6 +182,15 @@ describe("saves utils", () => {
       expect(() => importSave(JSON.stringify(envelope))).toThrow("signature mismatch");
     });
 
+    it("throws on invalid save structure (missing setup fields)", () => {
+      const foreign = JSON.stringify({
+        version: EXPORT_VERSION,
+        sig: "deadbeef",
+        save: { seed: "abc", id: "x", setup: {}, state: {} },
+      });
+      expect(() => importSave(foreign)).toThrow("Invalid save data");
+    });
+
     it("rejects arbitrary JSON that was not produced by this app", () => {
       const foreign = JSON.stringify({
         version: EXPORT_VERSION,
@@ -188,8 +203,14 @@ describe("saves utils", () => {
           updatedAt: 0,
           progress: 0,
           managerActions: [],
-          setup: {},
-          state: {},
+          setup: {
+            homeTeam: "A",
+            awayTeam: "B",
+            strategy: "balanced",
+            managedTeam: 0,
+            managerMode: false,
+          },
+          state: { teams: ["A", "B"] },
         },
       });
       expect(() => importSave(foreign)).toThrow("signature mismatch");

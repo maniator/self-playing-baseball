@@ -135,6 +135,7 @@ const makeAutoSaveSlot = () => ({
     awayTeam: "Mets",
     strategy: "power" as Strategy,
     managedTeam: 1 as 0 | 1,
+    managerMode: true,
   },
   state: makeState({ inning: 5, teams: ["Mets", "Yankees"] as [string, string] }),
 });

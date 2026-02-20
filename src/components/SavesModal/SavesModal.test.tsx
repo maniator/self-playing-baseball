@@ -61,6 +61,7 @@ const makeSlot = (overrides: Partial<SaveSlot> = {}): SaveSlot => ({
     awayTeam: "Away",
     strategy: "balanced" as Strategy,
     managedTeam: 0,
+    managerMode: false,
   },
   state: makeState(),
   ...overrides,
@@ -75,6 +76,7 @@ const renderModal = (
       <SavesModal
         strategy="balanced"
         managedTeam={0}
+        managerMode={false}
         currentSaveId={null}
         onSaveIdChange={noop}
         {...props}

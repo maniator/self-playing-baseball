@@ -56,11 +56,17 @@ export interface ExportedSave {
   save: SaveSlot;
 }
 
-/** Minimal structural check — ensures a parsed object is safe to use as SaveSlot. */
+/** Structural check — ensures a parsed object is safe to use as SaveSlot. */
 const isValidSaveSlot = (slot: unknown): slot is SaveSlot => {
   if (!slot || typeof slot !== "object") return false;
   const s = slot as Record<string, unknown>;
-  return typeof s.id === "string" && typeof s.seed === "string" && s.state != null;
+  if (typeof s.id !== "string" || typeof s.seed !== "string") return false;
+  if (!s.state || typeof s.state !== "object") return false;
+  if (!s.setup || typeof s.setup !== "object") return false;
+  const setup = s.setup as Record<string, unknown>;
+  if (typeof setup.homeTeam !== "string" || typeof setup.awayTeam !== "string") return false;
+  if (typeof setup.strategy !== "string") return false;
+  return true;
 };
 
 /** localStorage.setItem wrapper that silently drops QuotaExceededError. */
@@ -217,8 +223,8 @@ export const importSave = (json: string): SaveSlot => {
   if (!parsed || typeof parsed !== "object") throw new Error("Invalid save file");
   const { version, sig, save } = parsed as ExportedSave;
   if (version !== EXPORT_VERSION) throw new Error(`Unsupported save version: ${version}`);
-  if (!save || typeof save.seed !== "string") throw new Error("Invalid save data");
-  if (sig !== signSave(save))
+  if (!isValidSaveSlot(save)) throw new Error("Invalid save data");
+  if (typeof sig !== "string" || sig !== signSave(save))
     throw new Error("Save signature mismatch — file may be corrupted or from a different app");
   return save;
 };
