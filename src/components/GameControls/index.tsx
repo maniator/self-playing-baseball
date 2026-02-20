@@ -2,41 +2,34 @@ import * as React from "react";
 
 import DecisionPanel from "@components/DecisionPanel";
 import InstructionsModal from "@components/InstructionsModal";
+import SavesModal from "@components/SavesModal";
 import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import {
-  AutoPlayGroup,
-  BatterUpButton,
-  Controls,
-  NewGameButton,
-  Select,
-  ShareButton,
-  ToggleLabel,
-} from "./styles";
+import { AutoPlayGroup, Controls, NewGameButton, Select, ShareButton, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
 type Props = {
   onNewGame?: () => void;
+  gameStarted?: boolean;
 };
 
-const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
+const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted = false }) => {
   const {
-    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
     alertVolume,
     managerMode,
+    setManagerMode,
     strategy,
     setStrategy,
     managedTeam,
     setManagedTeam,
     teams,
     gameOver,
-    handleBatterUp,
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
@@ -45,14 +38,28 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
     handleShareReplay,
-  } = useGameControls();
+    currentSaveId,
+    setCurrentSaveId,
+  } = useGameControls({ gameStarted });
 
   return (
     <>
       <Controls>
-        {!gameStarted && <BatterUpButton onClick={handleBatterUp}>Batter Up!</BatterUpButton>}
         {gameOver && onNewGame && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
-        <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
+        <SavesModal
+          strategy={strategy}
+          managedTeam={managedTeam}
+          managerMode={managerMode}
+          currentSaveId={currentSaveId}
+          onSaveIdChange={setCurrentSaveId}
+          onSetupRestore={(setup) => {
+            setStrategy(setup.strategy);
+            setManagedTeam(setup.managedTeam);
+            setManagerMode(setup.managerMode ?? false);
+          }}
+        />
+        <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
+        <InstructionsModal />
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
@@ -84,7 +91,6 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
             />
           )}
         </AutoPlayGroup>
-        <InstructionsModal />
       </Controls>
       {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
     </>

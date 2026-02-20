@@ -81,6 +81,32 @@ export const RadioLabel = styled.label`
   }
 `;
 
+export const ResumeButton = styled.button`
+  display: block;
+  width: 100%;
+  background: #1a3a2a;
+  color: #6effc0;
+  border: 1px solid #3a7a5a;
+  border-radius: 20px;
+  padding: 10px 24px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 4px;
+
+  &:hover {
+    background: #254f38;
+  }
+`;
+
+export const Divider = styled.p`
+  text-align: center;
+  color: #4a6090;
+  font-size: 12px;
+  margin: 12px 0 16px;
+`;
+
 export const PlayBallButton = styled.button`
   display: block;
   width: 100%;

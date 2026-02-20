@@ -18,9 +18,7 @@ describe("useShareReplay", () => {
     vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() =>
-      useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }),
-    );
+    const { result } = renderHook(() => useShareReplay({ dispatchLog }));
     await act(async () => {
       result.current.handleShareReplay();
     });
@@ -37,37 +35,14 @@ describe("useShareReplay", () => {
     vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=abc");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() =>
-      useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }),
-    );
+    const { result } = renderHook(() => useShareReplay({ dispatchLog }));
     await act(async () => {
       result.current.handleShareReplay();
     });
     expect(dispatchLog).toHaveBeenCalledWith(expect.objectContaining({ type: "log" }));
   });
 
-  it("passes decisionLog to buildReplayUrl when managerMode is true", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      value: { writeText },
-      writable: true,
-      configurable: true,
-    });
-    const spy = vi
-      .spyOn(rngModule, "buildReplayUrl")
-      .mockReturnValue("https://example.com?seed=abc&decisions=1:skip");
-    const dispatchLog = vi.fn();
-
-    const { result } = renderHook(() =>
-      useShareReplay({ managerMode: true, decisionLog: ["1:skip"], dispatchLog }),
-    );
-    await act(async () => {
-      result.current.handleShareReplay();
-    });
-    expect(spy).toHaveBeenCalledWith(["1:skip"]);
-  });
-
-  it("does NOT pass decisionLog to buildReplayUrl when managerMode is false", async () => {
+  it("calls buildReplayUrl with no arguments (seed only)", async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -79,13 +54,11 @@ describe("useShareReplay", () => {
       .mockReturnValue("https://example.com?seed=abc");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() =>
-      useShareReplay({ managerMode: false, decisionLog: ["1:skip"], dispatchLog }),
-    );
+    const { result } = renderHook(() => useShareReplay({ dispatchLog }));
     await act(async () => {
       result.current.handleShareReplay();
     });
-    expect(spy).toHaveBeenCalledWith(undefined);
+    expect(spy).toHaveBeenCalledWith();
   });
 
   it("falls back to window.prompt when navigator.clipboard is unavailable", async () => {
@@ -98,15 +71,10 @@ describe("useShareReplay", () => {
     vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=xyz");
     const dispatchLog = vi.fn();
 
-    const { result } = renderHook(() =>
-      useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }),
-    );
+    const { result } = renderHook(() => useShareReplay({ dispatchLog }));
     act(() => {
       result.current.handleShareReplay();
     });
-    expect(promptSpy).toHaveBeenCalledWith(
-      "Copy this replay link:",
-      "https://example.com?seed=xyz",
-    );
+    expect(promptSpy).toHaveBeenCalledWith("Copy this seed link:", "https://example.com?seed=xyz");
   });
 });

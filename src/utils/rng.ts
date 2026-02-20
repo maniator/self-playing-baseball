@@ -4,9 +4,13 @@ type SeedInitOptions = {
 
 let seed: number | null = null;
 let rng: (() => number) | null = null;
+/** The current value of `a` inside the mulberry32 closure — captured after every call. */
+let rngInternalA: number | null = null;
 
 const mulberry32 = (a: number) => (): number => {
-  let t = (a += 0x6d2b79f5);
+  a += 0x6d2b79f5;
+  rngInternalA = a;
+  let t = a;
   t = Math.imul(t ^ (t >>> 15), t | 1);
   t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
@@ -34,14 +38,10 @@ export const initSeedFromUrl = ({ writeToUrl = false }: SeedInitOptions = {}): n
 
   const url = new URL(window.location.href);
   const seedParam = url.searchParams.get("seed");
-  let nextSeed = seedParam ? parseSeed(seedParam) : null;
-
-  if (nextSeed === null) {
-    nextSeed = generateSeed();
-  }
-
+  const nextSeed = parseSeed(seedParam ?? "") ?? generateSeed();
   seed = nextSeed;
   rng = mulberry32(seed);
+  rngInternalA = seed; // pre-call state
 
   if (writeToUrl) {
     url.searchParams.set("seed", seed.toString(36));
@@ -94,4 +94,20 @@ export const getDecisionsFromUrl = (): string[] => {
   const param = new URL(window.location.href).searchParams.get("decisions");
   if (!param) return [];
   return decodeURIComponent(param).split(",").filter(Boolean);
+};
+
+/**
+ * Returns the current internal PRNG state (the value of `a` after the last
+ * `random()` call, or the initial seed if no call has been made yet).
+ * Store this alongside game state so the PRNG position can be fully restored.
+ */
+export const getRngState = (): number | null => rngInternalA;
+
+/**
+ * Restores the PRNG to a previously captured state so that the next
+ * `random()` call produces the same value it would have in the original game.
+ */
+export const restoreRng = (state: number): void => {
+  rng = mulberry32(state);
+  rngInternalA = state;
 };

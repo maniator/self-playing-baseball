@@ -6,10 +6,12 @@ import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 import {
   Dialog,
+  Divider,
   FieldGroup,
   FieldLabel,
   PlayBallButton,
   RadioLabel,
+  ResumeButton,
   SectionLabel,
   Select,
   Title,
@@ -20,9 +22,11 @@ type MatchupMode = "al" | "nl" | "interleague";
 
 type Props = {
   onStart: (homeTeam: string, awayTeam: string, managedTeam: ManagedTeam) => void;
+  autoSaveName?: string;
+  onResume?: () => void;
 };
 
-const NewGameDialog: React.FunctionComponent<Props> = ({ onStart }) => {
+const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [teams, setTeams] = React.useState({ al: AL_FALLBACK, nl: NL_FALLBACK });
   const [mode, setMode] = React.useState<MatchupMode>("interleague");
@@ -38,7 +42,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart }) => {
       .catch(() => {});
   }, []);
 
-  const homeList = mode === "nl" ? teams.nl : teams.al;
+  const homeList =
+    mode === "interleague"
+      ? homeLeague === "al"
+        ? teams.al
+        : teams.nl
+      : mode === "nl"
+        ? teams.nl
+        : teams.al;
   const awayList =
     mode === "interleague"
       ? homeLeague === "al"
@@ -95,6 +106,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart }) => {
   return (
     <Dialog ref={ref} onCancel={(e) => e.preventDefault()}>
       <Title>⚾ New Game</Title>
+      {onResume && autoSaveName && (
+        <>
+          <ResumeButton type="button" onClick={onResume}>
+            ▶ Resume: {autoSaveName}
+          </ResumeButton>
+          <Divider>— or start a new game —</Divider>
+        </>
+      )}
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <SectionLabel>Matchup</SectionLabel>

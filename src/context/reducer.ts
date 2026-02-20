@@ -84,7 +84,10 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
   const log = createLogger(dispatchLogger);
 
   return function reducer(state: State, action: GameAction): State {
-    if (state.gameOver && !["setTeams", "nextInning", "reset"].includes(action.type)) {
+    if (
+      state.gameOver &&
+      !["setTeams", "nextInning", "reset", "restore_game"].includes(action.type)
+    ) {
       return state;
     }
 
@@ -225,6 +228,8 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
         const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
         return { ...state, defensiveShift: shiftOn, pendingDecision: null, decisionLog };
       }
+      case "restore_game":
+        return action.payload as State;
       default:
         throw new Error(`No such reducer type as ${action.type}`);
     }

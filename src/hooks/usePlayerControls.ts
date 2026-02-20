@@ -6,27 +6,23 @@ import { appLog } from "@utils/logger";
 import { useShareReplay } from "./useShareReplay";
 
 interface PlayerControlsArgs {
-  managerMode: boolean;
   setManagerMode: (v: boolean) => void;
   announcementVolume: number;
   setAnnouncementVolumeState: (v: number) => void;
   alertVolume: number;
   setAlertVolumeState: (v: number) => void;
-  decisionLog: string[];
   dispatchLog: (action: LogAction) => void;
 }
 
 export const usePlayerControls = ({
-  managerMode,
   setManagerMode,
   announcementVolume,
   setAnnouncementVolumeState,
   alertVolume,
   setAlertVolumeState,
-  decisionLog,
   dispatchLog,
 }: PlayerControlsArgs) => {
-  const { handleShareReplay } = useShareReplay({ managerMode, decisionLog, dispatchLog });
+  const { handleShareReplay } = useShareReplay({ dispatchLog });
 
   const [notifPermission, setNotifPermission] = React.useState<
     NotificationPermission | "unavailable"
