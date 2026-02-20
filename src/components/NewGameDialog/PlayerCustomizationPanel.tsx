@@ -59,6 +59,10 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
       value = isNaN(n) ? undefined : clampMod(n);
     }
     const updated: PlayerCustomization = { ...current, [field]: value };
+    // Remove keys with undefined values to keep the override object sparse
+    (Object.keys(updated) as (keyof PlayerCustomization)[]).forEach((k) => {
+      if (updated[k] === undefined) delete updated[k];
+    });
     onActiveChange({ ...activeOverrides, [playerId]: updated });
   };
 
@@ -90,32 +94,30 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
           <PlayerList>
             {allPlayers.map((player) =>
               player.isPitcher ? (
-                <React.Fragment key={player.id}>
-                  <PitcherRow>
-                    <PosTag>{player.position}</PosTag>
-                    <NicknameInput
-                      type="text"
-                      placeholder="Nickname"
-                      maxLength={20}
-                      value={getNick(player.id)}
-                      onChange={(e) => updateField(player.id, "nickname", e.target.value)}
-                      aria-label={`${player.position} nickname`}
-                    />
-                    {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
-                      <ModLabel key={field}>
-                        {["CTL", "VEL", "STM"][i]}
-                        <ModInput
-                          type="number"
-                          min={MOD_MIN}
-                          max={MOD_MAX}
-                          value={getNum(player.id, field)}
-                          onChange={(e) => updateField(player.id, field, e.target.value)}
-                          aria-label={`${player.position} ${["CTL", "VEL", "STM"][i]}`}
-                        />
-                      </ModLabel>
-                    ))}
-                  </PitcherRow>
-                </React.Fragment>
+                <PitcherRow key={player.id}>
+                  <PosTag>{player.position}</PosTag>
+                  <NicknameInput
+                    type="text"
+                    placeholder="Nickname"
+                    maxLength={20}
+                    value={getNick(player.id)}
+                    onChange={(e) => updateField(player.id, "nickname", e.target.value)}
+                    aria-label={`${player.position} nickname`}
+                  />
+                  {(["controlMod", "velocityMod", "staminaMod"] as const).map((field, i) => (
+                    <ModLabel key={field}>
+                      {["CTL", "VEL", "STM"][i]}
+                      <ModInput
+                        type="number"
+                        min={MOD_MIN}
+                        max={MOD_MAX}
+                        value={getNum(player.id, field)}
+                        onChange={(e) => updateField(player.id, field, e.target.value)}
+                        aria-label={`${player.position} ${["CTL", "VEL", "STM"][i]}`}
+                      />
+                    </ModLabel>
+                  ))}
+                </PitcherRow>
               ) : (
                 <PlayerRow key={player.id}>
                   <PosTag>{player.position}</PosTag>

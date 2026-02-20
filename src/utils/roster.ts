@@ -29,10 +29,11 @@ const POSITION_NAMES: Record<string, string> = {
  * Player IDs are stable as long as the team name doesn't change.
  */
 export const generateRoster = (teamName: string): Roster => {
-  const slug = teamName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
+  const slug =
+    teamName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "") || "team";
   const batters: Player[] = BATTING_POSITIONS.map((pos, i) => ({
     id: `${slug}_b${i}`,
     name: POSITION_NAMES[pos] ?? pos,
