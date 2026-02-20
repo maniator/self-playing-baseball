@@ -1,7 +1,12 @@
 import * as React from "react";
 
 import DecisionPanel from "@components/DecisionPanel";
+import InstructionsModal from "@components/InstructionsModal";
 import { Strategy } from "@context/index";
+
+type Props = {
+  onNewGame?: () => void;
+};
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
@@ -17,9 +22,8 @@ import {
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
-const GameControls: React.FunctionComponent = () => {
+const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   const {
-    dispatch,
     autoPlay,
     speed,
     setSpeed,
@@ -52,9 +56,7 @@ const GameControls: React.FunctionComponent = () => {
             Batter Up!
           </Button>
         )}
-        {gameOver && (
-          <NewGameButton onClick={() => dispatch({ type: "reset" })}>New Game</NewGameButton>
-        )}
+        {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
@@ -91,6 +93,7 @@ const GameControls: React.FunctionComponent = () => {
             />
           )}
         </AutoPlayGroup>
+        <InstructionsModal />
       </Controls>
       {autoPlay && managerMode && <DecisionPanel strategy={strategy} />}
     </>

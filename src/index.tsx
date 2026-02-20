@@ -17,4 +17,4 @@ if ("serviceWorker" in navigator) {
     .catch((err) => appLog.error("SW registration failed:", err));
 }
 
-createRoot(document.getElementById("game")!).render(<Game homeTeam="Yankees" awayTeam="Mets" />);
+createRoot(document.getElementById("game")!).render(<Game />);

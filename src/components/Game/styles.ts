@@ -19,29 +19,6 @@ export const GameDiv = styled.main`
   }
 `;
 
-export const GameInfo = styled.div`
-  padding: 15px 0;
-
-  & > div {
-    padding: 5px 0;
-  }
-
-  @media (max-width: 800px) {
-    margin-bottom: 8px;
-  }
-`;
-
-export const Input = styled.input`
-  background: #000;
-  color: #fff;
-  width: 120px;
-  margin: 0 5px;
-  border: 1px solid #555;
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: inherit;
-`;
-
 export const GameBody = styled.div`
   display: flex;
   gap: 20px;
