@@ -73,6 +73,9 @@ export async function fetchMlbTeams(): Promise<{ al: MlbTeam[]; nl: MlbTeam[] }>
   }
   try {
     const resp = await fetch("https://statsapi.mlb.com/api/v1/teams?sportId=1");
+    if (!resp.ok) {
+      throw new Error(`MLB teams request failed with status ${resp.status}`);
+    }
     const data = (await resp.json()) as { teams: ApiTeam[] };
     const sort = (a: MlbTeam, b: MlbTeam) => a.name.localeCompare(b.name);
     const toTeam = (t: ApiTeam): MlbTeam => ({
@@ -89,10 +92,9 @@ export async function fetchMlbTeams(): Promise<{ al: MlbTeam[]; nl: MlbTeam[] }>
       .map(toTeam)
       .sort(sort);
     if (al.length === 0 || nl.length === 0) {
-      // If league filtering yields no teams for either league, treat as an error so we can fall back.
       throw new Error("MLB teams data missing league information");
     }
-    if (al.length > 0 && nl.length > 0) saveCache(al, nl);
+    saveCache(al, nl);
     return { al, nl };
   } catch {
     if (cached) return { al: cached.al, nl: cached.nl };

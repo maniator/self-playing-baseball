@@ -29,7 +29,7 @@ describe("fetchMlbTeams", () => {
     ];
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ teams: mockTeams }) }),
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ teams: mockTeams }) }),
     );
 
     const result = await fetchMlbTeams();
@@ -73,10 +73,11 @@ describe("fetchMlbTeams", () => {
 
     const freshTeams = [
       { id: 147, name: "New York Yankees", abbreviation: "NYY", league: { id: 103 } },
+      { id: 121, name: "New York Mets", abbreviation: "NYM", league: { id: 104 } },
     ];
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ teams: freshTeams }) }),
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ teams: freshTeams }) }),
     );
 
     const result = await fetchMlbTeams();
@@ -100,10 +101,17 @@ describe("fetchMlbTeams", () => {
   it("does not save cache when API returns empty leagues", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn().mockResolvedValue({ json: () => Promise.resolve({ teams: [] }) }),
+      vi.fn().mockResolvedValue({ ok: true, json: () => Promise.resolve({ teams: [] }) }),
     );
     await fetchMlbTeams();
     expect(localStorage.getItem(CACHE_KEY)).toBeNull();
+  });
+
+  it("returns fallback data when API returns non-2xx status", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+    const result = await fetchMlbTeams();
+    expect(result.al).toEqual(AL_FALLBACK);
+    expect(result.nl).toEqual(NL_FALLBACK);
   });
 
   it("AL_FALLBACK has 15 teams", () => {

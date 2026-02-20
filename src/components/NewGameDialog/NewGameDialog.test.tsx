@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import { AL_FALLBACK, NL_FALLBACK } from "@utils/mlbTeams";
+import * as mlbTeamsModule from "@utils/mlbTeams";
 
 vi.mock("@utils/mlbTeams", async (importOriginal) => {
   const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
@@ -135,5 +136,17 @@ describe("NewGameDialog", () => {
     fireEvent.click(screen.getByLabelText(/nl vs nl/i));
     const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
     expect(homeSelect.options).toHaveLength(NL_FALLBACK.length);
+  });
+
+  it("renders with fallback teams when fetchMlbTeams rejects", async () => {
+    vi.mocked(mlbTeamsModule.fetchMlbTeams).mockRejectedValueOnce(new Error("network error"));
+    render(<NewGameDialog onStart={noop} />);
+    // Fallback data is loaded synchronously at init, so the dialog should render immediately
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    // AL fallback home options (interleague default)
+    expect(Array.from(homeSelect.options).map((o) => o.value)).toContain("New York Yankees");
+    // NL fallback away options (interleague default with AL home)
+    expect(Array.from(awaySelect.options).map((o) => o.value)).toContain("New York Mets");
   });
 });

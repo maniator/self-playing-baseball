@@ -51,15 +51,13 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart }) => {
     if (homeList.length > 0 && !homeList.some((t) => t.name === home)) {
       setHome(homeList[0].name);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeList]);
+  }, [homeList, home]);
 
   React.useEffect(() => {
     if (awayList.length > 0 && !awayList.some((t) => t.name === away)) {
       setAway(awayList[0].name);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [awayList]);
+  }, [awayList, away]);
 
   const handleModeChange = (m: MatchupMode) => {
     setMode(m);
@@ -70,8 +68,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart }) => {
       setHome(teams.nl[0]?.name ?? "");
       setAway(teams.nl[1]?.name ?? teams.nl[0]?.name ?? "");
     } else {
-      setHome(homeLeague === "al" ? (teams.al[0]?.name ?? "") : (teams.nl[0]?.name ?? ""));
-      setAway(homeLeague === "al" ? (teams.nl[0]?.name ?? "") : (teams.al[0]?.name ?? ""));
+      const homeLeagueList = homeLeague === "al" ? teams.al : teams.nl;
+      const awayLeagueList = homeLeague === "al" ? teams.nl : teams.al;
+      const homeIsValid = homeLeagueList.some((t) => t.name === home);
+      const awayIsValid = awayLeagueList.some((t) => t.name === away);
+      const nextHome = homeIsValid ? home : (homeLeagueList[0]?.name ?? "");
+      const nextAway = awayIsValid ? away : (awayLeagueList[0]?.name ?? "");
+      setHome(nextHome);
+      setAway(nextAway);
     }
   };
 
