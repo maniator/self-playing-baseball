@@ -5,7 +5,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import getRandomInt from "./getRandomInt";
-import { buildReplayUrl, getSeed, initSeedFromUrl, random } from "./rng";
+import { buildReplayUrl, getDecisionsFromUrl, getSeed, initSeedFromUrl, random } from "./rng";
 
 // rng keeps module-level state, so we cannot easily reinitialise between tests.
 // Instead we test that:
@@ -184,7 +184,6 @@ describe("rng.ts — isolated module instances", () => {
 // ---------------------------------------------------------------------------
 // decisions URL encoding round-trip
 // ---------------------------------------------------------------------------
-import { buildReplayUrl, getDecisionsFromUrl } from "./rng";
 
 describe("decisions URL encoding round-trip", () => {
   it("buildReplayUrl encodes decisions and getDecisionsFromUrl decodes them correctly", () => {

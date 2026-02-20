@@ -27,7 +27,7 @@ export const usePitchDispatch = (
     if (currentState.gameOver) return;
     if (managerModeRef.current && currentState.pendingDecision) return;
 
-    // Defensive shift: offered once per at-bat when the managed team is FIELDING
+    // Defensive shift: offered once per half-inning when the managed team is FIELDING
     if (
       managerModeRef.current &&
       !skipDecisionRef.current &&
