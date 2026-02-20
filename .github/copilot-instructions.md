@@ -1,8 +1,8 @@
-# Copilot Instructions for self-playing-baseball
+# Copilot Instructions for Ballgame (self-playing-baseball)
 
 ## Project Overview
 
-This is a **self-playing baseball game simulator** built as a single-page React/TypeScript web application. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation.
+**Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
 **Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4.
 
@@ -30,6 +30,13 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     ├── index.scss                  # Global styles + mobile media queries
     ├── index.tsx                   # React entry: initSeedFromUrl, registers sw.ts, createRoot
     ├── sw.ts                       # Service worker: caches bundles, handles notificationclick
+    ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
+    ├── images/
+    │   ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
+    │   ├── baseball-192.png        # PWA icon 192×192 (generated from baseball.svg)
+    │   ├── baseball-512.png        # PWA icon 512×512 / maskable (generated from baseball.svg)
+    │   ├── baseball-180.png        # Apple touch icon 180×180
+    │   └── favicon-32.png          # Fallback favicon 32×32
     ├── constants/
     │   ├── hitTypes.ts             # Hit enum: Single, Double, Triple, Homerun, Walk
     │   └── pitchTypes.ts           # PitchType enum + selectPitchType, pitchName helpers
