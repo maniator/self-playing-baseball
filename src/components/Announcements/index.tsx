@@ -61,7 +61,7 @@ const Log = styled.div`
   }
 `;
 
-/** Pixels from the bottom edge within which auto-scroll fires. */
+/** Pixels from the top edge within which auto-scroll to newest entry fires. */
 const SCROLL_THRESHOLD = 60;
 
 const Announcements: React.FunctionComponent = () => {
@@ -73,9 +73,10 @@ const Announcements: React.FunctionComponent = () => {
     if (!expanded) return;
     const el = areaRef.current;
     if (!el) return;
-    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
-    if (isNearBottom) {
-      el.scrollTop = el.scrollHeight;
+    // log is newest-first; scroll to top only when the user is already near it
+    const isNearTop = el.scrollTop < SCROLL_THRESHOLD;
+    if (isNearTop) {
+      el.scrollTop = 0;
     }
   }, [log, expanded]);
 

@@ -10,8 +10,8 @@ export const FieldWrapper = styled.div`
   flex-shrink: 0;
 
   ${mq.mobile} {
-    height: 140px;
     flex: 1;
+    height: auto;
   }
 `;
 
@@ -21,16 +21,16 @@ export const OutfieldDiv = styled.div`
   background: #aac32b;
   border-radius: 100% 0 0 0;
   position: absolute;
-  right: 0;
+  /* Centre the field horizontally so it doesn't hug one edge in wide containers */
+  left: 50%;
   bottom: 65px;
-  transform: rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
 
   ${mq.mobile} {
     height: 140px;
     width: 140px;
     top: 0;
-    right: auto;
-    left: 50%;
+    bottom: auto;
     transform: translateX(-50%) translateY(-20%) rotate(45deg);
   }
 `;
