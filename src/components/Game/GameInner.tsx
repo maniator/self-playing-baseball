@@ -18,13 +18,11 @@ const GameInner: React.FunctionComponent = () => {
   const [gameStarted, setGameStarted] = React.useState(false);
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
-  const [, setAutoPlay] = useLocalStorage("autoPlay", false);
 
   const handleStart = (homeTeam: string, awayTeam: string, managedTeam: 0 | 1 | null) => {
     setManagerMode(managedTeam !== null);
     if (managedTeam !== null) {
       setManagedTeam(managedTeam);
-      setAutoPlay(true);
     }
     dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });

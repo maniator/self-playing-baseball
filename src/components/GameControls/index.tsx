@@ -46,7 +46,6 @@ const GameControls: React.FunctionComponent<Props> = ({
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
-    handleAutoPlayChange,
     handleAnnouncementVolumeChange,
     handleAlertVolumeChange,
     handleToggleAnnouncementMute,
@@ -70,10 +69,6 @@ const GameControls: React.FunctionComponent<Props> = ({
         {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
-          <ToggleLabel>
-            <input type="checkbox" checked={autoPlay} onChange={handleAutoPlayChange} />
-            Auto-play
-          </ToggleLabel>
           <ToggleLabel>
             Speed
             <Select value={speed} onChange={(e) => setSpeed(parseInt(e.target.value, 10))}>

@@ -38,7 +38,7 @@ export const useGameControls = (gameStarted: boolean) => {
     defensiveShiftOffered,
   }: ContextValue = useGameContext();
 
-  const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
+  const [autoPlay, setAutoPlay] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
   const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);

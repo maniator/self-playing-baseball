@@ -47,9 +47,15 @@ describe("GameControls", () => {
     expect(screen.getByRole("button", { name: /share replay/i })).toBeInTheDocument();
   });
 
-  it("shows auto-play checkbox", () => {
-    renderWithContext(<GameControls />);
-    expect(screen.getByRole("checkbox", { name: /auto-play/i })).toBeInTheDocument();
+  it("shows Manager Mode checkbox after game starts (autoplay enabled)", () => {
+    renderWithContext(<GameControls gameStarted={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
+  });
+
+  it("does NOT show Manager Mode checkbox before game starts", () => {
+    renderWithContext(<GameControls gameStarted={false} />);
+    expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
   });
 
   it("clicking Batter Up! calls onBatterUp callback", () => {
@@ -77,18 +83,6 @@ describe("GameControls", () => {
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
-  it("shows Manager Mode checkbox when autoplay is on", () => {
-    localStorage.setItem("autoPlay", "true");
-    renderWithContext(<GameControls />);
-    expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
-  });
-
-  it("does NOT show Manager Mode checkbox when autoplay is off", () => {
-    localStorage.setItem("autoPlay", "false");
-    renderWithContext(<GameControls />);
-    expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
-  });
-
   it("shows volume sliders", () => {
     renderWithContext(<GameControls />);
     expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeInTheDocument();
@@ -100,26 +94,12 @@ describe("GameControls", () => {
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
-  it("toggling auto-play on reveals Manager Mode checkbox", () => {
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("checkbox", { name: /auto-play/i }));
-    expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
-  });
-
-  it("toggling auto-play off turns Manager Mode off and hides its checkbox", () => {
-    localStorage.setItem("autoPlay", "true");
-    localStorage.setItem("managerMode", "true");
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("checkbox", { name: /auto-play/i }));
-    expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
-  });
-
   it("enabling Manager Mode requests notification permission", () => {
-    localStorage.setItem("autoPlay", "true");
     (Notification as any).permission = "default";
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).requestPermission = requestPermission;
-    renderWithContext(<GameControls />);
+    renderWithContext(<GameControls gameStarted={false} />);
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: /manager mode/i }));
     expect(requestPermission).toHaveBeenCalled();
     (Notification as any).permission = "granted";
@@ -162,9 +142,12 @@ describe("GameControls", () => {
   });
 
   it("renders team and strategy selectors in manager mode", () => {
-    localStorage.setItem("autoPlay", "true");
     localStorage.setItem("managerMode", "true");
-    renderWithContext(<GameControls />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
+    renderWithContext(
+      <GameControls gameStarted={false} />,
+      makeContextValue({ teams: ["Yankees", "Red Sox"] }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Yankees")).toBeInTheDocument();
