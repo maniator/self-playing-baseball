@@ -26,13 +26,7 @@ type Props = {
   onResume?: () => void;
 };
 
-const NewGameDialog: React.FunctionComponent<Props> = ({
-  initialHome,
-  initialAway,
-  onStart,
-  autoSaveName,
-  onResume,
-}) => {
+const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [teams, setTeams] = React.useState({ al: AL_FALLBACK, nl: NL_FALLBACK });
   const [mode, setMode] = React.useState<MatchupMode>("interleague");

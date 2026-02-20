@@ -8,7 +8,7 @@ import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog from "@components/NewGameDialog";
-import { useGameContext } from "@context/index";
+import { type Strategy, useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
 import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
 
@@ -23,10 +23,11 @@ const getMatchedAutoSave = () => {
 };
 
 const GameInner: React.FunctionComponent = () => {
-  const { dispatch, teams } = useGameContext();
+  const { dispatch } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [, setAutoPlay] = useLocalStorage("autoPlay", false);
+  const [, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
   // Check for a resumable auto-save once on mount.
   const [autoSave] = React.useState(getMatchedAutoSave);
@@ -37,8 +38,10 @@ const GameInner: React.FunctionComponent = () => {
     if (autoSave) {
       restoreSaveRng(autoSave);
       dispatch({ type: "restore_game", payload: autoSave.state });
+      setStrategy(autoSave.setup.strategy);
+      setManagedTeam(autoSave.setup.managedTeam);
     }
-  }, [dispatch, autoSave]);
+  }, [dispatch, autoSave, setStrategy, setManagedTeam]);
 
   const handleResume = () => {
     // State is already restored by the effect above; just close the dialog.
@@ -67,8 +70,6 @@ const GameInner: React.FunctionComponent = () => {
     <GameDiv>
       {dialogOpen && (
         <NewGameDialog
-          initialHome={teams[1] || DEFAULT_HOME_TEAM}
-          initialAway={teams[0] || DEFAULT_AWAY_TEAM}
           onStart={handleStart}
           autoSaveName={autoSave?.name}
           onResume={autoSave ? handleResume : undefined}

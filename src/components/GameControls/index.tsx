@@ -65,6 +65,10 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
           managedTeam={managedTeam}
           currentSaveId={currentSaveId}
           onSaveIdChange={setCurrentSaveId}
+          onSetupRestore={(setup) => {
+            setStrategy(setup.strategy);
+            setManagedTeam(setup.managedTeam);
+          }}
         />
         <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
         <AutoPlayGroup>

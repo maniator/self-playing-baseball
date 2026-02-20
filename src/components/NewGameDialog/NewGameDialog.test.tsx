@@ -80,19 +80,13 @@ describe("NewGameDialog", () => {
   });
 
   it("does NOT show a Resume button when autoSaveName/onResume are not provided", () => {
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={noop} />);
+    render(<NewGameDialog onStart={noop} />);
     expect(screen.queryByText(/▶ Resume/)).not.toBeInTheDocument();
   });
 
   it("shows Resume button when autoSaveName and onResume are provided", () => {
     render(
-      <NewGameDialog
-        initialHome="A"
-        initialAway="B"
-        onStart={noop}
-        autoSaveName="Auto-save — A vs B · Inning 3"
-        onResume={noop}
-      />,
+      <NewGameDialog onStart={noop} autoSaveName="Auto-save — A vs B · Inning 3" onResume={noop} />,
     );
     expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
     expect(screen.getByText(/inning 3/i)).toBeInTheDocument();
@@ -102,8 +96,6 @@ describe("NewGameDialog", () => {
     const onResume = vi.fn();
     render(
       <NewGameDialog
-        initialHome="A"
-        initialAway="B"
         onStart={noop}
         autoSaveName="Auto-save — A vs B · Inning 5"
         onResume={onResume}
@@ -116,15 +108,7 @@ describe("NewGameDialog", () => {
   });
 
   it("shows the divider when a resume option is present", () => {
-    render(
-      <NewGameDialog
-        initialHome="A"
-        initialAway="B"
-        onStart={noop}
-        autoSaveName="My Save"
-        onResume={noop}
-      />,
-    );
+    render(<NewGameDialog onStart={noop} autoSaveName="My Save" onResume={noop} />);
     expect(screen.getByText(/or start a new game/i)).toBeInTheDocument();
   });
 });

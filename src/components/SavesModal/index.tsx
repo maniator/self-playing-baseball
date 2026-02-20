@@ -12,6 +12,7 @@ import {
   loadSaves,
   restoreSaveRng,
   saveGame,
+  type SaveSetup,
   type SaveSlot,
 } from "@utils/saves";
 
@@ -39,6 +40,7 @@ interface Props {
   managedTeam: 0 | 1;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
+  onSetupRestore?: (setup: SaveSetup) => void;
 }
 
 const formatDate = (ts: number): string =>
@@ -62,6 +64,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
   managedTeam,
   currentSaveId,
   onSaveIdChange,
+  onSetupRestore,
 }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const { dispatch, dispatchLog, teams, inning, pitchKey, decisionLog, ...gameState } =
@@ -105,7 +108,14 @@ const SavesModal: React.FunctionComponent<Props> = ({
 
   const handleLoad = (slot: SaveSlot) => {
     restoreSaveRng(slot);
+    // Update the URL seed so "Share seed" reflects the loaded game's seed.
+    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("seed", slot.seed);
+      window.history.replaceState(null, "", url.toString());
+    }
     dispatch({ type: "restore_game", payload: slot.state });
+    onSetupRestore?.(slot.setup);
     onSaveIdChange(slot.id);
     log(`Loaded: ${slot.name}`);
     close();
