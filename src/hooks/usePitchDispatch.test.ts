@@ -143,6 +143,209 @@ describe("usePitchDispatch", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("dispatches hit with contact strategy — Triple (hitRoll 8–9)", () => {
+    const dispatch = vi.fn();
+    const refs = makeRefs({ strategy: "contact" });
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0) // pitch type
+      .mockReturnValueOnce(0.999) // main roll >= 920 → hit
+      .mockReturnValueOnce(0.09); // hitRoll = 9, 8 <= 9 < 10 → Triple
+
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+    );
+  });
+
+  it("dispatches hit with contact strategy — Double (hitRoll 10–27)", () => {
+    const dispatch = vi.fn();
+    const refs = makeRefs({ strategy: "contact" });
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0)
+      .mockReturnValueOnce(0.999)
+      .mockReturnValueOnce(0.19); // hitRoll = 19, 10 <= 19 < 28 → Double
+
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+    );
+  });
+
+  it("dispatches hit with default strategy — Triple (hitRoll 13–14)", () => {
+    const dispatch = vi.fn();
+    const refs = makeRefs({ strategy: "balanced" });
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0)
+      .mockReturnValueOnce(0.999)
+      .mockReturnValueOnce(0.14); // hitRoll = 14, 13 <= 14 < 15 → Triple
+
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+    );
+  });
+
+  it("dispatches hit with default strategy — Double (hitRoll 15–34)", () => {
+    const dispatch = vi.fn();
+    const refs = makeRefs({ strategy: "balanced" });
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0)
+      .mockReturnValueOnce(0.999)
+      .mockReturnValueOnce(0.25); // hitRoll = 25, 15 <= 25 < 35 → Double
+
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+    );
+  });
+});
+
+describe("usePitchDispatch — power strategy hits", () => {
+  const makeHitRefs = (hitRoll: number) => {
+    const refs = makeRefs({ strategy: "power" });
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0) // pitch type
+      .mockReturnValueOnce(0.999) // main roll >= 920 → hit
+      .mockReturnValueOnce(hitRoll / 100);
+    return refs;
+  };
+
+  const dispatchAndGet = (refs: ReturnType<typeof makeRefs>) => {
+    const dispatch = vi.fn();
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    return dispatch;
+  };
+
+  it("power Homerun (hitRoll < 20)", () => {
+    const dispatch = dispatchAndGet(makeHitRefs(10));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
+    );
+  });
+
+  it("power Triple (hitRoll 20–22)", () => {
+    const dispatch = dispatchAndGet(makeHitRefs(21));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+    );
+  });
+
+  it("power Double (hitRoll 23–42)", () => {
+    const dispatch = dispatchAndGet(makeHitRefs(33));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+    );
+  });
+
+  it("power Single (hitRoll >= 43)", () => {
+    const dispatch = dispatchAndGet(makeHitRefs(55));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 0 }) }),
+    );
+  });
+});
+
+describe("usePitchDispatch — suppressNextDecision", () => {
+  it("dispatches clear_suppress_decision when suppressNextDecision is true", () => {
+    const dispatch = vi.fn();
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5);
+    const refs = makeRefs({
+      managerMode: true,
+      managedTeam: 0,
+      snap: {
+        atBat: 0,
+        balls: 0,
+        strikes: 0,
+        baseLayout: [0, 0, 0] as [number, number, number],
+        outs: 0,
+        suppressNextDecision: true,
+        defensiveShiftOffered: true, // already offered, so shift prompt is skipped
+      },
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
+  });
+});
+
+describe("usePitchDispatch — skip decision", () => {
   it("does NOT re-offer bunt after skip — skipDecisionRef stays set until new batter", () => {
     const dispatch = vi.fn();
     const refs = makeRefs({

@@ -355,6 +355,101 @@ describe("DecisionPanel — service worker notification paths", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
+  it("handles ph_* and shift_on SW notification actions", () => {
+    const dispatch = vi.fn();
+    renderWithContext(
+      <DecisionPanel strategy="balanced" />,
+      makeContextValue({ pendingDecision: { kind: "pinch_hitter" }, dispatch }),
+    );
+    const handler = getRegisteredMessageHandler();
+    const cases = [
+      { action: "ph_contact", expected: { type: "set_pinch_hitter_strategy", payload: "contact" } },
+      { action: "ph_patient", expected: { type: "set_pinch_hitter_strategy", payload: "patient" } },
+      { action: "ph_power", expected: { type: "set_pinch_hitter_strategy", payload: "power" } },
+      {
+        action: "ph_aggressive",
+        expected: { type: "set_pinch_hitter_strategy", payload: "aggressive" },
+      },
+      {
+        action: "ph_balanced",
+        expected: { type: "set_pinch_hitter_strategy", payload: "balanced" },
+      },
+      { action: "shift_on", expected: { type: "set_defensive_shift", payload: true } },
+    ];
+    for (const { action, expected } of cases) {
+      dispatch.mockClear();
+      act(() => {
+        handler({ data: { type: "NOTIFICATION_ACTION", action, payload: {} } } as MessageEvent);
+      });
+      expect(dispatch).toHaveBeenCalledWith(expected);
+    }
+  });
+
+  it("handles shift_off SW notification action", () => {
+    const dispatch = vi.fn();
+    renderWithContext(
+      <DecisionPanel strategy="balanced" />,
+      makeContextValue({ pendingDecision: { kind: "defensive_shift" }, dispatch }),
+    );
+    const handler = getRegisteredMessageHandler();
+    act(() => {
+      handler({
+        data: { type: "NOTIFICATION_ACTION", action: "shift_off", payload: {} },
+      } as MessageEvent);
+    });
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_defensive_shift", payload: false });
+  });
+
+  it("re-sends notification on visibilitychange when tab becomes hidden", async () => {
+    await act(async () => {
+      renderWithContext(
+        <DecisionPanel strategy="balanced" />,
+        makeContextValue({ pendingDecision: { kind: "bunt" } }),
+      );
+    });
+    mockReg.showNotification.mockClear();
+    // Simulate the tab becoming hidden
+    Object.defineProperty(document, "hidden", { value: true, configurable: true });
+    act(() => {
+      document.dispatchEvent(new Event("visibilitychange"));
+    });
+    // Give the SW promise time to settle
+    await act(async () => {
+      await new Promise((r) => setTimeout(r, 10));
+    });
+    Object.defineProperty(document, "hidden", { value: false, configurable: true });
+    expect(mockReg.showNotification).toHaveBeenCalled();
+  });
+});
+
+describe("DecisionPanel — closes notification", () => {
+  const mockNotifs = [{ close: vi.fn() }];
+  const mockReg = {
+    showNotification: vi.fn().mockResolvedValue(undefined),
+    getNotifications: vi.fn().mockResolvedValue(mockNotifs),
+  };
+  const mockSW = {
+    ready: Promise.resolve(mockReg),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+  };
+
+  beforeAll(() => {
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: mockSW,
+      writable: true,
+      configurable: true,
+    });
+  });
+
+  afterAll(() => {
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+  });
+
   it("closes notification when decision is resolved (pendingDecision → null)", async () => {
     const { rerender } = renderWithContext(
       <DecisionPanel strategy="balanced" />,

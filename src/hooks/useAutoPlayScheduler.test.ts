@@ -89,4 +89,53 @@ describe("useAutoPlayScheduler", () => {
     vi.advanceTimersByTime(150);
     expect(handleClick).toHaveBeenCalled();
   });
+
+  it("polls when speech is pending (not muted) then calls handleClick once speech clears", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending")
+      .mockReturnValueOnce(true) // first tick: still speaking
+      .mockReturnValue(false); // second tick: done
+
+    renderHook(() =>
+      useAutoPlayScheduler(
+        true,
+        null,
+        false,
+        { current: true } as any,
+        { current: false } as any, // NOT muted → speech check applies
+        { current: 100 } as any,
+        { current: handleClick } as any,
+        { current: makeSnap() } as any,
+        { current: false } as any,
+      ),
+    );
+    vi.advanceTimersByTime(100);
+    expect(handleClick).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(300);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("adds 1500ms pause when muted and betweenInningsPause is set", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+    const betweenInningsPauseRef = { current: true };
+
+    renderHook(() =>
+      useAutoPlayScheduler(
+        true,
+        null,
+        false,
+        { current: true } as any,
+        { current: true } as any, // muted
+        { current: 100 } as any,
+        { current: handleClick } as any,
+        { current: makeSnap() } as any,
+        betweenInningsPauseRef as any,
+      ),
+    );
+    vi.advanceTimersByTime(100);
+    expect(handleClick).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1500);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
 });

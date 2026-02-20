@@ -30,7 +30,7 @@ function applyEntry(
       if (parts.length < 4) break;
       const base = Number(parts[2]);
       const successPct = Number(parts[3]);
-      if ((base !== 0 && base !== 1) || !Number.isFinite(successPct)) break;
+      if (![0, 1].includes(base) || !Number.isFinite(successPct)) break;
       dispatch({
         type: "steal_attempt",
         payload: { base: base as 0 | 1, successPct },

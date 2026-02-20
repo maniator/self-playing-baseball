@@ -1,7 +1,6 @@
 import * as React from "react";
 
-import { useGameContext } from "@context/index";
-import { Strategy } from "@context/index";
+import { Strategy, useGameContext } from "@context/index";
 import { playDecisionChime } from "@utils/announce";
 import { appLog } from "@utils/logger";
 

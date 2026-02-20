@@ -116,6 +116,31 @@ describe("showManagerNotification", () => {
       expect.objectContaining({ body: "Sacrifice bunt opportunity", tag: "manager-decision" }),
     );
   });
+  it("falls back to plain Notification when SW showNotification rejects", async () => {
+    (Notification as unknown as { permission: NotificationPermission }).permission = "granted";
+    const showNotification = vi.fn().mockRejectedValue(new Error("SW failed"));
+    const mockReg = { showNotification };
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: { ready: Promise.resolve(mockReg) },
+      configurable: true,
+    });
+    showManagerNotification({ kind: "bunt" });
+    await new Promise((r) => setTimeout(r, 20));
+    // Notification constructor (plain fallback) should have been called
+    expect(Notification).toHaveBeenCalled();
+  });
+
+  it("uses plain Notification when serviceWorker is undefined (no-SW fallback)", () => {
+    (Notification as unknown as { permission: NotificationPermission }).permission = "granted";
+    // Redefine serviceWorker as a non-ready object so the SW path errors,
+    // triggering the plain-Notification fallback
+    Object.defineProperty(navigator, "serviceWorker", {
+      value: { ready: Promise.reject(new Error("no SW")) },
+      configurable: true,
+    });
+    // Just verify no throw — the fallback fires asynchronously
+    expect(() => showManagerNotification({ kind: "ibb" })).not.toThrow();
+  });
 });
 
 describe("closeManagerNotification", () => {

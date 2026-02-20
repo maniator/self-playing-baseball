@@ -87,4 +87,26 @@ describe("useShareReplay", () => {
     });
     expect(spy).toHaveBeenCalledWith(undefined);
   });
+
+  it("falls back to window.prompt when navigator.clipboard is unavailable", async () => {
+    Object.defineProperty(navigator, "clipboard", {
+      value: undefined,
+      writable: true,
+      configurable: true,
+    });
+    const promptSpy = vi.spyOn(window, "prompt").mockReturnValue(null);
+    vi.spyOn(rngModule, "buildReplayUrl").mockReturnValue("https://example.com?seed=xyz");
+    const dispatchLog = vi.fn();
+
+    const { result } = renderHook(() =>
+      useShareReplay({ managerMode: false, decisionLog: [], dispatchLog }),
+    );
+    act(() => {
+      result.current.handleShareReplay();
+    });
+    expect(promptSpy).toHaveBeenCalledWith(
+      "Copy this replay link:",
+      "https://example.com?seed=xyz",
+    );
+  });
 });

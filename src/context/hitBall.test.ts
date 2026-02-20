@@ -81,6 +81,51 @@ describe("hitBall — play log recording", () => {
   });
 });
 
+describe("hitBall — handleGrounder (ground ball out paths)", () => {
+  it("double play: runner on 1st, < 2 outs, DP roll < 65 → 2 outs recorded", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll >= 750 → pop-out zone
+      .mockReturnValueOnce(0.2) // ground ball check: 20 < 40 → handleGrounder
+      .mockReturnValueOnce(0.5); // DP check: 50 < 65 → double play
+    const { logs, log } = makeLogs();
+    const next = hitBall(Hit.Single, makeState({ baseLayout: [1, 0, 0], outs: 0 }), log);
+    expect(next.outs).toBe(2);
+    expect(logs.some((l) => l.includes("double play"))).toBe(true);
+  });
+
+  it("fielder's choice: runner on 1st, DP roll >= 65 → 1 out, batter safe at 1st", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone
+      .mockReturnValueOnce(0.2) // ground ball check → handleGrounder
+      .mockReturnValueOnce(0.7); // DP check: 70 >= 65 → fielder's choice
+    const { logs, log } = makeLogs();
+    const next = hitBall(Hit.Single, makeState({ baseLayout: [1, 0, 0], outs: 0 }), log);
+    expect(next.outs).toBe(1);
+    expect(next.baseLayout[0]).toBe(1);
+    expect(logs.some((l) => l.includes("fielder's choice"))).toBe(true);
+  });
+
+  it("simple ground out: no runner on 1st → out at first", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone
+      .mockReturnValueOnce(0.2); // ground ball check → handleGrounder (no runner, simple out)
+    const { logs, log } = makeLogs();
+    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 0], outs: 1 }), log);
+    expect(next.outs).toBe(2);
+    expect(logs.some((l) => l.includes("out at first"))).toBe(true);
+  });
+
+  it("power strategy: pop-out zone with roll < 15 → homerun override", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone (power threshold = 600)
+      .mockReturnValueOnce(0.1); // power homerun check: 10 < 15 → homerun
+    const { logs, log } = makeLogs();
+    const next = hitBall(Hit.Single, makeState({ score: [0, 0], atBat: 0 }), log, "power");
+    expect(next.score[0]).toBe(1);
+    expect(logs.some((l) => l.includes("Home Run"))).toBe(true);
+  });
+});
+
 describe("hitBall — inningRuns tracking", () => {
   it("records runs scored by team in the correct inning slot", () => {
     vi.spyOn(rngModule, "random").mockReturnValue(0);
