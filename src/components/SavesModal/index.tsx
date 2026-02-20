@@ -2,11 +2,12 @@ import * as React from "react";
 
 import type { Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import { getSeed } from "@utils/rng";
 import {
+  currentSeedStr,
   deleteSave,
   exportSave,
   importSave,
+  loadAutoSave,
   loadSaves,
   saveGame,
   type SaveSlot,
@@ -46,6 +47,14 @@ const formatDate = (ts: number): string =>
     minute: "2-digit",
   });
 
+const safeFilename = (slot: SaveSlot): string => {
+  const slug = slot.name
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase();
+  return `ballgame-${slug}.json`;
+};
+
 const SavesModal: React.FunctionComponent<Props> = ({
   strategy,
   managedTeam,
@@ -56,12 +65,16 @@ const SavesModal: React.FunctionComponent<Props> = ({
   const { dispatch, dispatchLog, teams, inning, pitchKey, decisionLog, ...gameState } =
     useGameContext();
   const [saves, setSaves] = React.useState<SaveSlot[]>([]);
+  const [autoSave, setAutoSave] = React.useState<SaveSlot | null>(null);
   const [importText, setImportText] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
 
   const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
 
-  const refresh = () => setSaves(loadSaves());
+  const refresh = () => {
+    setSaves(loadSaves());
+    setAutoSave(loadAutoSave());
+  };
 
   const open = () => {
     refresh();
@@ -70,7 +83,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
   const close = () => ref.current?.close();
 
   const handleSave = () => {
-    const seed = getSeed()?.toString(36) ?? "0";
+    const seed = currentSeedStr();
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
     const fullState = { ...gameState, teams, inning, pitchKey, decisionLog };
     const slot = saveGame({
@@ -106,7 +119,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `ballgame-save-${slot.id}.json`;
+    a.download = safeFilename(slot);
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -130,7 +143,10 @@ const SavesModal: React.FunctionComponent<Props> = ({
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => applyImport(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const result = ev.target?.result;
+      if (typeof result === "string") applyImport(result);
+    };
     reader.readAsText(file);
     e.target.value = "";
   };
@@ -158,6 +174,20 @@ const SavesModal: React.FunctionComponent<Props> = ({
         <SmallButton onClick={handleSave}>
           {currentSaveId ? "Update save" : "Save current game"}
         </SmallButton>
+
+        {autoSave && (
+          <>
+            <SectionHeading>Auto-save</SectionHeading>
+            <SlotList>
+              <SlotItem>
+                <SlotName title={autoSave.name}>{autoSave.name}</SlotName>
+                <SlotDate>{formatDate(autoSave.updatedAt)}</SlotDate>
+                <SmallButton onClick={() => handleLoad(autoSave)}>Load</SmallButton>
+                <SmallButton onClick={() => handleExport(autoSave)}>Export</SmallButton>
+              </SlotItem>
+            </SlotList>
+          </>
+        )}
 
         <SectionHeading>Saved games</SectionHeading>
         {saves.length === 0 ? (

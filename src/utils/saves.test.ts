@@ -1,18 +1,23 @@
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeState } from "@test/testHelpers";
+import * as rngModule from "@utils/rng";
 
 import {
+  AUTO_SAVE_KEY,
+  clearAutoSave,
   deleteSave,
   EXPORT_VERSION,
   exportSave,
   importSave,
+  loadAutoSave,
   loadSaves,
   MAX_SAVES,
   SAVE_SIGNING_KEY,
   saveGame,
   SAVES_KEY,
   type SaveSlot,
+  writeAutoSave,
 } from "./saves";
 
 const makeSlot = (
@@ -191,6 +196,72 @@ describe("saves utils", () => {
 
     it("SAVE_SIGNING_KEY is the expected constant", () => {
       expect(SAVE_SIGNING_KEY).toBe("ballgame:saves:v1");
+    });
+  });
+
+  describe("auto-save", () => {
+    beforeEach(() => {
+      vi.spyOn(rngModule, "getSeed").mockReturnValue(123456);
+    });
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("loadAutoSave returns null when nothing stored", () => {
+      expect(loadAutoSave()).toBeNull();
+    });
+
+    it("writeAutoSave persists to AUTO_SAVE_KEY", () => {
+      const state = makeState({
+        inning: 3,
+        pitchKey: 10,
+        teams: ["Sox", "Cubs"] as [string, string],
+      });
+      writeAutoSave(state, "balanced", 0);
+      expect(localStorage.getItem(AUTO_SAVE_KEY)).not.toBeNull();
+    });
+
+    it("loadAutoSave returns the written slot", () => {
+      const state = makeState({
+        inning: 4,
+        pitchKey: 20,
+        teams: ["Sox", "Cubs"] as [string, string],
+      });
+      writeAutoSave(state, "aggressive", 1);
+      const slot = loadAutoSave();
+      expect(slot?.id).toBe("autosave");
+      expect(slot?.seed).toBe((123456).toString(36));
+      expect(slot?.progress).toBe(20);
+      expect(slot?.setup.strategy).toBe("aggressive");
+      expect(slot?.setup.managedTeam).toBe(1);
+    });
+
+    it("writeAutoSave overwrites the previous auto-save", () => {
+      const stateA = makeState({ inning: 2 });
+      const stateB = makeState({ inning: 5 });
+      writeAutoSave(stateA, "balanced", 0);
+      writeAutoSave(stateB, "power", 1);
+      expect(loadAutoSave()?.setup.strategy).toBe("power");
+    });
+
+    it("clearAutoSave removes the auto-save", () => {
+      writeAutoSave(makeState(), "balanced", 0);
+      clearAutoSave();
+      expect(loadAutoSave()).toBeNull();
+    });
+
+    it("writeAutoSave does not affect the manual saves list", () => {
+      saveGame(makeSlot({ name: "Manual" }));
+      writeAutoSave(makeState(), "balanced", 0);
+      expect(loadSaves()).toHaveLength(1);
+      expect(loadSaves()[0].name).toBe("Manual");
+    });
+
+    it("auto-save name includes team names and inning", () => {
+      const state = makeState({ teams: ["Red Sox", "Yankees"] as [string, string], inning: 7 });
+      writeAutoSave(state, "contact", 0);
+      expect(loadAutoSave()?.name).toContain("Red Sox");
+      expect(loadAutoSave()?.name).toContain("Inning 7");
     });
   });
 });

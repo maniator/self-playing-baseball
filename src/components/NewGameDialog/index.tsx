@@ -4,11 +4,13 @@ import { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
 export { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
 import {
   Dialog,
+  Divider,
   FieldGroup,
   FieldLabel,
   Input,
   PlayBallButton,
   RadioLabel,
+  ResumeButton,
   SectionLabel,
   Title,
 } from "./styles";
@@ -19,9 +21,17 @@ type Props = {
   initialHome: string;
   initialAway: string;
   onStart: (homeTeam: string, awayTeam: string, managedTeam: ManagedTeam) => void;
+  autoSaveName?: string;
+  onResume?: () => void;
 };
 
-const NewGameDialog: React.FunctionComponent<Props> = ({ initialHome, initialAway, onStart }) => {
+const NewGameDialog: React.FunctionComponent<Props> = ({
+  initialHome,
+  initialAway,
+  onStart,
+  autoSaveName,
+  onResume,
+}) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [home, setHome] = React.useState(initialHome);
   const [away, setAway] = React.useState(initialAway);
@@ -44,6 +54,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ initialHome, initialAwa
   return (
     <Dialog ref={ref} onCancel={(e) => e.preventDefault()}>
       <Title>⚾ New Game</Title>
+      {onResume && autoSaveName && (
+        <>
+          <ResumeButton type="button" onClick={onResume}>
+            ▶ Resume: {autoSaveName}
+          </ResumeButton>
+          <Divider>— or start a new game —</Divider>
+        </>
+      )}
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <FieldLabel htmlFor="ng-home">Home team</FieldLabel>

@@ -1,4 +1,5 @@
 import type { State, Strategy } from "@context/index";
+import { getSeed } from "@utils/rng";
 
 export const SAVES_KEY = "ballgame:saves:v1";
 export const MAX_SAVES = 3;
@@ -22,6 +23,9 @@ const fnv1a = (str: string): string => {
 };
 
 const signSave = (save: SaveSlot): string => fnv1a(SAVE_SIGNING_KEY + JSON.stringify(save));
+
+/** Returns the current seed as a base-36 string, falling back to "0". */
+export const currentSeedStr = (): string => (getSeed() ?? 0).toString(36);
 
 export interface SaveSetup {
   homeTeam: string;
@@ -101,6 +105,39 @@ export const saveGame = (
 
 export const deleteSave = (id: string): void => {
   persistSaves(loadSaves().filter((s) => s.id !== id));
+};
+
+// ─── Auto-save (separate from the 3-slot manual saves) ──────────────────────
+
+export const AUTO_SAVE_KEY = "ballgame:autosave:v1";
+
+export const loadAutoSave = (): SaveSlot | null => {
+  try {
+    const raw = localStorage.getItem(AUTO_SAVE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SaveSlot;
+  } catch {
+    return null;
+  }
+};
+
+export const writeAutoSave = (state: State, strategy: Strategy, managedTeam: 0 | 1): void => {
+  const slot: SaveSlot = {
+    id: "autosave",
+    name: `Auto-save — ${state.teams[0]} vs ${state.teams[1]} · Inning ${state.inning}`,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    seed: currentSeedStr(),
+    progress: state.pitchKey,
+    managerActions: state.decisionLog,
+    setup: { homeTeam: state.teams[1], awayTeam: state.teams[0], strategy, managedTeam },
+    state,
+  };
+  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(slot));
+};
+
+export const clearAutoSave = (): void => {
+  localStorage.removeItem(AUTO_SAVE_KEY);
 };
 
 export const exportSave = (slot: SaveSlot): string => {

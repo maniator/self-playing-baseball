@@ -75,11 +75,52 @@ describe("NewGameDialog", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it("radio labels update dynamically as team names are typed", () => {
+  it("does NOT show a Resume button when autoSaveName/onResume are not provided", () => {
     render(<NewGameDialog initialHome="A" initialAway="B" onStart={noop} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "Rangers" } });
-    expect(screen.getByLabelText(/home \(rangers\)/i)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "Astros" } });
-    expect(screen.getByLabelText(/away \(astros\)/i)).toBeInTheDocument();
+    expect(screen.queryByText(/▶ Resume/)).not.toBeInTheDocument();
+  });
+
+  it("shows Resume button when autoSaveName and onResume are provided", () => {
+    render(
+      <NewGameDialog
+        initialHome="A"
+        initialAway="B"
+        onStart={noop}
+        autoSaveName="Auto-save — A vs B · Inning 3"
+        onResume={noop}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
+    expect(screen.getByText(/inning 3/i)).toBeInTheDocument();
+  });
+
+  it("calls onResume when the Resume button is clicked", () => {
+    const onResume = vi.fn();
+    render(
+      <NewGameDialog
+        initialHome="A"
+        initialAway="B"
+        onStart={noop}
+        autoSaveName="Auto-save — A vs B · Inning 5"
+        onResume={onResume}
+      />,
+    );
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /resume/i, hidden: true }));
+    });
+    expect(onResume).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows the divider when a resume option is present", () => {
+    render(
+      <NewGameDialog
+        initialHome="A"
+        initialAway="B"
+        onStart={noop}
+        autoSaveName="My Save"
+        onResume={noop}
+      />,
+    );
+    expect(screen.getByText(/or start a new game/i)).toBeInTheDocument();
   });
 });

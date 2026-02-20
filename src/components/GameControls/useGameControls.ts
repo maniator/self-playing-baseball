@@ -4,6 +4,7 @@ import { useLocalStorage } from "usehooks-ts";
 
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
+import { useAutoSave } from "@hooks/useAutoSave";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
 import { useKeyboardPitch } from "@hooks/useKeyboardPitch";
@@ -111,6 +112,7 @@ export const useGameControls = () => {
   );
   useKeyboardPitch(autoPlayRef, handleClickRef);
   useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
+  useAutoSave(strategy, managedTeam);
 
   React.useEffect(() => {
     setAnnouncementVolume(announcementVolume);
