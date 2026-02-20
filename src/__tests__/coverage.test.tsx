@@ -51,6 +51,13 @@ const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue =
   log: [],
   dispatch: vi.fn(),
   dispatchLog: vi.fn(),
+  suppressNextDecision: false,
+  pinchHitterStrategy: null,
+  defensiveShift: false,
+  defensiveShiftOffered: false,
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
   ...overrides,
 });
 
