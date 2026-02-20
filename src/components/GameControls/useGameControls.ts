@@ -15,7 +15,7 @@ import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/ann
 import { SPEED_NORMAL } from "./constants";
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
-export const useGameControls = () => {
+export const useGameControls = (gameStarted: boolean) => {
   const {
     dispatch,
     dispatchLog,
@@ -98,8 +98,15 @@ export const useGameControls = () => {
     strikesRef,
   );
 
+  const handleBatterUp = React.useCallback(() => {
+    setAutoPlay(true);
+  }, [setAutoPlay]);
+
+  const gameStartedRef = React.useRef(gameStarted);
+  gameStartedRef.current = gameStarted;
+
   useAutoPlayScheduler(
-    autoPlay,
+    autoPlay && gameStarted,
     pendingDecision,
     managerMode,
     autoPlayRef,
@@ -109,7 +116,7 @@ export const useGameControls = () => {
     gameStateRef,
     betweenInningsPauseRef,
   );
-  useKeyboardPitch(autoPlayRef, handleClickRef);
+  useKeyboardPitch(autoPlayRef, handleClickRef, gameStartedRef);
   useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
 
   React.useEffect(() => {
@@ -149,6 +156,7 @@ export const useGameControls = () => {
     teams,
     gameOver,
     handleClickRef,
+    handleBatterUp,
     ...playerControls,
   };
 };

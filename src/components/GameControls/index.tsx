@@ -8,7 +8,7 @@ import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
 import {
   AutoPlayGroup,
-  Button,
+  BatterUpButton,
   Controls,
   NewGameButton,
   Select,
@@ -20,9 +20,15 @@ import VolumeControls from "./VolumeControls";
 
 type Props = {
   onNewGame?: () => void;
+  gameStarted?: boolean;
+  onBatterUp?: () => void;
 };
 
-const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
+const GameControls: React.FunctionComponent<Props> = ({
+  onNewGame,
+  gameStarted = false,
+  onBatterUp,
+}) => {
   const {
     autoPlay,
     speed,
@@ -36,7 +42,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     setManagedTeam,
     teams,
     gameOver,
-    handleClickRef,
+    handleBatterUp,
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
@@ -46,15 +52,20 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
     handleShareReplay,
-  } = useGameControls();
+  } = useGameControls(gameStarted);
 
   return (
     <>
       <Controls>
-        {!autoPlay && (
-          <Button onClick={handleClickRef.current} disabled={gameOver}>
+        {!gameStarted && (
+          <BatterUpButton
+            onClick={() => {
+              handleBatterUp();
+              onBatterUp?.();
+            }}
+          >
             Batter Up!
-          </Button>
+          </BatterUpButton>
         )}
         {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
