@@ -1,7 +1,7 @@
 {
   "name": "Ballgame",
   "short_name": "Ballgame",
-  "description": "Self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager.",
+  "description": "Self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots.",
   "id": "/",
   "start_url": "/",
   "scope": "/",
