@@ -111,4 +111,28 @@ describe("NewGameDialog", () => {
     render(<NewGameDialog onStart={noop} autoSaveName="My Save" onResume={noop} />);
     expect(screen.getByText(/or start a new game/i)).toBeInTheDocument();
   });
+
+  it("switching to AL vs AL mode checks AL vs AL radio", () => {
+    render(<NewGameDialog onStart={noop} />);
+    act(() => {
+      fireEvent.click(screen.getByLabelText(/al vs al/i));
+    });
+    expect((screen.getByLabelText(/al vs al/i) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("switching to NL vs NL mode checks NL vs NL radio", () => {
+    render(<NewGameDialog onStart={noop} />);
+    act(() => {
+      fireEvent.click(screen.getByLabelText(/nl vs nl/i));
+    });
+    expect((screen.getByLabelText(/nl vs nl/i) as HTMLInputElement).checked).toBe(true);
+  });
+
+  it("switching home league to NL checks NL home league radio", () => {
+    render(<NewGameDialog onStart={noop} />);
+    act(() => {
+      fireEvent.click(screen.getByLabelText(/^nl$/i));
+    });
+    expect((screen.getByLabelText(/^nl$/i) as HTMLInputElement).checked).toBe(true);
+  });
 });

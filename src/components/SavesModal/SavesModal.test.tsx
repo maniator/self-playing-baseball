@@ -240,6 +240,25 @@ describe("SavesModal", () => {
     expect(screen.getByText("Auto-save — Away vs Home · Inning 3")).toBeInTheDocument();
   });
 
+  it("calls exportSave and createObjectURL when Export is clicked", async () => {
+    const slot = makeSlot();
+    vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);
+    (URL as unknown as Record<string, unknown>).createObjectURL = vi
+      .fn()
+      .mockReturnValue("blob:fake");
+    (URL as unknown as Record<string, unknown>).revokeObjectURL = vi.fn();
+    try {
+      renderModal();
+      await openPanel();
+      fireEvent.click(screen.getAllByRole("button", { name: /^export$/i })[0]);
+      expect(savesModule.exportSave).toHaveBeenCalledWith(slot);
+      expect((URL as unknown as Record<string, unknown>).createObjectURL).toHaveBeenCalled();
+    } finally {
+      delete (URL as unknown as Record<string, unknown>).createObjectURL;
+      delete (URL as unknown as Record<string, unknown>).revokeObjectURL;
+    }
+  });
+
   it("updates URL seed on load", async () => {
     const slot = makeSlot({ seed: "xyzseed" });
     vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);

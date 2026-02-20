@@ -72,6 +72,22 @@ describe("usePlayerControls", () => {
     expect(setManagerMode).toHaveBeenCalledWith(true);
   });
 
+  it("handleManagerModeChange: Notification API unavailable — logs warning and returns", () => {
+    const originalNotification = (global as any).Notification;
+    delete (global as any).Notification;
+    try {
+      const setManagerMode = vi.fn();
+      const { result } = renderHook(() => usePlayerControls(makeArgs({ setManagerMode })));
+      act(() => {
+        result.current.handleManagerModeChange({ target: { checked: true } } as any);
+      });
+      // setManagerMode still called even when Notification is unavailable
+      expect(setManagerMode).toHaveBeenCalledWith(true);
+    } finally {
+      (global as any).Notification = originalNotification;
+    }
+  });
+
   it("handleRequestNotifPermission requests permission and updates state", async () => {
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).requestPermission = requestPermission;

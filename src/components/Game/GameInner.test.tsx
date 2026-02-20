@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Strategy } from "@context/index";
-import { GameContext, GameProviderWrapper } from "@context/index";
+import { GameContext, GameProviderWrapper, useGameContext } from "@context/index";
 import { makeContextValue, makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 import * as savesModule from "@utils/saves";
@@ -218,5 +218,17 @@ describe("Game", () => {
   it("renders the GitHub ribbon link", () => {
     render(<Game />);
     expect(screen.getByText(/view on github/i)).toBeInTheDocument();
+  });
+});
+
+describe("GameProviderWrapper — logReducer", () => {
+  it("dispatchLog adds message to log", () => {
+    const { result } = renderHook(() => useGameContext(), {
+      wrapper: GameProviderWrapper,
+    });
+    act(() => {
+      result.current.dispatchLog({ type: "log", payload: "hello" });
+    });
+    expect(result.current.log[0]).toBe("hello");
   });
 });
