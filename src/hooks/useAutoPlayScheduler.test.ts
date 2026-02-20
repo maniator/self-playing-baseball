@@ -32,7 +32,7 @@ const makeSnap = () => ({
 });
 
 describe("useAutoPlayScheduler", () => {
-  it("does not call handleClick when autoPlay is false", () => {
+  it("does not call handleClick when game has not started", () => {
     const handleClick = vi.fn();
     renderHook(() =>
       useAutoPlayScheduler(
@@ -68,7 +68,7 @@ describe("useAutoPlayScheduler", () => {
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it("calls handleClick after speed delay when autoPlay is true", () => {
+  it("calls handleClick after speed delay when game has started", () => {
     const handleClick = vi.fn();
     vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
     renderHook(() =>

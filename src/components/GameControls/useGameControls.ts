@@ -37,7 +37,6 @@ export const useGameControls = () => {
     defensiveShiftOffered,
   }: ContextValue = useGameContext();
 
-  const [autoPlay, setAutoPlay] = React.useState(false);
   const [gameStarted, setGameStarted] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -97,12 +96,11 @@ export const useGameControls = () => {
   );
 
   const handleBatterUp = React.useCallback(() => {
-    setAutoPlay(true);
     setGameStarted(true);
   }, []);
 
   useAutoPlayScheduler(
-    autoPlay && gameStarted,
+    gameStarted,
     pendingDecision,
     managerMode,
     mutedRef,
@@ -126,7 +124,6 @@ export const useGameControls = () => {
   const playerControls = usePlayerControls({
     managerMode,
     setManagerMode,
-    setAutoPlay,
     announcementVolume,
     setAnnouncementVolumeState,
     alertVolume,
@@ -137,7 +134,6 @@ export const useGameControls = () => {
 
   return {
     dispatch,
-    autoPlay,
     gameStarted,
     speed,
     setSpeed,

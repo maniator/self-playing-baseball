@@ -59,7 +59,7 @@ describe("GameControls", () => {
     expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
   });
 
-  it("clicking Batter Up! does not dispatch game actions (starts autoplay instead)", () => {
+  it("clicking Batter Up! does not dispatch game actions (starts the game)", () => {
     const dispatch = vi.fn();
     renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));

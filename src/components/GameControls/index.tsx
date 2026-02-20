@@ -24,7 +24,6 @@ type Props = {
 
 const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   const {
-    autoPlay,
     gameStarted,
     speed,
     setSpeed,
@@ -71,7 +70,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
             onToggleAnnouncementMute={handleToggleAnnouncementMute}
             onToggleAlertMute={handleToggleAlertMute}
           />
-          {autoPlay && (
+          {gameStarted && (
             <ManagerModeControls
               managerMode={managerMode}
               strategy={strategy}
@@ -87,7 +86,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
         </AutoPlayGroup>
         <InstructionsModal />
       </Controls>
-      {autoPlay && managerMode && <DecisionPanel strategy={strategy} />}
+      {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
     </>
   );
 };
