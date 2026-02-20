@@ -7,9 +7,10 @@ export const FieldWrapper = styled.div`
   width: 100%;
   flex-shrink: 0;
 
-  @media (max-width: 800px) {
-    height: 140px;
-    flex: 1;
+  @media (max-width: 768px) {
+    height: 100%;
+    min-height: 160px;
+    flex-shrink: 1;
   }
 `;
 
@@ -23,7 +24,7 @@ export const OutfieldDiv = styled.div`
   bottom: 65px;
   transform: rotate(45deg);
 
-  @media (max-width: 800px) {
+  @media (max-width: 768px) {
     height: 140px;
     width: 140px;
     top: 0;
@@ -41,7 +42,7 @@ export const DiamondDiv = styled.div`
   bottom: 0;
   right: 0;
 
-  @media (max-width: 800px) {
+  @media (max-width: 768px) {
     height: 70px;
     width: 70px;
   }
@@ -67,7 +68,7 @@ export const Mound = styled.div`
     top: calc(50% - 25px);
   }
 
-  @media (max-width: 800px) {
+  @media (max-width: 768px) {
     height: 46px;
     width: 46px;
     left: calc(50% - 23px);

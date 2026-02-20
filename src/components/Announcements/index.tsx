@@ -16,6 +16,10 @@ const HeadingRow = styled.div`
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background: #000;
+  z-index: 1;
 `;
 
 const Toggle = styled.button`
@@ -35,9 +39,9 @@ const AnnouncementsArea = styled.div`
   padding-right: 8px;
   max-height: 300px;
   min-height: 60px;
-  @media (max-width: 800px) {
+  @media (max-width: 768px) {
     min-height: auto;
-    max-height: 25vh;
+    max-height: none;
   }
 `;
 
@@ -51,11 +55,25 @@ const Log = styled.div`
   font-size: 12px;
   padding: 3px 5px;
   color: #ccc;
+  @media (max-width: 768px) {
+    font-size: 11px;
+  }
 `;
 
 const Announcements: React.FunctionComponent = () => {
   const { log } = useGameContext();
   const [expanded, setExpanded] = React.useState(false);
+  const areaRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!expanded) return;
+    const el = areaRef.current;
+    if (!el) return;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    if (isNearBottom) {
+      el.scrollTop = el.scrollHeight;
+    }
+  }, [log, expanded]);
 
   return (
     <>
@@ -69,7 +87,7 @@ const Announcements: React.FunctionComponent = () => {
         </Toggle>
       </HeadingRow>
       {expanded && (
-        <AnnouncementsArea aria-live="polite" aria-atomic="false">
+        <AnnouncementsArea ref={areaRef} aria-live="polite" aria-atomic="false">
           {log.length === 0 ? (
             <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
           ) : (

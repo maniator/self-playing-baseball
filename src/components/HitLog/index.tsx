@@ -26,6 +26,10 @@ const HeadingRow = styled.div`
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background: #000;
+  z-index: 1;
 `;
 
 const Toggle = styled.button`
@@ -43,8 +47,8 @@ const Toggle = styled.button`
 const Area = styled.div`
   overflow-y: auto;
   max-height: 200px;
-  @media (max-width: 800px) {
-    max-height: 120px;
+  @media (max-width: 768px) {
+    max-height: none;
   }
 `;
 
