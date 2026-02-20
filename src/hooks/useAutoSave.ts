@@ -25,12 +25,13 @@ export const useAutoSave = (strategy: Strategy, managedTeam: 0 | 1, managerMode:
 
   // Stable save callback — reads from refs so needs no deps.
   const save = React.useCallback(() => {
-    writeAutoSave(
-      ctxRef.current,
-      strategyRef.current,
-      managedTeamRef.current,
-      managerModeRef.current,
-    );
+    // Strip ContextValue-only fields (dispatch, dispatchLog, log) — they are
+    // not part of State and must not be serialized into the save slot.
+    const { dispatch: _d, dispatchLog: _dl, log: _l, ...gameState } = ctxRef.current;
+    void _d;
+    void _dl;
+    void _l;
+    writeAutoSave(gameState, strategyRef.current, managedTeamRef.current, managerModeRef.current);
   }, []);
 
   // Track half-inning transitions (atBat toggles 0↔1 each half-inning,

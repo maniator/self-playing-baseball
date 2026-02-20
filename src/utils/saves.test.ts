@@ -388,7 +388,13 @@ describe("deterministic replay — save/load pitch sequence", () => {
       rngState: rng.getRngState() ?? undefined,
       progress: 30,
       managerActions: ["5:steal:0:78", "12:bunt", "20:skip"], // actions don't affect PRNG
-      setup: { homeTeam: "Home", awayTeam: "Away", strategy: "aggressive", managedTeam: 1 },
+      setup: {
+        homeTeam: "Home",
+        awayTeam: "Away",
+        strategy: "aggressive",
+        managedTeam: 1,
+        managerMode: false,
+      },
       state: makeState({ pitchKey: 30, decisionLog: ["5:steal:0:78", "12:bunt", "20:skip"] }),
     });
 

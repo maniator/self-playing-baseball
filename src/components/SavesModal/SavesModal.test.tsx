@@ -169,7 +169,7 @@ describe("SavesModal", () => {
     vi.mocked(savesModule.loadSaves).mockReturnValue([makeSlot()]);
     renderModal();
     await openPanel();
-    fireEvent.click(screen.getByRole("button", { name: /✕/i }));
+    fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
     expect(savesModule.deleteSave).toHaveBeenCalledWith("save_1");
   });
 
@@ -229,7 +229,7 @@ describe("SavesModal", () => {
     vi.mocked(savesModule.loadSaves).mockReturnValue([makeSlot()]);
     renderModal({ currentSaveId: "save_1", onSaveIdChange });
     await openPanel();
-    fireEvent.click(screen.getByRole("button", { name: /✕/i }));
+    fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
     expect(onSaveIdChange).toHaveBeenCalledWith(null);
   });
 
