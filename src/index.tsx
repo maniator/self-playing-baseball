@@ -4,9 +4,9 @@ import { createRoot } from "react-dom/client";
 
 import "./index.scss";
 
-import Game from "./Game";
-import { initSeedFromUrl } from "./utilities/rng";
-import { appLog } from "./utilities/logger";
+import Game from "@components/Game";
+import { initSeedFromUrl } from "@utils/rng";
+import { appLog } from "@utils/logger";
 
 initSeedFromUrl({ writeToUrl: true });
 

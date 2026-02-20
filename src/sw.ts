@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { manifest, version } from "@parcel/service-worker";
-import { createLogger } from "./utilities/logger";
+import { createLogger } from "@utils/logger";
 
 // Singleton logger for the service worker.
 // The main app uses the `appLog` singleton exported from utilities/logger.ts.
