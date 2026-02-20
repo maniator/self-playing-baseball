@@ -45,20 +45,20 @@ describe("NewGameDialog", () => {
     expect(onStart).toHaveBeenCalledWith(DEFAULT_HOME_TEAM, DEFAULT_AWAY_TEAM, null);
   });
 
-  it("calls onStart with managedTeam=0 when Home is selected", () => {
+  it("calls onStart with managedTeam=0 when Away is selected", () => {
     const onStart = vi.fn();
     render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/home \(yankees\)/i));
+    fireEvent.click(screen.getByLabelText(/away \(mets\)/i));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
     expect(onStart).toHaveBeenCalledWith("Yankees", "Mets", 0);
   });
 
-  it("calls onStart with managedTeam=1 when Away is selected", () => {
+  it("calls onStart with managedTeam=1 when Home is selected", () => {
     const onStart = vi.fn();
     render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/away \(mets\)/i));
+    fireEvent.click(screen.getByLabelText(/home \(yankees\)/i));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });

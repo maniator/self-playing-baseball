@@ -26,7 +26,7 @@ const GameInner: React.FunctionComponent = () => {
       setAutoPlay(true);
     }
     dispatch({ type: "reset" });
-    dispatch({ type: "setTeams", payload: [homeTeam, awayTeam] });
+    dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });
     setDialogOpen(false);
   };
 
@@ -39,8 +39,8 @@ const GameInner: React.FunctionComponent = () => {
     <GameDiv>
       {dialogOpen && (
         <NewGameDialog
-          initialHome={teams[0] || DEFAULT_HOME_TEAM}
-          initialAway={teams[1] || DEFAULT_AWAY_TEAM}
+          initialHome={teams[1] || DEFAULT_HOME_TEAM}
+          initialAway={teams[0] || DEFAULT_AWAY_TEAM}
           onStart={handleStart}
         />
       )}
