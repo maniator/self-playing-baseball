@@ -11,8 +11,18 @@ const noop = () => {};
 describe("VolumeControls", () => {
   const defaultProps = {
     announcementVolume: 0.8,
+    announcementVoice: "auto",
+    announcementVoiceOptions: [
+      {
+        id: "voice-a",
+        name: "Voice A",
+        lang: "en-US",
+        isDefault: true,
+      },
+    ],
     alertVolume: 0.5,
     onAnnouncementVolumeChange: noop,
+    onAnnouncementVoiceChange: noop,
     onAlertVolumeChange: noop,
     onToggleAnnouncementMute: noop,
     onToggleAlertMute: noop,
@@ -22,6 +32,7 @@ describe("VolumeControls", () => {
     render(<VolumeControls {...defaultProps} />);
     expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeTruthy();
     expect(screen.getByRole("slider", { name: /alert volume/i })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: /announcement voice/i })).toBeTruthy();
   });
 
   it("shows 🔊 icon when announcement volume > 0", () => {
@@ -68,5 +79,34 @@ describe("VolumeControls", () => {
     render(<VolumeControls {...defaultProps} alertVolume={0.3} />);
     const slider = screen.getByRole("slider", { name: /alert volume/i }) as HTMLInputElement;
     expect(slider.value).toBe("0.3");
+  });
+
+  it("calls onAnnouncementVoiceChange when voice select changes", async () => {
+    const onAnnouncementVoiceChange = vi.fn();
+    render(
+      <VolumeControls
+        {...defaultProps}
+        onAnnouncementVoiceChange={onAnnouncementVoiceChange}
+        announcementVoiceOptions={[
+          {
+            id: "voice-a",
+            name: "Voice A",
+            lang: "en-US",
+            isDefault: true,
+          },
+          {
+            id: "voice-b",
+            name: "Voice B",
+            lang: "en-US",
+            isDefault: false,
+          },
+        ]}
+      />,
+    );
+    await userEvent.selectOptions(
+      screen.getByRole("combobox", { name: /announcement voice/i }),
+      "voice-b",
+    );
+    expect(onAnnouncementVoiceChange).toHaveBeenCalledOnce();
   });
 });

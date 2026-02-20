@@ -13,6 +13,10 @@ vi.mock("@utils/announce", () => ({
   playDecisionChime: vi.fn(),
   setAnnouncementVolume: vi.fn(),
   setAlertVolume: vi.fn(),
+  setAnnouncementVoice: vi.fn(),
+  getAnnouncementVoices: vi
+    .fn()
+    .mockReturnValue([{ id: "voice-a", name: "Voice A", lang: "en-US", isDefault: true }]),
   getAnnouncementVolume: vi.fn().mockReturnValue(1),
   getAlertVolume: vi.fn().mockReturnValue(1),
   announce: vi.fn(),
@@ -74,7 +78,12 @@ describe("GameControls", () => {
 
   it("shows speed selector", () => {
     renderWithContext(<GameControls />);
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /playback speed/i })).toBeInTheDocument();
+  });
+
+  it("shows announcement voice selector", () => {
+    renderWithContext(<GameControls />);
+    expect(screen.getByRole("combobox", { name: /announcement voice/i })).toBeInTheDocument();
   });
 
   it("enabling Manager Mode requests notification permission", () => {
@@ -90,7 +99,7 @@ describe("GameControls", () => {
 
   it("changing speed select updates the value", () => {
     renderWithContext(<GameControls />);
-    const select = screen.getByRole("combobox");
+    const select = screen.getByRole("combobox", { name: /playback speed/i });
     fireEvent.change(select, { target: { value: "350" } });
     expect((select as HTMLSelectElement).value).toBe("350");
   });

@@ -9,7 +9,13 @@ import { useGameRefs } from "@hooks/useGameRefs";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";
 import { usePlayerControls } from "@hooks/usePlayerControls";
 import { useReplayDecisions } from "@hooks/useReplayDecisions";
-import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
+import {
+  getAnnouncementVoices,
+  setAlertVolume,
+  setAnnouncementVoice,
+  setAnnouncementVolume,
+  setSpeechRate,
+} from "@utils/announce";
 
 import { SPEED_NORMAL } from "./constants";
 
@@ -40,6 +46,10 @@ export const useGameControls = () => {
   const [gameStarted, setGameStarted] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
+  const [announcementVoice, setAnnouncementVoiceState] = useLocalStorage(
+    "announcementVoice",
+    "auto",
+  );
   const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
   const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
@@ -99,6 +109,10 @@ export const useGameControls = () => {
     setGameStarted(true);
   }, []);
 
+  const [announcementVoiceOptions, setAnnouncementVoiceOptions] = React.useState(() =>
+    getAnnouncementVoices(),
+  );
+
   useAutoPlayScheduler(
     gameStarted,
     pendingDecision,
@@ -120,6 +134,28 @@ export const useGameControls = () => {
   React.useEffect(() => {
     setSpeechRate(speed);
   }, [speed]);
+  React.useEffect(() => {
+    setAnnouncementVoice(announcementVoice === "auto" ? null : announcementVoice);
+  }, [announcementVoice]);
+
+  React.useEffect(() => {
+    const updateVoices = () => setAnnouncementVoiceOptions(getAnnouncementVoices());
+    updateVoices();
+    window.speechSynthesis.addEventListener("voiceschanged", updateVoices);
+    return () => {
+      window.speechSynthesis.removeEventListener("voiceschanged", updateVoices);
+    };
+  }, []);
+
+  React.useEffect(() => {
+    if (announcementVoice === "auto") return;
+    const selectedVoiceStillAvailable = announcementVoiceOptions.some(
+      (voice) => voice.id === announcementVoice,
+    );
+    if (!selectedVoiceStillAvailable) {
+      setAnnouncementVoiceState("auto");
+    }
+  }, [announcementVoice, announcementVoiceOptions, setAnnouncementVoiceState]);
 
   const playerControls = usePlayerControls({
     managerMode,
@@ -138,6 +174,9 @@ export const useGameControls = () => {
     speed,
     setSpeed,
     announcementVolume,
+    announcementVoice,
+    announcementVoiceOptions,
+    setAnnouncementVoice: setAnnouncementVoiceState,
     alertVolume,
     managerMode,
     strategy,

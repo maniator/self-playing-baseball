@@ -2,6 +2,8 @@ import * as React from "react";
 
 import styled from "styled-components";
 
+import { AnnouncementVoiceOption } from "@utils/announce";
+
 const VolumeRow = styled.label`
   display: inline-flex;
   align-items: center;
@@ -32,10 +34,25 @@ const RangeInput = styled.input`
   vertical-align: middle;
 `;
 
+const VoiceSelect = styled.select`
+  background: #1a2440;
+  border: 1px solid #4a6090;
+  color: #fff;
+  border-radius: 8px;
+  padding: 3px 6px;
+  cursor: pointer;
+  font-size: 12px;
+  font-family: inherit;
+  max-width: 190px;
+`;
+
 type Props = {
   announcementVolume: number;
+  announcementVoice: string;
+  announcementVoiceOptions: AnnouncementVoiceOption[];
   alertVolume: number;
   onAnnouncementVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAnnouncementVoiceChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onAlertVolumeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onToggleAnnouncementMute: () => void;
   onToggleAlertMute: () => void;
@@ -43,8 +60,11 @@ type Props = {
 
 const VolumeControls: React.FunctionComponent<Props> = ({
   announcementVolume,
+  announcementVoice,
+  announcementVoiceOptions,
   alertVolume,
   onAnnouncementVolumeChange,
+  onAnnouncementVoiceChange,
   onAlertVolumeChange,
   onToggleAnnouncementMute,
   onToggleAlertMute,
@@ -87,6 +107,21 @@ const VolumeControls: React.FunctionComponent<Props> = ({
         onChange={onAlertVolumeChange}
         aria-label="Alert volume"
       />
+    </VolumeRow>
+    <VolumeRow>
+      Voice
+      <VoiceSelect
+        value={announcementVoice}
+        onChange={onAnnouncementVoiceChange}
+        aria-label="Announcement voice"
+      >
+        <option value="auto">Auto</option>
+        {announcementVoiceOptions.map((voice) => (
+          <option key={voice.id} value={voice.id}>
+            {voice.name} ({voice.lang}){voice.isDefault ? " • default" : ""}
+          </option>
+        ))}
+      </VoiceSelect>
     </VolumeRow>
   </>
 );

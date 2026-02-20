@@ -28,6 +28,9 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     speed,
     setSpeed,
     announcementVolume,
+    announcementVoice,
+    announcementVoiceOptions,
+    setAnnouncementVoice,
     alertVolume,
     managerMode,
     strategy,
@@ -56,7 +59,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
-            <Select value={speed} onChange={(e) => setSpeed(parseInt(e.target.value, 10))}>
+            <Select
+              aria-label="Playback speed"
+              value={speed}
+              onChange={(e) => setSpeed(parseInt(e.target.value, 10))}
+            >
               <option value={SPEED_SLOW}>Slow</option>
               <option value={SPEED_NORMAL}>Normal</option>
               <option value={SPEED_FAST}>Fast</option>
@@ -64,8 +71,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
           </ToggleLabel>
           <VolumeControls
             announcementVolume={announcementVolume}
+            announcementVoice={announcementVoice}
+            announcementVoiceOptions={announcementVoiceOptions}
             alertVolume={alertVolume}
             onAnnouncementVolumeChange={handleAnnouncementVolumeChange}
+            onAnnouncementVoiceChange={(e) => setAnnouncementVoice(e.target.value)}
             onAlertVolumeChange={handleAlertVolumeChange}
             onToggleAnnouncementMute={handleToggleAnnouncementMute}
             onToggleAlertMute={handleToggleAlertMute}

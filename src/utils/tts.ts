@@ -3,27 +3,71 @@ const synth = window.speechSynthesis;
 let _speechVolume = 1.0;
 
 let _bestVoice: SpeechSynthesisVoice | null = null;
+let _preferredVoiceId: string | null = null;
+
+export type AnnouncementVoiceOption = {
+  id: string;
+  name: string;
+  lang: string;
+  isDefault: boolean;
+};
+
+const toVoiceId = (voice: SpeechSynthesisVoice): string =>
+  `${voice.voiceURI}::${voice.lang}::${voice.name}`;
+
+const getCandidateVoices = (): SpeechSynthesisVoice[] => {
+  if (typeof synth.getVoices !== "function") return [];
+  const voices = synth.getVoices();
+  const english = voices.filter((voice) => voice.lang.toLowerCase().startsWith("en"));
+  return english.length > 0 ? english : voices;
+};
 
 const pickVoice = (): void => {
-  if (typeof synth.getVoices !== "function") return;
-  const voices = synth.getVoices();
-  const en = voices.filter((v) => v.lang.startsWith("en") && !/female/i.test(v.name));
-  if (en.length === 0) {
-    const fallback = voices.filter((v) => v.lang.startsWith("en"));
-    _bestVoice = fallback.find((v) => v.default) ?? fallback[0] ?? null;
+  const candidates = getCandidateVoices();
+  if (candidates.length === 0) {
+    _bestVoice = null;
     return;
   }
+
+  if (_preferredVoiceId) {
+    const preferred = candidates.find((voice) => toVoiceId(voice) === _preferredVoiceId);
+    if (preferred) {
+      _bestVoice = preferred;
+      return;
+    }
+  }
+
   _bestVoice =
-    en.find((v) => /daniel|david|james|fred|ralph|alex|google\s+us\s+english/i.test(v.name)) ??
-    en.find((v) => /\bmale\b/i.test(v.name)) ??
-    en.find((v) => v.default) ??
-    en[0];
+    candidates.find((voice) => /natural|neural|premium|enhanced/i.test(voice.name)) ??
+    candidates.find((voice) => voice.default) ??
+    candidates.find((voice) =>
+      /daniel|david|james|fred|ralph|alex|google\s+us\s+english/i.test(voice.name),
+    ) ??
+    candidates[0];
 };
 
 pickVoice();
 if (typeof synth.addEventListener === "function") {
   synth.addEventListener("voiceschanged", pickVoice);
 }
+
+export const getAnnouncementVoices = (): AnnouncementVoiceOption[] =>
+  getCandidateVoices()
+    .map((voice) => ({
+      id: toVoiceId(voice),
+      name: voice.name,
+      lang: voice.lang,
+      isDefault: voice.default,
+    }))
+    .sort((left, right) => {
+      if (left.isDefault !== right.isDefault) return left.isDefault ? -1 : 1;
+      return left.name.localeCompare(right.name);
+    });
+
+export const setAnnouncementVoice = (voiceId: string | null): void => {
+  _preferredVoiceId = voiceId;
+  pickVoice();
+};
 
 const BATCH_DELAY = 50;
 let _pendingMessages: string[] = [];

@@ -10,12 +10,14 @@ import {
   canAnnounce,
   cancelAnnouncements,
   getAlertVolume,
+  getAnnouncementVoices,
   getAnnouncementVolume,
   isSpeechPending,
   play7thInningStretch,
   playDecisionChime,
   playVictoryFanfare,
   setAlertVolume,
+  setAnnouncementVoice,
   setAnnouncementVolume,
   setSpeechRate,
 } from "./announce";
@@ -303,10 +305,37 @@ describe("pickVoice — voice selection", () => {
     fireVoicesChanged();
   });
 
-  it("picks a known named male voice (Google US English) over generic male label", async () => {
+  it("picks preferred voice when selected", async () => {
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
       makeVoice("Google UK English Female", "en-GB"),
       makeVoice("Google UK English Male", "en-GB"),
+      makeVoice("Google US English", "en-US", true),
+    ]);
+    fireVoicesChanged();
+    const options = getAnnouncementVoices();
+    const preferred = options.find((voice) => voice.name === "Google UK English Male");
+    setAnnouncementVoice(preferred?.id ?? null);
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.voice?.name).toBe("Google UK English Male");
+  });
+
+  it("prefers natural/neural voice names", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google US English", "en-US", true),
+      makeVoice("Microsoft Aria Natural", "en-US"),
+    ]);
+    fireVoicesChanged();
+    announce("test");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.voice?.name).toBe("Microsoft Aria Natural");
+  });
+
+  it("falls back to default voice when no natural voice is present", async () => {
+    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
+      makeVoice("Google UK English Female", "en-GB"),
       makeVoice("Google US English", "en-US", true),
     ]);
     fireVoicesChanged();
@@ -316,45 +345,18 @@ describe("pickVoice — voice selection", () => {
     expect(utterance.voice?.name).toBe("Google US English");
   });
 
-  it("picks a voice with 'Male' in the name when no exact name match", async () => {
+  it("returns voice options sorted with default first", () => {
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
-      makeVoice("Google UK English Female", "en-GB"),
-      makeVoice("Google UK English Male", "en-GB"),
+      makeVoice("Zulu Voice", "en-US"),
+      makeVoice("Alpha Voice", "en-US", true),
     ]);
     fireVoicesChanged();
-    announce("test");
-    await vi.runAllTimersAsync();
-    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    expect(utterance.voice?.name).toBe("Google UK English Male");
+    const [first, second] = getAnnouncementVoices();
+    expect(first.name).toBe("Alpha Voice");
+    expect(second.name).toBe("Zulu Voice");
   });
 
-  it("excludes voices with 'female' in the name; picks non-female default", async () => {
-    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
-      makeVoice("Google UK English Female", "en-GB"),
-      makeVoice("Samantha", "en-US", true),
-    ]);
-    fireVoicesChanged();
-    announce("test");
-    await vi.runAllTimersAsync();
-    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    // Samantha does not have "female" in its name → chosen over Female-labelled voice
-    expect(utterance.voice?.name).toBe("Samantha");
-  });
-
-  it("falls back to default female voice when only female-labelled voices exist (Android edge case)", async () => {
-    (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
-      makeVoice("Google UK English Female", "en-GB"),
-      makeVoice("Google US English Female", "en-US", true),
-    ]);
-    fireVoicesChanged();
-    announce("test");
-    await vi.runAllTimersAsync();
-    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    // All English voices are female-labelled; fallback picks the default
-    expect(utterance.voice?.name).toBe("Google US English Female");
-  });
-
-  it("returns no voice when there are no English voices at all", async () => {
+  it("falls back to available non-English voice when no English voices exist", async () => {
     (synth.getVoices as ReturnType<typeof vi.fn>).mockReturnValue([
       makeVoice("French Female", "fr-FR"),
     ]);
@@ -362,7 +364,6 @@ describe("pickVoice — voice selection", () => {
     announce("test");
     await vi.runAllTimersAsync();
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
-    // No English voices at all → _bestVoice = null → voice stays null from the mock
-    expect(utterance.voice).toBeNull();
+    expect(utterance.voice?.name).toBe("French Female");
   });
 });
