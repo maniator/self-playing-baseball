@@ -2,6 +2,7 @@ import * as React from "react";
 
 import type { Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { getRngState } from "@utils/rng";
 import {
   currentSeedStr,
   deleteSave,
@@ -9,6 +10,7 @@ import {
   importSave,
   loadAutoSave,
   loadSaves,
+  restoreSaveRng,
   saveGame,
   type SaveSlot,
 } from "@utils/saves";
@@ -90,6 +92,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
       id: currentSaveId ?? undefined,
       name,
       seed,
+      rngState: getRngState() ?? undefined,
       progress: pitchKey,
       managerActions: decisionLog,
       setup: { homeTeam: teams[1], awayTeam: teams[0], strategy, managedTeam },
@@ -101,6 +104,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
   };
 
   const handleLoad = (slot: SaveSlot) => {
+    restoreSaveRng(slot);
     dispatch({ type: "restore_game", payload: slot.state });
     onSaveIdChange(slot.id);
     log(`Loaded: ${slot.name}`);

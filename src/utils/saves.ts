@@ -1,5 +1,5 @@
 import type { State, Strategy } from "@context/index";
-import { getSeed } from "@utils/rng";
+import { getRngState, getSeed, restoreRng } from "@utils/rng";
 
 export const SAVES_KEY = "ballgame:saves:v1";
 export const MAX_SAVES = 3;
@@ -40,6 +40,8 @@ export interface SaveSlot {
   createdAt: number;
   updatedAt: number;
   seed: string;
+  /** PRNG internal state at save time — restores identical pitch sequences on load. */
+  rngState?: number;
   progress: number;
   managerActions: string[];
   setup: SaveSetup;
@@ -128,6 +130,7 @@ export const writeAutoSave = (state: State, strategy: Strategy, managedTeam: 0 |
     createdAt: Date.now(),
     updatedAt: Date.now(),
     seed: currentSeedStr(),
+    rngState: getRngState() ?? undefined,
     progress: state.pitchKey,
     managerActions: state.decisionLog,
     setup: { homeTeam: state.teams[1], awayTeam: state.teams[0], strategy, managedTeam },
@@ -138,6 +141,15 @@ export const writeAutoSave = (state: State, strategy: Strategy, managedTeam: 0 |
 
 export const clearAutoSave = (): void => {
   localStorage.removeItem(AUTO_SAVE_KEY);
+};
+
+/**
+ * Restores the PRNG to the position it was at when `slot` was saved, so that
+ * pitches after loading are identical to what they would have been in the
+ * original game. No-op if the slot has no stored `rngState`.
+ */
+export const restoreSaveRng = (slot: SaveSlot): void => {
+  if (slot.rngState != null) restoreRng(slot.rngState);
 };
 
 export const exportSave = (slot: SaveSlot): string => {

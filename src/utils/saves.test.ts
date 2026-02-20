@@ -13,6 +13,7 @@ import {
   loadAutoSave,
   loadSaves,
   MAX_SAVES,
+  restoreSaveRng,
   SAVE_SIGNING_KEY,
   saveGame,
   SAVES_KEY,
@@ -257,11 +258,40 @@ describe("saves utils", () => {
       expect(loadSaves()[0].name).toBe("Manual");
     });
 
+    it("writeAutoSave stores rngState from getRngState()", () => {
+      vi.spyOn(rngModule, "getRngState").mockReturnValue(999888);
+      writeAutoSave(makeState(), "balanced", 0);
+      expect(loadAutoSave()?.rngState).toBe(999888);
+    });
+
+    it("writeAutoSave stores rngState as undefined when getRngState returns null", () => {
+      vi.spyOn(rngModule, "getRngState").mockReturnValue(null);
+      writeAutoSave(makeState(), "balanced", 0);
+      // undefined fields are omitted from JSON, so rngState should be undefined
+      expect(loadAutoSave()?.rngState).toBeUndefined();
+    });
+
     it("auto-save name includes team names and inning", () => {
       const state = makeState({ teams: ["Red Sox", "Yankees"] as [string, string], inning: 7 });
       writeAutoSave(state, "contact", 0);
       expect(loadAutoSave()?.name).toContain("Red Sox");
       expect(loadAutoSave()?.name).toContain("Inning 7");
+    });
+  });
+
+  describe("restoreSaveRng", () => {
+    it("calls restoreRng with slot.rngState when present", () => {
+      const restoreSpy = vi.spyOn(rngModule, "restoreRng");
+      const slot = saveGame(makeSlot({ rngState: 42 }));
+      restoreSaveRng(slot);
+      expect(restoreSpy).toHaveBeenCalledWith(42);
+    });
+
+    it("does NOT call restoreRng when slot.rngState is undefined", () => {
+      const restoreSpy = vi.spyOn(rngModule, "restoreRng");
+      const slot = saveGame(makeSlot()); // no rngState
+      restoreSaveRng(slot);
+      expect(restoreSpy).not.toHaveBeenCalled();
     });
   });
 });

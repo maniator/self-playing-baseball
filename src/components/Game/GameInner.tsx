@@ -10,7 +10,7 @@ import LineScore from "@components/LineScore";
 import NewGameDialog from "@components/NewGameDialog";
 import { useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
-import { clearAutoSave, loadAutoSave } from "@utils/saves";
+import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
 
 import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 
@@ -35,6 +35,7 @@ const GameInner: React.FunctionComponent = () => {
   // Restore auto-save state as soon as the context is ready.
   React.useEffect(() => {
     if (autoSave) {
+      restoreSaveRng(autoSave);
       dispatch({ type: "restore_game", payload: autoSave.state });
     }
   }, [dispatch, autoSave]);

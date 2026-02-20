@@ -10,7 +10,10 @@ import * as savesModule from "@utils/saves";
 
 import { useAutoSave } from "./useAutoSave";
 
-vi.mock("@utils/rng", () => ({ getSeed: vi.fn().mockReturnValue(12345) }));
+vi.mock("@utils/rng", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@utils/rng")>();
+  return { ...actual, getSeed: vi.fn().mockReturnValue(12345) };
+});
 
 /** Creates a named wrapper whose context can be updated via the returned ref. */
 const makeCtxWrapper = (ctxGetter: () => ContextValue) => {

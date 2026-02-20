@@ -182,6 +182,86 @@ describe("rng.ts — isolated module instances", () => {
 });
 
 // ---------------------------------------------------------------------------
+// getRngState / restoreRng — PRNG state save and restore
+// ---------------------------------------------------------------------------
+describe("rng.ts — getRngState and restoreRng", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("getRngState() returns null before any random() call", async () => {
+    const rng = await import("./rng");
+    // fresh module: rngInternalA is null until initSeedFromUrl is called
+    expect(rng.getRngState()).toBeNull();
+  });
+
+  it("getRngState() returns a number after initSeedFromUrl + random()", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+    rng.random(); // first call sets rngInternalA
+    expect(typeof rng.getRngState()).toBe("number");
+  });
+
+  it("getRngState() returns initial seed value before any random() call (after init)", async () => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", "12345");
+    window.history.replaceState(null, "", url.toString());
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+    // Before any call, rngInternalA equals the seed (12345)
+    expect(rng.getRngState()).toBe(12345);
+    url.searchParams.delete("seed");
+    window.history.replaceState(null, "", url.toString());
+  });
+
+  it("restoreRng makes subsequent random() calls match the original sequence", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Advance N calls and capture the sequence from call N+1 onwards.
+    for (let i = 0; i < 10; i++) rng.random();
+    const stateAfter10 = rng.getRngState()!;
+    const originalNext5 = Array.from({ length: 5 }, () => rng.random());
+
+    // Now restore to the state after 10 calls and replay.
+    rng.restoreRng(stateAfter10);
+    const restoredNext5 = Array.from({ length: 5 }, () => rng.random());
+
+    expect(restoredNext5).toEqual(originalNext5);
+  });
+
+  it("restoreRng after a save/load round-trip produces identical pitch values", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Simulate playing some pitches.
+    for (let i = 0; i < 25; i++) rng.random();
+
+    // Simulate a save: capture state.
+    const savedState = rng.getRngState()!;
+
+    // Continue the original game a few more pitches.
+    const originalValues = Array.from({ length: 8 }, () => rng.random());
+
+    // "Load" by restoring state, then play the same pitches.
+    rng.restoreRng(savedState);
+    const restoredValues = Array.from({ length: 8 }, () => rng.random());
+
+    expect(restoredValues).toEqual(originalValues);
+  });
+
+  it("getRngState changes after each random() call", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+    rng.random();
+    const state1 = rng.getRngState();
+    rng.random();
+    const state2 = rng.getRngState();
+    expect(state1).not.toBe(state2);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // decisions URL encoding round-trip
 // ---------------------------------------------------------------------------
 
