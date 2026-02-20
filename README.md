@@ -1,8 +1,10 @@
-# ⚾ Self-Playing Baseball
+# ⚾ Ballgame
 
-A self-playing, talking baseball game simulator that runs entirely in your browser. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots yourself.
+A self-playing, talking baseball simulator that runs entirely in your browser. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots yourself.
 
-**[▶ Play it live](https://self-playing-baseball.vercel.app/)**
+**[▶ Play it live](https://blipit.net/)**
+
+> **Install as an app** — open [blipit.net](https://blipit.net/) on Android or desktop Chrome, tap the browser menu, and choose **"Add to Home Screen"** (or "Install app") to get a native-feeling PWA with its own ⚾ icon.
 
 ---
 
@@ -28,6 +30,7 @@ A self-playing, talking baseball game simulator that runs entirely in your brows
 
 ## Features
 
+- **Installable PWA** — add to your Android or desktop home screen for a native app experience with its own ⚾ icon.
 - **Step-by-step or auto-play** — press *Batter Up!* (or Spacebar) for one pitch at a time, or enable Auto-play and choose Slow / Normal / Fast speed.
 - **Play-by-play announcements** — the Web Speech API narrates every pitch, hit, and out.
 - **Live scoreboard** — line score with per-inning runs, hits, balls/strikes/outs indicator, and an EXTRA INNINGS banner when the game goes deep.
@@ -80,6 +83,7 @@ yarn build
 | Speech | Web Speech API |
 | Audio | Web Audio API |
 | Randomness | Seeded PRNG (mulberry32) |
+| PWA | Web App Manifest + Service Worker |
 | Deployment | Vercel |
 
 ---

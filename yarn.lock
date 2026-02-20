@@ -1209,6 +1209,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@parcel/packager-raw-url@npm:^2.16.4":
+  version: 2.16.4
+  resolution: "@parcel/packager-raw-url@npm:2.16.4"
+  dependencies:
+    "@parcel/plugin": "npm:2.16.4"
+    "@parcel/utils": "npm:2.16.4"
+  checksum: 10c0/9589bf07e056f2f06d5b98f3b5328af67cbc720fb0f2a2267bafea2d9e761464a5f752daa37e69f7beebeaa45400560424a7d919049adec56746731f0cd2948b
+  languageName: node
+  linkType: hard
+
 "@parcel/packager-raw@npm:2.16.4":
   version: 2.16.4
   resolution: "@parcel/packager-raw@npm:2.16.4"
@@ -1624,6 +1634,18 @@ __metadata:
     "@parcel/plugin": "npm:2.16.4"
     "@parcel/rust": "npm:2.16.4"
   checksum: 10c0/331f5b2f8952e90dc454689b99f2cf7d74ace95a2c40fcb7b47d78b6d056176eae0c07225e3f377b0d4f0ea6b566f30952ff4c47db75837b99406810d0799733
+  languageName: node
+  linkType: hard
+
+"@parcel/transformer-webmanifest@npm:^2.16.4":
+  version: 2.16.4
+  resolution: "@parcel/transformer-webmanifest@npm:2.16.4"
+  dependencies:
+    "@mischnic/json-sourcemap": "npm:^0.1.1"
+    "@parcel/diagnostic": "npm:2.16.4"
+    "@parcel/plugin": "npm:2.16.4"
+    "@parcel/utils": "npm:2.16.4"
+  checksum: 10c0/7f67488fe0b155a697ce9043020eb63208daaa0860495db2e4c25382e410129ea40356fd172166e428908afd731f9ad61c4098eafd8c99c36517382c23c6828f
   languageName: node
   linkType: hard
 
@@ -6952,8 +6974,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "self-playing-baseball@workspace:."
   dependencies:
+    "@parcel/packager-raw-url": "npm:^2.16.4"
     "@parcel/service-worker": "npm:^2.16.4"
     "@parcel/transformer-sass": "npm:^2.16.4"
+    "@parcel/transformer-webmanifest": "npm:^2.16.4"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.6.3"
     "@testing-library/react": "npm:16.2.0"

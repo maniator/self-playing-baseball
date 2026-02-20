@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "parcel serve src/*.html",
     "dev:deploy": "parcel serve src/*.html",
-    "build": "parcel build src/*.html",
+    "build": "parcel build src/*.html && cp src/images/baseball-512.png dist/og-image.png",
     "test": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src",
@@ -19,7 +19,9 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
+    "@parcel/packager-raw-url": "^2.16.4",
     "@parcel/service-worker": "^2.16.4",
+    "@parcel/transformer-webmanifest": "^2.16.4",
     "github-fork-ribbon-css": "^0.2.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
