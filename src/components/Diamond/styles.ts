@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const FieldWrapper = styled.div`
   position: relative;
   overflow: hidden;
@@ -7,7 +9,7 @@ export const FieldWrapper = styled.div`
   width: 100%;
   flex-shrink: 0;
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     height: 100%;
     min-height: 160px;
     flex-shrink: 1;
@@ -24,7 +26,7 @@ export const OutfieldDiv = styled.div`
   bottom: 65px;
   transform: rotate(45deg);
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     height: 140px;
     width: 140px;
     top: 0;
@@ -42,7 +44,7 @@ export const DiamondDiv = styled.div`
   bottom: 0;
   right: 0;
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     height: 70px;
     width: 70px;
   }
@@ -68,7 +70,7 @@ export const Mound = styled.div`
     top: calc(50% - 25px);
   }
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     height: 46px;
     width: 46px;
     left: calc(50% - 23px);

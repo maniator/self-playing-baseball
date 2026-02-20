@@ -1,10 +1,12 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const Wrapper = styled.div`
   overflow-x: auto;
   margin: 8px 0 0;
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     order: -1;
     background: #000;
     margin: 0 0 4px;

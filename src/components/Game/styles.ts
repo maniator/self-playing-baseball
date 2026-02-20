@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const GameDiv = styled.main`
   color: white;
   display: flex;
@@ -9,7 +11,7 @@ export const GameDiv = styled.main`
   padding: 24px;
   margin: 0 auto;
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     height: 100dvh;
     overflow: hidden;
     overflow-anchor: none;
@@ -25,14 +27,14 @@ export const GameBody = styled.div`
   align-items: stretch;
   margin-top: 14px;
 
-  @media (min-width: 1024px) {
+  ${mq.desktop} {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: 20px;
     align-items: stretch;
   }
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     flex: 1;
     min-height: 0;
     overflow: hidden;
@@ -44,7 +46,7 @@ export const GameBody = styled.div`
 export const FieldPanel = styled.div`
   min-width: 0;
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     flex: 1;
     min-height: 0;
   }
@@ -56,14 +58,14 @@ export const LogPanel = styled.div`
   border-top: 1px solid #2a2a2a;
   padding-top: 8px;
 
-  @media (min-width: 1024px) {
+  ${mq.desktop} {
     border-top: none;
     border-left: 1px solid #2a2a2a;
     padding-left: 16px;
     padding-top: 0;
   }
 
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     position: fixed;
     bottom: 0;
     left: 0;

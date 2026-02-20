@@ -1,3 +1,7 @@
+// Breakpoint variables — keep in sync with src/utils/mediaQueries.ts
+$bp-mobile: 768px;
+$bp-desktop: 1024px;
+
 * {
   font-family: Lucida Console, monospace;
   color: #FFF;
@@ -10,7 +14,7 @@ body {
   padding: 40px 0;
 }
 
-@media (max-width: 768px) {
+@media (max-width: #{$bp-mobile}) {
   body {
     overflow: hidden;
     padding: 0;

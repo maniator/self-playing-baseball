@@ -3,6 +3,7 @@ import * as React from "react";
 import styled from "styled-components";
 
 import { useGameContext } from "@context/index";
+import { mq } from "@utils/mediaQueries";
 
 const HeadingRow = styled.div`
   display: flex;
@@ -39,7 +40,7 @@ const AnnouncementsArea = styled.div`
   padding-right: 8px;
   max-height: 300px;
   min-height: 60px;
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     min-height: auto;
     max-height: none;
   }
@@ -55,10 +56,13 @@ const Log = styled.div`
   font-size: 12px;
   padding: 3px 5px;
   color: #ccc;
-  @media (max-width: 768px) {
+  ${mq.mobile} {
     font-size: 11px;
   }
 `;
+
+/** Pixels from the bottom edge within which auto-scroll fires. */
+const SCROLL_THRESHOLD = 60;
 
 const Announcements: React.FunctionComponent = () => {
   const { log } = useGameContext();
@@ -69,7 +73,7 @@ const Announcements: React.FunctionComponent = () => {
     if (!expanded) return;
     const el = areaRef.current;
     if (!el) return;
-    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 60;
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < SCROLL_THRESHOLD;
     if (isNearBottom) {
       el.scrollTop = el.scrollHeight;
     }
