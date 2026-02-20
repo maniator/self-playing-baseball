@@ -24,7 +24,6 @@ export type GameStateSnapshot = Pick<
 export type GameStateRef = React.MutableRefObject<GameStateSnapshot>;
 
 export interface UseGameRefsOptions {
-  autoPlay: boolean;
   announcementVolume: number;
   speed: number;
   strikes: number;
@@ -41,7 +40,6 @@ export interface UseGameRefsOptions {
  * Returns refs + skipDecisionRef (which tracks pending-decision transitions).
  */
 export const useGameRefs = ({
-  autoPlay,
   announcementVolume,
   speed,
   strikes,
@@ -52,9 +50,6 @@ export const useGameRefs = ({
   gameSnapshot,
   pendingDecision,
 }: UseGameRefsOptions) => {
-  const autoPlayRef = React.useRef(autoPlay);
-  autoPlayRef.current = autoPlay;
-
   const mutedRef = React.useRef(announcementVolume === 0);
   mutedRef.current = announcementVolume === 0;
 
@@ -97,7 +92,6 @@ export const useGameRefs = ({
   }, [balls, strikes]);
 
   return {
-    autoPlayRef,
     mutedRef,
     speedRef,
     strikesRef,

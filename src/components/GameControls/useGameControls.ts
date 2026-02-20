@@ -65,7 +65,6 @@ export const useGameControls = () => {
   };
 
   const {
-    autoPlayRef,
     mutedRef,
     speedRef,
     strikesRef,
@@ -75,7 +74,6 @@ export const useGameControls = () => {
     gameStateRef,
     skipDecisionRef,
   } = useGameRefs({
-    autoPlay,
     announcementVolume,
     speed,
     strikes,
@@ -107,7 +105,6 @@ export const useGameControls = () => {
     autoPlay && gameStarted,
     pendingDecision,
     managerMode,
-    autoPlayRef,
     mutedRef,
     speedRef,
     handleClickRef,

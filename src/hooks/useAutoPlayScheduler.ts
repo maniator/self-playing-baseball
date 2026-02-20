@@ -14,7 +14,6 @@ export const useAutoPlayScheduler = (
   autoPlay: boolean,
   pendingDecision: DecisionType | null,
   managerMode: boolean,
-  autoPlayRef: React.MutableRefObject<boolean>,
   mutedRef: React.MutableRefObject<boolean>,
   speedRef: React.MutableRefObject<number>,
   handleClickRef: React.MutableRefObject<() => void>,
@@ -34,7 +33,7 @@ export const useAutoPlayScheduler = (
     const tick = (delay: number) => {
       timerId = setTimeout(() => {
         if (cancelled) return;
-        if (!autoPlayRef.current || gameStateRef.current.gameOver) return;
+        if (gameStateRef.current.gameOver) return;
 
         if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
           extraWait += SPEECH_POLL_MS;
@@ -66,7 +65,6 @@ export const useAutoPlayScheduler = (
     autoPlay,
     pendingDecision,
     managerMode,
-    autoPlayRef,
     betweenInningsPauseRef,
     gameStateRef,
     handleClickRef,
