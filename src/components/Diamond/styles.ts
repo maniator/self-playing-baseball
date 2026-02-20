@@ -8,7 +8,7 @@ export const FieldWrapper = styled.div`
   flex-shrink: 0;
 
   @media (max-width: 800px) {
-    height: 180px;
+    height: 140px;
     flex: 1;
   }
 `;
@@ -26,10 +26,10 @@ export const OutfieldDiv = styled.div`
   @media (max-width: 800px) {
     height: 140px;
     width: 140px;
-    bottom: 70px;
+    top: 0;
     right: auto;
     left: 50%;
-    transform: translateX(-50%) rotate(45deg);
+    transform: translateX(-50%) translateY(-20%) rotate(45deg);
   }
 `;
 
