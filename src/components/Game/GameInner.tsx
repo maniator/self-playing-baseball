@@ -1,54 +1,51 @@
 import * as React from "react";
 
+import { useLocalStorage } from "usehooks-ts";
+
 import Announcements from "@components/Announcements";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
-import InstructionsModal from "@components/InstructionsModal";
 import LineScore from "@components/LineScore";
+import NewGameDialog, { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "@components/NewGameDialog";
 import { useGameContext } from "@context/index";
 
-import { GameBody, GameDiv, GameInfo, Input, LeftPanel, RightPanel } from "./styles";
+import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 
-type Props = {
-  homeTeam: string;
-  awayTeam: string;
-};
-
-const GameInner: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => {
+const GameInner: React.FunctionComponent = () => {
   const { dispatch, teams } = useGameContext();
+  const [dialogOpen, setDialogOpen] = React.useState(true);
+  const [, setManagerMode] = useLocalStorage("managerMode", false);
+  const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+  const [, setAutoPlay] = useLocalStorage("autoPlay", false);
 
-  React.useEffect(() => {
+  const handleStart = (homeTeam: string, awayTeam: string, managedTeam: 0 | 1 | null) => {
+    setManagerMode(managedTeam !== null);
+    if (managedTeam !== null) {
+      setManagedTeam(managedTeam);
+      setAutoPlay(true);
+    }
+    dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [homeTeam, awayTeam] });
-  }, [dispatch, homeTeam, awayTeam]);
+    setDialogOpen(false);
+  };
 
-  const handleChangeTeam = (teamIdx) => (e) => {
-    e.stopPropagation();
-    const newTeamNames = [...teams];
-    newTeamNames[teamIdx] = e.target.value;
-    dispatch({ type: "setTeams", payload: newTeamNames });
+  const handleNewGame = () => {
+    dispatch({ type: "reset" });
+    setDialogOpen(true);
   };
 
   return (
     <GameDiv>
-      <GameInfo>
-        <div>Welcome to the game!</div>
-        <div>I hope you have a great time!</div>
-        <div>
-          The match-up is between <br />
-          <label>
-            <Input value={teams[0]} onChange={handleChangeTeam(0)} />
-          </label>{" "}
-          and
-          <label>
-            <Input value={teams[1]} onChange={handleChangeTeam(1)} />
-          </label>
-          !
-        </div>
-        <GameControls />
-        <InstructionsModal />
-      </GameInfo>
+      {dialogOpen && (
+        <NewGameDialog
+          initialHome={teams[0] || DEFAULT_HOME_TEAM}
+          initialAway={teams[1] || DEFAULT_AWAY_TEAM}
+          onStart={handleStart}
+        />
+      )}
       <LineScore />
+      <GameControls onNewGame={handleNewGame} />
       <GameBody>
         <LeftPanel>
           <HitLog />

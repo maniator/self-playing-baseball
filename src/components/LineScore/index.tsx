@@ -39,7 +39,8 @@ const LineScore: React.FunctionComponent = () => {
   const { teams, score, inning, atBat, gameOver, inningRuns, playLog, balls, strikes, outs } =
     useGameContext();
 
-  const totalInnings = Math.max(9, inning);
+  const displayInnings = gameOver && atBat === 0 ? inning - 1 : inning;
+  const totalInnings = Math.max(9, displayInnings);
   const inningCols = Array.from({ length: totalInnings }, (_, i) => i + 1);
   const hits = (team: 0 | 1) =>
     playLog.filter((e) => e.team === team && e.event !== Hit.Walk).length;

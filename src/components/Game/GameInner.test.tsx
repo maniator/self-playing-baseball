@@ -3,10 +3,15 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { GameProviderWrapper } from "@context/index";
+import { GameContext, GameProviderWrapper } from "@context/index";
+import { makeContextValue } from "@test/testHelpers";
 
 import Game from ".";
 import GameInner from "./GameInner";
+
+// jsdom doesn't implement showModal/close on <dialog>
+HTMLDialogElement.prototype.showModal = vi.fn();
+HTMLDialogElement.prototype.close = vi.fn();
 
 vi.mock("@utils/announce", () => ({
   playDecisionChime: vi.fn(),
@@ -27,56 +32,84 @@ describe("GameInner", () => {
   it("renders without crashing", () => {
     render(
       <GameProviderWrapper>
-        <GameInner homeTeam="Yankees" awayTeam="Red Sox" />
+        <GameInner />
       </GameProviderWrapper>,
     );
-    expect(screen.getByText(/welcome to the game/i)).toBeInTheDocument();
+    expect(screen.getByText(/New Game/i)).toBeInTheDocument();
   });
 
-  it("renders team name inputs", () => {
+  it("shows the new game dialog on first render", () => {
     render(
       <GameProviderWrapper>
-        <GameInner homeTeam="Cubs" awayTeam="Sox" />
+        <GameInner />
       </GameProviderWrapper>,
     );
-    const inputs = screen.getAllByRole("textbox");
-    expect(inputs.length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByLabelText(/home team/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
   });
 
-  it("dispatches setTeams when team input changes", () => {
+  it("starts the game after Play Ball is clicked", () => {
     render(
       <GameProviderWrapper>
-        <GameInner homeTeam="A" awayTeam="B" />
+        <GameInner />
       </GameProviderWrapper>,
     );
-    const inputs = screen.getAllByRole("textbox");
-    fireEvent.change(inputs[0], { target: { value: "Mets" } });
-    expect(inputs[0]).toBeInTheDocument();
-  });
-
-  it("game action triggers logReducer and adds announcements", () => {
-    render(
-      <GameProviderWrapper>
-        <GameInner homeTeam="A" awayTeam="B" />
-      </GameProviderWrapper>,
-    );
-    const batterUp = screen.getByRole("button", { name: /batter up/i });
     act(() => {
-      fireEvent.click(batterUp);
+      fireEvent.click(screen.getByText(/play ball/i));
     });
-    const pbpElements = screen.getAllByText(/play-by-play/i);
-    expect(pbpElements.length).toBeGreaterThan(0);
+    expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
+  });
+
+  it("game action adds to play-by-play after starting", () => {
+    render(
+      <GameProviderWrapper>
+        <GameInner />
+      </GameProviderWrapper>,
+    );
+    act(() => {
+      fireEvent.click(screen.getByText(/play ball/i));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    });
+    expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
+  });
+
+  it("clicking New Game button re-opens the dialog", () => {
+    // Render with a game-over context so the "New Game" button is visible in GameControls
+    render(
+      <GameContext.Provider
+        value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
+      >
+        <GameInner />
+      </GameContext.Provider>,
+    );
+    // Dialog starts open — close it by submitting the form
+    act(() => {
+      fireEvent.click(screen.getByText(/play ball/i));
+    });
+    // Dialog should now be closed
+    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
+    // "New Game" button is present because gameOver=true in context
+    expect(screen.getByRole("button", { name: /new game/i })).toBeInTheDocument();
+    // Click it to reopen the dialog
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /new game/i }));
+    });
+    // Dialog should be visible again with team name inputs
+    expect(screen.getByLabelText(/home team/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
   });
 });
 
 describe("Game", () => {
   it("renders the full game without crashing", () => {
-    render(<Game homeTeam="Yankees" awayTeam="Red Sox" />);
-    expect(screen.getByText(/welcome to the game/i)).toBeInTheDocument();
+    render(<Game />);
+    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
   });
 
   it("renders the GitHub ribbon link", () => {
-    render(<Game homeTeam="A" awayTeam="B" />);
+    render(<Game />);
     expect(screen.getByText(/view on github/i)).toBeInTheDocument();
   });
 });

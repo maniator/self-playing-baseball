@@ -6,11 +6,6 @@ import { GameProviderWrapper } from "@context/index";
 
 import GameInner from "./GameInner";
 
-type Props = {
-  homeTeam: string;
-  awayTeam: string;
-};
-
 const GithubRibbon = styled.a.attrs({
   href: "https://github.com/maniator/self-playing-baseball",
   "data-ribbon": "View on Github",
@@ -24,10 +19,10 @@ const GithubRibbon = styled.a.attrs({
   }
 `;
 
-const Game: React.FunctionComponent<Props> = ({ homeTeam, awayTeam }) => (
+const Game: React.FunctionComponent = () => (
   <GameProviderWrapper>
     <GithubRibbon>View on GitHub</GithubRibbon>
-    <GameInner homeTeam={homeTeam} awayTeam={awayTeam} />
+    <GameInner />
   </GameProviderWrapper>
 );
 

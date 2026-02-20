@@ -3,6 +3,16 @@ import styled from "styled-components";
 export const Wrapper = styled.div`
   overflow-x: auto;
   margin: 8px 0 0;
+
+  @media (max-width: 800px) {
+    order: -1;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: #000;
+    margin: 0 0 4px;
+    padding-bottom: 4px;
+  }
 `;
 
 export const Table = styled.table`
