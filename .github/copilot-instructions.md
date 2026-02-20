@@ -48,7 +48,8 @@ This is a **self-playing baseball game simulator** built as a single-page React/
     │   ├── gameOver.ts             # checkGameOver, checkWalkoff, nextHalfInning
     │   ├── playerOut.ts            # playerOut — handles out count, 3-out half-inning transitions
     │   ├── hitBall.ts              # hitBall — pop-out check, callout log, run scoring
-    │   ├── playerActions.ts        # playerStrike, playerWait, stealAttempt, buntAttempt
+    │   ├── buntAttempt.ts          # buntAttempt — fielder's choice, sacrifice bunt, bunt single, pop-out
+    │   ├── playerActions.ts        # playerStrike, playerBall, playerWait, stealAttempt (re-exports buntAttempt)
     │   └── reducer.ts              # Reducer factory; exports detectDecision(), re-exports stratMod
     ├── hooks/                      # All custom React hooks
     │   ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
@@ -127,7 +128,7 @@ Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 - **`LogAction`** = `{ type: "log"; payload: string }`. **`GameAction`** = `{ type: string; payload?: unknown }`. Both are exported from `@context/index`.
 - Reducer action types: `nextInning`, `hit`, `setTeams`, `strike`, `foul`, `wait`, `steal_attempt`, `bunt_attempt`, `intentional_walk`, `set_one_pitch_modifier`, `set_pending_decision`, `skip_decision`, `reset`, `clear_suppress_decision`, `set_pinch_hitter_strategy`, `set_defensive_shift`.
 - `detectDecision(state, strategy, managerMode)` is exported from `context/reducer.ts` and called in `usePitchDispatch` to detect decision points before each pitch.
-- **Context module dependency order (no cycles):** `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `playerActions` → `reducer`
+- **Context module dependency order (no cycles):** `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`
 
 ---
 
@@ -254,6 +255,6 @@ Validate changes by:
 - **`webkitAudioContext`** — use `(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext` for the Safari fallback in `audio.ts`.
 - **Never import GameContext directly** — always use the `useGameContext()` hook from `@context/index`.
 - **`announce.ts` is a barrel re-export** — always import from `@utils/announce`; never import directly from `tts.ts` or `audio.ts`.
-- **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `playerActions` → `reducer`. No module may import from a module later in this chain.
+- **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`. No module may import from a module later in this chain.
 - **`Function` type is banned** — use explicit function signatures: `(action: GameAction) => void` for dispatch, `(action: LogAction) => void` for dispatchLog.
 - **ESLint enforces import order** — run `yarn lint:fix` after adding imports to auto-sort them.

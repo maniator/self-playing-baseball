@@ -37,7 +37,19 @@ describe("InstructionsModal", () => {
   it("closes on backdrop click (outside dialog bounds)", () => {
     render(<InstructionsModal />);
     const dialog = document.querySelector("dialog")!;
+    // Stub the bounding rect so that clientX/Y (0,0) is outside the dialog.
+    dialog.getBoundingClientRect = vi.fn(() => ({
+      left: 100,
+      right: 400,
+      top: 100,
+      bottom: 400,
+      width: 300,
+      height: 300,
+      x: 100,
+      y: 100,
+      toJSON: () => ({}),
+    }));
     fireEvent.click(dialog, { clientX: 0, clientY: 0 });
-    expect(HTMLDialogElement.prototype.close).toBeDefined();
+    expect(HTMLDialogElement.prototype.close).toHaveBeenCalled();
   });
 });

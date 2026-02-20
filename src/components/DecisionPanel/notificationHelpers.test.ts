@@ -10,7 +10,7 @@ import {
 } from "./notificationHelpers";
 
 // appLog is a module-level singleton; mock it so tests don't emit console output.
-vi.mock("../utilities/logger", () => ({
+vi.mock("@utils/logger", () => ({
   appLog: { log: vi.fn(), warn: vi.fn(), error: vi.fn() },
   createLogger: vi.fn(() => ({ log: vi.fn(), warn: vi.fn(), error: vi.fn() })),
 }));
