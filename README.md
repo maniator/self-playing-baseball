@@ -12,19 +12,27 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 
 ### Game start
 
-![Game start](https://github.com/user-attachments/assets/b1a99e5c-8553-4c00-9789-063ddad6ec38)
+| Desktop | Mobile |
+|---|---|
+| ![Game start — desktop](https://github.com/user-attachments/assets/d44a3ab9-5017-49da-8c63-ac3080cddd5d) | ![Game start — mobile](https://github.com/user-attachments/assets/874cdfd3-733f-4e14-845d-3767495aae0b) |
 
 ### Mid-game with play-by-play
 
-![Mid-game with play-by-play](https://github.com/user-attachments/assets/6bd4fe10-d6db-4df8-94ba-343408647b0d)
+| Desktop | Mobile |
+|---|---|
+| ![Mid-game — desktop](https://github.com/user-attachments/assets/c73981e7-f3ca-4377-bf1b-fcac24c0ea15) | ![Mid-game — mobile](https://github.com/user-attachments/assets/36df5932-4d87-4758-b506-91936e9c6840) |
 
 ### How to play
 
-![How to play modal](https://github.com/user-attachments/assets/727c6358-641c-4e5b-b49f-634753670bc4)
+| Desktop | Mobile |
+|---|---|
+| ![How to play — desktop](https://github.com/user-attachments/assets/8a6cec1c-a2f0-463f-9133-1e39fb51696c) | ![How to play — mobile](https://github.com/user-attachments/assets/1fb7b753-ca6e-4e12-b585-ee2dfcf4fd6b) |
 
 ### Manager Mode decision panel
 
-![Manager Mode decision panel](https://github.com/user-attachments/assets/f92d8ad3-3446-47d0-a847-b2d9384206b8)
+| Desktop | Mobile |
+|---|---|
+| ![Manager Mode decision panel — desktop](https://github.com/user-attachments/assets/b05ae75e-7c32-46fc-a4ef-8f85d794ff83) | ![Manager Mode decision panel — mobile](https://github.com/user-attachments/assets/31eda8a1-c1cb-4c5d-b029-dbaf9f09463e) |
 
 ---
 
