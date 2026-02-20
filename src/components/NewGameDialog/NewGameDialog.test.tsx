@@ -135,4 +135,81 @@ describe("NewGameDialog", () => {
     });
     expect((screen.getByLabelText(/^nl$/i) as HTMLInputElement).checked).toBe(true);
   });
+
+  it("switches to AL-only team lists when AL vs AL mode is selected", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const options = Array.from(homeSelect.options).map((o) => o.value);
+    expect(options).toContain("New York Yankees");
+    expect(options).not.toContain("New York Mets");
+  });
+
+  it("switches to NL-only team lists when NL vs NL mode is selected", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/nl vs nl/i));
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Mets");
+    expect(options).not.toContain("New York Yankees");
+  });
+
+  it("shows NL away options when home team league is AL in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Mets");
+    expect(options).not.toContain("New York Yankees");
+  });
+
+  it("shows AL away options when home team league is NL in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/^nl$/i));
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Yankees");
+    expect(options).not.toContain("New York Mets");
+  });
+
+  it("shows NL home options when home team league is NL in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/^nl$/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const options = Array.from(homeSelect.options).map((o) => o.value);
+    expect(options).toContain("New York Mets");
+    expect(options).not.toContain("New York Yankees");
+  });
+
+  it("excludes home team from away options in AL vs AL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const selectedHome = homeSelect.value;
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const awayOptions = Array.from(awaySelect.options).map((o) => o.value);
+    expect(awayOptions).not.toContain(selectedHome);
+  });
+
+  it("home dropdown has all AL teams in AL vs AL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    expect(homeSelect.options).toHaveLength(AL_FALLBACK.length);
+  });
+
+  it("home dropdown has all NL teams in NL vs NL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/nl vs nl/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    expect(homeSelect.options).toHaveLength(NL_FALLBACK.length);
+  });
+
+  it("renders with fallback teams when fetchMlbTeams rejects", () => {
+    vi.mocked(mlbTeamsModule.fetchMlbTeams).mockRejectedValueOnce(new Error("network error"));
+    render(<NewGameDialog onStart={noop} />);
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    expect(Array.from(homeSelect.options).map((o) => o.value)).toContain("New York Yankees");
+    expect(Array.from(awaySelect.options).map((o) => o.value)).toContain("New York Mets");
+  });
 });

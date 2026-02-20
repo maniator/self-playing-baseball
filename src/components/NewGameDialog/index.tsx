@@ -42,7 +42,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
       .catch(() => {});
   }, []);
 
-  const homeList = mode === "nl" ? teams.nl : teams.al;
+  const homeList =
+    mode === "interleague"
+      ? homeLeague === "al"
+        ? teams.al
+        : teams.nl
+      : mode === "nl"
+        ? teams.nl
+        : teams.al;
   const awayList =
     mode === "interleague"
       ? homeLeague === "al"
