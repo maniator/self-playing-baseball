@@ -554,4 +554,44 @@ describe("useReplayDecisions", () => {
     expect(dispatch).toHaveBeenCalledWith({ type: "skip_decision" });
     expect(dispatch).toHaveBeenCalledTimes(1);
   });
+
+  it("ignores malformed pinch entry with missing strategy part", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed pinch entry with invalid strategy value", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch:invalid"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("ignores malformed shift entry with missing direction part", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:shift"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "defensive_shift" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).not.toHaveBeenCalled();
+  });
+
+  it("dispatches set_defensive_shift false for shift:off entry", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:shift:off"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "defensive_shift" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_defensive_shift", payload: false });
+  });
+
+  it("dispatches set_pinch_hitter_strategy for valid pinch entry", () => {
+    vi.spyOn(rngModuleExtra, "getDecisionsFromUrl").mockReturnValue(["5:pinch:power"]);
+    const dispatch = vi.fn();
+    const pending = { kind: "pinch_hitter" as const };
+    renderHook(() => useReplayDecisions(dispatch, pending, 5, "balanced"));
+    expect(dispatch).toHaveBeenCalledWith({ type: "set_pinch_hitter_strategy", payload: "power" });
+  });
 });

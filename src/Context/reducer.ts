@@ -50,11 +50,13 @@ export const detectDecision = (state: State, strategy: Strategy, managerMode: bo
   if (ibbAvailable) return { kind: "ibb" };
   if (stealDecision) return stealDecision;
 
-  if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
-
+  // pinch_hitter is checked before bunt: it's a start-of-at-bat decision (0-0 count only)
+  // and runners on 2nd/3rd would otherwise always hit the bunt branch first.
   if (state.inning >= 7 && outs < 2 && (baseLayout[1] || baseLayout[2]) && !state.pinchHitterStrategy && balls === 0 && strikes === 0) {
     return { kind: "pinch_hitter" };
   }
+
+  if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };
 
   if (balls === 3 && strikes === 0) return { kind: "count30" };
   if (balls === 0 && strikes === 2) return { kind: "count02" };

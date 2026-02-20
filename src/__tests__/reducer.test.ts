@@ -766,6 +766,15 @@ describe("pinch_hitter decision", () => {
     expect(d?.kind).not.toBe("pinch_hitter");
   });
 
+  it("detectDecision offers pinch_hitter with runner on 2nd (inning 7, 0-0 count) — not preempted by bunt", () => {
+    // Before fix: bunt check fired first because baseLayout[1]=1 satisfied it.
+    const d = detectDecision(
+      makeState({ baseLayout: [0, 1, 0], outs: 0, inning: 7, balls: 0, strikes: 0 }),
+      "balanced", true
+    );
+    expect(d?.kind).toBe("pinch_hitter");
+  });
+
   it("set_pinch_hitter_strategy stores strategy and clears pending decision", () => {
     const { state, logs } = dispatchAction(
       makeState({ pendingDecision: { kind: "pinch_hitter" } }),
@@ -799,6 +808,17 @@ describe("pinch_hitter decision", () => {
       "strike", { swung: true }
     );
     expect(state.pinchHitterStrategy).toBeNull();
+  });
+
+  it("pinchHitterStrategy persists on caught-stealing (batterCompleted=false, same batter stays up)", () => {
+    // Caught stealing only records a runner out; the batter's at-bat is not over.
+    // The active pinch-hitter strategy must remain for the batter's remaining pitches.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.99); // 99 ≥ successPct → caught stealing
+    const { state } = dispatchAction(
+      makeState({ baseLayout: [1, 0, 0], outs: 0, pinchHitterStrategy: "power" }),
+      "steal_attempt", { base: 0, successPct: 70 }
+    );
+    expect(state.pinchHitterStrategy).toBe("power");
   });
 
   it("pinchHitterStrategy cleared after sac bunt", () => {
