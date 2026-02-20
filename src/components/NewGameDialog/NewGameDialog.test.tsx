@@ -3,7 +3,18 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
+import { AL_FALLBACK, NL_FALLBACK } from "@utils/mlbTeams";
+import * as mlbTeamsModule from "@utils/mlbTeams";
+
+vi.mock("@utils/mlbTeams", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
+  return {
+    ...mod,
+    fetchMlbTeams: vi.fn().mockResolvedValue({ al: mod.AL_FALLBACK, nl: mod.NL_FALLBACK }),
+  };
+});
+
+import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 import NewGameDialog from "./index";
 
 HTMLDialogElement.prototype.showModal = vi.fn();
@@ -13,60 +24,53 @@ const noop = vi.fn();
 
 describe("NewGameDialog", () => {
   it("calls showModal on mount", () => {
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={noop} />);
+    render(<NewGameDialog onStart={noop} />);
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
   });
 
-  it("renders home and away team inputs pre-filled with initial values", () => {
-    render(<NewGameDialog initialHome="Cubs" initialAway="Sox" onStart={noop} />);
-    expect((screen.getByLabelText(/home team/i) as HTMLInputElement).value).toBe("Cubs");
-    expect((screen.getByLabelText(/away team/i) as HTMLInputElement).value).toBe("Sox");
+  it("defaults to Interleague matchup mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const radio = screen.getByLabelText(/interleague/i) as HTMLInputElement;
+    expect(radio.checked).toBe(true);
   });
 
-  it("calls onStart with entered team names and null managedTeam when None selected", () => {
+  it("defaults to New York Yankees (home) vs New York Mets (away) in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    expect((screen.getByLabelText(/home team/i) as HTMLSelectElement).value).toBe(DEFAULT_AL_TEAM);
+    expect((screen.getByLabelText(/away team/i) as HTMLSelectElement).value).toBe(DEFAULT_NL_TEAM);
+  });
+
+  it("calls onStart with selected teams and null managedTeam when None selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "Braves" } });
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "Dodgers" } });
+    render(<NewGameDialog onStart={onStart} />);
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Braves", "Dodgers", null);
-  });
-
-  it("calls onStart with DEFAULT team names when inputs are cleared", () => {
-    const onStart = vi.fn();
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "   " } });
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "   " } });
-    act(() => {
-      fireEvent.click(screen.getByText(/play ball/i));
-    });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_HOME_TEAM, DEFAULT_AWAY_TEAM, null);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, null);
   });
 
   it("calls onStart with managedTeam=0 when Away is selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/away \(mets\)/i));
+    render(<NewGameDialog onStart={onStart} />);
+    fireEvent.click(screen.getByLabelText(new RegExp(`away \\(${DEFAULT_NL_TEAM}\\)`, "i")));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Yankees", "Mets", 0);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0);
   });
 
   it("calls onStart with managedTeam=1 when Home is selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/home \(yankees\)/i));
+    render(<NewGameDialog onStart={onStart} />);
+    fireEvent.click(screen.getByLabelText(new RegExp(`home \\(${DEFAULT_AL_TEAM}\\)`, "i")));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Yankees", "Mets", 1);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1);
   });
 
   it("prevents dialog from being cancelled via keyboard escape", () => {
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={noop} />);
+    render(<NewGameDialog onStart={noop} />);
     const dialog = screen.getByRole("dialog", { hidden: true });
     const event = new Event("cancel", { cancelable: true });
     act(() => {
@@ -75,11 +79,74 @@ describe("NewGameDialog", () => {
     expect(event.defaultPrevented).toBe(true);
   });
 
-  it("radio labels update dynamically as team names are typed", () => {
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={noop} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "Rangers" } });
-    expect(screen.getByLabelText(/home \(rangers\)/i)).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "Astros" } });
-    expect(screen.getByLabelText(/away \(astros\)/i)).toBeInTheDocument();
+  it("switches to AL-only team lists when AL vs AL mode is selected", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const options = Array.from(homeSelect.options).map((o) => o.value);
+    expect(options).toContain("New York Yankees");
+    expect(options).not.toContain("New York Mets");
+  });
+
+  it("switches to NL-only team lists when NL vs NL mode is selected", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/nl vs nl/i));
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Mets");
+    expect(options).not.toContain("New York Yankees");
+  });
+
+  it("shows NL away options when home team league is AL in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Mets");
+    expect(options).not.toContain("New York Yankees");
+  });
+
+  it("shows AL away options when home team league is NL in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/^nl$/i));
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const options = Array.from(awaySelect.options).map((o) => o.value);
+    expect(options).toContain("New York Yankees");
+    expect(options).not.toContain("New York Mets");
+  });
+
+  it("excludes home team from away options in AL vs AL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const selectedHome = homeSelect.value;
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    const awayOptions = Array.from(awaySelect.options).map((o) => o.value);
+    expect(awayOptions).not.toContain(selectedHome);
+  });
+
+  it("home dropdown has all AL teams in AL vs AL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/al vs al/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    expect(homeSelect.options).toHaveLength(AL_FALLBACK.length);
+  });
+
+  it("home dropdown has all NL teams in NL vs NL mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    fireEvent.click(screen.getByLabelText(/nl vs nl/i));
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    expect(homeSelect.options).toHaveLength(NL_FALLBACK.length);
+  });
+
+  it("renders with fallback teams when fetchMlbTeams rejects", async () => {
+    vi.mocked(mlbTeamsModule.fetchMlbTeams).mockRejectedValueOnce(new Error("network error"));
+    render(<NewGameDialog onStart={noop} />);
+    // Fallback data is loaded synchronously at init, so the dialog should render immediately
+    const homeSelect = screen.getByLabelText(/home team/i) as HTMLSelectElement;
+    const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
+    // AL fallback home options (interleague default)
+    expect(Array.from(homeSelect.options).map((o) => o.value)).toContain("New York Yankees");
+    // NL fallback away options (interleague default with AL home)
+    expect(Array.from(awaySelect.options).map((o) => o.value)).toContain("New York Mets");
   });
 });

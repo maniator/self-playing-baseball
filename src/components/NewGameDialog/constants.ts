@@ -1,2 +1,2 @@
-export const DEFAULT_HOME_TEAM = "Yankees";
-export const DEFAULT_AWAY_TEAM = "Mets";
+export const DEFAULT_AL_TEAM = "New York Yankees";
+export const DEFAULT_NL_TEAM = "New York Mets";

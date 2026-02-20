@@ -7,13 +7,13 @@ import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
-import NewGameDialog, { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "@components/NewGameDialog";
+import NewGameDialog from "@components/NewGameDialog";
 import { useGameContext } from "@context/index";
 
 import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 
 const GameInner: React.FunctionComponent = () => {
-  const { dispatch, teams } = useGameContext();
+  const { dispatch } = useGameContext();
   const [dialogOpen, setDialogOpen] = React.useState(true);
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
@@ -37,13 +37,7 @@ const GameInner: React.FunctionComponent = () => {
 
   return (
     <GameDiv>
-      {dialogOpen && (
-        <NewGameDialog
-          initialHome={teams[1] || DEFAULT_HOME_TEAM}
-          initialAway={teams[0] || DEFAULT_AWAY_TEAM}
-          onStart={handleStart}
-        />
-      )}
+      {dialogOpen && <NewGameDialog onStart={handleStart} />}
       <LineScore />
       <GameControls onNewGame={handleNewGame} />
       <GameBody>
