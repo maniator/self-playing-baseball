@@ -52,7 +52,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     <>
       <Controls>
         {!gameStarted && <BatterUpButton onClick={handleBatterUp}>Batter Up!</BatterUpButton>}
-        {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
+        {gameOver && onNewGame && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
