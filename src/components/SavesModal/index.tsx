@@ -2,9 +2,8 @@ import * as React from "react";
 
 import type { Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import { getRngState } from "@utils/rng";
 import {
-  currentSeedStr,
+  buildSlotFields,
   deleteSave,
   exportSave,
   importSave,
@@ -38,6 +37,7 @@ import {
 interface Props {
   strategy: Strategy;
   managedTeam: 0 | 1;
+  managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
   onSetupRestore?: (setup: SaveSetup) => void;
@@ -62,6 +62,7 @@ const safeFilename = (slot: SaveSlot): string => {
 const SavesModal: React.FunctionComponent<Props> = ({
   strategy,
   managedTeam,
+  managerMode,
   currentSaveId,
   onSaveIdChange,
   onSetupRestore,
@@ -88,18 +89,19 @@ const SavesModal: React.FunctionComponent<Props> = ({
   const close = () => ref.current?.close();
 
   const handleSave = () => {
-    const seed = currentSeedStr();
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
     const fullState = { ...gameState, teams, inning, pitchKey, decisionLog };
+    const setup: SaveSetup = {
+      homeTeam: teams[1],
+      awayTeam: teams[0],
+      strategy,
+      managedTeam,
+      managerMode,
+    };
     const slot = saveGame({
       id: currentSaveId ?? undefined,
       name,
-      seed,
-      rngState: getRngState() ?? undefined,
-      progress: pitchKey,
-      managerActions: decisionLog,
-      setup: { homeTeam: teams[1], awayTeam: teams[0], strategy, managedTeam },
-      state: fullState,
+      ...buildSlotFields(fullState, setup),
     });
     onSaveIdChange(slot.id);
     refresh();

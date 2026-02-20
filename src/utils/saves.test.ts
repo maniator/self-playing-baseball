@@ -218,7 +218,7 @@ describe("saves utils", () => {
         pitchKey: 10,
         teams: ["Sox", "Cubs"] as [string, string],
       });
-      writeAutoSave(state, "balanced", 0);
+      writeAutoSave(state, "balanced", 0, false);
       expect(localStorage.getItem(AUTO_SAVE_KEY)).not.toBeNull();
     });
 
@@ -228,7 +228,7 @@ describe("saves utils", () => {
         pitchKey: 20,
         teams: ["Sox", "Cubs"] as [string, string],
       });
-      writeAutoSave(state, "aggressive", 1);
+      writeAutoSave(state, "aggressive", 1, false);
       const slot = loadAutoSave();
       expect(slot?.id).toBe("autosave");
       expect(slot?.seed).toBe((123456).toString(36));
@@ -240,40 +240,40 @@ describe("saves utils", () => {
     it("writeAutoSave overwrites the previous auto-save", () => {
       const stateA = makeState({ inning: 2 });
       const stateB = makeState({ inning: 5 });
-      writeAutoSave(stateA, "balanced", 0);
-      writeAutoSave(stateB, "power", 1);
+      writeAutoSave(stateA, "balanced", 0, false);
+      writeAutoSave(stateB, "power", 1, false);
       expect(loadAutoSave()?.setup.strategy).toBe("power");
     });
 
     it("clearAutoSave removes the auto-save", () => {
-      writeAutoSave(makeState(), "balanced", 0);
+      writeAutoSave(makeState(), "balanced", 0, false);
       clearAutoSave();
       expect(loadAutoSave()).toBeNull();
     });
 
     it("writeAutoSave does not affect the manual saves list", () => {
       saveGame(makeSlot({ name: "Manual" }));
-      writeAutoSave(makeState(), "balanced", 0);
+      writeAutoSave(makeState(), "balanced", 0, false);
       expect(loadSaves()).toHaveLength(1);
       expect(loadSaves()[0].name).toBe("Manual");
     });
 
     it("writeAutoSave stores rngState from getRngState()", () => {
       vi.spyOn(rngModule, "getRngState").mockReturnValue(999888);
-      writeAutoSave(makeState(), "balanced", 0);
+      writeAutoSave(makeState(), "balanced", 0, false);
       expect(loadAutoSave()?.rngState).toBe(999888);
     });
 
     it("writeAutoSave stores rngState as undefined when getRngState returns null", () => {
       vi.spyOn(rngModule, "getRngState").mockReturnValue(null);
-      writeAutoSave(makeState(), "balanced", 0);
+      writeAutoSave(makeState(), "balanced", 0, false);
       // undefined fields are omitted from JSON, so rngState should be undefined
       expect(loadAutoSave()?.rngState).toBeUndefined();
     });
 
     it("auto-save name includes team names and inning", () => {
       const state = makeState({ teams: ["Red Sox", "Yankees"] as [string, string], inning: 7 });
-      writeAutoSave(state, "contact", 0);
+      writeAutoSave(state, "contact", 0, false);
       expect(loadAutoSave()?.name).toContain("Red Sox");
       expect(loadAutoSave()?.name).toContain("Inning 7");
     });
@@ -338,7 +338,7 @@ describe("deterministic replay — save/load pitch sequence", () => {
 
     // Auto-save after a half-inning (writeAutoSave calls getRngState() internally).
     const state = makeState({ pitchKey: 25, inning: 4 });
-    savesModule.writeAutoSave(state, "balanced", 0);
+    savesModule.writeAutoSave(state, "balanced", 0, false);
 
     // Continue original game for 6 more pitches.
     const originalNext6 = Array.from({ length: 6 }, () => rng.random());

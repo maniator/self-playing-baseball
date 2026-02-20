@@ -36,7 +36,7 @@ describe("useAutoSave", () => {
   it("does NOT auto-save on initial render", () => {
     const writeSpy = vi.spyOn(savesModule, "writeAutoSave");
     const ctx = makeContextValue({ inning: 1, atBat: 0, gameOver: false });
-    renderHook(() => useAutoSave("balanced", 0), {
+    renderHook(() => useAutoSave("balanced", 0, false), {
       wrapper: makeCtxWrapper(() => ctx),
     });
     expect(writeSpy).not.toHaveBeenCalled();
@@ -45,7 +45,7 @@ describe("useAutoSave", () => {
   it("auto-saves when atBat changes (half-inning transition)", () => {
     const writeSpy = vi.spyOn(savesModule, "writeAutoSave");
     let ctx = makeContextValue({ inning: 1, atBat: 0, gameOver: false });
-    const { rerender } = renderHook(() => useAutoSave("balanced", 0), {
+    const { rerender } = renderHook(() => useAutoSave("balanced", 0, false), {
       wrapper: makeCtxWrapper(() => ctx),
     });
     expect(writeSpy).not.toHaveBeenCalled();
@@ -59,7 +59,7 @@ describe("useAutoSave", () => {
   it("auto-saves when inning changes", () => {
     const writeSpy = vi.spyOn(savesModule, "writeAutoSave");
     let ctx = makeContextValue({ inning: 1, atBat: 1, gameOver: false });
-    const { rerender } = renderHook(() => useAutoSave("balanced", 0), {
+    const { rerender } = renderHook(() => useAutoSave("balanced", 0, false), {
       wrapper: makeCtxWrapper(() => ctx),
     });
     act(() => {
@@ -72,7 +72,7 @@ describe("useAutoSave", () => {
   it("auto-saves when game ends", () => {
     const writeSpy = vi.spyOn(savesModule, "writeAutoSave");
     let ctx = makeContextValue({ inning: 9, atBat: 1, gameOver: false });
-    const { rerender } = renderHook(() => useAutoSave("balanced", 0), {
+    const { rerender } = renderHook(() => useAutoSave("balanced", 0, false), {
       wrapper: makeCtxWrapper(() => ctx),
     });
     act(() => {
@@ -85,7 +85,7 @@ describe("useAutoSave", () => {
   it("does NOT save again when halfKey stays the same (same inning + atBat)", () => {
     const writeSpy = vi.spyOn(savesModule, "writeAutoSave");
     let ctx = makeContextValue({ inning: 2, atBat: 0, gameOver: false });
-    const { rerender } = renderHook(() => useAutoSave("balanced", 0), {
+    const { rerender } = renderHook(() => useAutoSave("balanced", 0, false), {
       wrapper: makeCtxWrapper(() => ctx),
     });
     act(() => {

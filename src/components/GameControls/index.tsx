@@ -23,6 +23,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
     announcementVolume,
     alertVolume,
     managerMode,
+    setManagerMode,
     strategy,
     setStrategy,
     managedTeam,
@@ -48,11 +49,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
         <SavesModal
           strategy={strategy}
           managedTeam={managedTeam}
+          managerMode={managerMode}
           currentSaveId={currentSaveId}
           onSaveIdChange={setCurrentSaveId}
           onSetupRestore={(setup) => {
             setStrategy(setup.strategy);
             setManagedTeam(setup.managedTeam);
+            setManagerMode(setup.managerMode ?? false);
           }}
         />
         <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>

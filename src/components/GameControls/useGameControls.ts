@@ -134,7 +134,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     betweenInningsPauseRef,
   );
   useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
-  useAutoSave(safeStrategy, safeManagedTeam);
+  useAutoSave(safeStrategy, safeManagedTeam, safeManagerMode);
 
   React.useEffect(() => {
     setAnnouncementVolume(safeAnnouncementVolume);
@@ -162,6 +162,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     announcementVolume: safeAnnouncementVolume,
     alertVolume: safeAlertVolume,
     managerMode: safeManagerMode,
+    setManagerMode,
     strategy: safeStrategy,
     setStrategy,
     managedTeam: safeManagedTeam,

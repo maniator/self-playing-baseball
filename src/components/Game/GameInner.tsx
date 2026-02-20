@@ -42,8 +42,9 @@ const GameInner: React.FunctionComponent = () => {
       dispatch({ type: "restore_game", payload: autoSave.state });
       setStrategy(autoSave.setup.strategy);
       setManagedTeam(autoSave.setup.managedTeam);
+      setManagerMode(autoSave.setup.managerMode ?? false);
     }
-  }, [dispatch, autoSave, setStrategy, setManagedTeam]);
+  }, [dispatch, autoSave, setStrategy, setManagedTeam, setManagerMode]);
 
   const handleResume = () => {
     // State is already restored by the effect above; start the game and close.

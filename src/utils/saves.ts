@@ -32,6 +32,7 @@ export interface SaveSetup {
   awayTeam: string;
   strategy: Strategy;
   managedTeam: 0 | 1;
+  managerMode: boolean;
 }
 
 export interface SaveSlot {
@@ -71,9 +72,9 @@ const safeSetItem = (key: string, value: string): void => {
   }
 };
 
-export const loadSaves = (): SaveSlot[] => {
+/** Parses a raw localStorage string into an array of valid SaveSlots. */
+const parseSlotArray = (raw: string | null): SaveSlot[] => {
   try {
-    const raw = localStorage.getItem(SAVES_KEY);
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
@@ -82,6 +83,37 @@ export const loadSaves = (): SaveSlot[] => {
     return [];
   }
 };
+
+/** Parses a raw localStorage string into a single valid SaveSlot or null. */
+const parseSlot = (raw: string | null): SaveSlot | null => {
+  try {
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return isValidSaveSlot(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Builds the variable fields shared by manual saves and auto-saves:
+ * seed, rngState, progress, managerActions, setup, and state.
+ * Both `saveGame` callers and `writeAutoSave` use this so the fields
+ * are always assembled in one place.
+ */
+export const buildSlotFields = (
+  state: State,
+  setup: SaveSetup,
+): Pick<SaveSlot, "seed" | "rngState" | "progress" | "managerActions" | "setup" | "state"> => ({
+  seed: currentSeedStr(),
+  rngState: getRngState() ?? undefined,
+  progress: state.pitchKey,
+  managerActions: state.decisionLog,
+  setup,
+  state,
+});
+
+export const loadSaves = (): SaveSlot[] => parseSlotArray(localStorage.getItem(SAVES_KEY));
 
 const persistSaves = (saves: SaveSlot[]): void => {
   safeSetItem(SAVES_KEY, JSON.stringify(saves));
@@ -131,31 +163,30 @@ export const deleteSave = (id: string): void => {
 
 export const AUTO_SAVE_KEY = "ballgame:autosave:v1";
 
-export const loadAutoSave = (): SaveSlot | null => {
-  try {
-    const raw = localStorage.getItem(AUTO_SAVE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return isValidSaveSlot(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-};
+export const loadAutoSave = (): SaveSlot | null => parseSlot(localStorage.getItem(AUTO_SAVE_KEY));
 
-export const writeAutoSave = (state: State, strategy: Strategy, managedTeam: 0 | 1): void => {
+export const writeAutoSave = (
+  state: State,
+  strategy: Strategy,
+  managedTeam: 0 | 1,
+  managerMode: boolean,
+): void => {
+  const now = Date.now();
+  const setup: SaveSetup = {
+    homeTeam: state.teams[1],
+    awayTeam: state.teams[0],
+    strategy,
+    managedTeam,
+    managerMode,
+  };
   const slot: SaveSlot = {
     id: "autosave",
     name: `Auto-save — ${state.teams[0]} vs ${state.teams[1]} · Inning ${state.inning}`,
-    createdAt: Date.now(),
-    updatedAt: Date.now(),
-    seed: currentSeedStr(),
-    rngState: getRngState() ?? undefined,
-    progress: state.pitchKey,
-    managerActions: state.decisionLog,
-    setup: { homeTeam: state.teams[1], awayTeam: state.teams[0], strategy, managedTeam },
-    state,
+    createdAt: now,
+    updatedAt: now,
+    ...buildSlotFields(state, setup),
   };
-  localStorage.setItem(AUTO_SAVE_KEY, JSON.stringify(slot));
+  safeSetItem(AUTO_SAVE_KEY, JSON.stringify(slot));
 };
 
 export const clearAutoSave = (): void => {

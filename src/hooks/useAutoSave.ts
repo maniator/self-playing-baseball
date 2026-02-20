@@ -9,7 +9,7 @@ import { writeAutoSave } from "@utils/saves";
  * and when the game ends. Uses refs so the effect deps stay minimal and
  * the saved snapshot is always current.
  */
-export const useAutoSave = (strategy: Strategy, managedTeam: 0 | 1): void => {
+export const useAutoSave = (strategy: Strategy, managedTeam: 0 | 1, managerMode: boolean): void => {
   const ctx = useGameContext();
   const { atBat, inning, gameOver } = ctx;
 
@@ -20,10 +20,17 @@ export const useAutoSave = (strategy: Strategy, managedTeam: 0 | 1): void => {
   strategyRef.current = strategy;
   const managedTeamRef = React.useRef<0 | 1>(managedTeam);
   managedTeamRef.current = managedTeam;
+  const managerModeRef = React.useRef(managerMode);
+  managerModeRef.current = managerMode;
 
   // Stable save callback — reads from refs so needs no deps.
   const save = React.useCallback(() => {
-    writeAutoSave(ctxRef.current, strategyRef.current, managedTeamRef.current);
+    writeAutoSave(
+      ctxRef.current,
+      strategyRef.current,
+      managedTeamRef.current,
+      managerModeRef.current,
+    );
   }, []);
 
   // Track half-inning transitions (atBat toggles 0↔1 each half-inning,
