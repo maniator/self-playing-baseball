@@ -4,7 +4,7 @@
 
 This is a **self-playing baseball game simulator** built as a single-page React/TypeScript web application. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation.
 
-**Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn (classic).
+**Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4.
 
 ---
 
@@ -14,7 +14,7 @@ This is a **self-playing baseball game simulator** built as a single-page React/
 /
 ├── .github/                        # GitHub config (copilot-instructions.md, workflows/)
 ├── .yarn/                          # Yarn releases
-├── .yarnrc                         # Yarn config
+├── .yarnrc.yml                     # Yarn Berry config (nodeLinker: node-modules)
 ├── .gitignore
 ├── .nvmrc                          # Node version: 24
 ├── .prettierrc                     # Prettier config (double quotes, trailing commas, printWidth 100)

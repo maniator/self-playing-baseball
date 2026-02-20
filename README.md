@@ -50,7 +50,7 @@ A self-playing, talking baseball game simulator that runs entirely in your brows
 
 ## Getting started
 
-**Requirements:** Node 24.x, Yarn classic.
+**Requirements:** Node 24.x, Yarn Berry v4.
 
 ```bash
 # Install dependencies
