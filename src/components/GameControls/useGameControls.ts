@@ -1,0 +1,154 @@
+import * as React from "react";
+
+import { useLocalStorage } from "usehooks-ts";
+
+import { ContextValue, Strategy, useGameContext } from "@context/index";
+import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
+import { useGameAudio } from "@hooks/useGameAudio";
+import { useGameRefs } from "@hooks/useGameRefs";
+import { useKeyboardPitch } from "@hooks/useKeyboardPitch";
+import { usePitchDispatch } from "@hooks/usePitchDispatch";
+import { usePlayerControls } from "@hooks/usePlayerControls";
+import { useReplayDecisions } from "@hooks/useReplayDecisions";
+import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
+
+import { SPEED_NORMAL } from "./constants";
+
+/** Wires all game-controls hooks and localStorage state into a single value. */
+export const useGameControls = () => {
+  const {
+    dispatch,
+    dispatchLog,
+    strikes,
+    balls,
+    baseLayout,
+    outs,
+    inning,
+    score,
+    atBat,
+    pendingDecision,
+    gameOver,
+    onePitchModifier,
+    teams,
+    decisionLog,
+    pitchKey,
+    suppressNextDecision,
+    pinchHitterStrategy,
+    defensiveShift,
+    defensiveShiftOffered,
+  }: ContextValue = useGameContext();
+
+  const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
+  const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
+  const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
+  const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
+  const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
+  const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
+  const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+
+  const gameSnapshot = {
+    strikes,
+    balls,
+    baseLayout,
+    outs,
+    inning,
+    score,
+    atBat,
+    pendingDecision,
+    gameOver,
+    onePitchModifier,
+    teams,
+    suppressNextDecision,
+    pinchHitterStrategy,
+    defensiveShift,
+    defensiveShiftOffered,
+  };
+
+  const {
+    autoPlayRef,
+    mutedRef,
+    speedRef,
+    strikesRef,
+    managerModeRef,
+    strategyRef,
+    managedTeamRef,
+    gameStateRef,
+    skipDecisionRef,
+  } = useGameRefs({
+    autoPlay,
+    announcementVolume,
+    speed,
+    strikes,
+    balls,
+    managerMode,
+    strategy,
+    managedTeam,
+    gameSnapshot,
+    pendingDecision,
+  });
+
+  const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
+  const handleClickRef = usePitchDispatch(
+    dispatch,
+    gameStateRef,
+    managerModeRef,
+    strategyRef,
+    managedTeamRef,
+    skipDecisionRef,
+    strikesRef,
+  );
+
+  useAutoPlayScheduler(
+    autoPlay,
+    pendingDecision,
+    managerMode,
+    autoPlayRef,
+    mutedRef,
+    speedRef,
+    handleClickRef,
+    gameStateRef,
+    betweenInningsPauseRef,
+  );
+  useKeyboardPitch(autoPlayRef, handleClickRef);
+  useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
+
+  React.useEffect(() => {
+    setAnnouncementVolume(announcementVolume);
+  }, [announcementVolume]);
+  React.useEffect(() => {
+    setAlertVolume(alertVolume);
+  }, [alertVolume]);
+  React.useEffect(() => {
+    setSpeechRate(speed);
+  }, [speed]);
+
+  const playerControls = usePlayerControls({
+    managerMode,
+    setManagerMode,
+    setAutoPlay,
+    announcementVolume,
+    setAnnouncementVolumeState,
+    alertVolume,
+    setAlertVolumeState,
+    decisionLog,
+    dispatchLog,
+  });
+
+  return {
+    dispatch,
+    autoPlay,
+    speed,
+    setSpeed,
+    announcementVolume,
+    alertVolume,
+    managerMode,
+    strategy,
+    setStrategy,
+    managedTeam,
+    setManagedTeam,
+    teams,
+    gameOver,
+    handleClickRef,
+    ...playerControls,
+  };
+};
