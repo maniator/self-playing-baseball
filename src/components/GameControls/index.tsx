@@ -9,7 +9,7 @@ import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
 import {
   AutoPlayGroup,
-  Button,
+  BatterUpButton,
   Controls,
   NewGameButton,
   Select,
@@ -25,7 +25,7 @@ type Props = {
 
 const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   const {
-    autoPlay,
+    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
@@ -37,11 +37,10 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     setManagedTeam,
     teams,
     gameOver,
-    handleClickRef,
+    handleBatterUp,
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
-    handleAutoPlayChange,
     handleAnnouncementVolumeChange,
     handleAlertVolumeChange,
     handleToggleAnnouncementMute,
@@ -54,12 +53,8 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   return (
     <>
       <Controls>
-        {!autoPlay && (
-          <Button onClick={handleClickRef.current} disabled={gameOver}>
-            Batter Up!
-          </Button>
-        )}
-        {gameOver && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
+        {!gameStarted && <BatterUpButton onClick={handleBatterUp}>Batter Up!</BatterUpButton>}
+        {gameOver && onNewGame && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <SavesModal
           strategy={strategy}
           managedTeam={managedTeam}
@@ -70,12 +65,8 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
             setManagedTeam(setup.managedTeam);
           }}
         />
-        <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
+        <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
         <AutoPlayGroup>
-          <ToggleLabel>
-            <input type="checkbox" checked={autoPlay} onChange={handleAutoPlayChange} />
-            Auto-play
-          </ToggleLabel>
           <ToggleLabel>
             Speed
             <Select value={speed} onChange={(e) => setSpeed(parseInt(e.target.value, 10))}>
@@ -92,7 +83,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
             onToggleAnnouncementMute={handleToggleAnnouncementMute}
             onToggleAlertMute={handleToggleAlertMute}
           />
-          {autoPlay && (
+          {gameStarted && (
             <ManagerModeControls
               managerMode={managerMode}
               strategy={strategy}
@@ -108,7 +99,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
         </AutoPlayGroup>
         <InstructionsModal />
       </Controls>
-      {autoPlay && managerMode && <DecisionPanel strategy={strategy} />}
+      {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
     </>
   );
 };

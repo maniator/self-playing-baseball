@@ -54,6 +54,12 @@ export const ToggleLabel = styled.label`
   }
 `;
 
+export const BatterUpButton = styled(Button)`
+  font-size: 18px;
+  padding: 16px 28px;
+  font-weight: bold;
+`;
+
 export const Select = styled.select`
   background: #1a2440;
   border: 1px solid #4a6090;

@@ -6,15 +6,14 @@ import { isSpeechPending } from "@utils/announce";
 import { GameStateRef } from "./useGameRefs";
 
 /**
- * Speech-gated auto-play scheduler.
+ * Speech-gated scheduler — runs while the game is in progress.
  * Waits for the current announcement to finish before pitching, so nothing
  * gets cut off. Adds a brief pause at half-inning transitions when muted.
  */
 export const useAutoPlayScheduler = (
-  autoPlay: boolean,
+  gameStarted: boolean,
   pendingDecision: DecisionType | null,
   managerMode: boolean,
-  autoPlayRef: React.MutableRefObject<boolean>,
   mutedRef: React.MutableRefObject<boolean>,
   speedRef: React.MutableRefObject<number>,
   handleClickRef: React.MutableRefObject<() => void>,
@@ -22,7 +21,7 @@ export const useAutoPlayScheduler = (
   betweenInningsPauseRef: React.MutableRefObject<boolean>,
 ): void => {
   React.useEffect(() => {
-    if (!autoPlay) return;
+    if (!gameStarted) return;
     if (pendingDecision && managerMode) return;
 
     let timerId: ReturnType<typeof setTimeout>;
@@ -34,7 +33,7 @@ export const useAutoPlayScheduler = (
     const tick = (delay: number) => {
       timerId = setTimeout(() => {
         if (cancelled) return;
-        if (!autoPlayRef.current || gameStateRef.current.gameOver) return;
+        if (gameStateRef.current.gameOver) return;
 
         if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
           extraWait += SPEECH_POLL_MS;
@@ -63,10 +62,9 @@ export const useAutoPlayScheduler = (
       clearTimeout(timerId);
     };
   }, [
-    autoPlay,
+    gameStarted,
     pendingDecision,
     managerMode,
-    autoPlayRef,
     betweenInningsPauseRef,
     gameStateRef,
     handleClickRef,

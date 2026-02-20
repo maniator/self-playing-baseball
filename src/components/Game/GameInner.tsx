@@ -26,7 +26,9 @@ const GameInner: React.FunctionComponent = () => {
   const { dispatch } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
-  const [, setAutoPlay] = useLocalStorage("autoPlay", false);
+
+  const [dialogOpen, setDialogOpen] = React.useState(true);
+  const [gameKey, setGameKey] = React.useState(0);
   const [, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
   // Check for a resumable auto-save once on mount.
@@ -52,17 +54,18 @@ const GameInner: React.FunctionComponent = () => {
     setManagerMode(managedTeam !== null);
     if (managedTeam !== null) {
       setManagedTeam(managedTeam);
-      setAutoPlay(true);
     }
     clearAutoSave();
     dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });
+    setGameKey((k) => k + 1);
     setDialogOpen(false);
   };
 
   const handleNewGame = () => {
     clearAutoSave();
     dispatch({ type: "reset" });
+    setGameKey((k) => k + 1);
     setDialogOpen(true);
   };
 
@@ -76,7 +79,7 @@ const GameInner: React.FunctionComponent = () => {
         />
       )}
       <LineScore />
-      <GameControls onNewGame={handleNewGame} />
+      <GameControls key={gameKey} onNewGame={handleNewGame} />
       <GameBody>
         <LeftPanel>
           <HitLog />

@@ -6,7 +6,6 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ContextValue } from "@context/index";
 import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
-import * as rngModule from "@utils/rng";
 
 import GameControls from ".";
 
@@ -33,14 +32,15 @@ describe("GameControls", () => {
     localStorage.clear();
   });
 
-  it("shows Batter Up! button when autoplay is off", () => {
+  it("shows Batter Up! button on initial render", () => {
     renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
     expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
   });
 
-  it("Batter Up! button is disabled when game is over", () => {
-    renderWithContext(<GameControls />, makeContextValue({ gameOver: true }));
-    expect(screen.getByRole("button", { name: /batter up/i })).toBeDisabled();
+  it("hides Batter Up! after it is clicked", () => {
+    renderWithContext(<GameControls />);
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
   it("shows Share seed button", () => {
@@ -48,40 +48,22 @@ describe("GameControls", () => {
     expect(screen.getByRole("button", { name: /share seed/i })).toBeInTheDocument();
   });
 
-  it("shows auto-play checkbox", () => {
+  it("shows Manager Mode checkbox after Batter Up is clicked", () => {
     renderWithContext(<GameControls />);
-    expect(screen.getByRole("checkbox", { name: /auto-play/i })).toBeInTheDocument();
-  });
-
-  it("dispatches a game action when Batter Up! is clicked", () => {
-    const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
     fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).toHaveBeenCalled();
-  });
-
-  it("Batter Up! button is disabled (not clickable) when game is over", () => {
-    const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: true }));
-    expect(screen.getByRole("button", { name: /batter up/i })).toBeDisabled();
-  });
-
-  it("hides Batter Up! when autoplay is enabled", () => {
-    localStorage.setItem("autoPlay", "true");
-    renderWithContext(<GameControls />);
-    expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
-  });
-
-  it("shows Manager Mode checkbox when autoplay is on", () => {
-    localStorage.setItem("autoPlay", "true");
-    renderWithContext(<GameControls />);
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
   });
 
-  it("does NOT show Manager Mode checkbox when autoplay is off", () => {
-    localStorage.setItem("autoPlay", "false");
+  it("does NOT show Manager Mode checkbox before Batter Up is clicked", () => {
     renderWithContext(<GameControls />);
     expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
+  });
+
+  it("clicking Batter Up! does not dispatch game actions (starts the game)", () => {
+    const dispatch = vi.fn();
+    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("shows volume sliders", () => {
@@ -95,26 +77,12 @@ describe("GameControls", () => {
     expect(screen.getByRole("combobox")).toBeInTheDocument();
   });
 
-  it("toggling auto-play on reveals Manager Mode checkbox", () => {
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("checkbox", { name: /auto-play/i }));
-    expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
-  });
-
-  it("toggling auto-play off turns Manager Mode off and hides its checkbox", () => {
-    localStorage.setItem("autoPlay", "true");
-    localStorage.setItem("managerMode", "true");
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("checkbox", { name: /auto-play/i }));
-    expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
-  });
-
   it("enabling Manager Mode requests notification permission", () => {
-    localStorage.setItem("autoPlay", "true");
     (Notification as any).permission = "default";
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).requestPermission = requestPermission;
     renderWithContext(<GameControls />);
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     fireEvent.click(screen.getByRole("checkbox", { name: /manager mode/i }));
     expect(requestPermission).toHaveBeenCalled();
     (Notification as any).permission = "granted";
@@ -157,98 +125,11 @@ describe("GameControls", () => {
   });
 
   it("renders team and strategy selectors in manager mode", () => {
-    localStorage.setItem("autoPlay", "true");
     localStorage.setItem("managerMode", "true");
     renderWithContext(<GameControls />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
+    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Yankees")).toBeInTheDocument();
-  });
-
-  it("spacebar press triggers a pitch when autoPlay is off", () => {
-    const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
-    act(() => {
-      window.dispatchEvent(new KeyboardEvent("keyup", { key: " ", bubbles: true }));
-    });
-    expect(dispatch).toHaveBeenCalled();
-  });
-
-  it("Batter Up! dispatches strike when random produces a strike outcome", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.3)
-      .mockReturnValueOnce(0.7);
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls />,
-      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "strike" }));
-    vi.restoreAllMocks();
-  });
-
-  it("Batter Up! dispatches foul when random produces a foul outcome", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.3)
-      .mockReturnValueOnce(0.1);
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls />,
-      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "foul" }));
-    vi.restoreAllMocks();
-  });
-
-  it("Batter Up! dispatches hit when random >= 920", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.93)
-      .mockReturnValueOnce(0.5);
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls />,
-      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "hit" }));
-    vi.restoreAllMocks();
-  });
-
-  it("Batter Up! dispatches wait when random is in the take range", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.7)
-      .mockReturnValue(0.5);
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls />,
-      makeContextValue({ dispatch, gameOver: false, strikes: 0 }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
-    vi.restoreAllMocks();
-  });
-
-  it("swing modifier: random in take zone still produces a swing", () => {
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.7)
-      .mockReturnValueOnce(0.7);
-    const dispatch = vi.fn();
-    renderWithContext(
-      <GameControls />,
-      makeContextValue({ dispatch, gameOver: false, strikes: 0, onePitchModifier: "swing" }),
-    );
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "wait" }));
-    expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: expect.stringMatching(/strike|foul/) }),
-    );
-    vi.restoreAllMocks();
   });
 });

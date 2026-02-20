@@ -83,13 +83,14 @@
     │   │   ├── index.tsx           # Baseball diamond — self-contained with FieldWrapper container
     │   │   └── styles.ts           # Styled components for diamond layout
     │   ├── Game/
-    │   │   ├── index.tsx           # Wraps children in GameProviderWrapper
-    │   │   ├── GameInner.tsx       # Two-column layout: left (play-by-play), right (ScoreBoard + Diamond)
+    │   │   ├── index.tsx           # Wraps children in GameProviderWrapper; adds GitHub ribbon
+    │   │   ├── GameInner.tsx       # Top-level layout: NewGameDialog, LineScore, GameControls, two-column body (left: HitLog + Announcements, right: Diamond)
     │   │   └── styles.ts           # Styled components for game layout
     │   ├── GameControls/
-    │   │   ├── index.tsx           # GameControls component — wires all hooks + renders controls
+    │   │   ├── index.tsx           # GameControls component — renders controls using useGameControls hook
     │   │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms)
     │   │   ├── styles.ts           # Styled components for controls layout
+    │   │   ├── useGameControls.ts  # Hook: wires all game-controls hooks + localStorage state into a single value
     │   │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
     │   │   ├── ManagerModeStyles.ts     # Styled components for manager mode controls
     │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
@@ -97,9 +98,13 @@
     │   ├── InstructionsModal/
     │   │   ├── index.tsx           # Instructions modal component
     │   │   └── styles.ts           # Styled components for modal
-    │   └── LineScore/
-    │       ├── index.tsx           # Score/inning/strikes/balls/outs + FINAL banner when gameOver
-    │       └── styles.ts           # Styled components for line score
+    │   ├── LineScore/
+    │   │   ├── index.tsx           # Score/inning/strikes/balls/outs + FINAL banner when gameOver
+    │   │   └── styles.ts           # Styled components for line score
+    │   └── NewGameDialog/
+    │       ├── constants.ts        # DEFAULT_HOME_TEAM ("Yankees"), DEFAULT_AWAY_TEAM ("Mets")
+    │       ├── index.tsx           # Modal dialog for starting a new game: team name inputs + managed-team radio selection
+    │       └── styles.ts           # Styled components for the new game dialog
     └── test/                       # Shared test infrastructure only
         ├── setup.ts                # @testing-library/jest-dom + global mocks (SpeechSynthesis, AudioContext, Notification)
         └── testHelpers.ts          # makeState, makeContextValue, makeLogs, mockRandom
@@ -129,7 +134,7 @@ Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 ## Key Architectural Notes
 
 - All game state lives in `context/index.tsx` (`State` interface) and is mutated by `context/reducer.ts`.
-- `components/GameControls/index.tsx` dispatches all pitch actions and owns auto-play, speed, mute, manager mode, team selection, strategy, and share-replay controls. All stateful logic is split into focused hooks under `src/hooks/`.
+- `components/GameControls/useGameControls.ts` is the single hook that wires all game-controls hooks and `localStorage` state together. `components/GameControls/index.tsx` consumes this hook and renders the controls UI. All underlying pitch/audio/replay logic lives in focused hooks under `src/hooks/`.
 - `GameContext` is typed `createContext<ContextValue | undefined>(undefined)`. Always consume it via the `useGameContext()` hook exported from `@context/index` — **never** call `React.useContext(GameContext)` directly in components.
 - **`ContextValue` extends `State`** and adds `dispatch: React.Dispatch<GameAction>`, `dispatchLog: React.Dispatch<LogAction>`, and `log: string[]` (play-by-play, most recent first). All three are provided by `GameProviderWrapper`.
 - **`LogAction`** = `{ type: "log"; payload: string }`. **`GameAction`** = `{ type: string; payload?: unknown }`. Both are exported from `@context/index`.
@@ -235,7 +240,7 @@ yarn format:check     # Prettier check
 Validate changes by:
 1. `yarn lint` — zero errors/warnings required.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
-3. `yarn test` — all 470 tests must pass. Run `yarn test:coverage` to verify coverage thresholds.
+3. `yarn test` — all 535 tests must pass. Run `yarn test:coverage` to verify coverage thresholds.
 
 ---
 

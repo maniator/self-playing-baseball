@@ -8,7 +8,6 @@ import { useShareReplay } from "./useShareReplay";
 interface PlayerControlsArgs {
   managerMode: boolean;
   setManagerMode: (v: boolean) => void;
-  setAutoPlay: (v: boolean) => void;
   announcementVolume: number;
   setAnnouncementVolumeState: (v: number) => void;
   alertVolume: number;
@@ -19,7 +18,6 @@ interface PlayerControlsArgs {
 export const usePlayerControls = ({
   managerMode,
   setManagerMode,
-  setAutoPlay,
   announcementVolume,
   setAnnouncementVolumeState,
   alertVolume,
@@ -63,12 +61,6 @@ export const usePlayerControls = ({
     });
   }, []);
 
-  const handleAutoPlayChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const enabled = e.target.checked;
-    setAutoPlay(enabled);
-    if (!enabled && managerMode) setManagerMode(false);
-  };
-
   const handleAnnouncementVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const f = parseFloat(e.target.value);
     if (Number.isFinite(f)) setAnnouncementVolumeState(Math.max(0, Math.min(1, f)));
@@ -105,7 +97,6 @@ export const usePlayerControls = ({
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
-    handleAutoPlayChange,
     handleAnnouncementVolumeChange,
     handleAlertVolumeChange,
     handleToggleAnnouncementMute,

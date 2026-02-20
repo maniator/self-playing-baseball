@@ -31,7 +31,6 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
       useGameRefs({
-        autoPlay: false,
         announcementVolume: 1,
         speed: 700,
         strikes: 0,
@@ -43,7 +42,6 @@ describe("useGameRefs", () => {
         pendingDecision: null,
       }),
     );
-    expect(result.current.autoPlayRef.current).toBe(false);
     expect(result.current.mutedRef.current).toBe(false);
     expect(result.current.speedRef.current).toBe(700);
     expect(result.current.strikesRef.current).toBe(0);
@@ -57,7 +55,6 @@ describe("useGameRefs", () => {
     const snap = makeGameSnapshot();
     const { result } = renderHook(() =>
       useGameRefs({
-        autoPlay: false,
         announcementVolume: 0,
         speed: 700,
         strikes: 0,
@@ -78,7 +75,6 @@ describe("useGameRefs", () => {
     const { result, rerender } = renderHook(
       ({ pd }) =>
         useGameRefs({
-          autoPlay: false,
           announcementVolume: 1,
           speed: 700,
           strikes: 0,
@@ -103,7 +99,6 @@ describe("useGameRefs", () => {
     const { result, rerender } = renderHook(
       ({ pd, strikes, balls }) =>
         useGameRefs({
-          autoPlay: false,
           announcementVolume: 1,
           speed: 700,
           strikes,
@@ -129,7 +124,6 @@ describe("useGameRefs", () => {
     const { result, rerender } = renderHook(
       ({ pd, strikes, balls }) =>
         useGameRefs({
-          autoPlay: false,
           announcementVolume: 1,
           speed: 700,
           strikes,
