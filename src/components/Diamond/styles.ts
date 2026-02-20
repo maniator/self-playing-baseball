@@ -29,7 +29,7 @@ export const OutfieldDiv = styled.div`
     top: 0;
     right: auto;
     left: 50%;
-    transform: translateX(-50%) translateY(-20%) rotate(45deg)
+    transform: translateX(-50%) translateY(-20%) rotate(45deg);
   }
 `;
 
