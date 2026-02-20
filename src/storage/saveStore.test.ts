@@ -183,3 +183,75 @@ describe("SaveStore.listSaves", () => {
     expect(doc.schemaVersion).toBe(1);
   });
 });
+
+describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
+  it("exportRxdbSave produces valid JSON with version, header, events, sig", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [
+      { type: "hit", at: 1, payload: { hitType: "single" } },
+      { type: "strike", at: 2, payload: { swung: true } },
+    ]);
+    const json = await store.exportRxdbSave(saveId);
+    const parsed = JSON.parse(json);
+    expect(parsed.version).toBe(1);
+    expect(parsed.header.id).toBe(saveId);
+    expect(parsed.events).toHaveLength(2);
+    expect(typeof parsed.sig).toBe("string");
+    expect(parsed.sig).toHaveLength(8);
+  });
+
+  it("exportRxdbSave throws for unknown saveId", async () => {
+    await expect(store.exportRxdbSave("nonexistent")).rejects.toThrow("Save not found");
+  });
+
+  it("importRxdbSave round-trips export/import correctly", async () => {
+    const saveId = await store.createSave(makeSetup({ seed: "roundtrip" }));
+    await store.appendEvents(saveId, [{ type: "hit", at: 0, payload: {} }]);
+    const json = await store.exportRxdbSave(saveId);
+    // Import into a fresh db
+    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const restoredId = await store2.importRxdbSave(json);
+    expect(restoredId).toBe(saveId);
+    const saves = await store2.listSaves();
+    expect(saves).toHaveLength(1);
+    expect(saves[0].seed).toBe("roundtrip");
+    const events = await db2.events.find({ selector: { saveId } }).exec();
+    expect(events).toHaveLength(1);
+    await db2.close();
+  });
+
+  it("importRxdbSave throws on invalid JSON", async () => {
+    await expect(store.importRxdbSave("not json")).rejects.toThrow("Invalid JSON");
+  });
+
+  it("importRxdbSave throws on unsupported version", async () => {
+    const saveId = await store.createSave(makeSetup());
+    const json = await store.exportRxdbSave(saveId);
+    const envelope = JSON.parse(json);
+    envelope.version = 99;
+    await expect(store.importRxdbSave(JSON.stringify(envelope))).rejects.toThrow(
+      "Unsupported save version",
+    );
+  });
+
+  it("importRxdbSave throws on signature mismatch (tampered file)", async () => {
+    const saveId = await store.createSave(makeSetup({ homeTeamId: "Original" }));
+    const json = await store.exportRxdbSave(saveId);
+    const envelope = JSON.parse(json);
+    envelope.header.homeTeamId = "Tampered";
+    await expect(store.importRxdbSave(JSON.stringify(envelope))).rejects.toThrow(
+      "signature mismatch",
+    );
+  });
+
+  it("importRxdbSave handles saves with no events", async () => {
+    const saveId = await store.createSave(makeSetup());
+    const json = await store.exportRxdbSave(saveId);
+    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const restoredId = await store2.importRxdbSave(json);
+    expect(restoredId).toBe(saveId);
+    await db2.close();
+  });
+});

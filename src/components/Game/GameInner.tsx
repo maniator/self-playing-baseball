@@ -8,9 +8,12 @@ import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
-import { type Strategy, useGameContext } from "@context/index";
+import type { GameAction, Strategy } from "@context/index";
+import { useGameContext } from "@context/index";
+import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
+import { SaveStore } from "@storage/saveStore";
 import { getSeed } from "@utils/rng";
-import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
+import { clearAutoSave, currentSeedStr, loadAutoSave, restoreSaveRng } from "@utils/saves";
 
 import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 
@@ -22,8 +25,13 @@ const getMatchedAutoSave = () => {
   return currentSeed === saved.seed ? saved : null;
 };
 
-const GameInner: React.FunctionComponent = () => {
-  const { dispatch } = useGameContext();
+interface Props {
+  /** Shared buffer populated by GameProviderWrapper's onDispatch callback. */
+  actionBufferRef?: React.MutableRefObject<GameAction[]>;
+}
+
+const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBufferRef }) => {
+  const { dispatch, pitchKey, inning, atBat, score, gameOver } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
@@ -31,6 +39,15 @@ const GameInner: React.FunctionComponent = () => {
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
+
+  // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
+  const localBufferRef = React.useRef<GameAction[]>([]);
+  const actionBufferRef = externalBufferRef ?? localBufferRef;
+
+  // Tracks the RxDB save ID for the current game session.
+  const rxSaveIdRef = React.useRef<string | null>(null);
+
+  useRxdbGameSync(rxSaveIdRef, actionBufferRef, pitchKey, inning, atBat, score, gameOver);
 
   // Check for a resumable auto-save once on mount.
   const [autoSave] = React.useState(getMatchedAutoSave);
@@ -48,6 +65,22 @@ const GameInner: React.FunctionComponent = () => {
 
   const handleResume = () => {
     // State is already restored by the effect above; start the game and close.
+    if (autoSave) {
+      SaveStore.createSave(
+        {
+          matchupMode: "default",
+          homeTeamId: autoSave.setup.homeTeam,
+          awayTeamId: autoSave.setup.awayTeam,
+          seed: autoSave.seed,
+          setup: autoSave.setup as unknown as Record<string, unknown>,
+        },
+        { name: autoSave.name },
+      )
+        .then((id) => {
+          rxSaveIdRef.current = id;
+        })
+        .catch(() => {});
+    }
     setGameActive(true);
     setDialogOpen(false);
   };
@@ -72,12 +105,36 @@ const GameInner: React.FunctionComponent = () => {
         lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
       },
     });
+
+    // Create a new RxDB save for this session (fire-and-forget).
+    // currentSeedStr() returns the seed that was already initialised for this
+    // page load — it does NOT generate a new one.
+    SaveStore.createSave(
+      {
+        matchupMode: "default",
+        homeTeamId: homeTeam,
+        awayTeamId: awayTeam,
+        seed: currentSeedStr(),
+        setup: {
+          managedTeam,
+          managerMode: managedTeam !== null,
+          playerOverrides,
+        },
+      },
+      { name: `${awayTeam} vs ${homeTeam}` },
+    )
+      .then((id) => {
+        rxSaveIdRef.current = id;
+      })
+      .catch(() => {});
+
     setGameActive(true);
     setGameKey((k) => k + 1);
     setDialogOpen(false);
   };
 
   const handleNewGame = () => {
+    rxSaveIdRef.current = null;
     clearAutoSave();
     dispatch({ type: "reset" });
     setGameActive(false);

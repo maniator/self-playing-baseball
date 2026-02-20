@@ -124,9 +124,20 @@ const initialState: State = {
   lineupOrder: [[], []] as [string[], string[]],
 };
 
-export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {
+export const GameProviderWrapper: React.FunctionComponent<{
+  onDispatch?: (action: GameAction) => void;
+}> = ({ children, onDispatch }) => {
   const [logState, dispatchLogger] = React.useReducer(logReducer, { announcements: [] });
-  const [state, dispatch] = React.useReducer(reducer(dispatchLogger), initialState);
+  const [state, rawDispatch] = React.useReducer(reducer(dispatchLogger), initialState);
+
+  // Use a ref so the wrapped dispatch is stable even if onDispatch identity changes.
+  const onDispatchRef = React.useRef(onDispatch);
+  onDispatchRef.current = onDispatch;
+
+  const dispatch: React.Dispatch<GameAction> = React.useCallback((action) => {
+    onDispatchRef.current?.(action);
+    rawDispatch(action);
+  }, []);
 
   return (
     <GameContext.Provider

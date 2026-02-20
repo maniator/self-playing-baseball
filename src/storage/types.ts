@@ -54,3 +54,12 @@ export interface ProgressSummary {
   scoreSnapshot?: Record<string, unknown>;
   inningSnapshot?: Record<string, unknown>;
 }
+
+/** Portable export format: save header + full event log, signed for integrity. */
+export interface RxdbExportedSave {
+  version: 1;
+  header: SaveDoc;
+  events: EventDoc[];
+  /** FNV-1a 32-bit signature of RXDB_EXPORT_KEY + JSON.stringify({header, events}) */
+  sig: string;
+}

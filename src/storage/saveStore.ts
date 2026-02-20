@@ -1,7 +1,27 @@
 import { type BallgameDb, getDb } from "./db";
-import type { EventDoc, GameEvent, GameSetup, ProgressSummary, SaveDoc } from "./types";
+import type {
+  EventDoc,
+  GameEvent,
+  GameSetup,
+  ProgressSummary,
+  RxdbExportedSave,
+  SaveDoc,
+} from "./types";
 
 const SCHEMA_VERSION = 1;
+const RXDB_EXPORT_VERSION = 1 as const;
+const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
+
+// FNV-1a 32-bit checksum — fast and deterministic, used here for integrity
+// verification only (tamper/corruption detection, not cryptographic security).
+const fnv1a = (str: string): string => {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < str.length; i++) {
+    h ^= str.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+};
 
 type GetDb = () => Promise<BallgameDb>;
 
@@ -92,6 +112,53 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const docs = await db.saves.find({ sort: [{ updatedAt: "desc" }] }).exec();
       return docs.map((d) => d.toJSON() as unknown as SaveDoc);
+    },
+
+    /**
+     * Exports a save as a self-contained signed JSON string bundling the save
+     * header and all its event documents.  The result can be shared and later
+     * restored with `importRxdbSave`.
+     */
+    async exportRxdbSave(saveId: string): Promise<string> {
+      const db = await getDbFn();
+      const headerDoc = await db.saves.findOne(saveId).exec();
+      if (!headerDoc) throw new Error(`Save not found: ${saveId}`);
+      const header = headerDoc.toJSON() as unknown as SaveDoc;
+      const eventDocs = await db.events
+        .find({ selector: { saveId }, sort: [{ idx: "asc" }] })
+        .exec();
+      const events = eventDocs.map((d) => d.toJSON() as unknown as EventDoc);
+      const sig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
+      const payload: RxdbExportedSave = { version: RXDB_EXPORT_VERSION, header, events, sig };
+      return JSON.stringify(payload, null, 2);
+    },
+
+    /**
+     * Imports a save from a JSON string produced by `exportRxdbSave`.
+     * Verifies the signature, upserts the header, and bulk-upserts the events.
+     * @returns The restored saveId.
+     */
+    async importRxdbSave(json: string): Promise<string> {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(json);
+      } catch {
+        throw new Error("Invalid JSON");
+      }
+      if (!parsed || typeof parsed !== "object") throw new Error("Invalid save file");
+      const { version, header, events, sig } = parsed as RxdbExportedSave;
+      if (version !== RXDB_EXPORT_VERSION) throw new Error(`Unsupported save version: ${version}`);
+      if (!header || typeof header !== "object" || typeof header.id !== "string")
+        throw new Error("Invalid save data");
+      const expectedSig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
+      if (sig !== expectedSig)
+        throw new Error("Save signature mismatch — file may be corrupted or from a different app");
+      const db = await getDbFn();
+      await db.saves.upsert(header);
+      if (Array.isArray(events) && events.length > 0) {
+        await db.events.bulkUpsert(events);
+      }
+      return header.id;
     },
   };
 }

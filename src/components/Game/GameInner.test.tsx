@@ -46,6 +46,15 @@ vi.mock("@utils/rng", async (importOriginal) => {
   return { ...actual, getSeed: vi.fn().mockReturnValue(12345) };
 });
 
+vi.mock("@storage/saveStore", () => ({
+  SaveStore: {
+    createSave: vi.fn().mockResolvedValue("rxdb-save-1"),
+    appendEvents: vi.fn().mockResolvedValue(undefined),
+    updateProgress: vi.fn().mockResolvedValue(undefined),
+    listSaves: vi.fn().mockResolvedValue([]),
+  },
+}));
+
 describe("GameInner", () => {
   it("renders without crashing", () => {
     render(
