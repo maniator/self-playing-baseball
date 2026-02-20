@@ -32,14 +32,13 @@ const makeSnap = () => ({
 });
 
 describe("useAutoPlayScheduler", () => {
-  it("does not call handleClick when autoPlay is false", () => {
+  it("does not call handleClick when game has not started", () => {
     const handleClick = vi.fn();
     renderHook(() =>
       useAutoPlayScheduler(
         false,
         null,
         false,
-        { current: false } as any,
         { current: false } as any,
         { current: 700 } as any,
         { current: handleClick } as any,
@@ -58,7 +57,6 @@ describe("useAutoPlayScheduler", () => {
         true,
         { kind: "bunt" as const },
         true,
-        { current: true } as any,
         { current: false } as any,
         { current: 700 } as any,
         { current: handleClick } as any,
@@ -70,7 +68,7 @@ describe("useAutoPlayScheduler", () => {
     expect(handleClick).not.toHaveBeenCalled();
   });
 
-  it("calls handleClick after speed delay when autoPlay is true", () => {
+  it("calls handleClick after speed delay when game has started", () => {
     const handleClick = vi.fn();
     vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
     renderHook(() =>
@@ -78,7 +76,6 @@ describe("useAutoPlayScheduler", () => {
         true,
         null,
         false,
-        { current: true } as any,
         { current: true } as any,
         { current: 100 } as any,
         { current: handleClick } as any,
@@ -101,7 +98,6 @@ describe("useAutoPlayScheduler", () => {
         true,
         null,
         false,
-        { current: true } as any,
         { current: false } as any, // NOT muted → speech check applies
         { current: 100 } as any,
         { current: handleClick } as any,
@@ -125,7 +121,6 @@ describe("useAutoPlayScheduler", () => {
         true,
         null,
         false,
-        { current: true } as any,
         { current: true } as any, // muted
         { current: 100 } as any,
         { current: handleClick } as any,

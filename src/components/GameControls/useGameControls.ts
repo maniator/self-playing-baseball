@@ -6,7 +6,6 @@ import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
-import { useKeyboardPitch } from "@hooks/useKeyboardPitch";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";
 import { usePlayerControls } from "@hooks/usePlayerControls";
 import { useReplayDecisions } from "@hooks/useReplayDecisions";
@@ -38,7 +37,7 @@ export const useGameControls = () => {
     defensiveShiftOffered,
   }: ContextValue = useGameContext();
 
-  const [autoPlay, setAutoPlay] = useLocalStorage("autoPlay", false);
+  const [gameStarted, setGameStarted] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
   const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
@@ -65,7 +64,6 @@ export const useGameControls = () => {
   };
 
   const {
-    autoPlayRef,
     mutedRef,
     speedRef,
     strikesRef,
@@ -75,7 +73,6 @@ export const useGameControls = () => {
     gameStateRef,
     skipDecisionRef,
   } = useGameRefs({
-    autoPlay,
     announcementVolume,
     speed,
     strikes,
@@ -98,18 +95,20 @@ export const useGameControls = () => {
     strikesRef,
   );
 
+  const handleBatterUp = React.useCallback(() => {
+    setGameStarted(true);
+  }, []);
+
   useAutoPlayScheduler(
-    autoPlay,
+    gameStarted,
     pendingDecision,
     managerMode,
-    autoPlayRef,
     mutedRef,
     speedRef,
     handleClickRef,
     gameStateRef,
     betweenInningsPauseRef,
   );
-  useKeyboardPitch(autoPlayRef, handleClickRef);
   useReplayDecisions(dispatch, pendingDecision, pitchKey, strategy);
 
   React.useEffect(() => {
@@ -125,7 +124,6 @@ export const useGameControls = () => {
   const playerControls = usePlayerControls({
     managerMode,
     setManagerMode,
-    setAutoPlay,
     announcementVolume,
     setAnnouncementVolumeState,
     alertVolume,
@@ -136,7 +134,7 @@ export const useGameControls = () => {
 
   return {
     dispatch,
-    autoPlay,
+    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
@@ -149,6 +147,7 @@ export const useGameControls = () => {
     teams,
     gameOver,
     handleClickRef,
+    handleBatterUp,
     ...playerControls,
   };
 };

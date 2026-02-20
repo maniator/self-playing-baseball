@@ -8,8 +8,6 @@ afterEach(() => vi.restoreAllMocks());
 const makeArgs = (overrides: Record<string, any> = {}) => ({
   managerMode: false,
   setManagerMode: vi.fn(),
-  autoPlay: false,
-  setAutoPlay: vi.fn(),
   announcementVolume: 1,
   setAnnouncementVolumeState: vi.fn(),
   alertVolume: 1,
@@ -20,32 +18,6 @@ const makeArgs = (overrides: Record<string, any> = {}) => ({
 });
 
 describe("usePlayerControls", () => {
-  it("handleAutoPlayChange turning off autoPlay also turns off managerMode", () => {
-    const setManagerMode = vi.fn();
-    const setAutoPlay = vi.fn();
-    const { result } = renderHook(() =>
-      usePlayerControls(
-        makeArgs({ managerMode: true, setManagerMode, setAutoPlay, autoPlay: true }),
-      ),
-    );
-    act(() => {
-      result.current.handleAutoPlayChange({ target: { checked: false } } as any);
-    });
-    expect(setAutoPlay).toHaveBeenCalledWith(false);
-    expect(setManagerMode).toHaveBeenCalledWith(false);
-  });
-
-  it("handleAutoPlayChange enabling autoPlay does not touch managerMode", () => {
-    const setManagerMode = vi.fn();
-    const { result } = renderHook(() =>
-      usePlayerControls(makeArgs({ managerMode: false, setManagerMode })),
-    );
-    act(() => {
-      result.current.handleAutoPlayChange({ target: { checked: true } } as any);
-    });
-    expect(setManagerMode).not.toHaveBeenCalled();
-  });
-
   it("handleManagerModeChange enabling manager mode requests notification permission", async () => {
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).permission = "default";
