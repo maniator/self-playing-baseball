@@ -65,7 +65,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
             setManagedTeam(setup.managedTeam);
           }}
         />
-        <ShareButton onClick={handleShareReplay}>Share replay</ShareButton>
+        <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
         <AutoPlayGroup>
           <ToggleLabel>
             Speed

@@ -6,7 +6,6 @@ import { appLog } from "@utils/logger";
 import { useShareReplay } from "./useShareReplay";
 
 interface PlayerControlsArgs {
-  managerMode: boolean;
   setManagerMode: (v: boolean) => void;
   announcementVolume: number;
   setAnnouncementVolumeState: (v: number) => void;
@@ -16,7 +15,6 @@ interface PlayerControlsArgs {
 }
 
 export const usePlayerControls = ({
-  managerMode,
   setManagerMode,
   announcementVolume,
   setAnnouncementVolumeState,

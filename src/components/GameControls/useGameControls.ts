@@ -124,7 +124,6 @@ export const useGameControls = () => {
   }, [speed]);
 
   const playerControls = usePlayerControls({
-    managerMode,
     setManagerMode,
     announcementVolume,
     setAnnouncementVolumeState,

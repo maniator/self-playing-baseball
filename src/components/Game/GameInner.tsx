@@ -33,7 +33,6 @@ const GameInner: React.FunctionComponent = () => {
 
   // Check for a resumable auto-save once on mount.
   const [autoSave] = React.useState(getMatchedAutoSave);
-  const [dialogOpen, setDialogOpen] = React.useState(true);
 
   // Restore auto-save state as soon as the context is ready.
   React.useEffect(() => {

@@ -161,6 +161,7 @@ const SavesModal: React.FunctionComponent<Props> = ({
       const result = ev.target?.result;
       if (typeof result === "string") applyImport(result);
     };
+    reader.onerror = () => setImportError("Failed to read file");
     reader.readAsText(file);
     e.target.value = "";
   };
