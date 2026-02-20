@@ -1,7 +1,7 @@
 import * as React from "react";
 
-export { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
 import { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
+export { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
 import {
   Dialog,
   FieldGroup,
