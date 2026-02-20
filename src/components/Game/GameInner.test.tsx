@@ -3,7 +3,8 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { GameProviderWrapper } from "@context/index";
+import { GameContext, GameProviderWrapper } from "@context/index";
+import { makeContextValue } from "@test/testHelpers";
 
 import Game from ".";
 import GameInner from "./GameInner";
@@ -72,6 +73,32 @@ describe("GameInner", () => {
       fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     });
     expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
+  });
+
+  it("clicking New Game button re-opens the dialog", () => {
+    // Render with a game-over context so the "New Game" button is visible in GameControls
+    render(
+      <GameContext.Provider
+        value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
+      >
+        <GameInner />
+      </GameContext.Provider>,
+    );
+    // Dialog starts open — close it by submitting the form
+    act(() => {
+      fireEvent.click(screen.getByText(/play ball/i));
+    });
+    // Dialog should now be closed
+    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
+    // "New Game" button is present because gameOver=true in context
+    expect(screen.getByRole("button", { name: /new game/i })).toBeInTheDocument();
+    // Click it to reopen the dialog
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /new game/i }));
+    });
+    // Dialog should be visible again with team name inputs
+    expect(screen.getByLabelText(/home team/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
   });
 });
 

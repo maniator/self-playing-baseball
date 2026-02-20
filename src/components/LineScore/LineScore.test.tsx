@@ -133,6 +133,13 @@ describe("LineScore", () => {
     expect(screen.getByText("9")).toBeInTheDocument();
   });
 
+  it("shows 9 inning columns for a walk-off win in the bottom of the 9th", () => {
+    // Walk-off: atBat === 1, inning === 9 — no increment happened, so no adjustment needed.
+    renderWithContext(<LineScore />, makeContextValue({ inning: 9, atBat: 1, gameOver: true }));
+    expect(screen.getByText("9")).toBeInTheDocument();
+    expect(screen.queryByText("10")).not.toBeInTheDocument();
+  });
+
   it("shows 10 inning columns for a real extra-inning game in progress", () => {
     renderWithContext(<LineScore />, makeContextValue({ inning: 10, atBat: 0, gameOver: false }));
     expect(screen.getAllByText("10").length).toBeGreaterThan(0);

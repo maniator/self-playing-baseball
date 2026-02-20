@@ -4,10 +4,6 @@ import DecisionPanel from "@components/DecisionPanel";
 import InstructionsModal from "@components/InstructionsModal";
 import { Strategy } from "@context/index";
 
-type Props = {
-  onNewGame?: () => void;
-};
-
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
 import {
@@ -21,6 +17,10 @@ import {
 } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
+
+type Props = {
+  onNewGame?: () => void;
+};
 
 const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
   const {

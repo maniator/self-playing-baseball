@@ -1,5 +1,7 @@
 import * as React from "react";
 
+import { useLocalStorage } from "usehooks-ts";
+
 import Announcements from "@components/Announcements";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
@@ -13,18 +15,19 @@ import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 const GameInner: React.FunctionComponent = () => {
   const { dispatch, teams } = useGameContext();
   const [dialogOpen, setDialogOpen] = React.useState(true);
-  const [controlsKey, setControlsKey] = React.useState(0);
+  const [, setManagerMode] = useLocalStorage("managerMode", false);
+  const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+  const [, setAutoPlay] = useLocalStorage("autoPlay", false);
 
   const handleStart = (homeTeam: string, awayTeam: string, managedTeam: 0 | 1 | null) => {
-    localStorage.setItem("managerMode", JSON.stringify(managedTeam !== null));
+    setManagerMode(managedTeam !== null);
     if (managedTeam !== null) {
-      localStorage.setItem("managedTeam", JSON.stringify(managedTeam));
-      localStorage.setItem("autoPlay", JSON.stringify(true));
+      setManagedTeam(managedTeam);
+      setAutoPlay(true);
     }
     dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [homeTeam, awayTeam] });
     setDialogOpen(false);
-    setControlsKey((k) => k + 1);
   };
 
   const handleNewGame = () => {
@@ -42,7 +45,7 @@ const GameInner: React.FunctionComponent = () => {
         />
       )}
       <LineScore />
-      <GameControls key={controlsKey} onNewGame={handleNewGame} />
+      <GameControls onNewGame={handleNewGame} />
       <GameBody>
         <LeftPanel>
           <HitLog />
