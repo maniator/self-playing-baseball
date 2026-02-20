@@ -4,7 +4,6 @@ import styled from "styled-components";
 
 import { GameProviderWrapper } from "@context/index";
 
-import { ErrorBoundary } from "./ErrorBoundary";
 import GameInner from "./GameInner";
 
 const GithubRibbon = styled.a.attrs({
@@ -21,12 +20,10 @@ const GithubRibbon = styled.a.attrs({
 `;
 
 const Game: React.FunctionComponent = () => (
-  <ErrorBoundary>
-    <GameProviderWrapper>
-      <GithubRibbon>View on GitHub</GithubRibbon>
-      <GameInner />
-    </GameProviderWrapper>
-  </ErrorBoundary>
+  <GameProviderWrapper>
+    <GithubRibbon>View on GitHub</GithubRibbon>
+    <GameInner />
+  </GameProviderWrapper>
 );
 
 export default Game;
