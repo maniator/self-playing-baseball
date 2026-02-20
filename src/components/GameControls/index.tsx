@@ -7,25 +7,17 @@ import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import {
-  AutoPlayGroup,
-  BatterUpButton,
-  Controls,
-  NewGameButton,
-  Select,
-  ShareButton,
-  ToggleLabel,
-} from "./styles";
+import { AutoPlayGroup, Controls, NewGameButton, Select, ShareButton, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
 type Props = {
   onNewGame?: () => void;
+  gameStarted?: boolean;
 };
 
-const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
+const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted = false }) => {
   const {
-    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
@@ -37,7 +29,6 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     setManagedTeam,
     teams,
     gameOver,
-    handleBatterUp,
     notifPermission,
     handleManagerModeChange,
     handleRequestNotifPermission,
@@ -48,12 +39,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame }) => {
     handleShareReplay,
     currentSaveId,
     setCurrentSaveId,
-  } = useGameControls();
+  } = useGameControls({ gameStarted });
 
   return (
     <>
       <Controls>
-        {!gameStarted && <BatterUpButton onClick={handleBatterUp}>Batter Up!</BatterUpButton>}
         {gameOver && onNewGame && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
         <SavesModal
           strategy={strategy}

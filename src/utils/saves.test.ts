@@ -295,3 +295,118 @@ describe("saves utils", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Deterministic replay — game sequence is preserved after save + load
+// ---------------------------------------------------------------------------
+describe("deterministic replay — save/load pitch sequence", () => {
+  beforeEach(() => {
+    vi.resetModules();
+    localStorage.clear();
+  });
+
+  afterEach(() => {
+    localStorage.clear();
+  });
+
+  it("same random values produced after restoreRng, regardless of manager actions taken", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Simulate 20 pitches (manager mode actions don't consume rng calls).
+    for (let i = 0; i < 20; i++) rng.random();
+    const rngStateAtSave = rng.getRngState()!;
+
+    // Original game: next 8 values.
+    const original8 = Array.from({ length: 8 }, () => rng.random());
+
+    // Restore (simulates loading the save).
+    rng.restoreRng(rngStateAtSave);
+    const restored8 = Array.from({ length: 8 }, () => rng.random());
+
+    expect(restored8).toEqual(original8);
+  });
+
+  it("auto-save captures rngState and restoreSaveRng reproduces identical pitch sequence", async () => {
+    const rng = await import("./rng");
+    const savesModule = await import("./saves");
+
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Simulate 25 pitches.
+    for (let i = 0; i < 25; i++) rng.random();
+
+    // Auto-save after a half-inning (writeAutoSave calls getRngState() internally).
+    const state = makeState({ pitchKey: 25, inning: 4 });
+    savesModule.writeAutoSave(state, "balanced", 0);
+
+    // Continue original game for 6 more pitches.
+    const originalNext6 = Array.from({ length: 6 }, () => rng.random());
+
+    // "Page reload" — load the auto-save and restore the PRNG.
+    const slot = savesModule.loadAutoSave()!;
+    savesModule.restoreSaveRng(slot);
+
+    // Next 6 values after restore must be identical.
+    const restoredNext6 = Array.from({ length: 6 }, () => rng.random());
+    expect(restoredNext6).toEqual(originalNext6);
+  });
+
+  it("manual save captures rngState and produces identical pitch sequence after load", async () => {
+    const rng = await import("./rng");
+    const savesModule = await import("./saves");
+
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Simulate 30 pitches with manager actions in the log (actions don't touch PRNG).
+    for (let i = 0; i < 30; i++) rng.random();
+
+    const savedSlot = savesModule.saveGame({
+      name: "Determinism test",
+      seed: (rng.getSeed() ?? 0).toString(36),
+      rngState: rng.getRngState() ?? undefined,
+      progress: 30,
+      managerActions: ["5:steal:0:78", "12:bunt", "20:skip"], // actions don't affect PRNG
+      setup: { homeTeam: "Home", awayTeam: "Away", strategy: "aggressive", managedTeam: 1 },
+      state: makeState({ pitchKey: 30, decisionLog: ["5:steal:0:78", "12:bunt", "20:skip"] }),
+    });
+
+    // Original game: next 7 values.
+    const originalNext7 = Array.from({ length: 7 }, () => rng.random());
+
+    // Load save and restore PRNG.
+    savesModule.restoreSaveRng(savedSlot);
+
+    // After restore, next 7 values must be identical.
+    const restoredNext7 = Array.from({ length: 7 }, () => rng.random());
+    expect(restoredNext7).toEqual(originalNext7);
+  });
+
+  it("multiple save+load cycles all produce identical subsequent pitch values", async () => {
+    const rng = await import("./rng");
+    rng.initSeedFromUrl({ writeToUrl: false });
+
+    // Advance to position 10 and capture.
+    for (let i = 0; i < 10; i++) rng.random();
+    const state10 = rng.getRngState()!;
+
+    // Advance to position 20 and capture.
+    for (let i = 0; i < 10; i++) rng.random();
+    const state20 = rng.getRngState()!;
+
+    // Record what comes next from position 20.
+    const fromPos20 = Array.from({ length: 5 }, () => rng.random());
+
+    // Restore to pos 20 and verify.
+    rng.restoreRng(state20);
+    expect(Array.from({ length: 5 }, () => rng.random())).toEqual(fromPos20);
+
+    // Restore to pos 10, advance 10, verify we arrive at the same pos20 state.
+    rng.restoreRng(state10);
+    for (let i = 0; i < 10; i++) rng.random();
+    expect(rng.getRngState()).toBe(state20);
+
+    // And from here the next 5 should still match.
+    expect(Array.from({ length: 5 }, () => rng.random())).toEqual(fromPos20);
+  });
+});

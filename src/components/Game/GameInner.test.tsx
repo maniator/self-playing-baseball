@@ -66,7 +66,7 @@ describe("GameInner", () => {
     expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
   });
 
-  it("starts the game after Play Ball is clicked", () => {
+  it("starts the game after Play Ball is clicked (dialog closes)", () => {
     render(
       <GameProviderWrapper>
         <GameInner />
@@ -75,10 +75,10 @@ describe("GameInner", () => {
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
+    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
   });
 
-  it("game action adds to play-by-play after starting", () => {
+  it("game screen is visible after Play Ball is clicked", () => {
     render(
       <GameProviderWrapper>
         <GameInner />
@@ -86,9 +86,6 @@ describe("GameInner", () => {
     );
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
-    });
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     });
     expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
   });

@@ -15,7 +15,7 @@ import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/ann
 import { SPEED_NORMAL } from "./constants";
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
-export const useGameControls = () => {
+export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean } = {}) => {
   const {
     dispatch,
     dispatchLog,
@@ -37,7 +37,6 @@ export const useGameControls = () => {
     defensiveShiftOffered,
   }: ContextValue = useGameContext();
 
-  const [gameStarted, setGameStarted] = React.useState(false);
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
   const [alertVolume, setAlertVolumeState] = useLocalStorage("alertVolume", 1);
@@ -96,10 +95,6 @@ export const useGameControls = () => {
     strikesRef,
   );
 
-  const handleBatterUp = React.useCallback(() => {
-    setGameStarted(true);
-  }, []);
-
   useAutoPlayScheduler(
     gameStarted,
     pendingDecision,
@@ -134,7 +129,6 @@ export const useGameControls = () => {
 
   return {
     dispatch,
-    gameStarted,
     speed,
     setSpeed,
     announcementVolume,
@@ -149,7 +143,6 @@ export const useGameControls = () => {
     handleClickRef,
     currentSaveId,
     setCurrentSaveId,
-    handleBatterUp,
     ...playerControls,
   };
 };

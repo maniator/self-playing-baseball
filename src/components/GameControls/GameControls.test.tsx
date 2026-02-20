@@ -32,14 +32,8 @@ describe("GameControls", () => {
     localStorage.clear();
   });
 
-  it("shows Batter Up! button on initial render", () => {
+  it("does NOT show Batter Up button (removed in favour of Play ball dialog)", () => {
     renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
-    expect(screen.getByRole("button", { name: /batter up/i })).toBeInTheDocument();
-  });
-
-  it("hides Batter Up! after it is clicked", () => {
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
@@ -48,22 +42,14 @@ describe("GameControls", () => {
     expect(screen.getByRole("button", { name: /share seed/i })).toBeInTheDocument();
   });
 
-  it("shows Manager Mode checkbox after Batter Up is clicked", () => {
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+  it("shows Manager Mode checkbox when gameStarted=true", () => {
+    renderWithContext(<GameControls gameStarted />, makeContextValue());
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
   });
 
-  it("does NOT show Manager Mode checkbox before Batter Up is clicked", () => {
-    renderWithContext(<GameControls />);
+  it("does NOT show Manager Mode checkbox when gameStarted=false", () => {
+    renderWithContext(<GameControls gameStarted={false} />);
     expect(screen.queryByRole("checkbox", { name: /manager mode/i })).not.toBeInTheDocument();
-  });
-
-  it("clicking Batter Up! does not dispatch game actions (starts the game)", () => {
-    const dispatch = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatch, gameOver: false }));
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
-    expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("shows volume sliders", () => {
@@ -81,8 +67,7 @@ describe("GameControls", () => {
     (Notification as any).permission = "default";
     const requestPermission = vi.fn().mockResolvedValue("granted");
     (Notification as any).requestPermission = requestPermission;
-    renderWithContext(<GameControls />);
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    renderWithContext(<GameControls gameStarted />, makeContextValue());
     fireEvent.click(screen.getByRole("checkbox", { name: /manager mode/i }));
     expect(requestPermission).toHaveBeenCalled();
     (Notification as any).permission = "granted";
@@ -126,8 +111,10 @@ describe("GameControls", () => {
 
   it("renders team and strategy selectors in manager mode", () => {
     localStorage.setItem("managerMode", "true");
-    renderWithContext(<GameControls />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
-    fireEvent.click(screen.getByRole("button", { name: /batter up/i }));
+    renderWithContext(
+      <GameControls gameStarted />,
+      makeContextValue({ teams: ["Yankees", "Red Sox"] }),
+    );
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Yankees")).toBeInTheDocument();

@@ -29,6 +29,7 @@ const GameInner: React.FunctionComponent = () => {
 
   const [dialogOpen, setDialogOpen] = React.useState(true);
   const [gameKey, setGameKey] = React.useState(0);
+  const [gameActive, setGameActive] = React.useState(false);
   const [, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
   // Check for a resumable auto-save once on mount.
@@ -45,7 +46,8 @@ const GameInner: React.FunctionComponent = () => {
   }, [dispatch, autoSave, setStrategy, setManagedTeam]);
 
   const handleResume = () => {
-    // State is already restored by the effect above; just close the dialog.
+    // State is already restored by the effect above; start the game and close.
+    setGameActive(true);
     setDialogOpen(false);
   };
 
@@ -57,6 +59,7 @@ const GameInner: React.FunctionComponent = () => {
     clearAutoSave();
     dispatch({ type: "reset" });
     dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });
+    setGameActive(true);
     setGameKey((k) => k + 1);
     setDialogOpen(false);
   };
@@ -64,6 +67,7 @@ const GameInner: React.FunctionComponent = () => {
   const handleNewGame = () => {
     clearAutoSave();
     dispatch({ type: "reset" });
+    setGameActive(false);
     setGameKey((k) => k + 1);
     setDialogOpen(true);
   };
@@ -78,7 +82,7 @@ const GameInner: React.FunctionComponent = () => {
         />
       )}
       <LineScore />
-      <GameControls key={gameKey} onNewGame={handleNewGame} />
+      <GameControls key={gameKey} onNewGame={handleNewGame} gameStarted={gameActive} />
       <GameBody>
         <LeftPanel>
           <HitLog />
