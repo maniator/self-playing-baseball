@@ -7,7 +7,7 @@ import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
-import NewGameDialog, { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "@components/NewGameDialog";
+import NewGameDialog from "@components/NewGameDialog";
 import { useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
 import { clearAutoSave, loadAutoSave } from "@utils/saves";

@@ -3,7 +3,18 @@ import * as React from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { DEFAULT_AWAY_TEAM, DEFAULT_HOME_TEAM } from "./constants";
+import { AL_FALLBACK, NL_FALLBACK } from "@utils/mlbTeams";
+import * as mlbTeamsModule from "@utils/mlbTeams";
+
+vi.mock("@utils/mlbTeams", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
+  return {
+    ...mod,
+    fetchMlbTeams: vi.fn().mockResolvedValue({ al: mod.AL_FALLBACK, nl: mod.NL_FALLBACK }),
+  };
+});
+
+import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 import NewGameDialog from "./index";
 
 HTMLDialogElement.prototype.showModal = vi.fn();
@@ -13,60 +24,53 @@ const noop = vi.fn();
 
 describe("NewGameDialog", () => {
   it("calls showModal on mount", () => {
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={noop} />);
+    render(<NewGameDialog onStart={noop} />);
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
   });
 
-  it("renders home and away team inputs pre-filled with initial values", () => {
-    render(<NewGameDialog initialHome="Cubs" initialAway="Sox" onStart={noop} />);
-    expect((screen.getByLabelText(/home team/i) as HTMLInputElement).value).toBe("Cubs");
-    expect((screen.getByLabelText(/away team/i) as HTMLInputElement).value).toBe("Sox");
+  it("defaults to Interleague matchup mode", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const radio = screen.getByLabelText(/interleague/i) as HTMLInputElement;
+    expect(radio.checked).toBe(true);
   });
 
-  it("calls onStart with entered team names and null managedTeam when None selected", () => {
+  it("defaults to New York Yankees (home) vs New York Mets (away) in Interleague", () => {
+    render(<NewGameDialog onStart={noop} />);
+    expect((screen.getByLabelText(/home team/i) as HTMLSelectElement).value).toBe(DEFAULT_AL_TEAM);
+    expect((screen.getByLabelText(/away team/i) as HTMLSelectElement).value).toBe(DEFAULT_NL_TEAM);
+  });
+
+  it("calls onStart with selected teams and null managedTeam when None selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "Braves" } });
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "Dodgers" } });
+    render(<NewGameDialog onStart={onStart} />);
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Braves", "Dodgers", null);
-  });
-
-  it("calls onStart with DEFAULT team names when inputs are cleared", () => {
-    const onStart = vi.fn();
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={onStart} />);
-    fireEvent.change(screen.getByLabelText(/home team/i), { target: { value: "   " } });
-    fireEvent.change(screen.getByLabelText(/away team/i), { target: { value: "   " } });
-    act(() => {
-      fireEvent.click(screen.getByText(/play ball/i));
-    });
-    expect(onStart).toHaveBeenCalledWith(DEFAULT_HOME_TEAM, DEFAULT_AWAY_TEAM, null);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, null);
   });
 
   it("calls onStart with managedTeam=0 when Away is selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/away \(mets\)/i));
+    render(<NewGameDialog onStart={onStart} />);
+    fireEvent.click(screen.getByLabelText(new RegExp(`away \\(${DEFAULT_NL_TEAM}\\)`, "i")));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Yankees", "Mets", 0);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 0);
   });
 
   it("calls onStart with managedTeam=1 when Home is selected", () => {
     const onStart = vi.fn();
-    render(<NewGameDialog initialHome="Yankees" initialAway="Mets" onStart={onStart} />);
-    fireEvent.click(screen.getByLabelText(/home \(yankees\)/i));
+    render(<NewGameDialog onStart={onStart} />);
+    fireEvent.click(screen.getByLabelText(new RegExp(`home \\(${DEFAULT_AL_TEAM}\\)`, "i")));
     act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(onStart).toHaveBeenCalledWith("Yankees", "Mets", 1);
+    expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1);
   });
 
   it("prevents dialog from being cancelled via keyboard escape", () => {
-    render(<NewGameDialog initialHome="A" initialAway="B" onStart={noop} />);
+    render(<NewGameDialog onStart={noop} />);
     const dialog = screen.getByRole("dialog", { hidden: true });
     const event = new Event("cancel", { cancelable: true });
     act(() => {

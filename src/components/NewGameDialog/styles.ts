@@ -46,6 +46,18 @@ export const Input = styled.input`
   width: 100%;
 `;
 
+export const Select = styled.select`
+  background: #1a2e4a;
+  border: 1px solid #4a6090;
+  color: #fff;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: inherit;
+  font-size: 14px;
+  width: 100%;
+  cursor: pointer;
+`;
+
 export const SectionLabel = styled.p`
   font-size: 12px;
   text-transform: uppercase;
