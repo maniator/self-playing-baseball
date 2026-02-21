@@ -2,7 +2,11 @@ import { expect, test } from "@playwright/test";
 
 import {
   clickPlayBall,
+  closeSavesModal,
   gotoFreshApp,
+  loadSaveByName,
+  openSavesModal,
+  saveCurrentGame,
   takeManagerAction,
   waitForAtLeastLogLines,
   waitForManagerDecision,
@@ -76,8 +80,42 @@ test.describe("Manager Mode", () => {
     await expect(page.getByTestId("decision-panel")).not.toBeVisible({ timeout: 15_000 });
   });
 
-  test.skip("manager action state persists across save + reload", async () => {
-    // TODO: enable manager mode, take an action, save game, reload, load save,
-    // confirm the decision log is preserved.
+  test("manager action state persists across save + reload", async ({ page }) => {
+    // Start a new game with manager mode enabled via the dialog's managed-team radio.
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+
+    // Select a managed team before starting (radio: "0" = away team).
+    await page.getByTestId("managed-team-radio-0").check();
+    await clickPlayBall(page);
+    await page.getByTestId("speed-select").selectOption("350");
+
+    // Confirm manager mode checkbox is checked (set from dialog selection).
+    await expect(page.getByTestId("manager-mode-checkbox")).toBeChecked({ timeout: 5_000 });
+
+    // Wait for enough game progress, then save.
+    await waitForAtLeastLogLines(page, 5);
+    await openSavesModal(page);
+    await saveCurrentGame(page);
+    await page.waitForTimeout(500);
+    await closeSavesModal(page);
+
+    // Capture scoreboard state.
+    const scoreBefore = (await page.getByTestId("line-score").textContent()) ?? "";
+
+    // Reload fresh, then load the saved game.
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+    await clickPlayBall(page);
+    await openSavesModal(page);
+    await loadSaveByName(page, "New York Mets vs New York Yankees");
+    await page.waitForTimeout(500);
+
+    // Manager mode must still be active after loading the save.
+    await expect(page.getByTestId("manager-mode-checkbox")).toBeChecked({ timeout: 5_000 });
+
+    // Score must match the pre-reload snapshot.
+    const scoreAfter = (await page.getByTestId("line-score").textContent()) ?? "";
+    expect(scoreAfter).toBe(scoreBefore);
   });
 });

@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { clickPlayBall, gotoFreshApp, waitForNewGameDialog } from "../utils/helpers";
+import {
+  clickPlayBall,
+  gotoFreshApp,
+  waitForManagerDecision,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 test.describe("Notifications", () => {
   // The app uses a service worker to send notifications when a manager decision
@@ -49,8 +54,29 @@ test.describe("Notifications", () => {
     expect(swCount).toBeGreaterThanOrEqual(0); // graceful — SW may not register in all headless envs
   });
 
-  test.skip("notification click routes back to the correct game view", async () => {
-    // TODO: simulate a notificationclick postMessage from the SW and verify
-    // the app handles the NOTIFICATION_ACTION payload correctly.
+  test("notification click action is dispatched via simulated SW message", async ({ page }) => {
+    // Set up: start a game with manager mode active so the DecisionPanel
+    // listener is mounted and ready to receive NOTIFICATION_ACTION messages.
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+    await page.getByTestId("managed-team-radio-0").check();
+    await clickPlayBall(page);
+
+    // Wait for a manager decision to appear (ensures the SW listener is active).
+    await waitForManagerDecision(page, 60_000);
+    await expect(page.getByTestId("decision-panel")).toBeVisible();
+
+    // Simulate the service worker posting a NOTIFICATION_ACTION to the page.
+    // The DecisionPanel listens on navigator.serviceWorker for "message" events.
+    // SW-to-page messages have origin === "", so no origin check blocks them.
+    await page.evaluate(() => {
+      const event = new MessageEvent("message", {
+        data: { type: "NOTIFICATION_ACTION", action: "skip", payload: {} },
+      });
+      navigator.serviceWorker.dispatchEvent(event);
+    });
+
+    // "skip" dispatches { type: "skip_decision" } which dismisses the panel.
+    await expect(page.getByTestId("decision-panel")).not.toBeVisible({ timeout: 5_000 });
   });
 });

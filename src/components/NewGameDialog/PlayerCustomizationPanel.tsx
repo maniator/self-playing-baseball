@@ -123,7 +123,12 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
 
   return (
     <PanelSection>
-      <PanelToggle type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open}>
+      <PanelToggle
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        data-testid="customize-players-toggle"
+      >
         {open ? "▾" : "▸"} Customize Players
       </PanelToggle>
       {open && (

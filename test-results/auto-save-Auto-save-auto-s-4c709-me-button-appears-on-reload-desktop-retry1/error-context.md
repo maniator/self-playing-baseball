@@ -1,0 +1,226 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - link "View on GitHub View on Github":
+    - /url: https://github.com/maniator/self-playing-baseball
+  - main [ref=e3]:
+    - dialog [ref=e4]:
+      - heading "⚾ New Game" [level=2] [ref=e5]
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: Matchup
+          - generic [ref=e9] [cursor=pointer]:
+            - radio "AL vs AL" [active] [ref=e10]
+            - text: AL vs AL
+          - generic [ref=e11] [cursor=pointer]:
+            - radio "NL vs NL" [ref=e12]
+            - text: NL vs NL
+          - generic [ref=e13] [cursor=pointer]:
+            - radio "Interleague" [checked] [ref=e14]
+            - text: Interleague
+        - generic [ref=e15]:
+          - paragraph [ref=e16]: Home team league
+          - generic [ref=e17] [cursor=pointer]:
+            - radio "AL" [checked] [ref=e18]
+            - text: AL
+          - generic [ref=e19] [cursor=pointer]:
+            - radio "NL" [ref=e20]
+            - text: NL
+        - generic [ref=e21]:
+          - generic [ref=e22]: Home team
+          - combobox "Home team" [ref=e23] [cursor=pointer]:
+            - option "Athletics"
+            - option "Baltimore Orioles"
+            - option "Boston Red Sox"
+            - option "Chicago White Sox"
+            - option "Cleveland Guardians"
+            - option "Detroit Tigers"
+            - option "Houston Astros"
+            - option "Kansas City Royals"
+            - option "Los Angeles Angels"
+            - option "Minnesota Twins"
+            - option "New York Yankees" [selected]
+            - option "Seattle Mariners"
+            - option "Tampa Bay Rays"
+            - option "Texas Rangers"
+            - option "Toronto Blue Jays"
+        - generic [ref=e24]:
+          - generic [ref=e25]: Away team
+          - combobox "Away team" [ref=e26] [cursor=pointer]:
+            - option "Arizona Diamondbacks"
+            - option "Atlanta Braves"
+            - option "Chicago Cubs"
+            - option "Cincinnati Reds"
+            - option "Colorado Rockies"
+            - option "Los Angeles Dodgers"
+            - option "Miami Marlins"
+            - option "Milwaukee Brewers"
+            - option "New York Mets" [selected]
+            - option "Philadelphia Phillies"
+            - option "Pittsburgh Pirates"
+            - option "San Diego Padres"
+            - option "San Francisco Giants"
+            - option "St. Louis Cardinals"
+            - option "Washington Nationals"
+        - generic [ref=e27]:
+          - paragraph [ref=e28]: Manage a team?
+          - generic [ref=e29] [cursor=pointer]:
+            - radio "None — just watch" [checked] [ref=e30]
+            - text: None — just watch
+          - generic [ref=e31] [cursor=pointer]:
+            - radio "Away (New York Mets)" [ref=e32]
+            - text: Away (New York Mets)
+          - generic [ref=e33] [cursor=pointer]:
+            - radio "Home (New York Yankees)" [ref=e34]
+            - text: Home (New York Yankees)
+        - button "▸ Customize Players" [ref=e36] [cursor=pointer]
+        - button "Play Ball!" [ref=e37] [cursor=pointer]
+    - generic [ref=e38]:
+      - table [ref=e39]:
+        - rowgroup [ref=e40]:
+          - row "Team 1 2 3 4 5 6 7 8 9 R H" [ref=e41]:
+            - columnheader "Team" [ref=e42]
+            - columnheader "1" [ref=e43]
+            - columnheader "2" [ref=e44]
+            - columnheader "3" [ref=e45]
+            - columnheader "4" [ref=e46]
+            - columnheader "5" [ref=e47]
+            - columnheader "6" [ref=e48]
+            - columnheader "7" [ref=e49]
+            - columnheader "8" [ref=e50]
+            - columnheader "9" [ref=e51]
+            - columnheader [ref=e52]
+            - columnheader "R" [ref=e53]
+            - columnheader "H" [ref=e54]
+        - rowgroup [ref=e55]:
+          - row "A 0 - - - - - - - - 0 0" [ref=e56]:
+            - cell "A" [ref=e57]
+            - cell "0" [ref=e58]
+            - cell "-" [ref=e59]
+            - cell "-" [ref=e60]
+            - cell "-" [ref=e61]
+            - cell "-" [ref=e62]
+            - cell "-" [ref=e63]
+            - cell "-" [ref=e64]
+            - cell "-" [ref=e65]
+            - cell "-" [ref=e66]
+            - cell [ref=e67]
+            - cell "0" [ref=e68]
+            - cell "0" [ref=e69]
+          - row "B - - - - - - - - - 0 0" [ref=e70]:
+            - cell "B" [ref=e71]
+            - cell "-" [ref=e72]
+            - cell "-" [ref=e73]
+            - cell "-" [ref=e74]
+            - cell "-" [ref=e75]
+            - cell "-" [ref=e76]
+            - cell "-" [ref=e77]
+            - cell "-" [ref=e78]
+            - cell "-" [ref=e79]
+            - cell "-" [ref=e80]
+            - cell [ref=e81]
+            - cell "0" [ref=e82]
+            - cell "0" [ref=e83]
+      - generic [ref=e84]:
+        - generic [ref=e85]: B
+        - generic [ref=e89]: S
+        - generic [ref=e92]: O
+    - generic [ref=e95]:
+      - button "Open saves panel" [ref=e96] [cursor=pointer]: 💾 Saves
+      - button "Share seed" [ref=e97] [cursor=pointer]
+      - button "How to play" [ref=e98] [cursor=pointer]: "?"
+      - text: ▸ ▸ ▸ ▸ ▸ ▸ ▸
+      - generic [ref=e99]:
+        - generic [ref=e100] [cursor=pointer]:
+          - text: Speed
+          - combobox "Speed" [ref=e101]:
+            - option "Slow"
+            - option "Normal"
+            - option "Fast" [selected]
+        - generic [ref=e102]:
+          - button "Mute announcements" [ref=e103] [cursor=pointer]: 🔊
+          - slider "Announcement volume" [ref=e104] [cursor=pointer]: "1"
+        - generic [ref=e105]:
+          - button "Mute alerts" [ref=e106] [cursor=pointer]: 🔔
+          - slider "Alert volume" [ref=e107] [cursor=pointer]: "1"
+    - generic [ref=e119]:
+      - generic [ref=e120]:
+        - generic [ref=e121]:
+          - generic [ref=e122]: Hit Log
+          - button "Collapse hit log" [ref=e123] [cursor=pointer]: ▼ hide
+        - generic [ref=e125]: No hits yet.
+      - generic [ref=e126]:
+        - generic [ref=e127]:
+          - generic [ref=e128]: Batting Stats
+          - button "Collapse batting stats" [ref=e129] [cursor=pointer]: ▼ hide
+        - generic [ref=e130]:
+          - button "▲ A" [ref=e131] [cursor=pointer]
+          - button "▼ B" [ref=e132] [cursor=pointer]
+        - table [ref=e133]:
+          - rowgroup [ref=e134]:
+            - row "# AB H BB K" [ref=e135]:
+              - columnheader "#" [ref=e136]
+              - columnheader "AB" [ref=e137]
+              - columnheader "H" [ref=e138]
+              - columnheader "BB" [ref=e139]
+              - columnheader "K" [ref=e140]
+          - rowgroup [ref=e141]:
+            - row "Catcher – – – –" [ref=e142]:
+              - cell "Catcher" [ref=e143]
+              - cell "–" [ref=e144]
+              - cell "–" [ref=e145]
+              - cell "–" [ref=e146]
+              - cell "–" [ref=e147]
+            - row "First Baseman – – – –" [ref=e148]:
+              - cell "First Baseman" [ref=e149]
+              - cell "–" [ref=e150]
+              - cell "–" [ref=e151]
+              - cell "–" [ref=e152]
+              - cell "–" [ref=e153]
+            - row "Second Baseman – – – –" [ref=e154]:
+              - cell "Second Baseman" [ref=e155]
+              - cell "–" [ref=e156]
+              - cell "–" [ref=e157]
+              - cell "–" [ref=e158]
+              - cell "–" [ref=e159]
+            - row "Third Baseman – – – –" [ref=e160]:
+              - cell "Third Baseman" [ref=e161]
+              - cell "–" [ref=e162]
+              - cell "–" [ref=e163]
+              - cell "–" [ref=e164]
+              - cell "–" [ref=e165]
+            - row "Shortstop – – – –" [ref=e166]:
+              - cell "Shortstop" [ref=e167]
+              - cell "–" [ref=e168]
+              - cell "–" [ref=e169]
+              - cell "–" [ref=e170]
+              - cell "–" [ref=e171]
+            - row "Left Fielder – – – –" [ref=e172]:
+              - cell "Left Fielder" [ref=e173]
+              - cell "–" [ref=e174]
+              - cell "–" [ref=e175]
+              - cell "–" [ref=e176]
+              - cell "–" [ref=e177]
+            - row "Center Fielder – – – –" [ref=e178]:
+              - cell "Center Fielder" [ref=e179]
+              - cell "–" [ref=e180]
+              - cell "–" [ref=e181]
+              - cell "–" [ref=e182]
+              - cell "–" [ref=e183]
+            - row "Right Fielder – – – –" [ref=e184]:
+              - cell "Right Fielder" [ref=e185]
+              - cell "–" [ref=e186]
+              - cell "–" [ref=e187]
+              - cell "–" [ref=e188]
+              - cell "–" [ref=e189]
+            - row "Designated Hitter – – – –" [ref=e190]:
+              - cell "Designated Hitter" [ref=e191]
+              - cell "–" [ref=e192]
+              - cell "–" [ref=e193]
+              - cell "–" [ref=e194]
+              - cell "–" [ref=e195]
+      - generic [ref=e197]:
+        - generic [ref=e198]: Play-by-play
+        - button "Expand play-by-play" [ref=e199] [cursor=pointer]: ▶ show
+```

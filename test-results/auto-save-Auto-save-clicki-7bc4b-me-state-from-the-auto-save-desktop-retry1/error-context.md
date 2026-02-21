@@ -1,0 +1,165 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - link "View on GitHub View on Github":
+    - /url: https://github.com/maniator/self-playing-baseball
+  - main [ref=e3]:
+    - generic [ref=e4]:
+      - table [ref=e5]:
+        - rowgroup [ref=e6]:
+          - row "Team 1 2 3 4 5 6 7 8 9 R H" [ref=e7]:
+            - columnheader "Team" [ref=e8]
+            - columnheader "1" [ref=e9]
+            - columnheader "2" [ref=e10]
+            - columnheader "3" [ref=e11]
+            - columnheader "4" [ref=e12]
+            - columnheader "5" [ref=e13]
+            - columnheader "6" [ref=e14]
+            - columnheader "7" [ref=e15]
+            - columnheader "8" [ref=e16]
+            - columnheader "9" [ref=e17]
+            - columnheader [ref=e18]
+            - columnheader "R" [ref=e19]
+            - columnheader "H" [ref=e20]
+        - rowgroup [ref=e21]:
+          - row "New York Mets 1 - - - - - - - - 1 2" [ref=e22]:
+            - cell "New York Mets" [ref=e23]
+            - cell "1" [ref=e24]
+            - cell "-" [ref=e25]
+            - cell "-" [ref=e26]
+            - cell "-" [ref=e27]
+            - cell "-" [ref=e28]
+            - cell "-" [ref=e29]
+            - cell "-" [ref=e30]
+            - cell "-" [ref=e31]
+            - cell "-" [ref=e32]
+            - cell [ref=e33]
+            - cell "1" [ref=e34]
+            - cell "2" [ref=e35]
+          - row "New York Yankees 0 - - - - - - - - 0 0" [ref=e36]:
+            - cell "New York Yankees" [ref=e37]
+            - cell "0" [ref=e38]
+            - cell "-" [ref=e39]
+            - cell "-" [ref=e40]
+            - cell "-" [ref=e41]
+            - cell "-" [ref=e42]
+            - cell "-" [ref=e43]
+            - cell "-" [ref=e44]
+            - cell "-" [ref=e45]
+            - cell "-" [ref=e46]
+            - cell [ref=e47]
+            - cell "0" [ref=e48]
+            - cell "0" [ref=e49]
+      - generic [ref=e50]:
+        - generic [ref=e51]: B
+        - generic [ref=e55]: S
+        - generic [ref=e58]: O
+    - generic [ref=e61]:
+      - button "Open saves panel" [ref=e62] [cursor=pointer]: 💾 Saves
+      - button "Share seed" [ref=e63] [cursor=pointer]
+      - button "How to play" [ref=e64] [cursor=pointer]: "?"
+      - text: ▸ ▸ ▸ ▸ ▸ ▸ ▸
+      - generic [ref=e65]:
+        - generic [ref=e66] [cursor=pointer]:
+          - text: Speed
+          - combobox "Speed" [ref=e67]:
+            - option "Slow"
+            - option "Normal"
+            - option "Fast" [selected]
+        - generic [ref=e68]:
+          - button "Mute announcements" [ref=e69] [cursor=pointer]: 🔊
+          - slider "Announcement volume" [ref=e70] [cursor=pointer]: "1"
+        - generic [ref=e71]:
+          - button "Mute alerts" [ref=e72] [cursor=pointer]: 🔔
+          - slider "Alert volume" [ref=e73] [cursor=pointer]: "1"
+        - generic [ref=e74] [cursor=pointer]:
+          - checkbox "Manager Mode" [ref=e75]
+          - text: Manager Mode
+    - generic [ref=e87]:
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: Hit Log
+          - button "Collapse hit log" [ref=e91] [cursor=pointer]: ▼ hide
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]: 2B
+            - generic [ref=e95]: "▲1 — New York Mets #3"
+          - generic [ref=e96]:
+            - generic [ref=e97]: HR
+            - generic [ref=e98]: "▲1 — New York Mets #2"
+            - generic [ref=e99]: +1 run
+      - generic [ref=e100]:
+        - generic [ref=e101]:
+          - generic [ref=e102]: Batting Stats
+          - button "Collapse batting stats" [ref=e103] [cursor=pointer]: ▼ hide
+        - generic [ref=e104]:
+          - button "▲ New York Mets" [ref=e105] [cursor=pointer]
+          - button "▼ New York Yankees" [ref=e106] [cursor=pointer]
+        - table [ref=e107]:
+          - rowgroup [ref=e108]:
+            - row "# AB H BB K" [ref=e109]:
+              - columnheader "#" [ref=e110]
+              - columnheader "AB" [ref=e111]
+              - columnheader "H" [ref=e112]
+              - columnheader "BB" [ref=e113]
+              - columnheader "K" [ref=e114]
+          - rowgroup [ref=e115]:
+            - row "Catcher 1 – – 1" [ref=e116]:
+              - cell "Catcher" [ref=e117]
+              - cell "1" [ref=e118]
+              - cell "–" [ref=e119]
+              - cell "–" [ref=e120]
+              - cell "1" [ref=e121]
+            - row "First Baseman 1 1 – –" [ref=e122]:
+              - cell "First Baseman" [ref=e123]
+              - cell "1" [ref=e124]
+              - cell "1" [ref=e125]
+              - cell "–" [ref=e126]
+              - cell "–" [ref=e127]
+            - row "Second Baseman 1 1 – –" [ref=e128]:
+              - cell "Second Baseman" [ref=e129]
+              - cell "1" [ref=e130]
+              - cell "1" [ref=e131]
+              - cell "–" [ref=e132]
+              - cell "–" [ref=e133]
+            - row "Third Baseman 1 – – 1" [ref=e134]:
+              - cell "Third Baseman" [ref=e135]
+              - cell "1" [ref=e136]
+              - cell "–" [ref=e137]
+              - cell "–" [ref=e138]
+              - cell "1" [ref=e139]
+            - row "Shortstop 1 – – 1" [ref=e140]:
+              - cell "Shortstop" [ref=e141]
+              - cell "1" [ref=e142]
+              - cell "–" [ref=e143]
+              - cell "–" [ref=e144]
+              - cell "1" [ref=e145]
+            - row "Left Fielder – – – –" [ref=e146]:
+              - cell "Left Fielder" [ref=e147]
+              - cell "–" [ref=e148]
+              - cell "–" [ref=e149]
+              - cell "–" [ref=e150]
+              - cell "–" [ref=e151]
+            - row "Center Fielder – – – –" [ref=e152]:
+              - cell "Center Fielder" [ref=e153]
+              - cell "–" [ref=e154]
+              - cell "–" [ref=e155]
+              - cell "–" [ref=e156]
+              - cell "–" [ref=e157]
+            - row "Right Fielder – – – –" [ref=e158]:
+              - cell "Right Fielder" [ref=e159]
+              - cell "–" [ref=e160]
+              - cell "–" [ref=e161]
+              - cell "–" [ref=e162]
+              - cell "–" [ref=e163]
+            - row "Designated Hitter – – – –" [ref=e164]:
+              - cell "Designated Hitter" [ref=e165]
+              - cell "–" [ref=e166]
+              - cell "–" [ref=e167]
+              - cell "–" [ref=e168]
+              - cell "–" [ref=e169]
+      - generic [ref=e171]:
+        - generic [ref=e172]: Play-by-play
+        - button "Expand play-by-play" [ref=e173] [cursor=pointer]: ▶ show
+```

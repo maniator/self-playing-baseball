@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-import { clickPlayBall, gotoFreshApp, waitForNewGameDialog } from "../utils/helpers";
+import {
+  clickPlayBall,
+  closeSavesModal,
+  gotoFreshApp,
+  loadSaveByName,
+  openSavesModal,
+  saveCurrentGame,
+  waitForAtLeastLogLines,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 test.describe("Player customization", () => {
   test("New Game dialog shows home and away team selectors with options", async ({ page }) => {
@@ -47,13 +56,70 @@ test.describe("Player customization", () => {
     await expect(dialog.locator("form")).toBeVisible();
   });
 
-  test.skip("editing a player nickname persists after saving and reloading", async () => {
-    // TODO: expand the player customization panel, change a nickname,
-    // start game, save, reload, load save, verify nickname appears in logs.
+  test("editing a player nickname persists after saving and reloading", async ({ page }) => {
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+
+    // Expand the customization panel
+    await page.getByTestId("customize-players-toggle").click();
+    await expect(page.getByLabel("Catcher nickname")).toBeVisible({ timeout: 5_000 });
+
+    // Type a distinctive nickname for the Catcher (first batter slot)
+    const testNickname = "TestAce";
+    await page.getByLabel("Catcher nickname").fill(testNickname);
+
+    // Start the game
+    await clickPlayBall(page);
+    await page.getByTestId("speed-select").selectOption("350");
+    await waitForAtLeastLogLines(page, 5);
+
+    // Save, reload, load the saved game
+    await openSavesModal(page);
+    await saveCurrentGame(page);
+    await page.waitForTimeout(500);
+    await closeSavesModal(page);
+
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+    await clickPlayBall(page);
+    await openSavesModal(page);
+    await loadSaveByName(page, "New York Mets vs New York Yankees");
+    await page.waitForTimeout(500);
+
+    // The nickname must appear in the PlayerStatsPanel after loading.
+    const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 5_000 });
+    await expect(statsPanel.getByText(testNickname)).toBeVisible({ timeout: 5_000 });
   });
 
-  test.skip("editing a stat modifier changes the player display", async () => {
-    // TODO: expand player panel, change contactMod to Elite,
-    // start game, verify some observable difference.
+  test("editing a stat modifier changes the effective stat display", async ({ page }) => {
+    await gotoFreshApp(page);
+    await waitForNewGameDialog(page);
+
+    // Expand the customization panel
+    await page.getByTestId("customize-players-toggle").click();
+    await expect(page.getByLabel("Catcher nickname")).toBeVisible({ timeout: 5_000 });
+
+    // Read the current effective value for the Catcher's Contact stat.
+    const contactLabel = page.getByLabel("Catcher CON");
+    const baseDisplayBefore = await contactLabel
+      .locator("..")
+      .locator("span, output, [class*='Base']")
+      .first()
+      .textContent();
+
+    // Change contact modifier to "+20" (Elite) via the aria-labelled select
+    await contactLabel.selectOption("+20");
+
+    // The displayed effective value should now be different (higher).
+    const baseDisplayAfter = await contactLabel
+      .locator("..")
+      .locator("span, output, [class*='Base']")
+      .first()
+      .textContent();
+
+    expect(parseInt(baseDisplayAfter ?? "0", 10)).toBeGreaterThan(
+      parseInt(baseDisplayBefore ?? "0", 10),
+    );
   });
 });
