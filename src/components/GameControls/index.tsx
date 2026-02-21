@@ -46,7 +46,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
     <>
       <Controls>
         {gameOver && onNewGame && (
-          <Button $variant="new" onClick={onNewGame}>
+          <Button $variant="new" onClick={onNewGame} data-testid="new-game-button">
             New Game
           </Button>
         )}
@@ -62,7 +62,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             setManagerMode(setup.managerMode ?? false);
           }}
         />
-        <Button $variant="share" onClick={handleShareReplay}>
+        <Button $variant="share" onClick={handleShareReplay} data-testid="share-seed-button">
           Share seed
         </Button>
         <InstructionsModal />

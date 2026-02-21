@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_fixture_test_001",
+    "name": "New York Mets vs New York Yankees",
+    "seed": "abc",
+    "matchupMode": "default",
+    "homeTeamId": "New York Yankees",
+    "awayTeamId": "New York Mets",
+    "createdAt": 1700000000000,
+    "updatedAt": 1700000000000,
+    "progressIdx": -1,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": null,
+      "managerMode": false,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "New York Mets",
+      "playerOverrides": [{}, {}],
+      "lineupOrder": [[], []]
+    },
+    "schemaVersion": 1
+  },
+  "events": [],
+  "sig": "298e8796"
+}

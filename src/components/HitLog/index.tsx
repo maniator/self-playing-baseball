@@ -84,7 +84,7 @@ const HitLog: React.FunctionComponent = () => {
   const [collapsed, setCollapsed] = React.useState(false);
 
   return (
-    <>
+    <div data-testid="hit-log">
       <HeadingRow>
         <span>Hit Log</span>
         <Toggle
@@ -119,7 +119,7 @@ const HitLog: React.FunctionComponent = () => {
           )}
         </Area>
       )}
-    </>
+    </div>
   );
 };
 

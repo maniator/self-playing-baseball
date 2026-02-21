@@ -133,7 +133,7 @@ const DecisionPanel: React.FunctionComponent<Props> = ({ strategy }) => {
   const pct = (secondsLeft / DECISION_TIMEOUT_SEC) * 100;
 
   return (
-    <Panel>
+    <Panel data-testid="decision-panel">
       <DecisionButtons
         pendingDecision={pendingDecision}
         strategy={strategy}
