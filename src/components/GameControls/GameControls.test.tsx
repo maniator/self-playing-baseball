@@ -24,6 +24,18 @@ vi.mock("@utils/announce", () => ({
   play7thInningStretch: vi.fn(),
 }));
 
+vi.mock("@hooks/useSaveStore", () => ({
+  useSaveStore: vi.fn(() => ({
+    saves: [],
+    createSave: vi.fn().mockResolvedValue("save_1"),
+    appendEvents: vi.fn().mockResolvedValue(undefined),
+    updateProgress: vi.fn().mockResolvedValue(undefined),
+    deleteSave: vi.fn().mockResolvedValue(undefined),
+    exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+    importRxdbSave: vi.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeContextValue()) =>
   render(<GameContext.Provider value={ctx}>{ui}</GameContext.Provider>);
 

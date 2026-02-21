@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import type { Strategy } from "@context/index";
-import type { SaveSetup } from "@utils/saves";
+import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,
@@ -29,7 +29,11 @@ interface Props {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: SaveSetup) => void;
+  onSetupRestore?: (setup: {
+    strategy: Strategy;
+    managedTeam: 0 | 1;
+    managerMode: boolean;
+  }) => void;
 }
 
 const formatDate = (ts: number): string =>
@@ -44,7 +48,6 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
   const {
     ref,
     saves,
-    autoSave,
     importText,
     importError,
     setImportText,
@@ -82,26 +85,12 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           {props.currentSaveId ? "Update save" : "Save current game"}
         </SmallButton>
 
-        {autoSave && (
-          <>
-            <SectionHeading>Auto-save</SectionHeading>
-            <SlotList>
-              <SlotItem>
-                <SlotName title={autoSave.name}>{autoSave.name}</SlotName>
-                <SlotDate>{formatDate(autoSave.updatedAt)}</SlotDate>
-                <SmallButton onClick={() => handleLoad(autoSave)}>Load</SmallButton>
-                <SmallButton onClick={() => handleExport(autoSave)}>Export</SmallButton>
-              </SlotItem>
-            </SlotList>
-          </>
-        )}
-
         <SectionHeading>Saved games</SectionHeading>
         {saves.length === 0 ? (
           <EmptyMsg>No saves yet.</EmptyMsg>
         ) : (
           <SlotList>
-            {saves.map((s) => (
+            {saves.map((s: SaveDoc) => (
               <SlotItem key={s.id}>
                 <SlotName title={s.name}>{s.name}</SlotName>
                 <SlotDate>{formatDate(s.updatedAt)}</SlotDate>

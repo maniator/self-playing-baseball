@@ -12,9 +12,7 @@ const GAME_LS_KEYS = [
 
 const clearGameStorage = () => {
   try {
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith("ballgame:") || GAME_LS_KEYS.includes(k))
-      .forEach((k) => localStorage.removeItem(k));
+    GAME_LS_KEYS.forEach((k) => localStorage.removeItem(k));
   } catch {
     // ignore
   }
