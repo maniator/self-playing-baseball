@@ -4,7 +4,7 @@
 
 **Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
-**Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4.
+**Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4.
 
 ---
 
@@ -19,24 +19,26 @@
 ├── .nvmrc                          # Node version: 24
 ├── .prettierrc                     # Prettier config (double quotes, trailing commas, printWidth 100)
 ├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier)
-├── tsconfig.json                   # TypeScript config with path aliases
-├── vitest.config.ts                # Vitest config with matching resolve.alias entries
+├── tsconfig.json                   # TypeScript config with path aliases (jsx: react-jsx)
+├── vite.config.ts                  # Vite + Vitest config: React plugin, path aliases, vite-plugin-pwa, test section
 ├── package.json                    # Scripts, dependencies, Husky/Commitizen config
 ├── yarn.lock
-├── vercel.json                     # Vercel SPA routing config (version 2)
+├── vercel.json                     # Vercel SPA routing + outputDirectory + SW headers (version 2)
+├── public/                         # Static assets copied verbatim to dist/ by Vite (no hashing)
+│   ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
+│   ├── og-image.png                # OG / Twitter card image (stable URL: /og-image.png)
+│   └── images/
+│       ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
+│       ├── baseball-192.png        # PWA icon 192×192 (generated from baseball.svg)
+│       ├── baseball-512.png        # PWA icon 512×512 / maskable (generated from baseball.svg)
+│       ├── baseball-180.png        # Apple touch icon 180×180
+│       └── favicon-32.png          # Fallback favicon 32×32
 ├── dist/                           # Build output (gitignored)
 └── src/
-    ├── index.html                  # HTML entry point for Parcel (script has type="module")
+    ├── index.html                  # HTML entry point for Vite (script has type="module", image hrefs are absolute /…)
     ├── index.scss                  # Global styles + mobile media queries
-    ├── index.tsx                   # React entry: initSeedFromUrl, registers sw.ts, createRoot
-    ├── sw.ts                       # Service worker: caches bundles, handles notificationclick
-    ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
-    ├── images/
-    │   ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
-    │   ├── baseball-192.png        # PWA icon 192×192 (generated from baseball.svg)
-    │   ├── baseball-512.png        # PWA icon 512×512 / maskable (generated from baseball.svg)
-    │   ├── baseball-180.png        # Apple touch icon 180×180
-    │   └── favicon-32.png          # Fallback favicon 32×32
+    ├── index.tsx                   # React entry: initSeedFromUrl, registers /sw.js, createRoot
+    ├── sw.ts                       # Service worker: uses self.__WB_MANIFEST (injected by vite-plugin-pwa), caches bundles, handles notificationclick
     ├── constants/
     │   ├── hitTypes.ts             # Hit enum: Single, Double, Triple, Homerun, Walk
     │   └── pitchTypes.ts           # PitchType enum + selectPitchType, pitchName helpers
@@ -116,7 +118,7 @@ Tests are **co-located** next to their source files (e.g. `src/context/strategy.
 
 ## Path Aliases
 
-All cross-directory imports use aliases (configured in `tsconfig.json` and `vitest.config.ts`):
+All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
 | Alias | Resolves to |
 |---|---|
@@ -203,17 +205,16 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 ## Notification System (Service Worker)
 
-`src/sw.ts` is a **module service worker** registered with `{ type: "module" }`. It pre-caches bundles, implements network-first + cache fallback, and listens for `notificationclick` events, posting `{ type: 'NOTIFICATION_ACTION', action, payload }` to the page.
+`src/sw.ts` is a **module service worker** registered at `/sw.js` with `{ type: "module" }`. It uses `self.__WB_MANIFEST` (the precache list injected at build time by `vite-plugin-pwa`'s `injectManifest` strategy), implements network-first + cache fallback, and listens for `notificationclick` events, posting `{ type: 'NOTIFICATION_ACTION', action, payload }` to the page.
 
-**Logging**: imports `createLogger` from `@utils/logger` and creates its own `log` singleton tagged with the Parcel `version` hash.
+**Logging**: imports `createLogger` from `@utils/logger` and creates its own `log` singleton tagged with a version derived from the manifest content hashes.
 
 ---
 
 ## Shared Logger (`src/utils/logger.ts`)
 
 - **`appLog`** — singleton for the main-app context. Import this directly; do not call `createLogger("app")` again.
-- **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)`.
-
+- **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)` where `version` is derived from `self.__WB_MANIFEST` content hashes.
 ---
 
 ## Build & Development
@@ -222,8 +223,8 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 ```bash
 yarn                  # install dependencies
-yarn dev              # parcel serve src/*.html (hot reload on http://localhost:1234)
-yarn build            # parcel build src/*.html → dist/
+yarn dev              # vite dev server (hot reload on http://localhost:5173)
+yarn build            # vite build → dist/
 yarn test             # vitest run (one-shot)
 yarn test:coverage    # vitest run --coverage (thresholds: lines/functions/statements 90%, branches 80%)
 yarn lint             # ESLint check
@@ -231,7 +232,7 @@ yarn lint:fix         # ESLint auto-fix
 yarn format:check     # Prettier check
 ```
 
-**TypeScript** is compiled by Parcel (no standalone `tsc` build step). TypeScript errors surface as Parcel build errors.
+**TypeScript** is type-checked by editors / `tsc --noEmit`; Vite uses esbuild to strip types at build time. TypeScript errors surface as build errors only if `tsc` is run explicitly.
 
 ---
 
@@ -259,9 +260,12 @@ Validate changes by:
 
 ## Common Gotchas
 
-- **`tsconfig.json` exists** with `moduleResolution: "node"` and path aliases. Parcel reads it automatically. Do not remove or change `moduleResolution` without testing the Parcel build.
-- **Parcel v2 (not v1):** Use Parcel v2 conventions — the HTML `<script>` requires `type="module"`, no `"main"` field in `package.json`.
-- **Service worker is a module worker:** `src/sw.ts` uses ES `import`/`export` and is registered with `{ type: "module" }`.
+- **`tsconfig.json`** has `moduleResolution: "node"`, `jsx: "react-jsx"`, and path aliases. Vite reads it automatically via `vite.config.ts`. Do not change `moduleResolution` without testing the build and tests.
+- **Single config file:** `vite.config.ts` is the only config for both Vite (build/dev) and Vitest (tests). It imports `defineConfig` from `vitest/config`. There is no separate `vitest.config.ts`.
+- **Static assets live in `public/`** (not `src/`): `public/images/`, `public/manifest.webmanifest`, `public/og-image.png`. Vite copies them verbatim to `dist/` at their original paths — no content hashing. HTML references these with absolute paths (`/images/…`, `/manifest.webmanifest`).
+- **Service worker is a module worker:** `src/sw.ts` is built by `vite-plugin-pwa` (`injectManifest` strategy, `rollupFormat: "es"`), output as `dist/sw.js`, and registered via `navigator.serviceWorker.register("/sw.js", { type: "module" })`.
+- **`self.__WB_MANIFEST`** is the precache list injected into `sw.ts` at build time by `vite-plugin-pwa`. It is declared locally in `sw.ts` — do not import from any external package.
+- **Lazy-loaded components:** `InstructionsModal`, `SavesModal`, and `DecisionPanel` are loaded via `React.lazy()` in `GameControls/index.tsx` and wrapped in `<React.Suspense fallback={null}>`. Do not convert them back to static imports.
 - **React 19:** Entry point uses `createRoot` from `react-dom/client`.
 - **React import style:** Files use `import * as React from "react"` (not the default import).
 - **Styled-components v6:** Custom props **must** be typed via generics, e.g. `styled.div<{ $active: boolean }>`. Use `$propName` (transient props) for non-HTML props.

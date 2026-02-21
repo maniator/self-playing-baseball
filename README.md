@@ -67,7 +67,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 # Install dependencies
 yarn
 
-# Start the dev server (http://localhost:1234)
+# Start the dev server (http://localhost:5173)
 yarn dev
 
 # Run tests
@@ -86,7 +86,7 @@ yarn build
 | Framework | React 19 (hooks) |
 | Language | TypeScript 5 |
 | Styling | styled-components v6 + SASS |
-| Bundler | Parcel v2 |
+| Bundler | Vite v7 |
 | Testing | Vitest + Testing Library |
 | Speech | Web Speech API |
 | Audio | Web Audio API |

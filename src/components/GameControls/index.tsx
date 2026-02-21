@@ -1,15 +1,16 @@
 import * as React from "react";
 
-import DecisionPanel from "@components/DecisionPanel";
-import InstructionsModal from "@components/InstructionsModal";
-import SavesModal from "@components/SavesModal";
 import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Button, Controls, Select, ToggleLabel } from "./styles";
+import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
+
+const DecisionPanel = React.lazy(() => import("@components/DecisionPanel"));
+const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
+const SavesModal = React.lazy(() => import("@components/SavesModal"));
 
 type Props = {
   onNewGame?: () => void;
@@ -50,22 +51,38 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             New Game
           </Button>
         )}
-        <SavesModal
-          strategy={strategy}
-          managedTeam={managedTeam}
-          managerMode={managerMode}
-          currentSaveId={currentSaveId}
-          onSaveIdChange={setCurrentSaveId}
-          onSetupRestore={(setup) => {
-            setStrategy(setup.strategy);
-            setManagedTeam(setup.managedTeam);
-            setManagerMode(setup.managerMode ?? false);
-          }}
-        />
+        <React.Suspense
+          fallback={
+            <Button $variant="saves" disabled aria-label="Open saves panel">
+              💾 Saves
+            </Button>
+          }
+        >
+          <SavesModal
+            strategy={strategy}
+            managedTeam={managedTeam}
+            managerMode={managerMode}
+            currentSaveId={currentSaveId}
+            onSaveIdChange={setCurrentSaveId}
+            onSetupRestore={(setup) => {
+              setStrategy(setup.strategy);
+              setManagedTeam(setup.managedTeam);
+              setManagerMode(setup.managerMode ?? false);
+            }}
+          />
+        </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>
           Share seed
         </Button>
-        <InstructionsModal />
+        <React.Suspense
+          fallback={
+            <HelpButton disabled aria-label="How to play">
+              ?
+            </HelpButton>
+          }
+        >
+          <InstructionsModal />
+        </React.Suspense>
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
@@ -98,7 +115,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
           )}
         </AutoPlayGroup>
       </Controls>
-      {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
+      {gameStarted && managerMode && (
+        <React.Suspense fallback={null}>
+          <DecisionPanel strategy={strategy} />
+        </React.Suspense>
+      )}
     </>
   );
 };

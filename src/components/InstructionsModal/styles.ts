@@ -1,24 +1,6 @@
 import styled from "styled-components";
 
-export const HelpButton = styled.button`
-  background: rgba(47, 63, 105, 0.7);
-  color: #aaccff;
-  border: 1px solid #4a6090;
-  border-radius: 50%;
-  width: 25px;
-  height: 25px;
-  font-size: 15px;
-  font-family: inherit;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-  flex-shrink: 0;
-
-  &:hover {
-    background: rgba(74, 96, 144, 0.9);
-    color: #fff;
-  }
-`;
+export { HelpButton } from "@components/GameControls/styles";
 
 export const Dialog = styled.dialog`
   background: #0d1b2e;
