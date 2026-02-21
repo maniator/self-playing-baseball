@@ -7,7 +7,8 @@ import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
-import NewGameDialog from "@components/NewGameDialog";
+import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
+import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import { type Strategy, useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
 import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
@@ -52,14 +53,26 @@ const GameInner: React.FunctionComponent = () => {
     setDialogOpen(false);
   };
 
-  const handleStart = (homeTeam: string, awayTeam: string, managedTeam: 0 | 1 | null) => {
+  const handleStart = (
+    homeTeam: string,
+    awayTeam: string,
+    managedTeam: 0 | 1 | null,
+    playerOverrides: PlayerOverrides,
+  ) => {
     setManagerMode(managedTeam !== null);
     if (managedTeam !== null) {
       setManagedTeam(managedTeam);
     }
     clearAutoSave();
     dispatch({ type: "reset" });
-    dispatch({ type: "setTeams", payload: [awayTeam, homeTeam] });
+    dispatch({
+      type: "setTeams",
+      payload: {
+        teams: [awayTeam, homeTeam],
+        playerOverrides: [playerOverrides.away, playerOverrides.home],
+        lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
+      },
+    });
     setGameActive(true);
     setGameKey((k) => k + 1);
     setDialogOpen(false);
@@ -90,6 +103,7 @@ const GameInner: React.FunctionComponent = () => {
         </FieldPanel>
         <LogPanel>
           <HitLog />
+          <PlayerStatsPanel />
           <Announcements />
         </LogPanel>
       </GameBody>

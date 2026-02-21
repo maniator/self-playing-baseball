@@ -8,6 +8,8 @@ export const Dialog = styled.dialog`
   padding: 28px 32px 24px;
   max-width: min(420px, 92vw);
   width: 100%;
+  max-height: min(90dvh, 820px);
+  overflow-y: auto;
   font-family: inherit;
   font-size: 14px;
 

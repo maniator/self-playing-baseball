@@ -1,9 +1,8 @@
 import * as React from "react";
 
-import { AL_FALLBACK, fetchMlbTeams, NL_FALLBACK } from "@utils/mlbTeams";
+import type { TeamCustomPlayerOverrides } from "@context/index";
 
-import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
-export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
+import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 import {
   Dialog,
   Divider,
@@ -16,90 +15,46 @@ import {
   Select,
   Title,
 } from "./styles";
+import { usePlayerCustomization } from "./usePlayerCustomization";
+import { useTeamSelection } from "./useTeamSelection";
+
+export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 
 type ManagedTeam = 0 | 1 | null;
-type MatchupMode = "al" | "nl" | "interleague";
+
+export type PlayerOverrides = {
+  away: TeamCustomPlayerOverrides;
+  home: TeamCustomPlayerOverrides;
+  awayOrder: string[];
+  homeOrder: string[];
+};
 
 type Props = {
-  onStart: (homeTeam: string, awayTeam: string, managedTeam: ManagedTeam) => void;
+  onStart: (
+    homeTeam: string,
+    awayTeam: string,
+    managedTeam: ManagedTeam,
+    playerOverrides: PlayerOverrides,
+  ) => void;
   autoSaveName?: string;
   onResume?: () => void;
 };
 
 const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
-  const [teams, setTeams] = React.useState({ al: AL_FALLBACK, nl: NL_FALLBACK });
-  const [mode, setMode] = React.useState<MatchupMode>("interleague");
-  const [homeLeague, setHomeLeague] = React.useState<"al" | "nl">("al");
-  const [home, setHome] = React.useState(DEFAULT_AL_TEAM);
-  const [away, setAway] = React.useState(DEFAULT_NL_TEAM);
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
 
   React.useEffect(() => {
     if (!ref.current?.open) ref.current?.showModal();
-    fetchMlbTeams()
-      .then(setTeams)
-      .catch(() => {});
   }, []);
 
-  const homeList =
-    mode === "interleague"
-      ? homeLeague === "al"
-        ? teams.al
-        : teams.nl
-      : mode === "nl"
-        ? teams.nl
-        : teams.al;
-  const awayList =
-    mode === "interleague"
-      ? homeLeague === "al"
-        ? teams.nl
-        : teams.al
-      : homeList.filter((t) => t.name !== home);
-
-  // Keep selections valid if team lists change after fetch
-  React.useEffect(() => {
-    if (homeList.length > 0 && !homeList.some((t) => t.name === home)) {
-      setHome(homeList[0].name);
-    }
-  }, [homeList, home]);
-
-  React.useEffect(() => {
-    if (awayList.length > 0 && !awayList.some((t) => t.name === away)) {
-      setAway(awayList[0].name);
-    }
-  }, [awayList, away]);
-
-  const handleModeChange = (m: MatchupMode) => {
-    setMode(m);
-    if (m === "al") {
-      setHome(teams.al[0]?.name ?? "");
-      setAway(teams.al[1]?.name ?? teams.al[0]?.name ?? "");
-    } else if (m === "nl") {
-      setHome(teams.nl[0]?.name ?? "");
-      setAway(teams.nl[1]?.name ?? teams.nl[0]?.name ?? "");
-    } else {
-      const homeLeagueList = homeLeague === "al" ? teams.al : teams.nl;
-      const awayLeagueList = homeLeague === "al" ? teams.nl : teams.al;
-      const homeIsValid = homeLeagueList.some((t) => t.name === home);
-      const awayIsValid = awayLeagueList.some((t) => t.name === away);
-      const nextHome = homeIsValid ? home : (homeLeagueList[0]?.name ?? "");
-      const nextAway = awayIsValid ? away : (awayLeagueList[0]?.name ?? "");
-      setHome(nextHome);
-      setAway(nextAway);
-    }
-  };
-
-  const handleHomeLeagueChange = (league: "al" | "nl") => {
-    setHomeLeague(league);
-    setHome(league === "al" ? (teams.al[0]?.name ?? "") : (teams.nl[0]?.name ?? ""));
-    setAway(league === "al" ? (teams.nl[0]?.name ?? "") : (teams.al[0]?.name ?? ""));
-  };
+  const { mode, homeLeague, home, setHome, away, setAway, homeList, awayList, handleModeChange, handleHomeLeagueChange } = useTeamSelection(); // prettier-ignore
+  const { homeOverrides, setHomeOverrides, awayOverrides, setAwayOverrides, homeOrder, setHomeOrder, awayOrder, setAwayOrder } = usePlayerCustomization(home, away); // prettier-ignore
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
-    onStart(home, away, mt);
+    onStart(home, away, mt, { away: awayOverrides, home: homeOverrides, awayOrder, homeOrder });
     ref.current?.close();
   };
 
@@ -193,6 +148,18 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
             </RadioLabel>
           ))}
         </FieldGroup>
+        <PlayerCustomizationPanel
+          awayTeam={away}
+          homeTeam={home}
+          awayOverrides={awayOverrides}
+          homeOverrides={homeOverrides}
+          onAwayChange={setAwayOverrides}
+          onHomeChange={setHomeOverrides}
+          awayOrder={awayOrder}
+          homeOrder={homeOrder}
+          onAwayOrderChange={setAwayOrder}
+          onHomeOrderChange={setHomeOrder}
+        />
         <PlayBallButton type="submit">Play Ball!</PlayBallButton>
       </form>
     </Dialog>

@@ -1,5 +1,5 @@
 import { checkGameOver, nextHalfInning } from "./gameOver";
-import type { State, Strategy } from "./index";
+import type { State, Strategy, StrikeoutEntry } from "./index";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
 export const nextBatter = (state: State): State => {
@@ -17,7 +17,12 @@ export const nextBatter = (state: State): State => {
  *                          The same batter remains at the plate; order does NOT rotate.
  */
 export const playerOut = (state: State, log, batterCompleted = false): State => {
-  const stateAfterBatter = batterCompleted ? nextBatter(state) : state;
+  // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts).
+  const outEntry: StrikeoutEntry | null = batterCompleted
+    ? { team: state.atBat as 0 | 1, batterNum: state.batterIndex[state.atBat as 0 | 1] + 1 }
+    : null;
+  const stateWithOut = outEntry ? { ...state, outLog: [...state.outLog, outEntry] } : state;
+  const stateAfterBatter = batterCompleted ? nextBatter(stateWithOut) : stateWithOut;
   const newOuts = stateAfterBatter.outs + 1;
   if (newOuts === 3) {
     const afterHalf = nextHalfInning(stateAfterBatter, log);
