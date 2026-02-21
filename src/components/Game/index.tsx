@@ -7,6 +7,7 @@ import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 import type { BallgameDb } from "@storage/db";
 import { getDb } from "@storage/db";
+import { appLog } from "@utils/logger";
 
 import GameInner from "./GameInner";
 
@@ -30,7 +31,7 @@ const Game: React.FunctionComponent = () => {
   React.useEffect(() => {
     getDb()
       .then(setDb)
-      .catch(() => {});
+      .catch((err: unknown) => appLog.error("DB init failed:", err));
   }, []);
 
   const onDispatch = React.useCallback((action: GameAction) => {

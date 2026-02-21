@@ -101,7 +101,7 @@ async function initDb(
     devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
       addRxPlugin(RxDBDevModePlugin);
     });
-    await devModePluginPromise;
+    await devModePluginPromise.catch(() => {}); // dev plugin is optional; don't block DB init
   }
 
   const db = await createRxDatabase<DbCollections>({
