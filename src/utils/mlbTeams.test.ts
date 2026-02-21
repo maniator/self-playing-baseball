@@ -191,3 +191,25 @@ describe("fetchMlbTeams", () => {
     expect(NL_FALLBACK).toHaveLength(15);
   });
 });
+
+it("returns API data even when the DB write throws (saveToDb catch branch)", async () => {
+  // Stub bulkUpsert to throw — the catch in saveToDb should swallow it.
+  vi.spyOn(db.teams, "bulkUpsert").mockRejectedValue(new Error("DB write failed"));
+  vi.stubGlobal(
+    "fetch",
+    vi.fn().mockResolvedValue({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          teams: [
+            { id: 147, name: "New York Yankees", abbreviation: "NYY", league: { id: 103 } },
+            { id: 121, name: "New York Mets", abbreviation: "NYM", league: { id: 104 } },
+          ],
+        }),
+    }),
+  );
+  // fetchMlbTeams should still resolve with the API data even though the DB write failed
+  const result = await fetchMlbTeams();
+  expect(result.al[0].name).toBe("New York Yankees");
+  expect(result.nl[0].name).toBe("New York Mets");
+});

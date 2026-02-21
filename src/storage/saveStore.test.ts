@@ -317,3 +317,39 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     await db2.close();
   });
 });
+
+describe("SaveStore.appendEvents — counter initialisation from existing events", () => {
+  it("fresh store instance picks up existing event idx from DB and continues from there", async () => {
+    // First store writes two events with idx 0 and 1.
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [
+      { type: "pitch", at: 0, payload: {} },
+      { type: "pitch", at: 1, payload: {} },
+    ]);
+
+    // Create a fresh store instance pointing at the same DB.
+    // Its nextIdxMap is empty, so the first appendEvents call must
+    // query the DB to find the highest existing idx (1) and continue from 2.
+    const freshStore = makeSaveStore(() => Promise.resolve(db));
+    await freshStore.appendEvents(saveId, [{ type: "hit", at: 2, payload: { runs: 1 } }]);
+
+    // All three events should now exist with correct sequential ids.
+    const events = await db.events.find({ selector: { saveId }, sort: [{ idx: "asc" }] }).exec();
+    expect(events).toHaveLength(3);
+    expect(events[2].id).toBe(`${saveId}:2`);
+    expect(events[2].type).toBe("hit");
+    expect(events[2].idx).toBe(2);
+  });
+
+  it("fresh store with no existing events initialises counter at 0", async () => {
+    const saveId = await store.createSave(makeSetup());
+
+    // No events yet — fresh store should start at idx 0.
+    const freshStore = makeSaveStore(() => Promise.resolve(db));
+    await freshStore.appendEvents(saveId, [{ type: "pitch", at: 0, payload: {} }]);
+
+    const events = await db.events.find({ selector: { saveId } }).exec();
+    expect(events).toHaveLength(1);
+    expect(events[0].idx).toBe(0);
+  });
+});

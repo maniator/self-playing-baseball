@@ -1,12 +1,12 @@
 import * as React from "react";
 
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Strategy } from "@context/index";
 import { GameContext } from "@context/index";
 import { makeContextValue, makeState } from "@test/testHelpers";
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
 
 import SavesModal from ".";
 
@@ -157,7 +157,10 @@ describe("SavesModal", () => {
     renderModal({ onSaveIdChange }, { dispatch });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(dispatch).toHaveBeenCalledWith({ type: "restore_game", payload: slot.stateSnapshot?.state });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "restore_game",
+      payload: slot.stateSnapshot?.state,
+    });
     expect(onSaveIdChange).toHaveBeenCalledWith(slot.id);
   });
 
@@ -262,9 +265,7 @@ describe("SavesModal", () => {
       await act(async () => {
         fireEvent.click(screen.getAllByRole("button", { name: /^export$/i })[0]);
         await vi.waitFor(() =>
-          expect(
-            (URL as unknown as Record<string, unknown>).createObjectURL,
-          ).toHaveBeenCalled(),
+          expect((URL as unknown as Record<string, unknown>).createObjectURL).toHaveBeenCalled(),
         );
       });
       expect(SaveStore.exportRxdbSave).toHaveBeenCalledWith(slot.id);
