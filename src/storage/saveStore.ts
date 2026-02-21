@@ -104,7 +104,19 @@ function buildStore(getDbFn: GetDb) {
         updatedAt: Date.now(),
         ...(summary?.scoreSnapshot !== undefined && { scoreSnapshot: summary.scoreSnapshot }),
         ...(summary?.inningSnapshot !== undefined && { inningSnapshot: summary.inningSnapshot }),
+        ...(summary?.stateSnapshot !== undefined && { stateSnapshot: summary.stateSnapshot }),
       });
+    },
+
+    /**
+     * Permanently removes a save header and all its associated event documents.
+     */
+    async deleteSave(saveId: string): Promise<void> {
+      const db = await getDbFn();
+      const headerDoc = await db.saves.findOne(saveId).exec();
+      if (headerDoc) await headerDoc.remove();
+      const eventDocs = await db.events.find({ selector: { saveId } }).exec();
+      await Promise.all(eventDocs.map((d) => d.remove()));
     },
 
     /** Returns all save headers ordered by most recently updated. */

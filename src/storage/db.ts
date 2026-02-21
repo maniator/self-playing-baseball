@@ -33,6 +33,7 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
     setup: { type: "object", additionalProperties: true },
     scoreSnapshot: { type: "object", additionalProperties: true },
     inningSnapshot: { type: "object", additionalProperties: true },
+    stateSnapshot: { type: "object", additionalProperties: true },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
   required: [
@@ -45,6 +46,7 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
     "createdAt",
     "updatedAt",
     "progressIdx",
+    "setup",
     "schemaVersion",
   ],
   indexes: ["updatedAt"],
@@ -64,7 +66,7 @@ const eventsSchema: RxJsonSchema<EventDoc> = {
     ts: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
-  required: ["id", "saveId", "idx", "type", "ts", "schemaVersion"],
+  required: ["id", "saveId", "idx", "at", "type", "payload", "ts", "schemaVersion"],
   indexes: ["saveId", ["saveId", "idx"]],
 };
 

@@ -1,19 +1,11 @@
 import * as React from "react";
 
-import type { Strategy } from "@context/index";
+import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import {
-  buildSlotFields,
-  deleteSave,
-  exportSave,
-  importSave,
-  loadAutoSave,
-  loadSaves,
-  restoreSaveRng,
-  saveGame,
-  type SaveSetup,
-  type SaveSlot,
-} from "@utils/saves";
+import { SaveStore } from "@storage/saveStore";
+import type { SaveDoc } from "@storage/types";
+import { getRngState, restoreRng } from "@utils/rng";
+import { currentSeedStr } from "@utils/rng";
 
 interface Params {
   strategy: Strategy;
@@ -21,22 +13,25 @@ interface Params {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: SaveSetup) => void;
+  onSetupRestore?: (setup: {
+    strategy: Strategy;
+    managedTeam: 0 | 1;
+    managerMode: boolean;
+  }) => void;
 }
 
 export interface SavesModalState {
   ref: React.RefObject<HTMLDialogElement | null>;
-  saves: SaveSlot[];
-  autoSave: SaveSlot | null;
+  saves: SaveDoc[];
   importText: string;
   importError: string | null;
   setImportText: (v: string) => void;
   open: () => void;
   close: () => void;
   handleSave: () => void;
-  handleLoad: (slot: SaveSlot) => void;
+  handleLoad: (slot: SaveDoc) => void;
   handleDelete: (id: string) => void;
-  handleExport: (slot: SaveSlot) => void;
+  handleExport: (slot: SaveDoc) => void;
   handleImportPaste: () => void;
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
@@ -50,17 +45,26 @@ export const useSavesModal = ({
   onSetupRestore,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
-  const { dispatch, dispatchLog, teams, inning, pitchKey, decisionLog, ...rest } = useGameContext();
-  const [saves, setSaves] = React.useState<SaveSlot[]>([]);
-  const [autoSave, setAutoSave] = React.useState<SaveSlot | null>(null);
+  const {
+    dispatch,
+    dispatchLog,
+    log: _log,
+    teams,
+    inning,
+    pitchKey,
+    ...gameStateRest
+  } = useGameContext();
+  void _log;
+  const [saves, setSaves] = React.useState<SaveDoc[]>([]);
   const [importText, setImportText] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
 
   const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
 
   const refresh = () => {
-    setSaves(loadSaves());
-    setAutoSave(loadAutoSave());
+    SaveStore.listSaves()
+      .then(setSaves)
+      .catch(() => {});
   };
 
   const open = () => {
@@ -71,72 +75,118 @@ export const useSavesModal = ({
 
   const handleSave = () => {
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
-    // Only pass State fields (strip dispatch/dispatchLog/log from ContextValue).
-    const { log: _log, ...gameState } = rest;
-    void _log;
-    const fullState = { ...gameState, teams, inning, pitchKey, decisionLog };
-    const setup: SaveSetup = {
-      homeTeam: teams[1],
-      awayTeam: teams[0],
+    const fullState: State = { ...gameStateRest, teams, inning, pitchKey } as State;
+    const setup: Record<string, unknown> = {
       strategy,
       managedTeam,
       managerMode,
+      homeTeam: teams[1],
+      awayTeam: teams[0],
     };
-    const slot = saveGame({
-      id: currentSaveId ?? undefined,
-      name,
-      ...buildSlotFields(fullState, setup),
-    });
-    onSaveIdChange(slot.id);
-    refresh();
-    log("Game saved!");
+
+    if (currentSaveId) {
+      // Update the existing save with a fresh state snapshot.
+      SaveStore.updateProgress(currentSaveId, pitchKey, {
+        scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
+        inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
+        stateSnapshot: {
+          state: fullState as unknown as Record<string, unknown>,
+          rngState: getRngState(),
+        },
+      })
+        .then(() => {
+          refresh();
+          log("Game saved!");
+        })
+        .catch(() => {});
+    } else {
+      // Create a new explicit snapshot save.
+      SaveStore.createSave(
+        {
+          matchupMode: "manual",
+          homeTeamId: teams[1],
+          awayTeamId: teams[0],
+          seed: currentSeedStr(),
+          setup,
+        },
+        { name },
+      )
+        .then(async (id) => {
+          await SaveStore.updateProgress(id, pitchKey, {
+            scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
+            inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
+            stateSnapshot: {
+              state: fullState as unknown as Record<string, unknown>,
+              rngState: getRngState(),
+            },
+          });
+          onSaveIdChange(id);
+          refresh();
+          log("Game saved!");
+        })
+        .catch(() => {});
+    }
   };
 
-  const handleLoad = (slot: SaveSlot) => {
-    restoreSaveRng(slot);
+  const handleLoad = (slot: SaveDoc) => {
+    const snap = slot.stateSnapshot;
+    if (snap) {
+      if (typeof snap.rngState === "number") restoreRng(snap.rngState);
+      if (snap.state) dispatch({ type: "restore_game", payload: snap.state as State });
+    }
     if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
       const url = new URL(window.location.href);
       url.searchParams.set("seed", slot.seed);
       window.history.replaceState(null, "", url.toString());
     }
-    dispatch({ type: "restore_game", payload: slot.state });
-    onSetupRestore?.(slot.setup);
+    const setup = slot.setup;
+    onSetupRestore?.({
+      strategy: (setup.strategy as Strategy) ?? "balanced",
+      managedTeam: setup.managedTeam === 1 ? 1 : 0,
+      managerMode: typeof setup.managerMode === "boolean" ? setup.managerMode : false,
+    });
     onSaveIdChange(slot.id);
     log(`Loaded: ${slot.name}`);
     close();
   };
 
   const handleDelete = (id: string) => {
-    deleteSave(id);
-    if (currentSaveId === id) onSaveIdChange(null);
-    refresh();
+    SaveStore.deleteSave(id)
+      .then(() => {
+        if (currentSaveId === id) onSaveIdChange(null);
+        refresh();
+      })
+      .catch(() => {});
   };
 
-  const handleExport = (slot: SaveSlot) => {
-    const json = exportSave(slot);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `ballgame-${slot.name
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "")
-      .toLowerCase()}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExport = (slot: SaveDoc) => {
+    SaveStore.exportRxdbSave(slot.id)
+      .then((json) => {
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `ballgame-${slot.name
+          .replace(/[^a-z0-9]+/gi, "-")
+          .replace(/^-|-$/g, "")
+          .toLowerCase()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      })
+      .catch(() => {});
   };
 
   const applyImport = (json: string) => {
-    try {
-      const slot = importSave(json);
-      saveGame(slot);
-      refresh();
-      setImportText("");
-      setImportError(null);
-      log("Save imported!");
-    } catch (e) {
-      setImportError((e as Error).message);
-    }
+    SaveStore.importRxdbSave(json)
+      .then(() => {
+        refresh();
+        setImportText("");
+        setImportError(null);
+        log("Save imported!");
+      })
+      .catch((e: Error) => {
+        setImportError(e.message);
+      });
   };
 
   const handleImportPaste = () => applyImport(importText);
@@ -157,7 +207,6 @@ export const useSavesModal = ({
   return {
     ref,
     saves,
-    autoSave,
     importText,
     importError,
     setImportText,

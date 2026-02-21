@@ -8,21 +8,25 @@ import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
-import type { GameAction, Strategy } from "@context/index";
+import PlayerStatsPanel from "@components/PlayerStatsPanel";
+import type { GameAction, State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { SaveStore } from "@storage/saveStore";
-import { getSeed } from "@utils/rng";
-import { clearAutoSave, currentSeedStr, loadAutoSave, restoreSaveRng } from "@utils/saves";
+import type { SaveDoc } from "@storage/types";
+import { currentSeedStr, getSeed, restoreRng } from "@utils/rng";
 
 import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 
-/** Loads an auto-save only if its seed matches the current URL seed. */
-const getMatchedAutoSave = () => {
-  const saved = loadAutoSave();
-  if (!saved) return null;
-  const currentSeed = getSeed()?.toString(36);
-  return currentSeed === saved.seed ? saved : null;
+/** Loads the most recent RxDB save whose seed matches the current URL seed. */
+const loadMatchedRxSave = async (): Promise<SaveDoc | null> => {
+  try {
+    const saves = await SaveStore.listSaves();
+    const currentSeed = getSeed()?.toString(36);
+    return saves.find((s) => s.seed === currentSeed) ?? null;
+  } catch {
+    return null;
+  }
 };
 
 interface Props {
@@ -31,7 +35,7 @@ interface Props {
 }
 
 const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBufferRef }) => {
-  const { dispatch, pitchKey, inning, atBat, score, gameOver } = useGameContext();
+  const { dispatch } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
 
@@ -47,39 +51,33 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   // Tracks the RxDB save ID for the current game session.
   const rxSaveIdRef = React.useRef<string | null>(null);
 
-  useRxdbGameSync(rxSaveIdRef, actionBufferRef, pitchKey, inning, atBat, score, gameOver);
+  useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
-  // Check for a resumable auto-save once on mount.
-  const [autoSave] = React.useState(getMatchedAutoSave);
-
-  // Restore auto-save state as soon as the context is ready.
+  // Async load of the most recently updated RxDB save that matches the URL seed.
+  const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
-    if (autoSave) {
-      restoreSaveRng(autoSave);
-      dispatch({ type: "restore_game", payload: autoSave.state });
-      setStrategy(autoSave.setup.strategy);
-      setManagedTeam(autoSave.setup.managedTeam);
-      setManagerMode(autoSave.setup.managerMode ?? false);
-    }
-  }, [dispatch, autoSave, setStrategy, setManagedTeam, setManagerMode]);
+    loadMatchedRxSave()
+      .then(setRxAutoSave)
+      .catch(() => {});
+  }, []);
+
+  // Restore state from the RxDB save as soon as it is loaded.
+  React.useEffect(() => {
+    if (!rxAutoSave) return;
+    const snap = rxAutoSave.stateSnapshot;
+    if (!snap) return;
+    if (typeof snap.rngState === "number") restoreRng(snap.rngState);
+    if (snap.state) dispatch({ type: "restore_game", payload: snap.state as State });
+    const setup = rxAutoSave.setup;
+    if (typeof setup.strategy === "string") setStrategy(setup.strategy as Strategy);
+    if (setup.managedTeam === 0 || setup.managedTeam === 1) setManagedTeam(setup.managedTeam);
+    if (typeof setup.managerMode === "boolean") setManagerMode(setup.managerMode);
+  }, [dispatch, rxAutoSave, setStrategy, setManagedTeam, setManagerMode]);
 
   const handleResume = () => {
-    // State is already restored by the effect above; start the game and close.
-    if (autoSave) {
-      SaveStore.createSave(
-        {
-          matchupMode: "default",
-          homeTeamId: autoSave.setup.homeTeam,
-          awayTeamId: autoSave.setup.awayTeam,
-          seed: autoSave.seed,
-          setup: autoSave.setup as unknown as Record<string, unknown>,
-        },
-        { name: autoSave.name },
-      )
-        .then((id) => {
-          rxSaveIdRef.current = id;
-        })
-        .catch(() => {});
+    // State is already restored by the effect above; wire up the save ID.
+    if (rxAutoSave) {
+      rxSaveIdRef.current = rxAutoSave.id;
     }
     setGameActive(true);
     setDialogOpen(false);
@@ -95,7 +93,6 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
     if (managedTeam !== null) {
       setManagedTeam(managedTeam);
     }
-    clearAutoSave();
     dispatch({ type: "reset" });
     dispatch({
       type: "setTeams",
@@ -135,7 +132,6 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
 
   const handleNewGame = () => {
     rxSaveIdRef.current = null;
-    clearAutoSave();
     dispatch({ type: "reset" });
     setGameActive(false);
     setGameKey((k) => k + 1);
@@ -147,8 +143,8 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
       {dialogOpen && (
         <NewGameDialog
           onStart={handleStart}
-          autoSaveName={autoSave?.name}
-          onResume={autoSave ? handleResume : undefined}
+          autoSaveName={rxAutoSave?.name}
+          onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
         />
       )}
       <LineScore />

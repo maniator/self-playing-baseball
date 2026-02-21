@@ -145,8 +145,41 @@ describe("SaveStore.updateProgress", () => {
     expect(doc?.inningSnapshot).toEqual({ inning: 4, half: 1 });
   });
 
+  it("stores stateSnapshot when provided", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.updateProgress(saveId, 5, {
+      stateSnapshot: { state: { inning: 3 }, rngState: 99 },
+    });
+    const doc = await db.saves.findOne(saveId).exec();
+    expect(doc?.stateSnapshot).toEqual({ state: { inning: 3 }, rngState: 99 });
+  });
+
   it("throws for an unknown saveId", async () => {
     await expect(store.updateProgress("nonexistent", 0)).rejects.toThrow("Save not found");
+  });
+});
+
+describe("SaveStore.deleteSave", () => {
+  it("removes the save header", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.deleteSave(saveId);
+    const doc = await db.saves.findOne(saveId).exec();
+    expect(doc).toBeNull();
+  });
+
+  it("removes all associated events", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [
+      { type: "hit", at: 0, payload: {} },
+      { type: "strike", at: 1, payload: {} },
+    ]);
+    await store.deleteSave(saveId);
+    const events = await db.events.find({ selector: { saveId } }).exec();
+    expect(events).toHaveLength(0);
+  });
+
+  it("is a no-op for an unknown saveId (does not throw)", async () => {
+    await expect(store.deleteSave("nonexistent")).resolves.toBeUndefined();
   });
 });
 

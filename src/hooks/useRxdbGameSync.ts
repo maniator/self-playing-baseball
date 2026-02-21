@@ -1,7 +1,9 @@
 import * as React from "react";
 
 import type { GameAction } from "@context/index";
+import { useGameContext } from "@context/index";
 import { SaveStore } from "@storage/saveStore";
+import { getRngState } from "@utils/rng";
 
 /** Action types that represent meaningful game events (stored in the event log). */
 const GAME_EVENT_TYPES = new Set([
@@ -22,7 +24,8 @@ const GAME_EVENT_TYPES = new Set([
 /**
  * Wires the RxDB event store into the live game loop:
  * - flushes game actions to SaveStore.appendEvents() whenever pitchKey advances
- * - calls SaveStore.updateProgress() on half-inning transitions and game end
+ * - calls SaveStore.updateProgress() (with full stateSnapshot) on half-inning
+ *   transitions and game end so saves can be restored deterministically
  *
  * All RxDB writes are fire-and-forget (errors are swallowed) so failures never
  * block the UI.
@@ -30,12 +33,18 @@ const GAME_EVENT_TYPES = new Set([
 export const useRxdbGameSync = (
   rxSaveIdRef: React.MutableRefObject<string | null>,
   actionBufferRef: React.MutableRefObject<GameAction[]>,
-  pitchKey: number,
-  inning: number,
-  atBat: number,
-  score: [number, number],
-  gameOver: boolean,
 ): void => {
+  const { dispatch: _d, dispatchLog: _dl, log: _l, ...gameState } = useGameContext();
+  void _d;
+  void _dl;
+  void _l;
+
+  const { pitchKey, inning, atBat, gameOver } = gameState;
+
+  // Always-current ref of game state — read by effects without re-creating them.
+  const gameStateRef = React.useRef(gameState);
+  gameStateRef.current = gameState;
+
   const prevPitchKeyRef = React.useRef<number | null>(null);
 
   // Flush buffered actions to RxDB when pitchKey advances.
@@ -68,7 +77,8 @@ export const useRxdbGameSync = (
     }
   }, [pitchKey, rxSaveIdRef, actionBufferRef]);
 
-  // Update progress on half-inning transitions.
+  // Update progress on half-inning transitions — store a full stateSnapshot
+  // so the save can be resumed without replaying all events.
   const halfKey = inning * 2 + atBat;
   const prevHalfKeyRef = React.useRef<number | null>(null);
 
@@ -83,19 +93,29 @@ export const useRxdbGameSync = (
     const saveId = rxSaveIdRef.current;
     if (!saveId) return;
 
-    SaveStore.updateProgress(saveId, pitchKey, {
-      scoreSnapshot: { away: score[0], home: score[1] },
-      inningSnapshot: { inning, atBat },
+    const state = gameStateRef.current;
+    SaveStore.updateProgress(saveId, state.pitchKey, {
+      scoreSnapshot: { away: state.score[0], home: state.score[1] },
+      inningSnapshot: { inning: state.inning, atBat: state.atBat },
+      stateSnapshot: {
+        state: state as unknown as Record<string, unknown>,
+        rngState: getRngState(),
+      },
     }).catch(() => {});
-  }, [halfKey, rxSaveIdRef, pitchKey, score, inning, atBat]);
+  }, [halfKey, rxSaveIdRef]);
 
   // Update progress when the game ends.
   React.useEffect(() => {
     if (!gameOver) return;
     const saveId = rxSaveIdRef.current;
     if (!saveId) return;
-    SaveStore.updateProgress(saveId, pitchKey, {
-      scoreSnapshot: { away: score[0], home: score[1] },
+    const state = gameStateRef.current;
+    SaveStore.updateProgress(saveId, state.pitchKey, {
+      scoreSnapshot: { away: state.score[0], home: state.score[1] },
+      stateSnapshot: {
+        state: state as unknown as Record<string, unknown>,
+        rngState: getRngState(),
+      },
     }).catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [gameOver]);

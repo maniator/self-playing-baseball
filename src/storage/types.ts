@@ -14,6 +14,8 @@ export interface SaveDoc {
   setup: Record<string, unknown>;
   scoreSnapshot?: Record<string, unknown>;
   inningSnapshot?: Record<string, unknown>;
+  /** Full game State + rngState captured on each half-inning, for restore. */
+  stateSnapshot?: Record<string, unknown>;
   schemaVersion: number;
 }
 
@@ -53,6 +55,8 @@ export interface GameEvent {
 export interface ProgressSummary {
   scoreSnapshot?: Record<string, unknown>;
   inningSnapshot?: Record<string, unknown>;
+  /** Full game State + rngState for deterministic restore. */
+  stateSnapshot?: Record<string, unknown>;
 }
 
 /** Portable export format: save header + full event log, signed for integrity. */
