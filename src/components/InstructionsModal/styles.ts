@@ -27,8 +27,8 @@ export const Dialog = styled.dialog`
   border-radius: 14px;
   padding: 0;
   max-width: min(680px, 96vw);
-  max-height: 90vh;
   width: 100%;
+  height: min(700px, 90vh);
   font-family: inherit;
   font-size: 14px;
   line-height: 1.6;
@@ -44,8 +44,11 @@ export const Dialog = styled.dialog`
   }
 
   @media (max-width: 600px) {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
     max-width: 100vw;
-    max-height: 100dvh;
+    height: 100dvh;
     border-radius: 0;
     border: none;
     margin: 0;
