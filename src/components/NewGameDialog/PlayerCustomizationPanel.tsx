@@ -164,23 +164,30 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
                 onChange={(e) => updateField(pitcher.id, "nickname", e.target.value)}
                 aria-label={`${pitcher.position} nickname`}
               />
-              {PITCHER_MOD_FIELDS.map((field, i) => (
-                <ModLabel key={field}>
-                  {PITCHER_STAT_LABELS[i]}
-                  <BaseStat>{pitcher.baseStats[PITCHER_BASE_KEYS[i]]}</BaseStat>
-                  <ModSelect
-                    value={getMod(pitcher.id, field)}
-                    onChange={(e) => updateField(pitcher.id, field, e.target.value)}
-                    aria-label={`${pitcher.position} ${PITCHER_STAT_LABELS[i]}`}
-                  >
-                    {MOD_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </ModSelect>
-                </ModLabel>
-              ))}
+              {PITCHER_MOD_FIELDS.map((field, i) => {
+                const modValue = parseInt(getMod(pitcher.id, field), 10) || 0;
+                const effective = Math.max(
+                  0,
+                  Math.min(120, pitcher.baseStats[PITCHER_BASE_KEYS[i]] + modValue),
+                );
+                return (
+                  <ModLabel key={field}>
+                    {PITCHER_STAT_LABELS[i]}
+                    <BaseStat $modified={modValue !== 0}>{effective}</BaseStat>
+                    <ModSelect
+                      value={getMod(pitcher.id, field)}
+                      onChange={(e) => updateField(pitcher.id, field, e.target.value)}
+                      aria-label={`${pitcher.position} ${PITCHER_STAT_LABELS[i]}`}
+                    >
+                      {MOD_OPTIONS.map((opt) => (
+                        <option key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </option>
+                      ))}
+                    </ModSelect>
+                  </ModLabel>
+                );
+              })}
             </PitcherRow>
           </PlayerList>
         </>

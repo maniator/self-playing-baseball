@@ -11,6 +11,7 @@ import {
   OnePitchModifier,
   State,
   Strategy,
+  StrikeoutEntry,
   TeamCustomPlayerOverrides,
 } from "./index";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "./playerActions";
@@ -22,6 +23,19 @@ export { stratMod } from "./strategy";
 const createLogger = (dispatchLogger: (action: LogAction) => void) => (message: string) => {
   dispatchLogger({ type: "log", payload: message });
 };
+
+/**
+ * A strikeout occurred when the previous state had 2 strikes,
+ * the new state reset strikes (K or new half-inning), and no hit type was recorded
+ * (a walk sets hitType = Hit.Walk; a strikeout leaves hitType undefined/null).
+ */
+const wasStrikeout = (prev: State, next: State): boolean =>
+  prev.strikes === 2 && next.strikes !== 2 && next.hitType == null;
+
+const makeStrikeoutEntry = (state: State): StrikeoutEntry => ({
+  team: state.atBat as 0 | 1,
+  batterNum: state.batterIndex[state.atBat as 0 | 1] + 1,
+});
 
 const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy): number => {
   const base_pct = base === 0 ? 70 : 60;
@@ -128,7 +142,14 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       }
       case "strike": {
         const sp = action.payload as { swung?: boolean; pitchType?: PitchType };
-        return playerStrike(state, log, sp?.swung ?? false, false, sp?.pitchType);
+        const result = playerStrike(state, log, sp?.swung ?? false, false, sp?.pitchType);
+        if (wasStrikeout(state, result)) {
+          return {
+            ...result,
+            strikeoutLog: [...result.strikeoutLog, makeStrikeoutEntry(state)],
+          };
+        }
+        return result;
       }
       case "foul": {
         const fp = action.payload as { pitchType?: PitchType };
@@ -145,13 +166,20 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       }
       case "wait": {
         const wp = action.payload as { strategy?: Strategy; pitchType?: PitchType };
-        return playerWait(
+        const result = playerWait(
           state,
           log,
           wp?.strategy ?? "balanced",
           state.onePitchModifier,
           wp?.pitchType,
         );
+        if (wasStrikeout(state, result)) {
+          return {
+            ...result,
+            strikeoutLog: [...result.strikeoutLog, makeStrikeoutEntry(state)],
+          };
+        }
+        return result;
       }
       case "set_one_pitch_modifier": {
         const result = {
@@ -220,6 +248,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           batterIndex: [0, 0] as [number, number],
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
+          strikeoutLog: [],
           playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
           lineupOrder: [[], []] as [string[], string[]],
         };
@@ -260,6 +289,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           ...restored,
           playerOverrides: restored.playerOverrides ?? [{}, {}],
           lineupOrder: restored.lineupOrder ?? [[], []],
+          strikeoutLog: restored.strikeoutLog ?? [],
         };
       }
       default:

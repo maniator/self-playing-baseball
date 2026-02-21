@@ -57,23 +57,30 @@ const SortableBatterRow: React.FunctionComponent<Props> = ({
         onChange={(e) => onFieldChange(player.id, "nickname", e.target.value)}
         aria-label={`${player.position} nickname`}
       />
-      {BATTER_MOD_FIELDS.map((field, i) => (
-        <ModLabel key={field}>
-          {BATTER_STAT_LABELS[i]}
-          <BaseStat>{player.baseStats[BATTER_BASE_KEYS[i]]}</BaseStat>
-          <ModSelect
-            value={getMod(field)}
-            onChange={(e) => onFieldChange(player.id, field, e.target.value)}
-            aria-label={`${player.position} ${BATTER_STAT_LABELS[i]}`}
-          >
-            {MOD_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </ModSelect>
-        </ModLabel>
-      ))}
+      {BATTER_MOD_FIELDS.map((field, i) => {
+        const modValue = parseInt(getMod(field), 10) || 0;
+        const effective = Math.max(
+          0,
+          Math.min(120, player.baseStats[BATTER_BASE_KEYS[i]] + modValue),
+        );
+        return (
+          <ModLabel key={field}>
+            {BATTER_STAT_LABELS[i]}
+            <BaseStat $modified={modValue !== 0}>{effective}</BaseStat>
+            <ModSelect
+              value={getMod(field)}
+              onChange={(e) => onFieldChange(player.id, field, e.target.value)}
+              aria-label={`${player.position} ${BATTER_STAT_LABELS[i]}`}
+            >
+              {MOD_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </ModSelect>
+          </ModLabel>
+        );
+      })}
     </PlayerRow>
   );
 };
