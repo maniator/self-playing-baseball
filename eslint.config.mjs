@@ -7,7 +7,7 @@ import prettierRecommended from "eslint-plugin-prettier/recommended";
 
 export default tseslint.config(
   // Ignore generated and dependency directories
-  { ignores: ["dist/**", "node_modules/**", ".parcel-cache/**"] },
+  { ignores: ["dist/**", "node_modules/**", ".vite/**"] },
 
   // TypeScript recommended rules
   ...tseslint.configs.recommended,
@@ -48,7 +48,7 @@ export default tseslint.config(
             // Other external packages
             ["^@?\\w"],
             // Internal aliases
-            ["^@(components|context|hooks|utils|constants|test)(/|$)"],
+            ["^@(components|context|hooks|utils|constants|storage|test)(/|$)"],
             // Relative imports
             ["^\\."],
           ],
