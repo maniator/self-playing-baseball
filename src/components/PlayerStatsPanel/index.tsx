@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { Hit } from "@constants/hitTypes";
 import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
 import { useGameContext } from "@context/index";
+import { generateRoster } from "@utils/roster";
 
 const HeadingRow = styled.div`
   display: flex;
@@ -66,7 +67,7 @@ const Th = styled.th`
   border-bottom: 1px solid #222;
   &:first-child {
     text-align: left;
-    width: 28px;
+    width: auto;
   }
 `;
 
@@ -108,13 +109,27 @@ const computeStats = (
 };
 
 const PlayerStatsPanel: React.FunctionComponent = () => {
-  const { playLog, strikeoutLog, teams } = useGameContext();
+  const { playLog, strikeoutLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<0 | 1>(0);
 
   const stats = computeStats(activeTab, playLog, strikeoutLog);
   const hasActivity =
     playLog.some((e) => e.team === activeTab) || strikeoutLog.some((e) => e.team === activeTab);
+
+  // Build slot→name map for the active team
+  const slotNames = React.useMemo(() => {
+    const roster = generateRoster(teams[activeTab]);
+    const order =
+      lineupOrder[activeTab].length > 0 ? lineupOrder[activeTab] : roster.batters.map((p) => p.id);
+    const idToPlayer = new Map(roster.batters.map((p) => [p.id, p]));
+    const overrides = playerOverrides[activeTab];
+    return order.slice(0, 9).map((id, idx) => {
+      const player = idToPlayer.get(id);
+      const nickname = overrides[id]?.nickname?.trim();
+      return nickname || player?.name || `Batter ${idx + 1}`;
+    });
+  }, [teams, activeTab, lineupOrder, playerOverrides]);
 
   return (
     <>
@@ -154,7 +169,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
                   const s = stats[num];
                   return (
                     <tr key={num}>
-                      <Td>{num}</Td>
+                      <Td>{slotNames[num - 1] ?? num}</Td>
                       <Td $highlight={s.hits > 0}>{s.hits || "–"}</Td>
                       <Td $highlight={s.walks > 0}>{s.walks || "–"}</Td>
                       <Td $highlight={s.strikeouts > 0}>{s.strikeouts || "–"}</Td>

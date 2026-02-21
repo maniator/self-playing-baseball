@@ -52,18 +52,17 @@ describe("PlayerStatsPanel", () => {
       { inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Double, runs: 1 },
     ];
     renderWithContext({ playLog });
-    // batter #3 should show 2 hits
+    // batter #3 should show 2 hits (rows[0] = header, rows[3] = slot 3)
     const rows = screen.getAllByRole("row");
-    const row3 = rows.find((r) => r.textContent?.startsWith("3"));
-    expect(row3?.textContent).toContain("2");
+    expect(rows[3]?.textContent).toContain("2");
   });
 
   it("counts walks separately from hits", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Walk, runs: 0 }];
     renderWithContext({ playLog });
-    // batter #1: 0 hits (–), 1 walk
+    // batter #1: 0 hits (–), 1 walk (rows[0] = header, rows[1] = slot 1)
     const rows = screen.getAllByRole("row");
-    const row1 = rows.find((r) => r.textContent?.startsWith("1"));
+    const row1 = rows[1];
     // Contains "1" for walk count and "–" for hits
     expect(row1?.textContent).toContain("1");
     expect(row1?.textContent).toContain("–");
@@ -74,10 +73,9 @@ describe("PlayerStatsPanel", () => {
     renderWithContext({ strikeoutLog });
     // Has activity so table is shown
     expect(screen.getByRole("table")).toBeInTheDocument();
+    // batter #2 has 1 K (rows[0] = header, rows[2] = slot 2)
     const rows = screen.getAllByRole("row");
-    const row2 = rows.find((r) => r.textContent?.startsWith("2"));
-    // batter #2 has 1 K
-    expect(row2?.textContent).toContain("1");
+    expect(rows[2]?.textContent).toContain("1");
   });
 
   it("does not mix team stats — away stats excluded when viewing home tab", () => {
@@ -98,6 +96,23 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getAllByRole("row")).toHaveLength(10);
   });
 
+  it("shows player names from the roster instead of slot numbers", () => {
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
+    // teams default to ["Away","Home"]; generateRoster("Away") batter slot 1 = "Catcher"
+    renderWithContext({ playLog });
+    expect(screen.getByText("Catcher")).toBeInTheDocument();
+  });
+
+  it("shows nickname from playerOverrides when set", () => {
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
+    // away slug = "away", batter 0 id = "away_b0"
+    const playerOverrides: [Record<string, { nickname: string }>, Record<string, never>] = [
+      { away_b0: { nickname: "Slugger" } },
+      {},
+    ];
+    renderWithContext({ playLog, playerOverrides: playerOverrides as never });
+    expect(screen.getByText("Slugger")).toBeInTheDocument();
+  });
   it("collapses and hides the table when toggle is clicked", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
