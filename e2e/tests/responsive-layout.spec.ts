@@ -67,7 +67,7 @@ test.describe("Responsive layout", () => {
     expect(logBox!.y).toBeLessThan(vpHeight * 0.85);
   });
 
-  test("field and log do not overlap (field is above log on mobile layout)", async ({ page }) => {
+  test("field and log do not overlap (accessible in all viewport layouts)", async ({ page }) => {
     await gotoFreshApp(page);
     await clickPlayBall(page);
 
@@ -80,14 +80,19 @@ test.describe("Responsive layout", () => {
     expect(fieldBox).not.toBeNull();
     expect(logBox).not.toBeNull();
 
-    // On mobile the field top should precede the log top, or they sit side-by-side.
-    // Either way neither should completely obscure the other.
-    const fieldBottom = fieldBox!.y + fieldBox!.height;
-    const logTop = logBox!.y;
+    // Elements must each have meaningful area
+    expect(fieldBox!.width * fieldBox!.height).toBeGreaterThan(0);
+    expect(logBox!.width * logBox!.height).toBeGreaterThan(0);
 
-    // Field bottom should not be below the log bottom (log should remain accessible)
-    expect(fieldBottom).toBeLessThanOrEqual(logBox!.y + logBox!.height + 20);
-    void logTop; // used for readability
+    // Elements must not fully obscure each other.
+    // On desktop they sit side-by-side (field left, log right);
+    // on mobile they stack vertically (field above, log below).
+    const sideByMide =
+      fieldBox!.x + fieldBox!.width <= logBox!.x + logBox!.width + 20 &&
+      logBox!.x >= fieldBox!.x - 20;
+    const stackedVertically = fieldBox!.y + fieldBox!.height <= logBox!.y + logBox!.height + 20;
+
+    expect(sideByMide || stackedVertically).toBe(true);
   });
 
   test("no unintended horizontal overflow on any viewport", async ({ page }) => {

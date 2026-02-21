@@ -35,8 +35,11 @@ test.describe("Modal dialogs", () => {
 
   test("New Game dialog: cannot be dismissed via Escape", async ({ page }) => {
     await gotoFreshApp(page);
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible();
     await page.keyboard.press("Escape");
-    // Dialog should remain (onCancel prevents it)
+    // onCancel calls e.preventDefault(), so the dialog must remain open.
+    // A short wait lets the browser finish processing the keypress.
+    await page.waitForTimeout(300);
     await expect(page.getByTestId("new-game-dialog")).toBeVisible();
   });
 

@@ -56,9 +56,17 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
             <option value="power">Power</option>
           </Select>
         </ToggleLabel>
-        {notifPermission === "granted" && <NotifBadge $ok={true}>🔔 on</NotifBadge>}
+        {notifPermission === "granted" && (
+          <NotifBadge $ok={true} data-testid="notif-badge">
+            🔔 on
+          </NotifBadge>
+        )}
         {notifPermission === "denied" && (
-          <NotifBadge $ok={false} title="Enable notifications in your browser settings">
+          <NotifBadge
+            $ok={false}
+            title="Enable notifications in your browser settings"
+            data-testid="notif-badge"
+          >
             🔕 blocked
           </NotifBadge>
         )}
@@ -67,6 +75,7 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
             $ok={false}
             onClick={onRequestNotifPermission}
             title="Click to grant notification permission"
+            data-testid="notif-badge"
           >
             🔔 click to enable
           </NotifBadge>

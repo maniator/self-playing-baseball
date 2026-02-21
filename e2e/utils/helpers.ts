@@ -190,13 +190,14 @@ export async function saveCurrentGame(page: Page): Promise<void> {
   await page.getByTestId("save-current-button").click();
 }
 
-/** Loads a save by its displayed name. */
+/** Loads a save by its displayed name (clicks the first matching Load button). */
 export async function loadSaveByName(page: Page, name: string): Promise<void> {
   const row = page
     .getByTestId("saves-list")
     .locator('[data-testid="save-item"]')
-    .filter({ hasText: name });
-  await row.getByRole("button", { name: "Load" }).click();
+    .filter({ hasText: name })
+    .first();
+  await row.getByRole("button", { name: "Load" }).first().click();
 }
 
 /** Imports a save JSON file via the file-input in the Saves modal. */

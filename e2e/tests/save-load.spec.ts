@@ -71,12 +71,29 @@ test.describe("Save / Load", () => {
 
     await openSavesModal(page);
     await saveCurrentGame(page);
-    const saveItem = page.getByTestId("saves-list").locator('[data-testid="save-item"]').first();
-    await expect(saveItem).toBeVisible({ timeout: 5_000 });
 
-    // Delete it
-    await saveItem.getByRole("button", { name: "Delete save" }).click();
-    await expect(page.getByTestId("saves-list")).not.toBeVisible({ timeout: 3_000 });
+    // Wait for the list to settle before counting
+    await expect(
+      page.getByTestId("saves-list").locator('[data-testid="save-item"]').first(),
+    ).toBeVisible({ timeout: 5_000 });
+    await page.waitForTimeout(500); // allow RxDB refresh to complete
+
+    const countBefore = await page.locator('[data-testid="save-item"]').count();
+    expect(countBefore).toBeGreaterThan(0);
+
+    // Delete the first save in the list
+    await page
+      .getByTestId("saves-list")
+      .locator('[data-testid="save-item"]')
+      .first()
+      .getByRole("button", { name: "Delete save" })
+      .click();
+
+    // Count must decrease by exactly 1 (allow time for async RxDB delete)
+    await expect(page.locator('[data-testid="save-item"]')).toHaveCount(countBefore - 1, {
+      timeout: 10_000,
+    });
+
     await closeSavesModal(page);
   });
 });

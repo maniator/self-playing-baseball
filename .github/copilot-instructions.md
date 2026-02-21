@@ -18,13 +18,34 @@
 ├── .gitignore
 ├── .nvmrc                          # Node version: 24
 ├── .prettierrc                     # Prettier config (double quotes, trailing commas, printWidth 100)
-├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier)
+├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier); covers src/, e2e/, playwright.config.ts
+├── playwright.config.ts            # Playwright config: desktop / tablet / mobile projects; webServer → Parcel dev
 ├── tsconfig.json                   # TypeScript config with path aliases
-├── vitest.config.ts                # Vitest config with matching resolve.alias entries
+├── vitest.config.ts                # Vitest config with matching resolve.alias entries; excludes e2e/**
 ├── package.json                    # Scripts, dependencies, Husky/Commitizen config
 ├── yarn.lock
 ├── vercel.json                     # Vercel SPA routing config (version 2)
 ├── dist/                           # Build output (gitignored)
+├── e2e/                            # Playwright E2E + visual regression tests
+│   ├── fixtures/
+│   │   └── sample-save.json        # Valid RxdbExportedSave fixture (FNV-1a signed) for import tests
+│   ├── utils/
+│   │   └── helpers.ts              # Reusable helpers: resetAppState, gotoFreshApp, startGameViaPlayBall,
+│   │                               #   waitForAtLeastLogLines, captureGameSignature, openSavesModal,
+│   │                               #   loadSaveByName, importSaveFile, importSavePaste, waitForManagerDecision,
+│   │                               #   takeManagerAction, assertCoreLayoutVisible, disableAnimations
+│   └── tests/
+│       ├── smoke.spec.ts           # App load, New Game dialog, Play Ball autoplays
+│       ├── determinism.spec.ts     # Same seed → same outcomes; Share seed URL
+│       ├── save-load.spec.ts       # Save / load / delete via Saves modal
+│       ├── import-export.spec.ts   # Import via file/paste; export download; roundtrip
+│       ├── auto-save.spec.ts       # Auto-save resume (test.skip — see TODO)
+│       ├── manager-mode.spec.ts    # Manager Mode toggle, decision panel, auto-skip
+│       ├── modals.spec.ts          # All dialogs: open/close/escape/backdrop/confirm/cancel
+│       ├── notifications.spec.ts   # Notification badge, service-worker registration
+│       ├── player-customization.spec.ts  # Team selectors, roster options in New Game dialog
+│       ├── responsive-layout.spec.ts     # Field + log on desktop / tablet / mobile
+│       └── visual.spec.ts          # Screenshot baselines (New Game, in-game, Saves, decision panel)
 └── src/
     ├── index.html                  # HTML entry point for Parcel (script has type="module")
     ├── index.scss                  # Global styles + mobile media queries
@@ -235,10 +256,11 @@ handleResume → rxSaveIdRef = existing save id (from listSaves → stateSnapsho
 
 The project uses **ESLint v9** (flat config) + **Prettier v3**.
 
-- **`eslint.config.mjs`** — flat config with TypeScript, React, React Hooks, `simple-import-sort`, and Prettier rules.
+- **`eslint.config.mjs`** — flat config covering `src/`, `e2e/`, and `playwright.config.ts`. Includes TypeScript, React, React Hooks, `simple-import-sort`, and Prettier rules.
 - **`.prettierrc`** — double quotes, trailing commas, `printWidth: 100`, LF line endings.
 - `no-console` is turned **off** only for `src/utils/logger.ts` (it IS the logging abstraction).
-- `@typescript-eslint/no-explicit-any` and `@typescript-eslint/no-unused-vars` are turned off for test files (`**/*.test.{ts,tsx}` and `src/test/**`).
+- `@typescript-eslint/no-explicit-any` and `@typescript-eslint/no-unused-vars` are turned off for test files (`**/*.test.{ts,tsx}`, `src/test/**`) and for all `e2e/**` files.
+- `e2e/**` and `playwright.config.ts` use `globals.node` (not `globals.browser`) and have React Hooks rules disabled.
 
 **Import ordering** is enforced by `eslint-plugin-simple-import-sort` with these groups:
 1. Side-effect imports (e.g. CSS)
@@ -250,9 +272,9 @@ The project uses **ESLint v9** (flat config) + **Prettier v3**.
 **Scripts:**
 
 ```bash
-yarn lint          # ESLint check
+yarn lint          # ESLint check (src/ + e2e/ + playwright.config.ts)
 yarn lint:fix      # ESLint auto-fix
-yarn format        # Prettier write
+yarn format        # Prettier write (src/ + e2e/ + playwright.config.ts)
 yarn format:check  # Prettier check
 ```
 
@@ -333,12 +355,93 @@ yarn dev              # parcel serve src/*.html (hot reload on http://localhost:
 yarn build            # parcel build src/*.html → dist/
 yarn test             # vitest run (one-shot)
 yarn test:coverage    # vitest run --coverage (thresholds: lines/functions/statements 90%, branches 80%)
-yarn lint             # ESLint check
+yarn lint             # ESLint check (src/ + e2e/ + playwright.config.ts)
 yarn lint:fix         # ESLint auto-fix
 yarn format:check     # Prettier check
+
+# E2E tests (Playwright) — requires dev server or build
+npx playwright install --with-deps chromium   # first-time browser install
+yarn test:e2e                  # run E2E suite headlessly (desktop project)
+yarn test:e2e:ui               # open Playwright interactive UI
+yarn test:e2e:update-snapshots # regenerate visual snapshot baselines
 ```
 
 **TypeScript** is compiled by Parcel (no standalone `tsc` build step). TypeScript errors surface as Parcel build errors.
+
+---
+
+## E2E Testing (Playwright)
+
+End-to-end and visual regression tests live in `e2e/` and use **Playwright v1.58**.
+
+### Structure
+
+```
+e2e/
+  fixtures/sample-save.json     # Valid RxdbExportedSave for import tests
+  utils/helpers.ts              # All shared test helpers
+  tests/
+    smoke.spec.ts               # Boot, dialog, autoplay
+    determinism.spec.ts         # Seed reproducibility, Share seed
+    save-load.spec.ts           # Save / load / delete
+    import-export.spec.ts       # Import file/paste, export download, roundtrip
+    auto-save.spec.ts           # Auto-save resume (test.skip — RxDB cross-reload)
+    manager-mode.spec.ts        # Manager Mode toggle, decision panel, auto-skip
+    modals.spec.ts              # All modal open/close/escape/backdrop flows
+    notifications.spec.ts       # Notification badge, SW registration
+    player-customization.spec.ts# Team selectors, roster in New Game dialog
+    responsive-layout.spec.ts   # Layout assertions on desktop / tablet / mobile
+    visual.spec.ts              # Screenshot baselines (run with --update-snapshots to regenerate)
+```
+
+### Projects
+
+| Project | Viewport |
+|---|---|
+| `desktop` | 1280 × 800 |
+| `tablet` | 820 × 1180 |
+| `mobile` | 390 × 844 |
+
+### Key conventions
+
+- **`data-testid` attributes** are the primary selector strategy. See the Repository Layout above for which elements carry them.
+- **`gotoFreshApp(page, seed?)`** navigates to `/?seed=<seed>`, clears localStorage + IndexedDB + SW registrations, then reloads — every test starts clean.
+- **Fixed seed `"abc"`** (`FIXED_SEED`) is used for deterministic tests.
+- **`captureGameSignature(page)`** reads line-score text + BSO row + first N play-by-play entries to produce a stable comparison object.
+- Visual snapshot tests call **`disableAnimations(page)`** before `toHaveScreenshot()` to avoid flaky diffs.
+- Playwright's `webServer` config auto-starts the Parcel dev server (`yarn dev`) when none is already running.
+- The CI workflow (`.github/workflows/e2e-playwright.yml`) runs the `desktop` project only; all three projects run when executing `yarn test:e2e` locally.
+
+### `data-testid` reference
+
+| `data-testid` | Element |
+|---|---|
+| `new-game-dialog` | `<dialog>` in `NewGameDialog` |
+| `resume-button` | Resume auto-save button in `NewGameDialog` |
+| `matchup-mode-radio-al/nl/interleague` | Matchup-mode radio inputs |
+| `home-team-select` / `away-team-select` | Team `<select>` elements |
+| `managed-team-radio-none/0/1` | Managed-team radio inputs |
+| `play-ball-button` | Submit button in `NewGameDialog` |
+| `new-game-button` | New Game button in `GameControls` (post game-over) |
+| `share-seed-button` | Share seed button in `GameControls` |
+| `saves-button` | 💾 Saves trigger button |
+| `saves-dialog` | `<dialog>` in `SavesModal` |
+| `save-current-button` | Save / Update save button |
+| `saves-list` | `<ul>` of save entries |
+| `save-item` | Each `<li>` save entry |
+| `import-file-input` | File `<input>` for JSON import |
+| `import-json-textarea` | Paste JSON `<textarea>` |
+| `import-from-text-button` | Import from text `<button>` |
+| `close-saves-button` | Close button in `SavesModal` |
+| `line-score` | Line score outer wrapper |
+| `bso-row` | Balls/strikes/outs row |
+| `field` | `FieldWrapper` in `Diamond` |
+| `hit-log` | Outer wrapper in `HitLog` |
+| `announcements` | Outer wrapper in `Announcements` |
+| `log-entry` | Each play-by-play `<span>` |
+| `decision-panel` | `Panel` in `DecisionPanel` |
+| `manager-mode-checkbox` | Manager Mode `<input type="checkbox">` |
+| `notif-badge` | Notification permission badge (`NotifBadge`) — one of granted/denied/default |
 
 ---
 
@@ -349,7 +452,8 @@ yarn format:check     # Prettier check
 Validate changes by:
 1. `yarn lint` — zero errors/warnings required. Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
-3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
+3. `yarn test` — all unit tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
+4. `yarn test:e2e` — run when changes touch UI components, save flows, manager mode, or any `data-testid` attribute. Not required for every change, but required for UI-visible changes.
 
 **Do not call `report_progress` until all three steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
@@ -388,3 +492,7 @@ Validate changes by:
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden and the modal will always be visible.
 - **`mediaQueries.ts`** — use this for all CSS-in-JS breakpoints; never hardcode `@media (max-width: …)` strings inline.
 - **`useAutoSave`** still exists alongside `useRxdbGameSync` — `useAutoSave` writes a `localStorage` snapshot for backwards compatibility; `useRxdbGameSync` writes the canonical RxDB record. Both run in parallel.
+- **E2E tests live in `e2e/`** — never place Playwright specs inside `src/`. Vitest's `exclude: ["e2e/**"]` prevents double-running, and ESLint's e2e override provides Node globals.
+- **`data-testid` changes are breaking** — E2E tests rely on them. If you rename or remove a `data-testid`, update the corresponding tests and the `data-testid` reference table in this file.
+- **`gotoFreshApp` clears all IndexedDB databases** — this wipes RxDB state between tests. Do not call it mid-test expecting RxDB saves to survive.
+- **Visual snapshots must be regenerated** after intentional UI changes: run `yarn test:e2e:update-snapshots` and commit the new `.png` baselines from `e2e/tests/__snapshots__/`.

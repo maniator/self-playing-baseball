@@ -18,19 +18,20 @@ test.describe("Notifications", () => {
     expect(["default", "denied", "granted", "unavailable"]).toContain(permission);
   });
 
-  test("manager mode: notification badge renders when permission is default", async ({ page }) => {
+  test("manager mode: notification badge renders when manager mode is enabled", async ({
+    page,
+  }) => {
     await gotoFreshApp(page);
     await waitForNewGameDialog(page);
     await clickPlayBall(page);
 
-    // Enable manager mode
     const checkbox = page.getByTestId("manager-mode-checkbox");
     await expect(checkbox).toBeVisible();
     await checkbox.check();
 
-    // The notification badge should be visible (click-to-enable state)
-    const badge = page.locator("text=click to enable, text=🔔 on, text=🔕 blocked").first();
-    await expect(badge).toBeVisible({ timeout: 3_000 });
+    // ManagerModeControls renders exactly one NotifBadge (granted/denied/default)
+    // once manager mode is on. We verify it appears regardless of environment permission.
+    await expect(page.getByTestId("notif-badge")).toBeVisible({ timeout: 3_000 });
   });
 
   test("service worker is registered after page load", async ({ page }) => {
