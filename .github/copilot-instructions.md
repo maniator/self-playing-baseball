@@ -4,7 +4,7 @@
 
 **Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
-**Repository size:** Small (~80 source files). **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4.
+**Repository size:** ~95 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v16 (IndexedDB, local-only — no sync).
 
 ---
 
@@ -46,10 +46,25 @@
     │   ├── tts.ts                  # Web Speech API: announce, cancelAnnouncements, setSpeechRate, isSpeechPending
     │   ├── getRandomInt.ts         # Random number helper — delegates to rng.ts random()
     │   ├── logger.ts               # Shared colored console logger; exports createLogger(tag) + appLog singleton
-    │   └── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed
+    │   ├── mediaQueries.ts         # Responsive breakpoint helpers (CSS-in-JS); exported as mediaQueries object
+    │   ├── mlbTeams.ts             # Fetches MLB teams from MLB Stats API; caches per-team in RxDB `teams` collection
+    │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
+    │   ├── roster.ts               # BaseStats type + default lineup order helpers used by player customisation
+    │   ├── saves.ts                # currentSeedStr(), restoreRng() PRNG utilities + re-exports from saves.signing.ts
+    │   └── saves.signing.ts        # ExportedSave / SaveSlot / SaveSetup types; exportSave / importSave / SAVE_SIGNING_KEY
+    ├── storage/                    # RxDB local-only persistence (IndexedDB, no sync)
+    │   ├── db.ts                   # Lazy-singleton BallgameDb; collections: saves, events, teams; exports getDb(), savesCollection(), eventsCollection(), teamsCollection(), _createTestDb()
+    │   ├── saveStore.ts            # SaveStore singleton + makeSaveStore() factory:
+    │   │                           #   createSave, appendEvents (serialized queue + in-memory idx counter),
+    │   │                           #   updateProgress (with stateSnapshot), listSaves, deleteSave,
+    │   │                           #   exportRxdbSave, importRxdbSave (FNV-1a integrity bundle)
+    │   └── types.ts                # SaveDoc, EventDoc, TeamDoc, GameSaveSetup, ScoreSnapshot,
+    │                               #   InningSnapshot, StateSnapshot, GameSetup, GameEvent,
+    │                               #   ProgressSummary, RxdbExportedSave
     ├── context/                    # All game state, reducer, and types
     │   ├── index.tsx               # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
     │   │                           #   Exports: LogAction, GameAction, Strategy, DecisionType, OnePitchModifier
+    │   │                           #   GameProviderWrapper accepts optional onDispatch?: (action: GameAction) => void
     │   ├── strategy.ts             # stratMod(strategy, stat) — probability multipliers per strategy
     │   ├── advanceRunners.ts       # advanceRunners(type, baseLayout) — pure base-advancement logic
     │   ├── gameOver.ts             # checkGameOver, checkWalkoff, nextHalfInning
@@ -63,9 +78,11 @@
     │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
     │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
     │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler
-    │   ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
+    │   ├── useAutoSave.ts          # Writes auto-save to localStorage after every half-inning / game-over
     │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
+    │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
+    │   │                           #   calls updateProgress (with full stateSnapshot) on half-inning / game-over
     │   └── useShareReplay.ts       # Clipboard copy of replay URL
     ├── components/                 # All UI components
     │   ├── Announcements/index.tsx # Play-by-play log with heading + empty-state placeholder
@@ -83,8 +100,10 @@
     │   │   ├── index.tsx           # Baseball diamond — self-contained with FieldWrapper container
     │   │   └── styles.ts           # Styled components for diamond layout
     │   ├── Game/
-    │   │   ├── index.tsx           # Wraps children in GameProviderWrapper; adds GitHub ribbon
-    │   │   ├── GameInner.tsx       # Top-level layout: NewGameDialog, LineScore, GameControls, two-column body (left: HitLog + Announcements, right: Diamond)
+    │   │   ├── index.tsx           # Owns actionBufferRef; passes onDispatch to GameProviderWrapper + ref to GameInner
+    │   │   ├── ErrorBoundary.tsx   # React error boundary — catches render errors, clears stale localStorage keys
+    │   │   ├── GameInner.tsx       # Top-level layout: NewGameDialog, LineScore, GameControls, two-column body
+    │   │   │                       #   Calls SaveStore.createSave() on handleStart/handleResume; hosts useRxdbGameSync
     │   │   └── styles.ts           # Styled components for game layout
     │   ├── GameControls/
     │   │   ├── index.tsx           # GameControls component — renders controls using useGameControls hook
@@ -96,15 +115,25 @@
     │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
     │   ├── HitLog/index.tsx        # Hit log component
     │   ├── InstructionsModal/
-    │   │   ├── index.tsx           # Instructions modal component
-    │   │   └── styles.ts           # Styled components for modal
+    │   │   ├── index.tsx           # Full-screen scrollable <dialog>; 7 collapsible <details> sections; ✕ close button
+    │   │   └── styles.ts           # Styled components; display:flex lives inside &[open] so native hidden state is respected
     │   ├── LineScore/
     │   │   ├── index.tsx           # Score/inning/strikes/balls/outs + FINAL banner when gameOver
     │   │   └── styles.ts           # Styled components for line score
-    │   └── NewGameDialog/
-    │       ├── constants.ts        # DEFAULT_HOME_TEAM ("Yankees"), DEFAULT_AWAY_TEAM ("Mets")
-    │       ├── index.tsx           # Modal dialog for starting a new game: team name inputs + managed-team radio selection
-    │       └── styles.ts           # Styled components for the new game dialog
+    │   ├── NewGameDialog/
+    │   │   ├── constants.ts        # DEFAULT_HOME_TEAM ("Yankees"), DEFAULT_AWAY_TEAM ("Mets")
+    │   │   ├── index.tsx           # New-game dialog: team selectors, matchup mode, managed-team radio, player customisation
+    │   │   ├── styles.ts           # Styled components for the new game dialog
+    │   │   ├── PlayerCustomizationPanel.tsx    # Collapsible panel for editing per-player stat overrides and lineup order
+    │   │   ├── PlayerCustomizationPanel.styles.ts
+    │   │   ├── SortableBatterRow.tsx            # @dnd-kit drag handle row for reordering batting lineup
+    │   │   ├── usePlayerCustomization.ts        # Hook: manages playerOverrides + lineupOrder state
+    │   │   └── useTeamSelection.ts              # Hook: fetches MLB teams, manages home/away selection + league filter
+    │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table (AB / H / BB / K per player, per team tab)
+    │   └── SavesModal/
+    │       ├── index.tsx           # Save management overlay: list, create, load, delete, export, import
+    │       ├── styles.ts           # Styled components for saves modal
+    │       └── useSavesModal.ts    # Hook: calls SaveStore for all save CRUD operations
     └── test/                       # Shared test infrastructure only
         ├── setup.ts                # @testing-library/jest-dom + global mocks (SpeechSynthesis, AudioContext, Notification)
         └── testHelpers.ts          # makeState, makeContextValue, makeLogs, mockRandom
@@ -125,6 +154,7 @@ All cross-directory imports use aliases (configured in `tsconfig.json` and `vite
 | `@hooks/*` | `src/hooks/*` |
 | `@utils/*` | `src/utils/*` |
 | `@constants/*` | `src/constants/*` |
+| `@storage/*` | `src/storage/*` |
 | `@test/*` | `src/test/*` |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
@@ -138,9 +168,66 @@ Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 - `GameContext` is typed `createContext<ContextValue | undefined>(undefined)`. Always consume it via the `useGameContext()` hook exported from `@context/index` — **never** call `React.useContext(GameContext)` directly in components.
 - **`ContextValue` extends `State`** and adds `dispatch: React.Dispatch<GameAction>`, `dispatchLog: React.Dispatch<LogAction>`, and `log: string[]` (play-by-play, most recent first). All three are provided by `GameProviderWrapper`.
 - **`LogAction`** = `{ type: "log"; payload: string }`. **`GameAction`** = `{ type: string; payload?: unknown }`. Both are exported from `@context/index`.
+- **`GameProviderWrapper`** accepts an optional `onDispatch?: (action: GameAction) => void` prop (stored internally in a ref, zero re-render overhead). `components/Game/index.tsx` owns `actionBufferRef` and passes it as `onDispatch` to capture every dispatched action.
 - Reducer action types: `nextInning`, `hit`, `setTeams`, `strike`, `foul`, `wait`, `steal_attempt`, `bunt_attempt`, `intentional_walk`, `set_one_pitch_modifier`, `set_pending_decision`, `skip_decision`, `reset`, `clear_suppress_decision`, `set_pinch_hitter_strategy`, `set_defensive_shift`.
 - `detectDecision(state, strategy, managerMode)` is exported from `context/reducer.ts` and called in `usePitchDispatch` to detect decision points before each pitch.
 - **Context module dependency order (no cycles):** `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`
+
+---
+
+## RxDB Persistence Layer (`src/storage/`)
+
+Local-only IndexedDB persistence via **RxDB v16**. No replication, no sync, no leader election.
+
+### Collections
+
+| Collection | Purpose |
+|---|---|
+| `saves` | One header doc per save game (`SaveDoc`). Stores `setup`, `progressIdx`, `stateSnapshot` (full game `State` + `rngState` for deterministic resume), optional score/inning snapshots. |
+| `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. Indexed on `saveId` and compound `[saveId, idx]`. |
+| `teams` | MLB team cache (`TeamDoc`). Each team is individually upserted/deleted by numeric MLB ID. Replaces the old `localStorage` team cache. |
+
+### SaveStore API (exported singleton from `@storage/saveStore`)
+
+```ts
+SaveStore.createSave(setup: GameSaveSetup, meta?: { name?: string }): Promise<string>
+SaveStore.appendEvents(saveId: string, events: GameEvent[]): Promise<void>   // serialized per-save queue + in-memory idx counter
+SaveStore.updateProgress(saveId: string, progressIdx: number, summary?: ProgressSummary): Promise<void>
+SaveStore.listSaves(): Promise<SaveDoc[]>
+SaveStore.deleteSave(saveId: string): Promise<void>
+SaveStore.exportRxdbSave(saveId: string): Promise<string>   // FNV-1a signed JSON bundle
+SaveStore.importRxdbSave(json: string): Promise<string>     // verifies signature, upserts docs, returns saveId
+```
+
+Use `makeSaveStore(getDbFn)` to create an isolated instance for tests (pass `_createTestDb`).
+
+### Game Loop Integration
+
+```
+dispatch(action)
+  ├─→ onDispatchRef.current(action)   ← pushes into actionBufferRef (Game/index.tsx)
+  └─→ rawDispatch(action)             ← React state update → pitchKey++
+
+useRxdbGameSync effect (runs when pitchKey changes, lives in GameInner.tsx)
+  ├─→ guard: skip if rxSaveIdRef not yet set
+  ├─→ drain actionBufferRef, filter non-game actions (reset, setTeams, restore_game)
+  ├─→ wrap scalar payloads as { value } (set_one_pitch_modifier, set_defensive_shift)
+  └─→ SaveStore.appendEvents(saveId, events tagged with pre-advance pitchKey)
+
+half-inning / gameOver
+  └─→ SaveStore.updateProgress(saveId, pitchKey, { stateSnapshot: { state, rngState } })
+
+handleStart  → SaveStore.createSave(setup) → rxSaveIdRef
+handleResume → rxSaveIdRef = existing save id (from listSaves → stateSnapshot)
+```
+
+### Non-object payload normalisation
+
+`set_one_pitch_modifier` (string), `set_pinch_hitter_strategy` (string), and `set_defensive_shift` (boolean) dispatch scalar payloads. `useRxdbGameSync` wraps them as `{ value: payload }` before writing so the events schema's `object` requirement is always satisfied.
+
+### Test helpers
+
+`_createTestDb(name?)` in `db.ts` creates an in-memory RxDB database using `fake-indexeddb` (dev dependency). Each call appends a random suffix to the name to avoid cross-test registry collisions. Pass it to `makeSaveStore` in unit tests.
 
 ---
 
@@ -157,7 +244,7 @@ The project uses **ESLint v9** (flat config) + **Prettier v3**.
 1. Side-effect imports (e.g. CSS)
 2. React packages (`react`, `react-dom`, `react/*`)
 3. Other external packages
-4. Internal aliases (`@components`, `@context`, `@hooks`, `@utils`, `@constants`, `@test`)
+4. Internal aliases (`@components`, `@context`, `@hooks`, `@utils`, `@constants`, `@storage`, `@test`)
 5. Relative imports (`./`)
 
 **Scripts:**
@@ -191,6 +278,26 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 - Speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses refs so speed changes take effect immediately without stale closures.
 - Manager Mode pausing — when `pendingDecision` is set, the scheduler returns early and restarts once the decision resolves.
 - All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
+
+**Persistence split:**
+
+| What | Where |
+|---|---|
+| Game save state + events | RxDB (`saves` + `events` collections via `useRxdbGameSync`) |
+| MLB team roster cache | RxDB (`teams` collection, per-team upsert/delete by numeric ID) |
+| UI preferences (speed, volume, managerMode, strategy, managedTeam) | `localStorage` (scalars only — no benefit to RxDB) |
+
+---
+
+## Player Customisation
+
+Added in the New Game dialog (`NewGameDialog/`):
+
+- **`PlayerCustomizationPanel`** — collapsible section to override per-player `BaseStats` (contact, power, speed, control) and reorder the batting lineup via drag-and-drop.
+- **`SortableBatterRow`** — @dnd-kit drag handle row; uses `@dnd-kit/core` + `@dnd-kit/sortable`.
+- **`usePlayerCustomization`** — manages `playerOverrides: TeamCustomPlayerOverrides` and `lineupOrder: number[]` state; merges API roster with user overrides.
+- **`useTeamSelection`** — fetches MLB teams (from RxDB cache → API fallback), manages home/away selection and matchup-mode/league filter.
+- Player overrides are passed from `NewGameDialog` → `GameInner` → `createSave`'s `setup.playerOverrides` field and stored in `SaveDoc.setup`.
 
 ---
 
@@ -274,3 +381,10 @@ Validate changes by:
 - **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`. No module may import from a module later in this chain.
 - **`Function` type is banned** — use explicit function signatures: `(action: GameAction) => void` for dispatch, `(action: LogAction) => void` for dispatchLog.
 - **ESLint enforces import order** — run `yarn lint:fix` after adding imports to auto-sort them.
+- **`@storage/*` alias** — always import from `@storage/saveStore`, `@storage/db`, `@storage/types`; never use relative paths across directories.
+- **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb)` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.
+- **`_createTestDb` requires `fake-indexeddb/auto`** — import it at the top of any test file that calls `_createTestDb`. It is a dev-only dependency.
+- **Non-object `GameAction` payloads** — `set_one_pitch_modifier`, `set_pinch_hitter_strategy`, and `set_defensive_shift` dispatch string/boolean payloads. `useRxdbGameSync` wraps them as `{ value }` before writing to the events schema. If you add a new action with a scalar payload, add it to the `NON_OBJECT_PAYLOAD_ACTIONS` set in `useRxdbGameSync.ts`.
+- **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden and the modal will always be visible.
+- **`mediaQueries.ts`** — use this for all CSS-in-JS breakpoints; never hardcode `@media (max-width: …)` strings inline.
+- **`useAutoSave`** still exists alongside `useRxdbGameSync` — `useAutoSave` writes a `localStorage` snapshot for backwards compatibility; `useRxdbGameSync` writes the canonical RxDB record. Both run in parallel.
