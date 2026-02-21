@@ -9,6 +9,21 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("/node_modules/react/") || id.includes("/node_modules/react-dom/") || id.includes("/node_modules/react-is/")) {
+            return "react-vendor";
+          }
+          if (id.includes("/node_modules/styled-components/")) {
+            return "styled-vendor";
+          }
+          if (id.includes("/node_modules/@dnd-kit/")) {
+            return "dnd-vendor";
+          }
+        },
+      },
+    },
   },
   resolve: {
     alias: {
