@@ -1,6 +1,7 @@
-import { _createTestDb, type BallgameDb } from "@storage/db";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import { _createTestDb, type BallgameDb } from "@storage/db";
 
 import { _buildFetchMlbTeams, AL_FALLBACK, NL_FALLBACK } from "./mlbTeams";
 

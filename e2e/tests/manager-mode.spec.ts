@@ -103,8 +103,10 @@ test.describe("Manager Mode", () => {
     // Capture scoreboard state.
     const scoreBefore = (await page.getByTestId("line-score").textContent()) ?? "";
 
-    // Reload fresh, then load the saved game.
-    await gotoFreshApp(page);
+    // Navigate WITHOUT clearing IndexedDB — use a different seed so New Game dialog opens,
+    // but RxDB data (the save we just created) is preserved.
+    await page.goto("/?seed=reload-test-mgr");
+    await page.waitForLoadState("domcontentloaded");
     await waitForNewGameDialog(page);
     await clickPlayBall(page);
     await openSavesModal(page);

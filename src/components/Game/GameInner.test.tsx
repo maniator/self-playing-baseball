@@ -5,6 +5,9 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Strategy } from "@context/index";
 import { GameContext, GameProviderWrapper, useGameContext } from "@context/index";
+import type { SaveStoreHook } from "@hooks/useSaveStore";
+import { useSaveStore } from "@hooks/useSaveStore";
+import { SaveStore } from "@storage/saveStore";
 import { makeContextValue, makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 import * as savesModule from "@utils/saves";
@@ -58,6 +61,26 @@ vi.mock("@storage/saveStore", () => ({
     importRxdbSave: vi.fn().mockResolvedValue(undefined),
   },
 }));
+
+// Mock useSaveStore so auto-save tests can control the reactive saves list.
+vi.mock("@hooks/useSaveStore");
+
+// Routes createSave through the mocked SaveStore so existing assertions pass.
+const makeDefaultSaveStoreHook = (saves: SaveStoreHook["saves"] = []): SaveStoreHook => ({
+  saves,
+  savesLoading: false,
+  createSave: SaveStore.createSave,
+  appendEvents: vi.fn().mockResolvedValue(undefined),
+  updateProgress: vi.fn().mockResolvedValue(undefined),
+  deleteSave: vi.fn().mockResolvedValue(undefined),
+  exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+  importRxdbSave: vi.fn().mockResolvedValue(undefined),
+});
+
+// Apply a default (empty saves) useSaveStore mock for all tests.
+beforeEach(() => {
+  vi.mocked(useSaveStore).mockReturnValue(makeDefaultSaveStoreHook([]));
+});
 
 describe("GameInner", () => {
   it("renders without crashing", () => {
@@ -163,15 +186,15 @@ const makeAutoSaveSlot = () => ({
 
 describe("GameInner — auto-save resume", () => {
   beforeEach(async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
+    vi.mocked(useSaveStore).mockReturnValue(makeDefaultSaveStoreHook([]));
     vi.mocked(rngModule.restoreRng).mockClear();
     vi.mocked(rngModule.getSeed).mockReturnValue(SEED_NUM);
   });
 
   it("shows Resume button when a seed-matched auto-save exists", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeAutoSaveSlot() as never]);
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeDefaultSaveStoreHook([makeAutoSaveSlot() as never]),
+    );
     await act(async () => {
       render(
         <GameProviderWrapper>
@@ -183,8 +206,6 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("does NOT show Resume button when no auto-save exists", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
     await act(async () => {
       render(
         <GameProviderWrapper>
@@ -196,10 +217,9 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("does NOT show Resume button when auto-save seed does not match current seed", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([
-      { ...makeAutoSaveSlot(), seed: "zzzzz" } as never,
-    ]);
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeDefaultSaveStoreHook([{ ...makeAutoSaveSlot(), seed: "zzzzz" } as never]),
+    );
     await act(async () => {
       render(
         <GameProviderWrapper>
@@ -211,8 +231,9 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("calls restoreRng when a matched auto-save is present on mount", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeAutoSaveSlot() as never]);
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeDefaultSaveStoreHook([makeAutoSaveSlot() as never]),
+    );
     await act(async () => {
       render(
         <GameProviderWrapper>

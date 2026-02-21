@@ -1,9 +1,8 @@
 import * as React from "react";
 
-import { SaveStore } from "@storage/saveStore";
-
 import type { GameAction } from "@context/index";
 import { useGameContext } from "@context/index";
+import { SaveStore } from "@storage/saveStore";
 import { getRngState } from "@utils/rng";
 
 /** Action types that represent meaningful game events (stored in the event log). */

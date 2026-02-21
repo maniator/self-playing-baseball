@@ -1,11 +1,14 @@
 import * as React from "react";
 
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Strategy } from "@context/index";
 import { GameContext } from "@context/index";
+import type { SaveStoreHook } from "@hooks/useSaveStore";
+import { useSaveStore } from "@hooks/useSaveStore";
+import { SaveStore } from "@storage/saveStore";
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { makeContextValue, makeState } from "@test/testHelpers";
 
 import SavesModal from ".";
@@ -55,6 +58,23 @@ vi.mock("@storage/saveStore", () => ({
   },
 }));
 
+// Mock useSaveStore so tests can control the saves list without needing a real
+// RxDB subscription (the hook now uses savesCollection() rather than listSaves).
+vi.mock("@hooks/useSaveStore");
+
+// Routes hook write-operations through the mocked SaveStore so existing
+// `expect(SaveStore.X).toHaveBeenCalled()` assertions still pass.
+const makeSaveStoreHook = (saves: SaveDoc[] = []): SaveStoreHook => ({
+  saves,
+  savesLoading: false,
+  createSave: SaveStore.createSave,
+  appendEvents: vi.fn().mockResolvedValue(undefined),
+  updateProgress: SaveStore.updateProgress,
+  deleteSave: SaveStore.deleteSave,
+  exportRxdbSave: SaveStore.exportRxdbSave,
+  importRxdbSave: SaveStore.importRxdbSave,
+});
+
 vi.mock("@utils/rng", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@utils/rng")>();
   return { ...actual, getRngState: vi.fn().mockReturnValue(42) };
@@ -95,6 +115,8 @@ describe("SavesModal", () => {
     vi.clearAllMocks();
     const { SaveStore } = await import("@storage/saveStore");
     vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
+    // Default: empty saves list
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([]));
     // Restore showModal/close mock implementations after vi.clearAllMocks()
     HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
       this: HTMLDialogElement,
@@ -139,19 +161,17 @@ describe("SavesModal", () => {
   });
 
   it("shows saved slot name after opening", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([makeSlot()]));
     renderModal();
     await openPanel();
     expect(screen.getByText("Test save")).toBeInTheDocument();
   });
 
   it("calls SaveStore.updateProgress + dispatch + onSaveIdChange when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const slot = makeSlot({
       stateSnapshot: { state: makeState(), rngState: 42 },
     });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([slot]));
     const onSaveIdChange = vi.fn();
     const dispatch = vi.fn();
     renderModal({ onSaveIdChange }, { dispatch });
@@ -165,9 +185,8 @@ describe("SavesModal", () => {
   });
 
   it("calls onSetupRestore with typed setup when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([slot]));
     const onSetupRestore = vi.fn();
     renderModal({ onSetupRestore });
     await openPanel();
@@ -180,8 +199,7 @@ describe("SavesModal", () => {
   });
 
   it("calls SaveStore.deleteSave when ✕ is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([makeSlot()]));
     renderModal();
     await openPanel();
     await act(async () => {
@@ -240,9 +258,8 @@ describe("SavesModal", () => {
   });
 
   it("calls onSaveIdChange(null) when the current save is deleted", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const onSaveIdChange = vi.fn();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([makeSlot()]));
     renderModal({ currentSaveId: "save_1", onSaveIdChange });
     await openPanel();
     await act(async () => {
@@ -254,7 +271,7 @@ describe("SavesModal", () => {
   it("calls SaveStore.exportRxdbSave and createObjectURL when Export is clicked", async () => {
     const { SaveStore } = await import("@storage/saveStore");
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([slot]));
     (URL as unknown as Record<string, unknown>).createObjectURL = vi
       .fn()
       .mockReturnValue("blob:fake");
@@ -276,9 +293,8 @@ describe("SavesModal", () => {
   });
 
   it("updates URL seed on load", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const slot = makeSlot({ seed: "xyzseed" });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeSaveStoreHook([slot]));
     renderModal();
     await openPanel();
     const spy = vi.spyOn(window.history, "replaceState");

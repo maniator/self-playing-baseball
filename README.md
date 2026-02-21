@@ -80,47 +80,15 @@ yarn dev
 # Run unit tests
 yarn test
 
+# Run E2E tests (requires dev server or will auto-start one)
+yarn test:e2e
+
+# Update visual regression snapshots
+yarn test:e2e:update-snapshots
+
 # Production build → dist/
 yarn build
 ```
-
----
-
-## E2E tests
-
-End-to-end tests are written with [Playwright](https://playwright.dev) and live in `e2e/`.
-
-```bash
-# Install Playwright browsers (first time only)
-npx playwright install --with-deps chromium
-
-# Run E2E tests (requires the dev server or a build)
-yarn test:e2e
-
-# Open the interactive Playwright UI
-yarn test:e2e:ui
-
-# Regenerate visual-snapshot baselines after intentional UI changes
-yarn test:e2e:update-snapshots
-```
-
-The suite covers:
-
-| File | What is tested |
-|---|---|
-| `smoke.spec.ts` | App loads, New Game dialog, Play Ball starts autoplaying game |
-| `determinism.spec.ts` | Same seed → same outcomes; Share seed copies a URL |
-| `save-load.spec.ts` | Save / load / delete game via the Saves modal |
-| `import-export.spec.ts` | Import via file/paste, export download, roundtrip |
-| `auto-save.spec.ts` | Auto-save resume flow (skipped — see TODO in file) |
-| `manager-mode.spec.ts` | Manager checkbox, decision panel, auto-skip countdown |
-| `modals.spec.ts` | New Game dialog, Saves modal, Instructions modal — open/close/escape/backdrop |
-| `notifications.spec.ts` | Notification permission badge, service-worker registration |
-| `player-customization.spec.ts` | Team selectors, roster options in New Game dialog |
-| `responsive-layout.spec.ts` | Field + log visibility and layout on desktop / tablet / mobile |
-| `visual.spec.ts` | Screenshot baselines for key UI states |
-
-Tests run in CI via `.github/workflows/e2e-playwright.yml` on every push and pull request.
 
 ---
 
@@ -132,7 +100,7 @@ Tests run in CI via `.github/workflows/e2e-playwright.yml` on every push and pul
 | Language | TypeScript 5 |
 | Styling | styled-components v6 + SASS |
 | Bundler | Parcel v2 |
-| Testing | Vitest + Testing Library (unit) · Playwright (E2E + visual) |
+| Testing | Vitest + Testing Library + Playwright |
 | Speech | Web Speech API |
 | Audio | Web Audio API |
 | Randomness | Seeded PRNG (mulberry32) |

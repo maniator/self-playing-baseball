@@ -21,7 +21,6 @@ test.describe("Player customization", () => {
     await expect(homeSelect).toBeVisible();
     await expect(awaySelect).toBeVisible();
 
-    // Both selectors should have options
     const homeOptions = await homeSelect.locator("option").count();
     const awayOptions = await awaySelect.locator("option").count();
     expect(homeOptions).toBeGreaterThan(0);
@@ -32,16 +31,11 @@ test.describe("Player customization", () => {
     await gotoFreshApp(page);
     await waitForNewGameDialog(page);
 
-    // Select the first available home team option
     const homeSelect = page.getByTestId("home-team-select");
     const firstHomeTeam = await homeSelect.locator("option").first().textContent();
     await homeSelect.selectOption({ index: 0 });
 
-    // The "Home" managed-team radio should show the chosen team name
-    const homeRadioLabel = page
-      .getByTestId("managed-team-radio-1")
-      .locator("..") // parent RadioLabel
-      .textContent();
+    const homeRadioLabel = page.getByTestId("managed-team-radio-1").locator("..").textContent();
     const labelText = await homeRadioLabel;
     expect(labelText).toContain(firstHomeTeam ?? "");
   });
@@ -49,10 +43,8 @@ test.describe("Player customization", () => {
   test("player customization panel is present in the New Game dialog", async ({ page }) => {
     await gotoFreshApp(page);
     await waitForNewGameDialog(page);
-    // The PlayerCustomizationPanel should render inside the dialog
     const dialog = page.getByTestId("new-game-dialog");
     await expect(dialog).toBeVisible();
-    // The panel renders collapsible team sections — check the form exists
     await expect(dialog.locator("form")).toBeVisible();
   });
 
@@ -62,31 +54,36 @@ test.describe("Player customization", () => {
 
     // Expand the customization panel
     await page.getByTestId("customize-players-toggle").click();
-    await expect(page.getByLabel("Catcher nickname")).toBeVisible({ timeout: 5_000 });
+    // The first batter position is "C" (Catcher) — aria-label is "C nickname"
+    await expect(page.getByLabel("C nickname")).toBeVisible({ timeout: 5_000 });
 
-    // Type a distinctive nickname for the Catcher (first batter slot)
     const testNickname = "TestAce";
-    await page.getByLabel("Catcher nickname").fill(testNickname);
+    await page.getByLabel("C nickname").fill(testNickname);
 
-    // Start the game
+    // Start game and wait for progress
     await clickPlayBall(page);
     await page.getByTestId("speed-select").selectOption("350");
     await waitForAtLeastLogLines(page, 5);
 
-    // Save, reload, load the saved game
+    // Save
     await openSavesModal(page);
     await saveCurrentGame(page);
     await page.waitForTimeout(500);
     await closeSavesModal(page);
 
-    await gotoFreshApp(page);
+    // Navigate WITHOUT clearing IndexedDB — just go to a different seed URL
+    // so the New Game dialog opens fresh, but RxDB data is preserved.
+    await page.goto("/?seed=reload-test-nick");
+    await page.waitForLoadState("domcontentloaded");
     await waitForNewGameDialog(page);
     await clickPlayBall(page);
+
+    // Load the previously saved game
     await openSavesModal(page);
     await loadSaveByName(page, "New York Mets vs New York Yankees");
     await page.waitForTimeout(500);
 
-    // The nickname must appear in the PlayerStatsPanel after loading.
+    // The nickname must appear in the PlayerStatsPanel after loading
     const statsPanel = page.getByTestId("player-stats-panel");
     await expect(statsPanel).toBeVisible({ timeout: 5_000 });
     await expect(statsPanel.getByText(testNickname)).toBeVisible({ timeout: 5_000 });
@@ -98,28 +95,25 @@ test.describe("Player customization", () => {
 
     // Expand the customization panel
     await page.getByTestId("customize-players-toggle").click();
-    await expect(page.getByLabel("Catcher nickname")).toBeVisible({ timeout: 5_000 });
+    // First batter is "C" (Catcher)
+    await expect(page.getByLabel("C nickname")).toBeVisible({ timeout: 5_000 });
 
-    // Read the current effective value for the Catcher's Contact stat.
-    const contactLabel = page.getByLabel("Catcher CON");
-    const baseDisplayBefore = await contactLabel
+    // Read the current effective value for the Catcher's Contact stat (aria: "C CON")
+    const contactSelect = page.getByLabel("C CON");
+    await expect(contactSelect).toBeVisible({ timeout: 3_000 });
+
+    // Get the base stat display before the change
+    const statDisplay = contactSelect
       .locator("..")
-      .locator("span, output, [class*='Base']")
-      .first()
-      .textContent();
+      .locator("span[class*='Base'], [class*='BaseStat']")
+      .first();
+    const valueBefore = parseInt((await statDisplay.textContent()) ?? "0", 10);
 
-    // Change contact modifier to "+20" (Elite) via the aria-labelled select
-    await contactLabel.selectOption("+20");
+    // Change contact modifier to "+20" (Elite)
+    await contactSelect.selectOption("+20");
 
-    // The displayed effective value should now be different (higher).
-    const baseDisplayAfter = await contactLabel
-      .locator("..")
-      .locator("span, output, [class*='Base']")
-      .first()
-      .textContent();
-
-    expect(parseInt(baseDisplayAfter ?? "0", 10)).toBeGreaterThan(
-      parseInt(baseDisplayBefore ?? "0", 10),
-    );
+    // The displayed effective value should now be higher
+    const valueAfter = parseInt((await statDisplay.textContent()) ?? "0", 10);
+    expect(valueAfter).toBeGreaterThan(valueBefore);
   });
 });

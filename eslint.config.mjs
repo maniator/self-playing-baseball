@@ -17,6 +17,7 @@ export default tseslint.config(
 
   // Project-wide rules
   {
+    files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
       globals: globals.browser,
     },
@@ -48,7 +49,7 @@ export default tseslint.config(
             // Other external packages
             ["^@?\\w"],
             // Internal aliases
-            ["^@(components|context|hooks|utils|constants|test)(/|$)"],
+            ["^@(components|context|hooks|utils|constants|storage|test)(/|$)"],
             // Relative imports
             ["^\\."],
           ],
@@ -94,19 +95,18 @@ export default tseslint.config(
     },
   },
 
-  // E2E tests and Playwright config: Node.js environment, relaxed rules
+  // E2E tests (Playwright) — use Node globals, relax browser/React rules
   {
     files: ["e2e/**/*.ts", "playwright.config.ts"],
     languageOptions: {
-      globals: { ...globals.node },
+      globals: globals.node,
     },
     rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "off",
       "no-console": "off",
-      // React hooks rules do not apply to Playwright test files
-      "react-hooks/rules-of-hooks": "off",
-      "react-hooks/exhaustive-deps": "off",
     },
   },
 
