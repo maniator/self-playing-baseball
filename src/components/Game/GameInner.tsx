@@ -13,7 +13,7 @@ import { type Strategy, useGameContext } from "@context/index";
 import { getSeed } from "@utils/rng";
 import { clearAutoSave, loadAutoSave, restoreSaveRng } from "@utils/saves";
 
-import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
+import { FieldPanel, GameBody, GameDiv, LogPanel } from "./styles";
 
 /** Loads an auto-save only if its seed matches the current URL seed. */
 const getMatchedAutoSave = () => {
@@ -98,14 +98,14 @@ const GameInner: React.FunctionComponent = () => {
       <LineScore />
       <GameControls key={gameKey} onNewGame={handleNewGame} gameStarted={gameActive} />
       <GameBody>
-        <LeftPanel>
+        <FieldPanel>
+          <Diamond />
+        </FieldPanel>
+        <LogPanel>
           <HitLog />
           <PlayerStatsPanel />
           <Announcements />
-        </LeftPanel>
-        <RightPanel>
-          <Diamond />
-        </RightPanel>
+        </LogPanel>
       </GameBody>
     </GameDiv>
   );
