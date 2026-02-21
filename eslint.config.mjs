@@ -48,7 +48,7 @@ export default tseslint.config(
             // Other external packages
             ["^@?\\w"],
             // Internal aliases
-            ["^@(components|context|hooks|utils|constants|storage|test)(/|$)"],
+            ["^@(components|context|hooks|utils|constants|test)(/|$)"],
             // Relative imports
             ["^\\."],
           ],

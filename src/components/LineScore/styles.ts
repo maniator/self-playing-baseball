@@ -6,9 +6,6 @@ export const Wrapper = styled.div`
 
   @media (max-width: 800px) {
     order: -1;
-    position: sticky;
-    top: 0;
-    z-index: 1;
     background: #000;
     margin: 0 0 4px;
     padding-bottom: 4px;

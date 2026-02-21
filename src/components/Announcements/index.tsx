@@ -43,12 +43,14 @@ const AnnouncementsArea = styled.div`
 
 const EmptyState = styled.div`
   color: #555;
-  font-size: 13px;
-  padding: 12px 5px;
+  font-size: 12px;
+  padding: 6px 5px;
 `;
 
 const Log = styled.div`
-  padding: 5px;
+  font-size: 12px;
+  padding: 3px 5px;
+  color: #ccc;
 `;
 
 const Announcements: React.FunctionComponent = () => {

@@ -4,6 +4,7 @@ import { useLocalStorage } from "usehooks-ts";
 
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
+import { useAutoSave } from "@hooks/useAutoSave";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";
@@ -133,6 +134,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     betweenInningsPauseRef,
   );
   useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
+  useAutoSave(safeStrategy, safeManagedTeam, safeManagerMode);
 
   React.useEffect(() => {
     setAnnouncementVolume(safeAnnouncementVolume);

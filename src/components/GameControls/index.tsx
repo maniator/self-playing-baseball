@@ -55,7 +55,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
           onSetupRestore={(setup) => {
             setStrategy(setup.strategy);
             setManagedTeam(setup.managedTeam);
-            setManagerMode(setup.managerMode);
+            setManagerMode(setup.managerMode ?? false);
           }}
         />
         <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>

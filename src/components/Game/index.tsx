@@ -2,7 +2,6 @@ import * as React from "react";
 
 import styled from "styled-components";
 
-import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 
 import GameInner from "./GameInner";
@@ -20,19 +19,11 @@ const GithubRibbon = styled.a.attrs({
   }
 `;
 
-const Game: React.FunctionComponent = () => {
-  const actionBufferRef = React.useRef<GameAction[]>([]);
-
-  const onDispatch = React.useCallback((action: GameAction) => {
-    actionBufferRef.current.push(action);
-  }, []);
-
-  return (
-    <GameProviderWrapper onDispatch={onDispatch}>
-      <GithubRibbon>View on GitHub</GithubRibbon>
-      <GameInner actionBufferRef={actionBufferRef} />
-    </GameProviderWrapper>
-  );
-};
+const Game: React.FunctionComponent = () => (
+  <GameProviderWrapper>
+    <GithubRibbon>View on GitHub</GithubRibbon>
+    <GameInner />
+  </GameProviderWrapper>
+);
 
 export default Game;

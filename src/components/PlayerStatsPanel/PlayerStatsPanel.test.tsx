@@ -30,9 +30,13 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByRole("button", { name: /▼ Yankees/i })).toBeInTheDocument();
   });
 
-  it("shows 'No at-bats yet.' when no activity for the active team", () => {
+  it("always shows the stats table, even with no activity", () => {
     renderWithContext();
-    expect(screen.getByText(/no at-bats yet/i)).toBeInTheDocument();
+    expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("AB")).toBeInTheDocument();
+    expect(screen.getByText("H")).toBeInTheDocument();
+    expect(screen.getByText("BB")).toBeInTheDocument();
+    expect(screen.getByText("K")).toBeInTheDocument();
   });
 
   it("shows the stats table when there are play log entries", () => {
@@ -41,6 +45,7 @@ describe("PlayerStatsPanel", () => {
     ] as const;
     renderWithContext({ playLog: [...playLog] });
     expect(screen.getByRole("table")).toBeInTheDocument();
+    expect(screen.getByText("AB")).toBeInTheDocument();
     expect(screen.getByText("H")).toBeInTheDocument();
     expect(screen.getByText("BB")).toBeInTheDocument();
     expect(screen.getByText("K")).toBeInTheDocument();
@@ -52,18 +57,17 @@ describe("PlayerStatsPanel", () => {
       { inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Double, runs: 1 },
     ];
     renderWithContext({ playLog });
-    // batter #3 should show 2 hits
+    // batter #3 should show 2 hits (rows[0] = header, rows[3] = slot 3)
     const rows = screen.getAllByRole("row");
-    const row3 = rows.find((r) => r.textContent?.startsWith("3"));
-    expect(row3?.textContent).toContain("2");
+    expect(rows[3]?.textContent).toContain("2");
   });
 
   it("counts walks separately from hits", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Walk, runs: 0 }];
     renderWithContext({ playLog });
-    // batter #1: 0 hits (–), 1 walk
+    // batter #1: 0 hits (–), 1 walk (rows[0] = header, rows[1] = slot 1)
     const rows = screen.getAllByRole("row");
-    const row1 = rows.find((r) => r.textContent?.startsWith("1"));
+    const row1 = rows[1];
     // Contains "1" for walk count and "–" for hits
     expect(row1?.textContent).toContain("1");
     expect(row1?.textContent).toContain("–");
@@ -71,13 +75,23 @@ describe("PlayerStatsPanel", () => {
 
   it("counts strikeouts from the strikeoutLog", () => {
     const strikeoutLog = [{ team: 0, batterNum: 2 }];
-    renderWithContext({ strikeoutLog });
-    // Has activity so table is shown
+    const outLog = [{ team: 0 as const, batterNum: 2 }];
+    renderWithContext({ strikeoutLog, outLog });
     expect(screen.getByRole("table")).toBeInTheDocument();
+    // batter #2 has 1 K (rows[0] = header, rows[2] = slot 2)
     const rows = screen.getAllByRole("row");
-    const row2 = rows.find((r) => r.textContent?.startsWith("2"));
-    // batter #2 has 1 K
-    expect(row2?.textContent).toContain("1");
+    expect(rows[2]?.textContent).toContain("1");
+  });
+
+  it("counts at-bats from outLog (includes K and regular outs)", () => {
+    // batter #3: 1 hit + 1 groundout entry in outLog = 2 AB
+    const playLog = [{ inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Single, runs: 0 }];
+    const outLog = [{ team: 0 as const, batterNum: 3 }];
+    renderWithContext({ playLog, outLog });
+    const rows = screen.getAllByRole("row");
+    // row[3] = batter slot 3; text should contain "2" for AB and "1" for H
+    expect(rows[3]?.textContent).toContain("2"); // AB
+    expect(rows[3]?.textContent).toContain("1"); // H
   });
 
   it("does not mix team stats — away stats excluded when viewing home tab", () => {
@@ -87,17 +101,34 @@ describe("PlayerStatsPanel", () => {
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /▼ Yankees/i }));
     });
-    // Home has no activity
-    expect(screen.getByText(/no at-bats yet/i)).toBeInTheDocument();
+    // Home table shows all dashes (no activity for home team)
+    const rows = screen.getAllByRole("row");
+    // All 9 data rows should show "–" for AB
+    const dataCells = rows.slice(1).map((r) => r.textContent ?? "");
+    expect(dataCells.every((text) => text.includes("–"))).toBe(true);
   });
 
-  it("shows 9 batter rows when there is activity", () => {
-    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
-    renderWithContext({ playLog });
-    // 1 header row + 9 data rows
+  it("always shows 9 batter rows (header + 9 data rows = 10 total)", () => {
+    renderWithContext();
+    // 1 header row + 9 data rows, even with no activity
     expect(screen.getAllByRole("row")).toHaveLength(10);
   });
 
+  it("shows player names from the roster instead of slot numbers", () => {
+    // teams default to ["Away","Home"]; generateRoster("Away") batter slot 1 = "Catcher"
+    renderWithContext();
+    expect(screen.getByText("Catcher")).toBeInTheDocument();
+  });
+
+  it("shows nickname from playerOverrides when set", () => {
+    // away slug = "away", batter 0 id = "away_b0"
+    const playerOverrides: [Record<string, { nickname: string }>, Record<string, never>] = [
+      { away_b0: { nickname: "Slugger" } },
+      {},
+    ];
+    renderWithContext({ playerOverrides: playerOverrides as never });
+    expect(screen.getByText("Slugger")).toBeInTheDocument();
+  });
   it("collapses and hides the table when toggle is clicked", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
