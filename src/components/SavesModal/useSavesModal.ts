@@ -1,10 +1,10 @@
 import * as React from "react";
 
-import { SaveStore } from "@storage/saveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useSaveStore } from "@hooks/useSaveStore";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -56,22 +56,17 @@ export const useSavesModal = ({
     ...gameStateRest
   } = useGameContext();
   void _log;
-  const [saves, setSaves] = React.useState<SaveDoc[]>([]);
+
+  // Reactive saves list — auto-updates when any save is mutated in RxDB.
+  const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
+    useSaveStore();
+
   const [importText, setImportText] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
 
   const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
 
-  const refresh = () => {
-    SaveStore.listSaves()
-      .then(setSaves)
-      .catch(() => {});
-  };
-
-  const open = () => {
-    refresh();
-    ref.current?.showModal();
-  };
+  const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
 
   const handleSave = () => {
@@ -89,19 +84,18 @@ export const useSavesModal = ({
 
     if (currentSaveId) {
       // Update the existing save with a fresh state snapshot.
-      SaveStore.updateProgress(currentSaveId, pitchKey, {
+      updateProgress(currentSaveId, pitchKey, {
         scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
         inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
         stateSnapshot: { state: fullState, rngState: getRngState() },
       })
         .then(() => {
-          refresh();
           log("Game saved!");
         })
         .catch(() => {});
     } else {
       // Create a new explicit snapshot save.
-      SaveStore.createSave(
+      createSave(
         {
           matchupMode: "manual",
           homeTeamId: teams[1],
@@ -112,13 +106,12 @@ export const useSavesModal = ({
         { name },
       )
         .then(async (id) => {
-          await SaveStore.updateProgress(id, pitchKey, {
+          await updateProgress(id, pitchKey, {
             scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
             inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
             stateSnapshot: { state: fullState, rngState: getRngState() },
           });
           onSaveIdChange(id);
-          refresh();
           log("Game saved!");
         })
         .catch(() => {});
@@ -148,16 +141,15 @@ export const useSavesModal = ({
   };
 
   const handleDelete = (id: string) => {
-    SaveStore.deleteSave(id)
+    deleteSave(id)
       .then(() => {
         if (currentSaveId === id) onSaveIdChange(null);
-        refresh();
       })
       .catch(() => {});
   };
 
   const handleExport = (slot: SaveDoc) => {
-    SaveStore.exportRxdbSave(slot.id)
+    exportRxdbSave(slot.id)
       .then((json) => {
         const blob = new Blob([json], { type: "application/json" });
         const url = URL.createObjectURL(blob);
@@ -174,9 +166,8 @@ export const useSavesModal = ({
   };
 
   const applyImport = (json: string) => {
-    SaveStore.importRxdbSave(json)
+    importRxdbSave(json)
       .then(() => {
-        refresh();
         setImportText("");
         setImportError(null);
         log("Save imported!");

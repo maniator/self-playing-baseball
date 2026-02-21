@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { SaveStore } from "@storage/saveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -13,21 +12,17 @@ import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
 import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useSaveStore } from "@hooks/useSaveStore";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
 import { FieldPanel, GameBody, GameDiv, LogPanel } from "./styles";
 
-/** Loads the most recent RxDB save whose seed matches the current URL seed. */
-const loadMatchedRxSave = async (): Promise<SaveDoc | null> => {
-  try {
-    const saves = await SaveStore.listSaves();
-    const currentSeed = getSeed()?.toString(36);
-    return saves.find((s) => s.seed === currentSeed) ?? null;
-  } catch {
-    return null;
-  }
+/** Finds the most recent save whose seed matches the current URL seed. */
+const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
+  const currentSeed = getSeed()?.toString(36);
+  return saves.find((s) => s.seed === currentSeed) ?? null;
 };
 
 interface Props {
@@ -54,13 +49,18 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
-  // Async load of the most recently updated RxDB save that matches the URL seed.
+  // Reactive saves list — used for auto-resume detection on initial load.
+  const { saves, savesLoading, createSave } = useSaveStore();
+
+  // Determine the matched auto-save from the reactive list (once on first load).
+  const hasInitializedRef = React.useRef(false);
   const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
-    loadMatchedRxSave()
-      .then(setRxAutoSave)
-      .catch(() => {});
-  }, []);
+    if (savesLoading || hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+    const matched = findMatchedSave(saves);
+    if (matched) setRxAutoSave(matched);
+  }, [saves, savesLoading]);
 
   // Restore state from the RxDB save as soon as it is loaded.
   React.useEffect(() => {
@@ -115,7 +115,7 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
       playerOverrides: [playerOverrides.away, playerOverrides.home],
       lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
     };
-    SaveStore.createSave(
+    createSave(
       {
         matchupMode: "default",
         homeTeamId: homeTeam,
