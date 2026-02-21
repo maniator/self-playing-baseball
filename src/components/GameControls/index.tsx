@@ -1,16 +1,16 @@
 import * as React from "react";
 
-import DecisionPanel from "@components/DecisionPanel";
 import { Strategy } from "@context/index";
-
-const SavesModal = React.lazy(() => import("@components/SavesModal"));
-const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Button, Controls, Select, ToggleLabel } from "./styles";
+import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
+
+const DecisionPanel = React.lazy(() => import("@components/DecisionPanel"));
+const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
+const SavesModal = React.lazy(() => import("@components/SavesModal"));
 
 type Props = {
   onNewGame?: () => void;
@@ -51,7 +51,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             New Game
           </Button>
         )}
-        <React.Suspense fallback={null}>
+        <React.Suspense
+          fallback={
+            <Button $variant="saves" disabled aria-label="Open saves panel">
+              💾 Saves
+            </Button>
+          }
+        >
           <SavesModal
             strategy={strategy}
             managedTeam={managedTeam}
@@ -68,7 +74,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
         <Button $variant="share" onClick={handleShareReplay}>
           Share seed
         </Button>
-        <React.Suspense fallback={null}>
+        <React.Suspense
+          fallback={
+            <HelpButton disabled aria-label="How to play">
+              ?
+            </HelpButton>
+          }
+        >
           <InstructionsModal />
         </React.Suspense>
         <AutoPlayGroup>
@@ -103,7 +115,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
           )}
         </AutoPlayGroup>
       </Controls>
-      {gameStarted && managerMode && <DecisionPanel strategy={strategy} />}
+      {gameStarted && managerMode && (
+        <React.Suspense fallback={null}>
+          <DecisionPanel strategy={strategy} />
+        </React.Suspense>
+      )}
     </>
   );
 };

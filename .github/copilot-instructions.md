@@ -145,7 +145,7 @@ Tests are **co-located** next to their source files (e.g. `src/context/strategy.
 
 ## Path Aliases
 
-All cross-directory imports use aliases (configured in `tsconfig.json` and `vitest.config.ts`):
+All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
 | Alias | Resolves to |
 |---|---|

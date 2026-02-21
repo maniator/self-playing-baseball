@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:deploy": "vite",
+    "dev:deploy": "vite build && vite preview",
     "build": "vite build",
     "test": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage",
@@ -37,7 +37,7 @@
     "@testing-library/jest-dom": "6.6.3",
     "@testing-library/react": "16.2.0",
     "@testing-library/user-event": "^14.5.2",
-    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-react": "^5.1.4",
     "@vitest/coverage-v8": "3.0.7",
     "commitizen": "^4.1.2",
     "cz-conventional-changelog": "3.2.0",
@@ -56,8 +56,8 @@
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8",
-    "vite": "^6.2.0",
-    "vite-plugin-pwa": "^0.21.1",
+    "vite": "^7.3.1",
+    "vite-plugin-pwa": "^1.2.0",
     "vitest": "3.0.7"
   },
   "husky": {

@@ -1,28 +1,46 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
-  plugins: [
-    react(),
-    VitePWA({
-      strategies: "injectManifest",
-      srcDir: "src",
-      filename: "sw.ts",
-      injectRegister: false,
-      manifest: false,
-      devOptions: {
-        enabled: false,
-      },
-      injectManifest: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,webmanifest}"],
-        rollupOptions: {
-          input: path.resolve(process.cwd(), "src/sw.ts"),
+  root: "src",
+  publicDir: path.resolve(__dirname, "public"),
+  build: {
+    outDir: path.resolve(__dirname, "dist"),
+    emptyOutDir: true,
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.split(path.sep).join("/");
+          if (
+            normalizedId.includes("/node_modules/react/") ||
+            normalizedId.includes("/node_modules/react-dom/") ||
+            normalizedId.includes("/node_modules/react-is/")
+          ) {
+            return "vendor-react";
+          }
+          if (
+            normalizedId.includes("/node_modules/rxdb/") ||
+            normalizedId.includes("/node_modules/dexie/") ||
+            normalizedId.includes("/node_modules/rxjs/") ||
+            normalizedId.includes("/node_modules/mingo/")
+          ) {
+            return "vendor-rxdb";
+          }
+          if (
+            normalizedId.includes("/node_modules/styled-components/") ||
+            normalizedId.includes("/node_modules/@dnd-kit/") ||
+            normalizedId.includes("/node_modules/usehooks-ts/") ||
+            normalizedId.includes("/node_modules/stylis/")
+          ) {
+            return "vendor-ui";
+          }
         },
       },
-    }),
-  ],
+    },
+  },
   resolve: {
     alias: {
       "@components": path.resolve(__dirname, "src/components"),
@@ -34,26 +52,41 @@ export default defineConfig({
       "@test": path.resolve(__dirname, "src/test"),
     },
   },
-  build: {
-    outDir: "dist",
-    sourcemap: false,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("/node_modules/react") || id.includes("/node_modules/react-dom") || id.includes("/node_modules/react-is")) {
-            return "vendor-react";
-          }
-          if (id.includes("/node_modules/rxdb") || id.includes("/node_modules/dexie") || id.includes("/node_modules/rxjs") || id.includes("/node_modules/mingo")) {
-            return "vendor-rxdb";
-          }
-          if (id.includes("/node_modules/styled-components") || id.includes("/node_modules/@dnd-kit") || id.includes("/node_modules/usehooks-ts") || id.includes("/node_modules/stylis")) {
-            return "vendor-ui";
-          }
-        },
+  plugins: [
+    react(),
+    VitePWA({
+      strategies: "injectManifest",
+      srcDir: ".",
+      filename: "sw.ts",
+      injectRegister: false,
+      manifest: false,
+      injectManifest: {
+        rollupFormat: "es",
       },
-    },
-  },
+    }),
+  ],
   define: {
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
+  },
+  test: {
+    environment: "jsdom",
+    globals: true,
+    setupFiles: ["./test/setup.ts"],
+    coverage: {
+      provider: "v8",
+      include: ["src/**/*.{ts,tsx}"],
+      exclude: [
+        "src/index.tsx",
+        "src/sw.ts",
+        "src/test/**",
+        "**/*.test.{ts,tsx}",
+      ],
+      thresholds: {
+        lines: 90,
+        functions: 90,
+        branches: 80,
+        statements: 90,
+      },
+    },
   },
 });
