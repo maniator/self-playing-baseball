@@ -103,11 +103,9 @@ describe("SaveStore.appendEvents", () => {
 
   it("stores at, payload, and schemaVersion on each event", async () => {
     const saveId = await store.createSave(makeSetup());
-    await store.appendEvents(saveId, [
-      { type: "hit", at: { inning: 3, half: 0, pitchIndex: 5 }, payload: { kind: "single" } },
-    ]);
+    await store.appendEvents(saveId, [{ type: "hit", at: 42, payload: { kind: "single" } }]);
     const ev = await db.events.findOne(`${saveId}:0`).exec();
-    expect(ev?.at).toEqual({ inning: 3, half: 0, pitchIndex: 5 });
+    expect(ev?.at).toBe(42);
     expect(ev?.payload).toEqual({ kind: "single" });
     expect(ev?.schemaVersion).toBe(1);
   });
