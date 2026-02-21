@@ -32,9 +32,12 @@ export const Dialog = styled.dialog`
   font-family: inherit;
   font-size: 14px;
   line-height: 1.6;
-  display: flex;
-  flex-direction: column;
   overflow: hidden;
+
+  &[open] {
+    display: flex;
+    flex-direction: column;
+  }
 
   &::backdrop {
     background: rgba(0, 0, 0, 0.75);
