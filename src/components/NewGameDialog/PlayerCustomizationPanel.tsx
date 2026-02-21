@@ -16,8 +16,6 @@ import type { PlayerCustomization, TeamCustomPlayerOverrides } from "@context/in
 import { generateRoster } from "@utils/roster";
 
 import { MOD_OPTIONS, PITCHER_MOD_FIELDS, PITCHER_STAT_LABELS } from "./constants";
-export type { ModPreset } from "./constants";
-export { MOD_OPTIONS } from "./constants";
 import {
   BaseStat,
   ModLabel,
@@ -33,6 +31,9 @@ import {
   TabBar,
 } from "./PlayerCustomizationPanel.styles";
 import SortableBatterRow from "./SortableBatterRow";
+
+export type { ModPreset } from "./constants";
+export { MOD_OPTIONS } from "./constants";
 
 const PITCHER_BASE_KEYS = ["control", "velocity", "stamina"] as const;
 
