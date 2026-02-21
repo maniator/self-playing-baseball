@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import * as saveStoreModule from "@storage/saveStore";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContextValue, GameAction } from "@context/index";
 import { GameContext } from "@context/index";
-import * as saveStoreModule from "@storage/saveStore";
 import { makeContextValue } from "@test/testHelpers";
 
 import { useRxdbGameSync } from "./useRxdbGameSync";

@@ -139,7 +139,7 @@ function buildFetcher(getDbFn: GetDb) {
         .sort(sortByName);
       if (al.length === 0 || nl.length === 0)
         throw new Error("MLB teams data missing league information");
-      void saveToDb(al, nl);
+      await saveToDb(al, nl);
       return { al, nl };
     } catch {
       // Fall back to stale DB data, then hardcoded fallback.

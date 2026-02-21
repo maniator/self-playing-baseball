@@ -12,6 +12,7 @@
       "@hooks/*": ["src/hooks/*"],
       "@utils/*": ["src/utils/*"],
       "@constants/*": ["src/constants/*"],
+      "@storage/*": ["src/storage/*"],
       "@test/*": ["src/test/*"]
     }
   },

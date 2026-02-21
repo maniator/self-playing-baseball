@@ -1,7 +1,6 @@
+import { _createTestDb, type BallgameDb } from "@storage/db";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import { _createTestDb, type BallgameDb } from "@storage/db";
 
 import { _buildFetchMlbTeams, AL_FALLBACK, NL_FALLBACK } from "./mlbTeams";
 
@@ -16,7 +15,7 @@ beforeEach(async () => {
 
 afterEach(async () => {
   vi.unstubAllGlobals();
-  await db.destroy();
+  await db.close();
 });
 
 describe("fetchMlbTeams", () => {
@@ -178,8 +177,6 @@ describe("fetchMlbTeams", () => {
     );
 
     await fetchMlbTeams();
-    // saveToDb is fire-and-forget — wait a tick for it to settle
-    await new Promise((r) => setTimeout(r, 50));
 
     const defunct = await db.teams.findOne("999").exec();
     expect(defunct).toBeNull();

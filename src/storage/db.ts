@@ -80,7 +80,7 @@ const teamsSchema: RxJsonSchema<TeamDoc> = {
     numericId: { type: "number", minimum: 0, maximum: 999_999, multipleOf: 1 },
     name: { type: "string" },
     abbreviation: { type: "string" },
-    league: { type: "string", enum: ["al", "nl"] },
+    league: { type: "string", enum: ["al", "nl"], maxLength: 2 },
     cachedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
