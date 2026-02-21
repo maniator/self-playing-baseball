@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const SavesButton = styled.button`
   background: #1a3a2a;
   color: #6effc0;
@@ -12,6 +14,11 @@ export const SavesButton = styled.button`
 
   &:hover {
     background: #254f38;
+  }
+
+  ${mq.mobile} {
+    padding: 8px 12px;
+    font-size: 13px;
   }
 `;
 
