@@ -1,10 +1,9 @@
 import * as React from "react";
 
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
-
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useSaveStore } from "@hooks/useSaveStore";
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 

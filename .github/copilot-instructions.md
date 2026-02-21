@@ -4,7 +4,7 @@
 
 **Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
-**Repository size:** ~96 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
+**Repository size:** ~96 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v6. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
 ---
 
@@ -21,22 +21,24 @@
 ├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier)
 ├── tsconfig.json                   # TypeScript config with path aliases
 ├── vitest.config.ts                # Vitest config with matching resolve.alias entries
+├── vite.config.ts                  # Vite config: React plugin, vite-plugin-pwa, path aliases
 ├── package.json                    # Scripts, dependencies, Husky/Commitizen config
 ├── yarn.lock
+├── index.html                      # Root HTML entry point for Vite
 ├── vercel.json                     # Vercel SPA routing config (version 2)
 ├── dist/                           # Build output (gitignored)
+├── public/                         # Static assets served as-is by Vite
+│   ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
+│   └── images/
+│       ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
+│       ├── baseball-192.png        # PWA icon 192×192
+│       ├── baseball-512.png        # PWA icon 512×512 / maskable
+│       ├── baseball-180.png        # Apple touch icon 180×180
+│       └── favicon-32.png          # Fallback favicon 32×32
 └── src/
-    ├── index.html                  # HTML entry point for Parcel (script has type="module")
     ├── index.scss                  # Global styles + mobile media queries
-    ├── index.tsx                   # React entry: initSeedFromUrl, registers sw.ts, createRoot
-    ├── sw.ts                       # Service worker: caches bundles, handles notificationclick
-    ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
-    ├── images/
-    │   ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
-    │   ├── baseball-192.png        # PWA icon 192×192 (generated from baseball.svg)
-    │   ├── baseball-512.png        # PWA icon 512×512 / maskable (generated from baseball.svg)
-    │   ├── baseball-180.png        # Apple touch icon 180×180
-    │   └── favicon-32.png          # Fallback favicon 32×32
+    ├── index.tsx                   # React entry: initSeedFromUrl, registers /sw.js, createRoot
+    ├── sw.ts                       # Service worker source (built by vite-plugin-pwa → dist/sw.js)
     ├── constants/
     │   ├── hitTypes.ts             # Hit enum: Single, Double, Triple, Homerun, Walk
     │   └── pitchTypes.ts           # PitchType enum + selectPitchType, pitchName helpers
@@ -201,7 +203,7 @@ vi.mock("@hooks/useSaveStore", () => ({
 ```
 
 **Dev-mode plugin** (`src/storage/db.ts`):  
-`RxDBDevModePlugin` is registered via a dynamic `import()` inside `initDb`, guarded by `process.env.NODE_ENV === "development"`. Parcel replaces the env var at build time, so the import is dead-code-eliminated in production and never loaded in tests.
+`RxDBDevModePlugin` is registered via a dynamic `import()` inside `initDb`, guarded by `import.meta.env.MODE === "development"`. Vite replaces the env check at build time, so the import is dead-code-eliminated in production and never loaded in tests.
 
 ### Collections
 
@@ -335,17 +337,16 @@ Added in the New Game dialog (`NewGameDialog/`):
 
 ## Notification System (Service Worker)
 
-`src/sw.ts` is a **module service worker** registered with `{ type: "module" }`. It pre-caches bundles, implements network-first + cache fallback, and listens for `notificationclick` events, posting `{ type: 'NOTIFICATION_ACTION', action, payload }` to the page.
+`src/sw.ts` is built by **vite-plugin-pwa** (`injectManifest` strategy) into `dist/sw.js`. It pre-caches assets via **workbox-precaching**, implements network-first + cache fallback, and listens for `notificationclick` events, posting `{ type: 'NOTIFICATION_ACTION', action, payload }` to the page.
 
-**Logging**: imports `createLogger` from `@utils/logger` and creates its own `log` singleton tagged with the Parcel `version` hash.
+**Logging**: imports `createLogger` from `./utils/logger` (relative import — SW is built in a separate Vite context) and creates its own `log` singleton tagged `"SW"`.
 
 ---
 
 ## Shared Logger (`src/utils/logger.ts`)
 
 - **`appLog`** — singleton for the main-app context. Import this directly; do not call `createLogger("app")` again.
-- **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)`.
-
+- **SW logger** — `sw.ts` creates its own: `const log = createLogger("SW")` (using relative `./utils/logger` import).
 ---
 
 ## Build & Development
@@ -354,8 +355,8 @@ Added in the New Game dialog (`NewGameDialog/`):
 
 ```bash
 yarn                  # install dependencies
-yarn dev              # parcel serve src/*.html (hot reload on http://localhost:1234)
-yarn build            # parcel build src/*.html → dist/
+yarn dev              # vite (hot reload on http://localhost:5173)
+yarn build            # vite build → dist/
 yarn test             # vitest run (one-shot)
 yarn test:coverage    # vitest run --coverage (thresholds: lines/functions/statements 90%, branches 80%)
 yarn lint             # ESLint check
@@ -363,7 +364,7 @@ yarn lint:fix         # ESLint auto-fix
 yarn format:check     # Prettier check
 ```
 
-**TypeScript** is compiled by Parcel (no standalone `tsc` build step). TypeScript errors surface as Parcel build errors.
+**TypeScript** is compiled by Vite (no standalone `tsc` build step). TypeScript errors surface as Vite build errors.
 
 ---
 
@@ -391,9 +392,9 @@ Validate changes by:
 
 ## Common Gotchas
 
-- **`tsconfig.json` exists** with `moduleResolution: "node"` and path aliases. Parcel reads it automatically. Do not remove or change `moduleResolution` without testing the Parcel build.
-- **Parcel v2 (not v1):** Use Parcel v2 conventions — the HTML `<script>` requires `type="module"`, no `"main"` field in `package.json`.
-- **Service worker is a module worker:** `src/sw.ts` uses ES `import`/`export` and is registered with `{ type: "module" }`.
+- **`tsconfig.json` exists** with `moduleResolution: "node"` and path aliases. Vite reads it automatically. Do not remove or change `moduleResolution` without testing the Vite build.
+- **Vite (not Parcel):** The root `index.html` lives at the project root (not `src/`). Static assets live in `public/` and are referenced with absolute paths (e.g. `/images/baseball.svg`).
+- **Service worker is registered as `/sw.js`** (built by vite-plugin-pwa into `dist/sw.js`). `src/index.tsx` registers it with `navigator.serviceWorker.register("/sw.js")`.
 - **React 19:** Entry point uses `createRoot` from `react-dom/client`.
 - **React import style:** Files use `import * as React from "react"` (not the default import).
 - **Styled-components v6:** Custom props **must** be typed via generics, e.g. `styled.div<{ $active: boolean }>`. Use `$propName` (transient props) for non-HTML props.

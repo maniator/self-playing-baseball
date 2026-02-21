@@ -1,8 +1,7 @@
 import * as React from "react";
 
-import type { SaveDoc } from "@storage/types";
-
 import type { Strategy } from "@context/index";
+import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,

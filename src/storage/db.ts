@@ -97,7 +97,7 @@ async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
-  if (process.env.NODE_ENV === "development") {
+  if (import.meta.env.MODE === "development") {
     devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
       addRxPlugin(RxDBDevModePlugin);
     });

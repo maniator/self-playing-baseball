@@ -1,8 +1,9 @@
 import * as React from "react";
 
+import { useLiveRxQuery } from "rxdb/plugins/react";
+
 import { SaveStore } from "@storage/saveStore";
 import type { GameEvent, GameSetup, ProgressSummary, SaveDoc } from "@storage/types";
-import { useLiveRxQuery } from "rxdb/plugins/react";
 
 export interface SaveStoreHook {
   /** Reactively-updated list of all saves, sorted by most recently updated. */

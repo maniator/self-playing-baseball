@@ -2,12 +2,13 @@ import "fake-indexeddb/auto";
 
 import * as React from "react";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
-import { makeSaveStore } from "@storage/saveStore";
 import { renderHook, waitFor } from "@testing-library/react";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+
+import { _createTestDb, type BallgameDb } from "@storage/db";
+import { makeSaveStore } from "@storage/saveStore";
 
 import { useSaveStore } from "./useSaveStore";
 

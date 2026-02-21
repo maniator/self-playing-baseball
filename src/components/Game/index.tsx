@@ -1,12 +1,12 @@
 import * as React from "react";
 
-import type { BallgameDb } from "@storage/db";
-import { getDb } from "@storage/db";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 import styled from "styled-components";
 
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
+import type { BallgameDb } from "@storage/db";
+import { getDb } from "@storage/db";
 
 import GameInner from "./GameInner";
 

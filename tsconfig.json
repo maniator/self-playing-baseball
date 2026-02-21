@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "target": "ES2020",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "node",
-    "jsx": "react",
+    "jsx": "react-jsx",
     "strict": true,
     "baseUrl": ".",
     "paths": {

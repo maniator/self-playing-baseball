@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -14,6 +13,7 @@ import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
