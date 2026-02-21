@@ -3,6 +3,7 @@ import * as React from "react";
 import type { GameAction } from "@context/index";
 import { useGameContext } from "@context/index";
 import { SaveStore } from "@storage/saveStore";
+import { appLog } from "@utils/logger";
 import { getRngState } from "@utils/rng";
 
 /** Action types that represent meaningful game events (stored in the event log). */
@@ -74,15 +75,19 @@ export const useRxdbGameSync = (
         at: eventAt,
         // Ensure payload is always an object — some action types (e.g.
         // set_one_pitch_modifier, set_pinch_hitter_strategy, set_defensive_shift)
-        // dispatch string/boolean values directly.
+        // dispatch string/boolean values directly; undefined/null become {}.
         payload:
-          a.payload !== null && typeof a.payload === "object"
-            ? (a.payload as Record<string, unknown>)
-            : { value: a.payload },
+          a.payload === undefined || a.payload === null
+            ? {}
+            : typeof a.payload === "object"
+              ? (a.payload as Record<string, unknown>)
+              : { value: a.payload },
       }));
 
     if (events.length > 0) {
-      SaveStore.appendEvents(saveId, events).catch(() => {});
+      SaveStore.appendEvents(saveId, events).catch((err) => {
+        appLog.error("useRxdbGameSync: failed to append events", err);
+      });
     }
   }, [pitchKey, rxSaveIdRef, actionBufferRef]);
 
@@ -110,7 +115,9 @@ export const useRxdbGameSync = (
         state: state,
         rngState: getRngState(),
       },
-    }).catch(() => {});
+    }).catch((err) => {
+      appLog.error("useRxdbGameSync: failed to update progress (half-inning)", err);
+    });
   }, [halfKey, rxSaveIdRef]);
 
   // Update progress when the game ends.
@@ -125,7 +132,8 @@ export const useRxdbGameSync = (
         state: state,
         rngState: getRngState(),
       },
-    }).catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameOver]);
+    }).catch((err) => {
+      appLog.error("useRxdbGameSync: failed to update progress (game over)", err);
+    });
+  }, [gameOver, rxSaveIdRef]);
 };

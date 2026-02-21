@@ -148,14 +148,16 @@ function buildStore(getDbFn: GetDb) {
      * Permanently removes a save header and all its associated event documents.
      */
     async deleteSave(saveId: string): Promise<void> {
+      // Clear in-memory state first so any concurrent appendEvents call that
+      // starts after this point will not resurrect a zombie event stream for
+      // the deleted save.
+      nextIdxMap.delete(saveId);
+      appendQueues.delete(saveId);
       const db = await getDbFn();
       const headerDoc = await db.saves.findOne(saveId).exec();
       if (headerDoc) await headerDoc.remove();
       const eventDocs = await db.events.find({ selector: { saveId } }).exec();
       await Promise.all(eventDocs.map((d) => d.remove()));
-      // Purge in-memory state so a future save reusing the same id starts fresh.
-      nextIdxMap.delete(saveId);
-      appendQueues.delete(saveId);
     },
 
     /** Returns all save headers ordered by most recently updated. */
