@@ -71,8 +71,7 @@
     │   ├── mlbTeams.ts             # Fetches MLB teams from MLB Stats API; caches per-team in RxDB `teams` collection
     │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
     │   ├── roster.ts               # BaseStats type + default lineup order helpers used by player customisation
-    │   ├── saves.ts                # currentSeedStr(), restoreRng() PRNG utilities + re-exports from saves.signing.ts
-    │   └── saves.signing.ts        # ExportedSave / SaveSlot / SaveSetup types; exportSave / importSave / SAVE_SIGNING_KEY
+    │   ├── saves.ts                # currentSeedStr() — returns current seed as base-36 string
     ├── storage/                    # RxDB local-only persistence (IndexedDB, no sync)
     │   ├── db.ts                   # Lazy-singleton BallgameDb; collections: saves, events, teams; exports getDb(), savesCollection(), eventsCollection(), teamsCollection(), _createTestDb()
     │   ├── saveStore.ts            # SaveStore singleton + makeSaveStore() factory:
@@ -99,7 +98,6 @@
     │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
     │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
     │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler
-    │   ├── useAutoSave.ts          # Writes auto-save to localStorage after every half-inning / game-over
     │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
     │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
