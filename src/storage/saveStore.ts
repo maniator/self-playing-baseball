@@ -90,8 +90,8 @@ function buildStore(getDbFn: GetDb) {
         }
 
         const startIdx = nextIdxMap.get(saveId)!;
-        // Increment BEFORE the async DB write so the next queued batch sees the
-        // updated value immediately.
+        // Optimistically advance the counter so the next queued batch sees the
+        // updated value immediately (writes are serialized by the queue).
         nextIdxMap.set(saveId, startIdx + events.length);
 
         const now = Date.now();
@@ -106,7 +106,13 @@ function buildStore(getDbFn: GetDb) {
           schemaVersion: SCHEMA_VERSION,
         }));
 
-        await db.events.bulkInsert(docs);
+        try {
+          await db.events.bulkInsert(docs);
+        } catch (err) {
+          // Roll back the counter so the next batch retries from the correct idx.
+          nextIdxMap.set(saveId, startIdx);
+          throw err;
+        }
       });
 
       // Keep the chain alive; swallow errors so one failed batch doesn't

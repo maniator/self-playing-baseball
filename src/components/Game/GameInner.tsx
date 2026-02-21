@@ -12,8 +12,8 @@ import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
 import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import { useSaveStore } from "@hooks/useSaveStore";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
+import { useSaveStore } from "@hooks/useSaveStore";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -50,17 +50,18 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
   // Reactive saves list — used for auto-resume detection on initial load.
-  const { saves, savesLoading, createSave } = useSaveStore();
+  const { saves, createSave } = useSaveStore();
 
-  // Determine the matched auto-save from the reactive list (once on first load).
-  const hasInitializedRef = React.useRef(false);
+  // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
+  const restoredRef = React.useRef(false);
   const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
-    if (savesLoading || hasInitializedRef.current) return;
-    hasInitializedRef.current = true;
+    if (restoredRef.current) return;
     const matched = findMatchedSave(saves);
-    if (matched) setRxAutoSave(matched);
-  }, [saves, savesLoading]);
+    if (!matched) return;
+    restoredRef.current = true;
+    setRxAutoSave(matched);
+  }, [saves]);
 
   // Restore state from the RxDB save as soon as it is loaded.
   React.useEffect(() => {

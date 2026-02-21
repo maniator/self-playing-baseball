@@ -1,14 +1,12 @@
 import * as React from "react";
 
-import { savesCollection } from "@storage/db";
 import { SaveStore } from "@storage/saveStore";
 import type { GameEvent, GameSetup, ProgressSummary, SaveDoc } from "@storage/types";
+import { useLiveRxQuery } from "rxdb/plugins/react";
 
 export interface SaveStoreHook {
   /** Reactively-updated list of all saves, sorted by most recently updated. */
   saves: SaveDoc[];
-  /** True until the RxDB subscription has emitted its first result. */
-  savesLoading: boolean;
   createSave: (setup: GameSetup, meta?: { name?: string }) => Promise<string>;
   appendEvents: (saveId: string, events: GameEvent[]) => Promise<void>;
   updateProgress: (saveId: string, progressIdx: number, summary?: ProgressSummary) => Promise<void>;
@@ -17,37 +15,28 @@ export interface SaveStoreHook {
   importRxdbSave: (json: string) => Promise<string>;
 }
 
+const SAVES_QUERY = { selector: {}, sort: [{ updatedAt: "desc" as const }] };
+
 /**
  * React hook for accessing RxDB saves.
  *
- * Subscribes to the `saves` collection via RxDB's built-in `find().$`
- * observable so the returned `saves` list re-renders automatically whenever
- * any save is created, updated, or deleted — no manual `refresh()` needed.
+ * Uses RxDB's built-in `useLiveRxQuery` (from `rxdb/plugins/react`) so the
+ * returned `saves` list re-renders automatically whenever any save is created,
+ * updated, or deleted — no manual refresh needed.
  *
+ * Requires `<RxDatabaseProvider>` to be present in the component tree.
  * All write operations are stable `useCallback` wrappers around `SaveStore`.
  */
 export const useSaveStore = (): SaveStoreHook => {
-  const [saves, setSaves] = React.useState<SaveDoc[]>([]);
-  const [savesLoading, setSavesLoading] = React.useState(true);
+  const { results } = useLiveRxQuery<SaveDoc>({
+    collection: "saves",
+    query: SAVES_QUERY,
+  });
 
-  React.useEffect(() => {
-    let sub: { unsubscribe: () => void } | undefined;
-
-    savesCollection()
-      .then((col) => {
-        sub = col
-          .find({ sort: [{ updatedAt: "desc" }] })
-          .$.subscribe((docs) => {
-            setSaves(docs.map((d) => d.toJSON() as unknown as SaveDoc));
-            setSavesLoading(false);
-          });
-      })
-      .catch(() => {
-        setSavesLoading(false);
-      });
-
-    return () => sub?.unsubscribe();
-  }, []);
+  const saves = React.useMemo(
+    () => results.map((d) => d.toJSON() as unknown as SaveDoc),
+    [results],
+  );
 
   const createSave = React.useCallback(
     (setup: GameSetup, meta?: { name?: string }) => SaveStore.createSave(setup, meta),
@@ -72,14 +61,10 @@ export const useSaveStore = (): SaveStoreHook => {
     [],
   );
 
-  const importRxdbSave = React.useCallback(
-    (json: string) => SaveStore.importRxdbSave(json),
-    [],
-  );
+  const importRxdbSave = React.useCallback((json: string) => SaveStore.importRxdbSave(json), []);
 
   return {
     saves,
-    savesLoading,
     createSave,
     appendEvents,
     updateProgress,

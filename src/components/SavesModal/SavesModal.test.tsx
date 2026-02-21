@@ -44,15 +44,22 @@ const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({
   ...overrides,
 });
 
-vi.mock("@storage/saveStore", () => ({
-  SaveStore: {
-    listSaves: vi.fn().mockResolvedValue([]),
-    createSave: vi.fn().mockResolvedValue("save_1"),
-    updateProgress: vi.fn().mockResolvedValue(undefined),
-    deleteSave: vi.fn().mockResolvedValue(undefined),
-    exportRxdbSave: vi.fn().mockResolvedValue('{"version":1,"sig":"abc","header":{},"events":[]}'),
-    importRxdbSave: vi.fn().mockResolvedValue(undefined),
-  },
+// Default no-op store returned by the hook mock.
+const makeMockStore = (
+  overrides: Partial<ReturnType<(typeof import("@hooks/useSaveStore"))["useSaveStore"]>> = {},
+) => ({
+  saves: [] as SaveDoc[],
+  createSave: vi.fn().mockResolvedValue("save_1"),
+  updateProgress: vi.fn().mockResolvedValue(undefined),
+  deleteSave: vi.fn().mockResolvedValue(undefined),
+  exportRxdbSave: vi.fn().mockResolvedValue('{"version":1,"sig":"abc","header":{},"events":[]}'),
+  importRxdbSave: vi.fn().mockResolvedValue(undefined),
+  appendEvents: vi.fn().mockResolvedValue(undefined),
+  ...overrides,
+});
+
+vi.mock("@hooks/useSaveStore", () => ({
+  useSaveStore: vi.fn(() => makeMockStore()),
 }));
 
 vi.mock("@utils/rng", async (importOriginal) => {
@@ -93,8 +100,8 @@ const openPanel = () =>
 describe("SavesModal", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore());
     // Restore showModal/close mock implementations after vi.clearAllMocks()
     HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
       this: HTMLDialogElement,
@@ -126,32 +133,32 @@ describe("SavesModal", () => {
     expect(screen.getByRole("button", { name: /update save/i })).toBeInTheDocument();
   });
 
-  it("calls SaveStore.createSave and onSaveIdChange when save button is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls createSave and onSaveIdChange when save button is clicked", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockCreateSave = vi.fn().mockResolvedValue("save_1");
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ createSave: mockCreateSave }));
     const onSaveIdChange = vi.fn();
     renderModal({ onSaveIdChange });
     await openPanel();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /save current game/i }));
-      await vi.waitFor(() => expect(SaveStore.createSave).toHaveBeenCalled());
+      await vi.waitFor(() => expect(mockCreateSave).toHaveBeenCalled());
     });
     expect(onSaveIdChange).toHaveBeenCalledWith("save_1");
   });
 
   it("shows saved slot name after opening", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [makeSlot()] }));
     renderModal();
     await openPanel();
     expect(screen.getByText("Test save")).toBeInTheDocument();
   });
 
-  it("calls SaveStore.updateProgress + dispatch + onSaveIdChange when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    const slot = makeSlot({
-      stateSnapshot: { state: makeState(), rngState: 42 },
-    });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+  it("calls updateProgress + dispatch + onSaveIdChange when Load is clicked", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: 42 } });
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onSaveIdChange = vi.fn();
     const dispatch = vi.fn();
     renderModal({ onSaveIdChange }, { dispatch });
@@ -165,9 +172,9 @@ describe("SavesModal", () => {
   });
 
   it("calls onSetupRestore with typed setup when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+    const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onSetupRestore = vi.fn();
     renderModal({ onSetupRestore });
     await openPanel();
@@ -179,20 +186,27 @@ describe("SavesModal", () => {
     });
   });
 
-  it("calls SaveStore.deleteSave when ✕ is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+  it("calls deleteSave when ✕ is clicked", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockDeleteSave = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeMockStore({ saves: [makeSlot()], deleteSave: mockDeleteSave }),
+    );
     renderModal();
     await openPanel();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
     });
-    expect(SaveStore.deleteSave).toHaveBeenCalledWith("save_1");
+    expect(mockDeleteSave).toHaveBeenCalledWith("save_1");
   });
 
   it("shows an error message when import text is invalid", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.importRxdbSave).mockRejectedValue(new Error("Invalid JSON"));
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeMockStore({
+        importRxdbSave: vi.fn().mockRejectedValue(new Error("Invalid JSON")),
+      }),
+    );
     renderModal();
     await openPanel();
     fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
@@ -204,8 +218,10 @@ describe("SavesModal", () => {
     expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
   });
 
-  it("calls SaveStore.importRxdbSave on successful paste import", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls importRxdbSave on successful paste import", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockImport = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ importRxdbSave: mockImport }));
     renderModal();
     await openPanel();
     fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
@@ -214,7 +230,7 @@ describe("SavesModal", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /import from text/i }));
     });
-    expect(SaveStore.importRxdbSave).toHaveBeenCalledWith('{"valid":"json"}');
+    expect(mockImport).toHaveBeenCalledWith('{"valid":"json"}');
   });
 
   it("shows 'Failed to read file' when FileReader errors", async () => {
@@ -240,9 +256,12 @@ describe("SavesModal", () => {
   });
 
   it("calls onSaveIdChange(null) when the current save is deleted", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockDeleteSave = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeMockStore({ saves: [makeSlot()], deleteSave: mockDeleteSave }),
+    );
     const onSaveIdChange = vi.fn();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
     renderModal({ currentSaveId: "save_1", onSaveIdChange });
     await openPanel();
     await act(async () => {
@@ -251,10 +270,15 @@ describe("SavesModal", () => {
     expect(onSaveIdChange).toHaveBeenCalledWith(null);
   });
 
-  it("calls SaveStore.exportRxdbSave and createObjectURL when Export is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls exportRxdbSave and createObjectURL when Export is clicked", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    const mockExport = vi
+      .fn()
+      .mockResolvedValue('{"version":1,"sig":"abc","header":{},"events":[]}');
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeMockStore({ saves: [slot], exportRxdbSave: mockExport }),
+    );
     (URL as unknown as Record<string, unknown>).createObjectURL = vi
       .fn()
       .mockReturnValue("blob:fake");
@@ -268,7 +292,7 @@ describe("SavesModal", () => {
           expect((URL as unknown as Record<string, unknown>).createObjectURL).toHaveBeenCalled(),
         );
       });
-      expect(SaveStore.exportRxdbSave).toHaveBeenCalledWith(slot.id);
+      expect(mockExport).toHaveBeenCalledWith(slot.id);
     } finally {
       delete (URL as unknown as Record<string, unknown>).createObjectURL;
       delete (URL as unknown as Record<string, unknown>).revokeObjectURL;
@@ -276,9 +300,9 @@ describe("SavesModal", () => {
   });
 
   it("updates URL seed on load", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+    const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot({ seed: "xyzseed" });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     renderModal();
     await openPanel();
     const spy = vi.spyOn(window.history, "replaceState");

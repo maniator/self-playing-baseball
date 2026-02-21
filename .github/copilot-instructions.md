@@ -4,7 +4,7 @@
 
 **Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
-**Repository size:** ~95 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v16 (IndexedDB, local-only — no sync).
+**Repository size:** ~96 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Parcel v2.x. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
 ---
 
@@ -175,7 +175,33 @@ Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 
 ## RxDB Persistence Layer (`src/storage/`)
 
-Local-only IndexedDB persistence via **RxDB v16**. No replication, no sync, no leader election.
+Local-only IndexedDB persistence via **RxDB v17** (`rxdb@17.0.0-beta.7`). No replication, no sync, no leader election.
+
+### React integration — `rxdb/plugins/react`
+
+RxDB v17 ships a first-party React plugin (`rxdb/plugins/react`). The app uses it for reactive UI access to save data.
+
+**Provider setup** (`src/components/Game/index.tsx`):  
+`Game` initialises the database via `getDb()`, then wraps the entire tree with `<RxDatabaseProvider database={db}>`. Until the DB promise resolves the tree renders `null` (takes < 50 ms with Dexie).
+
+**`useSaveStore` hook** (`src/hooks/useSaveStore.ts`):  
+Uses `useLiveRxQuery` from `rxdb/plugins/react` to subscribe to the `saves` collection reactively (auto-updates on every insert/update/delete). Exposes stable `useCallback` wrappers for all write operations. Always import from `@hooks/useSaveStore`; **never** call `SaveStore` methods directly in UI components.
+
+```ts
+const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
+  useSaveStore();
+```
+
+`useSaveStore` **requires `<RxDatabaseProvider>`** in the tree. In component tests mock the entire hook:
+
+```ts
+vi.mock("@hooks/useSaveStore", () => ({
+  useSaveStore: vi.fn(() => ({ saves: [], createSave: vi.fn(), ... })),
+}));
+```
+
+**Dev-mode plugin** (`src/storage/db.ts`):  
+`RxDBDevModePlugin` is registered via a dynamic `import()` inside `initDb`, guarded by `process.env.NODE_ENV === "development"`. Parcel replaces the env var at build time, so the import is dead-code-eliminated in production and never loaded in tests.
 
 ### Collections
 
@@ -185,19 +211,20 @@ Local-only IndexedDB persistence via **RxDB v16**. No replication, no sync, no l
 | `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. Indexed on `saveId` and compound `[saveId, idx]`. |
 | `teams` | MLB team cache (`TeamDoc`). Each team is individually upserted/deleted by numeric MLB ID. Replaces the old `localStorage` team cache. |
 
-### SaveStore API (exported singleton from `@storage/saveStore`)
+### SaveStore API (low-level singleton from `@storage/saveStore`)
 
 ```ts
 SaveStore.createSave(setup: GameSaveSetup, meta?: { name?: string }): Promise<string>
 SaveStore.appendEvents(saveId: string, events: GameEvent[]): Promise<void>   // serialized per-save queue + in-memory idx counter
 SaveStore.updateProgress(saveId: string, progressIdx: number, summary?: ProgressSummary): Promise<void>
-SaveStore.listSaves(): Promise<SaveDoc[]>
 SaveStore.deleteSave(saveId: string): Promise<void>
 SaveStore.exportRxdbSave(saveId: string): Promise<string>   // FNV-1a signed JSON bundle
 SaveStore.importRxdbSave(json: string): Promise<string>     // verifies signature, upserts docs, returns saveId
 ```
 
-Use `makeSaveStore(getDbFn)` to create an isolated instance for tests (pass `_createTestDb`).
+`SaveStore` is consumed by **`useSaveStore`** (via stable `useCallback` wrappers). Components and hooks must use `useSaveStore()` — never import `SaveStore` directly in UI code.
+
+Use `makeSaveStore(getDbFn)` to create an isolated instance for tests (pass `async () => db` where `db` is a test DB).
 
 ### Game Loop Integration
 

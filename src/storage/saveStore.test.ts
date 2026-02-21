@@ -1,6 +1,8 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { makeState } from "@test/testHelpers";
+
 import { _createTestDb, type BallgameDb } from "./db";
 import { makeSaveStore } from "./saveStore";
 import type { GameSetup } from "./types";
@@ -166,19 +168,20 @@ describe("SaveStore.updateProgress", () => {
   it("stores inningSnapshot when provided", async () => {
     const saveId = await store.createSave(makeSetup());
     await store.updateProgress(saveId, 3, {
-      inningSnapshot: { inning: 4, half: 1 },
+      inningSnapshot: { inning: 4, atBat: 1 },
     });
     const doc = await db.saves.findOne(saveId).exec();
-    expect(doc?.inningSnapshot).toEqual({ inning: 4, half: 1 });
+    expect(doc?.inningSnapshot).toEqual({ inning: 4, atBat: 1 });
   });
 
   it("stores stateSnapshot when provided", async () => {
     const saveId = await store.createSave(makeSetup());
     await store.updateProgress(saveId, 5, {
-      stateSnapshot: { state: { inning: 3 }, rngState: 99 },
+      stateSnapshot: { state: makeState({ inning: 3 }), rngState: 99 },
     });
     const doc = await db.saves.findOne(saveId).exec();
-    expect(doc?.stateSnapshot).toEqual({ state: { inning: 3 }, rngState: 99 });
+    expect(doc?.stateSnapshot?.state.inning).toBe(3);
+    expect(doc?.stateSnapshot?.rngState).toBe(99);
   });
 
   it("throws for an unknown saveId", async () => {

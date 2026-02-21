@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const HelpButton = styled.button`
   background: rgba(47, 63, 105, 0.7);
   color: #aaccff;
@@ -43,7 +45,7 @@ export const Dialog = styled.dialog`
     background: rgba(0, 0, 0, 0.75);
   }
 
-  @media (max-width: 600px) {
+  ${mq.mobile} {
     position: fixed;
     inset: 0;
     width: 100vw;

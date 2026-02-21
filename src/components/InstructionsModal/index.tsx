@@ -22,7 +22,7 @@ interface SectionProps {
 }
 
 const Section: React.FunctionComponent<SectionProps> = ({ title, defaultOpen, children }) => (
-  <SectionDetails open={defaultOpen}>
+  <SectionDetails defaultOpen={defaultOpen}>
     <SectionSummary>{title}</SectionSummary>
     <SectionBody>{children}</SectionBody>
   </SectionDetails>

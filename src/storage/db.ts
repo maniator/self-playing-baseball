@@ -1,4 +1,5 @@
 import {
+  addRxPlugin,
   createRxDatabase,
   type RxCollection,
   type RxDatabase,
@@ -61,7 +62,7 @@ const eventsSchema: RxJsonSchema<EventDoc> = {
     id: { type: "string", maxLength: 256 },
     saveId: { type: "string", maxLength: 128 },
     idx: { type: "number", minimum: 0, maximum: 9_999_999, multipleOf: 1 },
-    at: {},
+    at: { type: "number", minimum: 0, maximum: 9_999_999, multipleOf: 1 },
     type: { type: "string" },
     payload: { type: "object", additionalProperties: true },
     ts: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
@@ -88,10 +89,21 @@ const teamsSchema: RxJsonSchema<TeamDoc> = {
   indexes: ["league", "cachedAt"],
 };
 
+// Promise-based guard: set synchronously before the first await so concurrent
+// initDb calls share the same load (JS is single-threaded; ??= is atomic here).
+let devModePluginPromise: Promise<void> | null = null;
+
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
+  if (process.env.NODE_ENV === "development") {
+    devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
+      addRxPlugin(RxDBDevModePlugin);
+    });
+    await devModePluginPromise;
+  }
+
   const db = await createRxDatabase<DbCollections>({
     name,
     storage: storage as RxStorage<object, object>,
@@ -123,7 +135,7 @@ export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (aw
  * Creates a fresh database with the given storage — intended for tests only.
  * Uses a random name by default so concurrent test files sharing the same
  * in-memory RxDB storage never produce COL23 name collisions.
- * Callers are responsible for calling `db.destroy()` when finished.
+ * Callers are responsible for calling `db.close()` when finished.
  */
 export const _createTestDb = (
   storage: RxStorage<unknown, unknown>,
