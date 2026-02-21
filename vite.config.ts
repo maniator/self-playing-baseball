@@ -37,6 +37,21 @@ export default defineConfig({
   build: {
     outDir: "dist",
     sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("/node_modules/react") || id.includes("/node_modules/react-dom") || id.includes("/node_modules/react-is")) {
+            return "vendor-react";
+          }
+          if (id.includes("/node_modules/rxdb") || id.includes("/node_modules/dexie") || id.includes("/node_modules/rxjs") || id.includes("/node_modules/mingo")) {
+            return "vendor-rxdb";
+          }
+          if (id.includes("/node_modules/styled-components") || id.includes("/node_modules/@dnd-kit") || id.includes("/node_modules/usehooks-ts") || id.includes("/node_modules/stylis")) {
+            return "vendor-ui";
+          }
+        },
+      },
+    },
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),

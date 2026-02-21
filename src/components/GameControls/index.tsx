@@ -1,9 +1,10 @@
 import * as React from "react";
 
 import DecisionPanel from "@components/DecisionPanel";
-import InstructionsModal from "@components/InstructionsModal";
-import SavesModal from "@components/SavesModal";
 import { Strategy } from "@context/index";
+
+const SavesModal = React.lazy(() => import("@components/SavesModal"));
+const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
@@ -50,22 +51,26 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             New Game
           </Button>
         )}
-        <SavesModal
-          strategy={strategy}
-          managedTeam={managedTeam}
-          managerMode={managerMode}
-          currentSaveId={currentSaveId}
-          onSaveIdChange={setCurrentSaveId}
-          onSetupRestore={(setup) => {
-            setStrategy(setup.strategy);
-            setManagedTeam(setup.managedTeam);
-            setManagerMode(setup.managerMode ?? false);
-          }}
-        />
+        <React.Suspense fallback={null}>
+          <SavesModal
+            strategy={strategy}
+            managedTeam={managedTeam}
+            managerMode={managerMode}
+            currentSaveId={currentSaveId}
+            onSaveIdChange={setCurrentSaveId}
+            onSetupRestore={(setup) => {
+              setStrategy(setup.strategy);
+              setManagedTeam(setup.managedTeam);
+              setManagerMode(setup.managerMode ?? false);
+            }}
+          />
+        </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>
           Share seed
         </Button>
-        <InstructionsModal />
+        <React.Suspense fallback={null}>
+          <InstructionsModal />
+        </React.Suspense>
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
