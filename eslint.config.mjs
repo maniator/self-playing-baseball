@@ -94,6 +94,22 @@ export default tseslint.config(
     },
   },
 
+  // E2E tests and Playwright config: Node.js environment, relaxed rules
+  {
+    files: ["e2e/**/*.ts", "playwright.config.ts"],
+    languageOptions: {
+      globals: { ...globals.node },
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-console": "off",
+      // React hooks rules do not apply to Playwright test files
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
+    },
+  },
+
   // Prettier (must be last – disables all conflicting formatting rules)
   prettierRecommended,
 );

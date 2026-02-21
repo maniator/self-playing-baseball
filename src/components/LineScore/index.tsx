@@ -46,7 +46,7 @@ const LineScore: React.FunctionComponent = () => {
     playLog.filter((e) => e.team === team && e.event !== Hit.Walk).length;
 
   return (
-    <Wrapper>
+    <Wrapper data-testid="line-score">
       <Table>
         <thead>
           <tr>
@@ -80,7 +80,7 @@ const LineScore: React.FunctionComponent = () => {
           ))}
         </tbody>
       </Table>
-      <BsoRow>
+      <BsoRow data-testid="bso-row">
         <BsoGroup>
           B
           {[0, 1, 2].map((i) => (

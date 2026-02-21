@@ -81,7 +81,7 @@ const Announcements: React.FunctionComponent = () => {
   }, [log, expanded]);
 
   return (
-    <>
+    <div data-testid="announcements">
       <HeadingRow>
         <span>Play-by-play</span>
         <Toggle
@@ -96,11 +96,15 @@ const Announcements: React.FunctionComponent = () => {
           {log.length === 0 ? (
             <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
           ) : (
-            log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)
+            log.map((announcement, idx) => (
+              <Log key={idx} data-testid="log-entry">
+                {announcement}
+              </Log>
+            ))
           )}
         </AnnouncementsArea>
       )}
-    </>
+    </div>
   );
 };
 

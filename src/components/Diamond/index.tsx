@@ -10,7 +10,7 @@ const Diamond: React.FunctionComponent = () => {
   const [first, second, third] = baseLayout;
 
   return (
-    <FieldWrapper>
+    <FieldWrapper data-testid="field">
       <OutfieldDiv>
         <DiamondDiv>
           <Mound />
