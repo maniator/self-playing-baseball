@@ -10,12 +10,21 @@ declare const self: ServiceWorkerGlobalScope & {
 
 const WB_MANIFEST: Array<{ url: string; revision: string | null }> = self.__WB_MANIFEST ?? [];
 
-// Derive a stable version string from the manifest content hashes so the
-// cache name changes automatically whenever the build output changes.
-const version =
-  WB_MANIFEST.slice(0, 4)
-    .map((e) => (e.revision ?? e.url).slice(0, 8))
-    .join("-") || "dev";
+// Derive a stable version string by hashing the full manifest so the cache
+// name rotates whenever any entry URL or revision changes (including when
+// revision is null for fingerprinted filenames, whose URL prefix is stable).
+function hashManifest(entries: Array<{ url: string; revision: string | null }>): string {
+  if (entries.length === 0) return "dev";
+  const input = JSON.stringify(entries.map(({ url, revision }) => ({ url, revision })));
+  let h = 0x811c9dc5; // FNV-1a 32-bit offset basis
+  for (let i = 0; i < input.length; i++) {
+    h ^= input.charCodeAt(i);
+    h = Math.imul(h, 0x01000193); // FNV-1a 32-bit prime
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+const version = hashManifest(WB_MANIFEST);
 
 const log = createLogger(`SW ${version.slice(0, 8)}`);
 

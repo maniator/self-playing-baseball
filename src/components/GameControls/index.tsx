@@ -51,8 +51,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             New Game
           </Button>
         )}
-        {/* Lazy-loaded: chunks are preloaded by Vite so the fallback is not visible in practice */}
-        <React.Suspense fallback={null}>
+        <React.Suspense
+          fallback={
+            <Button $variant="saves" disabled aria-label="Open saves panel">
+              💾 Saves
+            </Button>
+          }
+        >
           <SavesModal
             strategy={strategy}
             managedTeam={managedTeam}
@@ -69,7 +74,13 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
         <Button $variant="share" onClick={handleShareReplay}>
           Share seed
         </Button>
-        <React.Suspense fallback={null}>
+        <React.Suspense
+          fallback={
+            <button disabled aria-label="How to play">
+              ?
+            </button>
+          }
+        >
           <InstructionsModal />
         </React.Suspense>
         <AutoPlayGroup>

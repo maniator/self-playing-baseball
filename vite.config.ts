@@ -12,13 +12,18 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("/node_modules/react/") || id.includes("/node_modules/react-dom/") || id.includes("/node_modules/react-is/")) {
+          const normalizedId = id.split(path.sep).join("/");
+          if (
+            normalizedId.includes("/node_modules/react/") ||
+            normalizedId.includes("/node_modules/react-dom/") ||
+            normalizedId.includes("/node_modules/react-is/")
+          ) {
             return "react-vendor";
           }
-          if (id.includes("/node_modules/styled-components/")) {
+          if (normalizedId.includes("/node_modules/styled-components/")) {
             return "styled-vendor";
           }
-          if (id.includes("/node_modules/@dnd-kit/")) {
+          if (normalizedId.includes("/node_modules/@dnd-kit/")) {
             return "dnd-vendor";
           }
         },

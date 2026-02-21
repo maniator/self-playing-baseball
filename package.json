@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:deploy": "vite preview",
+    "dev:deploy": "vite build && vite preview",
     "build": "vite build",
     "test": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage",
