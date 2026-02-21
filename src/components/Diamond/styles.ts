@@ -12,13 +12,6 @@ export const FieldWrapper = styled.div`
   ${mq.mobile} {
     flex: 1;
     height: auto;
-    /*
-     * Cap the wrapper at the field's natural content height so it doesn't
-     * grow into a tall black void.  Derived from OutfieldDiv size × 1.007
-     * (rotated-square bounding box) + a small breathing gap.
-     * min(62vw, 282px) ≈ min(59vw, 260px) × 1.06 + a few pixels.
-     */
-    max-height: min(62vw, 282px);
   }
 `;
 

@@ -7,7 +7,7 @@ import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Controls, NewGameButton, Select, ShareButton, ToggleLabel } from "./styles";
+import { AutoPlayGroup, Button, Controls, Select, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
@@ -45,7 +45,11 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
   return (
     <>
       <Controls>
-        {gameOver && onNewGame && <NewGameButton onClick={onNewGame}>New Game</NewGameButton>}
+        {gameOver && onNewGame && (
+          <Button $variant="new" onClick={onNewGame}>
+            New Game
+          </Button>
+        )}
         <SavesModal
           strategy={strategy}
           managedTeam={managedTeam}
@@ -58,7 +62,9 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             setManagerMode(setup.managerMode ?? false);
           }}
         />
-        <ShareButton onClick={handleShareReplay}>Share seed</ShareButton>
+        <Button $variant="share" onClick={handleShareReplay}>
+          Share seed
+        </Button>
         <InstructionsModal />
         <AutoPlayGroup>
           <ToggleLabel>

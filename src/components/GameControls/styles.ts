@@ -1,4 +1,4 @@
-import styled from "styled-components";
+import styled, { css } from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
@@ -15,31 +15,47 @@ export const Controls = styled.div`
   }
 `;
 
-export const Button = styled.button`
-  background: aquamarine;
-  color: darkblue;
+type ButtonVariant = "default" | "share" | "new" | "saves";
+
+const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
+  default: css`
+    background: aquamarine;
+    color: darkblue;
+    border: none;
+  `,
+  share: css`
+    background: #2f3f69;
+    color: #fff;
+    border: none;
+  `,
+  new: css`
+    background: #22c55e;
+    color: #fff;
+    border: none;
+    font-weight: bold;
+  `,
+  saves: css`
+    background: #1a3a2a;
+    color: #6effc0;
+    border: 1px solid #3a7a5a;
+    &:hover {
+      background: #254f38;
+    }
+  `,
+};
+
+export const Button = styled.button<{ $variant?: ButtonVariant }>`
   padding: 12px 18px;
   border-radius: 30px;
   cursor: pointer;
-  border: none;
   font-family: inherit;
   font-size: 14px;
+  ${({ $variant = "default" }) => variantStyles[$variant]}
 
   ${mq.mobile} {
     padding: 8px 12px;
     font-size: 13px;
   }
-`;
-
-export const ShareButton = styled(Button)`
-  background: #2f3f69;
-  color: #fff;
-`;
-
-export const NewGameButton = styled(Button)`
-  background: #22c55e;
-  color: #fff;
-  font-weight: bold;
 `;
 
 export const AutoPlayGroup = styled.div`
