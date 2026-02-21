@@ -94,6 +94,26 @@ export const BatterUpButton = styled(Button)`
   font-weight: bold;
 `;
 
+export const HelpButton = styled.button`
+  background: rgba(47, 63, 105, 0.7);
+  color: #aaccff;
+  border: 1px solid #4a6090;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  font-size: 15px;
+  font-family: inherit;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover {
+    background: rgba(74, 96, 144, 0.9);
+    color: #fff;
+  }
+`;
+
 export const Select = styled.select`
   background: #1a2440;
   border: 1px solid #4a6090;

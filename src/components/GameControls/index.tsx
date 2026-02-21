@@ -4,7 +4,7 @@ import { Strategy } from "@context/index";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Button, Controls, Select, ToggleLabel } from "./styles";
+import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
@@ -76,9 +76,9 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
         </Button>
         <React.Suspense
           fallback={
-            <button disabled aria-label="How to play">
+            <HelpButton disabled aria-label="How to play">
               ?
-            </button>
+            </HelpButton>
           }
         >
           <InstructionsModal />
