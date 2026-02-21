@@ -1,12 +1,14 @@
 import * as React from "react";
 
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { Strategy } from "@context/index";
 import { GameContext } from "@context/index";
 import { makeContextValue, makeState } from "@test/testHelpers";
+import * as rngModule from "@utils/rng";
+import type { SaveSlot } from "@utils/saves";
+import * as savesModule from "@utils/saves";
 
 import SavesModal from ".";
 
@@ -19,53 +21,51 @@ HTMLDialogElement.prototype.close = vi.fn().mockImplementation(function (this: H
   this.removeAttribute("open");
 });
 
-const mockSetup: GameSaveSetup = {
-  strategy: "balanced" as Strategy,
-  managedTeam: null,
-  managerMode: false,
-  homeTeam: "Home",
-  awayTeam: "Away",
-  playerOverrides: [{}, {}],
-  lineupOrder: [[], []],
-};
-
-const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({
-  id: "save_1",
-  name: "Test save",
-  createdAt: 1000,
-  updatedAt: 2000,
-  seed: "abc",
-  matchupMode: "manual",
-  homeTeamId: "Home",
-  awayTeamId: "Away",
-  progressIdx: 5,
-  setup: mockSetup,
-  schemaVersion: 1,
-  ...overrides,
+vi.mock("@utils/saves", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@utils/saves")>();
+  return {
+    ...actual,
+    loadSaves: vi.fn().mockReturnValue([]),
+    loadAutoSave: vi.fn().mockReturnValue(null),
+    saveGame: vi.fn().mockImplementation((s: Partial<SaveSlot>) => ({
+      ...s,
+      id: s.id ?? "save_1",
+      createdAt: 1000,
+      updatedAt: 2000,
+    })),
+    deleteSave: vi.fn(),
+    exportSave: vi.fn().mockReturnValue('{"version":1,"sig":"abc","save":{}}'),
+    importSave: vi.fn(),
+    restoreSaveRng: vi.fn(),
+    currentSeedStr: vi.fn().mockReturnValue("abc"),
+  };
 });
-
-vi.mock("@storage/saveStore", () => ({
-  SaveStore: {
-    listSaves: vi.fn().mockResolvedValue([]),
-    createSave: vi.fn().mockResolvedValue("save_1"),
-    updateProgress: vi.fn().mockResolvedValue(undefined),
-    deleteSave: vi.fn().mockResolvedValue(undefined),
-    exportRxdbSave: vi.fn().mockResolvedValue('{"version":1,"sig":"abc","header":{},"events":[]}'),
-    importRxdbSave: vi.fn().mockResolvedValue(undefined),
-  },
-}));
 
 vi.mock("@utils/rng", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@utils/rng")>();
   return { ...actual, getRngState: vi.fn().mockReturnValue(42) };
 });
 
-vi.mock("@utils/saves", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@utils/saves")>();
-  return { ...actual, currentSeedStr: vi.fn().mockReturnValue("abc") };
-});
-
 const noop = vi.fn();
+
+const makeSlot = (overrides: Partial<SaveSlot> = {}): SaveSlot => ({
+  id: "save_1",
+  name: "Test save",
+  createdAt: 1000,
+  updatedAt: 2000,
+  seed: "abc",
+  progress: 5,
+  managerActions: [],
+  setup: {
+    homeTeam: "Home",
+    awayTeam: "Away",
+    strategy: "balanced" as Strategy,
+    managedTeam: 0,
+    managerMode: false,
+  },
+  state: makeState(),
+  ...overrides,
+});
 
 const renderModal = (
   props: Partial<React.ComponentProps<typeof SavesModal>> = {},
@@ -91,10 +91,10 @@ const openPanel = () =>
   });
 
 describe("SavesModal", () => {
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([]);
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(null);
     // Restore showModal/close mock implementations after vi.clearAllMocks()
     HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
       this: HTMLDialogElement,
@@ -126,73 +126,57 @@ describe("SavesModal", () => {
     expect(screen.getByRole("button", { name: /update save/i })).toBeInTheDocument();
   });
 
-  it("calls SaveStore.createSave and onSaveIdChange when save button is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls saveGame and onSaveIdChange when save button is clicked", async () => {
     const onSaveIdChange = vi.fn();
     renderModal({ onSaveIdChange });
     await openPanel();
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /save current game/i }));
-      await vi.waitFor(() => expect(SaveStore.createSave).toHaveBeenCalled());
-    });
-    expect(onSaveIdChange).toHaveBeenCalledWith("save_1");
+    fireEvent.click(screen.getByRole("button", { name: /save current game/i }));
+    expect(savesModule.saveGame).toHaveBeenCalled();
+    expect(onSaveIdChange).toHaveBeenCalled();
   });
 
   it("shows saved slot name after opening", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([makeSlot()]);
     renderModal();
     await openPanel();
     expect(screen.getByText("Test save")).toBeInTheDocument();
   });
 
-  it("calls SaveStore.updateProgress + dispatch + onSaveIdChange when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    const slot = makeSlot({
-      stateSnapshot: { state: makeState(), rngState: 42 },
-    });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+  it("calls restoreSaveRng + dispatch + onSaveIdChange when Load is clicked", async () => {
+    const slot = makeSlot();
+    vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);
     const onSaveIdChange = vi.fn();
     const dispatch = vi.fn();
     renderModal({ onSaveIdChange }, { dispatch });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "restore_game",
-      payload: slot.stateSnapshot?.state,
-    });
+    expect(savesModule.restoreSaveRng).toHaveBeenCalledWith(slot);
+    expect(dispatch).toHaveBeenCalledWith({ type: "restore_game", payload: slot.state });
     expect(onSaveIdChange).toHaveBeenCalledWith(slot.id);
   });
 
-  it("calls onSetupRestore with typed setup when Load is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls onSetupRestore with slot.setup when Load is clicked", async () => {
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);
     const onSetupRestore = vi.fn();
     renderModal({ onSetupRestore });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(onSetupRestore).toHaveBeenCalledWith({
-      strategy: slot.setup.strategy,
-      managedTeam: slot.setup.managedTeam ?? 0,
-      managerMode: slot.setup.managerMode,
-    });
+    expect(onSetupRestore).toHaveBeenCalledWith(slot.setup);
   });
 
-  it("calls SaveStore.deleteSave when ✕ is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+  it("calls deleteSave when ✕ is clicked", async () => {
+    vi.mocked(savesModule.loadSaves).mockReturnValue([makeSlot()]);
     renderModal();
     await openPanel();
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
-    });
-    expect(SaveStore.deleteSave).toHaveBeenCalledWith("save_1");
+    fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
+    expect(savesModule.deleteSave).toHaveBeenCalledWith("save_1");
   });
 
-  it("shows an error message when import text is invalid", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.importRxdbSave).mockRejectedValue(new Error("Invalid JSON"));
+  it("shows an error message when import text is invalid JSON", async () => {
+    vi.mocked(savesModule.importSave).mockImplementation(() => {
+      throw new Error("Invalid JSON");
+    });
     renderModal();
     await openPanel();
     fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
@@ -204,8 +188,9 @@ describe("SavesModal", () => {
     expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
   });
 
-  it("calls SaveStore.importRxdbSave on successful paste import", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("calls saveGame on successful paste import", async () => {
+    const slot = makeSlot();
+    vi.mocked(savesModule.importSave).mockReturnValue(slot);
     renderModal();
     await openPanel();
     fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
@@ -214,7 +199,7 @@ describe("SavesModal", () => {
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /import from text/i }));
     });
-    expect(SaveStore.importRxdbSave).toHaveBeenCalledWith('{"valid":"json"}');
+    expect(savesModule.saveGame).toHaveBeenCalledWith(slot);
   });
 
   it("shows 'Failed to read file' when FileReader errors", async () => {
@@ -240,21 +225,26 @@ describe("SavesModal", () => {
   });
 
   it("calls onSaveIdChange(null) when the current save is deleted", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const onSaveIdChange = vi.fn();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeSlot()]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([makeSlot()]);
     renderModal({ currentSaveId: "save_1", onSaveIdChange });
     await openPanel();
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
-    });
+    fireEvent.click(screen.getByRole("button", { name: /delete save/i }));
     expect(onSaveIdChange).toHaveBeenCalledWith(null);
   });
 
-  it("calls SaveStore.exportRxdbSave and createObjectURL when Export is clicked", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("shows auto-save section when an auto-save is present", async () => {
+    const autoSlot = makeSlot({ id: "autosave", name: "Auto-save — Away vs Home · Inning 3" });
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(autoSlot);
+    renderModal();
+    await openPanel();
+    // The section heading "Auto-save" and the slot name both appear
+    expect(screen.getByText("Auto-save — Away vs Home · Inning 3")).toBeInTheDocument();
+  });
+
+  it("calls exportSave and createObjectURL when Export is clicked", async () => {
     const slot = makeSlot();
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);
     (URL as unknown as Record<string, unknown>).createObjectURL = vi
       .fn()
       .mockReturnValue("blob:fake");
@@ -262,13 +252,9 @@ describe("SavesModal", () => {
     try {
       renderModal();
       await openPanel();
-      await act(async () => {
-        fireEvent.click(screen.getAllByRole("button", { name: /^export$/i })[0]);
-        await vi.waitFor(() =>
-          expect((URL as unknown as Record<string, unknown>).createObjectURL).toHaveBeenCalled(),
-        );
-      });
-      expect(SaveStore.exportRxdbSave).toHaveBeenCalledWith(slot.id);
+      fireEvent.click(screen.getAllByRole("button", { name: /^export$/i })[0]);
+      expect(savesModule.exportSave).toHaveBeenCalledWith(slot);
+      expect((URL as unknown as Record<string, unknown>).createObjectURL).toHaveBeenCalled();
     } finally {
       delete (URL as unknown as Record<string, unknown>).createObjectURL;
       delete (URL as unknown as Record<string, unknown>).revokeObjectURL;
@@ -276,9 +262,8 @@ describe("SavesModal", () => {
   });
 
   it("updates URL seed on load", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
     const slot = makeSlot({ seed: "xyzseed" });
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([slot]);
+    vi.mocked(savesModule.loadSaves).mockReturnValue([slot]);
     renderModal();
     await openPanel();
     const spy = vi.spyOn(window.history, "replaceState");

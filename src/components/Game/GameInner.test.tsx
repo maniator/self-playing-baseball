@@ -35,29 +35,16 @@ vi.mock("@utils/saves", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@utils/saves")>();
   return {
     ...actual,
-    currentSeedStr: vi.fn().mockReturnValue("9ix"),
+    loadAutoSave: vi.fn().mockReturnValue(null),
+    clearAutoSave: vi.fn(),
+    restoreSaveRng: vi.fn(),
   };
 });
 
 vi.mock("@utils/rng", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@utils/rng")>();
-  return {
-    ...actual,
-    getSeed: vi.fn().mockReturnValue(12345),
-    restoreRng: vi.fn(),
-  };
+  return { ...actual, getSeed: vi.fn().mockReturnValue(12345) };
 });
-
-vi.mock("@storage/saveStore", () => ({
-  SaveStore: {
-    listSaves: vi.fn().mockResolvedValue([]),
-    createSave: vi.fn().mockResolvedValue("save_1"),
-    updateProgress: vi.fn().mockResolvedValue(undefined),
-    deleteSave: vi.fn().mockResolvedValue(undefined),
-    exportRxdbSave: vi.fn().mockResolvedValue("{}"),
-    importRxdbSave: vi.fn().mockResolvedValue(undefined),
-  },
-}));
 
 describe("GameInner", () => {
   it("renders without crashing", () => {
@@ -141,99 +128,82 @@ const makeAutoSaveSlot = () => ({
   createdAt: 1000,
   updatedAt: 2000,
   seed: SEED_STR,
-  matchupMode: "default" as const,
-  homeTeamId: "Yankees",
-  awayTeamId: "Mets",
-  progressIdx: 25,
+  progress: 25,
+  managerActions: [] as string[],
   setup: {
+    homeTeam: "Yankees",
+    awayTeam: "Mets",
     strategy: "power" as Strategy,
     managedTeam: 1 as 0 | 1,
     managerMode: true,
-    homeTeam: "Yankees",
-    awayTeam: "Mets",
-    playerOverrides: [{}, {}] as [Record<string, unknown>, Record<string, unknown>],
-    lineupOrder: [[], []] as [string[], string[]],
   },
-  stateSnapshot: {
-    state: makeState({ inning: 5, teams: ["Mets", "Yankees"] as [string, string] }),
-    rngState: 42,
-  },
-  schemaVersion: 1,
+  state: makeState({ inning: 5, teams: ["Mets", "Yankees"] as [string, string] }),
 });
 
 describe("GameInner — auto-save resume", () => {
-  beforeEach(async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
-    vi.mocked(rngModule.restoreRng).mockClear();
+  beforeEach(() => {
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(null);
+    vi.mocked(savesModule.clearAutoSave).mockClear();
+    vi.mocked(savesModule.restoreSaveRng).mockClear();
     vi.mocked(rngModule.getSeed).mockReturnValue(SEED_NUM);
   });
 
-  it("shows Resume button when a seed-matched auto-save exists", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeAutoSaveSlot() as never]);
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
-  });
-
-  it("does NOT show Resume button when no auto-save exists", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
-  });
-
-  it("does NOT show Resume button when auto-save seed does not match current seed", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([
-      { ...makeAutoSaveSlot(), seed: "zzzzz" } as never,
-    ]);
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
-  });
-
-  it("calls restoreRng when a matched auto-save is present on mount", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([makeAutoSaveSlot() as never]);
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
-  });
-
-  it("calls SaveStore.createSave when starting a new game", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
+  it("shows Resume button when a seed-matched auto-save exists", () => {
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(makeAutoSaveSlot());
     render(
       <GameProviderWrapper>
         <GameInner />
       </GameProviderWrapper>,
     );
+    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
+  });
+
+  it("does NOT show Resume button when no auto-save exists", () => {
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(null);
+    render(
+      <GameProviderWrapper>
+        <GameInner />
+      </GameProviderWrapper>,
+    );
+    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
+  });
+
+  it("does NOT show Resume button when auto-save seed does not match current seed", () => {
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue({
+      ...makeAutoSaveSlot(),
+      seed: "zzzzz", // mismatch with SEED_STR
+    });
+    render(
+      <GameProviderWrapper>
+        <GameInner />
+      </GameProviderWrapper>,
+    );
+    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
+  });
+
+  it("calls restoreSaveRng when a matched auto-save is present on mount", async () => {
+    const slot = makeAutoSaveSlot();
+    vi.mocked(savesModule.loadAutoSave).mockReturnValue(slot);
     await act(async () => {
+      render(
+        <GameProviderWrapper>
+          <GameInner />
+        </GameProviderWrapper>,
+      );
+    });
+    expect(savesModule.restoreSaveRng).toHaveBeenCalledWith(slot);
+  });
+
+  it("calls clearAutoSave when starting a new game", () => {
+    render(
+      <GameProviderWrapper>
+        <GameInner />
+      </GameProviderWrapper>,
+    );
+    act(() => {
       fireEvent.click(screen.getByText(/play ball/i));
     });
-    expect(SaveStore.createSave).toHaveBeenCalled();
+    expect(savesModule.clearAutoSave).toHaveBeenCalled();
   });
 });
 

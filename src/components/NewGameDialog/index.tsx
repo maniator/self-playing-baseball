@@ -2,7 +2,6 @@ import * as React from "react";
 
 import type { TeamCustomPlayerOverrides } from "@context/index";
 
-export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 import {
   Dialog,
@@ -18,6 +17,8 @@ import {
 } from "./styles";
 import { usePlayerCustomization } from "./usePlayerCustomization";
 import { useTeamSelection } from "./useTeamSelection";
+
+export { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 
 type ManagedTeam = 0 | 1 | null;
 

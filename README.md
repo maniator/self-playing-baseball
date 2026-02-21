@@ -42,13 +42,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 - **Step-by-step or auto-play** — press *Batter Up!* (or Spacebar) for one pitch at a time, or enable Auto-play and choose Slow / Normal / Fast speed.
 - **Play-by-play announcements** — the Web Speech API narrates every pitch, hit, and out.
 - **Live scoreboard** — line score with per-inning runs, hits, balls/strikes/outs indicator, and an EXTRA INNINGS banner when the game goes deep.
-- **Live batting stats panel** — AB, H, HR, RBI, AVG, OBP, and SLG for every batter in both lineups, updated in real time.
 - **Realistic game logic** — four pitch types (fastball, curveball, slider, changeup), ground-ball double plays, walk-off wins, extra-inning tiebreak runners, and a home-team "no need to bat" rule.
-- **Pre-game player customisation** — before the first pitch:
-  - Enter custom team names, or let the game auto-fetch real MLB rosters from the MLB Stats API (cached in IndexedDB).
-  - Upload a roster CSV to give each batter a real name.
-  - Drag-and-drop batting order reordering.
-  - Per-player stat overrides for Contact, Power, and Speed.
 - **Seeded randomness** — every game is fully deterministic from its seed, so results are perfectly repeatable.
 - **Share replay** — copies a URL containing the seed so anyone can watch the exact same game unfold.
 - **Manager Mode** — pick a team and a strategy (Balanced / Aggressive / Patient / Contact / Power) and make real decisions at key moments:
@@ -60,8 +54,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Count-based swing/take choices
 - **Browser notifications** — optional notifications alert you when a Manager decision is ready, even when the tab is in the background.
 - **10-second auto-skip** — decisions auto-skip with a countdown bar if you don't act in time.
-- **RxDB persistence** — saves, game events, and MLB team data are all stored locally in IndexedDB via [RxDB](https://rxdb.info). No server required. Auto-save resumes your last game on reload.
-- **Save management** — save named game slots, load previous games, export as JSON for backup/sharing, and import from a file.
+- **Custom team names** — rename both teams via inline text inputs before or during the game.
 - **Volume controls** — independent sliders and mute buttons for voice announcements and alert chimes.
 
 ---
@@ -98,8 +91,6 @@ yarn build
 | Speech | Web Speech API |
 | Audio | Web Audio API |
 | Randomness | Seeded PRNG (mulberry32) |
-| Local DB | RxDB v16 (IndexedDB via Dexie) |
-| Drag & Drop | @dnd-kit |
 | PWA | Web App Manifest + Service Worker |
 | Deployment | Vercel |
 
