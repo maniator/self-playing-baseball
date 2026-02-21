@@ -5,7 +5,7 @@ import { useGameContext } from "@context/index";
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
-import { currentSeedStr } from "@utils/rng";
+import { currentSeedStr } from "@utils/saves";
 
 interface Params {
   strategy: Strategy;

@@ -26,6 +26,17 @@ const fnv1a = (str: string): string => {
 type GetDb = () => Promise<BallgameDb>;
 
 function buildStore(getDbFn: GetDb) {
+  // Per-save promise chain: serializes all appendEvents calls for the same save
+  // so index allocation never races even under rapid fire-and-forget writes.
+  const appendQueues = new Map<string, Promise<void>>();
+
+  // Per-save monotonic next-index counter.  Set to 0 on createSave (new save
+  // has no events yet) and incremented synchronously inside the queue chain so
+  // overlapping batches always get distinct, gapless indices.  Cleared on
+  // deleteSave / importRxdbSave to force a DB-query re-initialization if the
+  // save is ever reused from a different store instance (e.g. after import).
+  const nextIdxMap = new Map<string, number>();
+
   return {
     /**
      * Creates a new save header document.
@@ -49,43 +60,62 @@ function buildStore(getDbFn: GetDb) {
         schemaVersion: SCHEMA_VERSION,
       };
       await db.saves.insert(doc);
+      // New save has no events — seed counter at 0 to skip the DB-query path.
+      nextIdxMap.set(id, 0);
       return id;
     },
 
     /**
      * Appends a batch of events for a save.
-     * Events are stored as individual documents with a deterministic
-     * `${saveId}:${idx}` primary key. The starting index is derived from
-     * the current highest idx stored for this save.
+     * Calls are serialized per saveId via a promise queue so concurrent
+     * fire-and-forget writes never produce colliding `${saveId}:${idx}` keys.
+     * The in-memory counter is incremented synchronously inside the queue, so
+     * the next queued batch always starts at the correct index.
      */
     async appendEvents(saveId: string, events: GameEvent[]): Promise<void> {
       if (events.length === 0) return;
-      const db = await getDbFn();
 
-      // Determine the current highest idx for this save.
-      const existing = await db.events
-        .find({
-          selector: { saveId },
-          sort: [{ idx: "desc" }],
-          limit: 1,
-        })
-        .exec();
+      // Chain this write behind any in-progress append for the same save.
+      const prev = appendQueues.get(saveId) ?? Promise.resolve();
+      const thisWrite = prev.then(async () => {
+        const db = await getDbFn();
 
-      const startIdx = existing.length > 0 ? existing[0].idx + 1 : 0;
-      const now = Date.now();
+        // Initialise the counter from DB only the very first time (e.g. when
+        // loading a save created by a different store instance after import).
+        if (!nextIdxMap.has(saveId)) {
+          const existing = await db.events
+            .find({ selector: { saveId }, sort: [{ idx: "desc" }], limit: 1 })
+            .exec();
+          nextIdxMap.set(saveId, existing.length > 0 ? existing[0].idx + 1 : 0);
+        }
 
-      const docs: EventDoc[] = events.map((ev, i) => ({
-        id: `${saveId}:${startIdx + i}`,
+        const startIdx = nextIdxMap.get(saveId)!;
+        // Increment BEFORE the async DB write so the next queued batch sees the
+        // updated value immediately.
+        nextIdxMap.set(saveId, startIdx + events.length);
+
+        const now = Date.now();
+        const docs: EventDoc[] = events.map((ev, i) => ({
+          id: `${saveId}:${startIdx + i}`,
+          saveId,
+          idx: startIdx + i,
+          at: ev.at,
+          type: ev.type,
+          payload: ev.payload,
+          ts: now,
+          schemaVersion: SCHEMA_VERSION,
+        }));
+
+        await db.events.bulkInsert(docs);
+      });
+
+      // Keep the chain alive; swallow errors so one failed batch doesn't
+      // permanently break subsequent appends for this save.
+      appendQueues.set(
         saveId,
-        idx: startIdx + i,
-        at: ev.at,
-        type: ev.type,
-        payload: ev.payload,
-        ts: now,
-        schemaVersion: SCHEMA_VERSION,
-      }));
-
-      await db.events.bulkInsert(docs);
+        thisWrite.catch(() => {}),
+      );
+      return thisWrite;
     },
 
     /**
@@ -117,6 +147,9 @@ function buildStore(getDbFn: GetDb) {
       if (headerDoc) await headerDoc.remove();
       const eventDocs = await db.events.find({ selector: { saveId } }).exec();
       await Promise.all(eventDocs.map((d) => d.remove()));
+      // Purge in-memory state so a future save reusing the same id starts fresh.
+      nextIdxMap.delete(saveId);
+      appendQueues.delete(saveId);
     },
 
     /** Returns all save headers ordered by most recently updated. */
@@ -170,6 +203,10 @@ function buildStore(getDbFn: GetDb) {
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
       }
+      // Force counter re-initialization on next append so it reads the imported
+      // event count rather than using a stale in-memory value.
+      nextIdxMap.delete(header.id);
+      appendQueues.delete(header.id);
       return header.id;
     },
   };

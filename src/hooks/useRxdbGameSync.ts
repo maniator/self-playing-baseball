@@ -60,16 +60,25 @@ export const useRxdbGameSync = (
     prevPitchKeyRef.current = pitchKey;
 
     const saveId = rxSaveIdRef.current;
-    const pending = actionBufferRef.current.splice(0);
 
+    // Keep the buffer intact until the save ID is available (createSave may
+    // still be resolving).  Actions will be flushed on the next pitchKey advance.
     if (!saveId) return;
+
+    const pending = actionBufferRef.current.splice(0);
 
     const events = pending
       .filter((a) => GAME_EVENT_TYPES.has(a.type))
       .map((a) => ({
         type: a.type,
         at: eventAt,
-        payload: (a.payload as Record<string, unknown>) ?? {},
+        // Ensure payload is always an object — some action types (e.g.
+        // set_one_pitch_modifier, set_pinch_hitter_strategy, set_defensive_shift)
+        // dispatch string/boolean values directly.
+        payload:
+          a.payload !== null && typeof a.payload === "object"
+            ? (a.payload as Record<string, unknown>)
+            : { value: a.payload },
       }));
 
     if (events.length > 0) {

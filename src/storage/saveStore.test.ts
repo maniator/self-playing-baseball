@@ -115,6 +115,27 @@ describe("SaveStore.appendEvents", () => {
     const count = await db.events.count({ selector: { saveId } }).exec();
     expect(count).toBe(10);
   });
+
+  it("serializes concurrent appends — no index collisions", async () => {
+    const saveId = await store.createSave(makeSetup());
+    // Fire two appends concurrently without awaiting the first.
+    const p1 = store.appendEvents(saveId, [
+      { type: "a", at: 0, payload: {} },
+      { type: "b", at: 0, payload: {} },
+    ]);
+    const p2 = store.appendEvents(saveId, [
+      { type: "c", at: 1, payload: {} },
+      { type: "d", at: 1, payload: {} },
+    ]);
+    await Promise.all([p1, p2]);
+    const count = await db.events.count({ selector: { saveId } }).exec();
+    // All 4 events must be stored with unique indices 0–3.
+    expect(count).toBe(4);
+    for (let i = 0; i < 4; i++) {
+      const ev = await db.events.findOne(`${saveId}:${i}`).exec();
+      expect(ev).not.toBeNull();
+    }
+  });
 });
 
 describe("SaveStore.updateProgress", () => {

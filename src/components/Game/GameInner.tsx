@@ -14,7 +14,8 @@ import { useGameContext } from "@context/index";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
-import { currentSeedStr, getSeed, restoreRng } from "@utils/rng";
+import { getSeed, restoreRng } from "@utils/rng";
+import { currentSeedStr } from "@utils/saves";
 
 import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
 

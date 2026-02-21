@@ -77,7 +77,7 @@ describe("useRxdbGameSync", () => {
     ]);
   });
 
-  it("clears the buffer even when no saveId is set", () => {
+  it("preserves the buffer when no saveId is set (createSave may still be resolving)", () => {
     const refs = makeRefs(null);
     let ctx = makeContextValue({ pitchKey: 0 });
     const { rerender } = renderHook(() => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef), {
@@ -92,8 +92,44 @@ describe("useRxdbGameSync", () => {
       rerender();
     });
 
+    // Buffer must NOT be drained — the actions will be flushed on the next
+    // pitchKey advance once createSave resolves and sets the save ID.
     expect(saveStoreModule.SaveStore.appendEvents).not.toHaveBeenCalled();
-    expect(refs.actionBufferRef.current).toHaveLength(0);
+    expect(refs.actionBufferRef.current).toHaveLength(1);
+  });
+
+  it("flushes buffered actions accumulated before saveId was set, on next pitchKey advance", () => {
+    const refs = makeRefs(null); // saveId not set initially
+    let ctx = makeContextValue({ pitchKey: 0 });
+    const { rerender } = renderHook(() => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+      ),
+    });
+
+    // Actions arrive before createSave has resolved (saveId = null).
+    refs.actionBufferRef.current.push({ type: "strike", payload: { swung: false } });
+    act(() => {
+      ctx = makeContextValue({ pitchKey: 1 });
+      rerender();
+    });
+    expect(saveStoreModule.SaveStore.appendEvents).not.toHaveBeenCalled();
+    expect(refs.actionBufferRef.current).toHaveLength(1); // still buffered
+
+    // createSave resolves — save ID now available.
+    refs.rxSaveIdRef.current = "save_1";
+
+    // Next pitch — buffer is now flushed with all accumulated actions.
+    refs.actionBufferRef.current.push({ type: "hit", payload: { hitType: "single" } });
+    act(() => {
+      ctx = makeContextValue({ pitchKey: 2 });
+      rerender();
+    });
+
+    expect(saveStoreModule.SaveStore.appendEvents).toHaveBeenCalledWith("save_1", [
+      { type: "strike", at: 1, payload: { swung: false } },
+      { type: "hit", at: 1, payload: { hitType: "single" } },
+    ]);
   });
 
   it("filters out non-game-event actions (reset, setTeams, restore_game)", () => {
