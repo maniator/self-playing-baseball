@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 
-import { createLogger } from "./utils/logger";
+import { createLogger } from "@utils/logger";
 
 // `self.__WB_MANIFEST` is injected by vite-plugin-pwa's injectManifest strategy at build
 // time with an array of all pre-cached asset entries ({url, revision}).

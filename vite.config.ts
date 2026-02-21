@@ -9,7 +9,6 @@ export default defineConfig({
   build: {
     outDir: path.resolve(__dirname, "dist"),
     emptyOutDir: true,
-    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -19,7 +18,7 @@ export default defineConfig({
             normalizedId.includes("/node_modules/react-dom/") ||
             normalizedId.includes("/node_modules/react-is/")
           ) {
-            return "vendor-react";
+            return "react-vendor";
           }
           if (
             normalizedId.includes("/node_modules/rxdb/") ||
@@ -27,15 +26,13 @@ export default defineConfig({
             normalizedId.includes("/node_modules/rxjs/") ||
             normalizedId.includes("/node_modules/mingo/")
           ) {
-            return "vendor-rxdb";
+            return "rxdb-vendor";
           }
-          if (
-            normalizedId.includes("/node_modules/styled-components/") ||
-            normalizedId.includes("/node_modules/@dnd-kit/") ||
-            normalizedId.includes("/node_modules/usehooks-ts/") ||
-            normalizedId.includes("/node_modules/stylis/")
-          ) {
-            return "vendor-ui";
+          if (normalizedId.includes("/node_modules/styled-components/")) {
+            return "styled-vendor";
+          }
+          if (normalizedId.includes("/node_modules/@dnd-kit/")) {
+            return "dnd-vendor";
           }
         },
       },
