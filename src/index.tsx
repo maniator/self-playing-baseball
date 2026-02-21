@@ -13,7 +13,7 @@ initSeedFromUrl({ writeToUrl: true });
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker
-    .register(new URL("./sw.ts", import.meta.url), { type: "module" })
+    .register("/sw.js", { type: "module" })
     .then((reg) => appLog.log("SW registered — scope:", reg.scope))
     .catch((err) => appLog.error("SW registration failed:", err));
 }

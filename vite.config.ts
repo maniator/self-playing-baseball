@@ -1,7 +1,15 @@
-import { defineConfig } from "vitest/config";
+import react from "@vitejs/plugin-react";
 import path from "path";
+import { defineConfig } from "vitest/config";
+import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  root: "src",
+  publicDir: path.resolve(__dirname, "public"),
+  build: {
+    outDir: path.resolve(__dirname, "dist"),
+    emptyOutDir: true,
+  },
   resolve: {
     alias: {
       "@components": path.resolve(__dirname, "src/components"),
@@ -12,6 +20,19 @@ export default defineConfig({
       "@test": path.resolve(__dirname, "src/test"),
     },
   },
+  plugins: [
+    react(),
+    VitePWA({
+      strategies: "injectManifest",
+      srcDir: ".",
+      filename: "sw.ts",
+      injectRegister: false,
+      manifest: false,
+      injectManifest: {
+        rollupFormat: "es",
+      },
+    }),
+  ],
   test: {
     environment: "jsdom",
     globals: true,
@@ -34,4 +55,3 @@ export default defineConfig({
     },
   },
 });
-

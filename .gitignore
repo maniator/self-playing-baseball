@@ -13,6 +13,6 @@ nohup.out
 
 .env
 
-.parcel-cache
+.vite
 
 coverage
