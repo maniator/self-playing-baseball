@@ -17,7 +17,7 @@ import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
-import { GameBody, GameDiv, LeftPanel, RightPanel } from "./styles";
+import { FieldPanel, GameBody, GameDiv, LogPanel } from "./styles";
 
 /** Loads the most recent RxDB save whose seed matches the current URL seed. */
 const loadMatchedRxSave = async (): Promise<SaveDoc | null> => {
@@ -155,14 +155,14 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
       <LineScore />
       <GameControls key={gameKey} onNewGame={handleNewGame} gameStarted={gameActive} />
       <GameBody>
-        <LeftPanel>
+        <FieldPanel>
+          <Diamond />
+        </FieldPanel>
+        <LogPanel>
           <HitLog />
           <PlayerStatsPanel />
           <Announcements />
-        </LeftPanel>
-        <RightPanel>
-          <Diamond />
-        </RightPanel>
+        </LogPanel>
       </GameBody>
     </GameDiv>
   );

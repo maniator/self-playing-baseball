@@ -3,6 +3,7 @@ import * as React from "react";
 import styled from "styled-components";
 
 import { useGameContext } from "@context/index";
+import { mq } from "@utils/mediaQueries";
 
 const HeadingRow = styled.div`
   display: flex;
@@ -16,6 +17,10 @@ const HeadingRow = styled.div`
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background: #000;
+  z-index: 1;
 `;
 
 const Toggle = styled.button`
@@ -35,9 +40,9 @@ const AnnouncementsArea = styled.div`
   padding-right: 8px;
   max-height: 300px;
   min-height: 60px;
-  @media (max-width: 800px) {
+  ${mq.mobile} {
     min-height: auto;
-    max-height: 25vh;
+    max-height: none;
   }
 `;
 
@@ -51,11 +56,29 @@ const Log = styled.div`
   font-size: 12px;
   padding: 3px 5px;
   color: #ccc;
+  ${mq.mobile} {
+    font-size: 11px;
+  }
 `;
+
+/** Pixels from the top edge within which auto-scroll to newest entry fires. */
+const SCROLL_THRESHOLD = 60;
 
 const Announcements: React.FunctionComponent = () => {
   const { log } = useGameContext();
   const [expanded, setExpanded] = React.useState(false);
+  const areaRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!expanded) return;
+    const el = areaRef.current;
+    if (!el) return;
+    // log is newest-first; scroll to top only when the user is already near it
+    const isNearTop = el.scrollTop < SCROLL_THRESHOLD;
+    if (isNearTop) {
+      el.scrollTop = 0;
+    }
+  }, [log, expanded]);
 
   return (
     <>
@@ -69,7 +92,7 @@ const Announcements: React.FunctionComponent = () => {
         </Toggle>
       </HeadingRow>
       {expanded && (
-        <AnnouncementsArea aria-live="polite" aria-atomic="false">
+        <AnnouncementsArea ref={areaRef} aria-live="polite" aria-atomic="false">
           {log.length === 0 ? (
             <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
           ) : (

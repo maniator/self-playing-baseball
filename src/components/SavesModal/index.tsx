@@ -75,7 +75,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
 
   return (
     <>
-      <SavesButton onClick={open} aria-label="Open saves panel">
+      <SavesButton $variant="saves" onClick={open} aria-label="Open saves panel">
         💾 Saves
       </SavesButton>
 

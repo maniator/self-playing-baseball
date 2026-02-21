@@ -4,6 +4,7 @@ import styled from "styled-components";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
+import { mq } from "@utils/mediaQueries";
 
 const EVENT_LABEL: Record<Hit, string> = {
   [Hit.Single]: "1B",
@@ -26,6 +27,10 @@ const HeadingRow = styled.div`
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
+  position: sticky;
+  top: 0;
+  background: #000;
+  z-index: 1;
 `;
 
 const Toggle = styled.button`
@@ -43,8 +48,8 @@ const Toggle = styled.button`
 const Area = styled.div`
   overflow-y: auto;
   max-height: 200px;
-  @media (max-width: 800px) {
-    max-height: 120px;
+  ${mq.mobile} {
+    max-height: none;
   }
 `;
 

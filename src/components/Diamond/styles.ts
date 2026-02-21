@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const FieldWrapper = styled.div`
   position: relative;
   overflow: hidden;
@@ -7,9 +9,9 @@ export const FieldWrapper = styled.div`
   width: 100%;
   flex-shrink: 0;
 
-  @media (max-width: 800px) {
-    height: 140px;
+  ${mq.mobile} {
     flex: 1;
+    height: auto;
   }
 `;
 
@@ -19,16 +21,22 @@ export const OutfieldDiv = styled.div`
   background: #aac32b;
   border-radius: 100% 0 0 0;
   position: absolute;
-  right: 0;
+  /* Centre the field horizontally so it doesn't hug one edge in wide containers */
+  left: 50%;
   bottom: 65px;
-  transform: rotate(45deg);
+  transform: translateX(-50%) rotate(45deg);
 
-  @media (max-width: 800px) {
-    height: 140px;
-    width: 140px;
+  ${mq.mobile} {
+    /*
+     * --mobile-field scales the whole field with the viewport width and is
+     * inherited by DiamondDiv, Mound, and their children via CSS cascade.
+     * At 320 px → 189 px; 375 px → 221 px; 414 px → 244 px; capped at 260 px.
+     */
+    --mobile-field: min(59vw, 260px);
+    height: var(--mobile-field);
+    width: var(--mobile-field);
     top: 0;
-    right: auto;
-    left: 50%;
+    bottom: auto;
     transform: translateX(-50%) translateY(-20%) rotate(45deg);
   }
 `;
@@ -41,9 +49,10 @@ export const DiamondDiv = styled.div`
   bottom: 0;
   right: 0;
 
-  @media (max-width: 800px) {
-    height: 70px;
-    width: 70px;
+  ${mq.mobile} {
+    /* 50% of OutfieldDiv — same ratio as desktop (150/300) */
+    height: calc(var(--mobile-field, 140px) / 2);
+    width: calc(var(--mobile-field, 140px) / 2);
   }
 `;
 
@@ -67,17 +76,19 @@ export const Mound = styled.div`
     top: calc(50% - 25px);
   }
 
-  @media (max-width: 800px) {
-    height: 46px;
-    width: 46px;
-    left: calc(50% - 23px);
-    top: calc(50% - 23px);
+  ${mq.mobile} {
+    /* ~1/3 of OutfieldDiv — same ratio as desktop (100/300) */
+    height: calc(var(--mobile-field, 140px) / 3);
+    width: calc(var(--mobile-field, 140px) / 3);
+    left: calc(50% - var(--mobile-field, 140px) / 6);
+    top: calc(50% - var(--mobile-field, 140px) / 6);
 
     &:after {
-      height: 23px;
-      width: 23px;
-      left: calc(50% - 12px);
-      top: calc(50% - 12px);
+      /* ~1/6 of OutfieldDiv — same ratio as desktop (50/300) */
+      height: calc(var(--mobile-field, 140px) / 6);
+      width: calc(var(--mobile-field, 140px) / 6);
+      left: calc(50% - var(--mobile-field, 140px) / 12);
+      top: calc(50% - var(--mobile-field, 140px) / 12);
     }
   }
 `;
