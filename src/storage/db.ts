@@ -7,11 +7,12 @@ import {
 } from "rxdb";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 
-import type { EventDoc, SaveDoc } from "./types";
+import type { EventDoc, SaveDoc, TeamDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
   events: RxCollection<EventDoc>;
+  teams: RxCollection<TeamDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
@@ -70,6 +71,23 @@ const eventsSchema: RxJsonSchema<EventDoc> = {
   indexes: ["saveId", ["saveId", "idx"]],
 };
 
+const teamsSchema: RxJsonSchema<TeamDoc> = {
+  version: 0,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 32 },
+    numericId: { type: "number", minimum: 0, maximum: 999_999, multipleOf: 1 },
+    name: { type: "string" },
+    abbreviation: { type: "string" },
+    league: { type: "string", enum: ["al", "nl"] },
+    cachedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+  },
+  required: ["id", "numericId", "name", "abbreviation", "league", "cachedAt", "schemaVersion"],
+  indexes: ["league", "cachedAt"],
+};
+
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
@@ -82,6 +100,7 @@ async function initDb(
   await db.addCollections({
     saves: { schema: savesSchema },
     events: { schema: eventsSchema },
+    teams: { schema: teamsSchema },
   });
   return db;
 }
@@ -102,11 +121,11 @@ export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (aw
 
 /**
  * Creates a fresh database with the given storage — intended for tests only.
- * Each call returns an independent instance; callers are responsible for
- * calling `db.destroy()` when finished.
+ * Uses a random name by default so concurrent test files sharing the same
+ * in-memory RxDB storage never produce COL23 name collisions.
+ * Callers are responsible for calling `db.destroy()` when finished.
  */
-let _testCounter = 0;
 export const _createTestDb = (
   storage: RxStorage<unknown, unknown>,
-  name = `ballgame_test_${++_testCounter}`,
+  name = `ballgame_test_${Math.random().toString(36).slice(2, 14)}`,
 ): Promise<BallgameDb> => initDb(storage, name);

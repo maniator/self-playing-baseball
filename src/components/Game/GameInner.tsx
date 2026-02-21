@@ -9,11 +9,11 @@ import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
 import PlayerStatsPanel from "@components/PlayerStatsPanel";
-import type { GameAction, State, Strategy } from "@context/index";
+import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { SaveStore } from "@storage/saveStore";
-import type { SaveDoc } from "@storage/types";
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -39,11 +39,11 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   const { dispatch } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+  const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
   const [dialogOpen, setDialogOpen] = React.useState(true);
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
-  const [, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
@@ -65,14 +65,13 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   // Restore state from the RxDB save as soon as it is loaded.
   React.useEffect(() => {
     if (!rxAutoSave) return;
-    const snap = rxAutoSave.stateSnapshot;
+    const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
-    if (typeof snap.rngState === "number") restoreRng(snap.rngState);
-    if (snap.state) dispatch({ type: "restore_game", payload: snap.state as State });
-    const setup = rxAutoSave.setup;
-    if (typeof setup.strategy === "string") setStrategy(setup.strategy as Strategy);
-    if (setup.managedTeam === 0 || setup.managedTeam === 1) setManagedTeam(setup.managedTeam);
-    if (typeof setup.managerMode === "boolean") setManagerMode(setup.managerMode);
+    if (snap.rngState !== null) restoreRng(snap.rngState);
+    dispatch({ type: "restore_game", payload: snap.state });
+    setStrategy(setup.strategy);
+    if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
+    setManagerMode(setup.managerMode);
   }, [dispatch, rxAutoSave, setStrategy, setManagedTeam, setManagerMode]);
 
   const handleResume = () => {
@@ -107,17 +106,22 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
     // Create a new RxDB save for this session (fire-and-forget).
     // currentSeedStr() returns the seed that was already initialised for this
     // page load — it does NOT generate a new one.
+    const setup: GameSaveSetup = {
+      strategy,
+      managedTeam,
+      managerMode: managedTeam !== null,
+      homeTeam,
+      awayTeam,
+      playerOverrides: [playerOverrides.away, playerOverrides.home],
+      lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
+    };
     SaveStore.createSave(
       {
         matchupMode: "default",
         homeTeamId: homeTeam,
         awayTeamId: awayTeam,
         seed: currentSeedStr(),
-        setup: {
-          managedTeam,
-          managerMode: managedTeam !== null,
-          playerOverrides,
-        },
+        setup,
       },
       { name: `${awayTeam} vs ${homeTeam}` },
     )

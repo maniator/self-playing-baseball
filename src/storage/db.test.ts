@@ -14,9 +14,10 @@ afterEach(async () => {
 });
 
 describe("db collections", () => {
-  it("creates saves and events collections", () => {
+  it("creates saves, events, and teams collections", () => {
     expect(db.saves).toBeDefined();
     expect(db.events).toBeDefined();
+    expect(db.teams).toBeDefined();
   });
 
   it("inserts and retrieves a saves document", async () => {

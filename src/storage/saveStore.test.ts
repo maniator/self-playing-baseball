@@ -10,7 +10,15 @@ const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
   homeTeamId: "Yankees",
   awayTeamId: "Mets",
   seed: "abc123",
-  setup: { strategy: "balanced" },
+  setup: {
+    strategy: "balanced",
+    managedTeam: null,
+    managerMode: false,
+    homeTeam: "Yankees",
+    awayTeam: "Mets",
+    playerOverrides: [{}, {}],
+    lineupOrder: [[], []],
+  },
   ...overrides,
 });
 

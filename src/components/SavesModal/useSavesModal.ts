@@ -3,7 +3,7 @@ import * as React from "react";
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { SaveStore } from "@storage/saveStore";
-import type { SaveDoc } from "@storage/types";
+import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -76,12 +76,14 @@ export const useSavesModal = ({
   const handleSave = () => {
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
     const fullState: State = { ...gameStateRest, teams, inning, pitchKey } as State;
-    const setup: Record<string, unknown> = {
+    const setup: GameSaveSetup = {
       strategy,
       managedTeam,
       managerMode,
       homeTeam: teams[1],
       awayTeam: teams[0],
+      playerOverrides: [fullState.playerOverrides[0], fullState.playerOverrides[1]],
+      lineupOrder: [fullState.lineupOrder[0], fullState.lineupOrder[1]],
     };
 
     if (currentSaveId) {
@@ -89,10 +91,7 @@ export const useSavesModal = ({
       SaveStore.updateProgress(currentSaveId, pitchKey, {
         scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
         inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
-        stateSnapshot: {
-          state: fullState as unknown as Record<string, unknown>,
-          rngState: getRngState(),
-        },
+        stateSnapshot: { state: fullState, rngState: getRngState() },
       })
         .then(() => {
           refresh();
@@ -115,10 +114,7 @@ export const useSavesModal = ({
           await SaveStore.updateProgress(id, pitchKey, {
             scoreSnapshot: { away: fullState.score[0], home: fullState.score[1] },
             inningSnapshot: { inning: fullState.inning, atBat: fullState.atBat },
-            stateSnapshot: {
-              state: fullState as unknown as Record<string, unknown>,
-              rngState: getRngState(),
-            },
+            stateSnapshot: { state: fullState, rngState: getRngState() },
           });
           onSaveIdChange(id);
           refresh();
@@ -131,19 +127,19 @@ export const useSavesModal = ({
   const handleLoad = (slot: SaveDoc) => {
     const snap = slot.stateSnapshot;
     if (snap) {
-      if (typeof snap.rngState === "number") restoreRng(snap.rngState);
-      if (snap.state) dispatch({ type: "restore_game", payload: snap.state as State });
+      if (snap.rngState !== null) restoreRng(snap.rngState);
+      dispatch({ type: "restore_game", payload: snap.state });
     }
     if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
       const url = new URL(window.location.href);
       url.searchParams.set("seed", slot.seed);
       window.history.replaceState(null, "", url.toString());
     }
-    const setup = slot.setup;
+    const { setup } = slot;
     onSetupRestore?.({
-      strategy: (setup.strategy as Strategy) ?? "balanced",
-      managedTeam: setup.managedTeam === 1 ? 1 : 0,
-      managerMode: typeof setup.managerMode === "boolean" ? setup.managerMode : false,
+      strategy: setup.strategy,
+      managedTeam: setup.managedTeam ?? 0,
+      managerMode: setup.managerMode,
     });
     onSaveIdChange(slot.id);
     log(`Loaded: ${slot.name}`);

@@ -1,3 +1,5 @@
+import type { State, Strategy, TeamCustomPlayerOverrides } from "@context/index";
+
 /** Persisted save-header document (one per save game). */
 export interface SaveDoc {
   id: string;
@@ -11,11 +13,11 @@ export interface SaveDoc {
   /** Highest event index that has been stored; acts as a progress cursor. */
   progressIdx: number;
   /** Small immutable setup blob used to reconstruct the game deterministically. */
-  setup: Record<string, unknown>;
-  scoreSnapshot?: Record<string, unknown>;
-  inningSnapshot?: Record<string, unknown>;
+  setup: GameSaveSetup;
+  scoreSnapshot?: ScoreSnapshot;
+  inningSnapshot?: InningSnapshot;
   /** Full game State + rngState captured on each half-inning, for restore. */
-  stateSnapshot?: Record<string, unknown>;
+  stateSnapshot?: StateSnapshot;
   schemaVersion: number;
 }
 
@@ -26,13 +28,45 @@ export interface EventDoc {
   saveId: string;
   /** Monotonic index per save, starting at 0. */
   idx: number;
-  /** Deterministic position within the game (eventIndex or inning/half/pitchIndex object). */
-  at: number | Record<string, unknown>;
+  /** Deterministic position within the game — the pitchKey at the time the event occurred. */
+  at: number;
   type: string;
   payload: Record<string, unknown>;
   /** Wall-clock timestamp — metadata only, NOT used for determinism. */
   ts: number;
   schemaVersion: number;
+}
+
+/** Typed setup stored on the save header for deterministic game restore. */
+export interface GameSaveSetup {
+  strategy: Strategy;
+  /** null when the user chose "just watch" (no managed team). */
+  managedTeam: 0 | 1 | null;
+  managerMode: boolean;
+  homeTeam: string;
+  awayTeam: string;
+  /** [away, home] per-player stat overrides for this session. */
+  playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
+  /** [away, home] batter IDs in batting order. */
+  lineupOrder: [string[], string[]];
+}
+
+/** Scored snapshot stored on the save header for quick display. */
+export interface ScoreSnapshot {
+  away: number;
+  home: number;
+}
+
+/** Inning position snapshot stored on the save header. */
+export interface InningSnapshot {
+  inning: number;
+  atBat: number;
+}
+
+/** Full game state snapshot — enough to resume without replaying all events. */
+export interface StateSnapshot {
+  state: State;
+  rngState: number | null;
 }
 
 /** Input shape for creating a new save. */
@@ -41,22 +75,36 @@ export interface GameSetup {
   homeTeamId: string;
   awayTeamId: string;
   seed: string;
-  setup: Record<string, unknown>;
+  setup: GameSaveSetup;
 }
 
 /** A single game event to be appended. */
 export interface GameEvent {
   type: string;
-  at: number | Record<string, unknown>;
+  at: number;
   payload: Record<string, unknown>;
 }
 
 /** Optional progress-update summary fields. */
 export interface ProgressSummary {
-  scoreSnapshot?: Record<string, unknown>;
-  inningSnapshot?: Record<string, unknown>;
+  scoreSnapshot?: ScoreSnapshot;
+  inningSnapshot?: InningSnapshot;
   /** Full game State + rngState for deterministic restore. */
-  stateSnapshot?: Record<string, unknown>;
+  stateSnapshot?: StateSnapshot;
+}
+
+/** Cached MLB team document (one per team, keyed by `String(mlbNumericId)`). */
+export interface TeamDoc {
+  /** String PK: `String(mlbNumericId)` e.g. `"147"` for the Yankees. */
+  id: string;
+  /** The original MLB Stats API numeric team ID. */
+  numericId: number;
+  name: string;
+  abbreviation: string;
+  league: "al" | "nl";
+  /** Epoch ms when this record was last refreshed from the API. */
+  cachedAt: number;
+  schemaVersion: number;
 }
 
 /** Portable export format: save header + full event log, signed for integrity. */

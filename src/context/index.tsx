@@ -78,6 +78,7 @@ export interface State {
   inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
   strikeoutLog: StrikeoutEntry[]; // record of every strikeout with batter attribution
+  outLog: StrikeoutEntry[]; // record of every batter-completed out (K + pop-out + groundout + FC + sac-bunt)
   playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
   lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
 }
@@ -129,6 +130,7 @@ const initialState: State = {
   inningRuns: [[], []],
   playLog: [],
   strikeoutLog: [],
+  outLog: [],
   playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
   lineupOrder: [[], []] as [string[], string[]],
 };

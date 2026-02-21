@@ -1,3 +1,7 @@
+import type { BallgameDb } from "@storage/db";
+import { getDb } from "@storage/db";
+import type { TeamDoc } from "@storage/types";
+
 export type MlbTeam = { id: number; name: string; abbreviation: string };
 
 // League IDs from the MLB Stats API
@@ -41,63 +45,116 @@ export const NL_FALLBACK: MlbTeam[] = [
   { id: 120, name: "Washington Nationals", abbreviation: "WSH" },
 ];
 
-const CACHE_KEY = "mlbTeamsCache";
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
+const SCHEMA_VERSION = 1;
 
-type TeamsCache = { al: MlbTeam[]; nl: MlbTeam[]; timestamp: number };
-
-function loadCache(): TeamsCache | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw) as TeamsCache;
-  } catch {
-    return null;
-  }
-}
-
-function saveCache(al: MlbTeam[], nl: MlbTeam[]): void {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ al, nl, timestamp: Date.now() }));
-  } catch {
-    // ignore storage errors
-  }
-}
+const sortByName = (a: MlbTeam, b: MlbTeam) => a.name.localeCompare(b.name);
 
 type ApiTeam = { id: number; name: string; abbreviation: string; league?: { id: number } };
+type GetDb = () => Promise<BallgameDb>;
 
-export async function fetchMlbTeams(): Promise<{ al: MlbTeam[]; nl: MlbTeam[] }> {
-  const cached = loadCache();
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return { al: cached.al, nl: cached.nl };
-  }
-  try {
-    const resp = await fetch("https://statsapi.mlb.com/api/v1/teams?sportId=1");
-    if (!resp.ok) {
-      throw new Error(`MLB teams request failed with status ${resp.status}`);
-    }
-    const data = (await resp.json()) as { teams: ApiTeam[] };
-    const sort = (a: MlbTeam, b: MlbTeam) => a.name.localeCompare(b.name);
-    const toTeam = (t: ApiTeam): MlbTeam => ({
-      id: t.id,
-      name: t.name,
-      abbreviation: t.abbreviation,
-    });
-    const al = data.teams
-      .filter((t) => t.league?.id === AL_ID)
-      .map(toTeam)
-      .sort(sort);
-    const nl = data.teams
-      .filter((t) => t.league?.id === NL_ID)
-      .map(toTeam)
-      .sort(sort);
-    if (al.length === 0 || nl.length === 0) {
-      throw new Error("MLB teams data missing league information");
-    }
-    saveCache(al, nl);
-    return { al, nl };
-  } catch {
-    if (cached) return { al: cached.al, nl: cached.nl };
-    return { al: AL_FALLBACK, nl: NL_FALLBACK };
-  }
+function toMlbTeam(d: TeamDoc): MlbTeam {
+  return { id: d.numericId, name: d.name, abbreviation: d.abbreviation };
 }
+
+function toTeamDoc(t: MlbTeam, league: "al" | "nl", now: number): TeamDoc {
+  return {
+    id: String(t.id),
+    numericId: t.id,
+    name: t.name,
+    abbreviation: t.abbreviation,
+    league,
+    cachedAt: now,
+    schemaVersion: SCHEMA_VERSION,
+  };
+}
+
+function buildFetcher(getDbFn: GetDb) {
+  /** Read cached teams from RxDB. Returns null when the cache is empty or stale. */
+  async function loadFromDb(ignoreAge = false): Promise<{ al: MlbTeam[]; nl: MlbTeam[] } | null> {
+    try {
+      const db = await getDbFn();
+      const all = await db.teams.find().exec();
+      if (all.length === 0) return null;
+      if (!ignoreAge) {
+        const oldest = Math.min(...all.map((d) => d.cachedAt));
+        if (Date.now() - oldest >= CACHE_TTL_MS) return null;
+      }
+      const al = all
+        .filter((d) => d.league === "al")
+        .map(toMlbTeam)
+        .sort(sortByName);
+      const nl = all
+        .filter((d) => d.league === "nl")
+        .map(toMlbTeam)
+        .sort(sortByName);
+      return { al, nl };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Persist teams to RxDB: upserts all current teams and deletes any whose
+   * IDs are no longer present (e.g. contracted teams).
+   */
+  async function saveToDb(al: MlbTeam[], nl: MlbTeam[]): Promise<void> {
+    try {
+      const db = await getDbFn();
+      const now = Date.now();
+      const incoming = [
+        ...al.map((t) => toTeamDoc(t, "al", now)),
+        ...nl.map((t) => toTeamDoc(t, "nl", now)),
+      ];
+      const newIds = new Set(incoming.map((d) => d.id));
+      // Remove teams that no longer exist in the API response.
+      const existing = await db.teams.find().exec();
+      await Promise.all(existing.filter((d) => !newIds.has(d.id)).map((d) => d.remove()));
+      await db.teams.bulkUpsert(incoming);
+    } catch {
+      // Swallow DB errors — teams were already returned to the caller.
+    }
+  }
+
+  return async function fetchMlbTeams(): Promise<{ al: MlbTeam[]; nl: MlbTeam[] }> {
+    const cached = await loadFromDb();
+    if (cached) return cached;
+
+    try {
+      const resp = await fetch("https://statsapi.mlb.com/api/v1/teams?sportId=1");
+      if (!resp.ok) throw new Error(`MLB teams request failed with status ${resp.status}`);
+      const data = (await resp.json()) as { teams: ApiTeam[] };
+      const toTeam = (t: ApiTeam): MlbTeam => ({
+        id: t.id,
+        name: t.name,
+        abbreviation: t.abbreviation,
+      });
+      const al = data.teams
+        .filter((t) => t.league?.id === AL_ID)
+        .map(toTeam)
+        .sort(sortByName);
+      const nl = data.teams
+        .filter((t) => t.league?.id === NL_ID)
+        .map(toTeam)
+        .sort(sortByName);
+      if (al.length === 0 || nl.length === 0)
+        throw new Error("MLB teams data missing league information");
+      void saveToDb(al, nl);
+      return { al, nl };
+    } catch {
+      // Fall back to stale DB data, then hardcoded fallback.
+      const stale = await loadFromDb(true);
+      if (stale) return stale;
+      return { al: AL_FALLBACK, nl: NL_FALLBACK };
+    }
+  };
+}
+
+/** Default fetchMlbTeams backed by the IndexedDB singleton. */
+export const fetchMlbTeams = buildFetcher(getDb);
+
+/**
+ * Factory exposed for tests — pass an in-memory DB getter to get an isolated
+ * fetchMlbTeams that writes to the injected database.
+ */
+export const _buildFetchMlbTeams = buildFetcher;

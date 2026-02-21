@@ -107,7 +107,7 @@ export const useRxdbGameSync = (
       scoreSnapshot: { away: state.score[0], home: state.score[1] },
       inningSnapshot: { inning: state.inning, atBat: state.atBat },
       stateSnapshot: {
-        state: state as unknown as Record<string, unknown>,
+        state: state,
         rngState: getRngState(),
       },
     }).catch(() => {});
@@ -122,7 +122,7 @@ export const useRxdbGameSync = (
     SaveStore.updateProgress(saveId, state.pitchKey, {
       scoreSnapshot: { away: state.score[0], home: state.score[1] },
       stateSnapshot: {
-        state: state as unknown as Record<string, unknown>,
+        state: state,
         rngState: getRngState(),
       },
     }).catch(() => {});

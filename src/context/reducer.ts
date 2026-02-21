@@ -249,6 +249,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           inningRuns: [[], []] as [number[], number[]],
           playLog: [],
           strikeoutLog: [],
+          outLog: [],
           playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
           lineupOrder: [[], []] as [string[], string[]],
         };
@@ -290,6 +291,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           playerOverrides: restored.playerOverrides ?? [{}, {}],
           lineupOrder: restored.lineupOrder ?? [[], []],
           strikeoutLog: restored.strikeoutLog ?? [],
+          outLog: restored.outLog ?? [],
         };
       }
       default:
