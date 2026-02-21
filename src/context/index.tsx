@@ -14,6 +14,11 @@ export type PlayLogEntry = {
   runs: number; // runs scored on this play
 };
 
+export type StrikeoutEntry = {
+  team: 0 | 1;
+  batterNum: number; // 1–9
+};
+
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
 
 export const useGameContext = (): ContextValue => {
@@ -23,6 +28,20 @@ export const useGameContext = (): ContextValue => {
 };
 
 export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
+
+export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
+
+export type PlayerCustomization = {
+  nickname?: string;
+  contactMod?: ModPreset;
+  powerMod?: ModPreset;
+  speedMod?: ModPreset;
+  controlMod?: ModPreset;
+  velocityMod?: ModPreset;
+  staminaMod?: ModPreset;
+};
+
+export type TeamCustomPlayerOverrides = Record<string, PlayerCustomization>;
 
 export type DecisionType =
   | { kind: "steal"; base: 0 | 1; successPct: number }
@@ -58,6 +77,10 @@ export interface State {
   batterIndex: [number, number]; // 0–8 position in the 9-batter lineup per team
   inningRuns: [number[], number[]]; // runs scored per inning index per team (sparse)
   playLog: PlayLogEntry[]; // record of every hit/walk with batter attribution
+  strikeoutLog: StrikeoutEntry[]; // record of every strikeout with batter attribution
+  outLog: StrikeoutEntry[]; // record of every batter-completed out (K + pop-out + groundout + FC + sac-bunt)
+  playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
+  lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
 }
 
 export interface ContextValue extends State {
@@ -106,6 +129,10 @@ const initialState: State = {
   batterIndex: [0, 0],
   inningRuns: [[], []],
   playLog: [],
+  strikeoutLog: [],
+  outLog: [],
+  playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
+  lineupOrder: [[], []] as [string[], string[]],
 };
 
 export const GameProviderWrapper: React.FunctionComponent = ({ children }) => {
