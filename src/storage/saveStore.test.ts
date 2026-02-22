@@ -377,3 +377,49 @@ describe("SaveStore.appendEvents — counter initialisation from existing events
     expect(events[0].idx).toBe(0);
   });
 });
+
+describe("SaveStore — RBI in stateSnapshot export/import compatibility", () => {
+  it("round-trips a stateSnapshot containing playLog entries with rbi", async () => {
+    const saveId = await store.createSave(makeSetup({ seed: "rbisave" }));
+    const stateWithRbi = makeState({
+      playLog: [
+        { inning: 1, half: 0, batterNum: 1, team: 0, event: "single" as any, runs: 1, rbi: 1 },
+      ],
+    });
+    await store.updateProgress(saveId, 5, {
+      stateSnapshot: { state: stateWithRbi, rngState: 42 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    const playLog = saves[0].stateSnapshot?.state.playLog ?? [];
+    expect(playLog).toHaveLength(1);
+    expect(playLog[0].rbi).toBe(1);
+    await db2.close();
+  });
+
+  it("round-trips a stateSnapshot containing playLog entries without rbi (older save)", async () => {
+    const saveId = await store.createSave(makeSetup({ seed: "oldsave" }));
+    const oldState = makeState({
+      playLog: [
+        // Simulate old data: no rbi field
+        { inning: 1, half: 0, batterNum: 1, team: 0, event: "single" as any, runs: 1 },
+      ],
+    });
+    await store.updateProgress(saveId, 3, {
+      stateSnapshot: { state: oldState, rngState: null },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    // The rbi field may be absent — import must not fail
+    expect(saves[0].stateSnapshot?.state.playLog).toHaveLength(1);
+    await db2.close();
+  });
+});

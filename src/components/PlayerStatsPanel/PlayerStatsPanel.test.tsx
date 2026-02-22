@@ -37,6 +37,7 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText("H")).toBeInTheDocument();
     expect(screen.getByText("BB")).toBeInTheDocument();
     expect(screen.getByText("K")).toBeInTheDocument();
+    expect(screen.getByText("RBI")).toBeInTheDocument();
   });
 
   it("shows the stats table when there are play log entries", () => {
@@ -49,6 +50,7 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText("H")).toBeInTheDocument();
     expect(screen.getByText("BB")).toBeInTheDocument();
     expect(screen.getByText("K")).toBeInTheDocument();
+    expect(screen.getByText("RBI")).toBeInTheDocument();
   });
 
   it("counts hits for the correct batter", () => {
@@ -136,5 +138,25 @@ describe("PlayerStatsPanel", () => {
       fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
     });
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("counts RBI from playLog entries with rbi field", () => {
+    const playLog = [
+      { inning: 1, half: 0, batterNum: 2, team: 0, event: Hit.Single, runs: 1, rbi: 1 },
+      { inning: 1, half: 0, batterNum: 2, team: 0, event: Hit.Double, runs: 1, rbi: 1 },
+    ];
+    renderWithContext({ playLog });
+    // batter #2 should show 2 RBI (rows[0] = header, rows[2] = slot 2)
+    const rows = screen.getAllByRole("row");
+    expect(rows[2]?.textContent).toContain("2");
+  });
+
+  it("defaults RBI to 0 (shown as –) for playLog entries without rbi field", () => {
+    // entries without rbi field simulate older saved data
+    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1 }];
+    renderWithContext({ playLog });
+    const rows = screen.getAllByRole("row");
+    // batter #1 row: rbi defaults to 0, shown as "–"
+    expect(rows[1]?.textContent).toContain("–");
   });
 });

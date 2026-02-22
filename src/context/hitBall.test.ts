@@ -81,6 +81,56 @@ describe("hitBall — play log recording", () => {
   });
 });
 
+describe("hitBall — RBI tracking", () => {
+  it("single with no runners scores 0 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 0], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(0);
+  });
+
+  it("single with runner on 3rd scores 1 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Single, makeState({ baseLayout: [0, 0, 1], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(1);
+  });
+
+  it("double with runners on 2nd and 3rd scores 2 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Double, makeState({ baseLayout: [0, 1, 1], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(2);
+  });
+
+  it("triple with bases loaded scores 3 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Triple, makeState({ baseLayout: [1, 1, 1], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(3);
+  });
+
+  it("solo home run scores 1 RBI (batter only)", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Homerun, makeState({ baseLayout: [0, 0, 0], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(1);
+  });
+
+  it("grand slam scores 4 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Homerun, makeState({ baseLayout: [1, 1, 1], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(4);
+  });
+
+  it("bases-loaded walk scores 1 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Walk, makeState({ baseLayout: [1, 1, 1], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(1);
+  });
+
+  it("walk with bases not loaded scores 0 RBI", () => {
+    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    const next = hitBall(Hit.Walk, makeState({ baseLayout: [1, 0, 0], atBat: 0 }), noop);
+    expect(next.playLog[0].rbi).toBe(0);
+  });
+});
+
 describe("hitBall — handleGrounder (ground ball out paths)", () => {
   it("double play: runner on 1st, < 2 outs, DP roll < 65 → 2 outs recorded", () => {
     vi.spyOn(rngModule, "random")
