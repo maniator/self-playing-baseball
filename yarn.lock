@@ -5402,13 +5402,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"github-fork-ribbon-css@npm:^0.2.3":
-  version: 0.2.3
-  resolution: "github-fork-ribbon-css@npm:0.2.3"
-  checksum: 10c0/f4d6b6b891d8f54a5a380e98a623b5b655b18574877c25bf993600745e7f93b66f979b9c617c07b960fe66ea8daebc24bd910f885b1f739505c53a8f04e0d230
-  languageName: node
-  linkType: hard
-
 "glob-parent@npm:^6.0.2":
   version: 6.0.2
   resolution: "glob-parent@npm:6.0.2"
@@ -8170,7 +8163,6 @@ __metadata:
     eslint-plugin-simple-import-sort: "npm:^12"
     fake-indexeddb: "npm:^6.2.5"
     git-cz: "npm:^4.6.2"
-    github-fork-ribbon-css: "npm:^0.2.3"
     globals: "npm:^16"
     husky: "npm:^4.2.5"
     jsdom: "npm:26.0.0"
