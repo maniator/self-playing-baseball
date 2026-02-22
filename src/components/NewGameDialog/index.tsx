@@ -70,7 +70,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         </>
       )}
       <form onSubmit={handleSubmit}>
-        <FieldGroup>
+        <FieldGroup data-testid="matchup-mode-select">
           <SectionLabel>Matchup</SectionLabel>
           {(
             [

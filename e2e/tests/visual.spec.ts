@@ -10,8 +10,8 @@ import {
 } from "../utils/helpers";
 
 /**
- * Visual regression snapshots — only a small high-signal set.
- * Run only on desktop to keep snapshot count manageable.
+ * Visual regression snapshots — run across all three viewport projects.
+ * Captures a small, high-signal set of screens per viewport.
  */
 test.describe("Visual", () => {
   test.beforeEach(async ({ page }) => {

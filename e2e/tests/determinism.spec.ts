@@ -1,6 +1,6 @@
-import { expect, test } from "@playwright/test";
+import { type Browser, expect, test } from "@playwright/test";
 
-import { captureGameSignature, configureNewGame, waitForLogLines } from "../utils/helpers";
+import { captureGameSignature, configureNewGame } from "../utils/helpers";
 
 const FIXED_SEED = "deadbeef";
 const GAME_CONFIG = {
@@ -11,33 +11,37 @@ const GAME_CONFIG = {
 
 /**
  * Runs a full game-start sequence in a fresh isolated browser context and
- * returns a signature after N log lines.  The context is closed afterwards.
+ * returns a signature after enough log lines.  The context is closed afterwards.
+ * A fresh context guarantees IndexedDB isolation so the PRNG always starts
+ * from the same seed without being influenced by a prior run's auto-save.
  */
 async function runGameInFreshContext(
-  browser: Parameters<Parameters<typeof test>[1]>[0]["browser"],
+  browser: Browser,
   seed: string,
   config: { homeTeam?: string; awayTeam?: string } = {},
 ): Promise<string> {
   const context = await browser.newContext();
   const page = await context.newPage();
   try {
-    // Navigate with seed in URL so initSeedFromUrl picks it up on first load.
     await page.goto(`/?seed=${seed}`);
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     await configureNewGame(page, { ...config, seed });
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
-    await waitForLogLines(page, 20);
-    return captureGameSignature(page);
+    // 10 lines is enough for a stable signature and completes within budget on
+    // slower browsers (WebKit / mobile emulation).
+    return captureGameSignature(page, 10);
   } finally {
     await context.close();
   }
 }
 
 test.describe("Determinism", () => {
+  // Two sequential fresh-context game runs; give slow browsers plenty of room.
+  test.setTimeout(120_000);
+
   test("same seed produces same play-by-play sequence", async ({ browser }) => {
-    // Each call creates a fresh isolated context (own IndexedDB, own RNG init).
     const sig1 = await runGameInFreshContext(browser, FIXED_SEED, GAME_CONFIG);
     const sig2 = await runGameInFreshContext(browser, FIXED_SEED, GAME_CONFIG);
 
@@ -49,7 +53,6 @@ test.describe("Determinism", () => {
     const sig1 = await runGameInFreshContext(browser, "seed1", GAME_CONFIG);
     const sig2 = await runGameInFreshContext(browser, "seed2", GAME_CONFIG);
 
-    // Different seeds should produce different outputs
     expect(sig1).not.toEqual(sig2);
   });
 });

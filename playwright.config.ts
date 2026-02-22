@@ -8,6 +8,7 @@ export default defineConfig({
   forbidOnly: isCI,
   retries: isCI ? 1 : 0,
   workers: isCI ? 2 : undefined,
+  timeout: 90_000,
   reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
   use: {
     baseURL: "http://localhost:5173",
@@ -18,24 +19,27 @@ export default defineConfig({
   projects: [
     {
       name: "desktop",
-      use: {
-        ...devices["Desktop Chrome"],
-        viewport: { width: 1280, height: 800 },
-      },
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
       name: "tablet",
-      use: {
-        ...devices["iPad (gen 7)"],
-        viewport: { width: 820, height: 1180 },
-      },
+      use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
     {
-      name: "mobile",
-      use: {
-        ...devices["iPhone 14"],
-        viewport: { width: 390, height: 844 },
-      },
+      name: "iphone-14",
+      use: { ...devices["iPhone 14"] },
+    },
+    {
+      name: "iphone-15",
+      use: { ...devices["iPhone 15"] },
+    },
+    {
+      name: "pixel-7",
+      use: { ...devices["Pixel 7"] },
+    },
+    {
+      name: "pixel-5",
+      use: { ...devices["Pixel 5"] },
     },
   ],
   // Serve the production build for stable, dev-mode-free E2E tests.

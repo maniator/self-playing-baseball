@@ -87,16 +87,25 @@ export async function waitForLogLines(page: Page, count: number): Promise<void> 
 
 /**
  * Returns a deterministic "signature" string from visible game state.
- * Waits for at least 20 log entries, then takes the 5 OLDEST ones (from the
- * end of the array) — these are stable because autoplay only prepends new
- * entries, leaving the oldest entries at fixed positions from the back.
+ *
+ * Waits for at least `minLines` log entries (default 10), then reads the 5
+ * entries whose `data-log-index` is 0–4 (the first 5 events ever in the
+ * game).
+ *
+ * The log is rendered newest-first: array index 0 = most recent entry.
+ * Each entry carries `data-log-index = log.length - 1 - arrayIndex`, so
+ * index 0 always refers to the very first event and never shifts even as
+ * autoplay prepends newer entries at the top of the list.
  */
-export async function captureGameSignature(page: Page): Promise<string> {
-  await waitForLogLines(page, 20);
+export async function captureGameSignature(page: Page, minLines = 10): Promise<string> {
+  await waitForLogLines(page, minLines);
   const logEl = page.getByTestId("play-by-play-log");
-  const entries = await logEl.locator("div").allTextContents();
-  // log is newest-first; take the LAST 5 (oldest entries) — stable across captures
-  return entries.slice(-5).join("|");
+  const parts: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    const entry = logEl.locator(`[data-log-index="${i}"]`);
+    parts.push((await entry.textContent()) ?? "");
+  }
+  return parts.join("|");
 }
 
 /**
