@@ -328,13 +328,6 @@ describe("Game", () => {
     });
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
   });
-
-  it("renders the GitHub ribbon link", async () => {
-    await act(async () => {
-      render(<Game />);
-    });
-    expect(screen.getByText(/view on github/i)).toBeInTheDocument();
-  });
 });
 
 describe("GameProviderWrapper — logReducer", () => {

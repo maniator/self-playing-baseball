@@ -1,4 +1,3 @@
-import "github-fork-ribbon-css/gh-fork-ribbon.css";
 import "./index.scss";
 
 import * as React from "react";
