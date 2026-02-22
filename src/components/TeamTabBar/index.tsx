@@ -30,7 +30,7 @@ interface Props {
 }
 
 const TeamTabBar: React.FunctionComponent<Props> = ({ teams, activeTeam, onSelect }) => (
-  <Tabs role="tablist">
+  <Tabs role="tablist" data-testid="team-tab-bar">
     <TabBtn
       $active={activeTeam === 0}
       type="button"
