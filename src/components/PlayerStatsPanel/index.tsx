@@ -150,12 +150,12 @@ const warnBattingStatsInvariant = (
   }
 };
 
-const PlayerStatsPanel: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
+const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
 
   const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
-  warnBattingStatsInvariant(stats, activeTab, teams[activeTab]);
+  warnBattingStatsInvariant(stats, activeTeam, teams[activeTeam]);
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
@@ -186,7 +186,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ acti
       </HeadingRow>
       {!collapsed && (
         <>
-          <Table>
+          <Table data-testid="batting-stats-table">
             <thead>
               <tr>
                 <Th>#</Th>
