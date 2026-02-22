@@ -9,6 +9,7 @@ import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
 import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
 import PlayerStatsPanel from "@components/PlayerStatsPanel";
+import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
@@ -37,7 +38,7 @@ interface Props {
 }
 
 const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBufferRef }) => {
-  const { dispatch } = useGameContext();
+  const { dispatch, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
@@ -45,6 +46,7 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   const [dialogOpen, setDialogOpen] = React.useState(true);
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
+  const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
 
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
@@ -166,8 +168,9 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
           <Diamond />
         </FieldPanel>
         <LogPanel data-testid="log-panel">
-          <PlayerStatsPanel />
-          <HitLog />
+          <TeamTabBar teams={teams} activeTeam={activeTeam} onSelect={setActiveTeam} />
+          <PlayerStatsPanel activeTeam={activeTeam} />
+          <HitLog activeTeam={activeTeam} />
           <Announcements />
         </LogPanel>
       </GameBody>

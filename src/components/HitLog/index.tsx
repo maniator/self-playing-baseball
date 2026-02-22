@@ -45,27 +45,6 @@ const Toggle = styled.button`
   }
 `;
 
-const Tabs = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-`;
-
-const TabBtn = styled.button<{ $active: boolean }>`
-  flex: 1;
-  background: ${({ $active }) => ($active ? "#1a3a5a" : "transparent")};
-  border: 1px solid ${({ $active }) => ($active ? "#4a8abe" : "#333")};
-  color: ${({ $active }) => ($active ? "#cce8ff" : "#666")};
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-family: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-`;
-
 const Area = styled.div`
   overflow-y: auto;
   max-height: 200px;
@@ -100,12 +79,11 @@ const EmptyState = styled.div`
   padding: 6px 5px;
 `;
 
-const HitLog: React.FunctionComponent = () => {
+const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
   const { playLog, teams } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<0 | 1>(0);
 
-  const filtered = playLog.filter((entry) => entry.team === activeTab);
+  const filtered = playLog.filter((entry) => entry.team === activeTeam);
 
   return (
     <>
@@ -119,49 +97,29 @@ const HitLog: React.FunctionComponent = () => {
         </Toggle>
       </HeadingRow>
       {!collapsed && (
-        <>
-          <Tabs>
-            <TabBtn
-              $active={activeTab === 0}
-              type="button"
-              data-testid="hit-log-away-tab"
-              onClick={() => setActiveTab(0)}
-            >
-              ▲ {teams[0]}
-            </TabBtn>
-            <TabBtn
-              $active={activeTab === 1}
-              type="button"
-              data-testid="hit-log-home-tab"
-              onClick={() => setActiveTab(1)}
-            >
-              ▼ {teams[1]}
-            </TabBtn>
-          </Tabs>
-          <Area data-testid="hit-log">
-            {filtered.length === 0 ? (
-              <EmptyState>No hits yet.</EmptyState>
-            ) : (
-              [...filtered].reverse().map((entry, idx) => {
-                const key = `${entry.inning}-${entry.half}-${entry.team}-${entry.batterNum}-${idx}`;
-                return (
-                  <Entry key={key}>
-                    <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
-                    <span>
-                      {HALF_ARROW[entry.half]}
-                      {entry.inning} — {teams[entry.team]} #{entry.batterNum}
-                    </span>
-                    {entry.runs > 0 && (
-                      <Runs>
-                        +{entry.runs} run{entry.runs !== 1 ? "s" : ""}
-                      </Runs>
-                    )}
-                  </Entry>
-                );
-              })
-            )}
-          </Area>
-        </>
+        <Area data-testid="hit-log">
+          {filtered.length === 0 ? (
+            <EmptyState>No hits yet.</EmptyState>
+          ) : (
+            [...filtered].reverse().map((entry, idx) => {
+              const key = `${entry.inning}-${entry.half}-${entry.team}-${entry.batterNum}-${idx}`;
+              return (
+                <Entry key={key}>
+                  <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
+                  <span>
+                    {HALF_ARROW[entry.half]}
+                    {entry.inning} — {teams[entry.team]} #{entry.batterNum}
+                  </span>
+                  {entry.runs > 0 && (
+                    <Runs>
+                      +{entry.runs} run{entry.runs !== 1 ? "s" : ""}
+                    </Runs>
+                  )}
+                </Entry>
+              );
+            })
+          )}
+        </Area>
       )}
     </>
   );

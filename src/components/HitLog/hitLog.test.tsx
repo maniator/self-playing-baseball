@@ -13,8 +13,6 @@ import { GameContext } from "@context/index";
 
 import HitLog from ".";
 
-const noop = () => {};
-
 const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
   inning: 1,
   score: [0, 0],
@@ -39,10 +37,10 @@ const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
   ...overrides,
 });
 
-const renderHitLog = (ctx: ContextValue = makeCtx()) =>
+const renderHitLog = (ctx: ContextValue = makeCtx(), activeTeam: 0 | 1 = 0) =>
   render(
     <GameContext.Provider value={ctx}>
-      <HitLog />
+      <HitLog activeTeam={activeTeam} />
     </GameContext.Provider>,
   );
 
@@ -67,73 +65,73 @@ describe("HitLog", () => {
     expect(screen.getByText(/no hits yet/i)).toBeInTheDocument();
   });
 
-  it("shows an entry for a single (away tab active by default)", () => {
+  it("shows an entry for a single (away team active)", () => {
     const ctx = makeCtx({
       playLog: [makeEntry({ event: Hit.Single, batterNum: 3, inning: 2, half: 0, team: 0 })],
     });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("1B")).toBeInTheDocument();
     expect(screen.getByText(/Away #3/)).toBeInTheDocument();
   });
 
   it("shows HR in gold colour class for a homerun", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ event: Hit.Homerun })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("HR")).toBeInTheDocument();
   });
 
   it("shows walk as BB", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ event: Hit.Walk })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("BB")).toBeInTheDocument();
   });
 
   it("shows +1 run when entry has runs=1", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ runs: 1 })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("+1 run")).toBeInTheDocument();
   });
 
   it("pluralises 'runs' for runs > 1", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ runs: 3 })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("+3 runs")).toBeInTheDocument();
   });
 
   it("does not show runs span when runs=0", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ runs: 0 })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.queryByText(/\+0 run/)).not.toBeInTheDocument();
   });
 
   it("shows ▼ (bottom) arrow for half=1", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ half: 1, inning: 3 })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText(/▼3/)).toBeInTheDocument();
   });
 
   it("shows ▲ (top) arrow for half=0", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ half: 0, inning: 5 })] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText(/▲5/)).toBeInTheDocument();
   });
 
   it("is visible by default (not collapsed)", () => {
     const ctx = makeCtx({ playLog: [makeEntry()] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("1B")).toBeInTheDocument();
   });
 
   it("collapses when hide button is clicked", () => {
     const ctx = makeCtx({ playLog: [makeEntry()] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     fireEvent.click(screen.getByRole("button", { name: /collapse hit log/i }));
     expect(screen.queryByText("1B")).not.toBeInTheDocument();
   });
 
   it("expands again after toggling twice", () => {
     const ctx = makeCtx({ playLog: [makeEntry()] });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     fireEvent.click(screen.getByRole("button", { name: /collapse hit log/i }));
     fireEvent.click(screen.getByRole("button", { name: /expand hit log/i }));
     expect(screen.getByText("1B")).toBeInTheDocument();
@@ -146,41 +144,33 @@ describe("HitLog", () => {
         makeEntry({ event: Hit.Homerun, batterNum: 2 }),
       ],
     });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     const labels = screen.getAllByText(/^(1B|HR)$/);
     // Most recent (HR) should appear before older (1B) in the DOM
     expect(labels[0].textContent).toBe("HR");
     expect(labels[1].textContent).toBe("1B");
   });
 
-  it("renders Away and Home team tabs with correct labels", () => {
-    const ctx = makeCtx({ teams: ["Mets", "Yankees"] as [string, string] });
-    renderHitLog(ctx);
-    expect(screen.getByTestId("hit-log-away-tab")).toHaveTextContent("Mets");
-    expect(screen.getByTestId("hit-log-home-tab")).toHaveTextContent("Yankees");
-  });
-
-  it("defaults to the away team tab (team 0)", () => {
+  it("shows only away team entries when activeTeam=0", () => {
     const ctx = makeCtx({
       playLog: [
         makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
         makeEntry({ team: 1, event: Hit.Homerun, batterNum: 2 }),
       ],
     });
-    renderHitLog(ctx);
+    renderHitLog(ctx, 0);
     expect(screen.getByText("1B")).toBeInTheDocument();
     expect(screen.queryByText("HR")).not.toBeInTheDocument();
   });
 
-  it("filters to home team entries when home tab is clicked", () => {
+  it("shows only home team entries when activeTeam=1", () => {
     const ctx = makeCtx({
       playLog: [
         makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
         makeEntry({ team: 1, event: Hit.Homerun, batterNum: 2 }),
       ],
     });
-    renderHitLog(ctx);
-    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
+    renderHitLog(ctx, 1);
     expect(screen.queryByText("1B")).not.toBeInTheDocument();
     expect(screen.getByText("HR")).toBeInTheDocument();
   });
@@ -189,22 +179,26 @@ describe("HitLog", () => {
     const ctx = makeCtx({
       playLog: [makeEntry({ team: 0, event: Hit.Single, batterNum: 1 })],
     });
-    renderHitLog(ctx);
-    // Switch to home tab — home team has no hits
-    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
+    renderHitLog(ctx, 1);
     expect(screen.getByText(/no hits yet/i)).toBeInTheDocument();
     expect(screen.queryByText("1B")).not.toBeInTheDocument();
   });
 
-  it("switching tabs does not mutate the underlying playLog", () => {
+  it("re-renders with different activeTeam showing correct filtered entries", () => {
     const playLog = [
       makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
       makeEntry({ team: 1, event: Hit.Double, batterNum: 3 }),
     ];
     const ctx = makeCtx({ playLog });
-    renderHitLog(ctx);
-    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
-    fireEvent.click(screen.getByTestId("hit-log-away-tab"));
-    expect(playLog).toHaveLength(2);
+    const { rerender } = renderHitLog(ctx, 0);
+    expect(screen.getByText("1B")).toBeInTheDocument();
+    expect(screen.queryByText("2B")).not.toBeInTheDocument();
+    rerender(
+      <GameContext.Provider value={ctx}>
+        <HitLog activeTeam={1} />
+      </GameContext.Provider>,
+    );
+    expect(screen.queryByText("1B")).not.toBeInTheDocument();
+    expect(screen.getByText("2B")).toBeInTheDocument();
   });
 });
