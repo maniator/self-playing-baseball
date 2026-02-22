@@ -36,27 +36,27 @@ export default defineConfig({
     },
     {
       name: "tablet",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
       use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
     {
       name: "iphone-15-pro-max",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
       use: { ...devices["iPhone 15 Pro Max"] },
     },
     {
       name: "iphone-15",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
       use: { ...devices["iPhone 15"] },
     },
     {
       name: "pixel-7",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
       use: { ...devices["Pixel 7"] },
     },
     {
       name: "pixel-5",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
       use: { ...devices["Pixel 5"] },
     },
   ],

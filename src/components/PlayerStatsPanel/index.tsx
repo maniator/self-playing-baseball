@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { Hit } from "@constants/hitTypes";
 import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
 import { useGameContext } from "@context/index";
+import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
 
 const HeadingRow = styled.div`
@@ -126,12 +127,57 @@ const computeStats = (
   return stats;
 };
 
+/**
+ * Dev-mode invariant: verify batting-order PA consistency and that K ≤ AB.
+ *
+ * An earlier lineup slot must never have *fewer* plate appearances (AB + BB)
+ * than a later slot — regardless of walk counts.  If it does, stat attribution
+ * is broken.  K > AB is a separate hard impossibility (strikeouts always count
+ * as official at-bats).
+ *
+ * Plate appearances here means AB + BB only (walks are the only non-AB PA
+ * type modelled in this simulator — no sac flies, HBP, or CI).
+ *
+ * Only runs when import.meta.env.DEV is true; completely dead-code-eliminated
+ * in production builds.
+ */
+const warnBattingStatsInvariant = (
+  stats: Record<number, BatterStat>,
+  team: 0 | 1,
+  teamName: string,
+): void => {
+  if (!import.meta.env.DEV) return;
+  for (let slot = 1; slot <= 9; slot++) {
+    const s = stats[slot];
+    const pa = s.atBats + s.walks;
+    // K > AB is truly impossible — strikeouts always count as official at-bats.
+    if (s.strikeouts > s.atBats) {
+      appLog.warn(
+        `[BattingStats] IMPOSSIBLE: slot ${slot} team=${team} (${teamName}) ` +
+          `K=${s.strikeouts} > AB=${s.atBats}`,
+      );
+    }
+    // Earlier batter must not have fewer PAs than the next batter.
+    if (slot < 9) {
+      const nextPA = stats[slot + 1].atBats + stats[slot + 1].walks;
+      if (pa < nextPA) {
+        appLog.warn(
+          `[BattingStats] PA ordering violation: slot ${slot} PA=${pa} < slot ${slot + 1} PA=${nextPA} ` +
+            `team=${team} (${teamName}). ` +
+            `Note: AB can legitimately differ due to walks — check PA, not AB.`,
+        );
+      }
+    }
+  }
+};
+
 const PlayerStatsPanel: React.FunctionComponent = () => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<0 | 1>(0);
 
   const stats = computeStats(activeTab, playLog, strikeoutLog, outLog);
+  warnBattingStatsInvariant(stats, activeTab, teams[activeTab]);
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
@@ -178,7 +224,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
               ▼ {teams[1]}
             </TabBtn>
           </Tabs>
-          <Table>
+          <Table data-testid="batting-stats-table">
             <thead>
               <tr>
                 <Th>#</Th>
