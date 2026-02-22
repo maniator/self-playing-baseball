@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import * as fs from "fs";
 
 import {
   loadFirstSave,
@@ -73,5 +74,52 @@ test.describe("Save / Load", () => {
     await expect(page.getByTestId("saves-modal")).toBeVisible();
     await page.getByRole("button", { name: /close/i }).click();
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
+  });
+
+  test("export roundtrip: exported save can be re-imported and loaded", async ({ page }) => {
+    // 1. Start a game and save it (manual save has "· Inning N" in the name
+    //    which distinguishes it from the auto-save that GameInner creates).
+    await startGameViaPlayBall(page, { seed: "export1" });
+    await waitForLogLines(page, 5);
+    await saveCurrentGame(page);
+
+    // 2. Export the manual save (it's at the top of the list since it was
+    //    saved most recently).
+    const modal = page.getByTestId("saves-modal");
+    // The manual save contains "· Inning" which the raw auto-save does not.
+    const manualSaveRow = modal.locator("li").filter({ hasText: "· Inning" }).first();
+    await expect(manualSaveRow).toBeVisible({ timeout: 5_000 });
+
+    const [download] = await Promise.all([
+      page.waitForEvent("download"),
+      manualSaveRow.getByTestId("export-save-button").click(),
+    ]);
+
+    // 3. Read the exported JSON from the downloaded file.
+    const downloadPath = await download.path();
+    const exportedJson = fs.readFileSync(downloadPath!, "utf-8");
+    expect(exportedJson).toContain('"header"');
+
+    // 4. Close the modal and reset to a fresh game state.
+    await page.getByRole("button", { name: /close/i }).click();
+    await resetAppState(page);
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    // 5. Open the saves modal and paste the exported JSON into the import textarea.
+    await openSavesModal(page);
+    await page.getByTestId("import-save-textarea").fill(exportedJson);
+    await page.getByTestId("import-save-button").click();
+
+    // 6. The re-imported save should appear — it contains "· Inning" in its name.
+    const freshModal = page.getByTestId("saves-modal");
+    const importedRow = freshModal.locator("li").filter({ hasText: "· Inning" }).first();
+    await expect(importedRow).toBeVisible({ timeout: 10_000 });
+
+    // 7. Load the re-imported save.  The save has a stateSnapshot so handleLoad
+    //    will restore the game state and close the modal.
+    await importedRow.getByTestId("load-save-button").click();
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });
 });

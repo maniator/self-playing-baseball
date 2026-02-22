@@ -43,6 +43,12 @@ export interface GameConfig {
   seed?: string;
   homeTeam?: string;
   awayTeam?: string;
+  /**
+   * Select a managed team radio in the New Game dialog ("0" = away, "1" = home).
+   * When set, the dialog calls `setManagerMode(true)` so manager mode is active
+   * from the very first pitch — no localStorage pre-seeding required.
+   */
+  managedTeam?: "0" | "1";
 }
 
 /**
@@ -67,6 +73,10 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
   }
   if (options.awayTeam) {
     await page.getByTestId("away-team-select").selectOption({ label: options.awayTeam });
+  }
+  if (options.managedTeam !== undefined) {
+    // Click the radio button for the chosen managed team.
+    await page.locator(`input[name="managed"][value="${options.managedTeam}"]`).check();
   }
 }
 
@@ -221,6 +231,30 @@ export async function assertFieldAndLogVisible(page: Page): Promise<void> {
   const scoreBox = await scoreboard.boundingBox();
   expect(scoreBox).not.toBeNull();
   expect(scoreBox!.width).toBeGreaterThan(50);
+}
+
+/**
+ * Registers a page `addInitScript` that pre-sets Manager Mode (and managed
+ * team 0) in `localStorage` **before** the app's React hooks read it on
+ * the next navigation.
+ *
+ * Call this BEFORE `startGameViaPlayBall` (or any other helper that navigates)
+ * so that the app mounts with manager mode already enabled.  Because
+ * `addInitScript` runs on every subsequent navigation in the page's lifetime
+ * there is no need to re-register it between retries.
+ *
+ * @example
+ * ```ts
+ * await enableManagerModeViaStorage(page);
+ * await startGameViaPlayBall(page, { seed: "mgr42" });
+ * await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
+ * ```
+ */
+export async function enableManagerModeViaStorage(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem("managerMode", "true");
+    localStorage.setItem("managedTeam", "0");
+  });
 }
 
 /**
