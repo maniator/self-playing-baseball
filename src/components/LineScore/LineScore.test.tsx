@@ -93,8 +93,30 @@ describe("getCellValue — extra innings", () => {
 describe("LineScore", () => {
   it("shows both team names", () => {
     renderWithContext(<LineScore />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
-    expect(screen.getByText("Yankees")).toBeInTheDocument();
-    expect(screen.getByText("Red Sox")).toBeInTheDocument();
+    // Each team name is rendered in two spans (mobile label + full label) for
+    // responsive CSS toggling — use getAllByText to handle both occurrences.
+    expect(screen.getAllByText("Yankees").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Red Sox").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("renders the MLB abbreviation in the mobile label for a known team name", () => {
+    renderWithContext(
+      <LineScore />,
+      makeContextValue({ teams: ["New York Yankees", "New York Mets"] }),
+    );
+    // The mobile-label span contains the abbreviation; the full-label span contains
+    // the full name. Both appear in the DOM (CSS toggles which is shown).
+    expect(screen.getAllByText("NYY").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("NYM").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("New York Yankees").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("New York Mets").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("falls back to full team name when no abbreviation is known", () => {
+    renderWithContext(<LineScore />, makeContextValue({ teams: ["Custom Away", "Custom Home"] }));
+    // Both the mobile and full spans render the fallback full name (no abbreviation)
+    expect(screen.getAllByText("Custom Away").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getAllByText("Custom Home").length).toBeGreaterThanOrEqual(2);
   });
 
   it("shows R (runs) totals for each team", () => {

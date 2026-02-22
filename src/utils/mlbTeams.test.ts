@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "@storage/db";
 
-import { _buildFetchMlbTeams, AL_FALLBACK, NL_FALLBACK } from "./mlbTeams";
+import { _buildFetchMlbTeams, AL_FALLBACK, getTeamAbbreviation, NL_FALLBACK } from "./mlbTeams";
 
 let db: BallgameDb;
 let fetchMlbTeams: ReturnType<typeof _buildFetchMlbTeams>;
@@ -213,4 +213,26 @@ it("returns API data even when the DB write throws (saveToDb catch branch)", asy
   const result = await fetchMlbTeams();
   expect(result.al[0].name).toBe("New York Yankees");
   expect(result.nl[0].name).toBe("New York Mets");
+});
+
+describe("getTeamAbbreviation", () => {
+  it("returns abbreviation for a known AL team name", () => {
+    expect(getTeamAbbreviation("New York Yankees")).toBe("NYY");
+  });
+
+  it("returns abbreviation for a known NL team name", () => {
+    expect(getTeamAbbreviation("New York Mets")).toBe("NYM");
+  });
+
+  it("returns undefined for an unknown team name", () => {
+    expect(getTeamAbbreviation("Custom Team")).toBeUndefined();
+  });
+
+  it("returns undefined for an empty string", () => {
+    expect(getTeamAbbreviation("")).toBeUndefined();
+  });
+
+  it("is case-sensitive (no match for wrong casing)", () => {
+    expect(getTeamAbbreviation("new york yankees")).toBeUndefined();
+  });
 });

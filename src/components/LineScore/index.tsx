@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
+import { getTeamAbbreviation } from "@utils/mlbTeams";
 
 import {
   BsoGroup,
@@ -12,6 +13,8 @@ import {
   GameOverBanner,
   Table,
   Td,
+  TeamFullLabel,
+  TeamMobileLabel,
   TeamTd,
   TeamTh,
   Th,
@@ -64,7 +67,10 @@ const LineScore: React.FunctionComponent = () => {
         <tbody>
           {([0, 1] as const).map((team) => (
             <tr key={team}>
-              <TeamTd $active={atBat === team}>{teams[team]}</TeamTd>
+              <TeamTd $active={atBat === team} title={teams[team]}>
+                <TeamMobileLabel>{getTeamAbbreviation(teams[team]) ?? teams[team]}</TeamMobileLabel>
+                <TeamFullLabel>{teams[team]}</TeamFullLabel>
+              </TeamTd>
               {inningCols.map((n) => {
                 const val = getCellValue(team, n, inning, atBat, gameOver, inningRuns);
                 return (
