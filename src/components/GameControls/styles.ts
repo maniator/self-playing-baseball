@@ -52,6 +52,10 @@ export const Button = styled.button<{ $variant?: ButtonVariant }>`
   font-size: 14px;
   ${({ $variant = "default" }) => variantStyles[$variant]}
 
+  ${mq.desktop} {
+    font-size: 15px;
+  }
+
   ${mq.mobile} {
     padding: 8px 12px;
     font-size: 13px;
@@ -86,12 +90,21 @@ export const ToggleLabel = styled.label`
     width: 14px;
     height: 14px;
   }
+
+  ${mq.notMobile} {
+    font-size: 14px;
+  }
 `;
 
 export const BatterUpButton = styled(Button)`
   font-size: 18px;
   padding: 16px 28px;
   font-weight: bold;
+
+  ${mq.desktop} {
+    font-size: 20px;
+    padding: 18px 32px;
+  }
 `;
 
 export const HelpButton = styled.button`

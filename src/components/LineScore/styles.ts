@@ -21,6 +21,10 @@ export const Table = styled.table`
   background: #0a1628;
   color: #e8d5a3;
   width: 100%;
+
+  ${mq.notMobile} {
+    font-size: 14px;
+  }
 `;
 
 export const Th = styled.th<{ $accent?: boolean }>`
@@ -32,6 +36,10 @@ export const Th = styled.th<{ $accent?: boolean }>`
   font-size: 11px;
   letter-spacing: 0.5px;
   white-space: nowrap;
+
+  ${mq.notMobile} {
+    font-size: 12px;
+  }
 `;
 
 export const TeamTh = styled(Th)`
@@ -61,6 +69,10 @@ export const TeamTd = styled(Td)`
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 90px;
+
+  ${mq.notMobile} {
+    font-size: 13px;
+  }
 `;
 
 export const DividerTd = styled.td`
@@ -79,6 +91,10 @@ export const BsoRow = styled.div`
   font-size: 11px;
   color: #8abadf;
   letter-spacing: 0.5px;
+
+  ${mq.notMobile} {
+    font-size: 12px;
+  }
 `;
 
 export const BsoGroup = styled.div`

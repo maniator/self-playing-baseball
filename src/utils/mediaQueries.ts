@@ -31,4 +31,6 @@ export const mq = {
   mobile: `@media (max-width: ${breakpoints.mobile}px)`,
   desktop: `@media (min-width: ${breakpoints.desktop}px)`,
   tablet: `@media (min-width: ${breakpoints.mobile + 1}px) and (max-width: ${breakpoints.desktop - 1}px)`,
+  /** Applies to tablet + desktop (everything above the mobile breakpoint). */
+  notMobile: `@media (min-width: ${breakpoints.mobile + 1}px)`,
 } as const;

@@ -9,6 +9,27 @@ export const FieldWrapper = styled.div`
   width: 100%;
   flex-shrink: 0;
 
+  ${mq.desktop} {
+    /*
+     * --desktop-field scales the whole field responsively.
+     * Capped at 560 px so very wide monitors don't get an oversized field.
+     * The height is proportional (280/300 ≈ 0.933) to maintain the same
+     * visible crop of the outfield that the design uses.
+     */
+    --desktop-field: clamp(300px, min(38vw, 52vh), 560px);
+    height: calc(var(--desktop-field) * 0.933);
+  }
+
+  ${mq.tablet} {
+    /*
+     * On portrait tablet the field takes the full column width; scale by the
+     * narrower of viewport-width and viewport-height so the field is large
+     * but doesn't overflow the screen vertically.
+     */
+    --desktop-field: clamp(300px, min(60vw, 38vh), 520px);
+    height: calc(var(--desktop-field) * 0.933);
+  }
+
   ${mq.mobile} {
     flex: 1;
     height: auto;
@@ -25,6 +46,17 @@ export const OutfieldDiv = styled.div`
   left: 50%;
   bottom: 65px;
   transform: translateX(-50%) rotate(45deg);
+
+  ${mq.notMobile} {
+    /*
+     * --desktop-field is set on FieldWrapper and cascades to all children.
+     * bottom scales proportionally (65/300 ≈ 0.217) to keep the same
+     * visual crop as the base 300 px design.
+     */
+    height: var(--desktop-field, 300px);
+    width: var(--desktop-field, 300px);
+    bottom: calc(var(--desktop-field, 300px) * 0.217);
+  }
 
   ${mq.mobile} {
     /*
@@ -49,8 +81,14 @@ export const DiamondDiv = styled.div`
   bottom: 0;
   right: 0;
 
-  ${mq.mobile} {
+  ${mq.notMobile} {
     /* 50% of OutfieldDiv — same ratio as desktop (150/300) */
+    height: calc(var(--desktop-field, 300px) / 2);
+    width: calc(var(--desktop-field, 300px) / 2);
+  }
+
+  ${mq.mobile} {
+    /* 50% of OutfieldDiv — same ratio as mobile (150/300) */
     height: calc(var(--mobile-field, 140px) / 2);
     width: calc(var(--mobile-field, 140px) / 2);
   }
@@ -76,15 +114,31 @@ export const Mound = styled.div`
     top: calc(50% - 25px);
   }
 
-  ${mq.mobile} {
+  ${mq.notMobile} {
     /* ~1/3 of OutfieldDiv — same ratio as desktop (100/300) */
+    height: calc(var(--desktop-field, 300px) / 3);
+    width: calc(var(--desktop-field, 300px) / 3);
+    left: calc(50% - var(--desktop-field, 300px) / 6);
+    top: calc(50% - var(--desktop-field, 300px) / 6);
+
+    &:after {
+      /* ~1/6 of OutfieldDiv — same ratio as desktop (50/300) */
+      height: calc(var(--desktop-field, 300px) / 6);
+      width: calc(var(--desktop-field, 300px) / 6);
+      left: calc(50% - var(--desktop-field, 300px) / 12);
+      top: calc(50% - var(--desktop-field, 300px) / 12);
+    }
+  }
+
+  ${mq.mobile} {
+    /* ~1/3 of OutfieldDiv — same ratio as mobile (100/300) */
     height: calc(var(--mobile-field, 140px) / 3);
     width: calc(var(--mobile-field, 140px) / 3);
     left: calc(50% - var(--mobile-field, 140px) / 6);
     top: calc(50% - var(--mobile-field, 140px) / 6);
 
     &:after {
-      /* ~1/6 of OutfieldDiv — same ratio as desktop (50/300) */
+      /* ~1/6 of OutfieldDiv — same ratio as mobile (50/300) */
       height: calc(var(--mobile-field, 140px) / 6);
       width: calc(var(--mobile-field, 140px) / 6);
       left: calc(50% - var(--mobile-field, 140px) / 12);
