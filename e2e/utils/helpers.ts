@@ -13,6 +13,17 @@ export async function resetAppState(page: Page): Promise<void> {
 }
 
 /**
+ * Opens the New Game dialog.  In the current app the dialog opens
+ * automatically on every fresh page load, so this function simply waits
+ * until it is visible.  It is provided as a named helper so tests read
+ * naturally and future changes (e.g. a "New Game" button) only need to
+ * update this one place.
+ */
+export async function openNewGameDialog(page: Page): Promise<void> {
+  await waitForNewGameDialog(page);
+}
+
+/**
  * Waits until the New Game dialog is visible on screen.
  */
 export async function waitForNewGameDialog(page: Page): Promise<void> {
