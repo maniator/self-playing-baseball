@@ -1,5 +1,8 @@
 name: Copilot Setup Steps
 
+permissions:
+  contents: read
+
 # This workflow sets up the Copilot coding agent's environment before it starts
 # working on a task.  Steps here run BEFORE the firewall is enabled, so all
 # network downloads (npm packages, Playwright browsers) must happen here.
