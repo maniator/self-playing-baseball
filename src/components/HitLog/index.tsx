@@ -95,7 +95,7 @@ const HitLog: React.FunctionComponent = () => {
         </Toggle>
       </HeadingRow>
       {!collapsed && (
-        <Area>
+        <Area data-testid="hit-log">
           {playLog.length === 0 ? (
             <EmptyState>No hits yet.</EmptyState>
           ) : (

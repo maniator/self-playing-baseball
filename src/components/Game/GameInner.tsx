@@ -165,7 +165,7 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
         <FieldPanel>
           <Diamond />
         </FieldPanel>
-        <LogPanel>
+        <LogPanel data-testid="log-panel">
           <HitLog />
           <PlayerStatsPanel />
           <Announcements />

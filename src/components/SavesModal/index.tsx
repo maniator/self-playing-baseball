@@ -74,14 +74,19 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
 
   return (
     <>
-      <SavesButton $variant="saves" onClick={open} aria-label="Open saves panel">
+      <SavesButton
+        $variant="saves"
+        onClick={open}
+        aria-label="Open saves panel"
+        data-testid="saves-button"
+      >
         💾 Saves
       </SavesButton>
 
-      <Dialog ref={ref} onClick={handleClick}>
+      <Dialog ref={ref} onClick={handleClick} data-testid="saves-modal">
         <DialogTitle>💾 Saves</DialogTitle>
 
-        <SmallButton onClick={handleSave}>
+        <SmallButton onClick={handleSave} data-testid="save-game-button">
           {props.currentSaveId ? "Update save" : "Save current game"}
         </SmallButton>
 
@@ -93,8 +98,10 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
             {saves.map((s: SaveDoc) => (
               <SlotItem key={s.id}>
                 <SlotName title={s.name}>{s.name}</SlotName>
-                <SlotDate>{formatDate(s.updatedAt)}</SlotDate>
-                <SmallButton onClick={() => handleLoad(s)}>Load</SmallButton>
+                <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
+                <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
+                  Load
+                </SmallButton>
                 <SmallButton onClick={() => handleExport(s)}>Export</SmallButton>
                 <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
                   ✕
@@ -106,7 +113,12 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
 
         <SectionHeading>Import save</SectionHeading>
         <Row>
-          <FileInput type="file" accept=".json,application/json" onChange={handleFileImport} />
+          <FileInput
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileImport}
+            data-testid="import-save-file-input"
+          />
         </Row>
         <ImportArea
           rows={4}
@@ -114,10 +126,15 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           value={importText}
           onChange={(e) => setImportText(e.target.value)}
           aria-label="Import save JSON"
+          data-testid="import-save-textarea"
         />
         {importError && <ErrorMsg>{importError}</ErrorMsg>}
         <Row>
-          <SmallButton onClick={handleImportPaste} disabled={!importText.trim()}>
+          <SmallButton
+            onClick={handleImportPaste}
+            disabled={!importText.trim()}
+            data-testid="import-save-button"
+          >
             Import from text
           </SmallButton>
         </Row>

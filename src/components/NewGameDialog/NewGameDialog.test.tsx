@@ -15,6 +15,12 @@ vi.mock("@utils/mlbTeams", async (importOriginal) => {
   };
 });
 
+// Mock rng so getSeed pre-fills the seed input and reinitSeed is trackable.
+vi.mock("@utils/rng", () => ({
+  getSeed: vi.fn(() => 0xdeadbeef),
+  reinitSeed: vi.fn((s: string) => (s ? parseInt(s, 36) : 12345)),
+}));
+
 import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
 import NewGameDialog from "./index";
 
@@ -224,5 +230,38 @@ describe("NewGameDialog", () => {
     const awaySelect = screen.getByLabelText(/away team/i) as HTMLSelectElement;
     expect(Array.from(homeSelect.options).map((o) => o.value)).toContain("New York Yankees");
     expect(Array.from(awaySelect.options).map((o) => o.value)).toContain("New York Mets");
+  });
+
+  it("renders a seed input pre-filled with the current seed (from getSeed)", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const seedInput = screen.getByLabelText(/^seed$/i) as HTMLInputElement;
+    // getSeed mock returns 0xdeadbeef = 3735928559; toString(36) = "1z141z4"
+    expect(seedInput).toBeInTheDocument();
+    expect(seedInput.value).toBe((0xdeadbeef).toString(36));
+  });
+
+  it("allows the user to type a custom seed", () => {
+    render(<NewGameDialog onStart={noop} />);
+    const seedInput = screen.getByLabelText(/^seed$/i) as HTMLInputElement;
+    fireEvent.change(seedInput, { target: { value: "mycustomseed" } });
+    expect(seedInput.value).toBe("mycustomseed");
+  });
+
+  it("calls reinitSeed with the typed seed when Play Ball is clicked", async () => {
+    const { reinitSeed } = await import("@utils/rng");
+    const onStart = vi.fn();
+    render(<NewGameDialog onStart={onStart} />);
+    const seedInput = screen.getByLabelText(/^seed$/i);
+    fireEvent.change(seedInput, { target: { value: "myfixedseed" } });
+    act(() => {
+      fireEvent.click(screen.getByText(/play ball/i));
+    });
+    expect(reinitSeed).toHaveBeenCalledWith("myfixedseed");
+    expect(onStart).toHaveBeenCalled();
+  });
+
+  it("renders the seed hint text", () => {
+    render(<NewGameDialog onStart={noop} />);
+    expect(screen.getByText(/leave blank for a random game/i)).toBeInTheDocument();
   });
 });

@@ -1,0 +1,86 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches:
+      - master
+      - "copilot/**"
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: E2E (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Chromium: determinism + desktop + Pixel devices
+          - browser: chromium
+            projects: >-
+              --project=determinism
+              --project=desktop
+              --project=pixel-7
+              --project=pixel-5
+          # WebKit: tablet + iPhone devices
+          - browser: webkit
+            projects: >-
+              --project=tablet
+              --project=iphone-15-pro-max
+              --project=iphone-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          # Browser-specific cache key: upgrading Playwright (yarn.lock changes) or
+          # switching browsers invalidates only that browser's cache.
+          key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Playwright browsers (with system deps)
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Install Playwright system dependencies (cache hit)
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps ${{ matrix.browser }}
+
+      - name: Build app
+        run: yarn build
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test ${{ matrix.projects }}
+        env:
+          CI: true
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -71,12 +71,17 @@ export default defineConfig(({ mode }) => ({
     setupFiles: ["./test/setup.ts"],
     coverage: {
       provider: "v8",
-      include: ["src/**/*.{ts,tsx}"],
+      // Patterns are relative to the vitest root, which is "src/" (set by
+      // `root: "src"` above).  Do NOT prefix with "src/" — that would look
+      // for src/src/** which never exists.
+      include: ["**/*.{ts,tsx}"],
       exclude: [
-        "src/index.tsx",
-        "src/sw.ts",
-        "src/test/**",
+        "index.tsx",
+        "sw.ts",
+        "test/**",
         "**/*.test.{ts,tsx}",
+        "../e2e/**",
+        "../playwright.config.ts",
       ],
       thresholds: {
         lines: 90,

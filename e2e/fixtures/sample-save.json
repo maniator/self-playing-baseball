@@ -1,0 +1,93 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_1700000000000_fixture",
+    "name": "Mets vs Yankees",
+    "seed": "testse",
+    "matchupMode": "default",
+    "homeTeamId": "New York Yankees",
+    "awayTeamId": "New York Mets",
+    "createdAt": 1700000000000,
+    "updatedAt": 1700000000000,
+    "progressIdx": 12,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": null,
+      "managerMode": false,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "New York Mets",
+      "playerOverrides": [
+        {},
+        {}
+      ],
+      "lineupOrder": [
+        [],
+        []
+      ]
+    },
+    "schemaVersion": 1,
+    "stateSnapshot": {
+      "state": {
+        "inning": 2,
+        "score": [
+          1,
+          0
+        ],
+        "teams": [
+          "Mets",
+          "Yankees"
+        ],
+        "baseLayout": [
+          0,
+          0,
+          0
+        ],
+        "outs": 2,
+        "strikes": 1,
+        "balls": 2,
+        "atBat": 3,
+        "gameOver": false,
+        "pendingDecision": null,
+        "onePitchModifier": null,
+        "pitchKey": 12,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": false,
+        "defensiveShiftOffered": false,
+        "batterIndex": [
+          3,
+          0
+        ],
+        "inningRuns": [
+          [],
+          [
+            1
+          ]
+        ],
+        "playLog": [],
+        "strikeoutLog": [],
+        "outLog": [],
+        "playerOverrides": [
+          {},
+          {}
+        ],
+        "lineupOrder": [
+          [],
+          []
+        ]
+      },
+      "rngState": 1234567890
+    },
+    "scoreSnapshot": {
+      "away": 1,
+      "home": 0
+    },
+    "inningSnapshot": {
+      "inning": 2,
+      "atBat": 3
+    }
+  },
+  "events": [],
+  "sig": "1404bff2"
+}

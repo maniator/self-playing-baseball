@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import type { TeamCustomPlayerOverrides } from "@context/index";
+import { getSeed, reinitSeed } from "@utils/rng";
 
 import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 import {
@@ -8,10 +9,12 @@ import {
   Divider,
   FieldGroup,
   FieldLabel,
+  Input,
   PlayBallButton,
   RadioLabel,
   ResumeButton,
   SectionLabel,
+  SeedHint,
   Select,
   Title,
 } from "./styles";
@@ -43,6 +46,8 @@ type Props = {
 const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
+  // Pre-fill with the current seed so it's visible and shareable at a glance.
+  const [seedInput, setSeedInput] = React.useState(() => getSeed()?.toString(36) ?? "");
 
   React.useEffect(() => {
     if (!ref.current?.open) ref.current?.showModal();
@@ -53,13 +58,15 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Apply the seed before game state is initialized; updates URL too.
+    reinitSeed(seedInput.trim());
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
     onStart(home, away, mt, { away: awayOverrides, home: homeOverrides, awayOrder, homeOrder });
     ref.current?.close();
   };
 
   return (
-    <Dialog ref={ref} onCancel={(e) => e.preventDefault()}>
+    <Dialog ref={ref} onCancel={(e) => e.preventDefault()} data-testid="new-game-dialog">
       <Title>⚾ New Game</Title>
       {onResume && autoSaveName && (
         <>
@@ -70,7 +77,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         </>
       )}
       <form onSubmit={handleSubmit}>
-        <FieldGroup>
+        <FieldGroup data-testid="matchup-mode-select">
           <SectionLabel>Matchup</SectionLabel>
           {(
             [
@@ -115,7 +122,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         )}
         <FieldGroup>
           <FieldLabel htmlFor="ng-home">Home team</FieldLabel>
-          <Select id="ng-home" value={home} onChange={(e) => setHome(e.target.value)}>
+          <Select
+            id="ng-home"
+            data-testid="home-team-select"
+            value={home}
+            onChange={(e) => setHome(e.target.value)}
+          >
             {homeList.map((t) => (
               <option key={t.id} value={t.name}>
                 {t.name}
@@ -125,7 +137,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         </FieldGroup>
         <FieldGroup>
           <FieldLabel htmlFor="ng-away">Away team</FieldLabel>
-          <Select id="ng-away" value={away} onChange={(e) => setAway(e.target.value)}>
+          <Select
+            id="ng-away"
+            data-testid="away-team-select"
+            value={away}
+            onChange={(e) => setAway(e.target.value)}
+          >
             {awayList.map((t) => (
               <option key={t.id} value={t.name}>
                 {t.name}
@@ -160,7 +177,25 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
           onAwayOrderChange={setAwayOrder}
           onHomeOrderChange={setHomeOrder}
         />
-        <PlayBallButton type="submit">Play Ball!</PlayBallButton>
+        <FieldGroup>
+          <FieldLabel htmlFor="ng-seed">Seed</FieldLabel>
+          <Input
+            id="ng-seed"
+            type="text"
+            data-testid="seed-input"
+            value={seedInput}
+            onChange={(e) => setSeedInput(e.target.value)}
+            placeholder="random"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <SeedHint>
+            Leave blank for a random game. Share the URL after starting to replay.
+          </SeedHint>
+        </FieldGroup>
+        <PlayBallButton type="submit" data-testid="play-ball-button">
+          Play Ball!
+        </PlayBallButton>
       </form>
     </Dialog>
   );

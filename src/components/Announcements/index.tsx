@@ -92,11 +92,20 @@ const Announcements: React.FunctionComponent = () => {
         </Toggle>
       </HeadingRow>
       {expanded && (
-        <AnnouncementsArea ref={areaRef} aria-live="polite" aria-atomic="false">
+        <AnnouncementsArea
+          ref={areaRef}
+          aria-live="polite"
+          aria-atomic="false"
+          data-testid="play-by-play-log"
+        >
           {log.length === 0 ? (
             <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
           ) : (
-            log.map((announcement, idx) => <Log key={idx}>{announcement}</Log>)
+            log.map((announcement, idx) => (
+              <Log key={idx} data-log-index={log.length - 1 - idx}>
+                {announcement}
+              </Log>
+            ))
           )}
         </AnnouncementsArea>
       )}
