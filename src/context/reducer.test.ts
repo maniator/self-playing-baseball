@@ -1226,3 +1226,56 @@ describe("strikeout tracking", () => {
     expect(state.strikeoutLog).toHaveLength(0);
   });
 });
+
+describe("restore_game — RBI backfill for older saves", () => {
+  it("backfills rbi from runs on playLog entries that lack rbi", () => {
+    const oldPlayLog = [
+      { inning: 1, half: 0 as const, batterNum: 1, team: 0 as const, event: Hit.Single, runs: 1 },
+      { inning: 2, half: 0 as const, batterNum: 3, team: 0 as const, event: Hit.Homerun, runs: 4 },
+    ];
+    const { state } = dispatchAction(
+      makeState({ playLog: oldPlayLog }),
+      "restore_game",
+      makeState({ playLog: oldPlayLog }),
+    );
+    expect(state.playLog[0].rbi).toBe(1);
+    expect(state.playLog[1].rbi).toBe(4);
+  });
+
+  it("preserves existing rbi values and does not overwrite them", () => {
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 2,
+        team: 0 as const,
+        event: Hit.Double,
+        runs: 2,
+        rbi: 2,
+      },
+    ];
+    const { state } = dispatchAction(
+      makeState({ playLog }),
+      "restore_game",
+      makeState({ playLog }),
+    );
+    expect(state.playLog[0].rbi).toBe(2);
+  });
+
+  it("handles empty playLog without error", () => {
+    const { state } = dispatchAction(makeState(), "restore_game", makeState());
+    expect(state.playLog).toHaveLength(0);
+  });
+
+  it("zero-runs entry gets rbi=0 after backfill", () => {
+    const oldPlayLog = [
+      { inning: 1, half: 0 as const, batterNum: 1, team: 0 as const, event: Hit.Single, runs: 0 },
+    ];
+    const { state } = dispatchAction(
+      makeState({ playLog: oldPlayLog }),
+      "restore_game",
+      makeState({ playLog: oldPlayLog }),
+    );
+    expect(state.playLog[0].rbi).toBe(0);
+  });
+});

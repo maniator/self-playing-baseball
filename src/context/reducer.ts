@@ -286,8 +286,15 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       }
       case "restore_game": {
         const restored = action.payload as State;
+        // Backfill rbi for older saves that pre-date the rbi field.
+        // In this simulator rbi always equals runsScored (= entry.runs),
+        // so this produces exact values rather than a default-zero fallback.
+        const playLog = (restored.playLog ?? []).map((entry) =>
+          entry.rbi !== undefined ? entry : { ...entry, rbi: entry.runs },
+        );
         return {
           ...restored,
+          playLog,
           playerOverrides: restored.playerOverrides ?? [{}, {}],
           lineupOrder: restored.lineupOrder ?? [[], []],
           strikeoutLog: restored.strikeoutLog ?? [],

@@ -37,6 +37,25 @@ test.describe("Visual", () => {
     });
   });
 
+  /**
+   * Player stats panel screenshot — verifies the RBI column is present and the
+   * layout (PlayerStatsPanel above HitLog) is correct across all viewports.
+   *
+   * We use a deterministic seed and wait for a fixed log-line count so the
+   * entire panel (including live stat values) is stable at screenshot time.
+   */
+  test("player stats panel with RBI column screenshot", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "visual-stats1" });
+    await waitForLogLines(page, 8);
+    const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 10_000 });
+    // Seed is deterministic and we wait for a fixed log-line count, so the
+    // entire panel (including tbody stats) is stable — no masking needed.
+    await expect(statsPanel).toHaveScreenshot("player-stats-panel.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
   test("saves modal screenshot with one save present", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual2" });
     await waitForLogLines(page, 5);

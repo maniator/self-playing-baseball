@@ -12,6 +12,18 @@ export type PlayLogEntry = {
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
   runs: number; // runs scored on this play
+  /**
+   * RBI credited to the batter on this play.
+   * Equals runsScored for hits (single/double/triple/homerun) and walks
+   * (including bases-loaded walks). Sac bunts and fielder's choice plays
+   * are not credited with RBI in this simulator (simplified rule — those
+   * plays resolve through outLog, not playLog).
+   * Field is optional for backward compatibility with older saved data:
+   * `restore_game` backfills missing `rbi` from `runs` when a save is
+   * loaded, and stat aggregation then uses `entry.rbi ?? 0` so that only
+   * entries that still lack an explicit value default to 0.
+   */
+  rbi?: number;
 };
 
 export type StrikeoutEntry = {
