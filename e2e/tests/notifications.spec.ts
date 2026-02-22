@@ -85,7 +85,7 @@ test.describe("Notifications smoke — permission badge", () => {
     await page.getByTestId("manager-mode-toggle").check();
 
     // A notification state badge is rendered regardless of permission level:
-    // "�� on" (granted), "🔔 click to enable" (default), "🔕 blocked" (denied).
+    // "🔔 on" (granted), "🔔 click to enable" (default), "🔕 blocked" (denied).
     await expect(page.getByTestId("notif-permission-badge")).toBeVisible({ timeout: 5_000 });
   });
 });
