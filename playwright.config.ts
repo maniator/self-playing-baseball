@@ -26,12 +26,12 @@ export default defineConfig({
       use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
     {
-      name: "iphone-14",
-      use: { ...devices["iPhone 14"] },
+      name: "iphone-15-pro-max",
+      use: { ...devices["iPhone 15 Pro Max"] },
     },
     {
-      name: "iphone-15",
-      use: { ...devices["iPhone 15"] },
+      name: "iphone-15-pro",
+      use: { ...devices["iPhone 15 Pro"] },
     },
     {
       name: "pixel-7",
