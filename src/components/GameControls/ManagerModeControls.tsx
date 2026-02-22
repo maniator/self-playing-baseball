@@ -29,7 +29,12 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
 }) => (
   <>
     <ToggleLabel>
-      <input type="checkbox" checked={managerMode} onChange={onManagerModeChange} />
+      <input
+        type="checkbox"
+        checked={managerMode}
+        onChange={onManagerModeChange}
+        data-testid="manager-mode-toggle"
+      />
       Manager Mode
     </ToggleLabel>
     {managerMode && (

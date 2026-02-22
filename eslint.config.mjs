@@ -78,6 +78,21 @@ export default tseslint.config(
     },
   },
 
+  // E2E Playwright tests — Node.js environment, no React rules
+  {
+    files: ["e2e/**/*.ts"],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node },
+    },
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "no-console": "off",
+    },
+  },
+
   // logger.ts intentionally uses console — it IS the logging abstraction
   {
     files: ["src/utils/logger.ts"],

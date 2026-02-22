@@ -1,0 +1,53 @@
+name: Playwright E2E
+
+on:
+  push:
+    branches:
+      - master
+      - "copilot/**"
+  pull_request:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium --with-deps
+
+      - name: Build app
+        run: yarn build
+
+      - name: Run Playwright E2E tests
+        run: npx playwright test
+        env:
+          CI: true
+
+      - name: Upload test artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7

@@ -46,7 +46,7 @@ const LineScore: React.FunctionComponent = () => {
     playLog.filter((e) => e.team === team && e.event !== Hit.Walk).length;
 
   return (
-    <Wrapper>
+    <Wrapper data-testid="scoreboard">
       <Table>
         <thead>
           <tr>

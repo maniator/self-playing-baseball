@@ -2112,6 +2112,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@playwright/test@npm:1.50.1":
+  version: 1.50.1
+  resolution: "@playwright/test@npm:1.50.1"
+  dependencies:
+    playwright: "npm:1.50.1"
+  bin:
+    playwright: cli.js
+  checksum: 10c0/77c1a7cfaca7b3b88804256bb4c0e15c54b8df02690298086ef4a4fc8c2a42b99b69ba1b83906d00cc7ddb322ce8b2f19f0238f189913607c679779a4d132da1
+  languageName: node
+  linkType: hard
+
 "@rolldown/pluginutils@npm:1.0.0-rc.3":
   version: 1.0.0-rc.3
   resolution: "@rolldown/pluginutils@npm:1.0.0-rc.3"
@@ -5245,12 +5256,31 @@ __metadata:
   languageName: node
   linkType: hard
 
+"fsevents@npm:2.3.2":
+  version: 2.3.2
+  resolution: "fsevents@npm:2.3.2"
+  dependencies:
+    node-gyp: "npm:latest"
+  checksum: 10c0/be78a3efa3e181cda3cf7a4637cb527bcebb0bd0ea0440105a3bb45b86f9245b307dc10a2507e8f4498a7d4ec349d1910f4d73e4d4495b16103106e07eee735b
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
 "fsevents@npm:~2.3.2, fsevents@npm:~2.3.3":
   version: 2.3.3
   resolution: "fsevents@npm:2.3.3"
   dependencies:
     node-gyp: "npm:latest"
   checksum: 10c0/a1f0c44595123ed717febbc478aa952e47adfc28e2092be66b8ab1635147254ca6cfe1df792a8997f22716d4cbafc73309899ff7bfac2ac3ad8cf2e4ecc3ec60
+  conditions: os=darwin
+  languageName: node
+  linkType: hard
+
+"fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>":
+  version: 2.3.2
+  resolution: "fsevents@patch:fsevents@npm%3A2.3.2#optional!builtin<compat/fsevents>::version=2.3.2&hash=df0bf1"
+  dependencies:
+    node-gyp: "npm:latest"
   conditions: os=darwin
   languageName: node
   linkType: hard
@@ -7377,6 +7407,30 @@ __metadata:
   languageName: node
   linkType: hard
 
+"playwright-core@npm:1.50.1":
+  version: 1.50.1
+  resolution: "playwright-core@npm:1.50.1"
+  bin:
+    playwright-core: cli.js
+  checksum: 10c0/c158764257d870897c31807a830ddcc3f5aaf4376719e05aeada3489a01f751650b2dc43e027201a40405a1b075084e89f58cd3730a985a229efe9d8cecfe360
+  languageName: node
+  linkType: hard
+
+"playwright@npm:1.50.1":
+  version: 1.50.1
+  resolution: "playwright@npm:1.50.1"
+  dependencies:
+    fsevents: "npm:2.3.2"
+    playwright-core: "npm:1.50.1"
+  dependenciesMeta:
+    fsevents:
+      optional: true
+  bin:
+    playwright: cli.js
+  checksum: 10c0/b292ee6e0d122748a3d024b85ace86a0d9c848fc4121685d90ffc5d43d6bcf13ed7dc7488b1055f69040599c420052306ccba6fabfe2f69a15fc109c55171207
+  languageName: node
+  linkType: hard
+
 "please-upgrade-node@npm:^3.2.0":
   version: 3.2.0
   resolution: "please-upgrade-node@npm:3.2.0"
@@ -8154,6 +8208,7 @@ __metadata:
     "@dnd-kit/core": "npm:^6.3.1"
     "@dnd-kit/sortable": "npm:^10.0.0"
     "@dnd-kit/utilities": "npm:^3.2.2"
+    "@playwright/test": "npm:1.50.1"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.6.3"
     "@testing-library/react": "npm:16.2.0"

@@ -59,7 +59,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
   };
 
   return (
-    <Dialog ref={ref} onCancel={(e) => e.preventDefault()}>
+    <Dialog ref={ref} onCancel={(e) => e.preventDefault()} data-testid="new-game-dialog">
       <Title>⚾ New Game</Title>
       {onResume && autoSaveName && (
         <>
@@ -115,7 +115,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         )}
         <FieldGroup>
           <FieldLabel htmlFor="ng-home">Home team</FieldLabel>
-          <Select id="ng-home" value={home} onChange={(e) => setHome(e.target.value)}>
+          <Select
+            id="ng-home"
+            data-testid="home-team-select"
+            value={home}
+            onChange={(e) => setHome(e.target.value)}
+          >
             {homeList.map((t) => (
               <option key={t.id} value={t.name}>
                 {t.name}
@@ -125,7 +130,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
         </FieldGroup>
         <FieldGroup>
           <FieldLabel htmlFor="ng-away">Away team</FieldLabel>
-          <Select id="ng-away" value={away} onChange={(e) => setAway(e.target.value)}>
+          <Select
+            id="ng-away"
+            data-testid="away-team-select"
+            value={away}
+            onChange={(e) => setAway(e.target.value)}
+          >
             {awayList.map((t) => (
               <option key={t.id} value={t.name}>
                 {t.name}
@@ -160,7 +170,9 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
           onAwayOrderChange={setAwayOrder}
           onHomeOrderChange={setHomeOrder}
         />
-        <PlayBallButton type="submit">Play Ball!</PlayBallButton>
+        <PlayBallButton type="submit" data-testid="play-ball-button">
+          Play Ball!
+        </PlayBallButton>
       </form>
     </Dialog>
   );
