@@ -232,6 +232,8 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
     );
     // AB(slot2)=1 < AB(slot3)=2 but PA ordering holds (both PA=2) — no warning.
     expect(warnSpy).not.toHaveBeenCalled();
+  });
+
   it("counts RBI from playLog entries with rbi field", () => {
     const playLog = [
       { inning: 1, half: 0, batterNum: 2, team: 0, event: Hit.Single, runs: 1, rbi: 1 },
