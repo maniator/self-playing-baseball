@@ -41,10 +41,8 @@ test.describe("Visual", () => {
    * Player stats panel screenshot — verifies the RBI column is present and the
    * layout (PlayerStatsPanel above HitLog) is correct across all viewports.
    *
-   * The table body (live stat values) is masked so the snapshot is stable
-   * regardless of how many events autoplay has processed by screenshot time.
-   * The thead row — which contains the AB / H / BB / K / RBI column headers —
-   * is always captured and will catch any column regressions.
+   * We use a deterministic seed and wait for a fixed log-line count so the
+   * entire panel (including live stat values) is stable at screenshot time.
    */
   test("player stats panel with RBI column screenshot", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual-stats1" });

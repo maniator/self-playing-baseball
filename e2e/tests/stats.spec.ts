@@ -160,7 +160,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     const statsPanel = page.getByTestId("player-stats-panel");
     await expect(statsPanel).toBeVisible({ timeout: 10_000 });
     await expect(statsPanel.getByRole("columnheader", { name: "RBI" })).toBeVisible();
-    // With an empty playLog all RBI cells should show "–" (defaulted to 0 via backfill).
+    // With an empty playLog all computed RBI values remain 0, so every RBI cell renders as "–".
     const rbiCells = statsPanel.locator("tbody tr td:last-child");
     const texts = await rbiCells.allTextContents();
     expect(texts.every((t) => t === "–")).toBe(true);
