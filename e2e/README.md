@@ -123,7 +123,7 @@ All stable test selectors used across the suite:
 | Source of flake | Mitigation |
 |---|---|
 | Arbitrary `waitForTimeout` | Use `waitForLogLines`, `.toBeVisible`, `.toPass` with explicit conditions |
-| Manager mode race with autoplay | `enableManagerModeViaStorage` + `addInitScript` ensures mode is active from the first pitch |
+| Manager mode race with autoplay | Select `managedTeam: "0"` in `configureNewGame` so `handleStart` enables manager mode directly — avoids localStorage being overridden on submit |
 | Dynamic timestamps in screenshots | Visual tests mask `[data-testid="slot-date"]` |
 | CSS animation jitter in screenshots | `disableAnimations(page)` zeroes all durations before snapshot |
 | IndexedDB state bleed between tests | Each test gets a fresh Playwright `BrowserContext` (and thus a fresh IndexedDB) |
@@ -131,7 +131,14 @@ All stable test selectors used across the suite:
 
 ## Skipped test debt
 
-**No tests are currently skipped.**
+All previously skipped tests have been enabled.
+
+**Intentional browser-conditional skips** (not skip debt — these are permanent by design):
+
+- Tests in `notifications.spec.ts` skip when `browserName !== "chromium"` — the Notification
+  API is unreliable in headless WebKit and not supported on iOS.  The tests run successfully on
+  Chromium projects (`desktop`, `pixel-7`, `pixel-5`) and are cleanly reported as skipped on
+  WebKit projects (`tablet`, `iphone-15-pro-max`, `iphone-15`).
 
 All previously skipped tests have been enabled:
 

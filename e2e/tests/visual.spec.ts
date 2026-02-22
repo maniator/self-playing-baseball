@@ -49,4 +49,33 @@ test.describe("Visual", () => {
       maxDiffPixelRatio: 0.05,
     });
   });
+
+  /**
+   * Manager decision panel screenshot — captures the DecisionPanel UI that
+   * appears when Manager Mode is active and a decision point is reached.
+   *
+   * Restricted to desktop (Chromium 1280×800) because:
+   * - Waiting up to 120 s × 6 viewports would make CI prohibitively slow.
+   * - The decision panel layout is identical across viewports (it renders in the
+   *   controls bar, not the game field area).
+   * - Notification API / console assertions in the companion notifications.spec.ts
+   *   tests already cover this path on all Chromium projects.
+   */
+  test("manager decision panel screenshot", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Decision panel snapshot is desktop-only");
+    // The decision panel wait is 120 s; add headroom beyond the 90 s global limit.
+    test.setTimeout(150_000);
+
+    await startGameViaPlayBall(page, { seed: "visual3", managedTeam: "0" });
+    await waitForLogLines(page, 3);
+    // Wait for the first decision point — autoplay pauses until the panel is dismissed.
+    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
+
+    // Snapshot just the decision panel itself so the screenshot is stable
+    // regardless of what is happening in the scoreboard / log behind it.
+    await expect(page.getByTestId("manager-decision-panel")).toHaveScreenshot(
+      "manager-decision-panel.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
 });
