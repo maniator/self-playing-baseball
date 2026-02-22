@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { Hit } from "@constants/hitTypes";
 import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
 import { useGameContext } from "@context/index";
+import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
 
 const HeadingRow = styled.div`
@@ -30,27 +31,6 @@ const Toggle = styled.button`
   &:hover {
     color: #aaa;
   }
-`;
-
-const Tabs = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-`;
-
-const TabBtn = styled.button<{ $active: boolean }>`
-  flex: 1;
-  background: ${({ $active }) => ($active ? "#1a3a5a" : "transparent")};
-  border: 1px solid ${({ $active }) => ($active ? "#4a8abe" : "#333")};
-  color: ${({ $active }) => ($active ? "#cce8ff" : "#666")};
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-family: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
 `;
 
 const Table = styled.table`
@@ -126,26 +106,72 @@ const computeStats = (
   return stats;
 };
 
-const PlayerStatsPanel: React.FunctionComponent = () => {
+/**
+ * Dev-mode invariant: verify batting-order PA consistency and that K ≤ AB.
+ *
+ * An earlier lineup slot must never have *fewer* plate appearances (AB + BB)
+ * than a later slot — regardless of walk counts.  If it does, stat attribution
+ * is broken.  K > AB is a separate hard impossibility (strikeouts always count
+ * as official at-bats).
+ *
+ * Plate appearances here means AB + BB only (walks are the only non-AB PA
+ * type modelled in this simulator — no sac flies, HBP, or CI).
+ *
+ * Only runs when import.meta.env.DEV is true; completely dead-code-eliminated
+ * in production builds.
+ */
+const warnBattingStatsInvariant = (
+  stats: Record<number, BatterStat>,
+  team: 0 | 1,
+  teamName: string,
+): void => {
+  if (!import.meta.env.DEV) return;
+  for (let slot = 1; slot <= 9; slot++) {
+    const s = stats[slot];
+    const pa = s.atBats + s.walks;
+    // K > AB is truly impossible — strikeouts always count as official at-bats.
+    if (s.strikeouts > s.atBats) {
+      appLog.warn(
+        `[BattingStats] IMPOSSIBLE: slot ${slot} team=${team} (${teamName}) ` +
+          `K=${s.strikeouts} > AB=${s.atBats}`,
+      );
+    }
+    // Earlier batter must not have fewer PAs than the next batter.
+    if (slot < 9) {
+      const nextPA = stats[slot + 1].atBats + stats[slot + 1].walks;
+      if (pa < nextPA) {
+        appLog.warn(
+          `[BattingStats] PA ordering violation: slot ${slot} PA=${pa} < slot ${slot + 1} PA=${nextPA} ` +
+            `team=${team} (${teamName}). ` +
+            `Note: AB can legitimately differ due to walks — check PA, not AB.`,
+        );
+      }
+    }
+  }
+};
+
+const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<0 | 1>(0);
 
-  const stats = computeStats(activeTab, playLog, strikeoutLog, outLog);
+  const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
+  warnBattingStatsInvariant(stats, activeTeam, teams[activeTeam]);
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
-    const roster = generateRoster(teams[activeTab]);
+    const roster = generateRoster(teams[activeTeam]);
     const order =
-      lineupOrder[activeTab].length > 0 ? lineupOrder[activeTab] : roster.batters.map((p) => p.id);
+      lineupOrder[activeTeam].length > 0
+        ? lineupOrder[activeTeam]
+        : roster.batters.map((p) => p.id);
     const idToPlayer = new Map(roster.batters.map((p) => [p.id, p]));
-    const overrides = playerOverrides[activeTab];
+    const overrides = playerOverrides[activeTeam];
     return order.slice(0, 9).map((id, idx) => {
       const player = idToPlayer.get(id);
       const nickname = overrides[id]?.nickname?.trim();
       return nickname || player?.name || `Batter ${idx + 1}`;
     });
-  }, [teams, activeTab, lineupOrder, playerOverrides]);
+  }, [teams, activeTeam, lineupOrder, playerOverrides]);
 
   return (
     <div data-testid="player-stats-panel">
@@ -160,25 +186,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
       </HeadingRow>
       {!collapsed && (
         <>
-          <Tabs>
-            <TabBtn
-              $active={activeTab === 0}
-              type="button"
-              data-testid="stats-away-tab"
-              onClick={() => setActiveTab(0)}
-            >
-              ▲ {teams[0]}
-            </TabBtn>
-            <TabBtn
-              $active={activeTab === 1}
-              type="button"
-              data-testid="stats-home-tab"
-              onClick={() => setActiveTab(1)}
-            >
-              ▼ {teams[1]}
-            </TabBtn>
-          </Tabs>
-          <Table>
+          <Table data-testid="batting-stats-table">
             <thead>
               <tr>
                 <Th>#</Th>

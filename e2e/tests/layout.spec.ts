@@ -30,23 +30,36 @@ import { disableAnimations, startGameViaPlayBall, waitForLogLines } from "../uti
 type Viewport = { width: number; height: number };
 
 /**
- * Waits for the locator's bounding-box height to remain constant for
+ * Waits for the locator's bounding-box height to remain stable for
  * `stableChecks` consecutive polls spaced `intervalMs` apart.
- * This ensures autoplay has filled all log panels to their max-heights before
- * we take a visual snapshot.
+ *
+ * Heights are compared with a 1-pixel tolerance to avoid false instability
+ * from sub-pixel rounding between polls.  A hard `maxAttempts` cap prevents
+ * infinite loops when the selector is missing or the layout never settles.
+ * Throws a clear error if the element is not found or never becomes stable.
  */
 async function waitForStableHeight(
   page: Page,
   selector: string,
   stableChecks = 4,
   intervalMs = 400,
+  maxAttempts = 40,
 ): Promise<void> {
   let lastHeight = -1;
   let streak = 0;
+  let attempts = 0;
   while (streak < stableChecks) {
+    if (attempts++ >= maxAttempts) {
+      throw new Error(
+        `waitForStableHeight: layout did not stabilise for "${selector}" after ${maxAttempts} attempts`,
+      );
+    }
     const box = await page.locator(selector).first().boundingBox();
-    const h = box?.height ?? -1;
-    if (h === lastHeight && h > 0) {
+    if (box === null || box.height <= 0) {
+      throw new Error(`waitForStableHeight: element "${selector}" is not visible or has no height`);
+    }
+    const h = Math.round(box.height);
+    if (Math.abs(h - lastHeight) <= 1) {
       streak++;
     } else {
       lastHeight = h;

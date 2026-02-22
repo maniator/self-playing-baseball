@@ -1,19 +1,20 @@
 import * as React from "react";
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
+import * as loggerModule from "@utils/logger";
 
 import PlayerStatsPanel from "./index";
 
-const renderWithContext = (overrides = {}) => {
+const renderWithContext = (overrides = {}, activeTeam: 0 | 1 = 0) => {
   const ctx = makeContextValue(overrides);
   return render(
     <GameContext.Provider value={ctx}>
-      <PlayerStatsPanel />
+      <PlayerStatsPanel activeTeam={activeTeam} />
     </GameContext.Provider>,
   );
 };
@@ -24,10 +25,9 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText(/batting stats/i)).toBeInTheDocument();
   });
 
-  it("shows away team tab active by default", () => {
-    renderWithContext({ teams: ["Mets", "Yankees"] as [string, string] });
-    expect(screen.getByRole("button", { name: /▲ Mets/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /▼ Yankees/i })).toBeInTheDocument();
+  it("shows away team stats when activeTeam=0", () => {
+    renderWithContext({ teams: ["Mets", "Yankees"] as [string, string] }, 0);
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
   it("always shows the stats table, even with no activity", () => {
@@ -96,13 +96,9 @@ describe("PlayerStatsPanel", () => {
     expect(rows[3]?.textContent).toContain("1"); // H
   });
 
-  it("does not mix team stats — away stats excluded when viewing home tab", () => {
+  it("does not mix team stats — away stats excluded when viewing home team", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
-    renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] });
-    // Switch to home tab
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /▼ Yankees/i }));
-    });
+    renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] }, 1);
     // Home table shows all dashes (no activity for home team)
     const rows = screen.getAllByRole("row");
     // All 9 data rows should show "–" for AB
@@ -134,10 +130,101 @@ describe("PlayerStatsPanel", () => {
   it("collapses and hides the table when toggle is clicked", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
+    fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("batting-stats-table data-testid is present when not collapsed", () => {
+    renderWithContext();
+    expect(screen.getByTestId("batting-stats-table")).toBeInTheDocument();
+  });
+
+  it("batting-stats-table data-testid is absent when collapsed", () => {
+    renderWithContext();
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
     });
-    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("batting-stats-table")).not.toBeInTheDocument();
+  });
+});
+
+describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it("fires a warn when K > AB (impossible state)", () => {
+    const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
+    // batter #1: 3 Ks in strikeoutLog but 0 outLog entries → AB=0, K=3 (impossible)
+    const strikeoutLog = [
+      { team: 0 as const, batterNum: 1 },
+      { team: 0 as const, batterNum: 1 },
+      { team: 0 as const, batterNum: 1 },
+    ];
+    const ctx = makeContextValue({ strikeoutLog, outLog: [], playLog: [] });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("IMPOSSIBLE"));
+  });
+
+  it("fires a warn when PA ordering is violated (earlier slot has fewer PAs)", () => {
+    const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
+    // slot 3 has 2 outs (AB=2) but slot 2 has 0 (PA ordering violation)
+    const outLog = [
+      { team: 0 as const, batterNum: 3 },
+      { team: 0 as const, batterNum: 3 },
+    ];
+    const ctx = makeContextValue({ outLog, strikeoutLog: [], playLog: [] });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("PA ordering violation"));
+  });
+
+  it("does NOT fire a warn for valid stats where AB difference is explained by walks", () => {
+    const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
+    // Construct a state where:
+    //   slot 1: 2 outs          → PA=2, AB=2
+    //   slot 2: 1 out + 1 walk  → PA=2, AB=1  (fewer AB than slot 3, explained by BB)
+    //   slot 3: 2 outs          → PA=2, AB=2
+    //   slots 4-9: 2 outs each  → PA=2, AB=2
+    // All PA ordering pairs are equal (≥) and K<=AB throughout — no warning expected.
+    const playLog = [
+      { inning: 1, half: 0 as const, batterNum: 2, team: 0 as const, event: Hit.Walk, runs: 0 },
+    ];
+    const outLog = [
+      // slot 1
+      { team: 0 as const, batterNum: 1 },
+      { team: 0 as const, batterNum: 1 },
+      // slot 2 (only 1 out — the other PA is a walk above)
+      { team: 0 as const, batterNum: 2 },
+      // slots 3-9
+      { team: 0 as const, batterNum: 3 },
+      { team: 0 as const, batterNum: 3 },
+      { team: 0 as const, batterNum: 4 },
+      { team: 0 as const, batterNum: 4 },
+      { team: 0 as const, batterNum: 5 },
+      { team: 0 as const, batterNum: 5 },
+      { team: 0 as const, batterNum: 6 },
+      { team: 0 as const, batterNum: 6 },
+      { team: 0 as const, batterNum: 7 },
+      { team: 0 as const, batterNum: 7 },
+      { team: 0 as const, batterNum: 8 },
+      { team: 0 as const, batterNum: 8 },
+      { team: 0 as const, batterNum: 9 },
+      { team: 0 as const, batterNum: 9 },
+    ];
+    const ctx = makeContextValue({ playLog, outLog, strikeoutLog: [] });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    // AB(slot2)=1 < AB(slot3)=2 but PA ordering holds (both PA=2) — no warning.
+    expect(warnSpy).not.toHaveBeenCalled();
   });
 
   it("counts RBI from playLog entries with rbi field", () => {
