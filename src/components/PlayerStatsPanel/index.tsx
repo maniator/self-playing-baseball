@@ -88,7 +88,9 @@ type BatterStat = { atBats: number; hits: number; walks: number; strikeouts: num
  * RBI rule (simplified simulator):
  *   - hits (single/double/triple/homerun) and walks: rbi = runsScored on the play
  *   - sac bunt and fielder's choice: not credited with RBI (resolved via outLog)
- *   - older saved data without the rbi field defaults to 0
+ *   - older saves without an explicit rbi field are backfilled from runs at
+ *     restore time (`restore_game`); stat aggregation falls back to 0 via
+ *     `entry.rbi ?? 0` only for entries that are still absent after backfill
  */
 const computeStats = (
   team: 0 | 1,

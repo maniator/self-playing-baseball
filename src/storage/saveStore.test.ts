@@ -1,6 +1,7 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import { _createTestDb, type BallgameDb } from "./db";
@@ -382,9 +383,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
   it("round-trips a stateSnapshot containing playLog entries with rbi", async () => {
     const saveId = await store.createSave(makeSetup({ seed: "rbisave" }));
     const stateWithRbi = makeState({
-      playLog: [
-        { inning: 1, half: 0, batterNum: 1, team: 0, event: "single" as any, runs: 1, rbi: 1 },
-      ],
+      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1, rbi: 1 }],
     });
     await store.updateProgress(saveId, 5, {
       stateSnapshot: { state: stateWithRbi, rngState: 42 },
@@ -406,7 +405,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     const oldState = makeState({
       playLog: [
         // Simulate old data: no rbi field
-        { inning: 1, half: 0, batterNum: 1, team: 0, event: "single" as any, runs: 1 },
+        { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1 },
       ],
     });
     await store.updateProgress(saveId, 3, {
