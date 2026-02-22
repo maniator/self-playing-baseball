@@ -20,6 +20,14 @@ export default defineConfig({
           ) {
             return "react-vendor";
           }
+          if (
+            normalizedId.includes("/node_modules/rxdb/") ||
+            normalizedId.includes("/node_modules/dexie/") ||
+            normalizedId.includes("/node_modules/rxjs/") ||
+            normalizedId.includes("/node_modules/mingo/")
+          ) {
+            return "rxdb-vendor";
+          }
           if (normalizedId.includes("/node_modules/styled-components/")) {
             return "styled-vendor";
           }
@@ -40,6 +48,9 @@ export default defineConfig({
       "@storage": path.resolve(__dirname, "src/storage"),
       "@test": path.resolve(__dirname, "src/test"),
     },
+  },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
   },
   plugins: [
     react(),
