@@ -12,9 +12,12 @@ const GAME_LS_KEYS = [
 
 const clearGameStorage = () => {
   try {
-    Object.keys(localStorage)
-      .filter((k) => k.startsWith("ballgame:") || GAME_LS_KEYS.includes(k))
-      .forEach((k) => localStorage.removeItem(k));
+    GAME_LS_KEYS.forEach((k) => localStorage.removeItem(k));
+  } catch {
+    // ignore
+  }
+  try {
+    indexedDB.deleteDatabase("ballgame");
   } catch {
     // ignore
   }
@@ -56,7 +59,8 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
         <h1 style={{ color: "aquamarine" }}>⚾ Something went wrong</h1>
         <p style={{ color: "#ff8080", fontSize: 13 }}>{this.state.message}</p>
         <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
-          Your saved data may be corrupted. Resetting will clear local app data and reload the page.
+          Your saved data may be corrupted. Resetting will clear local app data (including saves)
+          and reload the page.
         </p>
         <button
           onClick={this.handleReset}

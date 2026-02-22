@@ -61,6 +61,13 @@ export const FieldPanel = styled.div`
   }
 `;
 
+export const LoadingScreen = styled.p`
+  color: #aaa;
+  text-align: center;
+  margin: 48px auto;
+  font-family: monospace;
+`;
+
 export const LogPanel = styled.div`
   min-width: 0;
   overflow-y: auto;

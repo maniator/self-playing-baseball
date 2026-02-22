@@ -3,7 +3,7 @@ import path from "path";
 import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: "src",
   publicDir: path.resolve(__dirname, "public"),
   build: {
@@ -19,6 +19,14 @@ export default defineConfig({
             normalizedId.includes("/node_modules/react-is/")
           ) {
             return "react-vendor";
+          }
+          if (
+            normalizedId.includes("/node_modules/rxdb/") ||
+            normalizedId.includes("/node_modules/dexie/") ||
+            normalizedId.includes("/node_modules/rxjs/") ||
+            normalizedId.includes("/node_modules/mingo/")
+          ) {
+            return "rxdb-vendor";
           }
           if (normalizedId.includes("/node_modules/styled-components/")) {
             return "styled-vendor";
@@ -37,8 +45,12 @@ export default defineConfig({
       "@hooks": path.resolve(__dirname, "src/hooks"),
       "@utils": path.resolve(__dirname, "src/utils"),
       "@constants": path.resolve(__dirname, "src/constants"),
+      "@storage": path.resolve(__dirname, "src/storage"),
       "@test": path.resolve(__dirname, "src/test"),
     },
+  },
+  define: {
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? mode),
   },
   plugins: [
     react(),
@@ -74,4 +86,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
