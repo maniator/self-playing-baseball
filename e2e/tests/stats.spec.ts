@@ -1,4 +1,4 @@
-import { expect, type Locator, test } from "@playwright/test";
+import { expect, type Locator, type Page, test } from "@playwright/test";
 import path from "path";
 
 import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
@@ -17,18 +17,19 @@ async function getActiveTabRbiTexts(statsPanel: Locator): Promise<string[]> {
 }
 
 /**
- * Clicks the home-team tab, reads its RBI cells, then restores the away tab.
+ * Clicks the home-team tab (on the global TeamTabBar in the log panel),
+ * reads its RBI cells from the stats panel, then restores the away tab.
  * Returns the combined [away…, home…] RBI text values.
  *
- * Uses the stable `data-testid` attributes on the tab buttons
- * (`stats-away-tab` / `stats-home-tab`) so the helper is not coupled to
- * button order or team-name text.
+ * Uses the stable `data-testid` attributes on the global tab buttons
+ * (`team-tab-away` / `team-tab-home`) that live in the shared TeamTabBar
+ * above the stats panel in the log panel.
  */
-async function getBothTabsRbi(statsPanel: Locator): Promise<string[]> {
+async function getBothTabsRbi(page: Page, statsPanel: Locator): Promise<string[]> {
   const awayTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.getByTestId("stats-home-tab").click();
+  await page.getByTestId("team-tab-home").click();
   const homeTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.getByTestId("stats-away-tab").click();
+  await page.getByTestId("team-tab-away").click();
   return [...awayTexts, ...homeTexts];
 }
 
@@ -94,7 +95,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
 
     // A run has scored — at least one team's batter must have a non-zero RBI.
     // Check BOTH team tabs: scoring could be by away or home first.
-    const allRbi = await getBothTabsRbi(statsPanel);
+    const allRbi = await getBothTabsRbi(page, statsPanel);
     expect(allRbi.some((t) => t !== "–" && t.trim() !== "")).toBe(true);
   });
 
@@ -110,7 +111,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     await waitForLogLines(page, 50, 90_000);
 
     // Capture both-tab RBI state before saving.
-    const rbiBeforeSave = await getBothTabsRbi(statsPanel);
+    const rbiBeforeSave = await getBothTabsRbi(page, statsPanel);
     expect(rbiBeforeSave.some((t) => t !== "–")).toBe(true);
 
     // Save the game.
@@ -124,7 +125,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
 
     // RBI values after reload: at least one team must still have non-zero RBI.
-    const rbiAfterLoad = await getBothTabsRbi(statsPanel);
+    const rbiAfterLoad = await getBothTabsRbi(page, statsPanel);
     expect(rbiAfterLoad.some((t) => t !== "–" && t.trim() !== "")).toBe(true);
   });
 

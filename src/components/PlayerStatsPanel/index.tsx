@@ -33,27 +33,6 @@ const Toggle = styled.button`
   }
 `;
 
-const Tabs = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-`;
-
-const TabBtn = styled.button<{ $active: boolean }>`
-  flex: 1;
-  background: ${({ $active }) => ($active ? "#1a3a5a" : "transparent")};
-  border: 1px solid ${({ $active }) => ($active ? "#4a8abe" : "#333")};
-  color: ${({ $active }) => ($active ? "#cce8ff" : "#666")};
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-family: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-`;
-
 const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
@@ -171,27 +150,28 @@ const warnBattingStatsInvariant = (
   }
 };
 
-const PlayerStatsPanel: React.FunctionComponent = () => {
+const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
-  const [activeTab, setActiveTab] = React.useState<0 | 1>(0);
 
-  const stats = computeStats(activeTab, playLog, strikeoutLog, outLog);
-  warnBattingStatsInvariant(stats, activeTab, teams[activeTab]);
+  const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
+  warnBattingStatsInvariant(stats, activeTeam, teams[activeTeam]);
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
-    const roster = generateRoster(teams[activeTab]);
+    const roster = generateRoster(teams[activeTeam]);
     const order =
-      lineupOrder[activeTab].length > 0 ? lineupOrder[activeTab] : roster.batters.map((p) => p.id);
+      lineupOrder[activeTeam].length > 0
+        ? lineupOrder[activeTeam]
+        : roster.batters.map((p) => p.id);
     const idToPlayer = new Map(roster.batters.map((p) => [p.id, p]));
-    const overrides = playerOverrides[activeTab];
+    const overrides = playerOverrides[activeTeam];
     return order.slice(0, 9).map((id, idx) => {
       const player = idToPlayer.get(id);
       const nickname = overrides[id]?.nickname?.trim();
       return nickname || player?.name || `Batter ${idx + 1}`;
     });
-  }, [teams, activeTab, lineupOrder, playerOverrides]);
+  }, [teams, activeTeam, lineupOrder, playerOverrides]);
 
   return (
     <div data-testid="player-stats-panel">
@@ -206,24 +186,6 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
       </HeadingRow>
       {!collapsed && (
         <>
-          <Tabs>
-            <TabBtn
-              $active={activeTab === 0}
-              type="button"
-              data-testid="stats-away-tab"
-              onClick={() => setActiveTab(0)}
-            >
-              ▲ {teams[0]}
-            </TabBtn>
-            <TabBtn
-              $active={activeTab === 1}
-              type="button"
-              data-testid="stats-home-tab"
-              onClick={() => setActiveTab(1)}
-            >
-              ▼ {teams[1]}
-            </TabBtn>
-          </Tabs>
           <Table data-testid="batting-stats-table">
             <thead>
               <tr>

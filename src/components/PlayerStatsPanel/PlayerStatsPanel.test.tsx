@@ -10,11 +10,11 @@ import * as loggerModule from "@utils/logger";
 
 import PlayerStatsPanel from "./index";
 
-const renderWithContext = (overrides = {}) => {
+const renderWithContext = (overrides = {}, activeTeam: 0 | 1 = 0) => {
   const ctx = makeContextValue(overrides);
   return render(
     <GameContext.Provider value={ctx}>
-      <PlayerStatsPanel />
+      <PlayerStatsPanel activeTeam={activeTeam} />
     </GameContext.Provider>,
   );
 };
@@ -25,10 +25,9 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText(/batting stats/i)).toBeInTheDocument();
   });
 
-  it("shows away team tab active by default", () => {
-    renderWithContext({ teams: ["Mets", "Yankees"] as [string, string] });
-    expect(screen.getByRole("button", { name: /▲ Mets/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /▼ Yankees/i })).toBeInTheDocument();
+  it("shows away team stats when activeTeam=0", () => {
+    renderWithContext({ teams: ["Mets", "Yankees"] as [string, string] }, 0);
+    expect(screen.getByRole("table")).toBeInTheDocument();
   });
 
   it("always shows the stats table, even with no activity", () => {
@@ -97,13 +96,9 @@ describe("PlayerStatsPanel", () => {
     expect(rows[3]?.textContent).toContain("1"); // H
   });
 
-  it("does not mix team stats — away stats excluded when viewing home tab", () => {
+  it("does not mix team stats — away stats excluded when viewing home team", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
-    renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] });
-    // Switch to home tab
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /▼ Yankees/i }));
-    });
+    renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] }, 1);
     // Home table shows all dashes (no activity for home team)
     const rows = screen.getAllByRole("row");
     // All 9 data rows should show "–" for AB
@@ -135,9 +130,7 @@ describe("PlayerStatsPanel", () => {
   it("collapses and hides the table when toggle is clicked", () => {
     const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog });
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
-    });
+    fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
 

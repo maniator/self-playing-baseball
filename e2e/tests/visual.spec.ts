@@ -38,8 +38,24 @@ test.describe("Visual", () => {
   });
 
   /**
-   * Player stats panel screenshot — verifies the RBI column is present and the
-   * layout (PlayerStatsPanel above HitLog) is correct across all viewports.
+   * Team tab bar screenshot — verifies the global Away/Home TeamTabBar that
+   * sits at the top of the log panel and controls both Batting Stats and Hit
+   * Log simultaneously.  The tab bar itself is stable once the game starts
+   * (team names don't change), so no masking is needed.
+   */
+  test("team tab bar screenshot", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "visual-stats1" });
+    await waitForLogLines(page, 8);
+    const tabBar = page.getByTestId("team-tab-bar");
+    await expect(tabBar).toBeVisible({ timeout: 10_000 });
+    await expect(tabBar).toHaveScreenshot("team-tab-bar.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  /**
+   * Player stats panel screenshot — verifies the RBI column is present and
+   * the stats table layout is correct across all viewports.
    *
    * We use a deterministic seed and wait for a fixed log-line count so the
    * entire panel (including live stat values) is stable at screenshot time.

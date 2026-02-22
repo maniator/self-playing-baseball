@@ -79,9 +79,11 @@ const EmptyState = styled.div`
   padding: 6px 5px;
 `;
 
-const HitLog: React.FunctionComponent = () => {
+const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
   const { playLog, teams } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
+
+  const filtered = playLog.filter((entry) => entry.team === activeTeam);
 
   return (
     <>
@@ -96,10 +98,10 @@ const HitLog: React.FunctionComponent = () => {
       </HeadingRow>
       {!collapsed && (
         <Area data-testid="hit-log">
-          {playLog.length === 0 ? (
+          {filtered.length === 0 ? (
             <EmptyState>No hits yet.</EmptyState>
           ) : (
-            [...playLog].reverse().map((entry, idx) => {
+            [...filtered].reverse().map((entry, idx) => {
               const key = `${entry.inning}-${entry.half}-${entry.team}-${entry.batterNum}-${idx}`;
               return (
                 <Entry key={key}>
