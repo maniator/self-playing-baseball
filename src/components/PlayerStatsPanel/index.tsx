@@ -159,10 +159,20 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
       {!collapsed && (
         <>
           <Tabs>
-            <TabBtn $active={activeTab === 0} type="button" onClick={() => setActiveTab(0)}>
+            <TabBtn
+              $active={activeTab === 0}
+              type="button"
+              data-testid="stats-away-tab"
+              onClick={() => setActiveTab(0)}
+            >
               ▲ {teams[0]}
             </TabBtn>
-            <TabBtn $active={activeTab === 1} type="button" onClick={() => setActiveTab(1)}>
+            <TabBtn
+              $active={activeTab === 1}
+              type="button"
+              data-testid="stats-home-tab"
+              onClick={() => setActiveTab(1)}
+            >
               ▼ {teams[1]}
             </TabBtn>
           </Tabs>

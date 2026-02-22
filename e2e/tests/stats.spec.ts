@@ -17,20 +17,18 @@ async function getActiveTabRbiTexts(statsPanel: Locator): Promise<string[]> {
 }
 
 /**
- * Clicks the home-team tab (always the 3rd button, index 2, in the panel),
- * reads its RBI cells, then restores the away tab (index 1).
+ * Clicks the home-team tab, reads its RBI cells, then restores the away tab.
  * Returns the combined [away…, home…] RBI text values.
  *
- * Button order inside player-stats-panel:
- *   0 — collapse/expand toggle ("▼ hide" / "▶ show")
- *   1 — away team tab ("▲ {teams[0]}")
- *   2 — home team tab ("▼ {teams[1]}")
+ * Uses the stable `data-testid` attributes on the tab buttons
+ * (`stats-away-tab` / `stats-home-tab`) so the helper is not coupled to
+ * button order or team-name text.
  */
 async function getBothTabsRbi(statsPanel: Locator): Promise<string[]> {
   const awayTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.locator("button").nth(2).click(); // home tab
+  await statsPanel.getByTestId("stats-home-tab").click();
   const homeTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.locator("button").nth(1).click(); // restore away tab
+  await statsPanel.getByTestId("stats-away-tab").click();
   return [...awayTexts, ...homeTexts];
 }
 
