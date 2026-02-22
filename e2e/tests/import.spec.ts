@@ -32,14 +32,16 @@ test.describe("Import Save", () => {
 
     await importSaveFromFixture(page, "sample-save.json");
 
-    // The imported save should be visible in the list with a Load button
+    // The imported save should be visible in the list — load it
     const modal = page.getByTestId("saves-modal");
     await expect(modal.getByText("Mets vs Yankees")).toBeVisible();
-    await expect(modal.getByTestId("load-save-button").first()).toBeVisible();
 
-    // Close modal — scoreboard should still be visible
-    await page.getByRole("button", { name: /close/i }).click();
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
-    await expect(page.getByTestId("scoreboard")).toBeVisible();
+    // Find the imported-save row and click its Load button
+    const importedRow = modal.locator("li").filter({ hasText: "Mets vs Yankees" });
+    await importedRow.getByTestId("load-save-button").click();
+
+    // Modal should close and scoreboard should be visible (game is active)
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });
 });

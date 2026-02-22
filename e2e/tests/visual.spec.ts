@@ -10,7 +10,8 @@ import {
 } from "../utils/helpers";
 
 /**
- * Visual regression snapshots — run across all three viewport projects.
+ * Visual regression snapshots — run across all 6 non-determinism viewport projects
+ * (desktop, tablet, iphone-15-pro-max, iphone-15, pixel-7, pixel-5).
  * Captures a small, high-signal set of screens per viewport.
  */
 test.describe("Visual", () => {

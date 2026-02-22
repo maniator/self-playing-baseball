@@ -31,7 +31,7 @@ test.describe("Smoke", () => {
     }
     // The log should populate without any user interaction (autoplay is always on)
     await expect(async () => {
-      const entries = page.getByTestId("play-by-play-log").locator("div");
+      const entries = page.getByTestId("play-by-play-log").locator("[data-log-index]");
       expect(await entries.count()).toBeGreaterThanOrEqual(3);
     }).toPass({ timeout: 30_000, intervals: [500, 1000, 1000] });
   });

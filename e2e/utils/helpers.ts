@@ -104,7 +104,7 @@ export async function waitForLogLines(page: Page, count: number, timeout = 60_00
   }
   await expect(page.getByTestId("play-by-play-log")).toBeVisible({ timeout: 10_000 });
   await expect(async () => {
-    const entries = page.getByTestId("play-by-play-log").locator("div");
+    const entries = page.getByTestId("play-by-play-log").locator("[data-log-index]");
     const count_ = await entries.count();
     expect(count_).toBeGreaterThanOrEqual(count);
   }).toPass({ timeout, intervals: [500, 1000, 1000] });
@@ -148,11 +148,15 @@ export async function openSavesModal(page: Page): Promise<void> {
 }
 
 /**
- * Saves the current game (clicks "Save current game" inside the Saves modal).
+ * Saves the current game (clicks "Save current game" inside the Saves modal)
+ * and waits for the RxDB write to complete (a load-save-button appears in the
+ * list — confirming the save was persisted and the reactive query updated).
  */
 export async function saveCurrentGame(page: Page): Promise<void> {
   await openSavesModal(page);
   await page.getByTestId("save-game-button").click();
+  // Wait for the async RxDB write + reactive list update to complete
+  await expect(page.getByTestId("load-save-button").first()).toBeVisible({ timeout: 10_000 });
 }
 
 /**

@@ -17,13 +17,18 @@ const GAME_CONFIG = {
  * fresh without being influenced by a prior run's auto-save.
  * The seed is typed into the seed-input field in the New Game dialog —
  * `reinitSeed()` fires on submit and sets the PRNG before the game starts.
+ *
+ * @param baseURL  The app's base URL (from the `baseURL` test fixture) —
+ *                 manually-created contexts do not inherit the project's
+ *                 `use.baseURL`, so it must be forwarded explicitly.
  */
 async function runGameInFreshContext(
   browser: Browser,
   seed: string,
   config: { homeTeam?: string; awayTeam?: string } = {},
+  baseURL = "http://localhost:5173",
 ): Promise<string> {
-  const context = await browser.newContext();
+  const context = await browser.newContext({ baseURL });
   const page = await context.newPage();
   try {
     await page.goto("/");
@@ -46,17 +51,27 @@ test.describe("Determinism", () => {
   // even slow CI runners have enough headroom (2 × ~60 s + startup overhead).
   test.setTimeout(200_000);
 
-  test("same seed produces same play-by-play sequence", async ({ browser }) => {
-    const sig1 = await runGameInFreshContext(browser, FIXED_SEED, GAME_CONFIG);
-    const sig2 = await runGameInFreshContext(browser, FIXED_SEED, GAME_CONFIG);
+  test("same seed produces same play-by-play sequence", async ({ browser, baseURL }) => {
+    const sig1 = await runGameInFreshContext(
+      browser,
+      FIXED_SEED,
+      GAME_CONFIG,
+      baseURL ?? undefined,
+    );
+    const sig2 = await runGameInFreshContext(
+      browser,
+      FIXED_SEED,
+      GAME_CONFIG,
+      baseURL ?? undefined,
+    );
 
     expect(sig1).toBeTruthy();
     expect(sig1).toEqual(sig2);
   });
 
-  test("different seeds produce different sequences", async ({ browser }) => {
-    const sig1 = await runGameInFreshContext(browser, "seed1", GAME_CONFIG);
-    const sig2 = await runGameInFreshContext(browser, "seed2", GAME_CONFIG);
+  test("different seeds produce different sequences", async ({ browser, baseURL }) => {
+    const sig1 = await runGameInFreshContext(browser, "seed1", GAME_CONFIG, baseURL ?? undefined);
+    const sig2 = await runGameInFreshContext(browser, "seed2", GAME_CONFIG, baseURL ?? undefined);
 
     expect(sig1).not.toEqual(sig2);
   });
