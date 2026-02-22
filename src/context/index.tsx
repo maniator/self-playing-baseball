@@ -18,8 +18,10 @@ export type PlayLogEntry = {
    * (including bases-loaded walks). Sac bunts and fielder's choice plays
    * are not credited with RBI in this simulator (simplified rule — those
    * plays resolve through outLog, not playLog).
-   * Field is optional for backward compatibility with older saved data
-   * (missing values default to 0 in stat aggregation).
+   * Field is optional for backward compatibility with older saved data:
+   * `restore_game` backfills missing `rbi` from `runs` when a save is
+   * loaded, and stat aggregation then uses `entry.rbi ?? 0` so that only
+   * entries that still lack an explicit value default to 0.
    */
   rbi?: number;
 };
