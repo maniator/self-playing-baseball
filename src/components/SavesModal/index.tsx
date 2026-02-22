@@ -98,7 +98,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
             {saves.map((s: SaveDoc) => (
               <SlotItem key={s.id}>
                 <SlotName title={s.name}>{s.name}</SlotName>
-                <SlotDate>{formatDate(s.updatedAt)}</SlotDate>
+                <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
                 <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
                   Load
                 </SmallButton>

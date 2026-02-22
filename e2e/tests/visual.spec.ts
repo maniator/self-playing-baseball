@@ -43,7 +43,7 @@ test.describe("Visual", () => {
     await expect(page.getByTestId("saves-modal")).toHaveScreenshot("saves-modal-with-save.png", {
       mask: [
         // Mask the date/time stamps which change every run
-        page.locator(".slot-date"),
+        page.getByTestId("slot-date"),
       ],
       maxDiffPixelRatio: 0.05,
     });
