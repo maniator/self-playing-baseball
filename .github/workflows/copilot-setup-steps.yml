@@ -1,0 +1,40 @@
+name: Copilot Setup Steps
+
+# This workflow sets up the Copilot coding agent's environment before it starts
+# working on a task.  Steps here run BEFORE the firewall is enabled, so all
+# network downloads (npm packages, Playwright browsers) must happen here.
+#
+# The job must be named `copilot-setup-steps` and triggered by `workflow_dispatch`.
+# See: https://docs.github.com/en/copilot/customizing-copilot/customizing-the-development-environment-for-copilot-coding-agent
+
+on:
+  workflow_dispatch:
+
+jobs:
+  copilot-setup-steps:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      # Install both Chromium (desktop/pixel) and WebKit (tablet/iPhone) so the
+      # agent can run either CI shard locally without hitting the firewall.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      # Pre-build the app so `vite preview` (used by E2E tests) is ready to serve
+      # immediately — the agent doesn't need to rebuild before running E2E tests.
+      - name: Build app
+        run: yarn build
