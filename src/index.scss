@@ -23,3 +23,11 @@ body {
     padding: 0;
   }
 }
+
+// Tablet: remove body padding so GameDiv can fill the full viewport height.
+@media (min-width: #{$bp-mobile + 1}) and (max-width: #{$bp-desktop - 1}) {
+  body {
+    padding: 0;
+    overflow: hidden;
+  }
+}

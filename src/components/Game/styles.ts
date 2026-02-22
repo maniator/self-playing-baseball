@@ -19,6 +19,8 @@ export const GameDiv = styled.main`
   margin: 0 auto;
 
   ${mq.tablet} {
+    height: 100dvh;
+    overflow: hidden;
     padding: 16px;
   }
 
@@ -46,6 +48,8 @@ export const GameBody = styled.div`
   }
 
   ${mq.tablet} {
+    flex: 1;
+    min-height: 0;
     margin-top: 10px;
     gap: 12px;
   }
@@ -88,6 +92,12 @@ export const LogPanel = styled.div`
     border-left: 1px solid #2a2a2a;
     padding-left: 16px;
     padding-top: 0;
+  }
+
+  ${mq.tablet} {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   ${mq.mobile} {
