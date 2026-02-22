@@ -146,7 +146,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
   }, [teams, activeTab, lineupOrder, playerOverrides]);
 
   return (
-    <>
+    <div data-testid="player-stats-panel">
       <HeadingRow>
         <span>Batting Stats</span>
         <Toggle
@@ -195,7 +195,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
           </Table>
         </>
       )}
-    </>
+    </div>
   );
 };
 

@@ -37,6 +37,27 @@ test.describe("Visual", () => {
     });
   });
 
+  /**
+   * Player stats panel screenshot — verifies the RBI column is present and the
+   * layout (PlayerStatsPanel above HitLog) is correct across all viewports.
+   *
+   * The table body (live stat values) is masked so the snapshot is stable
+   * regardless of how many events autoplay has processed by screenshot time.
+   * The thead row — which contains the AB / H / BB / K / RBI column headers —
+   * is always captured and will catch any column regressions.
+   */
+  test("player stats panel with RBI column screenshot", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "visual-stats1" });
+    await waitForLogLines(page, 8);
+    const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 10_000 });
+    await expect(statsPanel).toHaveScreenshot("player-stats-panel.png", {
+      // Mask the dynamic stat rows; the column-header row is always captured.
+      mask: [statsPanel.locator("tbody")],
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
   test("saves modal screenshot with one save present", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual2" });
     await waitForLogLines(page, 5);
