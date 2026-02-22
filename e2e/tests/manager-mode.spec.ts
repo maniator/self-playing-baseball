@@ -28,24 +28,29 @@ test.describe("Manager Mode", () => {
     });
   });
 
-  test.skip("manager decision panel appears and action can be taken", async ({ page }) => {
-    // TODO: This test requires waiting for a specific game state (e.g. 3-0 count)
-    // which is hard to time deterministically in this sprint.
-    // Re-enable once decision point injection or state mocking is available.
-    await startGameViaPlayBall(page, { seed: "manager3" });
-    await waitForLogLines(page, 5);
+  test("manager decision panel appears and action can be taken", async ({ page }) => {
+    // This test waits up to 120 s for a decision point — set a generous
+    // test-level timeout so the global 90 s limit doesn't fire first.
+    test.setTimeout(150_000);
 
-    // Enable manager mode and managed team
-    await page.getByTestId("manager-mode-toggle").check();
+    // Selecting managedTeam "0" (away team) via the New Game dialog causes
+    // GameInner's handleStart to call setManagerMode(true).  This is the
+    // correct way to enable manager mode — it avoids the race condition where
+    // handleStart would otherwise override any localStorage pre-set value.
+    await startGameViaPlayBall(page, { seed: "mgr42", managedTeam: "0" });
+    await waitForLogLines(page, 3);
 
-    // Wait for a decision panel to appear (may take a while depending on seed)
-    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 60_000 });
+    // With manager mode active from the start, autoplay pauses at the first
+    // decision point (defensive_shift at the start of the home team's first
+    // at-bat, or bunt / count30 / count02 — all happen within the first inning).
+    // Allow 120 s so even slow CI runners have enough headroom.
+    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
 
-    // Take the first available action button
+    // Take the first available action button to resolve the decision.
     const actionButtons = page.getByTestId("manager-decision-panel").getByRole("button");
     await actionButtons.first().click();
 
-    // Decision panel should close after action
+    // Decision panel should close once the action is dispatched.
     await expect(page.getByTestId("manager-decision-panel")).not.toBeVisible({ timeout: 5_000 });
   });
 });

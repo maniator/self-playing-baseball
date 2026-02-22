@@ -43,6 +43,12 @@ export interface GameConfig {
   seed?: string;
   homeTeam?: string;
   awayTeam?: string;
+  /**
+   * Select a managed team radio in the New Game dialog ("0" = away, "1" = home).
+   * When set, the dialog calls `setManagerMode(true)` so manager mode is active
+   * from the very first pitch — no localStorage pre-seeding required.
+   */
+  managedTeam?: "0" | "1";
 }
 
 /**
@@ -67,6 +73,10 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
   }
   if (options.awayTeam) {
     await page.getByTestId("away-team-select").selectOption({ label: options.awayTeam });
+  }
+  if (options.managedTeam !== undefined) {
+    // Click the radio button for the chosen managed team.
+    await page.locator(`input[name="managed"][value="${options.managedTeam}"]`).check();
   }
 }
 

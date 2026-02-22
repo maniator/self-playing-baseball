@@ -102,7 +102,9 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
                 <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
                   Load
                 </SmallButton>
-                <SmallButton onClick={() => handleExport(s)}>Export</SmallButton>
+                <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
+                  Export
+                </SmallButton>
                 <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
                   ✕
                 </DangerButton>
@@ -128,7 +130,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           aria-label="Import save JSON"
           data-testid="import-save-textarea"
         />
-        {importError && <ErrorMsg>{importError}</ErrorMsg>}
+        {importError && <ErrorMsg data-testid="import-error">{importError}</ErrorMsg>}
         <Row>
           <SmallButton
             onClick={handleImportPaste}
