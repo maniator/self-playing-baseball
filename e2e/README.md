@@ -104,6 +104,7 @@ not regenerate to silence a failure caused by an unintentional regression.
 | `saveCurrentGame(page)` | Open modal and click Save |
 | `loadFirstSave(page)` | Open modal and click first Load button |
 | `importSaveFromFixture(page, name)` | Set fixture file on the file input |
+| `assertFieldAndLogVisible(page)` | Assert field-view and scoreboard are visible with non-zero bounding boxes |
 | `disableAnimations(page)` | Inject CSS to zero all animation/transition durations |
 
 ### `data-testid` reference
