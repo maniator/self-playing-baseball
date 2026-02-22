@@ -67,7 +67,7 @@ describe("HitLog", () => {
     expect(screen.getByText(/no hits yet/i)).toBeInTheDocument();
   });
 
-  it("shows an entry for a single", () => {
+  it("shows an entry for a single (away tab active by default)", () => {
     const ctx = makeCtx({
       playLog: [makeEntry({ event: Hit.Single, batterNum: 3, inning: 2, half: 0, team: 0 })],
     });
@@ -151,5 +151,60 @@ describe("HitLog", () => {
     // Most recent (HR) should appear before older (1B) in the DOM
     expect(labels[0].textContent).toBe("HR");
     expect(labels[1].textContent).toBe("1B");
+  });
+
+  it("renders Away and Home team tabs with correct labels", () => {
+    const ctx = makeCtx({ teams: ["Mets", "Yankees"] as [string, string] });
+    renderHitLog(ctx);
+    expect(screen.getByTestId("hit-log-away-tab")).toHaveTextContent("Mets");
+    expect(screen.getByTestId("hit-log-home-tab")).toHaveTextContent("Yankees");
+  });
+
+  it("defaults to the away team tab (team 0)", () => {
+    const ctx = makeCtx({
+      playLog: [
+        makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
+        makeEntry({ team: 1, event: Hit.Homerun, batterNum: 2 }),
+      ],
+    });
+    renderHitLog(ctx);
+    expect(screen.getByText("1B")).toBeInTheDocument();
+    expect(screen.queryByText("HR")).not.toBeInTheDocument();
+  });
+
+  it("filters to home team entries when home tab is clicked", () => {
+    const ctx = makeCtx({
+      playLog: [
+        makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
+        makeEntry({ team: 1, event: Hit.Homerun, batterNum: 2 }),
+      ],
+    });
+    renderHitLog(ctx);
+    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
+    expect(screen.queryByText("1B")).not.toBeInTheDocument();
+    expect(screen.getByText("HR")).toBeInTheDocument();
+  });
+
+  it("shows team-specific empty state when selected team has no hits", () => {
+    const ctx = makeCtx({
+      playLog: [makeEntry({ team: 0, event: Hit.Single, batterNum: 1 })],
+    });
+    renderHitLog(ctx);
+    // Switch to home tab — home team has no hits
+    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
+    expect(screen.getByText(/no hits yet/i)).toBeInTheDocument();
+    expect(screen.queryByText("1B")).not.toBeInTheDocument();
+  });
+
+  it("switching tabs does not mutate the underlying playLog", () => {
+    const playLog = [
+      makeEntry({ team: 0, event: Hit.Single, batterNum: 1 }),
+      makeEntry({ team: 1, event: Hit.Double, batterNum: 3 }),
+    ];
+    const ctx = makeCtx({ playLog });
+    renderHitLog(ctx);
+    fireEvent.click(screen.getByTestId("hit-log-home-tab"));
+    fireEvent.click(screen.getByTestId("hit-log-away-tab"));
+    expect(playLog).toHaveLength(2);
   });
 });
