@@ -51,14 +51,19 @@ test.describe("Save / Load", () => {
 
     await loadFirstSave(page);
 
-    // Autoplay should resume — log should grow
+    // Expand the log if collapsed
     const logToggle = page.getByRole("button", { name: /expand play-by-play/i });
     if (await logToggle.isVisible()) {
       await logToggle.click();
     }
+
+    // Capture baseline count immediately after load, then assert it grows —
+    // this proves autoplay is actually generating new events, not just that
+    // the restored state already had entries.
+    const logEntries = page.getByTestId("play-by-play-log").locator("[data-log-index]");
+    const baselineCount = await logEntries.count();
     await expect(async () => {
-      const entries = page.getByTestId("play-by-play-log").locator("div");
-      expect(await entries.count()).toBeGreaterThanOrEqual(3);
+      expect(await logEntries.count()).toBeGreaterThan(baselineCount);
     }).toPass({ timeout: 30_000, intervals: [500, 1000, 1000] });
   });
 

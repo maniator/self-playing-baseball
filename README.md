@@ -107,7 +107,7 @@ yarn test:coverage      # with coverage report (90 % lines/functions/statements,
 
 End-to-end tests live in `e2e/` and cover the highest-risk user flows across
 **7 browser / device projects**: a dedicated `determinism` project (desktop
-Chromium) plus `desktop`, `tablet`, `iphone-15-pro-max`, `iphone-15-pro`,
+Chromium) plus `desktop`, `tablet`, `iphone-15-pro-max`, `iphone-15`,
 `pixel-7`, and `pixel-5`.
 
 ```bash

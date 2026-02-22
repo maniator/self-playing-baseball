@@ -37,8 +37,8 @@ export async function waitForNewGameDialog(page: Page): Promise<void> {
 export interface GameConfig {
   /**
    * Fixed seed for deterministic games (base-36 string).
-   * If set, the page is navigated to `/?seed=<value>` so that
-   * `initSeedFromUrl` picks it up before the React tree mounts.
+   * If set, it is typed into the seed input field in the New Game dialog so
+   * that `reinitSeed` fires with the correct value when Play Ball is clicked.
    */
   seed?: string;
   homeTeam?: string;
@@ -167,21 +167,19 @@ export async function loadFirstSave(page: Page): Promise<void> {
 
 /**
  * Loads the save slot whose row contains `name` (partial text match).
- * Opens the Saves modal, finds the matching row, and clicks its Load button.
+ * Opens the Saves modal, finds the list-item row whose SlotName cell contains
+ * the given text, then clicks the Load button inside that same row.
+ *
+ * This correctly handles multiple saves because the save name lives in a
+ * sibling element to the Load button — not inside the button itself.
  */
 export async function loadSaveByName(page: Page, name: string): Promise<void> {
   await openSavesModal(page);
   const modal = page.getByTestId("saves-modal");
-  const row = modal.locator("[data-testid='load-save-button']").filter({
-    has: modal.getByText(name, { exact: false }),
-  });
-  // Fall back to finding the closest load button to the text if filter above
-  // returns nothing (save name may be in a sibling element).
-  const loadBtn =
-    (await row.count()) > 0
-      ? row.first()
-      : modal.locator(`[data-testid='load-save-button']`).first();
-  await loadBtn.click();
+  // Find the <li> row that contains the save name text, then get the Load
+  // button that is a child of that same row.
+  const row = modal.locator("li").filter({ hasText: name });
+  await row.getByTestId("load-save-button").click();
   await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
 }
 
