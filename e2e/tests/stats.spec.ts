@@ -17,14 +17,20 @@ async function getActiveTabRbiTexts(statsPanel: Locator): Promise<string[]> {
 }
 
 /**
- * Clicks the home-team tab, reads its RBI cells, then restores the away tab.
+ * Clicks the home-team tab (always the 3rd button, index 2, in the panel),
+ * reads its RBI cells, then restores the away tab (index 1).
  * Returns the combined [away…, home…] RBI text values.
+ *
+ * Button order inside player-stats-panel:
+ *   0 — collapse/expand toggle ("▼ hide" / "▶ show")
+ *   1 — away team tab ("▲ {teams[0]}")
+ *   2 — home team tab ("▼ {teams[1]}")
  */
 async function getBothTabsRbi(statsPanel: Locator): Promise<string[]> {
   const awayTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.locator("button").filter({ hasText: /▼/ }).click();
+  await statsPanel.locator("button").nth(2).click(); // home tab
   const homeTexts = await getActiveTabRbiTexts(statsPanel);
-  await statsPanel.locator("button").filter({ hasText: /▲/ }).click();
+  await statsPanel.locator("button").nth(1).click(); // restore away tab
   return [...awayTexts, ...homeTexts];
 }
 
@@ -82,19 +88,17 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     test.skip(testInfo.project.name !== "desktop", "RBI scoring test is desktop-only");
     test.setTimeout(120_000);
 
-    await startGameViaPlayBall(page, { seed: "deadbeef" });
+    // Use a seed known to produce scoring within 80 log entries.
+    await startGameViaPlayBall(page, { seed: "rbi-save1" });
     const statsPanel = page.getByTestId("player-stats-panel");
 
-    // First, wait until the HitLog shows a run-scoring play (+N run/runs).
-    // The HitLog shows "+1 run" / "+2 runs" only when entry.runs > 0, which
-    // is the same condition under which rbi is set in hitBall.ts.
-    // This is a reliable trigger that avoids querying the wrong team tab.
-    await expect(page.getByTestId("hit-log")).toContainText(/\+\d+ run/, {
-      timeout: 90_000,
-    });
+    // Wait for enough log entries that scoring is virtually certain.
+    // 80 play-by-play entries ≈ several innings of at-bats; almost all
+    // simulated games score within that span.
+    await waitForLogLines(page, 80, 90_000);
 
     // A run has scored — at least one team's batter must have a non-zero RBI.
-    // Check BOTH team tabs: scoring could be by away or home first depending on seed.
+    // Check BOTH team tabs: scoring could be by away or home first.
     const allRbi = await getBothTabsRbi(statsPanel);
     expect(allRbi.some((t) => t !== "–" && t.trim() !== "")).toBe(true);
   });
@@ -106,10 +110,8 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     await startGameViaPlayBall(page, { seed: "rbi-save1" });
     const statsPanel = page.getByTestId("player-stats-panel");
 
-    // Wait for any scoring play via the HitLog (team-agnostic trigger).
-    await expect(page.getByTestId("hit-log")).toContainText(/\+\d+ run/, {
-      timeout: 90_000,
-    });
+    // Wait for enough log entries that scoring is virtually certain.
+    await waitForLogLines(page, 50, 90_000);
 
     // Capture both-tab RBI state before saving.
     const rbiBeforeSave = await getBothTabsRbi(statsPanel);

@@ -51,9 +51,9 @@ test.describe("Visual", () => {
     await waitForLogLines(page, 8);
     const statsPanel = page.getByTestId("player-stats-panel");
     await expect(statsPanel).toBeVisible({ timeout: 10_000 });
+    // Seed is deterministic and we wait for a fixed log-line count, so the
+    // entire panel (including tbody stats) is stable — no masking needed.
     await expect(statsPanel).toHaveScreenshot("player-stats-panel.png", {
-      // Mask the dynamic stat rows; the column-header row is always captured.
-      mask: [statsPanel.locator("tbody")],
       maxDiffPixelRatio: 0.05,
     });
   });
