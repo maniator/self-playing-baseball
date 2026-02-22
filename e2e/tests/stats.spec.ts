@@ -76,15 +76,12 @@ test.describe("Player Stats Panel — structure", () => {
 });
 
 test.describe("Player Stats Panel — RBI values (desktop only)", () => {
-  test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
-  });
-
   test("RBI values update after a scoring play", async ({ page }, testInfo) => {
     // Restrict to desktop: this test waits up to 90 s for a scoring play.
     // Running on all 6 projects × 90 s would make CI unacceptably slow.
     test.skip(testInfo.project.name !== "desktop", "RBI scoring test is desktop-only");
     test.setTimeout(120_000);
+    await resetAppState(page);
 
     // Use a seed known to produce scoring within 80 log entries.
     await startGameViaPlayBall(page, { seed: "rbi-save1" });
@@ -104,6 +101,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
   test("RBI stats are preserved after save and reload", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "RBI save/load test is desktop-only");
     test.setTimeout(120_000);
+    await resetAppState(page);
 
     await startGameViaPlayBall(page, { seed: "rbi-save1" });
     const statsPanel = page.getByTestId("player-stats-panel");
@@ -134,6 +132,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Import RBI backfill test is desktop-only");
+    await resetAppState(page);
 
     await startGameViaPlayBall(page, { seed: "importrbi" });
     await waitForLogLines(page, 3);
