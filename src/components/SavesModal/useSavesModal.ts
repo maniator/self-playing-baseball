@@ -91,7 +91,9 @@ export const useSavesModal = ({
         .then(() => {
           log("Game saved!");
         })
-        .catch(() => {});
+        .catch((err: unknown) => {
+          log(`Failed to save game: ${err instanceof Error ? err.message : String(err)}`);
+        });
     } else {
       // Create a new explicit snapshot save.
       createSave(
@@ -113,7 +115,9 @@ export const useSavesModal = ({
           onSaveIdChange(id);
           log("Game saved!");
         })
-        .catch(() => {});
+        .catch((err: unknown) => {
+          log(`Failed to save game: ${err instanceof Error ? err.message : String(err)}`);
+        });
     }
   };
 
@@ -155,7 +159,9 @@ export const useSavesModal = ({
       .then(() => {
         if (currentSaveId === id) onSaveIdChange(null);
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        log(`Failed to delete save: ${err instanceof Error ? err.message : String(err)}`);
+      });
   };
 
   const handleExport = (slot: SaveDoc) => {
@@ -172,7 +178,9 @@ export const useSavesModal = ({
         a.click();
         URL.revokeObjectURL(url);
       })
-      .catch(() => {});
+      .catch((err: unknown) => {
+        log(`Failed to export save: ${err instanceof Error ? err.message : String(err)}`);
+      });
   };
 
   const applyImport = (json: string) => {

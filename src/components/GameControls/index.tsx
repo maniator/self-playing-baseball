@@ -66,7 +66,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
             onSaveIdChange={setCurrentSaveId}
             onSetupRestore={(setup) => {
               setStrategy(setup.strategy);
-              if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
+              setManagedTeam(setup.managedTeam ?? 0);
               setManagerMode(setup.managerMode ?? false);
             }}
           />

@@ -71,6 +71,29 @@ describe("SaveStore.createSave", () => {
     expect(doc?.seed).toBe("xyz");
     expect(doc?.matchupMode).toBe("custom");
   });
+
+  it("enforces max-3-saves rule by evicting the oldest save", async () => {
+    const id1 = await store.createSave(makeSetup({ homeTeamId: "A" }));
+    await new Promise((r) => setTimeout(r, 5));
+    const id2 = await store.createSave(makeSetup({ homeTeamId: "B" }));
+    await new Promise((r) => setTimeout(r, 5));
+    const id3 = await store.createSave(makeSetup({ homeTeamId: "C" }));
+    await new Promise((r) => setTimeout(r, 5));
+
+    // All three fit under the limit; no eviction yet.
+    let saves = await store.listSaves();
+    expect(saves).toHaveLength(3);
+
+    // Adding a 4th should evict id1 (oldest by updatedAt).
+    const id4 = await store.createSave(makeSetup({ homeTeamId: "D" }));
+    saves = await store.listSaves();
+    expect(saves).toHaveLength(3);
+    const ids = saves.map((s) => s.id);
+    expect(ids).not.toContain(id1);
+    expect(ids).toContain(id2);
+    expect(ids).toContain(id3);
+    expect(ids).toContain(id4);
+  });
 });
 
 describe("SaveStore.appendEvents", () => {

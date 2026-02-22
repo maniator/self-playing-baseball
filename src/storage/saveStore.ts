@@ -9,6 +9,7 @@ import type {
 } from "./types";
 
 const SCHEMA_VERSION = 1;
+const MAX_SAVES = 3;
 const RXDB_EXPORT_VERSION = 1 as const;
 const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
 
@@ -46,6 +47,17 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const now = Date.now();
       const id = `save_${now}_${Math.random().toString(36).slice(2, 8)}`;
+
+      // Enforce max-saves rule: evict the oldest save before inserting a new one.
+      const allSaves = await db.saves.find({ sort: [{ updatedAt: "asc" }] }).exec();
+      if (allSaves.length >= MAX_SAVES) {
+        const oldest = allSaves[0];
+        nextIdxMap.delete(oldest.id);
+        appendQueues.delete(oldest.id);
+        await oldest.remove();
+        const staleEvents = await db.events.find({ selector: { saveId: oldest.id } }).exec();
+        await Promise.all(staleEvents.map((d) => d.remove()));
+      }
       const doc: SaveDoc = {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
@@ -55,6 +67,7 @@ function buildStore(getDbFn: GetDb) {
         awayTeamId: setup.awayTeamId,
         createdAt: now,
         updatedAt: now,
+        // -1 is the sentinel for "not started" (no pitches persisted yet).
         progressIdx: -1,
         setup: setup.setup,
         schemaVersion: SCHEMA_VERSION,

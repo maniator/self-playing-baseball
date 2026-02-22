@@ -10,6 +10,7 @@ import { getDb } from "@storage/db";
 import { appLog } from "@utils/logger";
 
 import GameInner from "./GameInner";
+import { LoadingScreen } from "./styles";
 
 const GithubRibbon = styled.a.attrs({
   href: "https://github.com/maniator/self-playing-baseball",
@@ -38,7 +39,7 @@ const Game: React.FunctionComponent = () => {
     actionBufferRef.current.push(action);
   }, []);
 
-  if (!db) return null;
+  if (!db) return <LoadingScreen>Loading game…</LoadingScreen>;
 
   return (
     <RxDatabaseProvider database={db}>
