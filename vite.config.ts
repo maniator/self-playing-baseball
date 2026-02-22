@@ -3,7 +3,7 @@ import path from "path";
 import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   root: "src",
   publicDir: path.resolve(__dirname, "public"),
   build: {
@@ -50,7 +50,7 @@ export default defineConfig({
     },
   },
   define: {
-    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? "production"),
+    "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? mode),
   },
   plugins: [
     react(),
