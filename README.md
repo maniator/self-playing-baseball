@@ -130,7 +130,7 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 - `data-testid` attributes on all critical elements enable stable locators.
 - Each play-by-play log entry has a hidden `data-log-index` attribute (`0` = oldest event), used by `captureGameSignature` to build a stable determinism signature that does not shift as autoplay prepends new entries.
 - The webServer is `vite preview` (production build), not `yarn dev`, to avoid the RxDB dev-mode plugin hanging in headless Chromium.
-- Seeds must be passed in the URL (`/?seed=xxx`) *before* the app mounts — `initSeedFromUrl` is a one-shot init.
+- Seeds can be set either via URL parameter (`?seed=`) at startup (`initSeedFromUrl` — one-shot) OR via the seed input field in the New Game dialog at runtime (`reinitSeed` — callable any time, updates the URL too). E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
 
 
 ## Tech stack

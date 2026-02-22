@@ -399,7 +399,7 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 ### Key design decisions
 
 - **`vite preview` webServer** — E2E tests run against the production build (`dist/`), not `yarn dev`. This avoids the RxDB `RxDBDevModePlugin` dynamic import hanging the DB initialisation in headless Chromium.
-- **Seed in URL before mount** — `initSeedFromUrl` is a one-shot init called before the React tree mounts. To use a fixed seed in tests, navigate to `/?seed=<value>` **before** clicking Play Ball. Setting it via `history.replaceState` after load is too late.
+- **Seed in URL before mount** — `initSeedFromUrl` is a one-shot init called before the React tree mounts. Seeds can also be set at runtime via the seed input field in the New Game dialog, which calls `reinitSeed(seedStr)` on submit and updates `?seed=` in the URL. E2E tests use `configureNewGame(page, { seed: "..." })` to fill the input field — no `/?seed=` URL navigation needed.
 - **`data-log-index` on log entries** — each play-by-play `<Log>` element has `data-log-index={log.length - 1 - arrayIndex}` (0 = oldest event). `captureGameSignature` reads indices 0–4 to get a stable deterministic signature regardless of how many new entries autoplay has prepended.
 - **Fresh context per determinism run** — `browser.newContext()` gives each game run its own IndexedDB, preventing the auto-save from the first run from restoring mid-game state in the second run and breaking seed reproducibility.
 
@@ -408,7 +408,7 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 | Helper | Purpose |
 |---|---|
 | `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
-| `startGameViaPlayBall(page, options?)` | Navigate `/?seed=`, configure teams, click Play Ball |
+| `startGameViaPlayBall(page, options?)` | Fill seed-input field (if provided), configure teams, click Play Ball |
 | `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
 | `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
 | `openSavesModal(page)` | Click saves button, wait for modal |
