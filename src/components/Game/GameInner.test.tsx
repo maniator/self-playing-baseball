@@ -233,10 +233,32 @@ describe("GameInner — auto-save resume", () => {
     expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
   });
 
-  it("does NOT show Resume button when auto-save seed does not match current seed", async () => {
+  it("shows Resume button as fallback when seed does not match but snapshot exists", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [{ ...makeAutoSaveSlot(), seed: "zzzzz" } as SaveDoc],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+    await act(async () => {
+      render(
+        <GameProviderWrapper>
+          <GameInner />
+        </GameProviderWrapper>,
+      );
+    });
+    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
+  });
+
+  it("does NOT show Resume button when no save has a stateSnapshot", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const noSnapshotSlot = { ...makeAutoSaveSlot(), seed: "zzzzz", stateSnapshot: undefined };
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [noSnapshotSlot as SaveDoc],
       createSave: vi.fn().mockResolvedValue("save_1"),
       appendEvents: vi.fn().mockResolvedValue(undefined),
       updateProgress: vi.fn().mockResolvedValue(undefined),

@@ -19,10 +19,15 @@ import { currentSeedStr } from "@utils/saves";
 
 import { FieldPanel, GameBody, GameDiv, LogPanel } from "./styles";
 
-/** Finds the most recent save whose seed matches the current URL seed. */
+/** Finds the best save to auto-resume: prefer seed+snapshot match, fallback to any snapshot. */
 const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
   const currentSeed = getSeed()?.toString(36);
-  return saves.find((s) => s.seed === currentSeed) ?? null;
+  const seedAndSnapshotMatch =
+    currentSeed != null
+      ? saves.find((s) => s.seed === currentSeed && s.stateSnapshot != null)
+      : null;
+  if (seedAndSnapshotMatch) return seedAndSnapshotMatch;
+  return saves.find((s) => s.stateSnapshot != null) ?? null;
 };
 
 interface Props {

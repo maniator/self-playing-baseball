@@ -15,7 +15,7 @@ interface Params {
   onSaveIdChange: (id: string | null) => void;
   onSetupRestore?: (setup: {
     strategy: Strategy;
-    managedTeam: 0 | 1;
+    managedTeam: 0 | 1 | null;
     managerMode: boolean;
   }) => void;
 }
@@ -118,11 +118,22 @@ export const useSavesModal = ({
   };
 
   const handleLoad = (slot: SaveDoc) => {
-    const snap = slot.stateSnapshot;
-    if (snap) {
-      if (snap.rngState !== null) restoreRng(snap.rngState);
-      dispatch({ type: "restore_game", payload: snap.state });
+    // Use the slot's own snapshot if available; otherwise fall back to the
+    // most recently-updated save that has a snapshot for the same seed.
+    // This lets a manual save (which always snapshots immediately) rescue an
+    // auto-save that hasn't yet crossed a half-inning boundary.
+    const snap =
+      slot.stateSnapshot ??
+      saves
+        .filter((s) => s.seed === slot.seed && s.stateSnapshot != null)
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0]?.stateSnapshot;
+
+    if (!snap) {
+      log(`Unable to load save "${slot.name}" — no state snapshot available yet.`);
+      return;
     }
+    if (snap.rngState !== null) restoreRng(snap.rngState);
+    dispatch({ type: "restore_game", payload: snap.state });
     if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
       const url = new URL(window.location.href);
       url.searchParams.set("seed", slot.seed);
@@ -131,7 +142,7 @@ export const useSavesModal = ({
     const { setup } = slot;
     onSetupRestore?.({
       strategy: setup.strategy,
-      managedTeam: setup.managedTeam ?? 0,
+      managedTeam: setup.managedTeam,
       managerMode: setup.managerMode,
     });
     onSaveIdChange(slot.id);

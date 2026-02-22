@@ -11,9 +11,9 @@ import { initSeedFromUrl } from "@utils/rng";
 
 initSeedFromUrl({ writeToUrl: true });
 
-if ("serviceWorker" in navigator) {
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
   navigator.serviceWorker
-    .register("/sw.js", { type: "module" })
+    .register("/sw.js")
     .then((reg) => appLog.log("SW registered — scope:", reg.scope))
     .catch((err) => appLog.error("SW registration failed:", err));
 }

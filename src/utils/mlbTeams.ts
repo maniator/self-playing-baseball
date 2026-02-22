@@ -107,10 +107,11 @@ function buildFetcher(getDbFn: GetDb) {
         ...nl.map((t) => toTeamDoc(t, "nl", now)),
       ];
       const newIds = new Set(incoming.map((d) => d.id));
+      // Upsert first — if this fails we haven't deleted anything yet.
+      await db.teams.bulkUpsert(incoming);
       // Remove teams that no longer exist in the API response.
       const existing = await db.teams.find().exec();
       await Promise.all(existing.filter((d) => !newIds.has(d.id)).map((d) => d.remove()));
-      await db.teams.bulkUpsert(incoming);
     } catch {
       // Swallow DB errors — teams were already returned to the caller.
     }

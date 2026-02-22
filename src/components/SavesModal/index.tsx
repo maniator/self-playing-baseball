@@ -31,7 +31,7 @@ interface Props {
   onSaveIdChange: (id: string | null) => void;
   onSetupRestore?: (setup: {
     strategy: Strategy;
-    managedTeam: 0 | 1;
+    managedTeam: 0 | 1 | null;
     managerMode: boolean;
   }) => void;
 }

@@ -173,7 +173,10 @@ describe("SavesModal", () => {
 
   it("calls onSetupRestore with typed setup when Load is clicked", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
-    const slot = makeSlot();
+    const slot = makeSlot({
+      stateSnapshot: { state: makeState(), rngState: null },
+      setup: { ...mockSetup, strategy: "balanced" as Strategy, managedTeam: 1 as 0 | 1 },
+    });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onSetupRestore = vi.fn();
     renderModal({ onSetupRestore });
@@ -181,9 +184,45 @@ describe("SavesModal", () => {
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
     expect(onSetupRestore).toHaveBeenCalledWith({
       strategy: slot.setup.strategy,
-      managedTeam: slot.setup.managedTeam ?? 0,
+      managedTeam: slot.setup.managedTeam,
       managerMode: slot.setup.managerMode,
     });
+  });
+
+  it("falls back to same-seed save's snapshot when clicked slot has none", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const snapshotState = makeState({ inning: 3 });
+    const slotWithSnapshot = makeSlot({
+      id: "save_2",
+      seed: "abc",
+      updatedAt: 3000,
+      stateSnapshot: { state: snapshotState, rngState: null },
+    });
+    const slotWithoutSnapshot = makeSlot({ id: "save_1", seed: "abc", updatedAt: 1000 });
+    vi.mocked(useSaveStore).mockReturnValue(
+      makeMockStore({ saves: [slotWithoutSnapshot, slotWithSnapshot] }),
+    );
+    const dispatch = vi.fn();
+    const onSaveIdChange = vi.fn();
+    renderModal({ onSaveIdChange }, { dispatch });
+    await openPanel();
+    // Click Load on the slot that has no snapshot (first in list)
+    fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
+    // Should have used the other save's snapshot
+    expect(dispatch).toHaveBeenCalledWith({ type: "restore_game", payload: snapshotState });
+    expect(onSaveIdChange).toHaveBeenCalledWith(slotWithoutSnapshot.id);
+  });
+
+  it("shows error when no snapshot exists for any save", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const slot = makeSlot({ seed: "abc" }); // no stateSnapshot
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
+    const dispatch = vi.fn();
+    renderModal({}, { dispatch });
+    await openPanel();
+    fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
+    expect(dispatch).not.toHaveBeenCalled();
+    // Error message logged to play-by-play (via dispatchLog)
   });
 
   it("calls deleteSave when ✕ is clicked", async () => {
@@ -301,7 +340,10 @@ describe("SavesModal", () => {
 
   it("updates URL seed on load", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
-    const slot = makeSlot({ seed: "xyzseed" });
+    const slot = makeSlot({
+      seed: "xyzseed",
+      stateSnapshot: { state: makeState(), rngState: null },
+    });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     renderModal();
     await openPanel();

@@ -10,7 +10,7 @@ export interface SaveDoc {
   awayTeamId: string;
   createdAt: number;
   updatedAt: number;
-  /** Highest event index that has been stored; acts as a progress cursor. */
+  /** Highest pitchKey (EventDoc.at) that has been stored; acts as a progress cursor. */
   progressIdx: number;
   /** Small immutable setup blob used to reconstruct the game deterministically. */
   setup: GameSaveSetup;
