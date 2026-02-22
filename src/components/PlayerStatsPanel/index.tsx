@@ -82,8 +82,16 @@ const Td = styled.td<{ $highlight?: boolean }>`
   }
 `;
 
-type BatterStat = { atBats: number; hits: number; walks: number; strikeouts: number };
+type BatterStat = { atBats: number; hits: number; walks: number; strikeouts: number; rbi: number };
 
+/**
+ * RBI rule (simplified simulator):
+ *   - hits (single/double/triple/homerun) and walks: rbi = runsScored on the play
+ *   - sac bunt and fielder's choice: not credited with RBI (resolved via outLog)
+ *   - older saves without an explicit rbi field are backfilled from runs at
+ *     restore time (`restore_game`); stat aggregation falls back to 0 via
+ *     `entry.rbi ?? 0` only for entries that are still absent after backfill
+ */
 const computeStats = (
   team: 0 | 1,
   playLog: PlayLogEntry[],
@@ -92,7 +100,7 @@ const computeStats = (
 ): Record<number, BatterStat> => {
   const stats: Record<number, BatterStat> = {};
   for (let i = 1; i <= 9; i++) {
-    stats[i] = { atBats: 0, hits: 0, walks: 0, strikeouts: 0 };
+    stats[i] = { atBats: 0, hits: 0, walks: 0, strikeouts: 0, rbi: 0 };
   }
   for (const entry of playLog) {
     if (entry.team !== team) continue;
@@ -101,6 +109,7 @@ const computeStats = (
     } else {
       stats[entry.batterNum].hits++;
     }
+    stats[entry.batterNum].rbi += entry.rbi ?? 0;
   }
   for (const entry of strikeoutLog) {
     if (entry.team !== team) continue;
@@ -139,7 +148,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
   }, [teams, activeTab, lineupOrder, playerOverrides]);
 
   return (
-    <>
+    <div data-testid="player-stats-panel">
       <HeadingRow>
         <span>Batting Stats</span>
         <Toggle
@@ -152,10 +161,20 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
       {!collapsed && (
         <>
           <Tabs>
-            <TabBtn $active={activeTab === 0} type="button" onClick={() => setActiveTab(0)}>
+            <TabBtn
+              $active={activeTab === 0}
+              type="button"
+              data-testid="stats-away-tab"
+              onClick={() => setActiveTab(0)}
+            >
               ▲ {teams[0]}
             </TabBtn>
-            <TabBtn $active={activeTab === 1} type="button" onClick={() => setActiveTab(1)}>
+            <TabBtn
+              $active={activeTab === 1}
+              type="button"
+              data-testid="stats-home-tab"
+              onClick={() => setActiveTab(1)}
+            >
               ▼ {teams[1]}
             </TabBtn>
           </Tabs>
@@ -167,6 +186,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
                 <Th>H</Th>
                 <Th>BB</Th>
                 <Th>K</Th>
+                <Th>RBI</Th>
               </tr>
             </thead>
             <tbody>
@@ -179,6 +199,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
                     <Td $highlight={s.hits > 0}>{s.hits || "–"}</Td>
                     <Td $highlight={s.walks > 0}>{s.walks || "–"}</Td>
                     <Td $highlight={s.strikeouts > 0}>{s.strikeouts || "–"}</Td>
+                    <Td $highlight={s.rbi > 0}>{s.rbi || "–"}</Td>
                   </tr>
                 );
               })}
@@ -186,7 +207,7 @@ const PlayerStatsPanel: React.FunctionComponent = () => {
           </Table>
         </>
       )}
-    </>
+    </div>
   );
 };
 

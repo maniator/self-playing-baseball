@@ -102,6 +102,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     team: state.atBat as 0 | 1,
     event: type,
     runs: runsScored,
+    rbi: runsScored,
   };
 
   const withRuns = addInningRuns(
