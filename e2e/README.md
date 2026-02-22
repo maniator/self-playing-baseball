@@ -136,7 +136,9 @@ All stable test selectors used across the suite:
 All previously skipped tests have been enabled:
 
 - **`manager decision panel appears and action can be taken`** (was in `manager-mode.spec.ts`) —
-  unskipped by pre-setting `managerMode=true` in localStorage via `enableManagerModeViaStorage`.
-  The key insight: `addInitScript` fires on the next `page.goto`, so calling it before
-  `startGameViaPlayBall` guarantees manager mode is active from pitch 1, eliminating the
-  race condition with autoplay.
+  unskipped by selecting a managed team (`managedTeam: "0"`) in the New Game dialog config.
+  `handleStart` in `GameInner` calls `setManagerMode(true)` when a team is managed, so manager
+  mode is active from the very first pitch.  The previous approach (pre-setting `managerMode` in
+  localStorage) was unreliable because `handleStart` explicitly overrides manager mode based on
+  the dialog selection.  `test.setTimeout(150_000)` was added to accommodate the 120 s decision
+  panel wait without hitting the 90 s global limit.

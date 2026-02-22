@@ -97,7 +97,8 @@ test.describe("Save / Load", () => {
 
     // 3. Read the exported JSON from the downloaded file.
     const downloadPath = await download.path();
-    const exportedJson = fs.readFileSync(downloadPath!, "utf-8");
+    if (!downloadPath) throw new Error("Download path is null — download may have failed");
+    const exportedJson = fs.readFileSync(downloadPath, "utf-8");
     expect(exportedJson).toContain('"header"');
 
     // 4. Close the modal and reset to a fresh game state.

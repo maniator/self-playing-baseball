@@ -88,7 +88,9 @@ test.describe("Modals", () => {
 
       // Wait for both the auto-save (created on game start) and the manual save
       // to appear in the reactive RxDB-backed list before we snapshot the count.
-      // Both are created asynchronously and may not yet be visible immediately.
+      // Both are created asynchronously; we need ≥ 2 items so there is always
+      // at least one left after deletion — avoiding a false "still 1" result when
+      // the autosave appears concurrently with (or just after) the deletion.
       const modal = page.getByTestId("saves-modal");
       const listItems = modal.locator("li");
       await expect(async () => {
