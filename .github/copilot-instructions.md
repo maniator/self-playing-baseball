@@ -18,9 +18,10 @@
 ├── .gitignore
 ├── .nvmrc                          # Node version: 24
 ├── .prettierrc                     # Prettier config (double quotes, trailing commas, printWidth 100)
-├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier)
+├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier + e2e overrides)
 ├── tsconfig.json                   # TypeScript config with path aliases (jsx: react-jsx)
 ├── vite.config.ts                  # Vite + Vitest config: React plugin, path aliases, vite-plugin-pwa, test section
+├── playwright.config.ts            # Playwright E2E config: 7 projects (determinism + desktop/tablet/iphone-15-pro-max/iphone-15-pro/pixel-7/pixel-5)
 ├── package.json                    # Scripts, dependencies, Husky/Commitizen config
 ├── yarn.lock
 ├── vercel.json                     # Vercel SPA routing + outputDirectory + SW headers (version 2)
@@ -34,6 +35,23 @@
 │       ├── baseball-180.png        # Apple touch icon 180×180
 │       └── favicon-32.png          # Fallback favicon 32×32
 ├── dist/                           # Build output (gitignored)
+├── e2e/                            # Playwright E2E tests
+│   ├── fixtures/
+│   │   └── sample-save.json        # FNV-1a signed save fixture for import tests
+│   ├── tests/
+│   │   ├── smoke.spec.ts           # App loads, Play Ball starts game, autoplay progresses
+│   │   ├── determinism.spec.ts     # Same seed → same play-by-play (desktop-only project, two fresh IndexedDB contexts)
+│   │   ├── save-load.spec.ts       # Save game, load game, autoplay resumes
+│   │   ├── import.spec.ts          # Import fixture, save visible in list
+│   │   ├── responsive-smoke.spec.ts # Scoreboard/field/log visible & non-zero on all viewports
+│   │   ├── visual.spec.ts          # Pixel-diff snapshots (New Game dialog, scoreboard, saves modal)
+│   │   ├── manager-mode.spec.ts    # Manager Mode toggle + strategy selector; deep flow test.skip TODO
+│   │   └── visual.spec.ts-snapshots/  # Committed baseline PNGs per project
+│   └── utils/
+│       └── helpers.ts              # resetAppState, startGameViaPlayBall, waitForLogLines(page, count, timeout?),
+│                                   # captureGameSignature(page, minLines?, logTimeout?), openSavesModal,
+│                                   # saveCurrentGame, loadFirstSave, importSaveFromFixture,
+│                                   # assertFieldAndLogVisible, disableAnimations
 └── src/
     ├── index.html                  # HTML entry point for Vite (script has type="module", image hrefs are absolute /…)
     ├── index.scss                  # Global styles + mobile media queries
@@ -323,6 +341,9 @@ yarn dev              # vite dev server (hot reload on http://localhost:5173)
 yarn build            # vite build → dist/
 yarn test             # vitest run (one-shot)
 yarn test:coverage    # vitest run --coverage (thresholds: lines/functions/statements 90%, branches 80%)
+yarn test:e2e         # build app then run all Playwright E2E tests headlessly
+yarn test:e2e:ui      # open Playwright UI mode for interactive debugging
+yarn test:e2e:update-snapshots  # regenerate visual regression baseline PNGs
 yarn lint             # ESLint check
 yarn lint:fix         # ESLint auto-fix
 yarn format:check     # Prettier check
@@ -340,8 +361,9 @@ Validate changes by:
 1. `yarn lint` — zero errors/warnings required. Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
 3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
+4. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, also run `yarn test:e2e:update-snapshots` to refresh visual baselines.
 
-**Do not call `report_progress` until all three steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
+**Do not call `report_progress` until all four steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
 ---
 
@@ -351,6 +373,68 @@ Validate changes by:
 - **Test files are exempt from the 200-line limit.**
 - **One test file per source file**, co-located next to the source (e.g. `strategy.ts` → `strategy.test.ts` in the same directory).
 - **Shared test helpers live in `src/test/testHelpers.ts`** and export `makeState`, `makeContextValue`, `makeLogs`, and `mockRandom`. Import these instead of redeclaring them.
+
+---
+
+## E2E Tests (`e2e/`)
+
+Playwright E2E tests live in `e2e/` and are separate from the Vitest unit tests in `src/`.
+
+### Projects
+
+`playwright.config.ts` defines **7 projects**:
+
+| Project | Browser | Viewport | Runs |
+|---|---|---|---|
+| `determinism` | Desktop Chrome | 1280×800 | `determinism.spec.ts` only |
+| `desktop` | Desktop Chrome | 1280×800 | all except `determinism.spec.ts` |
+| `tablet` | WebKit (iPad gen 7) | 820×1180 | all except `determinism.spec.ts` |
+| `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739 | all except `determinism.spec.ts` |
+| `iphone-15-pro` | WebKit (iPhone 15 Pro) | 393×659 | all except `determinism.spec.ts` |
+| `pixel-7` | Chromium (Pixel 7) | 412×839 | all except `determinism.spec.ts` |
+| `pixel-5` | Chromium (Pixel 5) | 393×727 | all except `determinism.spec.ts` |
+
+The `determinism` project is intentionally isolated to desktop because it spawns two sequential fresh browser contexts per test — running it on all 6 device projects would multiply CI time by 6× for no additional coverage value (PRNG determinism is not viewport-dependent).
+
+### Key design decisions
+
+- **`vite preview` webServer** — E2E tests run against the production build (`dist/`), not `yarn dev`. This avoids the RxDB `RxDBDevModePlugin` dynamic import hanging the DB initialisation in headless Chromium.
+- **Seed in URL before mount** — `initSeedFromUrl` is a one-shot init called before the React tree mounts. To use a fixed seed in tests, navigate to `/?seed=<value>` **before** clicking Play Ball. Setting it via `history.replaceState` after load is too late.
+- **`data-log-index` on log entries** — each play-by-play `<Log>` element has `data-log-index={log.length - 1 - arrayIndex}` (0 = oldest event). `captureGameSignature` reads indices 0–4 to get a stable deterministic signature regardless of how many new entries autoplay has prepended.
+- **Fresh context per determinism run** — `browser.newContext()` gives each game run its own IndexedDB, preventing the auto-save from the first run from restoring mid-game state in the second run and breaking seed reproducibility.
+
+### Helper functions (`e2e/utils/helpers.ts`)
+
+| Helper | Purpose |
+|---|---|
+| `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
+| `startGameViaPlayBall(page, options?)` | Navigate `/?seed=`, configure teams, click Play Ball |
+| `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
+| `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
+| `openSavesModal(page)` | Click saves button, wait for modal |
+| `saveCurrentGame(page)` | Open modal + click Save current game |
+| `loadFirstSave(page)` | Open modal + click first Load button, wait for modal to close |
+| `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path |
+| `assertFieldAndLogVisible(page)` | Assert field-view + scoreboard visible with non-zero bounding boxes |
+| `disableAnimations(page)` | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
+
+### `data-testid` reference
+
+All stable test selectors added to the app:
+
+`new-game-dialog`, `play-ball-button`, `matchup-mode-select`, `home-team-select`, `away-team-select`, `scoreboard`, `field-view`, `play-by-play-log`, `log-panel`, `hit-log`, `saves-button`, `saves-modal`, `save-game-button`, `load-save-button`, `import-save-file-input`, `import-save-textarea`, `import-save-button`, `manager-mode-toggle`, `manager-decision-panel`
+
+### Visual snapshots
+
+Committed baseline PNGs live in `e2e/tests/visual.spec.ts-snapshots/` named `<screen>-<project>-linux.png`. Run `yarn test:e2e:update-snapshots` after any intentional visual change. Do **not** regenerate snapshots unless you are intentionally changing a visual.
+
+### CI
+
+`.github/workflows/playwright-e2e.yml` runs on every push and PR:
+1. `yarn build` — produces `dist/` for `vite preview`
+2. `npx playwright install --with-deps` — installs all browsers (Chromium + WebKit)
+3. `npx playwright test` — runs all projects headlessly
+4. Uploads `playwright-report/` + `test-results/` as artifacts on failure
 
 ---
 

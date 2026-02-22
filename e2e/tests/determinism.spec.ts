@@ -11,9 +11,11 @@ const GAME_CONFIG = {
 
 /**
  * Runs a full game-start sequence in a fresh isolated browser context and
- * returns a signature after enough log lines.  The context is closed afterwards.
+ * returns a signature once enough log lines have appeared.
+ *
  * A fresh context guarantees IndexedDB isolation so the PRNG always starts
  * from the same seed without being influenced by a prior run's auto-save.
+ * The context is closed in the `finally` block regardless of outcome.
  */
 async function runGameInFreshContext(
   browser: Browser,
@@ -29,17 +31,19 @@ async function runGameInFreshContext(
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
-    // 10 lines is enough for a stable signature and completes within budget on
-    // slower browsers (WebKit / mobile emulation).
-    return captureGameSignature(page, 10);
+    // Wait for 5 lines with a generous 60 s budget — on CI runners autoplay
+    // can be slower. We only need 5 lines because captureGameSignature reads
+    // data-log-index 0–4 which are stable oldest entries.
+    return await captureGameSignature(page, 5, 60_000);
   } finally {
     await context.close();
   }
 }
 
 test.describe("Determinism", () => {
-  // Two sequential fresh-context game runs; give slow browsers plenty of room.
-  test.setTimeout(120_000);
+  // Each test runs two sequential fresh contexts.  Allow 3 minutes total so
+  // even slow CI runners have enough headroom (2 × ~60 s + startup overhead).
+  test.setTimeout(200_000);
 
   test("same seed produces same play-by-play sequence", async ({ browser }) => {
     const sig1 = await runGameInFreshContext(browser, FIXED_SEED, GAME_CONFIG);

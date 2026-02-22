@@ -77,14 +77,61 @@ yarn
 # Start the dev server (http://localhost:5173)
 yarn dev
 
-# Run tests
+# Run unit tests
 yarn test
+
+# Run E2E tests (builds app first, then runs Playwright)
+yarn test:e2e
+
+# Update visual regression snapshots
+yarn test:e2e:update-snapshots
 
 # Production build → dist/
 yarn build
 ```
 
 ---
+
+## Testing
+
+### Unit tests (Vitest)
+
+Co-located next to their source files. Run with:
+
+```bash
+yarn test               # one-shot
+yarn test:coverage      # with coverage report (90 % lines/functions/statements, 80 % branches)
+```
+
+### E2E tests (Playwright)
+
+End-to-end tests live in `e2e/` and cover the highest-risk user flows across
+**7 browser / device projects**: a dedicated `determinism` project (desktop
+Chromium) plus `desktop`, `tablet`, `iphone-15-pro-max`, `iphone-15-pro`,
+`pixel-7`, and `pixel-5`.
+
+```bash
+yarn test:e2e                       # build + run all E2E tests headlessly
+yarn test:e2e:ui                    # open Playwright UI for interactive debugging
+yarn test:e2e:update-snapshots      # regenerate visual regression baselines
+```
+
+| Spec | What it covers |
+|---|---|
+| `smoke.spec.ts` | App loads, New Game dialog visible, Play Ball starts autoplay |
+| `determinism.spec.ts` | Same `?seed=` → identical play-by-play (uses isolated IndexedDB contexts) |
+| `save-load.spec.ts` | Save game, load game, autoplay resumes after load |
+| `import.spec.ts` | Import fixture JSON, save appears in list with Load button |
+| `responsive-smoke.spec.ts` | Scoreboard + field + log visible & non-zero sized on all viewports |
+| `visual.spec.ts` | Pixel-diff snapshots: New Game dialog, in-game scoreboard, saves modal |
+| `manager-mode.spec.ts` | Manager Mode toggle + strategy selector visible after game starts |
+
+**Key implementation notes:**
+- `data-testid` attributes on all critical elements enable stable locators.
+- Each play-by-play log entry has a hidden `data-log-index` attribute (`0` = oldest event), used by `captureGameSignature` to build a stable determinism signature that does not shift as autoplay prepends new entries.
+- The webServer is `vite preview` (production build), not `yarn dev`, to avoid the RxDB dev-mode plugin hanging in headless Chromium.
+- Seeds must be passed in the URL (`/?seed=xxx`) *before* the app mounts — `initSeedFromUrl` is a one-shot init.
+
 
 ## Tech stack
 
@@ -94,7 +141,8 @@ yarn build
 | Language | TypeScript 5 |
 | Styling | styled-components v6 + SASS |
 | Bundler | Vite v7 |
-| Testing | Vitest + Testing Library |
+| Unit testing | Vitest + Testing Library |
+| E2E testing | Playwright (7 device projects) |
 | Speech | Web Speech API |
 | Audio | Web Audio API |
 | Randomness | Seeded PRNG (mulberry32) |

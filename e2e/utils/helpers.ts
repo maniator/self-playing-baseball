@@ -70,9 +70,13 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
 /**
  * Expands the play-by-play log (if collapsed) and waits until at least `count`
  * log entries are visible.
+ *
+ * @param timeout  How long to poll for the entry count (default 60 s).
+ *                 Increase for slow browsers / CI runners where autoplay
+ *                 may take longer to generate the first several lines.
  */
-export async function waitForLogLines(page: Page, count: number): Promise<void> {
-  // Expand the log if it is collapsed
+export async function waitForLogLines(page: Page, count: number, timeout = 60_000): Promise<void> {
+  // Expand the log if it is collapsed (mobile viewports hide it by default).
   const logToggle = page.getByRole("button", { name: /expand play-by-play/i });
   if (await logToggle.isVisible()) {
     await logToggle.click();
@@ -82,23 +86,29 @@ export async function waitForLogLines(page: Page, count: number): Promise<void> 
     const entries = page.getByTestId("play-by-play-log").locator("div");
     const count_ = await entries.count();
     expect(count_).toBeGreaterThanOrEqual(count);
-  }).toPass({ timeout: 30_000, intervals: [500, 1000, 1000] });
+  }).toPass({ timeout, intervals: [500, 1000, 1000] });
 }
 
 /**
  * Returns a deterministic "signature" string from visible game state.
  *
- * Waits for at least `minLines` log entries (default 10), then reads the 5
- * entries whose `data-log-index` is 0–4 (the first 5 events ever in the
- * game).
+ * Waits for at least `minLines` log entries, then reads the 5 entries whose
+ * `data-log-index` is 0–4 (the first 5 events ever in the game).
  *
  * The log is rendered newest-first: array index 0 = most recent entry.
  * Each entry carries `data-log-index = log.length - 1 - arrayIndex`, so
  * index 0 always refers to the very first event and never shifts even as
  * autoplay prepends newer entries at the top of the list.
+ *
+ * @param minLines   Minimum log entries to wait for before reading (default 5).
+ * @param logTimeout Passed through to `waitForLogLines` (default 60 s).
  */
-export async function captureGameSignature(page: Page, minLines = 10): Promise<string> {
-  await waitForLogLines(page, minLines);
+export async function captureGameSignature(
+  page: Page,
+  minLines = 5,
+  logTimeout = 60_000,
+): Promise<string> {
+  await waitForLogLines(page, minLines, logTimeout);
   const logEl = page.getByTestId("play-by-play-log");
   const parts: string[] = [];
   for (let i = 0; i < 5; i++) {
