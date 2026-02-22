@@ -14,8 +14,9 @@ const GAME_CONFIG = {
  * returns a signature once enough log lines have appeared.
  *
  * A fresh context guarantees IndexedDB isolation so the PRNG always starts
- * from the same seed without being influenced by a prior run's auto-save.
- * The context is closed in the `finally` block regardless of outcome.
+ * fresh without being influenced by a prior run's auto-save.
+ * The seed is typed into the seed-input field in the New Game dialog —
+ * `reinitSeed()` fires on submit and sets the PRNG before the game starts.
  */
 async function runGameInFreshContext(
   browser: Browser,
@@ -25,7 +26,7 @@ async function runGameInFreshContext(
   const context = await browser.newContext();
   const page = await context.newPage();
   try {
-    await page.goto(`/?seed=${seed}`);
+    await page.goto("/");
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     await configureNewGame(page, { ...config, seed });
     await page.getByTestId("play-ball-button").click();

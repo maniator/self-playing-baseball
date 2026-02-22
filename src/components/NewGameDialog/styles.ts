@@ -123,3 +123,9 @@ export const PlayBallButton = styled.button`
   cursor: pointer;
   margin-top: 20px;
 `;
+
+export const SeedHint = styled.p`
+  font-size: 11px;
+  color: #6680aa;
+  margin: 5px 0 0;
+`;

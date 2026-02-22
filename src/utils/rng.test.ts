@@ -5,7 +5,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import getRandomInt from "./getRandomInt";
-import { buildReplayUrl, getDecisionsFromUrl, getSeed, initSeedFromUrl, random } from "./rng";
+import {
+  buildReplayUrl,
+  getDecisionsFromUrl,
+  getSeed,
+  initSeedFromUrl,
+  random,
+  reinitSeed,
+} from "./rng";
 
 // rng keeps module-level state, so we cannot easily reinitialise between tests.
 // Instead we test that:
@@ -258,6 +265,64 @@ describe("rng.ts — getRngState and restoreRng", () => {
     rng.random();
     const state2 = rng.getRngState();
     expect(state1).not.toBe(state2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// reinitSeed — runtime re-seeding (used by New Game dialog seed input)
+// ---------------------------------------------------------------------------
+
+describe("rng.ts — reinitSeed", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("reinitSeed with a base-36 string sets the seed and returns it", async () => {
+    const rng = await import("./rng");
+    const result = rng.reinitSeed("deadbeef");
+    expect(typeof result).toBe("number");
+    expect(result).toBeGreaterThan(0);
+    expect(rng.getSeed()).toBe(result);
+  });
+
+  it("reinitSeed with same string produces same seed each time", async () => {
+    const rng = await import("./rng");
+    const a = rng.reinitSeed("abc123");
+    const b = rng.reinitSeed("abc123");
+    expect(a).toBe(b);
+  });
+
+  it("reinitSeed with different strings produces different seeds", async () => {
+    const rng = await import("./rng");
+    const a = rng.reinitSeed("seed1");
+    const b = rng.reinitSeed("seed2");
+    expect(a).not.toBe(b);
+  });
+
+  it("reinitSeed with blank string generates a random seed", async () => {
+    const rng = await import("./rng");
+    const result = rng.reinitSeed("   ");
+    expect(typeof result).toBe("number");
+    expect(rng.getSeed()).toBe(result);
+  });
+
+  it("reinitSeed updates URL via history.replaceState", async () => {
+    const spy = vi.spyOn(window.history, "replaceState");
+    const rng = await import("./rng");
+    rng.reinitSeed("testurl");
+    expect(spy).toHaveBeenCalled();
+    const call = spy.mock.calls[0];
+    expect(String(call[2])).toContain("seed=");
+    spy.mockRestore();
+  });
+
+  it("random() after reinitSeed produces deterministic sequence", async () => {
+    const rng = await import("./rng");
+    rng.reinitSeed("deterministic");
+    const seq1 = Array.from({ length: 5 }, () => rng.random());
+    rng.reinitSeed("deterministic");
+    const seq2 = Array.from({ length: 5 }, () => rng.random());
+    expect(seq1).toEqual(seq2);
   });
 });
 

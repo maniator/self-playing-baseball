@@ -45,9 +45,23 @@ export interface GameConfig {
   awayTeam?: string;
 }
 
+/**
+ * Configures the New Game dialog with the provided options.
+ * All options are optional; omitted values keep defaults.
+ *
+ * If `options.seed` is given it is typed into the seed input field so that
+ * `reinitSeed` fires with the correct value when Play Ball is clicked.
+ * This replaces the older approach of navigating to `/?seed=<value>` before
+ * calling this helper.
+ */
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);
 
+  if (options.seed !== undefined) {
+    const seedField = page.getByTestId("seed-input");
+    await seedField.clear();
+    await seedField.fill(options.seed);
+  }
   if (options.homeTeam) {
     await page.getByTestId("home-team-select").selectOption({ label: options.homeTeam });
   }
@@ -58,18 +72,14 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 
 /**
  * Starts the game:
- * - If a seed is given, navigates to `/?seed=<value>` first so the PRNG is
- *   seeded before the app initialises (initSeedFromUrl runs once at startup).
+ * - Resets app state (navigates to `/`).
+ * - If a seed is given, types it into the seed-input field in the dialog
+ *   (calls `reinitSeed` on submit — no page reload needed).
  * - Configures optional home/away team selection.
  * - Clicks "Play Ball!" and waits until the game is active.
  */
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
-  if (options.seed) {
-    // Navigate with the seed in the URL so initSeedFromUrl picks it up before
-    // React mounts — replaceState after load is too late (seed is already set).
-    await page.goto(`/?seed=${options.seed}`);
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-  }
+  await resetAppState(page);
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
   // Wait for the new game dialog to close
@@ -152,6 +162,26 @@ export async function loadFirstSave(page: Page): Promise<void> {
   await openSavesModal(page);
   await page.getByTestId("load-save-button").first().click();
   // Modal closes after load
+  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+}
+
+/**
+ * Loads the save slot whose row contains `name` (partial text match).
+ * Opens the Saves modal, finds the matching row, and clicks its Load button.
+ */
+export async function loadSaveByName(page: Page, name: string): Promise<void> {
+  await openSavesModal(page);
+  const modal = page.getByTestId("saves-modal");
+  const row = modal.locator("[data-testid='load-save-button']").filter({
+    has: modal.getByText(name, { exact: false }),
+  });
+  // Fall back to finding the closest load button to the text if filter above
+  // returns nothing (save name may be in a sibling element).
+  const loadBtn =
+    (await row.count()) > 0
+      ? row.first()
+      : modal.locator(`[data-testid='load-save-button']`).first();
+  await loadBtn.click();
   await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
 }
 

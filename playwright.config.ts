@@ -45,9 +45,9 @@ export default defineConfig({
       use: { ...devices["iPhone 15 Pro Max"] },
     },
     {
-      name: "iphone-15-pro",
+      name: "iphone-15",
       testIgnore: "**/determinism.spec.ts",
-      use: { ...devices["iPhone 15 Pro"] },
+      use: { ...devices["iPhone 15"] },
     },
     {
       name: "pixel-7",

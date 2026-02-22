@@ -111,3 +111,28 @@ export const restoreRng = (state: number): void => {
   rng = mulberry32(state);
   rngInternalA = state;
 };
+
+/**
+ * Re-initialises the PRNG from a caller-supplied seed string (base-36 or
+ * decimal).  Unlike `initSeedFromUrl`, this can be called at any time —
+ * e.g. when the user types a seed in the New Game dialog.
+ *
+ * If `seedStr` is blank or unparseable a fresh random seed is generated.
+ * The resulting seed is written to the `?seed=` URL parameter so that
+ * `buildReplayUrl()` and share-replay continue to work correctly.
+ *
+ * Returns the numeric seed that was actually applied.
+ */
+export const reinitSeed = (seedStr: string): number => {
+  const parsed = parseSeed(seedStr);
+  const nextSeed = parsed ?? generateSeed();
+  seed = nextSeed;
+  rng = mulberry32(seed);
+  rngInternalA = seed;
+  if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
+    const url = new URL(window.location.href);
+    url.searchParams.set("seed", seed.toString(36));
+    window.history.replaceState(null, "", url.toString());
+  }
+  return seed;
+};

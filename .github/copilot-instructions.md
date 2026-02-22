@@ -21,7 +21,7 @@
 ├── eslint.config.mjs               # ESLint flat config (TS + React + import-sort + Prettier + e2e overrides)
 ├── tsconfig.json                   # TypeScript config with path aliases (jsx: react-jsx)
 ├── vite.config.ts                  # Vite + Vitest config: React plugin, path aliases, vite-plugin-pwa, test section
-├── playwright.config.ts            # Playwright E2E config: 7 projects (determinism + desktop/tablet/iphone-15-pro-max/iphone-15-pro/pixel-7/pixel-5)
+├── playwright.config.ts            # Playwright E2E config: 7 projects (determinism + desktop/tablet/iphone-15-pro-max/iphone-15/pixel-7/pixel-5)
 ├── package.json                    # Scripts, dependencies, Husky/Commitizen config
 ├── yarn.lock
 ├── vercel.json                     # Vercel SPA routing + outputDirectory + SW headers (version 2)
@@ -390,7 +390,7 @@ Playwright E2E tests live in `e2e/` and are separate from the Vitest unit tests 
 | `desktop` | Desktop Chrome | 1280×800 | all except `determinism.spec.ts` |
 | `tablet` | WebKit (iPad gen 7) | 820×1180 | all except `determinism.spec.ts` |
 | `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739 | all except `determinism.spec.ts` |
-| `iphone-15-pro` | WebKit (iPhone 15 Pro) | 393×659 | all except `determinism.spec.ts` |
+| `iphone-15` | WebKit (iPhone 15) | 393×659 | all except `determinism.spec.ts` |
 | `pixel-7` | Chromium (Pixel 7) | 412×839 | all except `determinism.spec.ts` |
 | `pixel-5` | Chromium (Pixel 5) | 393×727 | all except `determinism.spec.ts` |
 
@@ -464,3 +464,5 @@ Committed baseline PNGs live in `e2e/tests/visual.spec.ts-snapshots/` named `<sc
 - **`useSaveStore` requires `<RxDatabaseProvider>`** in the tree. Mock the hook in component tests with `vi.mock("@hooks/useSaveStore", ...)`.
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden.
+- **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
+- **Seed input in New Game dialog** — the seed is now settable via the UI text input (`data-testid="seed-input"`). On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initialises the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
