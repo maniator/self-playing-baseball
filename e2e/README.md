@@ -97,10 +97,9 @@ not regenerate to silence a failure caused by an unintentional regression.
 | Helper | Purpose |
 |---|---|
 | `resetAppState(page)` | Navigate to `/` and wait for DB to finish loading |
-| `startGameViaPlayBall(page, opts?)` | Configure seed/teams + click Play Ball |
+| `startGameViaPlayBall(page, opts?)` | Configure seed/teams/managedTeam + click Play Ball |
 | `waitForLogLines(page, count)` | Poll until ≥ N play-by-play entries are visible |
 | `captureGameSignature(page)` | Read first 5 log entries as a deterministic fingerprint |
-| `enableManagerModeViaStorage(page)` | Register `addInitScript` to pre-set `managerMode=true` in localStorage before the next navigation |
 | `openSavesModal(page)` | Click Saves button and wait for modal |
 | `saveCurrentGame(page)` | Open modal and click Save |
 | `loadFirstSave(page)` | Open modal and click first Load button |
@@ -140,7 +139,7 @@ All previously skipped tests have been enabled.
   Chromium projects (`desktop`, `pixel-7`, `pixel-5`) and are cleanly reported as skipped on
   WebKit projects (`tablet`, `iphone-15-pro-max`, `iphone-15`).
 
-All previously skipped tests have been enabled:
+**Previously skipped test now enabled:**
 
 - **`manager decision panel appears and action can be taken`** (was in `manager-mode.spec.ts`) —
   unskipped by selecting a managed team (`managedTeam: "0"`) in the New Game dialog config.

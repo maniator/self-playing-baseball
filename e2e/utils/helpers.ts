@@ -234,30 +234,6 @@ export async function assertFieldAndLogVisible(page: Page): Promise<void> {
 }
 
 /**
- * Registers a page `addInitScript` that pre-sets Manager Mode (and managed
- * team 0) in `localStorage` **before** the app's React hooks read it on
- * the next navigation.
- *
- * Call this BEFORE `startGameViaPlayBall` (or any other helper that navigates)
- * so that the app mounts with manager mode already enabled.  Because
- * `addInitScript` runs on every subsequent navigation in the page's lifetime
- * there is no need to re-register it between retries.
- *
- * @example
- * ```ts
- * await enableManagerModeViaStorage(page);
- * await startGameViaPlayBall(page, { seed: "mgr42" });
- * await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
- * ```
- */
-export async function enableManagerModeViaStorage(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    localStorage.setItem("managerMode", "true");
-    localStorage.setItem("managedTeam", "0");
-  });
-}
-
-/**
  * Injects CSS to disable all CSS transitions and animations.
  * Useful before taking visual snapshots for consistency.
  */

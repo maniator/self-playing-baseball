@@ -101,23 +101,35 @@ test.describe("Save / Load", () => {
     const exportedJson = fs.readFileSync(downloadPath, "utf-8");
     expect(exportedJson).toContain('"header"');
 
-    // 4. Close the modal and reset to a fresh game state.
+    // 4. Delete the original save so we can tell whether the import actually
+    //    creates a new entry.  resetAppState() only navigates — it does NOT
+    //    wipe IndexedDB — so without this step the pre-existing "· Inning" row
+    //    would still be present after "reset", making the import assertion a
+    //    false positive (Codex review comment).
+    await manualSaveRow.getByRole("button", { name: /delete save/i }).click();
+    await expect(modal.locator("li").filter({ hasText: "· Inning" })).toHaveCount(0, {
+      timeout: 5_000,
+    });
+
+    // 5. Close the modal and reset to a fresh game state.
     await page.getByRole("button", { name: /close/i }).click();
     await resetAppState(page);
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
-    // 5. Open the saves modal and paste the exported JSON into the import textarea.
+    // 6. Open the saves modal and paste the exported JSON into the import textarea.
     await openSavesModal(page);
     await page.getByTestId("import-save-textarea").fill(exportedJson);
     await page.getByTestId("import-save-button").click();
 
-    // 6. The re-imported save should appear — it contains "· Inning" in its name.
+    // 7. The re-imported save should appear — this proves the import path works
+    //    because we deleted the original in step 4 (no pre-existing row to mask
+    //    a broken import).
     const freshModal = page.getByTestId("saves-modal");
     const importedRow = freshModal.locator("li").filter({ hasText: "· Inning" }).first();
     await expect(importedRow).toBeVisible({ timeout: 10_000 });
 
-    // 7. Load the re-imported save.  The save has a stateSnapshot so handleLoad
+    // 8. Load the re-imported save.  The save has a stateSnapshot so handleLoad
     //    will restore the game state and close the modal.
     await importedRow.getByTestId("load-save-button").click();
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
