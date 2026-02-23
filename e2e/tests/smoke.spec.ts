@@ -88,8 +88,7 @@ test.describe("Smoke", () => {
     await page.addInitScript(() => {
       localStorage.setItem("speed", "350"); // SPEED_FAST
     });
-    await resetAppState(page);
-
+    // startGameViaPlayBall calls resetAppState internally — no explicit reset needed.
     await startGameViaPlayBall(page, { seed: "smoke-final1" });
     await expect(page.getByText("FINAL")).toBeVisible({ timeout: 120_000 });
 
@@ -109,8 +108,7 @@ test.describe("Smoke", () => {
     await page.addInitScript(() => {
       localStorage.setItem("speed", "350");
     });
-    await resetAppState(page);
-
+    // startGameViaPlayBall calls resetAppState internally — no explicit reset needed.
     await startGameViaPlayBall(page, { seed: "perf-smoke1" });
     await waitForLogLines(page, 50, 90_000);
 

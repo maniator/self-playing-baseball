@@ -500,37 +500,41 @@ describe("SaveStore — progressIdx bounds", () => {
 
 describe("SaveStore — updatedAt advances on updateProgress", () => {
   it("updatedAt is strictly greater after each updateProgress call", async () => {
-    vi.useFakeTimers();
+    const nowSpy = vi.spyOn(Date, "now");
     try {
+      nowSpy.mockReturnValue(1_000);
       const saveId = await store.createSave(makeSetup());
       const doc1 = await db.saves.findOne(saveId).exec();
       const t1 = doc1!.updatedAt;
 
-      vi.advanceTimersByTime(100);
+      nowSpy.mockReturnValue(1_100);
       await store.updateProgress(saveId, 5);
 
       const doc2 = await db.saves.findOne(saveId).exec();
       expect(doc2!.updatedAt).toBeGreaterThan(t1);
     } finally {
-      vi.useRealTimers();
+      nowSpy.mockRestore();
     }
   });
 
   it("updatedAt advances on a second updateProgress call", async () => {
-    vi.useFakeTimers();
+    const nowSpy = vi.spyOn(Date, "now");
     try {
+      nowSpy.mockReturnValue(1_000);
       const saveId = await store.createSave(makeSetup());
+
+      nowSpy.mockReturnValue(1_100);
       await store.updateProgress(saveId, 5);
       const doc1 = await db.saves.findOne(saveId).exec();
       const t1 = doc1!.updatedAt;
 
-      vi.advanceTimersByTime(100);
+      nowSpy.mockReturnValue(1_200);
       await store.updateProgress(saveId, 10);
 
       const doc2 = await db.saves.findOne(saveId).exec();
       expect(doc2!.updatedAt).toBeGreaterThan(t1);
     } finally {
-      vi.useRealTimers();
+      nowSpy.mockRestore();
     }
   });
 });
