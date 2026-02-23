@@ -47,7 +47,6 @@ jobs:
         include:
           - browser: chromium
             projects: >-
-              --project=determinism
               --project=desktop
               --project=pixel-7
               --project=pixel-5
