@@ -113,7 +113,7 @@ export const restoreRng = (state: number): void => {
 };
 
 /**
- * Re-initialises the PRNG from a caller-supplied seed string (base-36 or
+ * Re-initializes the PRNG from a caller-supplied seed string (base-36 or
  * decimal).  Unlike `initSeedFromUrl`, this can be called at any time —
  * e.g. when the user types a seed in the New Game dialog.
  *

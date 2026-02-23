@@ -14,7 +14,7 @@ import {
   reinitSeed,
 } from "./rng";
 
-// rng keeps module-level state, so we cannot easily reinitialise between tests.
+// rng keeps module-level state, so we cannot easily reinitialize between tests.
 // Instead we test that:
 //  - initSeedFromUrl returns a non-null number
 //  - random() returns values in [0,1)
@@ -25,12 +25,12 @@ import {
 describe("rng – basic", () => {
   it("initSeedFromUrl returns a number", () => {
     const s = initSeedFromUrl();
-    // May already be initialised; still should be a number.
+    // May already be initialized; still should be a number.
     expect(typeof s === "number" || s === null).toBe(true);
   });
 
   it("random() returns values in [0, 1)", () => {
-    // Ensure initialised
+    // Ensure initialized
     initSeedFromUrl();
     for (let i = 0; i < 200; i++) {
       const v = random();
@@ -52,15 +52,15 @@ describe("rng – basic", () => {
     expect(url).toContain("seed=");
   });
 
-  it("getSeed returns a number after initialisation", () => {
+  it("getSeed returns a number after initialization", () => {
     initSeedFromUrl();
     expect(typeof getSeed()).toBe("number");
   });
 
-  it("calling initSeedFromUrl again returns the same seed (already initialised)", () => {
+  it("calling initSeedFromUrl again returns the same seed (already initialized)", () => {
     const first = getSeed();
     const second = initSeedFromUrl();
-    // Once initialised, repeated calls return the same seed without re-randomising.
+    // Once initialized, repeated calls return the same seed without re-randomizing.
     expect(second).toBe(first);
   });
 });
@@ -72,9 +72,9 @@ describe("rng – seed from URL param", () => {
     url.searchParams.set("seed", "12345");
     window.history.replaceState(null, "", url.toString());
 
-    // Re-import via a manual reset: we need to trick the module into re-initialising.
+    // Re-import via a manual reset: we need to trick the module into re-initializing.
     // Since module state is cached, we test via buildReplayUrl which calls getSeed.
-    // The already-initialised guard means getSeed() returns whatever was set first.
+    // The already-initialized guard means getSeed() returns whatever was set first.
     // We can still verify the URL helper works.
     const replayUrl = buildReplayUrl();
     expect(replayUrl).toContain("seed=");
@@ -95,7 +95,7 @@ describe("rng – seed from URL param", () => {
 describe("rng – writeToUrl option", () => {
   it("writeToUrl: true calls history.replaceState", () => {
     const spy = vi.spyOn(window.history, "replaceState");
-    // Already initialised, so this is a no-op if seed !== null.
+    // Already initialized, so this is a no-op if seed !== null.
     // Force a scenario by calling with false first and relying on getSeed side-effect.
     initSeedFromUrl({ writeToUrl: false });
     // Since seed is already set, replaceState won't be called again.
@@ -169,19 +169,19 @@ describe("rng.ts — isolated module instances", () => {
     spy.mockRestore();
   });
 
-  it("getSeed() before initSeedFromUrl still returns a number (auto-initialises)", async () => {
+  it("getSeed() before initSeedFromUrl still returns a number (auto-initializes)", async () => {
     const rng = await import("./rng");
     expect(typeof rng.getSeed()).toBe("number");
   });
 
-  it("random() before initSeedFromUrl auto-initialises", async () => {
+  it("random() before initSeedFromUrl auto-initializes", async () => {
     const rng = await import("./rng");
     const result = rng.random();
     expect(result).toBeGreaterThanOrEqual(0);
     expect(result).toBeLessThan(1);
   });
 
-  it("buildReplayUrl returns URL with seed= after initialising", async () => {
+  it("buildReplayUrl returns URL with seed= after initializing", async () => {
     const rng = await import("./rng");
     rng.initSeedFromUrl({ writeToUrl: false });
     expect(rng.buildReplayUrl()).toContain("seed=");

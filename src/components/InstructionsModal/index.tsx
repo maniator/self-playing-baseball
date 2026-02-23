@@ -60,23 +60,19 @@ const InstructionsModal: React.FunctionComponent = () => {
         </DialogHeader>
 
         <ScrollBody>
+          {/* Keep this copy aligned with the current UI and gameplay behavior.
+              Do not document planned features or internal tuning rules here. */}
           <Section title="Basics" defaultOpen>
             <List>
               <Li>
-                Press <strong>Play Ball!</strong> to start the game.
+                Press <strong>Play Ball!</strong> to start.
               </Li>
+              <Li>The game runs automatically pitch-by-pitch — no clicking needed.</Li>
+              <Li>Outcomes are randomized but seeded — same seed always plays out the same way.</Li>
+              <Li>3 strikes = out · 4 balls = walk · 3 outs = half-inning over.</Li>
               <Li>
-                Once the game starts, it runs automatically pitch-by-pitch — no clicking required.
-              </Li>
-              <Li>
-                Each pitch is a swing, take, or hit — randomised but seeded so every game is
-                repeatable.
-              </Li>
-              <Li>3 strikes = out · 4 balls = walk · 3 outs = end of half-inning.</Li>
-              <Li>
-                The game lasts 9 innings. If the home team leads after the top of the 9th, they win
-                without batting. Walk-off: if the home team takes the lead during the bottom of the
-                9th+, the game ends immediately.
+                Home team wins if ahead after the top of the 9th. Walk-off ends the game
+                immediately.
               </Li>
             </List>
           </Section>
@@ -84,15 +80,19 @@ const InstructionsModal: React.FunctionComponent = () => {
           <Section title="Pre-game customization">
             <List>
               <Li>
-                Before starting, enter team names and optionally upload a{" "}
-                <strong>roster CSV</strong> to give each lineup real player names.
+                Choose a <strong>Matchup</strong> type (AL vs AL, NL vs NL, or Interleague) and
+                select your Home and Away teams.
               </Li>
               <Li>
-                Drag rows in the <strong>batting order</strong> to reorder your lineup.
+                Under <strong>Manage a team?</strong> pick Home, Away, or None. You can also change
+                this after the game starts.
               </Li>
               <Li>
-                Override any batter&apos;s <strong>Contact</strong>, <strong>Power</strong>, or{" "}
-                <strong>Speed</strong> stats to change how they perform.
+                Expand <strong>▸ Customize Players</strong> to set nicknames, tweak stat presets,
+                and drag ⠿ to reorder the batting lineup — for both teams.
+              </Li>
+              <Li>
+                Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
               </Li>
             </List>
           </Section>
@@ -110,69 +110,48 @@ const InstructionsModal: React.FunctionComponent = () => {
           <Section title="Manager Mode">
             <List>
               <Li>
-                Turn on <strong>Manager Mode</strong> and pick which team you manage, along with a{" "}
-                <strong>Strategy</strong> (Balanced / Aggressive / Patient / Contact / Power).
+                Enable <strong>Manager Mode</strong>, pick which team to manage, and choose a{" "}
+                <strong>Strategy</strong> (Balanced, Aggressive, Patient, Contact, or Power).
               </Li>
               <Li>
-                The game keeps running automatically between decision moments. At key moments it
-                pauses and asks for your decision — steal, bunt, intentional walk, pinch-hitter,
-                defensive shift, or count-based choices.
+                The game keeps running between decisions. At key moments it pauses and asks — steal,
+                bunt, intentional walk, pinch-hitter, or defensive shift.
               </Li>
               <Li>
                 A chime sounds and a browser notification appears (if allowed) when a decision is
                 ready.
               </Li>
-              <Li>A 10-second countdown auto-skips if you don&apos;t choose in time.</Li>
-              <Li>Steals are only offered when the odds are ≥ 73 %.</Li>
-              <Li>
-                Intentional walk is only offered in the 7th inning or later, close game, with 2
-                outs.
-              </Li>
-              <Li>
-                Pinch-hitter is only offered in the 7th inning or later, with a runner on 2nd or
-                3rd, fewer than 2 outs, at the start of an at-bat.
-              </Li>
-              <Li>
-                Defensive shift is only offered when your team is in the field, at the start of the
-                opponent&apos;s at-bat.
-              </Li>
+              <Li>You have 10 seconds to decide; the game auto-skips if you don&apos;t.</Li>
             </List>
           </Section>
 
           <Section title="Live batting stats">
             <List>
               <Li>
-                The <strong>Batting Stats</strong> panel (always visible) shows AB, H, BB, K, and
-                RBI for every batter in both lineups.
+                The <strong>Batting Stats</strong> panel shows AB, H, BB, K, and RBI for every
+                batter.
               </Li>
               <Li>
-                Click/tap a batter&apos;s row to open the <strong>Player Details</strong> section
-                below the table — it shows expanded stats including 1B, 2B, 3B, HR, AVG, OBP, SLG,
-                and OPS.
+                Tap or click a batter&apos;s row to see <strong>Player Details</strong> — expanded
+                stats appear below the table.
               </Li>
-              <Li>The game continues running while you inspect a player&apos;s stats.</Li>
+              <Li>The game keeps running while you browse stats.</Li>
             </List>
           </Section>
 
           <Section title="Saves &amp; Sharing">
             <List>
               <Li>
-                Click <strong>💾 Saves</strong> to save, load, export, or import a game.
+                Click <strong>💾 Saves</strong> to save, load, export, or import a game. Saves are
+                stored locally — no account needed.
               </Li>
               <Li>
-                <strong>Export save</strong> downloads a JSON file you can share or back up.{" "}
-                <strong>Import save</strong> restores a game from that file.
+                <strong>Export save</strong> downloads a JSON file you can back up or share.{" "}
+                <strong>Import save</strong> restores it.
               </Li>
               <Li>
-                Game saves (including MLB team data) are stored locally in{" "}
-                <strong>IndexedDB</strong> via RxDB — no server required.
-              </Li>
-              <Li>
-                Click <strong>Share seed</strong> to copy a link containing only the random seed.
-              </Li>
-              <Li>
-                Anyone with the seed link will see identical pitches — but Manager decisions are
-                yours to make again.
+                Click <strong>Share seed</strong> to copy a link. Anyone with it sees the same
+                pitches — Manager decisions are yours to replay.
               </Li>
             </List>
           </Section>

@@ -113,7 +113,7 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
     });
 
     // Create a new RxDB save for this session (fire-and-forget).
-    // currentSeedStr() returns the seed that was already initialised for this
+    // currentSeedStr() returns the seed that was already initialized for this
     // page load — it does NOT generate a new one.
     const setup: GameSaveSetup = {
       strategy,

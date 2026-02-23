@@ -366,7 +366,7 @@ describe("SaveStore.appendEvents — counter initialisation from existing events
     expect(events[2].idx).toBe(2);
   });
 
-  it("fresh store with no existing events initialises counter at 0", async () => {
+  it("fresh store with no existing events initializes counter at 0", async () => {
     const saveId = await store.createSave(makeSetup());
 
     // No events yet — fresh store should start at idx 0.
