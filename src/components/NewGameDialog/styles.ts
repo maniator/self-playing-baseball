@@ -38,7 +38,7 @@ export const Title = styled.h2`
 `;
 
 export const FieldGroup = styled.div`
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 
   ${mq.mobile} {
     margin-bottom: 8px;
