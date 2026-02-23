@@ -3,6 +3,7 @@ import * as React from "react";
 import { Hit } from "@constants/hitTypes";
 import { announce } from "@utils/announce";
 
+import { createFreshGameState } from "./initialState";
 import reducer from "./reducer";
 
 export type PlayLogEntry = {
@@ -120,32 +121,7 @@ function logReducer(
   }
 }
 
-const initialState: State = {
-  inning: 1,
-  score: [0, 0],
-  teams: ["A", "B"],
-  baseLayout: [0, 0, 0],
-  outs: 0,
-  strikes: 0,
-  balls: 0,
-  atBat: 0,
-  gameOver: false,
-  pendingDecision: null,
-  onePitchModifier: null,
-  pitchKey: 0,
-  decisionLog: [],
-  suppressNextDecision: false,
-  pinchHitterStrategy: null,
-  defensiveShift: false,
-  defensiveShiftOffered: false,
-  batterIndex: [0, 0],
-  inningRuns: [[], []],
-  playLog: [],
-  strikeoutLog: [],
-  outLog: [],
-  playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
-  lineupOrder: [[], []] as [string[], string[]],
-};
+const initialState: State = createFreshGameState(["A", "B"]);
 
 export const GameProviderWrapper: React.FunctionComponent<{
   onDispatch?: (action: GameAction) => void;

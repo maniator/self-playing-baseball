@@ -11,11 +11,12 @@ import {
   OnePitchModifier,
   State,
   Strategy,
-  StrikeoutEntry,
   TeamCustomPlayerOverrides,
 } from "./index";
+import { backfillRestoredState, createFreshGameState } from "./initialState";
 import { warnIfImpossible } from "./invariants";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "./playerActions";
+import { withDecisionLog, withStrikeoutLog } from "./reducerHelpers";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -24,19 +25,6 @@ export { stratMod } from "./strategy";
 const createLogger = (dispatchLogger: (action: LogAction) => void) => (message: string) => {
   dispatchLogger({ type: "log", payload: message });
 };
-
-/**
- * A strikeout occurred when the previous state had 2 strikes,
- * the new state reset strikes (K or new half-inning), and no hit type was recorded
- * (a walk sets hitType = Hit.Walk; a strikeout leaves hitType undefined/null).
- */
-const wasStrikeout = (prev: State, next: State): boolean =>
-  prev.strikes === 2 && next.strikes !== 2 && next.hitType == null;
-
-const makeStrikeoutEntry = (state: State): StrikeoutEntry => ({
-  team: state.atBat as 0 | 1,
-  batterNum: state.batterIndex[state.atBat as 0 | 1] + 1,
-});
 
 const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy): number => {
   const base_pct = base === 0 ? 70 : 60;
@@ -144,13 +132,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       case "strike": {
         const sp = action.payload as { swung?: boolean; pitchType?: PitchType };
         const result = playerStrike(state, log, sp?.swung ?? false, false, sp?.pitchType);
-        if (wasStrikeout(state, result)) {
-          return {
-            ...result,
-            strikeoutLog: [...result.strikeoutLog, makeStrikeoutEntry(state)],
-          };
-        }
-        return result;
+        return withStrikeoutLog(state, result);
       }
       case "foul": {
         const fp = action.payload as { pitchType?: PitchType };
@@ -174,13 +156,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           state.onePitchModifier,
           wp?.pitchType,
         );
-        if (wasStrikeout(state, result)) {
-          return {
-            ...result,
-            strikeoutLog: [...result.strikeoutLog, makeStrikeoutEntry(state)],
-          };
-        }
-        return result;
+        return withStrikeoutLog(state, result);
       }
       case "set_one_pitch_modifier": {
         const result = {
@@ -188,32 +164,17 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           onePitchModifier: action.payload as OnePitchModifier,
           pendingDecision: null,
         };
-        if (state.pendingDecision) {
-          return {
-            ...result,
-            decisionLog: [...state.decisionLog, `${state.pitchKey}:${action.payload}`],
-          };
-        }
-        return result;
+        return withDecisionLog(state, result, `${state.pitchKey}:${action.payload}`);
       }
       case "steal_attempt": {
         const { successPct, base } = action.payload as { successPct: number; base: 0 | 1 };
         const result = stealAttempt(state, log, successPct, base);
-        if (state.pendingDecision) {
-          return {
-            ...result,
-            decisionLog: [...state.decisionLog, `${state.pitchKey}:steal:${base}:${successPct}`],
-          };
-        }
-        return result;
+        return withDecisionLog(state, result, `${state.pitchKey}:steal:${base}:${successPct}`);
       }
       case "bunt_attempt": {
         const bp = action.payload as { strategy?: Strategy };
         const result = checkWalkoff(buntAttempt(state, log, bp?.strategy ?? "balanced"), log);
-        if (state.pendingDecision) {
-          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:bunt`] };
-        }
-        return result;
+        return withDecisionLog(state, result, `${state.pitchKey}:bunt`);
       }
       case "intentional_walk": {
         log("Intentional walk issued.");
@@ -221,43 +182,13 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log),
           log,
         );
-        if (state.pendingDecision) {
-          return { ...result, decisionLog: [...state.decisionLog, `${state.pitchKey}:ibb`] };
-        }
-        return result;
+        return withDecisionLog(state, result, `${state.pitchKey}:ibb`);
       }
       case "reset":
-        return {
-          inning: 1,
-          score: [0, 0] as [number, number],
-          teams: state.teams,
-          baseLayout: [0, 0, 0] as [number, number, number],
-          outs: 0,
-          strikes: 0,
-          balls: 0,
-          atBat: 0,
-          hitType: undefined,
-          gameOver: false,
-          pendingDecision: null,
-          onePitchModifier: null,
-          pitchKey: 0,
-          decisionLog: [],
-          suppressNextDecision: false,
-          pinchHitterStrategy: null,
-          defensiveShift: false,
-          defensiveShiftOffered: false,
-          batterIndex: [0, 0] as [number, number],
-          inningRuns: [[], []] as [number[], number[]],
-          playLog: [],
-          strikeoutLog: [],
-          outLog: [],
-          playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
-          lineupOrder: [[], []] as [string[], string[]],
-        };
+        return createFreshGameState(state.teams);
       case "skip_decision": {
-        const entry = state.pendingDecision ? `${state.pitchKey}:skip` : null;
-        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
-        return { ...state, pendingDecision: null, decisionLog };
+        const result = { ...state, pendingDecision: null };
+        return withDecisionLog(state, result, `${state.pitchKey}:skip`);
       }
       case "set_pending_decision": {
         const newState: State = { ...state, pendingDecision: action.payload as DecisionType };
@@ -271,36 +202,19 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       case "set_pinch_hitter_strategy": {
         const ph = action.payload as Strategy;
         log(`Pinch hitter in — playing ${ph} strategy.`);
-        const entry = state.pendingDecision ? `${state.pitchKey}:pinch:${ph}` : null;
-        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
-        return { ...state, pinchHitterStrategy: ph, pendingDecision: null, decisionLog };
+        const result = { ...state, pinchHitterStrategy: ph, pendingDecision: null };
+        return withDecisionLog(state, result, `${state.pitchKey}:pinch:${ph}`);
       }
       case "set_defensive_shift": {
         const shiftOn = action.payload as boolean;
         if (shiftOn) log("Defensive shift deployed — outfield repositioned.");
         else log("Normal alignment set.");
-        const entry = state.pendingDecision
-          ? `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`
-          : null;
-        const decisionLog = entry ? [...state.decisionLog, entry] : state.decisionLog;
-        return { ...state, defensiveShift: shiftOn, pendingDecision: null, decisionLog };
+        const result = { ...state, defensiveShift: shiftOn, pendingDecision: null };
+        return withDecisionLog(state, result, `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`);
       }
       case "restore_game": {
         const restored = action.payload as State;
-        // Backfill rbi for older saves that pre-date the rbi field.
-        // In this simulator rbi always equals runsScored (= entry.runs),
-        // so this produces exact values rather than a default-zero fallback.
-        const playLog = (restored.playLog ?? []).map((entry) =>
-          entry.rbi !== undefined ? entry : { ...entry, rbi: entry.runs },
-        );
-        return {
-          ...restored,
-          playLog,
-          playerOverrides: restored.playerOverrides ?? [{}, {}],
-          lineupOrder: restored.lineupOrder ?? [[], []],
-          strikeoutLog: restored.strikeoutLog ?? [],
-          outLog: restored.outLog ?? [],
-        };
+        return backfillRestoredState(restored);
       }
       default:
         throw new Error(`No such reducer type as ${action.type}`);
