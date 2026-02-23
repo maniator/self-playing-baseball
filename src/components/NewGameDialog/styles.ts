@@ -1,5 +1,7 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const Dialog = styled.dialog`
   background: #0d1b2e;
   color: #e0f0ff;
@@ -16,16 +18,31 @@ export const Dialog = styled.dialog`
   &::backdrop {
     background: rgba(0, 0, 0, 0.75);
   }
+
+  ${mq.mobile} {
+    padding: 14px 18px 14px;
+    max-height: min(96dvh, 820px);
+    border-radius: 10px;
+  }
 `;
 
 export const Title = styled.h2`
   margin: 0 0 20px;
   font-size: 18px;
   color: aquamarine;
+
+  ${mq.mobile} {
+    margin: 0 0 10px;
+    font-size: 16px;
+  }
 `;
 
 export const FieldGroup = styled.div`
   margin-bottom: 16px;
+
+  ${mq.mobile} {
+    margin-bottom: 8px;
+  }
 `;
 
 export const FieldLabel = styled.label`
@@ -35,6 +52,11 @@ export const FieldLabel = styled.label`
   letter-spacing: 0.8px;
   color: #88bbee;
   margin-bottom: 6px;
+
+  ${mq.mobile} {
+    margin-bottom: 4px;
+    letter-spacing: 0.5px;
+  }
 `;
 
 export const Input = styled.input`
@@ -46,6 +68,10 @@ export const Input = styled.input`
   font-family: inherit;
   font-size: 14px;
   width: 100%;
+
+  ${mq.mobile} {
+    padding: 6px 10px;
+  }
 `;
 
 export const Select = styled.select`
@@ -58,6 +84,10 @@ export const Select = styled.select`
   font-size: 14px;
   width: 100%;
   cursor: pointer;
+
+  ${mq.mobile} {
+    padding: 6px 10px;
+  }
 `;
 
 export const SectionLabel = styled.p`
@@ -66,6 +96,11 @@ export const SectionLabel = styled.p`
   letter-spacing: 0.8px;
   color: #88bbee;
   margin: 0 0 8px;
+
+  ${mq.mobile} {
+    margin: 0 0 4px;
+    letter-spacing: 0.5px;
+  }
 `;
 
 export const RadioLabel = styled.label`
@@ -80,6 +115,11 @@ export const RadioLabel = styled.label`
   & input[type="radio"] {
     accent-color: aquamarine;
     cursor: pointer;
+  }
+
+  ${mq.mobile} {
+    padding: 2px 0;
+    font-size: 12px;
   }
 `;
 
@@ -100,6 +140,11 @@ export const ResumeButton = styled.button`
   &:hover {
     background: #254f38;
   }
+
+  ${mq.mobile} {
+    padding: 7px 16px;
+    font-size: 13px;
+  }
 `;
 
 export const Divider = styled.p`
@@ -107,6 +152,10 @@ export const Divider = styled.p`
   color: #4a6090;
   font-size: 12px;
   margin: 12px 0 16px;
+
+  ${mq.mobile} {
+    margin: 6px 0 8px;
+  }
 `;
 
 export const PlayBallButton = styled.button`
@@ -122,10 +171,26 @@ export const PlayBallButton = styled.button`
   font-weight: 700;
   cursor: pointer;
   margin-top: 20px;
+
+  ${mq.mobile} {
+    margin-top: 10px;
+  }
 `;
 
 export const SeedHint = styled.p`
   font-size: 11px;
   color: #6680aa;
   margin: 5px 0 0;
+
+  ${mq.mobile} {
+    font-size: 10px;
+    line-height: 1.3;
+    margin-top: 3px;
+  }
+`;
+
+export const ResumeLabel = styled.span`
+  ${mq.mobile} {
+    display: none;
+  }
 `;
