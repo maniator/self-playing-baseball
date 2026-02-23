@@ -42,6 +42,7 @@ export async function closeNewGameDialog(page: Page): Promise<void> {
     ) as HTMLDialogElement | null;
     dialog?.close();
   });
+  await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 15_000 });
 }
 
 /**
