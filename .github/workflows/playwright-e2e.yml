@@ -14,9 +14,10 @@ jobs:
     name: E2E (${{ matrix.browser }})
     runs-on: ubuntu-latest
     # The official Playwright container image ships all required OS/system
-    # dependencies (fonts, libs, etc.) pre-installed, so no install-deps step
-    # is needed on GitHub-hosted runners. Browser binaries are still cached
-    # separately via ~/.cache/ms-playwright to avoid re-downloading on every run.
+    # dependencies, fonts, and browser binaries pre-installed at /ms-playwright
+    # (PLAYWRIGHT_BROWSERS_PATH is set in the image). No browser installation or
+    # system deps steps are needed — the container is the complete, consistent
+    # environment for both CI and Copilot sessions.
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
     permissions:
@@ -54,22 +55,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install
-
-      # Browser binaries are cached separately from the container image.
-      # The cache key includes the container image tag so that a container
-      # upgrade (e.g. v1.58.2-noble → v1.59.0-noble) automatically invalidates
-      # cached binaries that may be incompatible with the new system libraries.
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-v1.58.2-noble-${{ matrix.browser }}-${{ hashFiles('yarn.lock') }}
-
-      # System deps are already in the container image; install browser binary only.
-      - name: Install Playwright browser (cache miss)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install ${{ matrix.browser }}
 
       - name: Build app
         run: yarn build

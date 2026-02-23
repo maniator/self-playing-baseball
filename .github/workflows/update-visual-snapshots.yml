@@ -57,18 +57,7 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
-      # Same cache key format as playwright-e2e.yml — reuses CI-populated browser cache.
-      - name: Cache Playwright browsers
-        id: playwright-cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-v1.58.2-noble-${{ matrix.browser }}-${{ hashFiles('yarn.lock') }}
-
-      - name: Install Playwright browser (cache miss)
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install ${{ matrix.browser }}
-
+      # Browser binaries are pre-installed in the container at /ms-playwright.
       - name: Build app
         run: yarn build
 
