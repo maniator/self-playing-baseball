@@ -60,6 +60,9 @@ const Entry = styled.div`
   display: flex;
   gap: 6px;
   align-items: baseline;
+  ${mq.notMobile} {
+    font-size: 13px;
+  }
 `;
 
 const Label = styled.span<{ $hr?: boolean }>`

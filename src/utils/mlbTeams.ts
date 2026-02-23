@@ -45,6 +45,26 @@ export const NL_FALLBACK: MlbTeam[] = [
   { id: 120, name: "Washington Nationals", abbreviation: "WSH" },
 ];
 
+/**
+ * All known teams combined for synchronous abbreviation lookup.
+ * Searched by `getTeamAbbreviation` without any DB/network access.
+ */
+const ALL_TEAMS: MlbTeam[] = [...AL_FALLBACK, ...NL_FALLBACK];
+
+/**
+ * Returns the 2–3-character MLB abbreviation for a given full team name, or
+ * `undefined` when the name is not found in the combined fallback list.
+ *
+ * Useful for compact/mobile display where space is limited.
+ *
+ * @example
+ * getTeamAbbreviation("New York Yankees") // "NYY"
+ * getTeamAbbreviation("Custom Team")      // undefined
+ */
+export function getTeamAbbreviation(teamName: string): string | undefined {
+  return ALL_TEAMS.find((t) => t.name === teamName)?.abbreviation;
+}
+
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 1 day
 const SCHEMA_VERSION = 1;
 

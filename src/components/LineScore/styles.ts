@@ -21,6 +21,10 @@ export const Table = styled.table`
   background: #0a1628;
   color: #e8d5a3;
   width: 100%;
+
+  ${mq.notMobile} {
+    font-size: 14px;
+  }
 `;
 
 export const Th = styled.th<{ $accent?: boolean }>`
@@ -32,6 +36,11 @@ export const Th = styled.th<{ $accent?: boolean }>`
   font-size: 11px;
   letter-spacing: 0.5px;
   white-space: nowrap;
+
+  ${mq.notMobile} {
+    font-size: 13px;
+    padding: 3px 8px;
+  }
 `;
 
 export const TeamTh = styled(Th)`
@@ -40,6 +49,11 @@ export const TeamTh = styled(Th)`
   max-width: 90px;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  ${mq.notMobile} {
+    min-width: 90px;
+    max-width: 140px;
+  }
 `;
 
 export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boolean }>`
@@ -50,6 +64,10 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
     $active ? "#ffffff" : $accent ? "#f5c842" : $dim ? "#3d5a7a" : "#e8d5a3"};
   border-right: ${({ $accent }) => ($accent ? "none" : "1px solid #0f2540")};
   white-space: nowrap;
+
+  ${mq.notMobile} {
+    padding: 5px 8px;
+  }
 `;
 
 export const TeamTd = styled(Td)`
@@ -61,6 +79,11 @@ export const TeamTd = styled(Td)`
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 90px;
+
+  ${mq.notMobile} {
+    font-size: 13px;
+    max-width: 140px;
+  }
 `;
 
 export const DividerTd = styled.td`
@@ -79,6 +102,10 @@ export const BsoRow = styled.div`
   font-size: 11px;
   color: #8abadf;
   letter-spacing: 0.5px;
+
+  ${mq.notMobile} {
+    font-size: 12px;
+  }
 `;
 
 export const BsoGroup = styled.div`
@@ -114,4 +141,26 @@ export const GameOverBanner = styled.div`
   font-size: 12px;
   padding: 3px 8px;
   letter-spacing: 1px;
+`;
+
+/**
+ * Visible only on mobile — shows the short team abbreviation (e.g. "NYY")
+ * so the narrow team-name column does not need to truncate a long full name.
+ */
+export const TeamMobileLabel = styled.span`
+  display: none;
+  ${mq.mobile} {
+    display: inline;
+  }
+`;
+
+/**
+ * Visible on tablet and desktop — shows the full team name with ellipsis
+ * truncation handled by the parent `TeamTd`.
+ */
+export const TeamFullLabel = styled.span`
+  display: inline;
+  ${mq.mobile} {
+    display: none;
+  }
 `;

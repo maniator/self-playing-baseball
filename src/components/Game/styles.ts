@@ -13,10 +13,16 @@ export const GameDiv = styled.main`
   color: white;
   display: flex;
   flex-direction: column;
-  width: min(960px, 94vw);
+  width: min(95vw, 1600px);
   border: 1px solid #884e4e;
   padding: 24px;
   margin: 0 auto;
+
+  ${mq.tablet} {
+    height: 100dvh;
+    overflow: hidden;
+    padding: 16px;
+  }
 
   ${mq.mobile} {
     height: 100dvh;
@@ -36,9 +42,16 @@ export const GameBody = styled.div`
 
   ${mq.desktop} {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 2.2fr 1fr;
     gap: 20px;
     align-items: stretch;
+  }
+
+  ${mq.tablet} {
+    flex: 1;
+    min-height: 0;
+    margin-top: 10px;
+    gap: 12px;
   }
 
   ${mq.mobile} {
@@ -79,6 +92,12 @@ export const LogPanel = styled.div`
     border-left: 1px solid #2a2a2a;
     padding-left: 16px;
     padding-top: 0;
+  }
+
+  ${mq.tablet} {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
   }
 
   ${mq.mobile} {

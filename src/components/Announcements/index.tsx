@@ -56,6 +56,9 @@ const Log = styled.div`
   font-size: 12px;
   padding: 3px 5px;
   color: #ccc;
+  ${mq.notMobile} {
+    font-size: 13px;
+  }
   ${mq.mobile} {
     font-size: 11px;
   }
