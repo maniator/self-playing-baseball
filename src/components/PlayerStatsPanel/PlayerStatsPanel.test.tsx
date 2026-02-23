@@ -174,6 +174,34 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText(/select a batter in batting stats/i)).toBeInTheDocument();
   });
 
+  it("selects a row when Enter is pressed", () => {
+    renderWithContext();
+    fireEvent.keyDown(screen.getByTestId("batter-row-1"), { key: "Enter" });
+    expect(screen.getByText("Player Details")).toBeInTheDocument();
+    expect(screen.getByText(/this game/i)).toBeInTheDocument();
+  });
+
+  it("selects a row when Space is pressed", () => {
+    renderWithContext();
+    fireEvent.keyDown(screen.getByTestId("batter-row-2"), { key: " " });
+    expect(screen.getByText("Player Details")).toBeInTheDocument();
+    expect(screen.getByText(/this game/i)).toBeInTheDocument();
+  });
+
+  it("deselects row when Enter is pressed on the already-selected row", () => {
+    renderWithContext();
+    fireEvent.keyDown(screen.getByTestId("batter-row-1"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByTestId("batter-row-1"), { key: "Enter" });
+    expect(screen.getByText(/select a batter in batting stats/i)).toBeInTheDocument();
+  });
+
+  it("ignores other keys (e.g. Tab) on a row", () => {
+    renderWithContext();
+    fireEvent.keyDown(screen.getByTestId("batter-row-1"), { key: "Tab" });
+    // Player Details should remain in empty state
+    expect(screen.getByText(/select a batter in batting stats/i)).toBeInTheDocument();
+  });
+
   it("clears selection when clear button is clicked", () => {
     renderWithContext();
     fireEvent.click(screen.getByTestId("batter-row-3"));
