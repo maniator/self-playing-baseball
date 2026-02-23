@@ -434,21 +434,30 @@ Committed baseline PNGs live in `e2e/tests/visual.spec.ts-snapshots/` named `<sc
 When an intentional UI change requires new baselines, the **`update-visual-snapshots`** workflow handles it automatically:
 - It fires **automatically** on any push to a non-master branch that changes `e2e/tests/visual.spec.ts` or `e2e/tests/layout.spec.ts`.
 - For manual control: **Actions → "Update Visual Snapshots" → Run workflow → select your branch → Run workflow**.
-- The workflow runs inside the same Playwright container as CI, regenerates all snapshot PNGs, and commits them back to your branch automatically.
+- The workflow runs inside the same Playwright container as CI, regenerates all snapshot PNGs, and commits them back to your branch (without `[skip ci]`), so `playwright-e2e.yml` runs against the updated baselines on that commit.
 - Do **not** regenerate snapshots unless you are intentionally changing a visual.
+
+### Workflow sequencing for snapshot changes
+
+When you push a commit that changes `visual.spec.ts` or `layout.spec.ts`, **two things happen**:
+1. `update-visual-snapshots` fires (auto-trigger), regenerates PNGs in the CI container, and commits them back to the branch.
+2. `playwright-e2e` fires against the *original* commit — this run may fail if the new test has no baseline yet.
+
+Once `update-visual-snapshots` commits the new baselines, a *second* `playwright-e2e` run is triggered against that commit. That run uses the fresh baselines and should pass. The initial failure on the original commit is expected and self-correcting.
 
 ### CI
 
-`.github/workflows/playwright-e2e.yml` runs on every push and PR inside `mcr.microsoft.com/playwright:v1.58.2-noble`:
+`.github/workflows/playwright-e2e.yml` — pure test runner; does **not** regenerate or commit snapshots:
 1. `yarn build` — produces `dist/` for `vite preview`
 2. `npx playwright test` — runs all projects headlessly (browser binaries pre-installed in the container)
 3. Uploads `playwright-report/` + `test-results/` as artifacts on failure
 
-`.github/workflows/update-visual-snapshots.yml` auto-triggers on pushes to any non-master branch when `e2e/tests/visual.spec.ts` or `e2e/tests/layout.spec.ts` change, and can also be triggered manually:
+`.github/workflows/update-visual-snapshots.yml` — sole snapshot regeneration workflow:
 - Runs inside the **same** `mcr.microsoft.com/playwright:v1.58.2-noble` container as `playwright-e2e.yml`.
 - **Auto-trigger:** push a commit that changes `visual.spec.ts` or `layout.spec.ts` on a non-master branch.
 - **Manual trigger:** Actions → "Update Visual Snapshots" → Run workflow → select branch.
-- Commits the updated PNGs back to the branch automatically.
+- Commits updated PNGs back to the branch; the commit triggers `playwright-e2e` to validate them.
+- Concurrency group: cancels stale queued runs when a newer push arrives.
 - Use this workflow — **not** `yarn test:e2e:update-snapshots` locally — whenever baselines need refreshing.
 
 ---
