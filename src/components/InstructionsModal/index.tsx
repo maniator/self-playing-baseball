@@ -81,18 +81,35 @@ const InstructionsModal: React.FunctionComponent = () => {
             </List>
           </Section>
 
+          {/* Keep this copy aligned with the current New Game dialog and gameplay controls.
+              Do not document planned features here. */}
           <Section title="Pre-game customization">
             <List>
               <Li>
-                Before starting, enter team names and optionally upload a{" "}
-                <strong>roster CSV</strong> to give each lineup real player names.
+                Choose the <strong>Matchup</strong> type — AL vs AL, NL vs NL, or Interleague — then
+                pick your Home and Away teams from the dropdowns.
               </Li>
               <Li>
-                Drag rows in the <strong>batting order</strong> to reorder your lineup.
+                Under <strong>Manage a team?</strong> choose None — just watch, Away, or Home. You
+                can also switch teams and toggle Manager Mode after the game starts.
               </Li>
               <Li>
-                Override any batter&apos;s <strong>Contact</strong>, <strong>Power</strong>, or{" "}
-                <strong>Speed</strong> stats to change how they perform.
+                Click <strong>▸ Customize Players</strong> to expand player editing. Use the{" "}
+                <strong>Away</strong> and <strong>Home</strong> tabs to switch teams.
+              </Li>
+              <Li>
+                For each batter: enter a <strong>nickname</strong>, adjust <strong>CON</strong> /{" "}
+                <strong>PWR</strong> / <strong>SPD</strong> using preset tiers (Poor → Elite), and
+                drag the ⠿ handle to reorder the batting lineup.
+              </Li>
+              <Li>
+                For the starting pitcher: enter a <strong>nickname</strong> and adjust{" "}
+                <strong>CTL</strong> / <strong>VEL</strong> / <strong>STM</strong> with the same
+                preset tiers.
+              </Li>
+              <Li>
+                Enter a custom <strong>Seed</strong> for a repeatable game, or leave blank for
+                random.
               </Li>
             </List>
           </Section>
