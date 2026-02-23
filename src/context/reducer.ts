@@ -4,7 +4,7 @@ import { pitchName } from "@constants/pitchTypes";
 
 import { checkWalkoff } from "./gameOver";
 import { hitBall } from "./hitBall";
-import {
+import type {
   DecisionType,
   GameAction,
   LogAction,

@@ -17,7 +17,7 @@
  * trajectories (low-scoring, high-scoring, extra-inning-eligible, etc.).
  */
 
-import { afterEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
@@ -189,51 +189,54 @@ const assertTeamMapping = (state: State) => {
 // ---------------------------------------------------------------------------
 
 describe("multi-seed regression — simulation correctness", () => {
-  afterEach(() => {
-    restoreRng(0);
-  });
-
   for (const { label, seed } of TEST_SEEDS) {
     describe(label, () => {
+      // Run the full game simulation exactly once per seed. All assertions in
+      // this describe block share the cached result, avoiding repeated ~3 000-
+      // pitch simulations that would slow down CI significantly.
+      let cachedState: State;
+
+      beforeAll(() => {
+        cachedState = runGame(seed);
+      });
+
+      afterAll(() => {
+        restoreRng(0);
+      });
+
       it("game completes within 3 000 pitches", () => {
-        const state = runGame(seed);
-        expect(state.gameOver).toBe(true);
+        expect(cachedState.gameOver).toBe(true);
       });
 
       it("away team (0): batting invariants (H<=AB, K<=AB, AB=PA-BB)", () => {
-        const state = runGame(seed);
-        assertBattingInvariants(computeStats(0, state), `${label} away`);
+        assertBattingInvariants(computeStats(0, cachedState), `${label} away`);
       });
 
       it("home team (1): batting invariants (H<=AB, K<=AB, AB=PA-BB)", () => {
-        const state = runGame(seed);
-        assertBattingInvariants(computeStats(1, state), `${label} home`);
+        assertBattingInvariants(computeStats(1, cachedState), `${label} home`);
       });
 
       it("away team: PA ordering — earlier lineup slots have >= PA", () => {
-        const state = runGame(seed);
-        assertPaOrdering(computeStats(0, state), `${label} away`);
+        assertPaOrdering(computeStats(0, cachedState), `${label} away`);
       });
 
       it("home team: PA ordering — earlier lineup slots have >= PA", () => {
-        const state = runGame(seed);
-        assertPaOrdering(computeStats(1, state), `${label} home`);
+        assertPaOrdering(computeStats(1, cachedState), `${label} home`);
       });
 
       it("scoreboard consistency: score[i] == sum(inningRuns[i])", () => {
-        const state = runGame(seed);
-        assertScoreboardConsistency(state);
+        assertScoreboardConsistency(cachedState);
       });
 
       it("team mapping: no cross-team stat leakage in playLog/strikeoutLog/outLog", () => {
-        const state = runGame(seed);
-        assertTeamMapping(state);
+        assertTeamMapping(cachedState);
       });
     });
   }
 
   it("each seed produces a distinct final score (seeds are meaningfully different)", () => {
     const results = TEST_SEEDS.map(({ seed }) => runGame(seed));
+    restoreRng(0);
     const scores = results.map((s) => `${s.score[0]}-${s.score[1]}`);
     // Not all three games should have the identical scoreline.
     const unique = new Set(scores);
