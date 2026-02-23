@@ -16,13 +16,13 @@ import { disableAnimations, startGameViaPlayBall, waitForLogLines } from "../uti
  *   - Large desktop    (1728 × 1117)
  *
  * All tests are restricted to the "desktop" project to avoid multiplying CI
- * time — viewport behaviour is independent of the Playwright browser device
+ * time — viewport behavior is independent of the Playwright browser device
  * preset.  The snapshots are named after the viewport so the filename clearly
  * identifies which layout is under test.
  *
  * Non-visual assertions verify:
  *  - The game container fills a large portion of the viewport width on
- *    tablet/desktop (no tiny centred island with huge black margins).
+ *    tablet/desktop (no tiny centered island with huge black margins).
  *  - The field container is visible and has a non-trivial bounding box.
  *  - There is no horizontal page overflow.
  */

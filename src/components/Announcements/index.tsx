@@ -102,7 +102,7 @@ const Announcements: React.FunctionComponent = () => {
           data-testid="play-by-play-log"
         >
           {log.length === 0 ? (
-            <EmptyState>Press &quot;Batter Up!&quot; to start the game.</EmptyState>
+            <EmptyState>Press &quot;Play Ball!&quot; to start the game.</EmptyState>
           ) : (
             log.map((announcement, idx) => (
               <Log key={idx} data-log-index={log.length - 1 - idx}>

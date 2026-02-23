@@ -88,7 +88,7 @@ describe("NewGameDialog", () => {
     expect(onStart).toHaveBeenCalledWith(DEFAULT_AL_TEAM, DEFAULT_NL_TEAM, 1, expectedOverrides());
   });
 
-  it("prevents dialog from being cancelled via keyboard escape", () => {
+  it("prevents dialog from being canceled via keyboard escape", () => {
     render(<NewGameDialog onStart={noop} />);
     const dialog = screen.getByRole("dialog", { hidden: true });
     const event = new Event("cancel", { cancelable: true });

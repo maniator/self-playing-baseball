@@ -91,9 +91,51 @@ jobs:
           CI: true
 
       - name: Commit updated snapshots
+        id: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update snapshots for ${{ matrix.browser }}"
           file_pattern: "e2e/tests/visual.spec.ts-snapshots/ e2e/tests/layout.spec.ts-snapshots/"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
+
+  # GitHub blocks GITHUB_TOKEN pushes from triggering pull_request/push
+  # workflow runs (loop prevention). After all matrix snapshot jobs finish,
+  # check whether any snapshots were actually committed and, if so, explicitly
+  # dispatch playwright-e2e.yml so it validates the fresh baselines.
+  trigger-e2e:
+    name: Trigger E2E validation
+    needs: update-snapshots
+    if: always() && needs.update-snapshots.result != 'cancelled' && needs.update-snapshots.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 1
+
+      # The matrix jobs may have pushed new snapshot commits after this workflow
+      # was triggered.  Pull to get the latest state of the branch before
+      # checking whether a snapshot update commit was made.
+      - name: Pull latest commits from branch
+        run: git pull --ff-only origin "${{ github.ref_name }}"
+
+      - name: Check if snapshots were updated
+        id: check
+        run: |
+          LAST_MSG=$(git log -1 --pretty=%s)
+          if echo "$LAST_MSG" | grep -q "^chore: update snapshots"; then
+            echo "snapshots_updated=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "snapshots_updated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Dispatch playwright-e2e workflow
+        if: steps.check.outputs.snapshots_updated == 'true'
+        run: gh workflow run playwright-e2e.yml --ref "${{ github.ref_name }}" --repo "${{ github.repository }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

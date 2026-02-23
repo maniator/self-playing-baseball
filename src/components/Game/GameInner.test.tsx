@@ -108,7 +108,7 @@ describe("GameInner", () => {
       </GameProviderWrapper>,
     );
     act(() => {
-      fireEvent.click(screen.getByText(/play ball/i));
+      fireEvent.click(screen.getByTestId("play-ball-button"));
     });
     expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
   });
@@ -120,7 +120,7 @@ describe("GameInner", () => {
       </GameProviderWrapper>,
     );
     act(() => {
-      fireEvent.click(screen.getByText(/play ball/i));
+      fireEvent.click(screen.getByTestId("play-ball-button"));
     });
     expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
   });
@@ -136,7 +136,7 @@ describe("GameInner", () => {
     );
     // Dialog starts open — close it by submitting the form
     act(() => {
-      fireEvent.click(screen.getByText(/play ball/i));
+      fireEvent.click(screen.getByTestId("play-ball-button"));
     });
     // Dialog should now be closed
     expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
@@ -315,7 +315,7 @@ describe("GameInner — auto-save resume", () => {
       </GameProviderWrapper>,
     );
     await act(async () => {
-      fireEvent.click(screen.getByText(/play ball/i));
+      fireEvent.click(screen.getByTestId("play-ball-button"));
     });
     expect(mockCreateSave).toHaveBeenCalled();
   });

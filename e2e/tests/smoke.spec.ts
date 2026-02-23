@@ -106,7 +106,7 @@ test.describe("Smoke", () => {
     page,
   }, testInfo) => {
     // Long-running: generates 50+ autoplay entries before asserting responsiveness.
-    // Restrict to desktop Chromium — viewport does not affect scheduling behaviour.
+    // Restrict to desktop Chromium — viewport does not affect scheduling behavior.
     test.skip(
       testInfo.project.name !== "desktop",
       "Long-session responsiveness test runs on desktop only",

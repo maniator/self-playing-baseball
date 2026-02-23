@@ -42,7 +42,7 @@ export const OutfieldDiv = styled.div`
   background: #aac32b;
   border-radius: 100% 0 0 0;
   position: absolute;
-  /* Centre the field horizontally so it doesn't hug one edge in wide containers */
+  /* Center the field horizontally so it doesn't hug one edge in wide containers */
   left: 50%;
   bottom: 65px;
   transform: translateX(-50%) rotate(45deg);

@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  closeNewGameDialog,
   disableAnimations,
   resetAppState,
   saveCurrentGame,
@@ -134,6 +135,59 @@ test.describe("Visual", () => {
     // regardless of what is happening in the scoreboard / log behind it.
     await expect(page.getByTestId("manager-decision-panel")).toHaveScreenshot(
       "manager-decision-panel.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * How to Play modal — default state.
+   *
+   * Opens the dialog from the New Game screen.  The "Basics" section is open
+   * by default; all other sections are collapsed.  Runs on all 6 viewports
+   * so we catch any mobile / tablet layout regressions.
+   */
+  test("How to Play modal default state screenshot", async ({ page }) => {
+    await waitForNewGameDialog(page);
+    // Close the New Game <dialog> so the rest of the page is no longer inert.
+    await closeNewGameDialog(page);
+    await page.getByRole("button", { name: /how to play/i }).click();
+    await expect(page.getByTestId("instructions-modal")).toBeVisible();
+    await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
+      "instructions-modal-default.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * How to Play modal — all accordion sections expanded.
+   *
+   * Desktop-only to keep CI time reasonable; the accordion layout is the
+   * same across all viewports.  We programmatically open every closed
+   * <details> element and then wait until all 7 sections are structurally
+   * open before snapshotting.
+   */
+  test("How to Play modal all sections expanded screenshot", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "All sections expanded snapshot is desktop-only",
+    );
+    await waitForNewGameDialog(page);
+    // Close the New Game <dialog> so the rest of the page is no longer inert.
+    await closeNewGameDialog(page);
+    await page.getByRole("button", { name: /how to play/i }).click();
+    await expect(page.getByTestId("instructions-modal")).toBeVisible();
+    // Use Playwright clicks (correct screen coordinates) so the dialog's
+    // outside-click handler doesn't close it due to clientX/Y = 0.
+    const closedSummaries = page.locator(
+      '[data-testid="instructions-modal"] details:not([open]) > summary',
+    );
+    while ((await closedSummaries.count()) > 0) {
+      await closedSummaries.first().click();
+    }
+    // Wait until all 7 sections are structurally open before snapshotting.
+    await expect(page.locator('[data-testid="instructions-modal"] details[open]')).toHaveCount(7);
+    await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
+      "instructions-modal-all-sections.png",
       { maxDiffPixelRatio: 0.05 },
     );
   });

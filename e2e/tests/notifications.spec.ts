@@ -35,7 +35,7 @@ test.describe("Notifications smoke — decision panel", () => {
     page,
     browserName,
   }) => {
-    // Notification API behaviour varies; run on Chromium where it is reliable.
+    // Notification API behavior varies; run on Chromium where it is reliable.
     test.skip(browserName !== "chromium", "Notification smoke runs on Chromium only");
     // The decision panel wait is 120 s; add headroom beyond the 90 s global limit.
     test.setTimeout(150_000);

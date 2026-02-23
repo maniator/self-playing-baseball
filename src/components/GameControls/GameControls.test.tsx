@@ -44,7 +44,7 @@ describe("GameControls", () => {
     localStorage.clear();
   });
 
-  it("does NOT show Batter Up button (removed in favour of Play ball dialog)", () => {
+  it("does NOT show Batter Up button (removed in favor of Play ball dialog)", () => {
     renderWithContext(<GameControls />, makeContextValue({ gameOver: false }));
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
