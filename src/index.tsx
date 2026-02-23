@@ -1,3 +1,4 @@
+import "@fontsource-variable/inter";
 import "./index.scss";
 
 import * as React from "react";

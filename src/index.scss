@@ -5,11 +5,40 @@
 $bp-mobile: 768px;
 $bp-desktop: 1024px;
 
+// Typography tokens
+// Primary sans-serif stack: Inter Variable (locally bundled via @fontsource-variable/inter),
+// falling back to common system-ui fonts and emoji support.
+$font-sans:
+  "Inter Variable",
+  system-ui,
+  -apple-system,
+  "Segoe UI",
+  Roboto,
+  "Helvetica Neue",
+  Arial,
+  sans-serif,
+  "Apple Color Emoji",
+  "Segoe UI Emoji",
+  "Segoe UI Symbol";
+// Monospace stack for fixed-width / alignment areas (score counts, debug, etc.)
+$font-mono: ui-monospace, "Cascadia Code", "Source Code Pro", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
 * {
-  font-family: Lucida Console, monospace;
+  font-family: $font-sans;
   color: #FFF;
   box-sizing: border-box;
 }
+
+// Form controls do not inherit font-family in all browsers — make them consistent.
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+// Elements that intentionally use monospace (score digits, stats alignment, etc.)
+// are individually opted-in via the $font-mono token in their styled-components.
 
 body {
   background: black;
