@@ -17,6 +17,9 @@ name: Update Visual Snapshots
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - "copilot/implement-batter-details-inspector"
 
 jobs:
   update-snapshots:
