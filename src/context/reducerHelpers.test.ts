@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import {
@@ -30,7 +31,7 @@ describe("wasStrikeout", () => {
 
   it("returns false when a hit type was recorded (e.g. walk on looking)", () => {
     const prev = makeState({ strikes: 2 });
-    const next = makeState({ strikes: 0, hitType: 4 }); // Hit.Walk = 4
+    const next = makeState({ strikes: 0, hitType: Hit.Walk });
     expect(wasStrikeout(prev, next)).toBe(false);
   });
 });
