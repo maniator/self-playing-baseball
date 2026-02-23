@@ -86,7 +86,7 @@ jobs:
           git add e2e/tests/visual.spec.ts-snapshots/
           git add e2e/tests/layout.spec.ts-snapshots/
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update visual snapshots for ${{ matrix.browser }} [skip ci]"
+            git commit -m "chore: update snapshots for ${{ matrix.browser }} [skip ci]"
             git pull --rebase origin ${{ github.ref_name }}
             git push origin ${{ github.ref_name }}
           else
