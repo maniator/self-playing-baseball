@@ -51,7 +51,7 @@ const InstructionsModal: React.FunctionComponent = () => {
         ?
       </HelpButton>
 
-      <Dialog ref={ref} onClick={handleClick}>
+      <Dialog ref={ref} onClick={handleClick} data-testid="instructions-modal">
         <DialogHeader>
           <DialogTitle>⚾ How to Play</DialogTitle>
           <CloseXButton onClick={close} aria-label="Close">

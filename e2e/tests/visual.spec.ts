@@ -137,4 +137,50 @@ test.describe("Visual", () => {
       { maxDiffPixelRatio: 0.05 },
     );
   });
+
+  /**
+   * How to Play modal — default state.
+   *
+   * Opens the dialog from the New Game screen.  The "Basics" section is open
+   * by default; all other sections are collapsed.  Runs on all 6 viewports
+   * so we catch any mobile / tablet layout regressions.
+   */
+  test("How to Play modal default state screenshot", async ({ page }) => {
+    await waitForNewGameDialog(page);
+    await page.getByRole("button", { name: /how to play/i }).click();
+    await expect(page.getByTestId("instructions-modal")).toBeVisible();
+    await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
+      "instructions-modal-default.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * How to Play modal — all accordion sections expanded.
+   *
+   * Desktop-only to keep CI time reasonable; the accordion layout is the
+   * same across all viewports.  We programmatically open every closed
+   * <details> element and then wait until all 7 sections are structurally
+   * open before snapshotting.
+   */
+  test("How to Play modal all sections expanded screenshot", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "All sections expanded snapshot is desktop-only",
+    );
+    await waitForNewGameDialog(page);
+    await page.getByRole("button", { name: /how to play/i }).click();
+    await expect(page.getByTestId("instructions-modal")).toBeVisible();
+    await page.evaluate(() => {
+      document
+        .querySelectorAll("dialog[open] details:not([open]) summary")
+        .forEach((s) => (s as HTMLElement).click());
+    });
+    // Wait until all 7 sections are structurally open before snapshotting.
+    await expect(page.locator("dialog[open] details[open]")).toHaveCount(7);
+    await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
+      "instructions-modal-all-sections.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
 });
