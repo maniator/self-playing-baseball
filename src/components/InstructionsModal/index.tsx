@@ -140,10 +140,15 @@ const InstructionsModal: React.FunctionComponent = () => {
           <Section title="Live batting stats">
             <List>
               <Li>
-                The <strong>Batting Stats</strong> panel (always visible) shows AB, H, HR, RBI, AVG,
-                OBP, and SLG for every batter in both lineups.
+                The <strong>Batting Stats</strong> panel (always visible) shows AB, H, BB, K, and
+                RBI for every batter in both lineups.
               </Li>
-              <Li>Click a batter&apos;s row to jump to their stats detail.</Li>
+              <Li>
+                Click/tap a batter&apos;s row to open the <strong>Player Details</strong> section
+                below the table — it shows expanded stats including 1B, 2B, 3B, HR, AVG, OBP, SLG,
+                and OPS.
+              </Li>
+              <Li>The game continues running while you inspect a player&apos;s stats.</Li>
             </List>
           </Section>
 

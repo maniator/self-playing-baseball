@@ -54,8 +54,9 @@ test.describe("Visual", () => {
   });
 
   /**
-   * Player stats panel screenshot — verifies the RBI column is present and
-   * the stats table layout is correct across all viewports.
+   * Player stats panel screenshot — captures the panel with Player Details in
+   * the empty (no batter selected) state.  Verifies the stats table layout and
+   * the placeholder copy across all viewports.
    *
    * We use a deterministic seed and wait for a fixed log-line count so the
    * entire panel (including live stat values) is stable at screenshot time.
@@ -68,6 +69,29 @@ test.describe("Visual", () => {
     // Seed is deterministic and we wait for a fixed log-line count, so the
     // entire panel (including tbody stats) is stable — no masking needed.
     await expect(statsPanel).toHaveScreenshot("player-stats-panel.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  /**
+   * Player stats panel — selected batter state.
+   *
+   * Clicks the first batter row so the Player Details section renders the
+   * expanded stat card (player name, sublabel, counting + rate stats grids).
+   * Verifies the selected-row highlight and populated Player Details UI
+   * across all viewports.
+   */
+  test("player stats panel selected batter screenshot", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "visual-stats1" });
+    await waitForLogLines(page, 8);
+    const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 10_000 });
+    // Select the first batter row — this transitions Player Details from empty
+    // to the populated card for batter slot 1.
+    await page.getByTestId("batter-row-1").click();
+    // Wait for the SubLabel ("This game") to confirm the selected state is rendered.
+    await expect(statsPanel.getByText(/this game/i)).toBeVisible({ timeout: 5_000 });
+    await expect(statsPanel).toHaveScreenshot("player-stats-panel-selected.png", {
       maxDiffPixelRatio: 0.05,
     });
   });

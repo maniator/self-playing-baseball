@@ -8,6 +8,8 @@ import { useGameContext } from "@context/index";
 import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
 
+import PlayerDetails, { type BatterStat } from "./PlayerDetails";
+
 const HeadingRow = styled.div`
   display: flex;
   align-items: center;
@@ -62,7 +64,18 @@ const Td = styled.td<{ $highlight?: boolean }>`
   }
 `;
 
-type BatterStat = { atBats: number; hits: number; walks: number; strikeouts: number; rbi: number };
+const Tr = styled.tr<{ $selected?: boolean }>`
+  cursor: pointer;
+  background: ${({ $selected }) => ($selected ? "rgba(106,176,224,0.12)" : "transparent")};
+  &:hover {
+    background: ${({ $selected }) =>
+      $selected ? "rgba(106,176,224,0.18)" : "rgba(255,255,255,0.04)"};
+  }
+  &:focus-visible {
+    outline: 1px solid #6ab0e0;
+    outline-offset: -1px;
+  }
+`;
 
 /**
  * RBI rule (simplified simulator):
@@ -80,7 +93,17 @@ const computeStats = (
 ): Record<number, BatterStat> => {
   const stats: Record<number, BatterStat> = {};
   for (let i = 1; i <= 9; i++) {
-    stats[i] = { atBats: 0, hits: 0, walks: 0, strikeouts: 0, rbi: 0 };
+    stats[i] = {
+      atBats: 0,
+      hits: 0,
+      walks: 0,
+      strikeouts: 0,
+      rbi: 0,
+      singles: 0,
+      doubles: 0,
+      triples: 0,
+      homers: 0,
+    };
   }
   for (const entry of playLog) {
     if (entry.team !== team) continue;
@@ -88,6 +111,10 @@ const computeStats = (
       stats[entry.batterNum].walks++;
     } else {
       stats[entry.batterNum].hits++;
+      if (entry.event === Hit.Single) stats[entry.batterNum].singles++;
+      else if (entry.event === Hit.Double) stats[entry.batterNum].doubles++;
+      else if (entry.event === Hit.Triple) stats[entry.batterNum].triples++;
+      else if (entry.event === Hit.Homerun) stats[entry.batterNum].homers++;
     }
     stats[entry.batterNum].rbi += entry.rbi ?? 0;
   }
@@ -153,9 +180,25 @@ const warnBattingStatsInvariant = (
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
+  const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
+
+  React.useEffect(() => {
+    setSelectedSlot(null);
+  }, [activeTeam]);
 
   const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
   warnBattingStatsInvariant(stats, activeTeam, teams[activeTeam]);
+
+  const handleRowSelect = (slot: number) => {
+    setSelectedSlot((prev) => (prev === slot ? null : slot));
+  };
+
+  const handleRowKeyDown = (e: React.KeyboardEvent, slot: number) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleRowSelect(slot);
+    }
+  };
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
@@ -172,6 +215,10 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
       return nickname || player?.name || `Batter ${idx + 1}`;
     });
   }, [teams, activeTeam, lineupOrder, playerOverrides]);
+
+  const selectedStats = selectedSlot != null ? stats[selectedSlot] : null;
+  const selectedName =
+    selectedSlot != null ? slotNames[selectedSlot - 1] || `Batter ${selectedSlot}` : "";
 
   return (
     <div data-testid="player-stats-panel">
@@ -201,18 +248,34 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
               {Array.from({ length: 9 }, (_, i) => i + 1).map((num) => {
                 const s = stats[num];
                 return (
-                  <tr key={num}>
+                  <Tr
+                    key={num}
+                    $selected={selectedSlot === num}
+                    onClick={() => handleRowSelect(num)}
+                    onKeyDown={(e) => handleRowKeyDown(e, num)}
+                    tabIndex={0}
+                    role="row"
+                    aria-selected={selectedSlot === num}
+                    data-testid={`batter-row-${num}`}
+                  >
                     <Td>{slotNames[num - 1] ?? num}</Td>
                     <Td $highlight={s.atBats > 0}>{s.atBats || "–"}</Td>
                     <Td $highlight={s.hits > 0}>{s.hits || "–"}</Td>
                     <Td $highlight={s.walks > 0}>{s.walks || "–"}</Td>
                     <Td $highlight={s.strikeouts > 0}>{s.strikeouts || "–"}</Td>
                     <Td $highlight={s.rbi > 0}>{s.rbi || "–"}</Td>
-                  </tr>
+                  </Tr>
                 );
               })}
             </tbody>
           </Table>
+          <PlayerDetails
+            slot={selectedSlot}
+            name={selectedName}
+            teamName={teams[activeTeam]}
+            stats={selectedStats}
+            onClear={() => setSelectedSlot(null)}
+          />
         </>
       )}
     </div>
