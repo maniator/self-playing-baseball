@@ -63,7 +63,10 @@ const InstructionsModal: React.FunctionComponent = () => {
           <Section title="Basics" defaultOpen>
             <List>
               <Li>
-                Press <strong>Batter Up!</strong> (or Spacebar) to pitch.
+                Press <strong>Play Ball!</strong> to start the game.
+              </Li>
+              <Li>
+                Once the game starts, it runs automatically pitch-by-pitch — no clicking required.
               </Li>
               <Li>
                 Each pitch is a swing, take, or hit — randomised but seeded so every game is
@@ -94,27 +97,26 @@ const InstructionsModal: React.FunctionComponent = () => {
             </List>
           </Section>
 
-          <Section title="Auto-play">
+          <Section title="Game Flow">
             <List>
-              <Li>
-                Enable <strong>Auto-play</strong> to let the game pitch itself.
-              </Li>
-              <Li>Choose Slow / Normal / Fast speed.</Li>
+              <Li>The game runs automatically once started — sit back and watch.</Li>
+              <Li>Choose Slow / Normal / Fast speed to control the pace.</Li>
               <Li>
                 🔊 slider = play-by-play voice volume · 🔔 slider = chime &amp; fanfare volume.
               </Li>
             </List>
           </Section>
 
-          <Section title="Manager Mode (requires Auto-play)">
+          <Section title="Manager Mode">
             <List>
               <Li>
-                Pick which team you manage and a <strong>Strategy</strong> (Balanced / Aggressive /
-                Patient / Contact / Power).
+                Turn on <strong>Manager Mode</strong> and pick which team you manage, along with a{" "}
+                <strong>Strategy</strong> (Balanced / Aggressive / Patient / Contact / Power).
               </Li>
               <Li>
-                At key moments the game pauses and asks for your decision — steal, bunt, intentional
-                walk, pinch-hitter, defensive shift, or count-based choices.
+                The game keeps running automatically between decision moments. At key moments it
+                pauses and asks for your decision — steal, bunt, intentional walk, pinch-hitter,
+                defensive shift, or count-based choices.
               </Li>
               <Li>
                 A chime sounds and a browser notification appears (if allowed) when a decision is
