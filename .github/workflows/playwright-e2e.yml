@@ -104,7 +104,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add e2e/tests/layout.spec.ts-snapshots/ e2e/tests/visual.spec.ts-snapshots/
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update snapshots from CI container (${{ matrix.browser }}) [skip ci]"
+            git commit -m "chore: update snapshots from CI container (${{ matrix.browser }})"
             TARGET="${{ github.head_ref || github.ref_name }}"
             if ! git pull --rebase origin "${TARGET}"; then
               echo "Rebase failed – skipping snapshot push"
