@@ -86,7 +86,7 @@ jobs:
         run: yarn build
 
       - name: Update visual snapshots
-        run: npx playwright test ${{ matrix.projects }} --update-snapshots
+        run: npx playwright test e2e/tests/visual.spec.ts e2e/tests/layout.spec.ts ${{ matrix.projects }} --update-snapshots
         env:
           CI: true
 
