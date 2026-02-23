@@ -176,13 +176,16 @@ test.describe("Visual", () => {
     await closeNewGameDialog(page);
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
-    await page.evaluate(() => {
-      document
-        .querySelectorAll("dialog[open] details:not([open]) summary")
-        .forEach((s) => (s as HTMLElement).click());
-    });
+    // Use Playwright clicks (correct screen coordinates) so the dialog's
+    // outside-click handler doesn't close it due to clientX/Y = 0.
+    const closedSummaries = page.locator(
+      '[data-testid="instructions-modal"] details:not([open]) > summary',
+    );
+    while ((await closedSummaries.count()) > 0) {
+      await closedSummaries.first().click();
+    }
     // Wait until all 7 sections are structurally open before snapshotting.
-    await expect(page.locator("dialog[open] details[open]")).toHaveCount(7);
+    await expect(page.locator('[data-testid="instructions-modal"] details[open]')).toHaveCount(7);
     await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
       "instructions-modal-all-sections.png",
       { maxDiffPixelRatio: 0.05 },
