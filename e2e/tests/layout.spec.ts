@@ -34,9 +34,10 @@ type Viewport = { width: number; height: number };
  * `stableChecks` consecutive polls spaced `intervalMs` apart.
  *
  * Heights are compared with a 1-pixel tolerance to avoid false instability
- * from sub-pixel rounding between polls.  A hard `maxAttempts` cap prevents
- * infinite loops when the selector is missing or the layout never settles.
- * Throws a clear error if the element is not found or never becomes stable.
+ * from sub-pixel rounding between polls.  Both `streak < stableChecks` and
+ * `attempts < maxAttempts` are checked in the loop condition so the loop
+ * exits cleanly on either termination.  Throws a clear error — including the
+ * last measured height — if the element is not found or never becomes stable.
  */
 async function waitForStableHeight(
   page: Page,
@@ -48,12 +49,8 @@ async function waitForStableHeight(
   let lastHeight = -1;
   let streak = 0;
   let attempts = 0;
-  while (streak < stableChecks) {
-    if (attempts++ >= maxAttempts) {
-      throw new Error(
-        `waitForStableHeight: layout did not stabilise for "${selector}" after ${maxAttempts} attempts`,
-      );
-    }
+  while (streak < stableChecks && attempts < maxAttempts) {
+    attempts++;
     const box = await page.locator(selector).first().boundingBox();
     if (box === null || box.height <= 0) {
       throw new Error(`waitForStableHeight: element "${selector}" is not visible or has no height`);
@@ -66,6 +63,11 @@ async function waitForStableHeight(
       streak = 0;
     }
     await page.waitForTimeout(intervalMs);
+  }
+  if (streak < stableChecks) {
+    throw new Error(
+      `waitForStableHeight: layout did not stabilise for "${selector}" after ${maxAttempts} attempts (last height: ${lastHeight}px)`,
+    );
   }
 }
 

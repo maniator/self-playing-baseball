@@ -25,9 +25,10 @@ body {
 }
 
 // Tablet: remove body padding so GameDiv can fill the full viewport height.
+// overflow-x: hidden prevents horizontal scroll without blocking vertical accessibility.
 @media (min-width: #{$bp-mobile + 1}) and (max-width: #{$bp-desktop - 1}) {
   body {
     padding: 0;
-    overflow: hidden;
+    overflow-x: hidden;
   }
 }
