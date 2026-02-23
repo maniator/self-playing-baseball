@@ -32,6 +32,39 @@ test.describe("Responsive Smoke", () => {
     expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
   });
 
+  test("critical form fields are visible within viewport on New Game dialog", async ({
+    page,
+    viewport,
+  }) => {
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    // These controls must all be fully visible without any scrolling on every viewport.
+    const criticalTestIds = [
+      "matchup-mode-select",
+      "home-team-select",
+      "away-team-select",
+      "seed-input",
+      "play-ball-button",
+    ];
+    for (const testId of criticalTestIds) {
+      const el = page.getByTestId(testId);
+      await expect(el).toBeVisible();
+      const box = await el.boundingBox();
+      expect(box, `${testId} bounding box`).not.toBeNull();
+      expect(
+        box!.y + box!.height,
+        `${testId} bottom edge must be within viewport height`,
+      ).toBeLessThanOrEqual(viewport!.height);
+    }
+  });
+
+  test("no horizontal overflow on New Game dialog page", async ({ page }) => {
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    const hasOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(hasOverflow).toBe(false);
+  });
+
   test("scoreboard, field, and log panel are visible and non-zero after game starts", async ({
     page,
   }) => {

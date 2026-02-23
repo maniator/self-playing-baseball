@@ -55,6 +55,7 @@ export const FieldLabel = styled.label`
 
   ${mq.mobile} {
     margin-bottom: 4px;
+    letter-spacing: 0.5px;
   }
 `;
 
@@ -98,6 +99,7 @@ export const SectionLabel = styled.p`
 
   ${mq.mobile} {
     margin: 0 0 4px;
+    letter-spacing: 0.5px;
   }
 `;
 
@@ -184,5 +186,11 @@ export const SeedHint = styled.p`
     font-size: 10px;
     line-height: 1.3;
     margin-top: 3px;
+  }
+`;
+
+export const ResumeLabel = styled.span`
+  ${mq.mobile} {
+    display: none;
   }
 `;

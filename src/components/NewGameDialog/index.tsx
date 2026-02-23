@@ -13,6 +13,7 @@ import {
   PlayBallButton,
   RadioLabel,
   ResumeButton,
+  ResumeLabel,
   SectionLabel,
   SeedHint,
   Select,
@@ -71,7 +72,8 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
       {onResume && autoSaveName && (
         <>
           <ResumeButton type="button" onClick={onResume}>
-            ▶ Resume: {autoSaveName}
+            ▶ <ResumeLabel>Resume: </ResumeLabel>
+            {autoSaveName}
           </ResumeButton>
           <Divider>— or start a new game —</Divider>
         </>
