@@ -1,10 +1,6 @@
 import type { DecisionType, GameAction, OnePitchModifier, State, Strategy } from "../index";
+import type { ReducerCtx } from "../reducerHelpers";
 import { withDecisionLog } from "../reducerHelpers";
-
-/** Reducer context passed into decision handlers. */
-export interface DecisionsCtx {
-  log: (msg: string) => void;
-}
 
 /**
  * Handles manager/UI decision state actions.
@@ -14,7 +10,7 @@ export interface DecisionsCtx {
 export const handleDecisionsAction = (
   state: State,
   action: GameAction,
-  ctx: DecisionsCtx,
+  ctx: ReducerCtx,
 ): State | undefined => {
   const { log } = ctx;
 

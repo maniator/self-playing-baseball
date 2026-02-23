@@ -4,6 +4,7 @@ import { handleSetupAction } from "./handlers/setup";
 import { handleSimAction } from "./handlers/sim";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
+import { applyHandlersInOrder } from "./reducerHelpers";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -89,19 +90,14 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       return state;
     }
 
-    const simResult = handleSimAction(state, action, { log });
-    if (simResult !== undefined) return simResult;
-
-    const lifecycleResult = handleLifecycleAction(state, action);
-    if (lifecycleResult !== undefined) return lifecycleResult;
-
-    const decisionsResult = handleDecisionsAction(state, action, { log });
-    if (decisionsResult !== undefined) return decisionsResult;
-
-    const setupResult = handleSetupAction(state, action);
-    if (setupResult !== undefined) return setupResult;
-
-    throw new Error(`No such reducer type as ${action.type}`);
+    // Handler precedence is intentional: sim actions are most common and checked
+    // first; lifecycle (reset/restore) second; manager decisions third; setup last.
+    return applyHandlersInOrder(state, action, [
+      (s, a) => handleSimAction(s, a, { log }),
+      handleLifecycleAction,
+      (s, a) => handleDecisionsAction(s, a, { log }),
+      handleSetupAction,
+    ]);
   }
 
   return function reducer(state: State, action: GameAction): State {
