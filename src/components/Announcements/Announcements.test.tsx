@@ -33,7 +33,7 @@ describe("Announcements", () => {
   it("shows empty state message when expanded and log is empty", () => {
     renderWithContext(<Announcements />, makeContextValue({ log: [] }));
     fireEvent.click(screen.getByRole("button", { name: /expand play-by-play/i }));
-    expect(screen.getByText(/batter up/i)).toBeInTheDocument();
+    expect(screen.getByText(/play ball/i)).toBeInTheDocument();
   });
 
   it("collapses again after toggling twice", () => {
