@@ -38,18 +38,6 @@ jobs:
             fonts-noto-color-emoji \
             fonts-dejavu-core
 
-      # If you are using a web font like Inter via local files/package import,
-      # you may not need extra apt fonts beyond fallback coverage.
-
-      # Preinstall Playwright browsers before the firewall is enabled
-      # (install both engines used in your CI matrix)
-      - name: Install Playwright browsers
-        run: npx playwright install chromium webkit
-
-      # If needed for host runner Playwright dependencies (Ubuntu)
-      - name: Install Playwright system dependencies
-        run: npx playwright install-deps chromium webkit
-
       # Pre-build app so agent can run preview/tests quickly
       - name: Build app
         run: yarn build
