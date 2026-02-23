@@ -81,7 +81,7 @@ const InstructionsModal: React.FunctionComponent = () => {
             </List>
           </Section>
 
-          <Section title="Pre-game customisation">
+          <Section title="Pre-game customization">
             <List>
               <Li>
                 Before starting, enter team names and optionally upload a{" "}

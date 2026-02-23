@@ -3,7 +3,7 @@
  *
  * Specifically covers seed `30nl0i` where the 2nd lineup batter (First Baseman)
  * appears to have fewer at-bats than the 3rd batter (Second Baseman).  This is
- * valid behaviour: the First Baseman walked once, so their plate appearances (PA)
+ * valid behavior: the First Baseman walked once, so their plate appearances (PA)
  * are the same as the Second Baseman's while their official at-bat (AB) count is
  * one lower.  The real invariant is on PA (plate appearances), not raw ABs.
  *

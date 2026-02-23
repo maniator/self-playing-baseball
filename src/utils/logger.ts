@@ -26,7 +26,7 @@ export interface AppLogger {
 }
 
 /**
- * Creates a coloured console logger whose every message is prefixed with a
+ * Creates a colored console logger whose every message is prefixed with a
  * styled `tag` badge.
  *
  * @param tag  Short label shown in the badge, e.g. "app" or "SW v1.3.0".

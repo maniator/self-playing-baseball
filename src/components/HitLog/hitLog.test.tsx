@@ -74,7 +74,7 @@ describe("HitLog", () => {
     expect(screen.getByText(/Away #3/)).toBeInTheDocument();
   });
 
-  it("shows HR in gold colour class for a homerun", () => {
+  it("shows HR in gold color class for a homerun", () => {
     const ctx = makeCtx({ playLog: [makeEntry({ event: Hit.Homerun })] });
     renderHitLog(ctx, 0);
     expect(screen.getByText("HR")).toBeInTheDocument();

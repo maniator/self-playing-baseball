@@ -11,7 +11,7 @@ import {
 } from "../utils/helpers";
 
 /**
- * Modal / dialog smoke tests — verify open/close behaviour, form state,
+ * Modal / dialog smoke tests — verify open/close behavior, form state,
  * and one representative destructive action for each key dialog in the app.
  *
  * These tests run across all non-determinism viewport projects so we catch
