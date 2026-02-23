@@ -72,8 +72,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
       {onResume && autoSaveName && (
         <>
           <ResumeButton type="button" onClick={onResume}>
-            ▶ <ResumeLabel>Resume: </ResumeLabel>
-            {autoSaveName}
+            ▶ <ResumeLabel>Resume:</ResumeLabel> {autoSaveName}
           </ResumeButton>
           <Divider>— or start a new game —</Divider>
         </>

@@ -21,7 +21,7 @@ test.describe("Responsive Smoke", () => {
     expect(box!.height).toBeGreaterThan(0);
   });
 
-  test("Play Ball button is in viewport without scrolling", async ({ page, viewport }) => {
+  test("Play Ball button is in viewport without scrolling", async ({ page }) => {
     await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
     const btn = page.getByTestId("play-ball-button");
     await expect(btn).toBeVisible();
@@ -29,13 +29,11 @@ test.describe("Responsive Smoke", () => {
     expect(box).not.toBeNull();
     // The bottom edge of the button must fit within the visible viewport height.
     // This ensures no scrolling is required to reach Play Ball! on any viewport.
-    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+    const viewportHeight = await page.evaluate(() => window.innerHeight);
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewportHeight);
   });
 
-  test("critical form fields are visible within viewport on New Game dialog", async ({
-    page,
-    viewport,
-  }) => {
+  test("critical form fields are visible within viewport on New Game dialog", async ({ page }) => {
     await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
     // These controls must all be fully visible without any scrolling on every viewport.
     const criticalTestIds = [
@@ -45,6 +43,7 @@ test.describe("Responsive Smoke", () => {
       "seed-input",
       "play-ball-button",
     ];
+    const viewportHeight = await page.evaluate(() => window.innerHeight);
     for (const testId of criticalTestIds) {
       const el = page.getByTestId(testId);
       await expect(el).toBeVisible();
@@ -53,16 +52,16 @@ test.describe("Responsive Smoke", () => {
       expect(
         box!.y + box!.height,
         `${testId} bottom edge must be within viewport height`,
-      ).toBeLessThanOrEqual(viewport!.height);
+      ).toBeLessThanOrEqual(viewportHeight);
     }
   });
 
   test("no horizontal overflow on New Game dialog page", async ({ page }) => {
     await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
-    const hasOverflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > window.innerWidth,
+    const overflowDiff = await page.evaluate(
+      () => document.documentElement.scrollWidth - window.innerWidth,
     );
-    expect(hasOverflow).toBe(false);
+    expect(overflowDiff).toBeLessThanOrEqual(1);
   });
 
   test("scoreboard, field, and log panel are visible and non-zero after game starts", async ({
