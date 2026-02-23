@@ -91,9 +91,27 @@ jobs:
           CI: true
 
       - name: Commit updated snapshots
+        id: commit
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update snapshots for ${{ matrix.browser }}"
           file_pattern: "e2e/tests/visual.spec.ts-snapshots/ e2e/tests/layout.spec.ts-snapshots/"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
+
+  # GitHub blocks GITHUB_TOKEN pushes from triggering pull_request/push
+  # workflow runs (loop prevention). After all matrix snapshot jobs finish,
+  # explicitly dispatch playwright-e2e.yml so it validates the fresh baselines.
+  trigger-e2e:
+    name: Trigger E2E validation
+    needs: update-snapshots
+    # Run even when no snapshots changed (conclusion = success or skipped)
+    if: always() && needs.update-snapshots.result != 'cancelled' && needs.update-snapshots.result != 'skipped'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - name: Dispatch playwright-e2e workflow
+        run: gh workflow run playwright-e2e.yml --ref "${{ github.ref_name }}"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
