@@ -7,7 +7,7 @@ export const Dialog = styled.dialog`
   color: #e0f0ff;
   border: 2px solid #4a6090;
   border-radius: 14px;
-  padding: 28px 32px 24px;
+  padding: 18px 32px 14px;
   max-width: min(420px, 92vw);
   width: 100%;
   max-height: min(90dvh, 820px);
@@ -170,7 +170,7 @@ export const PlayBallButton = styled.button`
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 20px;
+  margin-top: 12px;
 
   ${mq.mobile} {
     margin-top: 10px;
