@@ -222,27 +222,13 @@ describe("hit - walk", () => {
 });
 
 // foul ball
-describe("foul ball", () => {
-  it("foul with 0 strikes → 1", () => {
-    const { state, logs } = dispatchAction(makeState({ strikes: 0 }), "foul");
-    expect(state.strikes).toBe(1);
-    expect(logs.some((l) => l.toLowerCase().includes("foul"))).toBe(true);
-  });
-  it("foul with 1 strike → 2", () => {
-    expect(dispatchAction(makeState({ strikes: 1 }), "foul").state.strikes).toBe(2);
-  });
-  it("foul with 2 strikes stays at 2 (no strikeout)", () => {
-    const { state, logs } = dispatchAction(makeState({ strikes: 2 }), "foul");
+// Foul-ball detailed behavior is fully covered in handlers/sim.test.ts.
+// This single integration test proves the root reducer routes foul to the sim handler.
+describe("foul ball — root delegation proof", () => {
+  it("root reducer routes foul to sim handler: 2-strike foul stays at 2, pitchKey increments", () => {
+    const { state } = dispatchAction(makeState({ strikes: 2, pitchKey: 5 }), "foul");
     expect(state.strikes).toBe(2);
-    expect(logs.some((l) => l.toLowerCase().includes("foul"))).toBe(true);
-  });
-  it("foul increments pitchKey", () => {
-    expect(dispatchAction(makeState({ strikes: 0, pitchKey: 5 }), "foul").state.pitchKey).toBe(6);
-  });
-  it("foul clears hitType", () => {
-    expect(
-      dispatchAction(makeState({ strikes: 0, hitType: Hit.Single }), "foul").state.hitType,
-    ).toBeUndefined();
+    expect(state.pitchKey).toBe(6);
   });
 });
 
@@ -1277,5 +1263,45 @@ describe("restore_game — RBI backfill for older saves", () => {
       makeState({ playLog: oldPlayLog }),
     );
     expect(state.playLog[0].rbi).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Root reducer — routing / orchestration (one proof per domain handler)
+// ---------------------------------------------------------------------------
+
+describe("root reducer — routing and orchestration", () => {
+  it("delegates sim action (hit) to handleSimAction", () => {
+    mockRandom(0);
+    const { state } = dispatchAction(makeState({ score: [0, 0] }), "hit", {
+      hitType: Hit.Homerun,
+      strategy: "balanced",
+    });
+    expect(state.score[0]).toBe(1); // solo HR scored → sim handler ran
+  });
+
+  it("delegates lifecycle action (reset) to handleLifecycleAction", () => {
+    const { state } = dispatchAction(makeState({ strikes: 2, balls: 3, score: [5, 3] }), "reset");
+    expect(state.strikes).toBe(0);
+    expect(state.score).toEqual([0, 0]);
+  });
+
+  it("delegates decisions action (skip_decision) to handleDecisionsAction", () => {
+    const { state } = dispatchAction(
+      makeState({ pendingDecision: { kind: "bunt" } }),
+      "skip_decision",
+    );
+    expect(state.pendingDecision).toBeNull();
+  });
+
+  it("delegates setup action (setTeams) to handleSetupAction", () => {
+    const { state } = dispatchAction(makeState(), "setTeams", ["Dodgers", "Giants"]);
+    expect(state.teams).toEqual(["Dodgers", "Giants"]);
+  });
+
+  it("warnIfImpossible (invariant check) still runs after delegated actions in DEV", () => {
+    // In the test environment import.meta.env.DEV is true; warnIfImpossible must
+    // not throw for a valid post-action state.
+    expect(() => dispatchAction(makeState(), "reset")).not.toThrow();
   });
 });

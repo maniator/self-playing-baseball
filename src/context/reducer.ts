@@ -1,16 +1,9 @@
+import { handleDecisionsAction } from "./handlers/decisions";
+import { handleLifecycleAction } from "./handlers/lifecycle";
+import { handleSetupAction } from "./handlers/setup";
 import { handleSimAction } from "./handlers/sim";
-import type {
-  DecisionType,
-  GameAction,
-  LogAction,
-  OnePitchModifier,
-  State,
-  Strategy,
-  TeamCustomPlayerOverrides,
-} from "./index";
-import { backfillRestoredState, createFreshGameState } from "./initialState";
+import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
-import { withDecisionLog } from "./reducerHelpers";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -99,70 +92,16 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
     const simResult = handleSimAction(state, action, { log });
     if (simResult !== undefined) return simResult;
 
-    switch (action.type) {
-      case "nextInning":
-        return { ...state, inning: state.inning + 1 };
-      case "setTeams": {
-        const p = action.payload as
-          | [string, string]
-          | {
-              teams: [string, string];
-              playerOverrides?: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
-              lineupOrder?: [string[], string[]];
-            };
-        if (Array.isArray(p)) {
-          return { ...state, teams: p };
-        }
-        return {
-          ...state,
-          teams: p.teams,
-          ...(p.playerOverrides ? { playerOverrides: p.playerOverrides } : {}),
-          ...(p.lineupOrder ? { lineupOrder: p.lineupOrder } : {}),
-        };
-      }
-      case "set_one_pitch_modifier": {
-        const result = {
-          ...state,
-          onePitchModifier: action.payload as OnePitchModifier,
-          pendingDecision: null,
-        };
-        return withDecisionLog(state, result, `${state.pitchKey}:${action.payload}`);
-      }
-      case "reset":
-        return createFreshGameState(state.teams);
-      case "skip_decision": {
-        const result = { ...state, pendingDecision: null };
-        return withDecisionLog(state, result, `${state.pitchKey}:skip`);
-      }
-      case "set_pending_decision": {
-        const newState: State = { ...state, pendingDecision: action.payload as DecisionType };
-        if ((action.payload as DecisionType).kind === "defensive_shift") {
-          newState.defensiveShiftOffered = true;
-        }
-        return newState;
-      }
-      case "clear_suppress_decision":
-        return { ...state, suppressNextDecision: false };
-      case "set_pinch_hitter_strategy": {
-        const ph = action.payload as Strategy;
-        log(`Pinch hitter in — playing ${ph} strategy.`);
-        const result = { ...state, pinchHitterStrategy: ph, pendingDecision: null };
-        return withDecisionLog(state, result, `${state.pitchKey}:pinch:${ph}`);
-      }
-      case "set_defensive_shift": {
-        const shiftOn = action.payload as boolean;
-        if (shiftOn) log("Defensive shift deployed — outfield repositioned.");
-        else log("Normal alignment set.");
-        const result = { ...state, defensiveShift: shiftOn, pendingDecision: null };
-        return withDecisionLog(state, result, `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`);
-      }
-      case "restore_game": {
-        const restored = action.payload as State;
-        return backfillRestoredState(restored);
-      }
-      default:
-        throw new Error(`No such reducer type as ${action.type}`);
-    }
+    const lifecycleResult = handleLifecycleAction(state, action);
+    if (lifecycleResult !== undefined) return lifecycleResult;
+
+    const decisionsResult = handleDecisionsAction(state, action, { log });
+    if (decisionsResult !== undefined) return decisionsResult;
+
+    const setupResult = handleSetupAction(state, action);
+    if (setupResult !== undefined) return setupResult;
+
+    throw new Error(`No such reducer type as ${action.type}`);
   }
 
   return function reducer(state: State, action: GameAction): State {
