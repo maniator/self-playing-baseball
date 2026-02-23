@@ -35,7 +35,11 @@ jobs:
       # Install both Chromium (desktop/pixel) and WebKit (tablet/iPhone) so the
       # agent can run either CI shard locally without hitting the firewall.
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium webkit
+        run: npx playwright install chromium webkit
+
+      # Install system dependencies separately, consistent with playwright-e2e.yml.
+      - name: Install Playwright system dependencies
+        run: npx playwright install-deps chromium webkit
 
       # Pre-build the app so `vite preview` (used by E2E tests) is ready to serve
       # immediately — the agent doesn't need to rebuild before running E2E tests.
