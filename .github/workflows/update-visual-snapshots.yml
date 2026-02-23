@@ -52,6 +52,13 @@ jobs:
           # Use a token that can push back to the branch
           token: ${{ secrets.GITHUB_TOKEN }}
 
+      # actions/checkout marks safe.directory with a temporary HOME override that
+      # is invisible to subsequent steps running inside the container.  Re-adding
+      # it here (with the real container HOME) makes every subsequent git command
+      # work correctly, including the snapshot commit/push steps and Husky.
+      - name: Mark workspace as safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:

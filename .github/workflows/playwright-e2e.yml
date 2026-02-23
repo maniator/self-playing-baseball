@@ -49,6 +49,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # actions/checkout marks safe.directory with a temporary HOME override that
+      # is invisible to subsequent steps running inside the container.  Re-adding
+      # it here (with the real container HOME) makes every subsequent git command
+      # work correctly, including the snapshot commit/push steps and Husky.
+      - name: Mark workspace as safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -63,30 +70,41 @@ jobs:
       - name: Build app
         run: yarn build
 
-      # Layout snapshots must be generated inside this container to ensure the
-      # baselines match the rendering environment used by the test run.
-      # Running with --update-snapshots regenerates the baselines, then the
-      # main test run below compares fresh screenshots against those baselines.
-      # Only the desktop project produces layout snapshots (the test file skips
-      # all other projects internally), so this step only runs for chromium.
-      - name: Regenerate layout snapshots in container
+      # ── Snapshot baseline regeneration ──────────────────────────────────────
+      # Snapshots MUST be generated inside this container so the baselines match
+      # the rendering environment used by the test run below.
+      #
+      # Chromium shard:
+      #  - layout.spec.ts: desktop project only (test skips other projects).
+      #  - visual.spec.ts: desktop + pixel-7 + pixel-5 projects.
+      # Webkit shard:
+      #  - visual.spec.ts: tablet + iphone-15-pro-max + iphone-15 projects.
+      #
+      # After regeneration, changed files are committed back to the branch so the
+      # repo always holds container-accurate baselines.  The push is best-effort
+      # (skipped silently for fork PRs that have no write access).
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Regenerate snapshots in container (chromium)
         if: matrix.browser == 'chromium'
-        run: npx playwright test --project=desktop e2e/tests/layout.spec.ts --update-snapshots
+        run: |
+          npx playwright test --project=desktop e2e/tests/layout.spec.ts --update-snapshots
+          npx playwright test --project=desktop --project=pixel-7 --project=pixel-5 e2e/tests/visual.spec.ts --update-snapshots
         env:
           CI: true
 
-      # Commit any snapshot changes back to the branch so the repository always
-      # holds container-accurate baselines.  The push is a best-effort: it is
-      # skipped silently for fork PRs (which have no write access) and for any
-      # other push failure.
-      - name: Commit layout snapshot updates if changed
-        if: matrix.browser == 'chromium'
+      - name: Regenerate visual snapshots in container (webkit)
+        if: matrix.browser == 'webkit'
+        run: npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 e2e/tests/visual.spec.ts --update-snapshots
+        env:
+          CI: true
+
+      - name: Commit snapshot updates if changed
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add e2e/tests/layout.spec.ts-snapshots/
+          git add e2e/tests/layout.spec.ts-snapshots/ e2e/tests/visual.spec.ts-snapshots/
           if ! git diff --staged --quiet; then
-            git commit -m "chore: update layout snapshots from CI container [skip ci]"
+            git commit -m "chore: update snapshots from CI container (${{ matrix.browser }}) [skip ci]"
             TARGET="${{ github.head_ref || github.ref_name }}"
             if ! git pull --rebase origin "${TARGET}"; then
               echo "Rebase failed – skipping snapshot push"
@@ -94,7 +112,7 @@ jobs:
               echo "Push failed – fork PR or insufficient permissions, snapshot commit not persisted"
             fi
           else
-            echo "Layout snapshots unchanged – no commit needed"
+            echo "Snapshots unchanged – no commit needed"
           fi
 
       - name: Run Playwright E2E tests
