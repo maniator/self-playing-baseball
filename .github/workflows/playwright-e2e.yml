@@ -20,8 +20,12 @@ jobs:
     # environment for both CI and Copilot sessions.
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
+    # contents:write is needed so the chromium shard can commit layout snapshot
+    # updates generated inside the container (the only authoritative source for
+    # pixel-accurate baselines).  Fork PRs still receive read-only tokens from
+    # GitHub, so the push step fails gracefully for them.
     permissions:
-      contents: read
+      contents: write
 
     strategy:
       fail-fast: false
@@ -45,6 +49,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # actions/checkout marks safe.directory with a temporary HOME override that
+      # is invisible to subsequent steps running inside the container.  Re-adding
+      # it here (with the real container HOME) makes every subsequent git command
+      # work correctly, including the snapshot commit/push steps and Husky.
+      - name: Mark workspace as safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
       - name: Use Node.js
         uses: actions/setup-node@v4
         with:
@@ -58,6 +69,51 @@ jobs:
 
       - name: Build app
         run: yarn build
+
+      # ── Snapshot baseline regeneration ──────────────────────────────────────
+      # Snapshots MUST be generated inside this container so the baselines match
+      # the rendering environment used by the test run below.
+      #
+      # Chromium shard:
+      #  - layout.spec.ts: desktop project only (test skips other projects).
+      #  - visual.spec.ts: desktop + pixel-7 + pixel-5 projects.
+      # Webkit shard:
+      #  - visual.spec.ts: tablet + iphone-15-pro-max + iphone-15 projects.
+      #
+      # After regeneration, changed files are committed back to the branch so the
+      # repo always holds container-accurate baselines.  The push is best-effort
+      # (skipped silently for fork PRs that have no write access).
+      # ──────────────────────────────────────────────────────────────────────────
+      - name: Regenerate snapshots in container (chromium)
+        if: matrix.browser == 'chromium'
+        run: |
+          npx playwright test --project=desktop e2e/tests/layout.spec.ts --update-snapshots
+          npx playwright test --project=desktop --project=pixel-7 --project=pixel-5 e2e/tests/visual.spec.ts --update-snapshots
+        env:
+          CI: true
+
+      - name: Regenerate visual snapshots in container (webkit)
+        if: matrix.browser == 'webkit'
+        run: npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 e2e/tests/visual.spec.ts --update-snapshots
+        env:
+          CI: true
+
+      - name: Commit snapshot updates if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/tests/layout.spec.ts-snapshots/ e2e/tests/visual.spec.ts-snapshots/
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update snapshots from CI container (${{ matrix.browser }}) [skip ci]"
+            TARGET="${{ github.head_ref || github.ref_name }}"
+            if ! git pull --rebase origin "${TARGET}"; then
+              echo "Rebase failed – skipping snapshot push"
+            elif ! git push origin "HEAD:${TARGET}"; then
+              echo "Push failed – fork PR or insufficient permissions, snapshot commit not persisted"
+            fi
+          else
+            echo "Snapshots unchanged – no commit needed"
+          fi
 
       - name: Run Playwright E2E tests
         run: npx playwright test ${{ matrix.projects }}
