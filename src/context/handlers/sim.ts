@@ -13,28 +13,17 @@ export interface SimCtx {
   log: (msg: string) => void;
 }
 
-/** Sim action types handled by this module. */
-const SIM_ACTIONS = new Set([
-  "hit",
-  "strike",
-  "foul",
-  "wait",
-  "steal_attempt",
-  "bunt_attempt",
-  "intentional_walk",
-]);
-
 /**
  * Handles simulation (on-field) actions.
  * Returns `undefined` for any action type that is not a sim action,
  * allowing the root reducer to fall through to its own branches.
+ * The `default` branch is the sole sentinel — no separate membership set needed.
  */
 export const handleSimAction = (
   state: State,
   action: GameAction,
   ctx: SimCtx,
 ): State | undefined => {
-  if (!SIM_ACTIONS.has(action.type)) return undefined;
   const { log } = ctx;
 
   switch (action.type) {
