@@ -1,4 +1,32 @@
-import type { State, StrikeoutEntry } from "./index";
+import type { GameAction, State, StrikeoutEntry } from "./index";
+
+/** Shared logger context passed to handlers that emit play-by-play messages. */
+export interface ReducerCtx {
+  log: (msg: string) => void;
+}
+
+/**
+ * Common handler function signature: returns updated State, or undefined when
+ * the action is not in this handler's domain (sentinel / fall-through pattern).
+ */
+export type HandlerFn = (state: State, action: GameAction) => State | undefined;
+
+/**
+ * Tries each handler in order and returns the first non-undefined result.
+ * Handler precedence is explicit in the call-site array (sim → lifecycle → decisions → setup).
+ * Throws for any action type that no handler claims.
+ */
+export const applyHandlersInOrder = (
+  state: State,
+  action: GameAction,
+  handlers: HandlerFn[],
+): State => {
+  for (const handler of handlers) {
+    const result = handler(state, action);
+    if (result !== undefined) return result;
+  }
+  throw new Error(`No such reducer type as ${action.type}`);
+};
 
 /**
  * Returns true when the transition from `prev` to `next` represents a strikeout:

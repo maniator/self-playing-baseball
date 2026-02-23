@@ -4,6 +4,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import {
+  applyHandlersInOrder,
   makeStrikeoutEntry,
   wasStrikeout,
   withDecisionLog,
@@ -120,5 +121,48 @@ describe("withDecisionLog", () => {
     withDecisionLog(state, result, "2:ibb");
     expect(state.decisionLog).toBe(originalLog); // unchanged
     expect(result.decisionLog).toEqual([]); // unchanged
+  });
+});
+
+describe("applyHandlersInOrder", () => {
+  it("returns the result of the first handler that returns non-undefined", () => {
+    const state = makeState({ strikes: 0 });
+    const expected = makeState({ strikes: 1 });
+    const handler1 = () => undefined;
+    const handler2 = () => expected;
+    const handler3 = () => makeState({ strikes: 2 }); // should never run
+    const result = applyHandlersInOrder(state, { type: "any" }, [handler1, handler2, handler3]);
+    expect(result).toBe(expected);
+  });
+
+  it("throws when no handler claims the action", () => {
+    const state = makeState();
+    expect(() =>
+      applyHandlersInOrder(state, { type: "unknown_action" }, [() => undefined, () => undefined]),
+    ).toThrow("No such reducer type as unknown_action");
+  });
+
+  it("returns immediately on the first match (skips remaining handlers)", () => {
+    const state = makeState();
+    let secondHandlerCalled = false;
+    const first = () => makeState({ strikes: 1 });
+    const second = () => {
+      secondHandlerCalled = true;
+      return makeState({ strikes: 2 });
+    };
+    applyHandlersInOrder(state, { type: "any" }, [first, second]);
+    expect(secondHandlerCalled).toBe(false);
+  });
+
+  it("tries all handlers before throwing when none match", () => {
+    let callCount = 0;
+    const handler = () => {
+      callCount++;
+      return undefined;
+    };
+    expect(() =>
+      applyHandlersInOrder(makeState(), { type: "x" }, [handler, handler, handler]),
+    ).toThrow();
+    expect(callCount).toBe(3);
   });
 });

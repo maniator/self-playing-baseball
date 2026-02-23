@@ -6,12 +6,8 @@ import { checkWalkoff } from "../gameOver";
 import { hitBall } from "../hitBall";
 import type { GameAction, State, Strategy } from "../index";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "../playerActions";
+import type { ReducerCtx } from "../reducerHelpers";
 import { withDecisionLog, withStrikeoutLog } from "../reducerHelpers";
-
-/** Reducer context passed into simulation handlers. */
-export interface SimCtx {
-  log: (msg: string) => void;
-}
 
 /**
  * Handles simulation (on-field) actions.
@@ -22,7 +18,7 @@ export interface SimCtx {
 export const handleSimAction = (
   state: State,
   action: GameAction,
-  ctx: SimCtx,
+  ctx: ReducerCtx,
 ): State | undefined => {
   const { log } = ctx;
 
