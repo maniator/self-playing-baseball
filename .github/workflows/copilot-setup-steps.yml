@@ -40,9 +40,30 @@ jobs:
 
       # Install both Chromium (desktop/pixel) and WebKit (tablet/iPhone) so the
       # agent can run either CI shard locally without hitting the firewall.
+      # Each browser uses the same cache key format as playwright-e2e.yml so that
+      # Copilot setup and CI share the same browser binary cache entries.
       # System deps are already in the container image — browser binaries only.
-      - name: Install Playwright browsers
-        run: npx playwright install chromium webkit
+      - name: Cache Playwright chromium
+        id: cache-chromium
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1.58.2-noble-chromium-${{ hashFiles('yarn.lock') }}
+
+      - name: Cache Playwright webkit
+        id: cache-webkit
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-v1.58.2-noble-webkit-${{ hashFiles('yarn.lock') }}
+
+      - name: Install Playwright chromium (cache miss)
+        if: steps.cache-chromium.outputs.cache-hit != 'true'
+        run: npx playwright install chromium
+
+      - name: Install Playwright webkit (cache miss)
+        if: steps.cache-webkit.outputs.cache-hit != 'true'
+        run: npx playwright install webkit
 
       # Pre-build the app so `vite preview` (used by E2E tests) is ready to serve
       # immediately — the agent doesn't need to rebuild before running E2E tests.
