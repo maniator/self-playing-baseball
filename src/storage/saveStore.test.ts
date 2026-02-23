@@ -1,5 +1,5 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
@@ -420,5 +420,117 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     // The rbi field may be absent — import must not fail
     expect(saves[0].stateSnapshot?.state.playLog).toHaveLength(1);
     await db2.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// SaveStore — event ordering and persistence invariants
+// ---------------------------------------------------------------------------
+
+describe("SaveStore — event idx monotonicity", () => {
+  it("idx values are contiguous from 0 when events are appended in one call", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [
+      { type: "a", at: 0, payload: {} },
+      { type: "b", at: 1, payload: {} },
+      { type: "c", at: 2, payload: {} },
+    ]);
+    const events = await db.events.find({ selector: { saveId }, sort: [{ idx: "asc" }] }).exec();
+    expect(events).toHaveLength(3);
+    for (let i = 0; i < events.length; i++) {
+      expect(events[i].idx).toBe(i);
+    }
+  });
+
+  it("idx continues monotonically across multiple sequential appends", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [{ type: "a", at: 0, payload: {} }]);
+    await store.appendEvents(saveId, [{ type: "b", at: 1, payload: {} }]);
+    await store.appendEvents(saveId, [{ type: "c", at: 2, payload: {} }]);
+    const events = await db.events.find({ selector: { saveId }, sort: [{ idx: "asc" }] }).exec();
+    expect(events).toHaveLength(3);
+    expect(events.map((e) => e.idx)).toEqual([0, 1, 2]);
+  });
+});
+
+describe("SaveStore — no duplicate event IDs", () => {
+  it("event IDs are unique across multiple appends to the same save", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [{ type: "a", at: 0, payload: {} }]);
+    await store.appendEvents(saveId, [{ type: "b", at: 1, payload: {} }]);
+    await store.appendEvents(saveId, [{ type: "c", at: 2, payload: {} }]);
+    const events = await db.events.find({ selector: { saveId } }).exec();
+    const ids = events.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it("event IDs for two different saves do not collide", async () => {
+    const id1 = await store.createSave(makeSetup({ homeTeamId: "A" }));
+    const id2 = await store.createSave(makeSetup({ homeTeamId: "B" }));
+    await store.appendEvents(id1, [{ type: "x", at: 0, payload: {} }]);
+    await store.appendEvents(id2, [{ type: "x", at: 0, payload: {} }]);
+    const all = await db.events.find().exec();
+    const ids = all.map((e) => e.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
+
+describe("SaveStore — progressIdx bounds", () => {
+  it("progressIdx after updateProgress does not exceed the highest event idx", async () => {
+    const saveId = await store.createSave(makeSetup());
+    await store.appendEvents(saveId, [
+      { type: "a", at: 0, payload: {} },
+      { type: "b", at: 1, payload: {} },
+    ]);
+    await store.updateProgress(saveId, 1);
+    const doc = await db.saves.findOne(saveId).exec();
+    const events = await db.events
+      .find({ selector: { saveId }, sort: [{ idx: "desc" }], limit: 1 })
+      .exec();
+    const maxIdx = events[0]?.idx ?? -1;
+    expect(doc?.progressIdx).toBeLessThanOrEqual(maxIdx);
+  });
+
+  it("progressIdx starts at -1 (not-started sentinel) after createSave", async () => {
+    const saveId = await store.createSave(makeSetup());
+    const doc = await db.saves.findOne(saveId).exec();
+    expect(doc?.progressIdx).toBe(-1);
+  });
+});
+
+describe("SaveStore — updatedAt advances on updateProgress", () => {
+  it("updatedAt is strictly greater after each updateProgress call", async () => {
+    vi.useFakeTimers();
+    try {
+      const saveId = await store.createSave(makeSetup());
+      const doc1 = await db.saves.findOne(saveId).exec();
+      const t1 = doc1!.updatedAt;
+
+      vi.advanceTimersByTime(100);
+      await store.updateProgress(saveId, 5);
+
+      const doc2 = await db.saves.findOne(saveId).exec();
+      expect(doc2!.updatedAt).toBeGreaterThan(t1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("updatedAt advances on a second updateProgress call", async () => {
+    vi.useFakeTimers();
+    try {
+      const saveId = await store.createSave(makeSetup());
+      await store.updateProgress(saveId, 5);
+      const doc1 = await db.saves.findOne(saveId).exec();
+      const t1 = doc1!.updatedAt;
+
+      vi.advanceTimersByTime(100);
+      await store.updateProgress(saveId, 10);
+
+      const doc2 = await db.saves.findOne(saveId).exec();
+      expect(doc2!.updatedAt).toBeGreaterThan(t1);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

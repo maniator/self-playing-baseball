@@ -14,6 +14,7 @@ import {
   StrikeoutEntry,
   TeamCustomPlayerOverrides,
 } from "./index";
+import { warnIfImpossible } from "./invariants";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "./playerActions";
 import { stratMod } from "./strategy";
 
@@ -105,7 +106,7 @@ export const detectDecision = (
 const reducer = (dispatchLogger: (action: LogAction) => void) => {
   const log = createLogger(dispatchLogger);
 
-  return function reducer(state: State, action: GameAction): State {
+  function apply(state: State, action: GameAction): State {
     if (
       state.gameOver &&
       !["setTeams", "nextInning", "reset", "restore_game"].includes(action.type)
@@ -304,6 +305,12 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       default:
         throw new Error(`No such reducer type as ${action.type}`);
     }
+  }
+
+  return function reducer(state: State, action: GameAction): State {
+    const next = apply(state, action);
+    if (import.meta.env.DEV) warnIfImpossible(next, { pitchKey: next.pitchKey ?? 0 });
+    return next;
   };
 };
 
