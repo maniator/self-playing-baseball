@@ -1,9 +1,4 @@
-import { Hit } from "@constants/hitTypes";
-import type { PitchType } from "@constants/pitchTypes";
-import { pitchName } from "@constants/pitchTypes";
-
-import { checkWalkoff } from "./gameOver";
-import { hitBall } from "./hitBall";
+import { handleSimAction } from "./handlers/sim";
 import type {
   DecisionType,
   GameAction,
@@ -15,8 +10,7 @@ import type {
 } from "./index";
 import { backfillRestoredState, createFreshGameState } from "./initialState";
 import { warnIfImpossible } from "./invariants";
-import { buntAttempt, playerStrike, playerWait, stealAttempt } from "./playerActions";
-import { withDecisionLog, withStrikeoutLog } from "./reducerHelpers";
+import { withDecisionLog } from "./reducerHelpers";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -102,15 +96,12 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
       return state;
     }
 
+    const simResult = handleSimAction(state, action, { log });
+    if (simResult !== undefined) return simResult;
+
     switch (action.type) {
       case "nextInning":
         return { ...state, inning: state.inning + 1 };
-      case "hit": {
-        const p = action.payload as { hitType?: Hit; strategy?: Strategy };
-        const strategy: Strategy = p?.strategy ?? "balanced";
-        const hitType: Hit = p?.hitType ?? (action.payload as Hit);
-        return checkWalkoff(hitBall(hitType, state, log, strategy), log);
-      }
       case "setTeams": {
         const p = action.payload as
           | [string, string]
@@ -129,35 +120,6 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           ...(p.lineupOrder ? { lineupOrder: p.lineupOrder } : {}),
         };
       }
-      case "strike": {
-        const sp = action.payload as { swung?: boolean; pitchType?: PitchType };
-        const result = playerStrike(state, log, sp?.swung ?? false, false, sp?.pitchType);
-        return withStrikeoutLog(state, result);
-      }
-      case "foul": {
-        const fp = action.payload as { pitchType?: PitchType };
-        const pt = fp?.pitchType;
-        if (state.strikes < 2) return playerStrike(state, log, true, true, pt);
-        const msg = pt ? `${pitchName(pt)} — foul ball — count stays.` : "Foul ball — count stays.";
-        log(msg);
-        return {
-          ...state,
-          pendingDecision: null,
-          hitType: undefined,
-          pitchKey: (state.pitchKey ?? 0) + 1,
-        };
-      }
-      case "wait": {
-        const wp = action.payload as { strategy?: Strategy; pitchType?: PitchType };
-        const result = playerWait(
-          state,
-          log,
-          wp?.strategy ?? "balanced",
-          state.onePitchModifier,
-          wp?.pitchType,
-        );
-        return withStrikeoutLog(state, result);
-      }
       case "set_one_pitch_modifier": {
         const result = {
           ...state,
@@ -165,24 +127,6 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
           pendingDecision: null,
         };
         return withDecisionLog(state, result, `${state.pitchKey}:${action.payload}`);
-      }
-      case "steal_attempt": {
-        const { successPct, base } = action.payload as { successPct: number; base: 0 | 1 };
-        const result = stealAttempt(state, log, successPct, base);
-        return withDecisionLog(state, result, `${state.pitchKey}:steal:${base}:${successPct}`);
-      }
-      case "bunt_attempt": {
-        const bp = action.payload as { strategy?: Strategy };
-        const result = checkWalkoff(buntAttempt(state, log, bp?.strategy ?? "balanced"), log);
-        return withDecisionLog(state, result, `${state.pitchKey}:bunt`);
-      }
-      case "intentional_walk": {
-        log("Intentional walk issued.");
-        const result = checkWalkoff(
-          hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log),
-          log,
-        );
-        return withDecisionLog(state, result, `${state.pitchKey}:ibb`);
       }
       case "reset":
         return createFreshGameState(state.teams);
