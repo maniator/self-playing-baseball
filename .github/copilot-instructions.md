@@ -370,6 +370,7 @@ Validate changes by:
 
 ## Code Style & File Size
 
+- **American English spelling** — use American English in all user-facing copy, help text, comments, and documentation (e.g. "randomized" not "randomised", "customization" not "customisation"). Help copy must reflect currently implemented behavior only.
 - **Target file length: ≤ 200 lines.** Aim for **100 lines or fewer** in ideal cases. Split if larger.
 - **Test files are exempt from the 200-line limit.**
 - **One test file per source file**, co-located next to the source (e.g. `strategy.ts` → `strategy.test.ts` in the same directory).

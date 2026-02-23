@@ -68,10 +68,11 @@ const InstructionsModal: React.FunctionComponent = () => {
                 Press <strong>Play Ball!</strong> to start.
               </Li>
               <Li>The game runs automatically pitch-by-pitch — no clicking needed.</Li>
-              <Li>Outcomes are randomised but seeded — same seed always plays out the same way.</Li>
+              <Li>Outcomes are randomized but seeded — same seed always plays out the same way.</Li>
               <Li>3 strikes = out · 4 balls = walk · 3 outs = half-inning over.</Li>
               <Li>
-                9 innings; home team wins if ahead after 8½. Walk-off ends the game instantly.
+                Home team wins if ahead after the top of the 9th. Walk-off ends the game
+                immediately.
               </Li>
             </List>
           </Section>
@@ -131,8 +132,8 @@ const InstructionsModal: React.FunctionComponent = () => {
                 batter.
               </Li>
               <Li>
-                Tap or click any row to see <strong>Player Details</strong> — expanded stats appear
-                below the table.
+                Tap or click a batter&apos;s row to see <strong>Player Details</strong> — expanded
+                stats appear below the table.
               </Li>
               <Li>The game keeps running while you browse stats.</Li>
             </List>

@@ -57,10 +57,10 @@ describe("rng – basic", () => {
     expect(typeof getSeed()).toBe("number");
   });
 
-  it("calling initSeedFromUrl again returns the same seed (already initialised)", () => {
+  it("calling initSeedFromUrl again returns the same seed (already initialized)", () => {
     const first = getSeed();
     const second = initSeedFromUrl();
-    // Once initialised, repeated calls return the same seed without re-randomising.
+    // Once initialized, repeated calls return the same seed without re-randomizing.
     expect(second).toBe(first);
   });
 });
