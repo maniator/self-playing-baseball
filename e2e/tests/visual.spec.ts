@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  closeNewGameDialog,
   disableAnimations,
   resetAppState,
   saveCurrentGame,
@@ -148,12 +149,7 @@ test.describe("Visual", () => {
   test("How to Play modal default state screenshot", async ({ page }) => {
     await waitForNewGameDialog(page);
     // Close the New Game <dialog> so the rest of the page is no longer inert.
-    await page.evaluate(() => {
-      const dialog = document.querySelector(
-        '[data-testid="new-game-dialog"]',
-      ) as HTMLDialogElement | null;
-      dialog?.close();
-    });
+    await closeNewGameDialog(page);
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
@@ -177,12 +173,7 @@ test.describe("Visual", () => {
     );
     await waitForNewGameDialog(page);
     // Close the New Game <dialog> so the rest of the page is no longer inert.
-    await page.evaluate(() => {
-      const dialog = document.querySelector(
-        '[data-testid="new-game-dialog"]',
-      ) as HTMLDialogElement | null;
-      dialog?.close();
-    });
+    await closeNewGameDialog(page);
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     await page.evaluate(() => {

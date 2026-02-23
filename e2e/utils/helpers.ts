@@ -31,6 +31,20 @@ export async function waitForNewGameDialog(page: Page): Promise<void> {
 }
 
 /**
+ * Programmatically closes the New Game <dialog> so the backdrop no longer
+ * inerts the rest of the page.  Call this before interacting with elements
+ * outside the dialog (e.g. the "?" help button).
+ */
+export async function closeNewGameDialog(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const dialog = document.querySelector(
+      '[data-testid="new-game-dialog"]',
+    ) as HTMLDialogElement | null;
+    dialog?.close();
+  });
+}
+
+/**
  * Configures the New Game dialog with the provided options.
  * All options are optional; omitted values keep defaults.
  */
