@@ -20,8 +20,12 @@ jobs:
     # environment for both CI and Copilot sessions.
     container:
       image: mcr.microsoft.com/playwright:v1.58.2-noble
+    # contents:write is needed so the chromium shard can commit layout snapshot
+    # updates generated inside the container (the only authoritative source for
+    # pixel-accurate baselines).  Fork PRs still receive read-only tokens from
+    # GitHub, so the push step fails gracefully for them.
     permissions:
-      contents: read
+      contents: write
 
     strategy:
       fail-fast: false
@@ -58,6 +62,40 @@ jobs:
 
       - name: Build app
         run: yarn build
+
+      # Layout snapshots must be generated inside this container to ensure the
+      # baselines match the rendering environment used by the test run.
+      # Running with --update-snapshots regenerates the baselines, then the
+      # main test run below compares fresh screenshots against those baselines.
+      # Only the desktop project produces layout snapshots (the test file skips
+      # all other projects internally), so this step only runs for chromium.
+      - name: Regenerate layout snapshots in container
+        if: matrix.browser == 'chromium'
+        run: npx playwright test --project=desktop e2e/tests/layout.spec.ts --update-snapshots
+        env:
+          CI: true
+
+      # Commit any snapshot changes back to the branch so the repository always
+      # holds container-accurate baselines.  The push is a best-effort: it is
+      # skipped silently for fork PRs (which have no write access) and for any
+      # other push failure.
+      - name: Commit layout snapshot updates if changed
+        if: matrix.browser == 'chromium'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add e2e/tests/layout.spec.ts-snapshots/
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update layout snapshots from CI container [skip ci]"
+            TARGET="${{ github.head_ref || github.ref_name }}"
+            if ! git pull --rebase origin "${TARGET}"; then
+              echo "Rebase failed – skipping snapshot push"
+            elif ! git push origin "HEAD:${TARGET}"; then
+              echo "Push failed – fork PR or insufficient permissions, snapshot commit not persisted"
+            fi
+          else
+            echo "Layout snapshots unchanged – no commit needed"
+          fi
 
       - name: Run Playwright E2E tests
         run: npx playwright test ${{ matrix.projects }}
