@@ -41,8 +41,9 @@ Behavior must be identical. Add a focused unit test for scoreRunners with multip
 
 Change the app font from system-ui to "Inter" (loaded via Google Fonts).
 Ensure button/input/select/textarea inherit the font.
-After layout validation across all viewport projects, regenerate visual snapshot baselines
-using the Playwright container image (mcr.microsoft.com/playwright:v1.58.2-noble) to match CI.
+After layout validation across all viewport projects, trigger the update-visual-snapshots
+workflow on this branch to regenerate baselines inside the CI Playwright container.
+Do NOT run yarn test:e2e:update-snapshots locally — local rendering differs from the container.
 ```
 
 ### New Game dialog mobile layout fix

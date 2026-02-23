@@ -47,7 +47,8 @@ Before adding sharding:
 ### Visual snapshot parity
 
 - The Playwright container image ensures consistent fonts/system libs for snapshot baselines.
-- Do not change the container image version without regenerating all snapshot baselines in the new environment.
+- **Never run `yarn test:e2e:update-snapshots` locally and commit the result.** Use the `update-visual-snapshots` workflow instead (Actions → "Update Visual Snapshots" → Run workflow → select branch). It commits the updated PNGs back automatically inside the container.
+- Do not change the container image version without regenerating all snapshot baselines via the workflow.
 
 ## Copilot Setup Steps workflow (CRITICAL REPO-SPECIFIC NOTE)
 

@@ -42,7 +42,7 @@ Validate layout and readability across all configured Playwright projects:
 
 ## Playwright snapshot environment guidance (CRITICAL)
 
-> **Visual snapshots must be regenerated in an environment that matches the Playwright E2E CI Docker container.**
+> **Never run `yarn test:e2e:update-snapshots` locally and commit the result.** Local OS fonts and rendering differ from the CI container and cause false visual-diff failures on every subsequent CI run.
 
 The CI `playwright-e2e` workflow uses:
 
@@ -53,16 +53,13 @@ container:
 
 This container ships pre-installed OS/system dependencies, fonts (`Noto`, `Liberation`, `DejaVu`), and browser binaries. Snapshot baselines committed from a **different OS/font/library environment** will produce false diffs in CI.
 
-### When regenerating snapshots, prefer one of:
+### When regenerating snapshots:
 
-1. **Use the same container image locally** (recommended):
-   ```bash
-   docker run --rm -v $(pwd):/work -w /work \
-     mcr.microsoft.com/playwright:v1.58.2-noble \
-     bash -c "corepack enable && yarn install && yarn build && yarn test:e2e:update-snapshots"
-   ```
-2. **Use GitHub Actions** — trigger `update-visual-snapshots` workflow (`.github/workflows/update-visual-snapshots.yml`) and commit the artifacts it produces.
-3. **Document the delta** — if parity cannot be achieved, explicitly note in the PR which environment was used and why.
+Use the **`update-visual-snapshots`** GitHub Actions workflow — it runs inside the same container as CI and commits the updated PNGs back to your branch automatically:
+
+1. Go to **Actions → "Update Visual Snapshots" → Run workflow → select your branch → Run workflow**.
+2. The workflow regenerates all snapshot PNGs inside `mcr.microsoft.com/playwright:v1.58.2-noble` and commits them back.
+3. Do **not** regenerate snapshots unless you are intentionally changing a visual.
 
 ### Important distinction
 
@@ -80,5 +77,5 @@ This container guidance is **only for Playwright visual snapshot work**. The **C
 - [ ] `yarn build` — clean compile
 - [ ] `yarn test` — unit tests pass
 - [ ] `yarn test:e2e` — all Playwright projects pass (including visual diffs)
-- [ ] Snapshots regenerated in Playwright container-equivalent environment if baselines changed
+- [ ] Snapshots regenerated via the `update-visual-snapshots` workflow (not local regen) if baselines changed
 - [ ] `responsive-smoke.spec.ts` passes on all 7 projects (Play Ball button within viewport, no horizontal overflow)
