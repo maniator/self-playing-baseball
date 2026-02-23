@@ -1,10 +1,17 @@
 import styled from "styled-components";
 
+import { mq } from "@utils/mediaQueries";
+
 export const PanelSection = styled.div`
   margin-bottom: 16px;
   border: 1px solid #2a4060;
   border-radius: 8px;
   padding: 10px 12px 12px;
+
+  ${mq.mobile} {
+    margin-bottom: 8px;
+    padding: 7px 10px 8px;
+  }
 `;
 
 export const PanelToggle = styled.button`

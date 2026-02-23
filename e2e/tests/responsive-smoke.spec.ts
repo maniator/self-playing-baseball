@@ -21,6 +21,17 @@ test.describe("Responsive Smoke", () => {
     expect(box!.height).toBeGreaterThan(0);
   });
 
+  test("Play Ball button is in viewport without scrolling", async ({ page, viewport }) => {
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    const btn = page.getByTestId("play-ball-button");
+    await expect(btn).toBeVisible();
+    const box = await btn.boundingBox();
+    expect(box).not.toBeNull();
+    // The bottom edge of the button must fit within the visible viewport height.
+    // This ensures no scrolling is required to reach Play Ball! on any viewport.
+    expect(box!.y + box!.height).toBeLessThanOrEqual(viewport!.height);
+  });
+
   test("scoreboard, field, and log panel are visible and non-zero after game starts", async ({
     page,
   }) => {
