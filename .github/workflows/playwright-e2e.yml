@@ -13,6 +13,11 @@ jobs:
   e2e:
     name: E2E (${{ matrix.browser }})
     runs-on: ubuntu-latest
+    # The official Playwright container image ships all required OS/system
+    # dependencies (fonts, libs, etc.) pre-installed, so no install-deps step
+    # is needed on GitHub-hosted runners.
+    container:
+      image: mcr.microsoft.com/playwright:v1.58.2-noble
     permissions:
       contents: read
 
@@ -49,6 +54,11 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      # Browser binaries are cached separately from the container image.
+      # The container already provides all OS/system deps, so only the browser
+      # binary itself needs to be installed on a cache miss — no --with-deps
+      # and no install-deps step required, avoiding repeated apt installs on
+      # fresh GitHub-hosted runners.
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
@@ -58,13 +68,10 @@ jobs:
           # switching browsers invalidates only that browser's cache.
           key: playwright-${{ runner.os }}-${{ matrix.browser }}-${{ hashFiles('yarn.lock') }}
 
-      - name: Install Playwright browsers (with system deps)
+      - name: Install Playwright browser (cache miss)
         if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps ${{ matrix.browser }}
-
-      - name: Install Playwright system dependencies (cache hit)
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: npx playwright install-deps ${{ matrix.browser }}
+        # System deps are already in the container image; install browser binary only.
+        run: npx playwright install ${{ matrix.browser }}
 
       - name: Build app
         run: yarn build
