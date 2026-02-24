@@ -59,8 +59,8 @@ export const CloseXButton = styled.button`
   color: #aaccff;
   border: 1px solid #4a6090;
   border-radius: 6px;
-  width: 28px;
-  height: 28px;
+  width: 44px;
+  height: 44px;
   font-size: 16px;
   font-family: inherit;
   cursor: pointer;
@@ -100,6 +100,7 @@ export const SectionSummary = styled.summary`
   justify-content: space-between;
   gap: 8px;
   padding: 10px 14px;
+  min-height: 44px;
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
@@ -116,7 +117,7 @@ export const SectionSummary = styled.summary`
   &::after {
     content: "▸";
     font-size: 11px;
-    color: #4a6090;
+    color: #7799bb;
     flex-shrink: 0;
     transition: transform 0.15s;
   }

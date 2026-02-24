@@ -107,7 +107,8 @@ export const RadioLabel = styled.label`
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 0;
+  padding: 10px 8px 10px 4px;
+  min-height: 44px;
   cursor: pointer;
   font-size: 13px;
   color: #cce0ff;
@@ -115,11 +116,9 @@ export const RadioLabel = styled.label`
   & input[type="radio"] {
     accent-color: aquamarine;
     cursor: pointer;
-  }
-
-  ${mq.mobile} {
-    padding: 2px 0;
-    font-size: 12px;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
   }
 `;
 
@@ -149,7 +148,7 @@ export const ResumeButton = styled.button`
 
 export const Divider = styled.p`
   text-align: center;
-  color: #4a6090;
+  color: #7799bb;
   font-size: 12px;
   margin: 12px 0 16px;
 
@@ -179,7 +178,7 @@ export const PlayBallButton = styled.button`
 
 export const SeedHint = styled.p`
   font-size: 11px;
-  color: #6680aa;
+  color: #7aabcc;
   margin: 5px 0 0;
 
   ${mq.mobile} {

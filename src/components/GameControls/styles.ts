@@ -112,8 +112,8 @@ export const HelpButton = styled.button`
   color: #aaccff;
   border: 1px solid #4a6090;
   border-radius: 50%;
-  width: 25px;
-  height: 25px;
+  width: 44px;
+  height: 44px;
   font-size: 15px;
   font-family: inherit;
   cursor: pointer;
