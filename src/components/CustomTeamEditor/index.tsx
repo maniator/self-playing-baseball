@@ -80,6 +80,7 @@ const makeBlankPitcher = (): EditorPlayer => ({
 const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCancel }) => {
   const [state, dispatch] = React.useReducer(editorReducer, team, initEditorState);
   const { createTeam, updateTeam } = useCustomTeams();
+  const errorRef = React.useRef<HTMLParagraphElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -105,6 +106,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     const err = validateEditorState(state);
     if (err) {
       dispatch({ type: "SET_ERROR", error: err });
+      // Scroll to and focus the error summary so it is immediately visible
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        errorRef.current?.focus();
+      }, 0);
       return;
     }
     try {
@@ -112,6 +118,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       if (team) {
         await updateTeam(team.id, {
           name: input.name,
+          abbreviation: input.abbreviation,
           city: input.city,
           nickname: input.nickname,
           roster: input.roster,
@@ -123,6 +130,10 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       }
     } catch (e) {
       dispatch({ type: "SET_ERROR", error: e instanceof Error ? e.message : "Save failed." });
+      setTimeout(() => {
+        errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        errorRef.current?.focus();
+      }, 0);
     }
   };
 
@@ -225,6 +236,31 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             />
           </FieldGroup>
           <FieldGroup>
+            <FieldLabel htmlFor="ct-abbrev">Abbrev * (2–3 chars)</FieldLabel>
+            <TextInput
+              id="ct-abbrev"
+              value={state.abbreviation}
+              onChange={(e) =>
+                dispatch({
+                  type: "SET_FIELD",
+                  field: "abbreviation",
+                  value: e.target.value.toUpperCase().slice(0, 3),
+                })
+              }
+              placeholder="e.g. EAG"
+              maxLength={3}
+              aria-invalid={
+                !!state.error &&
+                (!state.abbreviation.trim() ||
+                  state.abbreviation.trim().length < 2 ||
+                  state.abbreviation.trim().length > 3)
+                  ? "true"
+                  : undefined
+              }
+              data-testid="custom-team-abbreviation-input"
+            />
+          </FieldGroup>
+          <FieldGroup>
             <FieldLabel htmlFor="ct-city">City</FieldLabel>
             <TextInput
               id="ct-city"
@@ -246,7 +282,16 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
         </GenerateBtn>
       </FormSection>
 
-      {state.error && <ErrorMsg role="alert">{state.error}</ErrorMsg>}
+      {state.error && (
+        <ErrorMsg
+          ref={errorRef}
+          role="alert"
+          tabIndex={-1}
+          data-testid="custom-team-editor-error-summary"
+        >
+          {state.error}
+        </ErrorMsg>
+      )}
 
       {lineupSection()}
       {plainSection(
@@ -271,6 +316,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           Cancel
         </CancelBtn>
       </ButtonRow>
+      {state.error && (
+        <ErrorMsg role="presentation" aria-hidden="true" data-testid="custom-team-save-error-hint">
+          {state.error}
+        </ErrorMsg>
+      )}
     </EditorContainer>
   );
 };
