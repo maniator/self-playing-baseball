@@ -19,6 +19,7 @@ interface Params {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
+  autoOpen?: boolean;
 }
 
 export interface SavesModalState {
@@ -45,6 +46,7 @@ export const useSavesModal = ({
   onSaveIdChange,
   onSetupRestore,
   onLoadActivate,
+  autoOpen,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const {
@@ -69,6 +71,14 @@ export const useSavesModal = ({
 
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
+
+  // Auto-open when requested (e.g. navigating via "Load Saved Game").
+  // Uses ref.current directly instead of closing over `open` so that the
+  // effect only depends on `autoOpen` and no stale-closure suppression is needed.
+  React.useEffect(() => {
+    if (!autoOpen || ref.current?.open) return;
+    ref.current?.showModal();
+  }, [autoOpen]);
 
   const handleSave = () => {
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;

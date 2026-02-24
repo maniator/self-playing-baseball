@@ -16,12 +16,20 @@ type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
   onLoadActivate?: (saveId: string) => void;
+  autoOpenSaves?: boolean;
+  /** Routes back to the Home screen. When provided a "← Home" button is shown. */
+  onBackToHome?: () => void;
+  /** Overrides saves-modal close — used to route Home when no game is active yet. */
+  onSavesClose?: () => void;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
   onNewGame,
   gameStarted = false,
   onLoadActivate,
+  autoOpenSaves,
+  onBackToHome,
+  onSavesClose,
 }) => {
   const {
     speed,
@@ -51,6 +59,11 @@ const GameControls: React.FunctionComponent<Props> = ({
   return (
     <>
       <Controls>
+        {onBackToHome && (
+          <Button $variant="home" onClick={onBackToHome} data-testid="back-to-home-button">
+            ← Home
+          </Button>
+        )}
         {gameOver && onNewGame && (
           <Button $variant="new" onClick={onNewGame}>
             New Game
@@ -75,6 +88,9 @@ const GameControls: React.FunctionComponent<Props> = ({
               setManagerMode(setup.managerMode ?? false);
             }}
             onLoadActivate={onLoadActivate}
+            autoOpen={autoOpenSaves}
+            onRequestClose={onSavesClose}
+            closeLabel={onSavesClose ? "Back to Home" : undefined}
           />
         </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>

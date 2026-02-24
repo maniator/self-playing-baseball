@@ -8,8 +8,8 @@ import path from "path";
  */
 export async function resetAppState(page: Page): Promise<void> {
   await page.goto("/");
-  // Wait until the DB loading screen disappears (i.e. the game is ready).
-  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+  // Wait until the home screen is visible (the app's new front door).
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
 }
 
 /**
@@ -25,8 +25,22 @@ export async function openNewGameDialog(page: Page): Promise<void> {
 
 /**
  * Waits until the New Game dialog is visible on screen.
+ * If the Home screen is currently showing, clicks "New Game" first to navigate
+ * into the game UI — the dialog then opens automatically.
  */
 export async function waitForNewGameDialog(page: Page): Promise<void> {
+  // If neither the home screen nor the dialog is visible yet, wait for one of them.
+  await expect(page.getByTestId("home-screen").or(page.getByTestId("new-game-dialog"))).toBeVisible(
+    { timeout: 15_000 },
+  );
+
+  // If the home screen is showing, navigate into the game flow first.
+  if (await page.getByTestId("home-screen").isVisible()) {
+    await page.getByTestId("home-new-game-button").click();
+    // Wait for the DB loading screen to clear, then wait for the dialog.
+    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+  }
+
   await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
 }
 

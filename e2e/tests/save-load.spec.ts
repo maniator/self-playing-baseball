@@ -8,6 +8,7 @@ import {
   saveCurrentGame,
   startGameViaPlayBall,
   waitForLogLines,
+  waitForNewGameDialog,
 } from "../utils/helpers";
 
 test.describe("Save / Load", () => {
@@ -114,6 +115,7 @@ test.describe("Save / Load", () => {
     // 5. Close the modal and reset to a fresh game state.
     await page.getByRole("button", { name: /close/i }).click();
     await resetAppState(page);
+    await waitForNewGameDialog(page);
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 

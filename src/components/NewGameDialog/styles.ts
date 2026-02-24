@@ -194,3 +194,28 @@ export const ResumeLabel = styled.span`
     display: none;
   }
 `;
+
+export const BackHomeButton = styled.button`
+  background: none;
+  border: none;
+  color: #6680aa;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0 0 10px;
+  display: block;
+
+  &:hover {
+    color: #aaccff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+    border-radius: 3px;
+  }
+
+  ${mq.mobile} {
+    padding: 0 0 6px;
+  }
+`;

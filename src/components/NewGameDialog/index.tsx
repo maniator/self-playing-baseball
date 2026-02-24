@@ -5,6 +5,7 @@ import { getSeed, reinitSeed } from "@utils/rng";
 
 import PlayerCustomizationPanel from "./PlayerCustomizationPanel";
 import {
+  BackHomeButton,
   Dialog,
   Divider,
   FieldGroup,
@@ -42,9 +43,16 @@ type Props = {
   ) => void;
   autoSaveName?: string;
   onResume?: () => void;
+  /** When provided, shows a "← Home" button that routes back to the Home screen. */
+  onBackToHome?: () => void;
 };
 
-const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, onResume }) => {
+const NewGameDialog: React.FunctionComponent<Props> = ({
+  onStart,
+  autoSaveName,
+  onResume,
+  onBackToHome,
+}) => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
   // Pre-fill with the current seed so it's visible and shareable at a glance.
@@ -68,6 +76,15 @@ const NewGameDialog: React.FunctionComponent<Props> = ({ onStart, autoSaveName, 
 
   return (
     <Dialog ref={ref} onCancel={(e) => e.preventDefault()} data-testid="new-game-dialog">
+      {onBackToHome && (
+        <BackHomeButton
+          type="button"
+          onClick={onBackToHome}
+          data-testid="new-game-back-home-button"
+        >
+          ← Home
+        </BackHomeButton>
+      )}
       <Title>⚾ New Game</Title>
       {onResume && autoSaveName && (
         <>

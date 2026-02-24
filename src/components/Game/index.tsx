@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
+import type { InitialGameView } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 import type { BallgameDb } from "@storage/db";
@@ -11,7 +12,12 @@ import { appLog } from "@utils/logger";
 import GameInner from "./GameInner";
 import { LoadingScreen } from "./styles";
 
-const Game: React.FunctionComponent = () => {
+type Props = {
+  initialView?: InitialGameView;
+  onBackToHome?: () => void;
+};
+
+const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
 
@@ -30,7 +36,11 @@ const Game: React.FunctionComponent = () => {
   return (
     <RxDatabaseProvider database={db}>
       <GameProviderWrapper onDispatch={onDispatch}>
-        <GameInner actionBufferRef={actionBufferRef} />
+        <GameInner
+          actionBufferRef={actionBufferRef}
+          initialView={initialView}
+          onBackToHome={onBackToHome}
+        />
       </GameProviderWrapper>
     </RxDatabaseProvider>
   );

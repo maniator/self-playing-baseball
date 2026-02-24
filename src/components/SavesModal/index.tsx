@@ -35,6 +35,16 @@ interface Props {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
+  autoOpen?: boolean;
+  /**
+   * When provided, overrides the modal's built-in close action.
+   * Called instead of closing the dialog when the user clicks Close,
+   * the backdrop, or presses Escape. Used to route Home when no game
+   * has been started yet (Load Saved Game entry path).
+   */
+  onRequestClose?: () => void;
+  /** Label for the close button. Defaults to "Close". */
+  closeLabel?: string;
 }
 
 const formatDate = (ts: number): string =>
@@ -62,7 +72,16 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleFileImport,
   } = useSavesModal(props);
 
+  // When onRequestClose is provided it overrides the built-in close so the
+  // caller can intercept close attempts (e.g. route back to Home).
+  const handleClose = props.onRequestClose ?? close;
+
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    // Guard: if the dialog was already closed (e.g. by a programmatic close()
+    // inside a child button handler), the click event still bubbles here.
+    // getBoundingClientRect() returns all-zeros on a closed dialog, so every
+    // screen coordinate would be "outside" — falsely triggering handleClose.
+    if (!ref.current?.open) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
     const outside =
@@ -70,7 +89,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
       e.clientX > rect.right ||
       e.clientY < rect.top ||
       e.clientY > rect.bottom;
-    if (outside) close();
+    if (outside) handleClose();
   };
 
   return (
@@ -84,7 +103,15 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         💾 Saves
       </SavesButton>
 
-      <Dialog ref={ref} onClick={handleClick} data-testid="saves-modal">
+      <Dialog
+        ref={ref}
+        onClick={handleClick}
+        onCancel={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
+        data-testid="saves-modal"
+      >
         <DialogTitle>💾 Saves</DialogTitle>
 
         <SmallButton onClick={handleSave} data-testid="save-game-button">
@@ -142,7 +169,9 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           </SmallButton>
         </Row>
 
-        <CloseButton onClick={close}>Close</CloseButton>
+        <CloseButton onClick={handleClose} data-testid="saves-modal-close-button">
+          {props.closeLabel ?? "Close"}
+        </CloseButton>
       </Dialog>
     </>
   );
