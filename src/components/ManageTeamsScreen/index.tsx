@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import CustomTeamEditor from "@components/CustomTeamEditor";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import {
@@ -18,18 +19,28 @@ type Props = {
   onBack: () => void;
   /** When true, shows a non-blocking info banner that edits won't affect the current game. */
   hasActiveGame?: boolean;
-  /** Called when the user wants to create or edit a team (editor rendered by parent). */
-  onCreateTeam?: () => void;
-  onEditTeam?: (id: string) => void;
 };
 
-const ManageTeamsScreen: React.FunctionComponent<Props> = ({
-  onBack,
-  hasActiveGame,
-  onCreateTeam,
-  onEditTeam,
-}) => {
-  const { teams, loading, deleteTeam } = useCustomTeams();
+type View = "list" | "create" | { edit: string };
+
+const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {
+  const { teams, loading, deleteTeam, refresh } = useCustomTeams();
+  const [view, setView] = React.useState<View>("list");
+
+  const editingTeam = typeof view === "object" ? teams.find((t) => t.id === view.edit) : undefined;
+
+  if (view === "create" || typeof view === "object") {
+    return (
+      <CustomTeamEditor
+        team={editingTeam}
+        onSave={() => {
+          refresh();
+          setView("list");
+        }}
+        onCancel={() => setView("list")}
+      />
+    );
+  }
 
   return (
     <ScreenContainer data-testid="manage-teams-screen">
@@ -47,7 +58,11 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({
         </InfoBanner>
       )}
 
-      <CreateBtn type="button" onClick={onCreateTeam} data-testid="manage-teams-create-button">
+      <CreateBtn
+        type="button"
+        onClick={() => setView("create")}
+        data-testid="manage-teams-create-button"
+      >
         + Create New Team
       </CreateBtn>
 
@@ -61,7 +76,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({
             <TeamListItem
               key={team.id}
               team={team}
-              onEdit={onEditTeam ?? (() => {})}
+              onEdit={(id) => setView({ edit: id })}
               onDelete={deleteTeam}
             />
           ))}
