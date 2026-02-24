@@ -3,7 +3,14 @@ import "fake-indexeddb/auto";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb, eventsCollection, getDb, savesCollection } from "./db";
+import {
+  _createTestDb,
+  type BallgameDb,
+  customTeamsCollection,
+  eventsCollection,
+  getDb,
+  savesCollection,
+} from "./db";
 
 let db: BallgameDb;
 
@@ -16,10 +23,11 @@ afterEach(async () => {
 });
 
 describe("db collections", () => {
-  it("creates saves, events, and teams collections", () => {
+  it("creates saves, events, teams, and customTeams collections", () => {
     expect(db.saves).toBeDefined();
     expect(db.events).toBeDefined();
     expect(db.teams).toBeDefined();
+    expect(db.customTeams).toBeDefined();
   });
 
   it("inserts and retrieves a saves document", async () => {
@@ -99,6 +107,12 @@ describe("savesCollection / eventsCollection helpers (singleton)", () => {
     const singletonDb = await getDb();
     const col = await eventsCollection();
     expect(col).toBe(singletonDb.events);
+  });
+
+  it("customTeamsCollection() resolves to the RxDB customTeams collection", async () => {
+    const singletonDb = await getDb();
+    const col = await customTeamsCollection();
+    expect(col).toBe(singletonDb.customTeams);
   });
 });
 

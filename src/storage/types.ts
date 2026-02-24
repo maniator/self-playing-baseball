@@ -93,6 +93,103 @@ export interface ProgressSummary {
   stateSnapshot?: StateSnapshot;
 }
 
+/** Batting statistics for a custom team player. */
+export interface TeamPlayerBatting {
+  contact: number;
+  power: number;
+  speed: number;
+}
+
+/** Optional pitching statistics for a custom team player. */
+export interface TeamPlayerPitching {
+  velocity?: number;
+  control?: number;
+  movement?: number;
+}
+
+/** A single player on a custom team roster. */
+export interface TeamPlayer {
+  /** Stable ID within the team. */
+  id: string;
+  name: string;
+  role: "batter" | "pitcher" | "two-way";
+  batting: TeamPlayerBatting;
+  pitching?: TeamPlayerPitching;
+  position?: string;
+  handedness?: "R" | "L" | "S";
+  isBenchEligible?: boolean;
+  isPitcherEligible?: boolean;
+  jerseyNumber?: number | null;
+}
+
+/** Roster embedded in a custom team document. */
+export interface TeamRoster {
+  schemaVersion: number;
+  lineup: TeamPlayer[];
+  bench: TeamPlayer[];
+  pitchers: TeamPlayer[];
+}
+
+/** Freeform metadata on a custom team document. */
+export interface CustomTeamMetadata {
+  notes?: string;
+  tags?: string[];
+  archived?: boolean;
+}
+
+/** Persisted custom team document (one per user-created team). */
+export interface CustomTeamDoc {
+  id: string;
+  schemaVersion: number;
+  createdAt: string;
+  updatedAt: string;
+  name: string;
+  nickname?: string;
+  city?: string;
+  slug?: string;
+  /** "custom" = user-created; "generated" = future auto-generated use. */
+  source: "custom" | "generated";
+  roster: TeamRoster;
+  metadata: CustomTeamMetadata;
+  /** Optional future hint for stat generation (e.g. "balanced", "power"). */
+  statsProfile?: string;
+}
+
+/** Input shape for creating a new custom team. */
+export interface CreateCustomTeamInput {
+  name: string;
+  nickname?: string;
+  city?: string;
+  slug?: string;
+  source?: "custom" | "generated";
+  roster: {
+    lineup: TeamPlayer[];
+    bench?: TeamPlayer[];
+    pitchers?: TeamPlayer[];
+  };
+  metadata?: {
+    notes?: string;
+    tags?: string[];
+    archived?: boolean;
+  };
+  statsProfile?: string;
+}
+
+/** Input shape for updating an existing custom team (all fields optional). */
+export interface UpdateCustomTeamInput {
+  name?: string;
+  nickname?: string;
+  city?: string;
+  slug?: string;
+  roster?: {
+    lineup?: TeamPlayer[];
+    bench?: TeamPlayer[];
+    pitchers?: TeamPlayer[];
+  };
+  metadata?: Partial<CustomTeamMetadata>;
+  statsProfile?: string;
+}
+
 /** Cached MLB team document (one per team, keyed by `String(mlbNumericId)`). */
 export interface TeamDoc {
   /** String PK: `String(mlbNumericId)` e.g. `"147"` for the Yankees. */
