@@ -25,6 +25,26 @@ export function customTeamToLineupOrder(team: CustomTeamDoc): string[] {
   return team.roster.lineup.map((p) => p.id);
 }
 
+/**
+ * Returns the abbreviation for a custom team, or a safe short fallback.
+ * Used by compact UI surfaces like the line score.
+ *
+ * @param gameId - The game-session team string (e.g. `"custom:ct_123"` or an MLB name).
+ * @param teams  - List of known custom team docs for lookup.
+ */
+export function customTeamToAbbreviation(
+  gameId: string,
+  teams: CustomTeamDoc[],
+): string | undefined {
+  if (!gameId.startsWith("custom:")) return undefined;
+  const id = gameId.slice("custom:".length);
+  const doc = teams.find((t) => t.id === id);
+  if (!doc) return undefined;
+  if (doc.abbreviation) return doc.abbreviation;
+  // Fallback: first 3 chars of team name (uppercase)
+  return doc.name.trim().toUpperCase().slice(0, 3) || undefined;
+}
+
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 /** Rounds a raw offset to the nearest valid ModPreset value. */

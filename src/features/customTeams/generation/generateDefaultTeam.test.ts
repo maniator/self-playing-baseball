@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { generateDefaultCustomTeamDraft } from "./generateDefaultTeam";
+import { generateDefaultCustomTeamDraft, makeAbbreviation } from "./generateDefaultTeam";
 
 describe("generateDefaultCustomTeamDraft", () => {
   it("same seed produces same output (determinism)", () => {
@@ -115,5 +115,37 @@ describe("generateDefaultCustomTeamDraft", () => {
     for (const pos of required) {
       expect(positions).toContain(pos);
     }
+  });
+
+  it("generates a valid 2–3 char abbreviation", () => {
+    const draft = generateDefaultCustomTeamDraft("abbrev-test");
+    expect(typeof draft.abbreviation).toBe("string");
+    expect(draft.abbreviation.length).toBeGreaterThanOrEqual(2);
+    expect(draft.abbreviation.length).toBeLessThanOrEqual(3);
+  });
+
+  it("generates the same abbreviation deterministically for the same seed", () => {
+    const a = generateDefaultCustomTeamDraft("abbrev-det");
+    const b = generateDefaultCustomTeamDraft("abbrev-det");
+    expect(a.abbreviation).toBe(b.abbreviation);
+  });
+});
+
+describe("makeAbbreviation", () => {
+  it("single-word city: first 2 letters of city + first letter of nickname", () => {
+    expect(makeAbbreviation("Austin", "Eagles")).toBe("AUE");
+  });
+
+  it("two-word city: first letter of each word + first letter of nickname", () => {
+    expect(makeAbbreviation("New York", "Eagles")).toBe("NYE");
+  });
+
+  it("three-word city: first letter of each of the first 3 words", () => {
+    expect(makeAbbreviation("San Jose West", "Dragons")).toBe("SJW");
+  });
+
+  it("result is uppercase", () => {
+    const result = makeAbbreviation("boston", "eagles");
+    expect(result).toBe(result.toUpperCase());
   });
 });

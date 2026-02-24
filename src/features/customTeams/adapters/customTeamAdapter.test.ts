@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { CustomTeamDoc } from "@storage/types";
 
 import {
+  customTeamToAbbreviation,
   customTeamToDisplayName,
   customTeamToGameId,
   customTeamToLineupOrder,
@@ -107,5 +108,25 @@ describe("customTeamToPlayerOverrides", () => {
   it("does not include pitching mods for batters", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].velocityMod).toBeUndefined();
+  });
+});
+
+describe("customTeamToAbbreviation", () => {
+  it("returns stored abbreviation for a custom team game ID", () => {
+    const teams = [{ ...makeTeam(), id: "ct_abc", abbreviation: "EAG" }];
+    expect(customTeamToAbbreviation("custom:ct_abc", teams)).toBe("EAG");
+  });
+
+  it("falls back to first-3-chars of team name when abbreviation is missing", () => {
+    const teams = [{ ...makeTeam(), id: "ct_abc", name: "Eagles", abbreviation: undefined }];
+    expect(customTeamToAbbreviation("custom:ct_abc", teams)).toBe("EAG");
+  });
+
+  it("returns undefined for a non-custom (MLB-style) team string", () => {
+    expect(customTeamToAbbreviation("New York Yankees", [])).toBeUndefined();
+  });
+
+  it("returns undefined when the custom team ID is not found in the list", () => {
+    expect(customTeamToAbbreviation("custom:missing", [])).toBeUndefined();
   });
 });

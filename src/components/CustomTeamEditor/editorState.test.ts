@@ -129,8 +129,43 @@ describe("validateEditorState", () => {
     expect(validateEditorState(state)).toContain("Team name");
   });
 
+  it("requires abbreviation when name is set", () => {
+    const state = { ...initEditorState(), name: "Eagles", abbreviation: "" };
+    expect(validateEditorState(state)).toContain("abbreviation");
+  });
+
+  it("rejects abbreviation shorter than 2 chars", () => {
+    const state = { ...initEditorState(), name: "Eagles", abbreviation: "E" };
+    expect(validateEditorState(state)).toContain("2–3");
+  });
+
+  it("rejects abbreviation longer than 3 chars", () => {
+    const state = { ...initEditorState(), name: "Eagles", abbreviation: "EAGL" };
+    expect(validateEditorState(state)).toContain("2–3");
+  });
+
+  it("accepts 2-char abbreviation", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EA",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+    };
+    expect(validateEditorState(state)).toBe("");
+  });
+
   it("requires at least 1 lineup player", () => {
-    const state = { ...initEditorState(), name: "Eagles" };
+    const state = { ...initEditorState(), name: "Eagles", abbreviation: "EAG" };
     expect(validateEditorState(state)).toContain("lineup");
   });
 
@@ -138,6 +173,7 @@ describe("validateEditorState", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
+      abbreviation: "EAG",
       lineup: [{ ...makePlayer(""), contact: 60, power: 60, speed: 60 }],
     };
     expect(validateEditorState(state)).toContain("name");
@@ -147,6 +183,7 @@ describe("validateEditorState", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
+      abbreviation: "EAG",
       lineup: [
         makePlayer("P1", "C"),
         makePlayer("P2", "1B"),
@@ -166,6 +203,7 @@ describe("validateEditorState", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
+      abbreviation: "EAG",
       // Has all positions except SS
       lineup: [
         makePlayer("P1", "C"),
@@ -187,6 +225,7 @@ describe("validateEditorState", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
+      abbreviation: "EAG",
       lineup: [makePlayer("P1", "C"), makePlayer("P2", "1B")],
     };
     const err = validateEditorState(state);
@@ -202,6 +241,7 @@ describe("validateEditorState", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
+      abbreviation: "EAG",
       lineup: [
         makePlayer("P1", "C"),
         makePlayer("P2", "1B"),

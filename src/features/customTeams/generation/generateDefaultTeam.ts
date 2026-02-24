@@ -206,7 +206,13 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     },
   }));
 
-  return { name: nickname, abbreviation: makeAbbreviation(city, nickname), city, nickname, roster: { lineup, bench, pitchers } };
+  return {
+    name: nickname,
+    abbreviation: makeAbbreviation(city, nickname),
+    city,
+    nickname,
+    roster: { lineup, bench, pitchers },
+  };
 }
 
 /**
@@ -216,6 +222,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
  */
 export function makeAbbreviation(city: string, nickname: string): string {
   const cityWords = city.trim().toUpperCase().split(/\s+/).filter(Boolean);
+  const nickChar = nickname.trim().toUpperCase()[0] ?? "X";
   if (cityWords.length >= 3) {
     return cityWords
       .slice(0, 3)
@@ -223,7 +230,7 @@ export function makeAbbreviation(city: string, nickname: string): string {
       .join("");
   }
   if (cityWords.length === 2) {
-    return cityWords.map((w) => w[0]).join("") + nickname.trim().toUpperCase()[0];
+    return cityWords.map((w) => w[0]).join("") + nickChar;
   }
   // Single-word city: first 2 letters of city + first letter of nickname
   const c = cityWords[0] ?? "X";

@@ -158,8 +158,7 @@ export function validateEditorState(state: EditorState): string {
   if (!state.name.trim()) return "Team name is required.";
   const abbrev = state.abbreviation.trim();
   if (!abbrev) return "Team abbreviation is required (2–3 characters).";
-  if (abbrev.length < 2 || abbrev.length > 3)
-    return "Team abbreviation must be 2–3 characters.";
+  if (abbrev.length < 2 || abbrev.length > 3) return "Team abbreviation must be 2–3 characters.";
   if (state.lineup.length === 0) return "At least 1 lineup player is required.";
   for (const p of [...state.lineup, ...state.bench, ...state.pitchers]) {
     if (!p.name.trim()) return "All players must have a name.";
@@ -180,7 +179,7 @@ export function validateEditorState(state: EditorState): string {
 export function editorStateToCreateInput(state: EditorState): CreateCustomTeamInput {
   return {
     name: state.name.trim(),
-    abbreviation: state.abbreviation.trim().toUpperCase() || undefined,
+    abbreviation: state.abbreviation.trim().toUpperCase(),
     city: state.city.trim() || undefined,
     nickname: state.nickname.trim() || undefined,
     source: "custom",

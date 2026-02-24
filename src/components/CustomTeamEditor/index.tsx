@@ -244,7 +244,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
                 dispatch({
                   type: "SET_FIELD",
                   field: "abbreviation",
-                  value: e.target.value.toUpperCase().slice(0, 3),
+                  value: e.target.value.toUpperCase(),
                 })
               }
               placeholder="e.g. EAG"

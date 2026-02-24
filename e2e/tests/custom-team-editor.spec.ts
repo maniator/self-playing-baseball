@@ -1,5 +1,5 @@
 /**
- * Custom Team Editor — position + handedness UI and validation E2E tests.
+ * Custom Team Editor — position, handedness, abbreviation UI and validation E2E tests.
  *
  * Covers:
  * 1. Position dropdown is present for player rows
@@ -9,6 +9,8 @@
  * 5. Edit mode loads saved positions and handedness
  * 6. Mobile viewport — selects are visible and layout is usable
  * 7. Tablet/desktop — full label text is readable
+ * 8. Abbreviation field — required, validation, generation, edit-load
+ * 9. Save error is discoverable on failed submit (shown near save/cancel area)
  */
 import { expect, test } from "@playwright/test";
 
@@ -217,5 +219,70 @@ test.describe("Custom Team Editor — position/handedness selects on mobile", ()
       () => document.documentElement.scrollWidth > window.innerWidth,
     );
     expect(hasHorizontalOverflow).toBe(false);
+  });
+});
+
+// ─── Abbreviation field ──────────────────────────────────────────────────────
+test.describe("Custom Team Editor — team abbreviation field", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("abbreviation input is visible in Team Info section", async ({ page }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("custom-team-abbreviation-input")).toBeVisible({
+      timeout: 5_000,
+    });
+  });
+
+  test("Generate Defaults populates the abbreviation field automatically", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const abbrevInput = page.getByTestId("custom-team-abbreviation-input");
+    const value = await abbrevInput.inputValue();
+    expect(value.length).toBeGreaterThanOrEqual(2);
+    expect(value.length).toBeLessThanOrEqual(3);
+  });
+
+  test("attempting to save with empty abbreviation shows a validation error", async ({ page }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-name-input").fill("No Abbrev Team");
+    // Leave abbreviation empty and attempt to save
+    await page.getByTestId("custom-team-save-button").click();
+    const summary = page.getByTestId("custom-team-editor-error-summary");
+    await expect(summary).toBeVisible({ timeout: 3_000 });
+    const text = await summary.textContent();
+    expect(text?.toLowerCase()).toMatch(/abbreviation/i);
+  });
+
+  test("save error hint appears near Save/Cancel buttons on failed submit (mobile-friendly UX)", async ({
+    page,
+  }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    // Attempt save without any data
+    await page.getByTestId("custom-team-save-button").click();
+    // Error hint near the save button area
+    const hint = page.getByTestId("custom-team-save-error-hint");
+    await expect(hint).toBeVisible({ timeout: 3_000 });
+  });
+
+  test("saved team loads its abbreviation in edit mode", async ({ page }) => {
+    // Create a team with Generate Defaults (abbreviation is pre-filled)
+    await openCreateEditorWithDefaults(page);
+    // Record the generated abbreviation
+    const generated = await page.getByTestId("custom-team-abbreviation-input").inputValue();
+    await page.getByTestId("custom-team-name-input").fill("Abbrev Load Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Abbrev Load Team")).toBeVisible({ timeout: 5_000 });
+
+    // Open edit mode
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-abbreviation-input")).toBeVisible({
+      timeout: 5_000,
+    });
+    const loaded = await page.getByTestId("custom-team-abbreviation-input").inputValue();
+    expect(loaded).toBe(generated);
   });
 });
