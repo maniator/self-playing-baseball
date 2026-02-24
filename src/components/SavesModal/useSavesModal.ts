@@ -1,7 +1,10 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
@@ -64,6 +67,9 @@ export const useSavesModal = ({
   const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
     useSaveStore();
 
+  // Custom team docs for resolving human-readable labels on save names.
+  const { teams: customTeams } = useCustomTeams();
+
   const [importText, setImportText] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
 
@@ -81,7 +87,8 @@ export const useSavesModal = ({
   }, [autoOpen]);
 
   const handleSave = () => {
-    const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
+    const teamLabel = (id: string) => resolveTeamLabel(id, customTeams);
+    const name = `${teamLabel(teams[0])} vs ${teamLabel(teams[1])} · Inning ${inning}`;
     const fullState: State = { ...gameStateRest, teams, inning, pitchKey } as State;
     const setup: GameSaveSetup = {
       strategy,

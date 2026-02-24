@@ -1,6 +1,9 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+
 import type { Strategy } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { SaveDoc } from "@storage/types";
 
 import {
@@ -72,6 +75,12 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleFileImport,
   } = useSavesModal(props);
 
+  // Resolve custom team IDs to human-readable labels for the saves list display.
+  const { teams: customTeams } = useCustomTeams();
+  /** Replace any `custom:ct_...` fragment in a save name with the resolved team name. */
+  const resolveSaveName = (name: string): string =>
+    name.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
+
   // When onRequestClose is provided it overrides the built-in close so the
   // caller can intercept close attempts (e.g. route back to Home).
   const handleClose = props.onRequestClose ?? close;
@@ -123,21 +132,24 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           <EmptyMsg>No saves yet.</EmptyMsg>
         ) : (
           <SlotList>
-            {saves.map((s: SaveDoc) => (
-              <SlotItem key={s.id}>
-                <SlotName title={s.name}>{s.name}</SlotName>
-                <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
-                <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
-                  Load
-                </SmallButton>
-                <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
-                  Export
-                </SmallButton>
-                <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
-                  ✕
-                </DangerButton>
-              </SlotItem>
-            ))}
+            {saves.map((s: SaveDoc) => {
+              const displayName = resolveSaveName(s.name);
+              return (
+                <SlotItem key={s.id}>
+                  <SlotName title={displayName}>{displayName}</SlotName>
+                  <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
+                  <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
+                    Load
+                  </SmallButton>
+                  <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
+                    Export
+                  </SmallButton>
+                  <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
+                    ✕
+                  </DangerButton>
+                </SlotItem>
+              );
+            })}
           </SlotList>
         )}
 
