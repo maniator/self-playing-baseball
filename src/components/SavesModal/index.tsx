@@ -77,6 +77,11 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
   const handleClose = props.onRequestClose ?? close;
 
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    // Guard: if the dialog was already closed (e.g. by a programmatic close()
+    // inside a child button handler), the click event still bubbles here.
+    // getBoundingClientRect() returns all-zeros on a closed dialog, so every
+    // screen coordinate would be "outside" — falsely triggering handleClose.
+    if (!ref.current?.open) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
     const outside =
