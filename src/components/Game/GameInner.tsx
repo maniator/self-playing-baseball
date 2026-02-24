@@ -38,11 +38,14 @@ interface Props {
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
   /** Determines initial screen: show New Game dialog or auto-open saves modal. */
   initialView?: InitialGameView;
+  /** Routes back to the Home screen in AppShell. */
+  onBackToHome?: () => void;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   initialView,
+  onBackToHome,
 }) => {
   const { dispatch, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -182,6 +185,8 @@ const GameInner: React.FunctionComponent<Props> = ({
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
         autoOpenSaves={initialView === "load-saves"}
+        onBackToHome={onBackToHome}
+        onSavesClose={initialView === "load-saves" && !gameActive ? onBackToHome : undefined}
       />
       <GameBody>
         <FieldPanel>

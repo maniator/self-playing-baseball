@@ -36,6 +36,13 @@ interface Props {
   }) => void;
   onLoadActivate?: (saveId: string) => void;
   autoOpen?: boolean;
+  /**
+   * When provided, overrides the modal's built-in close action.
+   * Called instead of closing the dialog when the user clicks Close,
+   * the backdrop, or presses Escape. Used to route Home when no game
+   * has been started yet (Load Saved Game entry path).
+   */
+  onRequestClose?: () => void;
 }
 
 const formatDate = (ts: number): string =>
@@ -63,6 +70,10 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleFileImport,
   } = useSavesModal(props);
 
+  // When onRequestClose is provided it overrides the built-in close so the
+  // caller can intercept close attempts (e.g. route back to Home).
+  const handleClose = props.onRequestClose ?? close;
+
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
@@ -71,7 +82,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
       e.clientX > rect.right ||
       e.clientY < rect.top ||
       e.clientY > rect.bottom;
-    if (outside) close();
+    if (outside) handleClose();
   };
 
   return (
@@ -85,7 +96,15 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         💾 Saves
       </SavesButton>
 
-      <Dialog ref={ref} onClick={handleClick} data-testid="saves-modal">
+      <Dialog
+        ref={ref}
+        onClick={handleClick}
+        onCancel={(e) => {
+          e.preventDefault();
+          handleClose();
+        }}
+        data-testid="saves-modal"
+      >
         <DialogTitle>💾 Saves</DialogTitle>
 
         <SmallButton onClick={handleSave} data-testid="save-game-button">
@@ -143,7 +162,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           </SmallButton>
         </Row>
 
-        <CloseButton onClick={close}>Close</CloseButton>
+        <CloseButton onClick={handleClose}>Close</CloseButton>
       </Dialog>
     </>
   );

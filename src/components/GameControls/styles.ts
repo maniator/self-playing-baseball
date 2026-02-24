@@ -15,7 +15,7 @@ export const Controls = styled.div`
   }
 `;
 
-type ButtonVariant = "default" | "share" | "new" | "saves";
+type ButtonVariant = "default" | "share" | "new" | "saves" | "home";
 
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
@@ -40,6 +40,16 @@ const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
     border: 1px solid #3a7a5a;
     &:hover {
       background: #254f38;
+    }
+  `,
+  home: css`
+    background: transparent;
+    color: #aaa;
+    border: 1px solid #444;
+    &:hover {
+      background: #111;
+      border-color: #666;
+      color: #ddd;
     }
   `,
 };

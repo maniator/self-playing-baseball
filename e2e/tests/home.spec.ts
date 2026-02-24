@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall, waitForNewGameDialog } from "../utils/helpers";
+import {
+  openSavesModal,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 test.describe("Home Screen", () => {
   test.beforeEach(async ({ page }) => {
@@ -38,6 +43,51 @@ test.describe("Home Screen", () => {
     // Home screen should no longer be visible
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
+
+  // ── Stranded-close guard ───────────────────────────────────────────────────
+
+  test("Load Saved Game → close modal without loading returns to Home screen", async ({ page }) => {
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
+    // Close modal without loading a save
+    await page.getByRole("button", { name: /close/i }).click();
+    // Should route back to Home, not strand the user on an empty game shell
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible();
+  });
+
+  // ── Back to Home button ────────────────────────────────────────────────────
+
+  test("Back to Home button is visible in game UI after starting a game", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "home-btn1" });
+    await expect(page.getByTestId("back-to-home-button")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("Back to Home button returns to Home screen from an active game", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "home-btn2" });
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard")).not.toBeVisible();
+  });
+
+  test("Back to Home button is visible before game starts (New Game dialog open)", async ({
+    page,
+  }) => {
+    await waitForNewGameDialog(page);
+    await expect(page.getByTestId("back-to-home-button")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("Back to Home from Save/Load modal area works after opening Saves", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "home-btn3" });
+    await openSavesModal(page);
+    // Close the saves modal first, then use Back to Home
+    await page.getByRole("button", { name: /close/i }).click();
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+  });
+
+  // ── Manage Teams placeholder ──────────────────────────────────────────────
 
   test("Manage Teams button navigates to Manage Teams placeholder screen", async ({ page }) => {
     await page.getByTestId("home-manage-teams-button").click();

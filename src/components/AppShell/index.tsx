@@ -16,7 +16,7 @@ const AppShell: React.FunctionComponent = () => {
   }
 
   if (screen === "game") {
-    return <Game initialView={initialGameView} />;
+    return <Game initialView={initialGameView} onBackToHome={() => setScreen("home")} />;
   }
 
   return (

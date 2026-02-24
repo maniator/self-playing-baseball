@@ -14,9 +14,10 @@ import { LoadingScreen } from "./styles";
 
 type Props = {
   initialView?: InitialGameView;
+  onBackToHome?: () => void;
 };
 
-const Game: React.FunctionComponent<Props> = ({ initialView }) => {
+const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
 
@@ -35,7 +36,11 @@ const Game: React.FunctionComponent<Props> = ({ initialView }) => {
   return (
     <RxDatabaseProvider database={db}>
       <GameProviderWrapper onDispatch={onDispatch}>
-        <GameInner actionBufferRef={actionBufferRef} initialView={initialView} />
+        <GameInner
+          actionBufferRef={actionBufferRef}
+          initialView={initialView}
+          onBackToHome={onBackToHome}
+        />
       </GameProviderWrapper>
     </RxDatabaseProvider>
   );
