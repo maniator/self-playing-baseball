@@ -64,6 +64,11 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Tracks the RxDB save ID for the current game session.
   const rxSaveIdRef = React.useRef<string | null>(null);
 
+  // Guards the "route Home on saves-modal close" behavior for the load-saves
+  // entry path. Cleared synchronously in handleLoadActivate so there is no
+  // timing window where a successful load could accidentally trigger the guard.
+  const savesCloseActiveRef = React.useRef(initialView === "load-saves");
+
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
   // Reactive saves list — used for auto-resume detection on initial load.
@@ -164,6 +169,10 @@ const GameInner: React.FunctionComponent<Props> = ({
   };
 
   const handleLoadActivate = React.useCallback((saveId: string) => {
+    // Clear the stranded-close guard synchronously — before any React state
+    // updates — so there is zero timing window where a "close" event could
+    // accidentally route the user back to Home after a successful load.
+    savesCloseActiveRef.current = false;
     rxSaveIdRef.current = saveId;
     setGameActive(true);
     setDialogOpen(false);
@@ -176,6 +185,7 @@ const GameInner: React.FunctionComponent<Props> = ({
           onStart={handleStart}
           autoSaveName={rxAutoSave?.name}
           onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
+          onBackToHome={onBackToHome}
         />
       )}
       <LineScore />
@@ -186,7 +196,10 @@ const GameInner: React.FunctionComponent<Props> = ({
         onLoadActivate={handleLoadActivate}
         autoOpenSaves={initialView === "load-saves"}
         onBackToHome={onBackToHome}
-        onSavesClose={initialView === "load-saves" && !gameActive ? onBackToHome : undefined}
+        onSavesClose={
+          // Ref cleared synchronously in handleLoadActivate; state is belt-and-suspenders.
+          savesCloseActiveRef.current && !gameActive ? onBackToHome : undefined
+        }
       />
       <GameBody>
         <FieldPanel>

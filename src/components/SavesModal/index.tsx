@@ -43,6 +43,8 @@ interface Props {
    * has been started yet (Load Saved Game entry path).
    */
   onRequestClose?: () => void;
+  /** Label for the close button. Defaults to "Close". */
+  closeLabel?: string;
 }
 
 const formatDate = (ts: number): string =>
@@ -162,7 +164,9 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           </SmallButton>
         </Row>
 
-        <CloseButton onClick={handleClose}>Close</CloseButton>
+        <CloseButton onClick={handleClose} data-testid="saves-modal-close-button">
+          {props.closeLabel ?? "Close"}
+        </CloseButton>
       </Dialog>
     </>
   );

@@ -423,4 +423,16 @@ describe("SavesModal", () => {
       payload: importedSlot.stateSnapshot?.state,
     });
   });
+
+  it("defaults close button label to 'Close'", async () => {
+    renderModal();
+    await openPanel();
+    expect(screen.getByTestId("saves-modal-close-button")).toHaveTextContent("Close");
+  });
+
+  it("uses a custom closeLabel when provided", async () => {
+    renderModal({ closeLabel: "Back to Home" });
+    await openPanel();
+    expect(screen.getByTestId("saves-modal-close-button")).toHaveTextContent("Back to Home");
+  });
 });

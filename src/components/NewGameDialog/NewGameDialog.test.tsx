@@ -264,4 +264,23 @@ describe("NewGameDialog", () => {
     render(<NewGameDialog onStart={noop} />);
     expect(screen.getByText(/leave blank for a random game/i)).toBeInTheDocument();
   });
+
+  it("does NOT show a Back to Home button when onBackToHome is not provided", () => {
+    render(<NewGameDialog onStart={noop} />);
+    expect(screen.queryByTestId("new-game-back-home-button")).not.toBeInTheDocument();
+  });
+
+  it("shows a Back to Home button when onBackToHome is provided", () => {
+    render(<NewGameDialog onStart={noop} onBackToHome={noop} />);
+    expect(screen.getByTestId("new-game-back-home-button")).toBeInTheDocument();
+  });
+
+  it("calls onBackToHome when the Back to Home button is clicked", () => {
+    const onBackToHome = vi.fn();
+    render(<NewGameDialog onStart={noop} onBackToHome={onBackToHome} />);
+    act(() => {
+      fireEvent.click(screen.getByTestId("new-game-back-home-button"));
+    });
+    expect(onBackToHome).toHaveBeenCalledTimes(1);
+  });
 });

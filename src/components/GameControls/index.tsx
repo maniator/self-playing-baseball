@@ -90,6 +90,7 @@ const GameControls: React.FunctionComponent<Props> = ({
             onLoadActivate={onLoadActivate}
             autoOpen={autoOpenSaves}
             onRequestClose={onSavesClose}
+            closeLabel={onSavesClose ? "Back to Home" : undefined}
           />
         </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>

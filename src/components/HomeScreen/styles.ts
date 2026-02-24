@@ -47,23 +47,29 @@ export const MenuGroup = styled.div`
 `;
 
 export const PrimaryBtn = styled.button`
-  background: #7a2020;
-  color: white;
-  border: none;
+  background: #1a3a2a;
+  color: #6effc0;
+  border: 1px solid #3a7a5a;
   border-radius: 6px;
   padding: 16px 20px;
   font-size: 1.05rem;
   font-weight: 600;
+  font-family: inherit;
   cursor: pointer;
   min-height: 52px;
   text-align: center;
 
   &:hover {
-    background: #8e2626;
+    background: #254f38;
   }
 
   &:active {
-    background: #5e1a1a;
+    background: #0e2418;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
   }
 `;
 
@@ -74,6 +80,7 @@ export const SecondaryBtn = styled.button`
   border-radius: 6px;
   padding: 14px 20px;
   font-size: 0.95rem;
+  font-family: inherit;
   cursor: pointer;
   min-height: 48px;
   text-align: center;
@@ -82,5 +89,10 @@ export const SecondaryBtn = styled.button`
     background: #111;
     border-color: #666;
     color: #ddd;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
   }
 `;
