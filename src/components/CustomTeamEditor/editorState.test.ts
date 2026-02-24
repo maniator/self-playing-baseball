@@ -62,6 +62,65 @@ describe("initEditorState", () => {
     expect(state.lineup[0].name).toBe("Jake Jones");
     expect(state.lineup[0].contact).toBe(70);
   });
+
+  it("loads position and handedness from an existing team doc", () => {
+    const team = {
+      id: "ct_pos",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+      name: "Rockets",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Sam Scott",
+            role: "batter" as const,
+            batting: { contact: 65, power: 60, speed: 70 },
+            position: "SS",
+            handedness: "L" as const,
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const state = initEditorState(team);
+    expect(state.lineup[0].position).toBe("SS");
+    expect(state.lineup[0].handedness).toBe("L");
+  });
+
+  it("defaults to empty position and R handedness for legacy docs missing those fields", () => {
+    const team = {
+      id: "ct_legacy",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00Z",
+      updatedAt: "2024-01-01T00:00:00Z",
+      name: "Old Team",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Ray Reed",
+            role: "batter" as const,
+            batting: { contact: 60, power: 60, speed: 60 },
+            // no position or handedness
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const state = initEditorState(team);
+    expect(state.lineup[0].position).toBe("");
+    expect(state.lineup[0].handedness).toBe("R");
+  });
 });
 
 describe("validateEditorState", () => {
@@ -99,6 +158,60 @@ describe("validateEditorState", () => {
         makePlayer("P8", "RF"),
         makePlayer("P9", "DH"),
       ],
+    };
+    expect(validateEditorState(state)).toBe("");
+  });
+
+  it("blocks save when a required field position is missing from lineup and bench", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      // Has all positions except SS
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "LF"),
+        makePlayer("P6", "CF"),
+        makePlayer("P7", "RF"),
+        makePlayer("P8", "DH"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toBeTruthy();
+    expect(err).toContain("SS");
+  });
+
+  it("reports all missing positions when multiple are absent", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      lineup: [makePlayer("P1", "C"), makePlayer("P2", "1B")],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("2B");
+    expect(err).toContain("3B");
+    expect(err).toContain("SS");
+    expect(err).toContain("LF");
+    expect(err).toContain("CF");
+    expect(err).toContain("RF");
+  });
+
+  it("bench players count toward covering required positions", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+      ],
+      bench: [makePlayer("Bench", "RF")],
     };
     expect(validateEditorState(state)).toBe("");
   });

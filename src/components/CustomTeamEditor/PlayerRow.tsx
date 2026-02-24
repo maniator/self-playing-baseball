@@ -49,7 +49,7 @@ const PlayerRow: React.FunctionComponent<Props> = ({
   const stat = (label: string, key: keyof EditorPlayer, htmlFor: string) => {
     const val = (player[key] as number | undefined) ?? 0;
     return (
-      <StatRow key={key}>
+      <StatRow key={`stat-${key}`}>
         <StatLabel htmlFor={htmlFor}>{label}</StatLabel>
         <StatInput
           id={htmlFor}

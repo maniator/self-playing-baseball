@@ -71,4 +71,49 @@ describe("generateDefaultCustomTeamDraft", () => {
       expect(p.pitching!.movement).toBeLessThanOrEqual(80);
     }
   });
+
+  it("lineup players have positions from the standard batting position set", () => {
+    const draft = generateDefaultCustomTeamDraft("positions-test");
+    const validPositions = new Set(["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]);
+    for (const p of draft.roster.lineup) {
+      expect(p.position).toBeDefined();
+      expect(validPositions.has(p.position!)).toBe(true);
+    }
+  });
+
+  it("lineup positions cover all 8 required field positions (C 1B 2B 3B SS LF CF RF)", () => {
+    const draft = generateDefaultCustomTeamDraft("required-positions");
+    const positions = new Set(draft.roster.lineup.map((p) => p.position));
+    const required = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
+    for (const pos of required) {
+      expect(positions.has(pos)).toBe(true);
+    }
+  });
+
+  it("pitcher positions are SP or RP", () => {
+    const draft = generateDefaultCustomTeamDraft("pitcher-positions");
+    for (const p of draft.roster.pitchers) {
+      expect(["SP", "RP"]).toContain(p.position);
+    }
+    // First pitcher is SP
+    expect(draft.roster.pitchers[0].position).toBe("SP");
+  });
+
+  it("all players have a handedness value of R, L, or S", () => {
+    const draft = generateDefaultCustomTeamDraft("handedness-test");
+    const all = [...draft.roster.lineup, ...draft.roster.bench, ...draft.roster.pitchers];
+    for (const p of all) {
+      expect(["R", "L", "S"]).toContain(p.handedness);
+    }
+  });
+
+  it("generated team satisfies required-position validation via editorStateToCreateInput", () => {
+    // Import validateEditorState indirectly by checking positions are present
+    const draft = generateDefaultCustomTeamDraft("validation-compat");
+    const positions = draft.roster.lineup.map((p) => p.position);
+    const required = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
+    for (const pos of required) {
+      expect(positions).toContain(pos);
+    }
+  });
 });

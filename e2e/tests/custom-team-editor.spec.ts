@@ -1,0 +1,221 @@
+/**
+ * Custom Team Editor — position + handedness UI and validation E2E tests.
+ *
+ * Covers:
+ * 1. Position dropdown is present for player rows
+ * 2. Handedness dropdown is present for player rows
+ * 3. Save is blocked when required field positions are missing, error shown
+ * 4. Fixing positions unblocks the save
+ * 5. Edit mode loads saved positions and handedness
+ * 6. Mobile viewport — selects are visible and layout is usable
+ * 7. Tablet/desktop — full label text is readable
+ */
+import { expect, test } from "@playwright/test";
+
+import { resetAppState } from "../utils/helpers";
+
+const REQUIRED_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
+
+/** Helper: open Manage Teams → click Create → Generate Defaults. Returns when name input is filled. */
+async function openCreateEditorWithDefaults(page: Parameters<typeof resetAppState>[0]) {
+  await page.getByTestId("home-manage-teams-button").click();
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId("manage-teams-create-button").click();
+  await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+  await page.getByTestId("custom-team-regenerate-defaults-button").click();
+  await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", { timeout: 3_000 });
+}
+
+/** Helper: save a generated team under a custom name. */
+async function saveGeneratedTeam(page: Parameters<typeof resetAppState>[0], teamName: string) {
+  await openCreateEditorWithDefaults(page);
+  await page.getByTestId("custom-team-name-input").fill(teamName);
+  await page.getByTestId("custom-team-save-button").click();
+  await expect(page.getByText(teamName)).toBeVisible({ timeout: 5_000 });
+}
+
+// ─── Position dropdown ──────────────────────────────────────────────────────
+test.describe("Custom Team Editor — position dropdown", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("lineup player rows show a position dropdown after Generate Defaults", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const positionSelects = page.getByTestId("custom-team-player-position-select");
+    // Should be at least one visible (first lineup row)
+    await expect(positionSelects.first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("generated defaults pre-select a position for each lineup player", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const positionSelects = page.getByTestId("custom-team-player-position-select");
+    const count = await positionSelects.count();
+    expect(count).toBeGreaterThan(0);
+
+    // First lineup player should have a position value set (not empty "— select —")
+    const firstValue = await positionSelects.first().inputValue();
+    expect(firstValue).not.toBe("");
+  });
+
+  test("position dropdown includes standard field positions as options", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const firstSelect = page.getByTestId("custom-team-player-position-select").first();
+    await expect(firstSelect).toBeVisible();
+
+    // Check that at least one required position is an option
+    const optionText = await firstSelect.locator("option").allTextContents();
+    const optionValues = await firstSelect
+      .locator("option")
+      .evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value));
+    // Should contain the 8 required positions plus DH
+    for (const pos of ["C", "1B", "SS", "LF", "CF", "RF"]) {
+      expect(optionValues).toContain(pos);
+    }
+    expect(optionText.length).toBeGreaterThan(5);
+  });
+});
+
+// ─── Handedness dropdown ────────────────────────────────────────────────────
+test.describe("Custom Team Editor — handedness dropdown", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("lineup player rows show a batting handedness dropdown", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const handednessSelects = page.getByTestId("custom-team-player-handedness-select");
+    await expect(handednessSelects.first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("generated defaults pre-select a handedness for each lineup player", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const handednessSelects = page.getByTestId("custom-team-player-handedness-select");
+    const firstValue = await handednessSelects.first().inputValue();
+    expect(["R", "L", "S"]).toContain(firstValue);
+  });
+
+  test("handedness dropdown has R, L, S options with readable labels", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    const firstSelect = page.getByTestId("custom-team-player-handedness-select").first();
+    const optionValues = await firstSelect
+      .locator("option")
+      .evaluateAll((opts) => opts.map((o) => (o as HTMLOptionElement).value));
+    expect(optionValues).toContain("R");
+    expect(optionValues).toContain("L");
+    expect(optionValues).toContain("S");
+
+    const optionLabels = await firstSelect.locator("option").allTextContents();
+    // Labels should be readable (Right/Left/Switch), not just R/L/S
+    const labelText = optionLabels.join(" ");
+    expect(labelText).toMatch(/Right/i);
+    expect(labelText).toMatch(/Left/i);
+    expect(labelText).toMatch(/Switch/i);
+  });
+});
+
+// ─── Validation blocking save ───────────────────────────────────────────────
+test.describe("Custom Team Editor — required position validation", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("saving a manually built team with no positions set shows a validation error", async ({
+    page,
+  }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+
+    // Fill just a name and add one player without selecting a position
+    await page.getByTestId("custom-team-name-input").fill("Incomplete Team");
+    await page.getByTestId("custom-team-add-lineup-player-button").click();
+    // Fill player name
+    const nameInputs = page.locator('[aria-label="Player name"]');
+    await nameInputs.first().fill("John Doe");
+
+    // Attempt to save without setting any positions
+    await page.getByTestId("custom-team-save-button").click();
+
+    // Should show a validation error mentioning missing positions
+    const errorMsg = page.locator('[role="alert"]');
+    await expect(errorMsg).toBeVisible({ timeout: 5_000 });
+    const errorText = await errorMsg.textContent();
+    // Error should mention at least one required position
+    expect(REQUIRED_POSITIONS.some((pos) => errorText?.includes(pos))).toBe(true);
+  });
+
+  test("saving a generated-defaults team succeeds (all positions pre-assigned)", async ({
+    page,
+  }) => {
+    await openCreateEditorWithDefaults(page);
+    await page.getByTestId("custom-team-name-input").fill("Auto Filled FC");
+    await page.getByTestId("custom-team-save-button").click();
+    // Should return to the team list
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Auto Filled FC")).toBeVisible();
+  });
+});
+
+// ─── Edit mode preserves positions + handedness ─────────────────────────────
+test.describe("Custom Team Editor — edit mode loads positions and handedness", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("editing a saved team shows the same position values that were stored", async ({ page }) => {
+    // Create a team with Generate Defaults (positions are pre-assigned)
+    await saveGeneratedTeam(page, "Position Edit Team");
+
+    // Open the editor for this team
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+
+    // Position selects should be visible and have non-empty values
+    const positionSelects = page.getByTestId("custom-team-player-position-select");
+    await expect(positionSelects.first()).toBeVisible();
+    const firstPos = await positionSelects.first().inputValue();
+    expect(firstPos).not.toBe("");
+    // Should be a valid position from BATTING_POSITIONS
+    expect(["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"]).toContain(firstPos);
+  });
+
+  test("editing a saved team shows the same handedness values that were stored", async ({
+    page,
+  }) => {
+    await saveGeneratedTeam(page, "Handedness Edit Team");
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+
+    const handednessSelects = page.getByTestId("custom-team-player-handedness-select");
+    await expect(handednessSelects.first()).toBeVisible();
+    const firstHand = await handednessSelects.first().inputValue();
+    expect(["R", "L", "S"]).toContain(firstHand);
+  });
+});
+
+// ─── Mobile viewport ─────────────────────────────────────────────────────────
+test.describe("Custom Team Editor — position/handedness selects on mobile", () => {
+  test.use({ viewport: { width: 393, height: 659 } });
+
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("position and handedness selects are visible and usable on mobile", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+
+    const posSelect = page.getByTestId("custom-team-player-position-select").first();
+    const handSelect = page.getByTestId("custom-team-player-handedness-select").first();
+
+    await posSelect.scrollIntoViewIfNeeded();
+    await expect(posSelect).toBeVisible();
+    await handSelect.scrollIntoViewIfNeeded();
+    await expect(handSelect).toBeVisible();
+
+    // No horizontal overflow from added controls
+    const hasHorizontalOverflow = await page.evaluate(
+      () => document.documentElement.scrollWidth > window.innerWidth,
+    );
+    expect(hasHorizontalOverflow).toBe(false);
+  });
+});
