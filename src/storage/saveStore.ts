@@ -202,9 +202,9 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Imports a save from a JSON string produced by `exportRxdbSave`.
      * Verifies the signature, upserts the header, and bulk-upserts the events.
-     * @returns The restored saveId.
+     * @returns The restored SaveDoc.
      */
-    async importRxdbSave(json: string): Promise<string> {
+    async importRxdbSave(json: string): Promise<SaveDoc> {
       let parsed: unknown;
       try {
         parsed = JSON.parse(json);
@@ -228,7 +228,7 @@ function buildStore(getDbFn: GetDb) {
       // event count rather than using a stale in-memory value.
       nextIdxMap.delete(header.id);
       appendQueues.delete(header.id);
-      return header.id;
+      return header;
     },
   };
 }

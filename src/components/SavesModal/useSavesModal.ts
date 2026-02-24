@@ -18,6 +18,7 @@ interface Params {
     managedTeam: 0 | 1 | null;
     managerMode: boolean;
   }) => void;
+  onLoadActivate?: (saveId: string) => void;
 }
 
 export interface SavesModalState {
@@ -43,6 +44,7 @@ export const useSavesModal = ({
   currentSaveId,
   onSaveIdChange,
   onSetupRestore,
+  onLoadActivate,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const {
@@ -150,6 +152,7 @@ export const useSavesModal = ({
       managerMode: setup.managerMode,
     });
     onSaveIdChange(slot.id);
+    onLoadActivate?.(slot.id);
     log(`Loaded: ${slot.name}`);
     close();
   };
@@ -185,10 +188,11 @@ export const useSavesModal = ({
 
   const applyImport = (json: string) => {
     importRxdbSave(json)
-      .then(() => {
+      .then((importedSave) => {
         setImportText("");
         setImportError(null);
         log("Save imported!");
+        if (importedSave) handleLoad(importedSave);
       })
       .catch((e: Error) => {
         setImportError(e.message);

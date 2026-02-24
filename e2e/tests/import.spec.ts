@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   importSaveFromFixture,
+  openSavesModal,
   resetAppState,
   startGameViaPlayBall,
   waitForLogLines,
@@ -12,36 +13,30 @@ test.describe("Import Save", () => {
     await resetAppState(page);
   });
 
-  test("importing a save fixture shows the save in the list", async ({ page }) => {
-    // Navigate so the app is loaded but don't start a game yet
+  test("importing a save fixture auto-loads the game and save appears in list", async ({
+    page,
+  }) => {
     await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
-    // Dismiss the dialog by starting a default game
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
-    // Import the fixture
+    // Import auto-loads and closes the modal
     await importSaveFromFixture(page, "sample-save.json");
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    // Reopen modal and confirm save is in the list
+    await openSavesModal(page);
     await expect(page.getByTestId("saves-modal").getByText("Mets vs Yankees")).toBeVisible({
       timeout: 10_000,
     });
   });
 
-  test("can load an imported save and game becomes active", async ({ page }) => {
+  test("importing a save auto-loads and game becomes active", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "importme" });
     await waitForLogLines(page, 3);
 
+    // Import auto-loads and closes the modal
     await importSaveFromFixture(page, "sample-save.json");
-
-    // The imported save should be visible in the list — load it
-    const modal = page.getByTestId("saves-modal");
-    await expect(modal.getByText("Mets vs Yankees")).toBeVisible();
-
-    // Find the imported-save row and click its Load button
-    const importedRow = modal.locator("li").filter({ hasText: "Mets vs Yankees" });
-    await importedRow.getByTestId("load-save-button").click();
-
-    // Modal should close and scoreboard should be visible (game is active)
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });
 });

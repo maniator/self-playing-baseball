@@ -34,6 +34,7 @@ interface Props {
     managedTeam: 0 | 1 | null;
     managerMode: boolean;
   }) => void;
+  onLoadActivate?: (saveId: string) => void;
 }
 
 const formatDate = (ts: number): string =>

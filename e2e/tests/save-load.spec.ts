@@ -117,21 +117,11 @@ test.describe("Save / Load", () => {
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
-    // 6. Open the saves modal and paste the exported JSON into the import textarea.
+    // 6. Import via paste and let auto-load handle the rest.
     await openSavesModal(page);
     await page.getByTestId("import-save-textarea").fill(exportedJson);
     await page.getByTestId("import-save-button").click();
-
-    // 7. The re-imported save should appear — this proves the import path works
-    //    because we deleted the original in step 4 (no pre-existing row to mask
-    //    a broken import).
-    const freshModal = page.getByTestId("saves-modal");
-    const importedRow = freshModal.locator("li").filter({ hasText: "· Inning" }).first();
-    await expect(importedRow).toBeVisible({ timeout: 10_000 });
-
-    // 8. Load the re-imported save.  The save has a stateSnapshot so handleLoad
-    //    will restore the game state and close the modal.
-    await importedRow.getByTestId("load-save-button").click();
+    // Auto-load closes the modal and restores the game state.
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });

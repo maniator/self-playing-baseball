@@ -219,12 +219,9 @@ export async function loadSaveByName(page: Page, name: string): Promise<void> {
 export async function importSaveFromFixture(page: Page, fixtureName: string): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
   await openSavesModal(page);
-  // Use file input
   await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
-  // Wait for import to complete — the save should appear in the list
-  await expect(page.getByTestId("saves-modal").getByText("Mets vs Yankees")).toBeVisible({
-    timeout: 10_000,
-  });
+  // Auto-load closes the modal after a successful import
+  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
 }
 
 /**

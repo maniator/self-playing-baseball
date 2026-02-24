@@ -53,7 +53,7 @@ const makeMockStore = (
   updateProgress: vi.fn().mockResolvedValue(undefined),
   deleteSave: vi.fn().mockResolvedValue(undefined),
   exportRxdbSave: vi.fn().mockResolvedValue('{"version":1,"sig":"abc","header":{},"events":[]}'),
-  importRxdbSave: vi.fn().mockResolvedValue(undefined),
+  importRxdbSave: vi.fn().mockResolvedValue(makeSlot()),
   appendEvents: vi.fn().mockResolvedValue(undefined),
   ...overrides,
 });
@@ -352,5 +352,75 @@ describe("SavesModal", () => {
     const calledUrl = spy.mock.calls[0]?.[2] as string;
     expect(calledUrl).toContain("xyzseed");
     spy.mockRestore();
+  });
+
+  it("calls onLoadActivate with save id when Load is clicked", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: null } });
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
+    const onLoadActivate = vi.fn();
+    renderModal({ onLoadActivate });
+    await openPanel();
+    fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
+    expect(onLoadActivate).toHaveBeenCalledWith(slot.id);
+  });
+
+  it("auto-loads imported save after successful paste import", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const importedSlot = makeSlot({
+      id: "imported_1",
+      stateSnapshot: { state: makeState({ inning: 6 }), rngState: null },
+    });
+    const mockImport = vi.fn().mockResolvedValue(importedSlot);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ importRxdbSave: mockImport }));
+    const dispatch = vi.fn();
+    renderModal({}, { dispatch });
+    await openPanel();
+    fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
+      target: { value: '{"valid":"json"}' },
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /import from text/i }));
+      await vi.waitFor(() => expect(dispatch).toHaveBeenCalled());
+    });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "restore_game",
+      payload: importedSlot.stateSnapshot?.state,
+    });
+  });
+
+  it("auto-loads imported save after successful file import", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const importedSlot = makeSlot({
+      id: "imported_2",
+      stateSnapshot: { state: makeState({ inning: 7 }), rngState: null },
+    });
+    const mockImport = vi.fn().mockResolvedValue(importedSlot);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ importRxdbSave: mockImport }));
+
+    const mockReader = {
+      onload: null as ((e: ProgressEvent) => void) | null,
+      onerror: null as (() => void) | null,
+      readAsText: vi.fn().mockImplementation(function (this: typeof mockReader) {
+        this.onload?.({ target: { result: '{"valid":"json"}' } } as ProgressEvent);
+      }),
+    };
+    vi.spyOn(global, "FileReader").mockImplementation(() => mockReader as unknown as FileReader);
+
+    const dispatch = vi.fn();
+    const { container } = renderModal({}, { dispatch });
+    await openPanel();
+    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
+    Object.defineProperty(fileInput, "files", {
+      value: [new File(['{"valid":"json"}'], "import.json", { type: "application/json" })],
+    });
+    await act(async () => {
+      fireEvent.change(fileInput);
+      await vi.waitFor(() => expect(dispatch).toHaveBeenCalled());
+    });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "restore_game",
+      payload: importedSlot.stateSnapshot?.state,
+    });
   });
 });

@@ -152,6 +152,12 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
     setDialogOpen(true);
   };
 
+  const handleLoadActivate = React.useCallback((saveId: string) => {
+    rxSaveIdRef.current = saveId;
+    setGameActive(true);
+    setDialogOpen(false);
+  }, []);
+
   return (
     <GameDiv>
       {dialogOpen && (
@@ -162,7 +168,12 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
         />
       )}
       <LineScore />
-      <GameControls key={gameKey} onNewGame={handleNewGame} gameStarted={gameActive} />
+      <GameControls
+        key={gameKey}
+        onNewGame={handleNewGame}
+        gameStarted={gameActive}
+        onLoadActivate={handleLoadActivate}
+      />
       <GameBody>
         <FieldPanel>
           <Diamond />
