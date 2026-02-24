@@ -22,6 +22,8 @@ export interface EditorPlayer {
 
 export interface EditorState {
   name: string;
+  /** 2–3 char compact team label. Empty string while unset. */
+  abbreviation: string;
   city: string;
   nickname: string;
   lineup: EditorPlayer[];
@@ -31,7 +33,7 @@ export interface EditorState {
 }
 
 export type EditorAction =
-  | { type: "SET_FIELD"; field: "name" | "city" | "nickname"; value: string }
+  | { type: "SET_FIELD"; field: "name" | "abbreviation" | "city" | "nickname"; value: string }
   | {
       type: "UPDATE_PLAYER";
       section: "lineup" | "bench" | "pitchers";
@@ -95,6 +97,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       return {
         ...state,
         name: action.draft.name,
+        abbreviation: action.draft.abbreviation ?? "",
         city: action.draft.city,
         nickname: action.draft.nickname,
         lineup: action.draft.roster.lineup.map(draftPlayerToEditor),
@@ -141,6 +144,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
   name: team?.name ?? "",
+  abbreviation: team?.abbreviation ?? "",
   city: team?.city ?? "",
   nickname: team?.nickname ?? "",
   lineup: team?.roster.lineup.map(docPlayerToEditor) ?? [],
@@ -152,6 +156,10 @@ export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
 /** Validates the state and returns an error string or empty string if valid. */
 export function validateEditorState(state: EditorState): string {
   if (!state.name.trim()) return "Team name is required.";
+  const abbrev = state.abbreviation.trim();
+  if (!abbrev) return "Team abbreviation is required (2–3 characters).";
+  if (abbrev.length < 2 || abbrev.length > 3)
+    return "Team abbreviation must be 2–3 characters.";
   if (state.lineup.length === 0) return "At least 1 lineup player is required.";
   for (const p of [...state.lineup, ...state.bench, ...state.pitchers]) {
     if (!p.name.trim()) return "All players must have a name.";
@@ -172,6 +180,7 @@ export function validateEditorState(state: EditorState): string {
 export function editorStateToCreateInput(state: EditorState): CreateCustomTeamInput {
   return {
     name: state.name.trim(),
+    abbreviation: state.abbreviation.trim().toUpperCase() || undefined,
     city: state.city.trim() || undefined,
     nickname: state.nickname.trim() || undefined,
     source: "custom",

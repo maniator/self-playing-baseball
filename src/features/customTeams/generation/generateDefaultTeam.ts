@@ -12,6 +12,8 @@ export interface GeneratedPlayer {
 
 export interface CustomTeamDraft {
   name: string;
+  /** 2–3 char generated abbreviation derived from city + nickname. */
+  abbreviation: string;
   city: string;
   nickname: string;
   roster: {
@@ -204,5 +206,26 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     },
   }));
 
-  return { name: nickname, city, nickname, roster: { lineup, bench, pitchers } };
+  return { name: nickname, abbreviation: makeAbbreviation(city, nickname), city, nickname, roster: { lineup, bench, pitchers } };
+}
+
+/**
+ * Derives a deterministic 2–3 char abbreviation from city + nickname.
+ * Strategy: take first letter of each word in the city name (up to 3 chars total),
+ * or first 3 letters of the nickname if the city is one word.
+ */
+export function makeAbbreviation(city: string, nickname: string): string {
+  const cityWords = city.trim().toUpperCase().split(/\s+/).filter(Boolean);
+  if (cityWords.length >= 3) {
+    return cityWords
+      .slice(0, 3)
+      .map((w) => w[0])
+      .join("");
+  }
+  if (cityWords.length === 2) {
+    return cityWords.map((w) => w[0]).join("") + nickname.trim().toUpperCase()[0];
+  }
+  // Single-word city: first 2 letters of city + first letter of nickname
+  const c = cityWords[0] ?? "X";
+  return (c.slice(0, 2) + nickname.trim().toUpperCase()[0]).slice(0, 3);
 }

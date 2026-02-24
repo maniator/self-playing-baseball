@@ -144,6 +144,8 @@ export interface CustomTeamDoc {
   createdAt: string;
   updatedAt: string;
   name: string;
+  /** 2–3 char compact label for line score / scoreboard contexts. */
+  abbreviation?: string;
   nickname?: string;
   city?: string;
   slug?: string;
@@ -158,6 +160,8 @@ export interface CustomTeamDoc {
 /** Input shape for creating a new custom team. */
 export interface CreateCustomTeamInput {
   name: string;
+  /** 2–3 char compact label for compact UI contexts. */
+  abbreviation?: string;
   nickname?: string;
   city?: string;
   slug?: string;
@@ -178,6 +182,8 @@ export interface CreateCustomTeamInput {
 /** Input shape for updating an existing custom team (all fields optional). */
 export interface UpdateCustomTeamInput {
   name?: string;
+  /** 2–3 char compact label for compact UI contexts. */
+  abbreviation?: string;
   nickname?: string;
   city?: string;
   slug?: string;

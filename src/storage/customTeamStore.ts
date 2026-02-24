@@ -107,6 +107,7 @@ function buildStore(getDbFn: GetDb) {
         createdAt: now,
         updatedAt: now,
         name,
+        ...(input.abbreviation !== undefined && { abbreviation: input.abbreviation }),
         ...(input.nickname !== undefined && { nickname: input.nickname }),
         ...(input.city !== undefined && { city: input.city }),
         ...(input.slug !== undefined && { slug: input.slug }),
@@ -138,6 +139,7 @@ function buildStore(getDbFn: GetDb) {
       };
 
       if (updates.name !== undefined) patch.name = requireNonEmpty(updates.name, "name");
+      if (updates.abbreviation !== undefined) patch.abbreviation = updates.abbreviation;
       if (updates.nickname !== undefined) patch.nickname = updates.nickname;
       if (updates.city !== undefined) patch.city = updates.city;
       if (updates.slug !== undefined) patch.slug = updates.slug;
