@@ -27,21 +27,21 @@ export const Dialog = styled.dialog`
 `;
 
 export const Title = styled.h2`
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   font-size: 18px;
   color: aquamarine;
 
   ${mq.mobile} {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     font-size: 16px;
   }
 `;
 
 export const FieldGroup = styled.div`
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 
   ${mq.mobile} {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 `;
 
@@ -170,10 +170,10 @@ export const PlayBallButton = styled.button`
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 8px;
 
   ${mq.mobile} {
-    margin-top: 10px;
+    margin-top: 6px;
   }
 `;
 

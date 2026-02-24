@@ -128,8 +128,10 @@ test.describe("Custom Team Editor — required position validation", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
 
-    // Fill just a name and add one player without selecting a position
+    // Fill just a name + valid abbreviation, then add one player without selecting a position
     await page.getByTestId("custom-team-name-input").fill("Incomplete Team");
+    // Abbreviation is required; fill it so that validation reaches the position check.
+    await page.getByTestId("custom-team-abbreviation-input").fill("INC");
     await page.getByTestId("custom-team-add-lineup-player-button").click();
     // Fill player name
     const nameInputs = page.locator('[aria-label="Player name"]');
