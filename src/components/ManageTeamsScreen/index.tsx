@@ -6,6 +6,8 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import {
   BackBtn,
   CreateBtn,
+  EditorShell,
+  EditorShellHeader,
   EmptyState,
   InfoBanner,
   ScreenContainer,
@@ -31,14 +33,25 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
 
   if (view === "create" || typeof view === "object") {
     return (
-      <CustomTeamEditor
-        team={editingTeam}
-        onSave={() => {
-          refresh();
-          setView("list");
-        }}
-        onCancel={() => setView("list")}
-      />
+      <EditorShell data-testid="manage-teams-editor-shell">
+        <EditorShellHeader>
+          <BackBtn
+            onClick={() => setView("list")}
+            data-testid="manage-teams-editor-back-button"
+            aria-label="Back to team list"
+          >
+            ← Team List
+          </BackBtn>
+        </EditorShellHeader>
+        <CustomTeamEditor
+          team={editingTeam}
+          onSave={() => {
+            refresh();
+            setView("list");
+          }}
+          onCancel={() => setView("list")}
+        />
+      </EditorShell>
     );
   }
 

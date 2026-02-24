@@ -14,6 +14,10 @@ export const ScreenContainer = styled.div`
 
   ${mq.mobile} {
     padding: 16px;
+    /* On mobile body has overflow:hidden (game styles). Provide own scroll. */
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
 `;
 
@@ -159,4 +163,31 @@ export const EmptyState = styled.p`
   font-size: 0.95rem;
   text-align: center;
   margin: 40px 0;
+`;
+
+/** Wrapper for the inline editor view — provides its own scroll on mobile. */
+export const EditorShell = styled.div`
+  display: flex;
+  flex-direction: column;
+  max-width: 680px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: 100dvh;
+
+  ${mq.mobile} {
+    height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+`;
+
+export const EditorShellHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px 0;
+
+  ${mq.mobile} {
+    padding: 12px 16px 0;
+  }
 `;
