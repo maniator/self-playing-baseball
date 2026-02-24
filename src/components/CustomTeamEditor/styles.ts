@@ -203,6 +203,43 @@ export const ErrorMsg = styled.p`
   padding: 8px 12px;
 `;
 
+export const SelectInput = styled.select`
+  background: #1a2e4a;
+  border: 1px solid #4a6090;
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  min-height: 32px;
+
+  &:focus {
+    outline: 2px solid aquamarine;
+    outline-offset: 1px;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 1px;
+  }
+`;
+
+/** Row for position + handedness selects, below the name input. */
+export const PlayerMeta = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+`;
+
+export const MetaGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
 export const ButtonRow = styled.div`
   display: flex;
   gap: 12px;

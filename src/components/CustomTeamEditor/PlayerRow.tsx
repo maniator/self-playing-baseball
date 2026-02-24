@@ -2,9 +2,18 @@ import * as React from "react";
 
 import type { EditorPlayer } from "./editorState";
 import {
+  BATTER_POSITION_OPTIONS,
+  HANDEDNESS_OPTIONS,
+  PITCHER_POSITION_OPTIONS,
+} from "./playerConstants";
+import {
+  FieldLabel,
+  MetaGroup,
   PlayerCard,
   PlayerHeader,
+  PlayerMeta,
   RemoveBtn,
+  SelectInput,
   SmallIconBtn,
   StatInput,
   StatLabel,
@@ -35,10 +44,12 @@ const PlayerRow: React.FunctionComponent<Props> = ({
   onMoveUp,
   onMoveDown,
 }) => {
+  const positionOptions = isPitcher ? PITCHER_POSITION_OPTIONS : BATTER_POSITION_OPTIONS;
+
   const stat = (label: string, key: keyof EditorPlayer, htmlFor: string) => {
     const val = (player[key] as number | undefined) ?? 0;
     return (
-      <StatRow>
+      <StatRow key={key}>
         <StatLabel htmlFor={htmlFor}>{label}</StatLabel>
         <StatInput
           id={htmlFor}
@@ -86,6 +97,41 @@ const PlayerRow: React.FunctionComponent<Props> = ({
           ✕
         </RemoveBtn>
       </PlayerHeader>
+      <PlayerMeta>
+        <MetaGroup>
+          <FieldLabel htmlFor={`pos-${player.id}`}>Position</FieldLabel>
+          <SelectInput
+            id={`pos-${player.id}`}
+            value={player.position}
+            onChange={(e) => onChange({ position: e.target.value })}
+            aria-label="Position"
+            data-testid="custom-team-player-position-select"
+          >
+            <option value="">— select —</option>
+            {positionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectInput>
+        </MetaGroup>
+        <MetaGroup>
+          <FieldLabel htmlFor={`hand-${player.id}`}>Bats</FieldLabel>
+          <SelectInput
+            id={`hand-${player.id}`}
+            value={player.handedness}
+            onChange={(e) => onChange({ handedness: e.target.value as "R" | "L" | "S" })}
+            aria-label="Batting handedness"
+            data-testid="custom-team-player-handedness-select"
+          >
+            {HANDEDNESS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectInput>
+        </MetaGroup>
+      </PlayerMeta>
       <StatsGrid>
         {stat("Contact", "contact", `contact-${player.id}`)}
         {stat("Power", "power", `power-${player.id}`)}

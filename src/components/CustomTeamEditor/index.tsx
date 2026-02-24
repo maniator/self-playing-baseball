@@ -21,6 +21,7 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { CustomTeamDoc } from "@storage/types";
 
 import {
+  type EditorPlayer,
   editorReducer,
   editorStateToCreateInput,
   initEditorState,
@@ -53,17 +54,21 @@ type Props = {
   onCancel: () => void;
 };
 
-const makeBlankBatter = () => ({
+const makeBlankBatter = (): EditorPlayer => ({
   id: makePlayerId(),
   name: "",
+  position: "",
+  handedness: "R",
   contact: 60,
   power: 60,
   speed: 60,
 });
 
-const makeBlankPitcher = () => ({
+const makeBlankPitcher = (): EditorPlayer => ({
   id: makePlayerId(),
   name: "",
+  position: "",
+  handedness: "R",
   contact: 35,
   power: 35,
   speed: 35,

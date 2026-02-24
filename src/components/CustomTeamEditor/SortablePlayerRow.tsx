@@ -5,9 +5,18 @@ import { CSS } from "@dnd-kit/utilities";
 
 import type { EditorPlayer } from "./editorState";
 import {
+  BATTER_POSITION_OPTIONS,
+  HANDEDNESS_OPTIONS,
+  PITCHER_POSITION_OPTIONS,
+} from "./playerConstants";
+import {
+  FieldLabel,
+  MetaGroup,
   PlayerCard,
   PlayerHeader,
+  PlayerMeta,
   RemoveBtn,
+  SelectInput,
   StatInput,
   StatLabel,
   StatRow,
@@ -23,11 +32,6 @@ type Props = {
   onRemove: () => void;
 };
 
-/**
- * Drag-and-drop sortable player row using @dnd-kit/sortable.
- * Used for the lineup section of the Custom Team Editor.
- * The drag handle is the player name input row area.
- */
 const SortablePlayerRow: React.FunctionComponent<Props> = ({
   player,
   isPitcher = false,
@@ -43,6 +47,8 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  const positionOptions = isPitcher ? PITCHER_POSITION_OPTIONS : BATTER_POSITION_OPTIONS;
 
   const stat = (label: string, key: keyof EditorPlayer, htmlFor: string) => {
     const val = (player[key] as number | undefined) ?? 0;
@@ -65,7 +71,6 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
   return (
     <PlayerCard ref={setNodeRef} style={style}>
       <PlayerHeader>
-        {/* Drag handle via grip icon on the header */}
         <span
           {...attributes}
           {...listeners}
@@ -94,6 +99,41 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
           ✕
         </RemoveBtn>
       </PlayerHeader>
+      <PlayerMeta>
+        <MetaGroup>
+          <FieldLabel htmlFor={`pos-${player.id}`}>Position</FieldLabel>
+          <SelectInput
+            id={`pos-${player.id}`}
+            value={player.position}
+            onChange={(e) => onChange({ position: e.target.value })}
+            aria-label="Position"
+            data-testid="custom-team-player-position-select"
+          >
+            <option value="">— select —</option>
+            {positionOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectInput>
+        </MetaGroup>
+        <MetaGroup>
+          <FieldLabel htmlFor={`hand-${player.id}`}>Bats</FieldLabel>
+          <SelectInput
+            id={`hand-${player.id}`}
+            value={player.handedness}
+            onChange={(e) => onChange({ handedness: e.target.value as "R" | "L" | "S" })}
+            aria-label="Batting handedness"
+            data-testid="custom-team-player-handedness-select"
+          >
+            {HANDEDNESS_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </SelectInput>
+        </MetaGroup>
+      </PlayerMeta>
       <StatsGrid>
         {stat("Contact", "contact", `contact-${player.id}`)}
         {stat("Power", "power", `power-${player.id}`)}
