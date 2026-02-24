@@ -10,40 +10,45 @@ export type InitialGameView = "new-game" | "load-saves";
 const AppShell: React.FunctionComponent = () => {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [initialGameView, setInitialGameView] = React.useState<InitialGameView>("new-game");
-  // True once a game session has been started — enables the Resume button.
-  const [gameEverStarted, setGameEverStarted] = React.useState(false);
+  // True only once a real game session has been started or loaded — gates Resume.
+  const [hasActiveSession, setHasActiveSession] = React.useState(false);
+  // Whether Game has ever been mounted (controls CSS visibility wrapper).
+  const [gameEverMounted, setGameEverMounted] = React.useState(false);
 
   const goHome = React.useCallback(() => setScreen("home"), []);
   const goManageTeams = React.useCallback(() => setScreen("manage-teams"), []);
 
-  const handleBackToHome = React.useCallback(() => {
-    setGameEverStarted(true);
-    setScreen("home");
+  const handleBackToHome = React.useCallback(() => setScreen("home"), []);
+
+  // Called by Game/GameInner when setGameActive(true) fires.
+  const handleGameSessionStarted = React.useCallback(() => {
+    setHasActiveSession(true);
   }, []);
 
   const handleResumeCurrent = React.useCallback(() => setScreen("game"), []);
 
   const handleNewGame = React.useCallback(() => {
     setInitialGameView("new-game");
-    setGameEverStarted(true);
+    setGameEverMounted(true);
     setScreen("game");
   }, []);
 
   const handleLoadSaves = React.useCallback(() => {
     setInitialGameView("load-saves");
-    setGameEverStarted(true);
+    setGameEverMounted(true);
     setScreen("game");
   }, []);
 
   return (
     <>
-      {/* Game is kept mounted once started so in-memory state survives navigation. */}
+      {/* Game is kept mounted once entered so in-memory state survives navigation. */}
       <div style={{ display: screen === "game" ? undefined : "none" }}>
-        {gameEverStarted && (
+        {gameEverMounted && (
           <Game
             initialView={initialGameView}
             onBackToHome={handleBackToHome}
             onManageTeams={goManageTeams}
+            onGameSessionStarted={handleGameSessionStarted}
           />
         )}
       </div>
@@ -53,12 +58,12 @@ const AppShell: React.FunctionComponent = () => {
           onNewGame={handleNewGame}
           onLoadSaves={handleLoadSaves}
           onManageTeams={goManageTeams}
-          onResumeCurrent={gameEverStarted ? handleResumeCurrent : undefined}
+          onResumeCurrent={hasActiveSession ? handleResumeCurrent : undefined}
         />
       )}
 
       {screen === "manage-teams" && (
-        <ManageTeamsScreen onBack={goHome} hasActiveGame={gameEverStarted} />
+        <ManageTeamsScreen onBack={goHome} hasActiveGame={hasActiveSession} />
       )}
     </>
   );

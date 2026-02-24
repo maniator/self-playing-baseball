@@ -42,6 +42,8 @@ interface Props {
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
   onManageTeams?: () => void;
+  /** Called the first time a real game session starts or a save is loaded. */
+  onGameSessionStarted?: () => void;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
@@ -49,6 +51,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   initialView,
   onBackToHome,
   onManageTeams,
+  onGameSessionStarted,
 }) => {
   const { dispatch, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -108,6 +111,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       rxSaveIdRef.current = rxAutoSave.id;
     }
     setGameActive(true);
+    onGameSessionStarted?.();
     setDialogOpen(false);
   };
 
@@ -159,6 +163,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       .catch(() => {});
 
     setGameActive(true);
+    onGameSessionStarted?.();
     setGameKey((k) => k + 1);
     setDialogOpen(false);
   };
@@ -171,15 +176,19 @@ const GameInner: React.FunctionComponent<Props> = ({
     setDialogOpen(true);
   };
 
-  const handleLoadActivate = React.useCallback((saveId: string) => {
-    // Clear the stranded-close guard synchronously — before any React state
-    // updates — so there is zero timing window where a "close" event could
-    // accidentally route the user back to Home after a successful load.
-    savesCloseActiveRef.current = false;
-    rxSaveIdRef.current = saveId;
-    setGameActive(true);
-    setDialogOpen(false);
-  }, []);
+  const handleLoadActivate = React.useCallback(
+    (saveId: string) => {
+      // Clear the stranded-close guard synchronously — before any React state
+      // updates — so there is zero timing window where a "close" event could
+      // accidentally route the user back to Home after a successful load.
+      savesCloseActiveRef.current = false;
+      rxSaveIdRef.current = saveId;
+      setGameActive(true);
+      onGameSessionStarted?.();
+      setDialogOpen(false);
+    },
+    [onGameSessionStarted],
+  );
 
   return (
     <GameDiv>

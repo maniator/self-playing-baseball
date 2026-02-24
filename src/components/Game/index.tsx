@@ -16,9 +16,16 @@ type Props = {
   initialView?: InitialGameView;
   onBackToHome?: () => void;
   onManageTeams?: () => void;
+  /** Called the first time a real game session starts or a save is loaded. */
+  onGameSessionStarted?: () => void;
 };
 
-const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome, onManageTeams }) => {
+const Game: React.FunctionComponent<Props> = ({
+  initialView,
+  onBackToHome,
+  onManageTeams,
+  onGameSessionStarted,
+}) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
 
@@ -42,6 +49,7 @@ const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome, onMan
           initialView={initialView}
           onBackToHome={onBackToHome}
           onManageTeams={onManageTeams}
+          onGameSessionStarted={onGameSessionStarted}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>
