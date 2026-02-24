@@ -121,6 +121,11 @@ export const RadioLabel = styled.label`
     flex-shrink: 0;
   }
 
+  ${mq.desktop} {
+    padding: 4px 0;
+    min-height: 0;
+  }
+
   ${mq.mobile} {
     padding: 2px 8px 2px 4px;
     min-height: 0;
