@@ -45,6 +45,23 @@ export function customTeamToAbbreviation(
   return doc.name.trim().toUpperCase().slice(0, 3) || undefined;
 }
 
+/**
+ * Returns the full display label for any team string (MLB name or `custom:<id>`).
+ * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
+ *
+ * @param gameId  - The game-session team string.
+ * @param teams   - Known custom team docs for lookup.
+ */
+export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {
+  if (!gameId.startsWith("custom:")) return gameId;
+  const id = gameId.slice("custom:".length);
+  const doc = teams.find((t) => t.id === id);
+  // Safe short fallback: strip the `custom:` prefix and show the first 8 chars of the
+  // internal ID so the user sees something recognizable, never the full raw ID.
+  if (!doc) return gameId.replace(/^custom:/, "").slice(0, 8);
+  return customTeamToDisplayName(doc);
+}
+
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 /** Rounds a raw offset to the nearest valid ModPreset value. */

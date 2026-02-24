@@ -39,11 +39,12 @@ import {
   ErrorMsg,
   FieldGroup,
   FieldLabel,
-  FieldRow,
   FormSection,
   GenerateBtn,
   SaveBtn,
   SectionHeading,
+  TeamInfoGrid,
+  TeamInfoSecondRow,
   TextInput,
 } from "./styles";
 
@@ -221,8 +222,8 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
 
       <FormSection>
         <SectionHeading>Team Info</SectionHeading>
-        <FieldRow>
-          <FieldGroup $flex={2}>
+        <TeamInfoGrid>
+          <FieldGroup>
             <FieldLabel htmlFor="ct-name">Team Name *</FieldLabel>
             <TextInput
               id="ct-name"
@@ -235,44 +236,46 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
               data-testid="custom-team-name-input"
             />
           </FieldGroup>
-          <FieldGroup>
-            <FieldLabel htmlFor="ct-abbrev">Abbrev * (2–3 chars)</FieldLabel>
-            <TextInput
-              id="ct-abbrev"
-              value={state.abbreviation}
-              onChange={(e) =>
-                dispatch({
-                  type: "SET_FIELD",
-                  field: "abbreviation",
-                  value: e.target.value.toUpperCase(),
-                })
-              }
-              placeholder="e.g. EAG"
-              maxLength={3}
-              aria-invalid={
-                !!state.error &&
-                (!state.abbreviation.trim() ||
-                  state.abbreviation.trim().length < 2 ||
-                  state.abbreviation.trim().length > 3)
-                  ? "true"
-                  : undefined
-              }
-              data-testid="custom-team-abbreviation-input"
-            />
-          </FieldGroup>
-          <FieldGroup>
-            <FieldLabel htmlFor="ct-city">City</FieldLabel>
-            <TextInput
-              id="ct-city"
-              value={state.city}
-              onChange={(e) =>
-                dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
-              }
-              placeholder="e.g. Austin"
-              data-testid="custom-team-city-input"
-            />
-          </FieldGroup>
-        </FieldRow>
+          <TeamInfoSecondRow>
+            <FieldGroup>
+              <FieldLabel htmlFor="ct-abbrev">Abbrev * (2–3 chars)</FieldLabel>
+              <TextInput
+                id="ct-abbrev"
+                value={state.abbreviation}
+                onChange={(e) =>
+                  dispatch({
+                    type: "SET_FIELD",
+                    field: "abbreviation",
+                    value: e.target.value.toUpperCase(),
+                  })
+                }
+                placeholder="e.g. EAG"
+                maxLength={3}
+                aria-invalid={
+                  !!state.error &&
+                  (!state.abbreviation.trim() ||
+                    state.abbreviation.trim().length < 2 ||
+                    state.abbreviation.trim().length > 3)
+                    ? "true"
+                    : undefined
+                }
+                data-testid="custom-team-abbreviation-input"
+              />
+            </FieldGroup>
+            <FieldGroup>
+              <FieldLabel htmlFor="ct-city">City</FieldLabel>
+              <TextInput
+                id="ct-city"
+                value={state.city}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
+                }
+                placeholder="e.g. Austin"
+                data-testid="custom-team-city-input"
+              />
+            </FieldGroup>
+          </TeamInfoSecondRow>
+        </TeamInfoGrid>
         <GenerateBtn
           type="button"
           onClick={handleGenerate}

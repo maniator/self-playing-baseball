@@ -8,6 +8,7 @@ import {
   customTeamToGameId,
   customTeamToLineupOrder,
   customTeamToPlayerOverrides,
+  resolveTeamLabel,
 } from "./customTeamAdapter";
 
 const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
@@ -128,5 +129,27 @@ describe("customTeamToAbbreviation", () => {
 
   it("returns undefined when the custom team ID is not found in the list", () => {
     expect(customTeamToAbbreviation("custom:missing", [])).toBeUndefined();
+  });
+});
+
+describe("resolveTeamLabel", () => {
+  it("returns MLB team name unchanged for non-custom team strings", () => {
+    expect(resolveTeamLabel("New York Yankees", [])).toBe("New York Yankees");
+  });
+
+  it("returns full display name (City + Name) for a known custom team", () => {
+    const teams = [{ ...makeTeam(), id: "ct_abc", city: "Austin", name: "Eagles" }];
+    expect(resolveTeamLabel("custom:ct_abc", teams)).toBe("Austin Eagles");
+  });
+
+  it("returns just team name when custom team has no city", () => {
+    const teams = [{ ...makeTeam(), id: "ct_abc", city: "", name: "Eagles" }];
+    expect(resolveTeamLabel("custom:ct_abc", teams)).toBe("Eagles");
+  });
+
+  it("returns safe short fallback (not raw ID) for unknown custom team ID", () => {
+    const result = resolveTeamLabel("custom:ct_unknown123", []);
+    expect(result).not.toContain("custom:");
+    expect(result.length).toBeLessThanOrEqual(8);
   });
 });

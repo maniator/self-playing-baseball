@@ -116,12 +116,12 @@ const PlayerRow: React.FunctionComponent<Props> = ({
           </SelectInput>
         </MetaGroup>
         <MetaGroup>
-          <FieldLabel htmlFor={`hand-${player.id}`}>Bats</FieldLabel>
+          <FieldLabel htmlFor={`hand-${player.id}`}>{isPitcher ? "Throws" : "Bats"}</FieldLabel>
           <SelectInput
             id={`hand-${player.id}`}
             value={player.handedness}
             onChange={(e) => onChange({ handedness: e.target.value as "R" | "L" | "S" })}
-            aria-label="Batting handedness"
+            aria-label={isPitcher ? "Throwing handedness" : "Batting handedness"}
             data-testid="custom-team-player-handedness-select"
           >
             {HANDEDNESS_OPTIONS.map((opt) => (

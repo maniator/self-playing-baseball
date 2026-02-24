@@ -14,6 +14,8 @@ const AppShell: React.FunctionComponent = () => {
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
   // Whether Game has ever been mounted (controls CSS visibility wrapper).
   const [gameEverMounted, setGameEverMounted] = React.useState(false);
+  // Incremented each time the user requests a new game; GameInner watches this.
+  const [newGameRequestCount, setNewGameRequestCount] = React.useState(0);
 
   const goHome = React.useCallback(() => setScreen("home"), []);
   const goManageTeams = React.useCallback(() => setScreen("manage-teams"), []);
@@ -30,6 +32,7 @@ const AppShell: React.FunctionComponent = () => {
   const handleNewGame = React.useCallback(() => {
     setInitialGameView("new-game");
     setGameEverMounted(true);
+    setNewGameRequestCount((c) => c + 1);
     setScreen("game");
   }, []);
 
@@ -46,6 +49,7 @@ const AppShell: React.FunctionComponent = () => {
         {gameEverMounted && (
           <Game
             initialView={initialGameView}
+            newGameRequestCount={newGameRequestCount}
             onBackToHome={handleBackToHome}
             onManageTeams={goManageTeams}
             onGameSessionStarted={handleGameSessionStarted}

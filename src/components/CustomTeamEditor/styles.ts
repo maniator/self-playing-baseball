@@ -225,6 +225,25 @@ export const SelectInput = styled.select`
   }
 `;
 
+/** Two-row Team Info layout: Name (full width) then Abbrev + City. Stacks cleanly on mobile. */
+export const TeamInfoGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+export const TeamInfoSecondRow = styled.div`
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 12px;
+
+  ${mq.mobile} {
+    grid-template-columns: 80px 1fr;
+    gap: 8px;
+  }
+`;
+
 /** Row for position + handedness selects, below the name input. */
 export const PlayerMeta = styled.div`
   display: flex;

@@ -14,6 +14,7 @@ import { LoadingScreen } from "./styles";
 
 type Props = {
   initialView?: InitialGameView;
+  newGameRequestCount?: number;
   onBackToHome?: () => void;
   onManageTeams?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
@@ -22,6 +23,7 @@ type Props = {
 
 const Game: React.FunctionComponent<Props> = ({
   initialView,
+  newGameRequestCount,
   onBackToHome,
   onManageTeams,
   onGameSessionStarted,
@@ -47,6 +49,7 @@ const Game: React.FunctionComponent<Props> = ({
         <GameInner
           actionBufferRef={actionBufferRef}
           initialView={initialView}
+          newGameRequestCount={newGameRequestCount}
           onBackToHome={onBackToHome}
           onManageTeams={onManageTeams}
           onGameSessionStarted={onGameSessionStarted}

@@ -38,6 +38,11 @@ interface Props {
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
   /** Determines initial screen: show New Game dialog or auto-open saves modal. */
   initialView?: InitialGameView;
+  /**
+   * Incremented each time the user explicitly requests a New Game from Home.
+   * GameInner watches this and re-opens the dialog even when already mounted.
+   */
+  newGameRequestCount?: number;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
@@ -49,6 +54,7 @@ interface Props {
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   initialView,
+  newGameRequestCount,
   onBackToHome,
   onManageTeams,
   onGameSessionStarted,
@@ -62,6 +68,18 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
+
+  // Re-open the New Game dialog when the user explicitly clicks "New Game" from Home
+  // while Game is already mounted (the prop increments on each request).
+  const prevNewGameRequestRef = React.useRef(newGameRequestCount ?? 0);
+  React.useEffect(() => {
+    const prev = prevNewGameRequestRef.current;
+    const next = newGameRequestCount ?? 0;
+    if (next > prev) {
+      setDialogOpen(true);
+      prevNewGameRequestRef.current = next;
+    }
+  }, [newGameRequestCount]);
 
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);

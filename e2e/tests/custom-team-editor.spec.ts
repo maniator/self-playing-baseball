@@ -286,3 +286,36 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     expect(loaded).toBe(generated);
   });
 });
+
+// ─── Pitcher THROWS label ─────────────────────────────────────────────────────
+test.describe("Custom Team Editor — pitcher handedness label", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("pitcher rows display 'Throws' label (not 'Bats') for handedness", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    // Navigate to the Pitchers section
+    const pitchersSection = page.getByTestId("custom-team-pitchers-section");
+    await expect(pitchersSection).toBeVisible({ timeout: 5_000 });
+
+    // Each pitcher card should have a label containing 'Throws', not 'Bats'
+    const cards = pitchersSection.locator("[data-testid='custom-team-player-handedness-select']");
+    const count = await cards.count();
+    expect(count).toBeGreaterThan(0);
+
+    // Check the label text in pitcher section - should say Throws
+    const throwsLabels = pitchersSection.getByText("Throws");
+    await expect(throwsLabels.first()).toBeVisible({ timeout: 3_000 });
+  });
+
+  test("lineup/bench player rows display 'Bats' label for handedness", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+    // Lineup section
+    const lineupSection = page.getByTestId("custom-team-lineup-section");
+    await expect(lineupSection).toBeVisible({ timeout: 5_000 });
+
+    const batsLabels = lineupSection.getByText("Bats");
+    await expect(batsLabels.first()).toBeVisible({ timeout: 3_000 });
+  });
+});
