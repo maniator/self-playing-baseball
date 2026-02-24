@@ -126,6 +126,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     gameStarted,
     pendingDecision,
     safeManagerMode,
+    gameOver,
     mutedRef,
     speedRef,
     handleClickRef,

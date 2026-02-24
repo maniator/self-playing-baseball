@@ -9,11 +9,16 @@ import { GameStateRef } from "./useGameRefs";
  * Speech-gated scheduler — runs while the game is in progress.
  * Waits for the current announcement to finish before pitching, so nothing
  * gets cut off. Adds a brief pause at half-inning transitions when muted.
+ *
+ * `gameOver` is included as an explicit parameter (and effect dependency) so
+ * the scheduler restarts automatically when a new in-progress save is loaded
+ * after a finished game — without it the timer chain would stay dead.
  */
 export const useAutoPlayScheduler = (
   gameStarted: boolean,
   pendingDecision: DecisionType | null,
   managerMode: boolean,
+  gameOver: boolean,
   mutedRef: React.MutableRefObject<boolean>,
   speedRef: React.MutableRefObject<number>,
   handleClickRef: React.MutableRefObject<() => void>,
@@ -22,6 +27,7 @@ export const useAutoPlayScheduler = (
 ): void => {
   React.useEffect(() => {
     if (!gameStarted) return;
+    if (gameOver) return;
     if (pendingDecision && managerMode) return;
 
     let timerId: ReturnType<typeof setTimeout>;
@@ -65,6 +71,7 @@ export const useAutoPlayScheduler = (
     gameStarted,
     pendingDecision,
     managerMode,
+    gameOver,
     betweenInningsPauseRef,
     gameStateRef,
     handleClickRef,

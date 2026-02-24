@@ -10,6 +10,17 @@ import { stratMod } from "./strategy";
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
 export { stratMod } from "./strategy";
 
+/**
+ * Returns true for actions that must be processed even when the game is over.
+ *
+ * Lifecycle actions (restore_game, reset) and team setup always pass through
+ * so that players can load a new save, start a fresh game, or re-configure
+ * teams on the post-game screen.  Pure gameplay actions (pitch simulation,
+ * manager decisions, etc.) remain blocked to prevent state corruption.
+ */
+export const canProcessActionAfterGameOver = (action: GameAction): boolean =>
+  ["setTeams", "reset", "restore_game"].includes(action.type);
+
 const createLogger = (dispatchLogger: (action: LogAction) => void) => (message: string) => {
   dispatchLogger({ type: "log", payload: message });
 };
@@ -83,10 +94,7 @@ const reducer = (dispatchLogger: (action: LogAction) => void) => {
   const log = createLogger(dispatchLogger);
 
   function apply(state: State, action: GameAction): State {
-    if (
-      state.gameOver &&
-      !["setTeams", "nextInning", "reset", "restore_game"].includes(action.type)
-    ) {
+    if (state.gameOver && !canProcessActionAfterGameOver(action)) {
       return state;
     }
 
