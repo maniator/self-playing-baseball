@@ -57,7 +57,7 @@ export const DialogTitle = styled.h2`
 export const CloseXButton = styled.button`
   background: transparent;
   color: #aaccff;
-  border: 1px solid #4a6090;
+  border: none;
   border-radius: 6px;
   width: 44px;
   height: 44px;
@@ -70,9 +70,24 @@ export const CloseXButton = styled.button`
   line-height: 1;
   padding: 0;
   flex-shrink: 0;
+  position: relative;
+  isolation: isolate;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 8px;
+    border-radius: 6px;
+    border: 1px solid #4a6090;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &:hover::before {
+    background: rgba(74, 96, 144, 0.6);
+  }
 
   &:hover {
-    background: rgba(74, 96, 144, 0.6);
     color: #fff;
   }
 `;

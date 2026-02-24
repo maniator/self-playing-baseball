@@ -108,9 +108,9 @@ export const BatterUpButton = styled(Button)`
 `;
 
 export const HelpButton = styled.button`
-  background: rgba(47, 63, 105, 0.7);
+  background: transparent;
   color: #aaccff;
-  border: 1px solid #4a6090;
+  border: none;
   border-radius: 50%;
   width: 44px;
   height: 44px;
@@ -120,9 +120,28 @@ export const HelpButton = styled.button`
   line-height: 1;
   padding: 0;
   flex-shrink: 0;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border-radius: 50%;
+    background: rgba(47, 63, 105, 0.7);
+    border: 1px solid #4a6090;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  &:hover::before {
+    background: rgba(74, 96, 144, 0.9);
+  }
 
   &:hover {
-    background: rgba(74, 96, 144, 0.9);
     color: #fff;
   }
 `;
