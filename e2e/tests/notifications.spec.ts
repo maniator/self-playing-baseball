@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  resetAppState,
+  startGameViaPlayBall,
+  waitForLogLines,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 /**
  * Notification / service-worker smoke tests.
@@ -77,6 +82,7 @@ test.describe("Notifications smoke — permission badge", () => {
   }) => {
     test.skip(browserName !== "chromium", "Notification badge test runs on Chromium only");
 
+    await waitForNewGameDialog(page);
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 

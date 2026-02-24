@@ -65,6 +65,10 @@ test.describe("Home Screen", () => {
     // First start a game, save it, and go back to Home.
     await startGameViaPlayBall(page, { seed: "load-saves-regression" });
     await saveCurrentGame(page);
+    // Close the saves modal before navigating — the modal is still open after
+    // saving and a showModal() dialog makes all elements outside it inert.
+    await page.getByTestId("saves-modal-close-button").click();
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
     // Navigate back to Home.
     await page.getByTestId("back-to-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });

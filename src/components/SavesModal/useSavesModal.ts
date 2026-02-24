@@ -72,13 +72,13 @@ export const useSavesModal = ({
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
 
-  // Auto-open on mount when requested (e.g. navigating via "Load Saved Game").
+  // Auto-open when requested (e.g. navigating via "Load Saved Game").
+  // Uses ref.current directly instead of closing over `open` so that the
+  // effect only depends on `autoOpen` and no stale-closure suppression is needed.
   React.useEffect(() => {
-    if (autoOpen) open();
-    // We intentionally run this only on mount — `open` is stable and `autoOpen`
-    // is a mount-time flag that does not change while the component is alive.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!autoOpen || ref.current?.open) return;
+    ref.current?.showModal();
+  }, [autoOpen]);
 
   const handleSave = () => {
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
