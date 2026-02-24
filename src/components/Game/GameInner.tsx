@@ -40,12 +40,15 @@ interface Props {
   initialView?: InitialGameView;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
+  /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
+  onManageTeams?: () => void;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   initialView,
   onBackToHome,
+  onManageTeams,
 }) => {
   const { dispatch, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -186,6 +189,7 @@ const GameInner: React.FunctionComponent<Props> = ({
           autoSaveName={rxAutoSave?.name}
           onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
           onBackToHome={onBackToHome}
+          onManageTeams={onManageTeams}
         />
       )}
       <LineScore />

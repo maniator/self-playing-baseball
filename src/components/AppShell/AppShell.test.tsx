@@ -89,7 +89,8 @@ describe("AppShell", () => {
     await user.click(screen.getByRole("button", { name: /new game/i }));
     await user.click(screen.getByTestId("back-to-home-mock"));
     expect(screen.getByTestId("home-screen-mock")).toBeInTheDocument();
-    expect(screen.queryByTestId("game-mock")).not.toBeInTheDocument();
+    // Game stays mounted (CSS-hidden) so Resume is possible — it is not removed from DOM.
+    expect(screen.getByTestId("game-mock")).toBeInTheDocument();
   });
 
   it("Manage Teams back button returns to the Home screen", async () => {

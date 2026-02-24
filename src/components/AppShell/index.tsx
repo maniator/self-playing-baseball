@@ -10,27 +10,57 @@ export type InitialGameView = "new-game" | "load-saves";
 const AppShell: React.FunctionComponent = () => {
   const [screen, setScreen] = React.useState<Screen>("home");
   const [initialGameView, setInitialGameView] = React.useState<InitialGameView>("new-game");
+  // True once a game session has been started — enables the Resume button.
+  const [gameEverStarted, setGameEverStarted] = React.useState(false);
 
-  if (screen === "manage-teams") {
-    return <ManageTeamsScreen onBack={() => setScreen("home")} />;
-  }
+  const goHome = React.useCallback(() => setScreen("home"), []);
+  const goManageTeams = React.useCallback(() => setScreen("manage-teams"), []);
 
-  if (screen === "game") {
-    return <Game initialView={initialGameView} onBackToHome={() => setScreen("home")} />;
-  }
+  const handleBackToHome = React.useCallback(() => {
+    setGameEverStarted(true);
+    setScreen("home");
+  }, []);
+
+  const handleResumeCurrent = React.useCallback(() => setScreen("game"), []);
+
+  const handleNewGame = React.useCallback(() => {
+    setInitialGameView("new-game");
+    setGameEverStarted(true);
+    setScreen("game");
+  }, []);
+
+  const handleLoadSaves = React.useCallback(() => {
+    setInitialGameView("load-saves");
+    setGameEverStarted(true);
+    setScreen("game");
+  }, []);
 
   return (
-    <HomeScreen
-      onNewGame={() => {
-        setInitialGameView("new-game");
-        setScreen("game");
-      }}
-      onLoadSaves={() => {
-        setInitialGameView("load-saves");
-        setScreen("game");
-      }}
-      onManageTeams={() => setScreen("manage-teams")}
-    />
+    <>
+      {/* Game is kept mounted once started so in-memory state survives navigation. */}
+      <div style={{ display: screen === "game" ? undefined : "none" }}>
+        {gameEverStarted && (
+          <Game
+            initialView={initialGameView}
+            onBackToHome={handleBackToHome}
+            onManageTeams={goManageTeams}
+          />
+        )}
+      </div>
+
+      {screen === "home" && (
+        <HomeScreen
+          onNewGame={handleNewGame}
+          onLoadSaves={handleLoadSaves}
+          onManageTeams={goManageTeams}
+          onResumeCurrent={gameEverStarted ? handleResumeCurrent : undefined}
+        />
+      )}
+
+      {screen === "manage-teams" && (
+        <ManageTeamsScreen onBack={goHome} hasActiveGame={gameEverStarted} />
+      )}
+    </>
   );
 };
 
