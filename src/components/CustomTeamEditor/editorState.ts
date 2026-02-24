@@ -36,6 +36,8 @@ export type EditorAction =
   | { type: "REMOVE_PLAYER"; section: "lineup" | "bench" | "pitchers"; index: number }
   | { type: "MOVE_UP"; section: "lineup" | "bench" | "pitchers"; index: number }
   | { type: "MOVE_DOWN"; section: "lineup" | "bench" | "pitchers"; index: number }
+  /** Reorder section by new ordered list of player IDs (used by DnD drag-end). */
+  | { type: "REORDER"; section: "lineup" | "bench" | "pitchers"; orderedIds: string[] }
   | { type: "APPLY_DRAFT"; draft: CustomTeamDraft }
   | { type: "SET_ERROR"; error: string };
 
@@ -64,6 +66,14 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case "REMOVE_PLAYER": {
       const list = state[action.section].filter((_, i) => i !== action.index);
       return { ...state, [action.section]: list, error: "" };
+    }
+    case "REORDER": {
+      const lookup = new Map(state[action.section].map((p) => [p.id, p]));
+      const reordered = action.orderedIds.flatMap((id) => {
+        const p = lookup.get(id);
+        return p ? [p] : [];
+      });
+      return { ...state, [action.section]: reordered };
     }
     case "MOVE_UP":
       return {

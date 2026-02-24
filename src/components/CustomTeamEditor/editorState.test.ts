@@ -141,6 +141,19 @@ describe("editorReducer", () => {
     const next = editorReducer(state, { type: "MOVE_UP", section: "lineup", index: 0 });
     expect(next.lineup[0].name).toBe("A");
   });
+
+  it("REORDER reorders lineup by ordered IDs", () => {
+    const p1 = makePlayer("A");
+    const p2 = makePlayer("B");
+    const p3 = makePlayer("C");
+    const state = { ...initEditorState(), lineup: [p1, p2, p3] };
+    const next = editorReducer(state, {
+      type: "REORDER",
+      section: "lineup",
+      orderedIds: [p3.id, p1.id, p2.id],
+    });
+    expect(next.lineup.map((p) => p.name)).toEqual(["C", "A", "B"]);
+  });
 });
 
 describe("editorStateToCreateInput", () => {

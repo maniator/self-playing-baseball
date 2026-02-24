@@ -1,5 +1,20 @@
 import * as React from "react";
 
+import type { DragEndEvent } from "@dnd-kit/core";
+import {
+  closestCenter,
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { generateDefaultCustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
@@ -13,6 +28,7 @@ import {
   validateEditorState,
 } from "./editorState";
 import PlayerRow from "./PlayerRow";
+import SortablePlayerRow from "./SortablePlayerRow";
 import {
   AddPlayerBtn,
   ButtonRow,
@@ -60,6 +76,21 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   const [state, dispatch] = React.useReducer(editorReducer, team, initEditorState);
   const { createTeam, updateTeam } = useCustomTeams();
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const handleLineupDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = state.lineup.findIndex((p) => p.id === active.id);
+    const newIndex = state.lineup.findIndex((p) => p.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(state.lineup, oldIndex, newIndex);
+    dispatch({ type: "REORDER", section: "lineup", orderedIds: reordered.map((p) => p.id) });
+  };
+
   const handleGenerate = () => {
     const seed = `${Date.now()}`;
     dispatch({ type: "APPLY_DRAFT", draft: generateDefaultCustomTeamDraft(seed) });
@@ -90,8 +121,46 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     }
   };
 
-  const section = (
-    key: "lineup" | "bench" | "pitchers",
+  /** DnD-enabled lineup section. */
+  const lineupSection = () => (
+    <FormSection data-testid="custom-team-lineup-section">
+      <SectionHeading>Lineup (drag to reorder)</SectionHeading>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleLineupDragEnd}
+      >
+        <SortableContext
+          items={state.lineup.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {state.lineup.map((p, i) => (
+            <SortablePlayerRow
+              key={p.id}
+              player={p}
+              onChange={(patch) =>
+                dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
+              }
+              onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+      <AddPlayerBtn
+        type="button"
+        data-testid="custom-team-add-lineup-player-button"
+        onClick={() =>
+          dispatch({ type: "ADD_PLAYER", section: "lineup", player: makeBlankBatter() })
+        }
+      >
+        + Add Player
+      </AddPlayerBtn>
+    </FormSection>
+  );
+
+  /** Plain up/down section for bench and pitchers. */
+  const plainSection = (
+    key: "bench" | "pitchers",
     label: string,
     testId: string,
     addTestId: string,
@@ -174,19 +243,14 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
 
       {state.error && <ErrorMsg role="alert">{state.error}</ErrorMsg>}
 
-      {section(
-        "lineup",
-        "Lineup",
-        "custom-team-lineup-section",
-        "custom-team-add-lineup-player-button",
-      )}
-      {section(
+      {lineupSection()}
+      {plainSection(
         "bench",
         "Bench",
         "custom-team-bench-section",
         "custom-team-add-bench-player-button",
       )}
-      {section(
+      {plainSection(
         "pitchers",
         "Pitchers",
         "custom-team-pitchers-section",
