@@ -8,12 +8,13 @@ import {
 } from "rxdb";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 
-import type { EventDoc, SaveDoc, TeamDoc } from "./types";
+import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
   events: RxCollection<EventDoc>;
   teams: RxCollection<TeamDoc>;
+  customTeams: RxCollection<CustomTeamDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
@@ -127,6 +128,38 @@ const teamsSchema: RxJsonSchema<TeamDoc> = {
   indexes: ["league", "cachedAt"],
 };
 
+const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
+  version: 0,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 128 },
+    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+    // ISO 8601 timestamps — 32 chars is safe ("2024-01-01T00:00:00.000Z" = 24).
+    createdAt: { type: "string", maxLength: 32 },
+    updatedAt: { type: "string", maxLength: 32 },
+    name: { type: "string", maxLength: 256 },
+    nickname: { type: "string", maxLength: 256 },
+    city: { type: "string", maxLength: 256 },
+    slug: { type: "string", maxLength: 256 },
+    source: { type: "string", enum: ["custom", "generated"], maxLength: 16 },
+    roster: { type: "object", additionalProperties: true },
+    metadata: { type: "object", additionalProperties: true },
+    statsProfile: { type: "string", maxLength: 64 },
+  },
+  required: [
+    "id",
+    "schemaVersion",
+    "createdAt",
+    "updatedAt",
+    "name",
+    "source",
+    "roster",
+    "metadata",
+  ],
+  indexes: ["updatedAt", "source"],
+};
+
 // Promise-based guard: set synchronously before the first await so concurrent
 // initDb calls share the same load (JS is single-threaded; ??= is atomic here).
 let devModePluginPromise: Promise<void> | null = null;
@@ -151,6 +184,7 @@ async function initDb(
     saves: { schema: savesSchema },
     events: { schema: eventsSchema },
     teams: { schema: teamsSchema },
+    customTeams: { schema: customTeamsSchema },
   });
   return db;
 }
@@ -168,6 +202,9 @@ export const getDb = (): Promise<BallgameDb> => {
 export const savesCollection = async (): Promise<RxCollection<SaveDoc>> => (await getDb()).saves;
 
 export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (await getDb()).events;
+
+export const customTeamsCollection = async (): Promise<RxCollection<CustomTeamDoc>> =>
+  (await getDb()).customTeams;
 
 /**
  * Creates a fresh database with the given storage — intended for tests only.
