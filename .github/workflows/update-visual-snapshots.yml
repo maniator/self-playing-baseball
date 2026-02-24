@@ -93,7 +93,7 @@ jobs:
       # Pull any commits pushed by an earlier matrix shard (e.g. chromium before
       # webkit) so this job's push is always a fast-forward.
       - name: Pull latest remote commits before pushing snapshots
-        run: git pull --rebase origin "${{ github.ref_name }}"
+        run: git pull --rebase --autostash origin "${{ github.ref_name }}"
 
       - name: Commit updated snapshots
         id: commit
