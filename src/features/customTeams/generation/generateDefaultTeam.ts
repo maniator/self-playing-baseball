@@ -2,6 +2,8 @@ export interface GeneratedPlayer {
   id: string;
   name: string;
   role: "batter" | "pitcher";
+  position?: string;
+  handedness?: "R" | "L" | "S";
   batting: { contact: number; power: number; speed: number };
   pitching?: { velocity: number; control: number; movement: number };
 }

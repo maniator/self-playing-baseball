@@ -2,10 +2,16 @@ import type { CustomTeamDraft } from "@features/customTeams/generation/generateD
 
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
 
+import { REQUIRED_FIELD_POSITIONS } from "./playerConstants";
+
 /** A single player row as edited in the form (stats as numbers 0–100). */
 export interface EditorPlayer {
   id: string;
   name: string;
+  /** Position code (e.g. "C", "1B", "SS", "SP"). Empty string while unset. */
+  position: string;
+  /** Batting handedness. Defaults to "R" for new players. */
+  handedness: "R" | "L" | "S";
   contact: number;
   power: number;
   speed: number;
@@ -106,6 +112,8 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
 const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): EditorPlayer => ({
   id: p.id,
   name: p.name,
+  position: p.position ?? "",
+  handedness: p.handedness ?? "R",
   contact: p.batting.contact,
   power: p.batting.power,
   speed: p.batting.speed,
@@ -119,6 +127,8 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
   id: p.id,
   name: p.name,
+  position: p.position ?? "",
+  handedness: p.handedness ?? "R",
   contact: p.batting.contact,
   power: p.batting.power,
   speed: p.batting.speed,
@@ -146,6 +156,15 @@ export function validateEditorState(state: EditorState): string {
   for (const p of [...state.lineup, ...state.bench, ...state.pitchers]) {
     if (!p.name.trim()) return "All players must have a name.";
   }
+
+  // Check that all required field positions are covered in lineup + bench.
+  const fieldPlayers = [...state.lineup, ...state.bench];
+  const coveredPositions = new Set(fieldPlayers.map((p) => p.position).filter(Boolean));
+  const missingPositions = REQUIRED_FIELD_POSITIONS.filter((pos) => !coveredPositions.has(pos));
+  if (missingPositions.length > 0) {
+    return `Roster must include at least one player at each of: ${missingPositions.join(", ")}.`;
+  }
+
   return "";
 }
 
@@ -170,6 +189,8 @@ const editorToTeamPlayer =
     id: p.id,
     name: p.name.trim(),
     role,
+    position: p.position || undefined,
+    handedness: p.handedness || undefined,
     batting: { contact: p.contact, power: p.power, speed: p.speed },
     ...(role === "pitcher" &&
       p.velocity !== undefined && {
