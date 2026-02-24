@@ -82,12 +82,18 @@ export const TextInput = styled.input`
   }
 `;
 
+export const StatsGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+`;
+
 export const StatRow = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  flex: 1;
-  min-width: 140px;
+  width: 100%;
 `;
 
 export const StatLabel = styled.label`

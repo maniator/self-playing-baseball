@@ -9,6 +9,7 @@ import {
   StatInput,
   StatLabel,
   StatRow,
+  StatsGrid,
   StatValue,
   TextInput,
 } from "./styles";
@@ -85,14 +86,14 @@ const PlayerRow: React.FunctionComponent<Props> = ({
           ✕
         </RemoveBtn>
       </PlayerHeader>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+      <StatsGrid>
         {stat("Contact", "contact", `contact-${player.id}`)}
         {stat("Power", "power", `power-${player.id}`)}
         {stat("Speed", "speed", `speed-${player.id}`)}
         {isPitcher && stat("Velocity", "velocity", `velocity-${player.id}`)}
         {isPitcher && stat("Control", "control", `control-${player.id}`)}
         {isPitcher && stat("Movement", "movement", `movement-${player.id}`)}
-      </div>
+      </StatsGrid>
     </PlayerCard>
   );
 };
