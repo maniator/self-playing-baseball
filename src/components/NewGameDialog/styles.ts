@@ -120,6 +120,12 @@ export const RadioLabel = styled.label`
     height: 18px;
     flex-shrink: 0;
   }
+
+  ${mq.mobile} {
+    padding: 2px 8px 2px 4px;
+    min-height: 0;
+    font-size: 12px;
+  }
 `;
 
 export const ResumeButton = styled.button`
