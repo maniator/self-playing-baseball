@@ -30,9 +30,7 @@ type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 /** Rounds a raw offset to the nearest valid ModPreset value. */
 function clampMod(offset: number): ModPreset {
   const presets: ModPreset[] = [-20, -10, -5, 0, 5, 10, 20];
-  return presets.reduce((best, p) =>
-    Math.abs(p - offset) < Math.abs(best - offset) ? p : best,
-  );
+  return presets.reduce((best, p) => (Math.abs(p - offset) < Math.abs(best - offset) ? p : best));
 }
 
 /**

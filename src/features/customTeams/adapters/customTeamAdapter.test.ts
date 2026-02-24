@@ -20,11 +20,26 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   roster: {
     schemaVersion: 1,
     lineup: [
-      { id: "p1", name: "Tom Adams", role: "batter", batting: { contact: 70, power: 65, speed: 60 } },
-      { id: "p2", name: "Jake Baker", role: "batter", batting: { contact: 55, power: 80, speed: 50 } },
+      {
+        id: "p1",
+        name: "Tom Adams",
+        role: "batter",
+        batting: { contact: 70, power: 65, speed: 60 },
+      },
+      {
+        id: "p2",
+        name: "Jake Baker",
+        role: "batter",
+        batting: { contact: 55, power: 80, speed: 50 },
+      },
     ],
     bench: [
-      { id: "p3", name: "Sam Cole", role: "batter", batting: { contact: 50, power: 50, speed: 50 } },
+      {
+        id: "p3",
+        name: "Sam Cole",
+        role: "batter",
+        batting: { contact: 50, power: 50, speed: 50 },
+      },
     ],
     pitchers: [
       {
