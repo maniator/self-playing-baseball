@@ -29,7 +29,7 @@ async function createCustomTeam(page: Parameters<typeof resetAppState>[0], name:
 }
 
 // ─── Mobile scroll ────────────────────────────────────────────────────────────
-test.describe("Stage 2B polish — mobile scroll", () => {
+test.describe("Custom Team Editor — mobile scroll container", () => {
   test.use({ viewport: { width: 393, height: 659 } }); // iPhone 15 viewport
 
   test.beforeEach(async ({ page }) => {
@@ -73,7 +73,7 @@ test.describe("Stage 2B polish — mobile scroll", () => {
 });
 
 // ─── Mobile layout ────────────────────────────────────────────────────────────
-test.describe("Stage 2B polish — mobile editor layout", () => {
+test.describe("Custom Team Editor — mobile stat row layout", () => {
   test.use({ viewport: { width: 393, height: 659 } });
 
   test.beforeEach(async ({ page }) => {
@@ -106,7 +106,7 @@ test.describe("Stage 2B polish — mobile editor layout", () => {
 });
 
 // ─── Home button styling ──────────────────────────────────────────────────────
-test.describe("Stage 2B polish — home Manage Teams button", () => {
+test.describe("Home screen — Manage Teams button styling", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
@@ -127,7 +127,7 @@ test.describe("Stage 2B polish — home Manage Teams button", () => {
 });
 
 // ─── Resume gating ────────────────────────────────────────────────────────────
-test.describe("Stage 2B polish — Resume gating", () => {
+test.describe("Resume Current Game — false-positive gating", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
@@ -168,7 +168,7 @@ test.describe("Stage 2B polish — Resume gating", () => {
 });
 
 // ─── Editor navigation shell ──────────────────────────────────────────────────
-test.describe("Stage 2B polish — editor navigation shell", () => {
+test.describe("Custom Team Editor — editor shell navigation", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
@@ -198,7 +198,7 @@ test.describe("Stage 2B polish — editor navigation shell", () => {
 });
 
 // ─── Stage 2A regression guardrails ──────────────────────────────────────────
-test.describe("Stage 2B polish — Stage 2A regression guardrails", () => {
+test.describe("Stage 2A regression guardrails", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });

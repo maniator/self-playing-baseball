@@ -2,12 +2,14 @@ import { expect, test } from "@playwright/test";
 
 import { resetAppState, startGameViaPlayBall, waitForNewGameDialog } from "../utils/helpers";
 
-test.describe("Stage 2B — Manage Teams", () => {
+test.describe("Manage Teams — team list and CRUD", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
 
-  test("Manage Teams shows real list UI (not placeholder text)", async ({ page }) => {
+  test("navigating to Manage Teams shows the real team list UI with a Create button", async ({
+    page,
+  }) => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
     // Real UI has a Create button; placeholder had no such button
@@ -16,7 +18,9 @@ test.describe("Stage 2B — Manage Teams", () => {
     await expect(page.getByText("coming soon")).not.toBeVisible();
   });
 
-  test("Create new team → default fields prefilled → save → appears in list", async ({ page }) => {
+  test("clicking Generate Defaults prefills the form, saving adds team to list", async ({
+    page,
+  }) => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
@@ -41,7 +45,7 @@ test.describe("Stage 2B — Manage Teams", () => {
     await expect(page.getByText("Test City Rockets")).toBeVisible();
   });
 
-  test("Create team persists after page reload", async ({ page }) => {
+  test("custom team saved via editor is visible after page reload", async ({ page }) => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-create-button")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("manage-teams-create-button").click();
@@ -57,7 +61,7 @@ test.describe("Stage 2B — Manage Teams", () => {
     await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 5_000 });
   });
 
-  test("Edit existing team updates the list", async ({ page }) => {
+  test("editing a custom team name updates the team list", async ({ page }) => {
     // First create a team
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
@@ -74,7 +78,9 @@ test.describe("Stage 2B — Manage Teams", () => {
     await expect(page.getByText("Updated Name")).toBeVisible({ timeout: 5_000 });
   });
 
-  test("hasActiveGame banner shows when navigating from active game", async ({ page }) => {
+  test("info banner warns that edits won't affect the current game when navigating from an active game", async ({
+    page,
+  }) => {
     await startGameViaPlayBall(page, { seed: "2b-manage-active" });
     // Go back to home from game
     await page.getByTestId("back-to-home-button").click();
@@ -87,23 +93,27 @@ test.describe("Stage 2B — Manage Teams", () => {
   });
 });
 
-test.describe("Stage 2B — Resume Current Game", () => {
+test.describe("Resume Current Game — gating and navigation", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
 
-  test("Resume button absent before any game is started", async ({ page }) => {
+  test("Resume Current Game button is absent before any game is started", async ({ page }) => {
     await expect(page.getByTestId("home-resume-current-game-button")).not.toBeVisible();
   });
 
-  test("Resume button appears after going Back to Home from a game", async ({ page }) => {
+  test("Resume Current Game button appears after clicking Back to Home from an active game", async ({
+    page,
+  }) => {
     await startGameViaPlayBall(page, { seed: "2b-resume-1" });
     await page.getByTestId("back-to-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("home-resume-current-game-button")).toBeVisible();
   });
 
-  test("Resume returns to same game session (scoreboard visible, not reset)", async ({ page }) => {
+  test("Resume Current Game returns to the same in-progress game (scoreboard visible)", async ({
+    page,
+  }) => {
     await startGameViaPlayBall(page, { seed: "2b-resume-2" });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
@@ -116,7 +126,7 @@ test.describe("Stage 2B — Resume Current Game", () => {
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
 
-  test("Manage Teams during active game → return and resume → game still active", async ({
+  test("visiting Manage Teams during an active game does not break Resume on return", async ({
     page,
   }) => {
     await startGameViaPlayBall(page, { seed: "2b-manage-resume" });
@@ -139,18 +149,20 @@ test.describe("Stage 2B — Resume Current Game", () => {
   });
 });
 
-test.describe("Stage 2B — New Game custom team picker", () => {
+test.describe("New Game dialog — custom team picker", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
 
-  test("MLB Teams tab is selected by default", async ({ page }) => {
+  test("MLB Teams tab is selected by default and shows team selectors", async ({ page }) => {
     await waitForNewGameDialog(page);
     await expect(page.getByTestId("new-game-mlb-teams-tab")).toBeVisible();
     await expect(page.getByTestId("home-team-select")).toBeVisible();
   });
 
-  test("Custom Teams tab shows empty state when no teams exist", async ({ page }) => {
+  test("Custom Teams tab shows empty-state message when no custom teams exist", async ({
+    page,
+  }) => {
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-custom-teams-tab").click();
     // No custom teams → empty state text
@@ -159,7 +171,9 @@ test.describe("Stage 2B — New Game custom team picker", () => {
     await expect(page.getByTestId("home-team-select")).not.toBeVisible();
   });
 
-  test("Custom Teams tab shows selectors when teams exist", async ({ page }) => {
+  test("Custom Teams tab shows team selectors when at least one custom team exists", async ({
+    page,
+  }) => {
     // Create a team first
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
@@ -183,7 +197,7 @@ test.describe("Stage 2B — New Game custom team picker", () => {
     });
   });
 
-  test("Start game with custom teams works end-to-end", async ({ page }) => {
+  test("starting a game with two custom teams reaches the game screen", async ({ page }) => {
     // Create two custom teams
     await page.getByTestId("home-manage-teams-button").click();
 
