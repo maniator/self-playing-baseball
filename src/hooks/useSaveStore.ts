@@ -13,7 +13,7 @@ export interface SaveStoreHook {
   updateProgress: (saveId: string, progressIdx: number, summary?: ProgressSummary) => Promise<void>;
   deleteSave: (saveId: string) => Promise<void>;
   exportRxdbSave: (saveId: string) => Promise<string>;
-  importRxdbSave: (json: string) => Promise<string>;
+  importRxdbSave: (json: string) => Promise<SaveDoc>;
 }
 
 const SAVES_QUERY = { selector: {}, sort: [{ updatedAt: "desc" as const }] };

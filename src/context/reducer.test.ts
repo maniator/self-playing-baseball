@@ -9,7 +9,7 @@ import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
 import type { DecisionType, State } from "./index";
-import { detectDecision } from "./reducer";
+import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
 
 afterEach(() => vi.restoreAllMocks());
@@ -1303,5 +1303,347 @@ describe("root reducer — routing and orchestration", () => {
     // In the test environment import.meta.env.DEV is true; warnIfImpossible must
     // not throw for a valid post-action state.
     expect(() => dispatchAction(makeState(), "reset")).not.toThrow();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// canProcessActionAfterGameOver — explicit allow-list regression tests
+// (Bug fix: load over finished game must never be a silent no-op)
+// ---------------------------------------------------------------------------
+
+describe("canProcessActionAfterGameOver", () => {
+  it("allows restore_game through when game is over", () => {
+    expect(canProcessActionAfterGameOver({ type: "restore_game" })).toBe(true);
+  });
+
+  it("allows reset through when game is over", () => {
+    expect(canProcessActionAfterGameOver({ type: "reset" })).toBe(true);
+  });
+
+  it("allows setTeams through when game is over", () => {
+    expect(canProcessActionAfterGameOver({ type: "setTeams" })).toBe(true);
+  });
+
+  it("blocks pitch simulation actions after game over", () => {
+    const blocked = [
+      "strike",
+      "hit",
+      "foul",
+      "wait",
+      "steal_attempt",
+      "bunt_attempt",
+      "intentional_walk",
+    ];
+    for (const type of blocked) {
+      expect(canProcessActionAfterGameOver({ type })).toBe(false);
+    }
+  });
+
+  it("blocks manager-decision actions after game over", () => {
+    const blocked = [
+      "set_pending_decision",
+      "skip_decision",
+      "set_one_pitch_modifier",
+      "set_pinch_hitter_strategy",
+      "set_defensive_shift",
+    ];
+    for (const type of blocked) {
+      expect(canProcessActionAfterGameOver({ type })).toBe(false);
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// restore_game over a finished game — Bug regression
+// ---------------------------------------------------------------------------
+describe("restore_game when current game is already over (load-over-finished regression)", () => {
+  it("loading an in-progress save over a finished game updates the state", () => {
+    const finishedState = makeState({ gameOver: true, inning: 9, score: [5, 3], pitchKey: 50 });
+    const { state: afterFirstLoad } = dispatchAction(makeState(), "restore_game", finishedState);
+    expect(afterFirstLoad.gameOver).toBe(true);
+    expect(afterFirstLoad.score).toEqual([5, 3]);
+
+    // Second load: an in-progress save over the finished game
+    const inProgressState = makeState({
+      gameOver: false,
+      inning: 6,
+      score: [2, 1],
+      pitchKey: 30,
+      playLog: [
+        { inning: 2, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 },
+        { inning: 4, half: 1, batterNum: 3, team: 1, event: Hit.Homerun, runs: 1, rbi: 1 },
+      ],
+    });
+    const { state: afterSecondLoad } = dispatchAction(
+      afterFirstLoad,
+      "restore_game",
+      inProgressState,
+    );
+
+    // State must reflect the newly loaded save — NOT the old finished game
+    expect(afterSecondLoad.gameOver).toBe(false);
+    expect(afterSecondLoad.inning).toBe(6);
+    expect(afterSecondLoad.score).toEqual([2, 1]);
+    expect(afterSecondLoad.pitchKey).toBe(30);
+    expect(afterSecondLoad.playLog).toHaveLength(2);
+  });
+
+  it("loading a finished save over a finished game updates the state (no silent no-op)", () => {
+    const finishedA = makeState({ gameOver: true, inning: 9, score: [5, 3], teams: ["A", "B"] });
+    const { state: afterA } = dispatchAction(makeState(), "restore_game", finishedA);
+    expect(afterA.gameOver).toBe(true);
+    expect(afterA.teams).toEqual(["A", "B"]);
+
+    const finishedB = makeState({ gameOver: true, inning: 11, score: [7, 6], teams: ["X", "Y"] });
+    const { state: afterB } = dispatchAction(afterA, "restore_game", finishedB);
+
+    // Must switch to game B — not a no-op
+    expect(afterB.teams).toEqual(["X", "Y"]);
+    expect(afterB.inning).toBe(11);
+    expect(afterB.score).toEqual([7, 6]);
+  });
+
+  it("loading after multiple consecutive finished games always succeeds", () => {
+    let state = makeState();
+    for (let i = 0; i < 3; i++) {
+      const finished = makeState({ gameOver: true, inning: 9 + i, score: [i + 1, i] });
+      const { state: next } = dispatchAction(state, "restore_game", finished);
+      expect(next.gameOver).toBe(true);
+      expect(next.inning).toBe(9 + i);
+      state = next;
+    }
+    // Finally load an in-progress game
+    const inProgress = makeState({ gameOver: false, inning: 4, score: [1, 0] });
+    const { state: final } = dispatchAction(state, "restore_game", inProgress);
+    expect(final.gameOver).toBe(false);
+    expect(final.inning).toBe(4);
+  });
+
+  it("gameplay actions remain blocked on the restored finished game", () => {
+    const finishedA = makeState({ gameOver: true, strikes: 0 });
+    const { state: afterLoad } = dispatchAction(makeState(), "restore_game", finishedA);
+    // strike should be blocked because the restored game is also finished
+    const { state: afterStrike } = dispatchAction(afterLoad, "strike", { swung: true });
+    expect(afterStrike.strikes).toBe(0);
+  });
+
+  it("reset is allowed on a finished game to start fresh", () => {
+    const finished = makeState({ gameOver: true, score: [5, 3] });
+    const { state } = dispatchAction(finished, "reset");
+    expect(state.gameOver).toBe(false);
+    expect(state.score).toEqual([0, 0]);
+    expect(state.inning).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hit-log after load — Bug regression
+// ---------------------------------------------------------------------------
+describe("restore_game hit log consistency after load", () => {
+  it("restores playLog exactly so hit-log and line-score H column stay in sync", () => {
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 0,
+        rbi: 0,
+      },
+      {
+        inning: 2,
+        half: 0 as const,
+        batterNum: 2,
+        team: 0 as const,
+        event: Hit.Double,
+        runs: 1,
+        rbi: 1,
+      },
+      {
+        inning: 3,
+        half: 1 as const,
+        batterNum: 4,
+        team: 1 as const,
+        event: Hit.Homerun,
+        runs: 2,
+        rbi: 2,
+      },
+      {
+        inning: 4,
+        half: 0 as const,
+        batterNum: 1,
+        team: 0 as const,
+        event: Hit.Walk,
+        runs: 0,
+        rbi: 0,
+      },
+    ];
+    const savedState = makeState({ inning: 6, score: [1, 2], playLog });
+    const { state } = dispatchAction(makeState(), "restore_game", savedState);
+
+    // Full log preserved
+    expect(state.playLog).toHaveLength(4);
+    // Team-0 hits (excl. walk): Single + Double = 2
+    const team0Hits = state.playLog.filter((e) => e.team === 0 && e.event !== Hit.Walk).length;
+    expect(team0Hits).toBe(2);
+    // Team-1 hits: HR = 1
+    const team1Hits = state.playLog.filter((e) => e.team === 1 && e.event !== Hit.Walk).length;
+    expect(team1Hits).toBe(1);
+    // Walk entry present but not counted as hit
+    const walks = state.playLog.filter((e) => e.event === Hit.Walk).length;
+    expect(walks).toBe(1);
+  });
+
+  it("loading an older save without playLog produces an empty (not undefined) log", () => {
+    const oldSave = makeState({ inning: 7, score: [3, 2] });
+    // @ts-expect-error simulate pre-playLog save
+    delete oldSave.playLog;
+    const { state } = dispatchAction(makeState(), "restore_game", oldSave);
+    expect(Array.isArray(state.playLog)).toBe(true);
+    expect(state.playLog).toHaveLength(0);
+  });
+
+  it("hit log aligns with batting stats after restore", () => {
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 3,
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 0,
+        rbi: 0,
+      },
+      {
+        inning: 2,
+        half: 0 as const,
+        batterNum: 3,
+        team: 0 as const,
+        event: Hit.Double,
+        runs: 1,
+        rbi: 1,
+      },
+    ];
+    const savedState = makeState({ playLog });
+    const { state } = dispatchAction(makeState(), "restore_game", savedState);
+    const batter3Entries = state.playLog.filter((e) => e.team === 0 && e.batterNum === 3);
+    expect(batter3Entries).toHaveLength(2);
+    // RBI must be preserved for stats computation
+    expect(batter3Entries[0].rbi).toBe(0);
+    expect(batter3Entries[1].rbi).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Save → Load → Save round-trip scenarios
+// These exercise the reducer state transitions for every meaningful sequence
+// a player can perform involving saves, loads, and new games.
+// ---------------------------------------------------------------------------
+describe("save → load → save round-trip scenarios", () => {
+  it("load in-progress → play a hit → state reflects new hit", () => {
+    mockRandom(0);
+    const savedState = makeState({ inning: 5, score: [2, 1], pitchKey: 20 });
+    const { state: loaded } = dispatchAction(makeState(), "restore_game", savedState);
+    expect(loaded.inning).toBe(5);
+    // Play a hit from the loaded state
+    const { state: afterHit } = dispatchAction(loaded, "hit", {
+      hitType: Hit.Single,
+      strategy: "balanced",
+    });
+    expect(afterHit.score[0]).toBeGreaterThanOrEqual(loaded.score[0]);
+    expect(afterHit.pitchKey).toBeGreaterThan(loaded.pitchKey);
+  });
+
+  it("load finished save → reset → new game starts from scratch", () => {
+    const finished = makeState({
+      gameOver: true,
+      inning: 9,
+      score: [5, 3],
+      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+    });
+    const { state: loaded } = dispatchAction(makeState(), "restore_game", finished);
+    expect(loaded.gameOver).toBe(true);
+
+    const { state: fresh } = dispatchAction(loaded, "reset");
+    expect(fresh.gameOver).toBe(false);
+    expect(fresh.inning).toBe(1);
+    expect(fresh.score).toEqual([0, 0]);
+    expect(fresh.playLog).toHaveLength(0);
+  });
+
+  it("load save A → load save B → state is exactly save B (not a blend)", () => {
+    const saveA = makeState({
+      inning: 3,
+      score: [1, 0],
+      teams: ["Red Sox", "Yankees"],
+      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+    });
+    const saveB = makeState({
+      inning: 7,
+      score: [4, 2],
+      teams: ["Mets", "Cubs"],
+      playLog: [
+        { inning: 2, half: 0, batterNum: 2, team: 0, event: Hit.Homerun, runs: 1, rbi: 1 },
+        { inning: 5, half: 1, batterNum: 1, team: 1, event: Hit.Double, runs: 0, rbi: 0 },
+      ],
+    });
+    const { state: afterA } = dispatchAction(makeState(), "restore_game", saveA);
+    const { state: afterB } = dispatchAction(afterA, "restore_game", saveB);
+
+    expect(afterB.inning).toBe(7);
+    expect(afterB.score).toEqual([4, 2]);
+    expect(afterB.teams).toEqual(["Mets", "Cubs"]);
+    expect(afterB.playLog).toHaveLength(2);
+    // No bleed-through from save A
+    expect(afterB.playLog.some((e) => e.event === Hit.Single)).toBe(false);
+  });
+
+  it("load finished A → load in-progress B → load finished C → state is C", () => {
+    const saveA = makeState({ gameOver: true, inning: 9, score: [5, 3], teams: ["A", "B"] });
+    const saveB = makeState({ gameOver: false, inning: 6, score: [2, 1], teams: ["C", "D"] });
+    const saveC = makeState({ gameOver: true, inning: 10, score: [3, 3], teams: ["E", "F"] });
+
+    const { state: a } = dispatchAction(makeState(), "restore_game", saveA);
+    const { state: b } = dispatchAction(a, "restore_game", saveB);
+    const { state: c } = dispatchAction(b, "restore_game", saveC);
+
+    expect(c.gameOver).toBe(true);
+    expect(c.teams).toEqual(["E", "F"]);
+    expect(c.inning).toBe(10);
+    expect(c.score).toEqual([3, 3]);
+  });
+
+  it("load save → setTeams still works (team setup during finished game)", () => {
+    const finished = makeState({ gameOver: true, teams: ["A", "B"] });
+    const { state: loaded } = dispatchAction(makeState(), "restore_game", finished);
+    const { state: renamed } = dispatchAction(loaded, "setTeams", ["X", "Y"]);
+    expect(renamed.teams).toEqual(["X", "Y"]);
+    // gameOver state preserved
+    expect(renamed.gameOver).toBe(true);
+  });
+
+  it("load save with missing inningRuns → pitchKey increments safely on next pitch", () => {
+    mockRandom(0);
+    const oldSave = makeState({ inning: 5, score: [2, 1], pitchKey: 15 });
+    // @ts-expect-error simulate old save without inningRuns
+    delete oldSave.inningRuns;
+    const { state: loaded } = dispatchAction(makeState(), "restore_game", oldSave);
+    expect(Array.isArray(loaded.inningRuns)).toBe(true);
+    // A strike action should proceed without crashing
+    expect(() => dispatchAction(loaded, "strike", { swung: true })).not.toThrow();
+  });
+
+  it("load save with missing batterIndex → next batter rotation works", () => {
+    mockRandom(0);
+    const oldSave = makeState({ inning: 3 });
+    // @ts-expect-error simulate old save without batterIndex
+    delete oldSave.batterIndex;
+    const { state: loaded } = dispatchAction(makeState(), "restore_game", oldSave);
+    expect(Array.isArray(loaded.batterIndex)).toBe(true);
+    // A hit should proceed without crashing
+    expect(() =>
+      dispatchAction(loaded, "hit", { hitType: Hit.Single, strategy: "balanced" }),
+    ).not.toThrow();
   });
 });

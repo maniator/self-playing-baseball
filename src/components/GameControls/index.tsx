@@ -15,9 +15,14 @@ const SavesModal = React.lazy(() => import("@components/SavesModal"));
 type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
+  onLoadActivate?: (saveId: string) => void;
 };
 
-const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted = false }) => {
+const GameControls: React.FunctionComponent<Props> = ({
+  onNewGame,
+  gameStarted = false,
+  onLoadActivate,
+}) => {
   const {
     speed,
     setSpeed,
@@ -69,6 +74,7 @@ const GameControls: React.FunctionComponent<Props> = ({ onNewGame, gameStarted =
               setManagedTeam(setup.managedTeam ?? 0);
               setManagerMode(setup.managerMode ?? false);
             }}
+            onLoadActivate={onLoadActivate}
           />
         </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>

@@ -32,10 +32,48 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
     createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
     updatedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
     progressIdx: { type: "number", minimum: -1, maximum: 9_999_999, multipleOf: 1 },
-    setup: { type: "object", additionalProperties: true },
-    scoreSnapshot: { type: "object", additionalProperties: true },
-    inningSnapshot: { type: "object", additionalProperties: true },
-    stateSnapshot: { type: "object", additionalProperties: true },
+    setup: {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        strategy: { type: "string" },
+        managerMode: { type: "boolean" },
+        homeTeam: { type: "string" },
+        awayTeam: { type: "string" },
+        playerOverrides: { type: "array" },
+        lineupOrder: { type: "array" },
+      },
+    },
+    scoreSnapshot: {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        away: { type: "number" },
+        home: { type: "number" },
+      },
+    },
+    inningSnapshot: {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        inning: { type: "number" },
+        atBat: { type: "number" },
+      },
+    },
+    /**
+     * stateSnapshot: full game State blob + seeded PRNG state.
+     * `state` is stored as an opaque object and backfilled via
+     * `backfillRestoredState` on load to handle schema evolution.
+     * `rngState` is null for saves predating PRNG persistence.
+     */
+    stateSnapshot: {
+      type: "object",
+      additionalProperties: true,
+      properties: {
+        state: { type: "object", additionalProperties: true },
+        rngState: { type: ["number", "null"] },
+      },
+    },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
   required: [

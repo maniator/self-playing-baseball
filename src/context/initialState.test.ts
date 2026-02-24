@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import type { PlayLogEntry, TeamCustomPlayerOverrides } from "./index";
@@ -116,6 +117,14 @@ describe("backfillRestoredState", () => {
     expect(result.strikeoutLog).toEqual([]);
   });
 
+  it("defaults strikeoutLog to [] when explicitly null (old save wrote null)", () => {
+    const restored = makeState();
+    // @ts-expect-error simulating old save that stored null instead of []
+    restored.strikeoutLog = null;
+    const result = backfillRestoredState(restored);
+    expect(result.strikeoutLog).toEqual([]);
+  });
+
   it("defaults outLog to [] when missing", () => {
     const restored = makeState();
     // @ts-expect-error intentionally deleting to simulate older save
@@ -124,11 +133,84 @@ describe("backfillRestoredState", () => {
     expect(result.outLog).toEqual([]);
   });
 
+  it("defaults outLog to [] when explicitly null (old save wrote null)", () => {
+    const restored = makeState();
+    // @ts-expect-error simulating old save that stored null instead of []
+    restored.outLog = null;
+    const result = backfillRestoredState(restored);
+    expect(result.outLog).toEqual([]);
+  });
+
+  it("defaults decisionLog to [] when missing", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.decisionLog;
+    const result = backfillRestoredState(restored);
+    expect(Array.isArray(result.decisionLog)).toBe(true);
+    expect(result.decisionLog).toEqual([]);
+  });
+
+  it("defaults inningRuns to [[],[]] when missing", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.inningRuns;
+    const result = backfillRestoredState(restored);
+    expect(result.inningRuns).toEqual([[], []]);
+  });
+
+  it("defaults batterIndex to [0,0] when missing", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.batterIndex;
+    const result = backfillRestoredState(restored);
+    expect(result.batterIndex).toEqual([0, 0]);
+  });
+
+  it("defaults playLog to [] when missing", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.playLog;
+    const result = backfillRestoredState(restored);
+    expect(result.playLog).toEqual([]);
+  });
+
+  it("uses fallback teams [Away,Home] when teams field is missing", () => {
+    const restored = makeState({ teams: ["Reds", "Cubs"] });
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.teams;
+    const result = backfillRestoredState(restored);
+    expect(Array.isArray(result.teams)).toBe(true);
+    expect(result.teams).toHaveLength(2);
+  });
+
   it("preserves all other fields from restored state", () => {
     const restored = makeState({ inning: 5, score: [3, 2], outs: 2 });
     const result = backfillRestoredState(restored);
     expect(result.inning).toBe(5);
     expect(result.score).toEqual([3, 2]);
     expect(result.outs).toBe(2);
+  });
+
+  // -------------------------------------------------------------------------
+  // Bug regression: restoring a mid-game save must keep full playLog intact
+  // so the hit log and line-score H column stay in sync.
+  // -------------------------------------------------------------------------
+  it("preserves all playLog entries in a mid-game save (hit log regression)", () => {
+    const entries: PlayLogEntry[] = [
+      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 },
+      { inning: 2, half: 0, batterNum: 3, team: 0, event: Hit.Double, runs: 1, rbi: 1 },
+      { inning: 3, half: 1, batterNum: 2, team: 1, event: Hit.Homerun, runs: 2, rbi: 2 },
+    ];
+    const restored = makeState({ inning: 6, playLog: entries });
+    const result = backfillRestoredState(restored);
+    expect(result.playLog).toHaveLength(3);
+    expect(result.playLog[0].event).toBe(Hit.Single);
+    expect(result.playLog[1].event).toBe(Hit.Double);
+    expect(result.playLog[2].event).toBe(Hit.Homerun);
+    // Line-score hits count (non-walk entries) must match playLog
+    const hitsTeam0 = result.playLog.filter((e) => e.team === 0 && e.event !== Hit.Walk).length;
+    expect(hitsTeam0).toBe(2);
+    const hitsTeam1 = result.playLog.filter((e) => e.team === 1 && e.event !== Hit.Walk).length;
+    expect(hitsTeam1).toBe(1);
   });
 });

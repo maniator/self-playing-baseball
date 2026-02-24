@@ -298,8 +298,8 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     // Import into a fresh db
     const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
     const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
-    const restoredId = await store2.importRxdbSave(json);
-    expect(restoredId).toBe(saveId);
+    const restoredSave = await store2.importRxdbSave(json);
+    expect(restoredSave.id).toBe(saveId);
     const saves = await store2.listSaves();
     expect(saves).toHaveLength(1);
     expect(saves[0].seed).toBe("roundtrip");
@@ -337,8 +337,8 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     const json = await store.exportRxdbSave(saveId);
     const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
     const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
-    const restoredId = await store2.importRxdbSave(json);
-    expect(restoredId).toBe(saveId);
+    const restoredSave = await store2.importRxdbSave(json);
+    expect(restoredSave.id).toBe(saveId);
     await db2.close();
   });
 });
