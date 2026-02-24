@@ -3,6 +3,7 @@
  * Reuses the canonical position set from src/utils/roster.ts
  * (BATTING_POSITIONS, POSITION_NAMES) as the single source of truth.
  */
+import { BATTING_POSITIONS } from "@utils/roster";
 
 /** Allowed batting positions for lineup/bench players. */
 export const BATTER_POSITION_OPTIONS = [
@@ -50,15 +51,8 @@ export const REQUIRED_FIELD_POSITIONS: ReadonlyArray<string> = [
   "RF",
 ] as const;
 
-/** Ordered positions assigned to the 9 default lineup slots. */
-export const DEFAULT_LINEUP_POSITIONS: ReadonlyArray<string> = [
-  "C",
-  "1B",
-  "2B",
-  "3B",
-  "SS",
-  "LF",
-  "CF",
-  "RF",
-  "DH",
-] as const;
+/**
+ * Ordered positions for the 9 default lineup slots.
+ * Sourced from BATTING_POSITIONS in roster.ts (same set).
+ */
+export const DEFAULT_LINEUP_POSITIONS: ReadonlyArray<string> = [...BATTING_POSITIONS] as const;

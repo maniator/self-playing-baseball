@@ -1,3 +1,5 @@
+import { BATTING_POSITIONS } from "@utils/roster";
+
 export interface GeneratedPlayer {
   id: string;
   name: string;
@@ -149,10 +151,20 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
   const city = pickFrom(rng, CITIES);
   const nickname = pickFrom(rng, NICKNAMES);
 
+  /** Pick a batting handedness: 65% R, 25% L, 10% S. */
+  const pickHandedness = (): "R" | "L" | "S" => {
+    const r = rng();
+    if (r < 0.65) return "R";
+    if (r < 0.9) return "L";
+    return "S";
+  };
+
   const lineup: GeneratedPlayer[] = Array.from({ length: 9 }, (_, i) => ({
     id: `p_${seed}_L${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "batter" as const,
+    position: BATTING_POSITIONS[i] ?? "DH",
+    handedness: pickHandedness(),
     batting: {
       contact: randInt(rng, 40, 80),
       power: randInt(rng, 40, 80),
@@ -164,6 +176,9 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     id: `p_${seed}_B${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "batter" as const,
+    // Bench players get utility positions (OF spots or C) in rotation
+    position: (["LF", "CF", "C"] as const)[i % 3],
+    handedness: pickHandedness(),
     batting: {
       contact: randInt(rng, 40, 80),
       power: randInt(rng, 40, 80),
@@ -175,6 +190,8 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     id: `p_${seed}_P${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "pitcher" as const,
+    position: i === 0 ? "SP" : "RP",
+    handedness: pickHandedness(),
     batting: {
       contact: randInt(rng, 20, 50),
       power: randInt(rng, 20, 50),

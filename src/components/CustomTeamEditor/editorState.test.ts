@@ -8,9 +8,11 @@ import {
   validateEditorState,
 } from "./editorState";
 
-const makePlayer = (name = "Tom Adams") => ({
+const makePlayer = (name = "Tom Adams", position = "C") => ({
   id: makePlayerId(),
   name,
+  position,
+  handedness: "R" as const,
   contact: 60,
   power: 60,
   speed: 60,
@@ -82,11 +84,21 @@ describe("validateEditorState", () => {
     expect(validateEditorState(state)).toContain("name");
   });
 
-  it("returns empty string for a valid state", () => {
+  it("returns empty string for a valid state with all required positions", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
-      lineup: [makePlayer("Tom Adams")],
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
     };
     expect(validateEditorState(state)).toBe("");
   });
