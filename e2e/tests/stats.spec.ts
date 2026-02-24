@@ -139,18 +139,11 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     await waitForLogLines(page, 3);
 
     // Import the sample fixture (has empty playLog — no rbi fields).
+    // Auto-load closes the modal and activates the game immediately.
     const fixturePath = path.resolve(__dirname, "../fixtures/sample-save.json");
     await page.getByTestId("saves-button").click();
     await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
-    await expect(page.getByTestId("saves-modal").getByText("Mets vs Yankees")).toBeVisible({
-      timeout: 10_000,
-    });
-
-    // Load the imported save.
-    const modal = page.getByTestId("saves-modal");
-    const importedRow = modal.locator("li").filter({ hasText: "Mets vs Yankees" });
-    await importedRow.getByTestId("load-save-button").click();
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
