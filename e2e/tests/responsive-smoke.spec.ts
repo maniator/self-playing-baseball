@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { assertFieldAndLogVisible, resetAppState, startGameViaPlayBall } from "../utils/helpers";
+import {
+  assertFieldAndLogVisible,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 /**
  * Responsive smoke checks — run across desktop, tablet, and mobile projects.
@@ -12,7 +17,7 @@ test.describe("Responsive Smoke", () => {
   });
 
   test("New Game dialog is visible and Play Ball button is reachable", async ({ page }) => {
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    await waitForNewGameDialog(page);
     const btn = page.getByTestId("play-ball-button");
     await expect(btn).toBeVisible();
     const box = await btn.boundingBox();
@@ -22,7 +27,7 @@ test.describe("Responsive Smoke", () => {
   });
 
   test("Play Ball button is in viewport without scrolling", async ({ page }) => {
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    await waitForNewGameDialog(page);
     const btn = page.getByTestId("play-ball-button");
     await expect(btn).toBeVisible();
     const box = await btn.boundingBox();
@@ -34,7 +39,7 @@ test.describe("Responsive Smoke", () => {
   });
 
   test("critical form fields are visible within viewport on New Game dialog", async ({ page }) => {
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    await waitForNewGameDialog(page);
     // These controls must all be fully visible without any scrolling on every viewport.
     const criticalTestIds = [
       "matchup-mode-select",
@@ -57,7 +62,7 @@ test.describe("Responsive Smoke", () => {
   });
 
   test("no horizontal overflow on New Game dialog page", async ({ page }) => {
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    await waitForNewGameDialog(page);
     const overflowDiff = await page.evaluate(
       () => document.documentElement.scrollWidth - window.innerWidth,
     );

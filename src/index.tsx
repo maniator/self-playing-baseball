@@ -4,7 +4,7 @@ import "./index.scss";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
-import Game from "@components/Game";
+import AppShell from "@components/AppShell";
 import { ErrorBoundary } from "@components/Game/ErrorBoundary";
 import { appLog } from "@utils/logger";
 import { initSeedFromUrl } from "@utils/rng";
@@ -20,6 +20,6 @@ if ("serviceWorker" in navigator) {
 
 createRoot(document.getElementById("game")!).render(
   <ErrorBoundary>
-    <Game />
+    <AppShell />
   </ErrorBoundary>,
 );

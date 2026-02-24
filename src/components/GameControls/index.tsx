@@ -16,12 +16,14 @@ type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
   onLoadActivate?: (saveId: string) => void;
+  autoOpenSaves?: boolean;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
   onNewGame,
   gameStarted = false,
   onLoadActivate,
+  autoOpenSaves,
 }) => {
   const {
     speed,
@@ -75,6 +77,7 @@ const GameControls: React.FunctionComponent<Props> = ({
               setManagerMode(setup.managerMode ?? false);
             }}
             onLoadActivate={onLoadActivate}
+            autoOpen={autoOpenSaves}
           />
         </React.Suspense>
         <Button $variant="share" onClick={handleShareReplay}>

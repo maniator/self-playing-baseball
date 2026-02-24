@@ -19,6 +19,7 @@ interface Params {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
+  autoOpen?: boolean;
 }
 
 export interface SavesModalState {
@@ -45,6 +46,7 @@ export const useSavesModal = ({
   onSaveIdChange,
   onSetupRestore,
   onLoadActivate,
+  autoOpen,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const {
@@ -69,6 +71,14 @@ export const useSavesModal = ({
 
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
+
+  // Auto-open on mount when requested (e.g. navigating via "Load Saved Game").
+  React.useEffect(() => {
+    if (autoOpen) open();
+    // We intentionally run this only on mount — `open` is stable and `autoOpen`
+    // is a mount-time flag that does not change while the component is alive.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleSave = () => {
     const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;

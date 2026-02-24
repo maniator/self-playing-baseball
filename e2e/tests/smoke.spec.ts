@@ -9,8 +9,17 @@ import {
 } from "../utils/helpers";
 
 test.describe("Smoke", () => {
-  test("app loads and New Game dialog is visible", async ({ page }) => {
+  test("app loads and shows the Home screen", async ({ page }) => {
     await resetAppState(page);
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("home-new-game-button")).toBeVisible();
+    await expect(page.getByTestId("home-load-saves-button")).toBeVisible();
+    await expect(page.getByTestId("home-manage-teams-button")).toBeVisible();
+  });
+
+  test("New Game button on Home screen shows the New Game dialog", async ({ page }) => {
+    await resetAppState(page);
+    await waitForNewGameDialog(page);
     await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("play-ball-button")).toBeVisible();
   });

@@ -3,6 +3,7 @@ import * as React from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
+import type { InitialGameView } from "@components/AppShell";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
@@ -35,15 +36,20 @@ const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
 interface Props {
   /** Shared buffer populated by GameProviderWrapper's onDispatch callback. */
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
+  /** Determines initial screen: show New Game dialog or auto-open saves modal. */
+  initialView?: InitialGameView;
 }
 
-const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBufferRef }) => {
+const GameInner: React.FunctionComponent<Props> = ({
+  actionBufferRef: externalBufferRef,
+  initialView,
+}) => {
   const { dispatch, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
-  const [dialogOpen, setDialogOpen] = React.useState(true);
+  const [dialogOpen, setDialogOpen] = React.useState(initialView !== "load-saves");
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
@@ -61,15 +67,17 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
   const { saves, createSave } = useSaveStore();
 
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
+  // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
   const restoredRef = React.useRef(false);
   const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
     if (restoredRef.current) return;
+    if (initialView === "load-saves") return;
     const matched = findMatchedSave(saves);
     if (!matched) return;
     restoredRef.current = true;
     setRxAutoSave(matched);
-  }, [saves]);
+  }, [saves, initialView]);
 
   // Restore state from the RxDB save as soon as it is loaded.
   React.useEffect(() => {
@@ -173,6 +181,7 @@ const GameInner: React.FunctionComponent<Props> = ({ actionBufferRef: externalBu
         onNewGame={handleNewGame}
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
+        autoOpenSaves={initialView === "load-saves"}
       />
       <GameBody>
         <FieldPanel>

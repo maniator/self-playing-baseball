@@ -35,6 +35,7 @@ interface Props {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
+  autoOpen?: boolean;
 }
 
 const formatDate = (ts: number): string =>

@@ -21,6 +21,13 @@ test.describe("Visual", () => {
     await disableAnimations(page);
   });
 
+  test("Home screen screenshot", async ({ page }) => {
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("home-screen")).toHaveScreenshot("home-screen.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
   test("New Game dialog screenshot", async ({ page }) => {
     await waitForNewGameDialog(page);
     await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot("new-game-dialog.png", {

@@ -8,6 +8,7 @@ import {
   saveCurrentGame,
   startGameViaPlayBall,
   waitForLogLines,
+  waitForNewGameDialog,
 } from "../utils/helpers";
 
 /**
@@ -25,20 +26,21 @@ test.describe("Modals", () => {
   // ── New Game dialog ────────────────────────────────────────────────────────
 
   test.describe("New Game dialog", () => {
-    test("auto-opens on page load and shows Play Ball button", async ({ page }) => {
+    test("opens via New Game button and shows Play Ball button", async ({ page }) => {
+      await waitForNewGameDialog(page);
       await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("play-ball-button")).toBeVisible();
     });
 
     test("Escape key does NOT close the dialog", async ({ page }) => {
-      await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+      await waitForNewGameDialog(page);
       // The dialog has onCancel={(e) => e.preventDefault()} so Escape is a no-op.
       await page.keyboard.press("Escape");
       await expect(page.getByTestId("new-game-dialog")).toBeVisible();
     });
 
     test("submitting the form (Play Ball!) dismisses the dialog", async ({ page }) => {
-      await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+      await waitForNewGameDialog(page);
       await page.getByTestId("play-ball-button").click();
       await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
       await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
