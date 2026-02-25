@@ -47,7 +47,11 @@ const Game: React.FunctionComponent<Props> = ({
   React.useEffect(() => {
     getDb()
       .then((resolvedDb) => {
-        if (wasDbReset()) setDbResetNotice(true);
+        // Show the reset notice at most once per browser session even if the
+        // component unmounts and remounts (e.g. route change).
+        if (wasDbReset() && sessionStorage.getItem("db-reset-dismissed") !== "1") {
+          setDbResetNotice(true);
+        }
         setDb(resolvedDb);
       })
       .catch((err: unknown) => appLog.error("DB init failed:", err));
@@ -63,7 +67,7 @@ const Game: React.FunctionComponent<Props> = ({
     <RxDatabaseProvider database={db}>
       <GameProviderWrapper onDispatch={onDispatch} announcePreprocessor={announcePreprocessor}>
         {dbResetNotice && (
-          <DbResetNotice>
+          <DbResetNotice data-testid="db-reset-notice">
             <span>
               Your local game data (saves, events, teams, and custom teams) was reset due to an app
               update. Sorry for the inconvenience!
@@ -71,7 +75,11 @@ const Game: React.FunctionComponent<Props> = ({
             <button
               type="button"
               aria-label="Dismiss notice"
-              onClick={() => setDbResetNotice(false)}
+              title="Dismiss notice"
+              onClick={() => {
+                sessionStorage.setItem("db-reset-dismissed", "1");
+                setDbResetNotice(false);
+              }}
             >
               ×
             </button>

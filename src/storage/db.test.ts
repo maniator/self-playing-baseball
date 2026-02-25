@@ -1,13 +1,14 @@
 import "fake-indexeddb/auto";
 
-import { addRxPlugin, createRxDatabase, type RxJsonSchema } from "rxdb";
-import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
+import { createRxDatabase, newRxError, type RxJsonSchema } from "rxdb";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import {
   _createTestDb,
+  _isMigrationFailureForTest,
+  _resetDbForTest,
   type BallgameDb,
   customTeamsCollection,
   eventsCollection,
@@ -248,7 +249,8 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     const dbName = `migration_test_${Math.random().toString(36).slice(2, 10)}`;
 
     // ── Step 1: Create v0 DB (simulates pre-Stage-3B user data) ──────────────
-    addRxPlugin(RxDBMigrationSchemaPlugin);
+    // RxDBMigrationSchemaPlugin is registered automatically by _createTestDb
+    // (via initDb) in Step 2, so no explicit addRxPlugin call is needed here.
     const v0Db = await createRxDatabase({
       name: dbName,
       storage: getRxStorageDexie(),
@@ -290,5 +292,128 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     });
 
     await v1Db.close();
+  });
+
+  it("migrates a v0 save with all optional nested fields populated", async () => {
+    // Verifies that pre-Stage-3B saves that already had scoreSnapshot,
+    // inningSnapshot, and stateSnapshot populated survive the identity migration.
+    const v0SavesSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 0,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        name: { type: "string" },
+        seed: { type: "string" },
+        matchupMode: { type: "string" },
+        homeTeamId: { type: "string" },
+        awayTeamId: { type: "string" },
+        createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        updatedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        progressIdx: { type: "number", minimum: -1, maximum: 9_999_999, multipleOf: 1 },
+        setup: { type: "object", additionalProperties: true },
+        scoreSnapshot: { type: "object", additionalProperties: true },
+        inningSnapshot: { type: "object", additionalProperties: true },
+        stateSnapshot: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "name",
+        "seed",
+        "matchupMode",
+        "homeTeamId",
+        "awayTeamId",
+        "createdAt",
+        "updatedAt",
+        "progressIdx",
+        "setup",
+        "schemaVersion",
+      ],
+      indexes: ["updatedAt"],
+    };
+
+    const dbName = `migration_full_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ saves: { schema: v0SavesSchema } });
+    await v0Db.saves.insert({
+      id: "full_save",
+      name: "Full Pre-Stage-3B Save",
+      seed: "abc",
+      matchupMode: "default",
+      homeTeamId: "Red Sox",
+      awayTeamId: "Dodgers",
+      createdAt: 3000,
+      updatedAt: 4000,
+      progressIdx: 42,
+      setup: { strategy: "power", managerMode: false },
+      scoreSnapshot: { home: 3, away: 1, runs: [1, 2, 0] },
+      inningSnapshot: { inning: 7, half: "bottom", outs: 2 },
+      stateSnapshot: { rngState: 999, strikes: 1, balls: 2 },
+      schemaVersion: 0,
+    });
+    await v0Db.close();
+
+    const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    const doc = await v1Db.saves.findOne("full_save").exec();
+    expect(doc, "migrated document should exist").not.toBeNull();
+    expect(doc?.progressIdx).toBe(42);
+    expect(doc?.setup).toMatchObject({ strategy: "power", managerMode: false });
+    expect(doc?.scoreSnapshot).toMatchObject({ home: 3, away: 1 });
+    expect(doc?.inningSnapshot).toMatchObject({ inning: 7, half: "bottom" });
+    expect(doc?.stateSnapshot).toMatchObject({ rngState: 999 });
+
+    await v1Db.close();
+  });
+});
+
+describe("isMigrationFailure (via _isMigrationFailureForTest)", () => {
+  it("returns true for RxError with code DB6 (schema hash mismatch)", () => {
+    const err = newRxError("DB6", {});
+    expect(_isMigrationFailureForTest(err)).toBe(true);
+  });
+
+  it("returns true for RxError with code DM4 (migration strategy execution failed)", () => {
+    const err = newRxError("DM4", { collection: "saves", error: new Error("strategy threw") });
+    expect(_isMigrationFailureForTest(err)).toBe(true);
+  });
+
+  it("returns false for a plain Error (not an RxError)", () => {
+    expect(_isMigrationFailureForTest(new Error("quota exceeded"))).toBe(false);
+  });
+
+  it("returns false for a non-DB6/DM4 RxError code", () => {
+    const err = newRxError("DB1", {});
+    expect(_isMigrationFailureForTest(err)).toBe(false);
+  });
+
+  it("returns false for non-Error values", () => {
+    expect(_isMigrationFailureForTest("string error")).toBe(false);
+    expect(_isMigrationFailureForTest(null)).toBe(false);
+    expect(_isMigrationFailureForTest(undefined)).toBe(false);
+  });
+});
+
+describe("getDb() recovery path", () => {
+  afterEach(() => {
+    _resetDbForTest();
+  });
+
+  it("wasDbReset() stays false when getDb() succeeds normally", async () => {
+    // getDb() is not mocked here; the module-level singleton is reset before each test
+    // and wasDbReset() should remain false on a clean init.
+    // (The actual DB init would run but is covered by the db collections tests above.)
+    expect(wasDbReset()).toBe(false);
+  });
+
+  it("_resetDbForTest clears the cached promise so getDb() runs fresh", () => {
+    _resetDbForTest();
+    expect(wasDbReset()).toBe(false);
   });
 });

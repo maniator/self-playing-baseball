@@ -243,8 +243,8 @@ export const getDb = (): Promise<BallgameDb> => {
       try {
         await removeRxDatabase("ballgame", getRxStorageDexie());
         resetSucceeded = true;
-      } catch {
-        appLog.warn("DB removal also failed during recovery — proceeding anyway");
+      } catch (removalErr: unknown) {
+        appLog.warn("DB removal also failed during recovery:", removalErr);
       }
       dbWasReset = resetSucceeded;
       return initDb(getRxStorageDexie());
@@ -270,3 +270,19 @@ export const _createTestDb = (
   storage: RxStorage<unknown, unknown>,
   name = `ballgame_test_${Math.random().toString(36).slice(2, 14)}`,
 ): Promise<BallgameDb> => initDb(storage, name);
+
+/**
+ * Resets module-level singleton state so `getDb()` can be re-exercised in tests.
+ * Call this in `afterEach` / `beforeEach` when testing the `getDb()` recovery path.
+ */
+export const _resetDbForTest = (): void => {
+  dbPromise = null;
+  dbWasReset = false;
+};
+
+/**
+ * Exposes the internal `isMigrationFailure` predicate for unit testing.
+ * Returns true for DB6 (schema hash mismatch) and DM4 (strategy execution
+ * failure) RxErrors; false for all other error types.
+ */
+export const _isMigrationFailureForTest = (err: unknown): boolean => isMigrationFailure(err);
