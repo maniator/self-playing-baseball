@@ -39,6 +39,7 @@ interface Props {
   }) => void;
   onLoadActivate?: (saveId: string) => void;
   autoOpen?: boolean;
+  openSavesRequestCount?: number;
   /**
    * When provided, overrides the modal's built-in close action.
    * Called instead of closing the dialog when the user clicks Close,

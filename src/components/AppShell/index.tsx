@@ -16,6 +16,8 @@ const AppShell: React.FunctionComponent = () => {
   const [gameEverMounted, setGameEverMounted] = React.useState(false);
   // Incremented each time the user requests a new game; GameInner watches this.
   const [newGameRequestCount, setNewGameRequestCount] = React.useState(0);
+  // Incremented each time the user navigates via "Load Saved Game"; GameInner watches this.
+  const [loadSavesRequestCount, setLoadSavesRequestCount] = React.useState(0);
 
   const goHome = React.useCallback(() => setScreen("home"), []);
   const goManageTeams = React.useCallback(() => setScreen("manage-teams"), []);
@@ -39,6 +41,7 @@ const AppShell: React.FunctionComponent = () => {
   const handleLoadSaves = React.useCallback(() => {
     setInitialGameView("load-saves");
     setGameEverMounted(true);
+    setLoadSavesRequestCount((c) => c + 1);
     setScreen("game");
   }, []);
 
@@ -50,6 +53,7 @@ const AppShell: React.FunctionComponent = () => {
           <Game
             initialView={initialGameView}
             newGameRequestCount={newGameRequestCount}
+            loadSavesRequestCount={loadSavesRequestCount}
             onBackToHome={handleBackToHome}
             onManageTeams={goManageTeams}
             onGameSessionStarted={handleGameSessionStarted}

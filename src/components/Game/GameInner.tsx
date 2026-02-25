@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -13,6 +14,7 @@ import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
@@ -43,6 +45,11 @@ interface Props {
    * GameInner watches this and re-opens the dialog even when already mounted.
    */
   newGameRequestCount?: number;
+  /**
+   * Incremented each time the user navigates via "Load Saved Game" from Home.
+   * GameInner watches this and opens the Saves modal even when already mounted.
+   */
+  loadSavesRequestCount?: number;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
@@ -55,11 +62,12 @@ const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   initialView,
   newGameRequestCount,
+  loadSavesRequestCount,
   onBackToHome,
   onManageTeams,
   onGameSessionStarted,
 }) => {
-  const { dispatch, teams } = useGameContext();
+  const { dispatch, dispatchLog, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
@@ -81,6 +89,20 @@ const GameInner: React.FunctionComponent<Props> = ({
     }
   }, [newGameRequestCount]);
 
+  // Open the Saves modal when the user navigates via "Load Saved Game" from Home
+  // while Game is already mounted (the prop increments on each request).
+  const [openSavesCount, setOpenSavesCount] = React.useState(initialView === "load-saves" ? 1 : 0);
+  const prevLoadSavesRef = React.useRef(loadSavesRequestCount ?? 0);
+  React.useEffect(() => {
+    const prev = prevLoadSavesRef.current;
+    const next = loadSavesRequestCount ?? 0;
+    if (next > prev) {
+      prevLoadSavesRef.current = next;
+      savesCloseActiveRef.current = true;
+      setOpenSavesCount((c) => c + 1);
+    }
+  }, [loadSavesRequestCount]);
+
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
   const actionBufferRef = externalBufferRef ?? localBufferRef;
@@ -97,6 +119,9 @@ const GameInner: React.FunctionComponent<Props> = ({
 
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
+
+  // Custom teams for resolving human-readable names in the resume banner.
+  const { teams: customTeams } = useCustomTeams();
 
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
   // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
@@ -144,6 +169,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       setManagedTeam(managedTeam);
     }
     dispatch({ type: "reset" });
+    dispatchLog({ type: "reset" });
     dispatch({
       type: "setTeams",
       payload: {
@@ -189,6 +215,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const handleNewGame = () => {
     rxSaveIdRef.current = null;
     dispatch({ type: "reset" });
+    dispatchLog({ type: "reset" });
     setGameActive(false);
     setGameKey((k) => k + 1);
     setDialogOpen(true);
@@ -208,12 +235,19 @@ const GameInner: React.FunctionComponent<Props> = ({
     [onGameSessionStarted],
   );
 
+  // Resolve custom team IDs in the auto-save name to human-readable labels.
+  const autoSaveName = React.useMemo(() => {
+    const name = rxAutoSave?.name;
+    if (!name) return undefined;
+    return name.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
+  }, [rxAutoSave?.name, customTeams]);
+
   return (
     <GameDiv>
       {dialogOpen && (
         <NewGameDialog
           onStart={handleStart}
-          autoSaveName={rxAutoSave?.name}
+          autoSaveName={autoSaveName}
           onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
           onBackToHome={onBackToHome}
           onManageTeams={onManageTeams}
@@ -226,6 +260,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
         autoOpenSaves={initialView === "load-saves"}
+        openSavesRequestCount={openSavesCount}
         onBackToHome={onBackToHome}
         onSavesClose={
           // Ref cleared synchronously in handleLoadActivate; state is belt-and-suspenders.
