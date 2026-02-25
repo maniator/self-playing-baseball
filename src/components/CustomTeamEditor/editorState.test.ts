@@ -13,9 +13,9 @@ const makePlayer = (name = "Tom Adams", position = "C") => ({
   name,
   position,
   handedness: "R" as const,
-  contact: 60,
-  power: 60,
-  speed: 60,
+  contact: 45,
+  power: 45,
+  speed: 45,
 });
 
 const validState = () =>
@@ -174,7 +174,7 @@ describe("validateEditorState", () => {
       ...initEditorState(),
       name: "Eagles",
       abbreviation: "EAG",
-      lineup: [{ ...makePlayer(""), contact: 60, power: 60, speed: 60 }],
+      lineup: [{ ...makePlayer(""), contact: 45, power: 45, speed: 45 }],
     };
     expect(validateEditorState(state)).toContain("name");
   });
@@ -254,6 +254,107 @@ describe("validateEditorState", () => {
       bench: [makePlayer("Bench", "RF")],
     };
     expect(validateEditorState(state)).toBe("");
+  });
+
+  it("hitter within cap passes validation", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+    };
+    expect(validateEditorState(state)).toBe("");
+  });
+
+  it("hitter over hitter cap is rejected with clear message", () => {
+    const overCapPlayer = { ...makePlayer("Big Hitter", "C"), contact: 60, power: 60, speed: 60 };
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        overCapPlayer,
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("Big Hitter");
+    expect(err).toContain("180");
+    expect(err).toContain("150");
+  });
+
+  it("pitcher within pitcher cap passes validation", () => {
+    const pitcher = {
+      ...makePlayer("Good Pitcher"),
+      velocity: 50,
+      control: 55,
+      movement: 50,
+    };
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+      pitchers: [pitcher],
+    };
+    expect(validateEditorState(state)).toBe("");
+  });
+
+  it("pitcher over pitcher cap is rejected with clear message", () => {
+    const overCapPitcher = {
+      ...makePlayer("Fire Pitcher"),
+      velocity: 70,
+      control: 70,
+      movement: 70,
+    };
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+      pitchers: [overCapPitcher],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("Fire Pitcher");
+    expect(err).toContain("210");
+    expect(err).toContain("160");
   });
 });
 

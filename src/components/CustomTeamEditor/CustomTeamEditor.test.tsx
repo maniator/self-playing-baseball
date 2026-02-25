@@ -231,7 +231,7 @@ describe("CustomTeamEditor — edit mode", () => {
     id,
     name,
     role: "batter" as const,
-    batting: { contact: 70, power: 65, speed: 60 },
+    batting: { contact: 45, power: 45, speed: 45 },
     position,
     handedness: "R" as const,
   });

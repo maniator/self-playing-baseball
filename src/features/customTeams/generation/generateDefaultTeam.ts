@@ -167,10 +167,11 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: BATTING_POSITIONS[i] ?? "DH",
     handedness: pickHandedness(),
+    // Cap-compliant ranges: max sum = 3 × 50 = 150 ≤ HITTER_STAT_CAP (150).
     batting: {
-      contact: randInt(rng, 40, 80),
-      power: randInt(rng, 40, 80),
-      speed: randInt(rng, 40, 80),
+      contact: randInt(rng, 20, 50),
+      power: randInt(rng, 20, 50),
+      speed: randInt(rng, 20, 50),
     },
   }));
 
@@ -181,10 +182,11 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     // Bench players get utility positions (OF spots or C) in rotation
     position: (["LF", "CF", "C"] as const)[i % 3],
     handedness: pickHandedness(),
+    // Cap-compliant ranges: max sum = 3 × 50 = 150 ≤ HITTER_STAT_CAP (150).
     batting: {
-      contact: randInt(rng, 40, 80),
-      power: randInt(rng, 40, 80),
-      speed: randInt(rng, 40, 80),
+      contact: randInt(rng, 20, 50),
+      power: randInt(rng, 20, 50),
+      speed: randInt(rng, 20, 50),
     },
   }));
 
@@ -199,10 +201,11 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
       power: randInt(rng, 20, 50),
       speed: randInt(rng, 20, 50),
     },
+    // Cap-compliant ranges: max sum = 3 × 53 = 159 ≤ PITCHER_STAT_CAP (160).
     pitching: {
-      velocity: randInt(rng, 40, 80),
-      control: randInt(rng, 40, 80),
-      movement: randInt(rng, 40, 80),
+      velocity: randInt(rng, 25, 53),
+      control: randInt(rng, 25, 53),
+      movement: randInt(rng, 25, 53),
     },
   }));
 

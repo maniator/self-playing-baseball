@@ -332,3 +332,12 @@ export const GenerateBtn = styled.button`
     outline-offset: 2px;
   }
 `;
+
+export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: ${({ $overCap }) => ($overCap ? "#ff8888" : "#6680aa")};
+`;
