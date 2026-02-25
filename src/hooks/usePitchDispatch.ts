@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import type { PitchingRole } from "@components/SubstitutionPanel";
 import { Hit } from "@constants/hitTypes";
 import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
 import { makeAiPitchingDecision, makeAiTacticalDecision } from "@context/aiManager";
@@ -22,6 +23,9 @@ export const usePitchDispatch = (
   skipDecisionRef: React.MutableRefObject<boolean>,
   strikesRef: React.MutableRefObject<number>,
   dispatchLog?: (action: LogAction) => void,
+  pitcherRolesRef?: React.MutableRefObject<
+    [Record<string, PitchingRole>, Record<string, PitchingRole>]
+  >,
 ): React.MutableRefObject<() => void> => {
   const handleClickButton = React.useCallback(() => {
     const currentState = gameStateRef.current;
@@ -72,7 +76,8 @@ export const usePitchDispatch = (
     if (currentState.balls === 0 && currentState.strikes === 0) {
       const pitchingTeamIdx = (1 - currentState.atBat) as 0 | 1;
       if (isFieldingUnmanaged) {
-        const aiDecision = makeAiPitchingDecision(currentState as State, pitchingTeamIdx);
+        const roles = pitcherRolesRef?.current[pitchingTeamIdx] ?? {};
+        const aiDecision = makeAiPitchingDecision(currentState as State, pitchingTeamIdx, roles);
         if (aiDecision.kind === "pitching_change") {
           dispatch({
             type: "make_substitution",
@@ -196,6 +201,7 @@ export const usePitchDispatch = (
     gameStateRef,
     managedTeamRef,
     managerModeRef,
+    pitcherRolesRef,
     skipDecisionRef,
     strategyRef,
     strikesRef,

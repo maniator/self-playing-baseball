@@ -138,5 +138,11 @@ export function validateCustomTeamForGame(team: CustomTeamDoc): string | null {
       return `"${team.name}" has a lineup player with no name. Edit the team to fix it before starting.`;
     }
   }
+  // Validate each pitcher has a non-empty name.
+  for (const pitcher of pitchers) {
+    if (!pitcher.name || !pitcher.name.trim()) {
+      return `"${team.name}" has a pitcher with no name. Edit the team to fix it before starting.`;
+    }
+  }
   return null;
 }

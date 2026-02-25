@@ -54,8 +54,8 @@ const isRelieverEligible = (role?: PitchingRole): boolean =>
   role === "RP" || role === "SP/RP" || role === undefined;
 
 /** Fatigue threshold above which a pitching change is strongly recommended. */
-const FATIGUE_HIGH = 15;
-const FATIGUE_MED = 9;
+const FATIGUE_HIGH = 18;
+const FATIGUE_MED = 12;
 
 const SubstitutionPanel: React.FunctionComponent<Props> = ({
   teamName,
