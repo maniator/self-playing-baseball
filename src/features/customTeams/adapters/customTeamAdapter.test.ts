@@ -152,4 +152,9 @@ describe("resolveTeamLabel", () => {
     expect(result).not.toContain("custom:");
     expect(result.length).toBeLessThanOrEqual(8);
   });
+
+  it("resolves a custom team ID that contains hyphens", () => {
+    const teams = [{ ...makeTeam(), id: "ct-hyphen-id", city: "Test", name: "Rockets" }];
+    expect(resolveTeamLabel("custom:ct-hyphen-id", teams)).toBe("Test Rockets");
+  });
 });
