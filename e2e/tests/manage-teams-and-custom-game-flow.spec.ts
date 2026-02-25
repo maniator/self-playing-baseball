@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall, waitForNewGameDialog } from "../utils/helpers";
+import {
+  resetAppState,
+  startGameViaPlayBall,
+  waitForLogLines,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 test.describe("Manage Teams — team list and CRUD", () => {
   test.beforeEach(async ({ page }) => {
@@ -227,5 +232,42 @@ test.describe("New Game dialog — custom team picker", () => {
 
     await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("play-by-play log shows custom team display names, not raw custom IDs", async ({ page }) => {
+    // Create two custom teams.
+    await page.getByTestId("home-manage-teams-button").click();
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Scarlet Hawks");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Scarlet Hawks")).toBeVisible({ timeout: 5_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Cobalt Wolves");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Cobalt Wolves")).toBeVisible({ timeout: 5_000 });
+
+    // Start a game with the two custom teams.
+    await page.getByTestId("manage-teams-back-button").click();
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("new-game-custom-teams-tab").click();
+    await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
+      timeout: 5_000,
+    });
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    // Wait for several play-by-play entries.
+    await waitForLogLines(page, 5, 30_000);
+
+    // Collect all visible log text.
+    const logText = await page.getByTestId("play-by-play-log").textContent();
+
+    // No raw custom ID fragments must appear in the log.
+    expect(logText).not.toMatch(/custom:ct_/);
   });
 });
