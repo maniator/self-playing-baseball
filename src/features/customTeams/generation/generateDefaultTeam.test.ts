@@ -23,11 +23,11 @@ describe("generateDefaultCustomTeamDraft", () => {
     expect(a.city !== b.city || aFirstPlayer !== bFirstPlayer).toBe(true);
   });
 
-  it("output has correct roster shape: 9 lineup, 2 bench, 3 pitchers", () => {
+  it("output has correct roster shape: 9 lineup, 4 bench, 5 pitchers", () => {
     const draft = generateDefaultCustomTeamDraft(42);
     expect(draft.roster.lineup).toHaveLength(9);
-    expect(draft.roster.bench).toHaveLength(2);
-    expect(draft.roster.pitchers).toHaveLength(3);
+    expect(draft.roster.bench).toHaveLength(4);
+    expect(draft.roster.pitchers).toHaveLength(5);
   });
 
   it("batter batting stats are in [20, 50]", () => {
@@ -123,8 +123,12 @@ describe("generateDefaultCustomTeamDraft", () => {
     for (const p of draft.roster.pitchers) {
       expect(["SP", "RP"]).toContain(p.position);
     }
-    // First pitcher is SP
+    // First pitcher is SP; bullpen pitchers can be RP or SP/RP
     expect(draft.roster.pitchers[0].position).toBe("SP");
+    expect(draft.roster.pitchers[0].pitchingRole).toBe("SP");
+    for (const p of draft.roster.pitchers.slice(1)) {
+      expect(["RP", "SP/RP"]).toContain(p.pitchingRole);
+    }
   });
 
   it("all players have a handedness value of R, L, or S", () => {
@@ -244,5 +248,46 @@ describe("generateDefaultCustomTeamDraft — seed variability", () => {
         expect(positions).toContain(pos);
       }
     }
+  });
+
+  it("bench positions are not always the same fixed pattern across seeds", () => {
+    // With randomized bench positions, different seeds should produce different bench position sets.
+    const seeds = [1, 2, 3, 4, 5, 100, 200, 300, 400, 500];
+    const benchPatterns = seeds.map((s) =>
+      generateDefaultCustomTeamDraft(s)
+        .roster.bench.map((p) => p.position)
+        .join(","),
+    );
+    const unique = new Set(benchPatterns);
+    expect(unique.size).toBeGreaterThan(1);
+  });
+
+  it("same seed produces the same bench composition (deterministic)", () => {
+    const a = generateDefaultCustomTeamDraft("bench-det");
+    const b = generateDefaultCustomTeamDraft("bench-det");
+    const aBench = a.roster.bench.map((p) => p.position);
+    const bBench = b.roster.bench.map((p) => p.position);
+    expect(aBench).toEqual(bBench);
+  });
+
+  it("bullpen role composition is not always the same fixed pattern across seeds", () => {
+    // Bullpen relievers (indices 1-4) should have varied SP/RP role patterns across seeds.
+    const seeds = [1, 2, 3, 4, 5, 100, 200, 300, 400, 500];
+    const bullpenPatterns = seeds.map((s) =>
+      generateDefaultCustomTeamDraft(s)
+        .roster.pitchers.slice(1)
+        .map((p) => p.pitchingRole)
+        .join(","),
+    );
+    const unique = new Set(bullpenPatterns);
+    expect(unique.size).toBeGreaterThan(1);
+  });
+
+  it("same seed produces the same bullpen composition (deterministic)", () => {
+    const a = generateDefaultCustomTeamDraft("bullpen-det");
+    const b = generateDefaultCustomTeamDraft("bullpen-det");
+    const aRoles = a.roster.pitchers.map((p) => p.pitchingRole);
+    const bRoles = b.roster.pitchers.map((p) => p.pitchingRole);
+    expect(aRoles).toEqual(bRoles);
   });
 });
