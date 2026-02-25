@@ -212,11 +212,35 @@ vi.mock("@hooks/useSaveStore", () => ({
 **Dev-mode plugin** (`src/storage/db.ts`):  
 `RxDBDevModePlugin` is registered via a dynamic `import()` inside `initDb`, guarded by `import.meta.env.MODE === "development"`. Dead-code-eliminated in production; never loaded in tests.
 
+### Schema versioning & migration
+
+**Any change to a collection's JSON schema MUST follow this checklist or it will break production for existing users (RxDB DB6 error).**
+
+1. **Bump `version`** in the collection's `RxJsonSchema` (e.g. `version: 1` → `version: 2`).
+2. **Add a migration strategy** for the new version in the `migrationStrategies` object passed to `addCollections`. The strategy must be a pure function that accepts an old document and returns a valid new document — it must **never throw**.
+3. **Write defensive strategies** — always handle missing or `undefined` fields with a fallback value (`?? default`). Never assume the old document is complete.
+4. **Test the upgrade path** — add a unit test that creates a real DB at the old schema version, inserts a legacy document, closes the DB, reopens it with the new code, and asserts all fields survive migration intact. See `src/storage/db.test.ts` `schema migration: v0 → v1` for the pattern.
+5. **Never change a schema's `properties` or `required` at the same version** — doing so changes the schema hash and causes RxDB to throw DB6 for every existing user. If the change is purely descriptive (adding `title`/`description` annotations) and `additionalProperties: true` is set, it is still a hash change.
+
+```ts
+// ✅ Correct: bump version + safe identity strategy
+{ version: 2,
+  migrationStrategies: {
+    2: (oldDoc) => ({ ...oldDoc, newField: oldDoc.newField ?? "default" }),
+  }
+}
+
+// ❌ Wrong: schema changed but version unchanged — DB6 for all existing users
+{ version: 1, /* properties added/changed */ }
+```
+
+**Last-resort fallback** (`getDb()` in `src/storage/db.ts`): if `initDb()` throws with RxError code `DB6` (hash mismatch at same version) or `DM4` (migration strategy execution failed), the entire database is wiped and recreated, and a user-facing reset notice is shown. This fallback exists only as a safety net — it must never be the primary recovery path. Every schema change must have a proper migration strategy so the fallback never fires.
+
 ### Collections
 
 | Collection | Purpose |
 |---|---|
-| `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`) |
+| `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.** |
 | `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. |
 | `teams` | MLB team cache (`TeamDoc`). Each team individually upserted/deleted by numeric MLB ID. |
 
@@ -487,6 +511,7 @@ Once `update-visual-snapshots` commits the new baselines, a *second* `playwright
 - **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.
 - **`_createTestDb` requires `fake-indexeddb/auto`** — import it at the top of any test file that calls `_createTestDb`. It is a dev-only dependency.
 - **`useSaveStore` requires `<RxDatabaseProvider>`** in the tree. Mock the hook in component tests with `vi.mock("@hooks/useSaveStore", ...)`.
+- **RxDB schema changes MUST bump `version` and add a migration strategy** — any change to a collection's `properties`, `required`, or `indexes` at the same version number causes a DB6 schema hash mismatch for every existing user, blocking app startup. Always: (1) increment `version`, (2) add a `migrationStrategies` entry that never throws, (3) add an upgrade-path unit test. See `### Schema versioning & migration` in the RxDB section above.
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden.
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.

@@ -31,6 +31,14 @@ You are an expert TypeScript/React engineer specializing in **behavior-preservin
 - `GameContext` must only be consumed via `useGameContext()` — never via `React.useContext(GameContext)` directly.
 - The `Function` type is banned. Use explicit signatures: `(action: GameAction) => void`.
 
+## Storage / RxDB schema rules
+
+If a refactor touches any RxDB collection schema (`src/storage/db.ts`):
+
+- **Do not change `properties`, `required`, or `indexes` without bumping `version`.** Even purely descriptive changes (adding `title`/`description` annotations) alter the schema hash and cause DB6 for all existing users.
+- **Any version bump requires a migration strategy** — a pure function in `migrationStrategies` that never throws and returns a valid document for the new schema. Use `?? defaultValue` for any field that may be absent in old documents.
+- **Add an upgrade-path unit test** — create a DB at the old version, insert a legacy document, close, reopen with new code, assert all fields survive. See `src/storage/db.test.ts` `schema migration: v0 → v1` for the pattern.
+
 ## Testing rules
 
 - Tests are co-located next to source files (e.g., `strategy.ts` → `strategy.test.ts`).

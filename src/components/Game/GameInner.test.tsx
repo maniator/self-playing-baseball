@@ -480,3 +480,54 @@ describe("GameInner — custom team label resolution", () => {
     expect(restoredTeams[1]).toBe("Home");
   });
 });
+
+describe("Game — DbResetNotice", () => {
+  beforeEach(() => {
+    sessionStorage.clear();
+  });
+
+  it("shows the reset notice when wasDbReset returns true", async () => {
+    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    await act(async () => {
+      render(<Game />);
+    });
+    expect(screen.getByTestId("db-reset-notice")).toBeInTheDocument();
+  });
+
+  it("hides the notice after clicking the dismiss button", async () => {
+    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    await act(async () => {
+      render(<Game />);
+    });
+    const notice = screen.getByTestId("db-reset-notice");
+    expect(notice).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /dismiss notice/i }));
+    expect(screen.queryByTestId("db-reset-notice")).not.toBeInTheDocument();
+  });
+
+  it("does not show the notice when wasDbReset returns false", async () => {
+    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(false);
+    await act(async () => {
+      render(<Game />);
+    });
+    expect(screen.queryByTestId("db-reset-notice")).not.toBeInTheDocument();
+  });
+
+  it("does not show the notice if already dismissed this session (sessionStorage guard)", async () => {
+    sessionStorage.setItem("db-reset-dismissed", "1");
+    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    await act(async () => {
+      render(<Game />);
+    });
+    expect(screen.queryByTestId("db-reset-notice")).not.toBeInTheDocument();
+  });
+
+  it("dismiss sets sessionStorage so notice stays gone on remount", async () => {
+    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    await act(async () => {
+      render(<Game />);
+    });
+    fireEvent.click(screen.getByRole("button", { name: /dismiss notice/i }));
+    expect(sessionStorage.getItem("db-reset-dismissed")).toBe("1");
+  });
+});

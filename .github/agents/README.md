@@ -60,10 +60,11 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 
 ### `rxdb-save-integrity`
 
-**When to use:** RxDB persistence changes — save/load, export/import, event-log structure, `SaveStore` API, or `stateSnapshot` format.
+**When to use:** RxDB persistence changes — save/load, export/import, event-log structure, `SaveStore` API, `stateSnapshot` format, or **any change to a collection's JSON schema**.
 
 **Key guardrails:**
 - Treats FNV-1a export signature and monotonic event `idx` as critical invariants
+- **Schema changes require a version bump + migration strategy that never throws** — any properties change at the same version causes DB6 for all existing users
 - Tests malformed import payloads, collisions, and partial-write safety
 - Verifies correctness under long autoplay sessions (hundreds of events)
 - Keeps `save-load.spec.ts` and `import.spec.ts` E2E tests passing
@@ -78,5 +79,6 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 | Snapshot environment | Regenerate baselines inside `mcr.microsoft.com/playwright:v1.58.2-noble` or via the `update-visual-snapshots` workflow to match CI fonts/libs. |
 | Copilot setup workflow | `copilot-setup-steps.yml` must not use `container:` — known bootstrap shell compatibility issue. |
 | Reducer cycle order | `strategy → advanceRunners → gameOver → playerOut → hitBall → buntAttempt → playerActions → reducer`. No circular imports. |
+| RxDB schema versioning | Any change to a collection's `properties`, `required`, or `indexes` at the same `version` causes DB6 for all existing users. Always bump `version`, add a migration strategy that never throws, and add an upgrade-path unit test. |
 | `useSaveStore` in tests | Requires `<RxDatabaseProvider>` in tree. Always mock with `vi.mock("@hooks/useSaveStore", ...)` in component tests. |
 | `dvh` vs `vh` | Always use `dvh` for modal `max-height` — `100vh` on mobile can exceed visible viewport. |
