@@ -66,7 +66,7 @@ describe("generateDefaultCustomTeamDraft", () => {
     expect(new Set(ids).size).toBe(ids.length);
   });
 
-  it("pitches have pitching stats", () => {
+  it("pitchers have pitching stats", () => {
     const draft = generateDefaultCustomTeamDraft("pitchingstats");
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();

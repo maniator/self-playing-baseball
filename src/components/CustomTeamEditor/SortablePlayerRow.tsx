@@ -10,6 +10,14 @@ import {
   PITCHER_POSITION_OPTIONS,
 } from "./playerConstants";
 import {
+  HITTER_STAT_CAP,
+  hitterRemaining,
+  hitterStatTotal,
+  PITCHER_STAT_CAP,
+  pitcherRemaining,
+  pitcherStatTotal,
+} from "./statBudget";
+import {
   FieldLabel,
   MetaGroup,
   PlayerCard,
@@ -17,6 +25,7 @@ import {
   PlayerMeta,
   RemoveBtn,
   SelectInput,
+  StatBudgetRow,
   StatInput,
   StatLabel,
   StatRow,
@@ -135,13 +144,48 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
         </MetaGroup>
       </PlayerMeta>
       <StatsGrid>
-        {stat("Contact", "contact", `contact-${player.id}`)}
-        {stat("Power", "power", `power-${player.id}`)}
-        {stat("Speed", "speed", `speed-${player.id}`)}
-        {isPitcher && stat("Velocity", "velocity", `velocity-${player.id}`)}
-        {isPitcher && stat("Control", "control", `control-${player.id}`)}
-        {isPitcher && stat("Movement", "movement", `movement-${player.id}`)}
+        {isPitcher ? (
+          <>
+            {stat("Velocity", "velocity", `velocity-${player.id}`)}
+            {stat("Control", "control", `control-${player.id}`)}
+            {stat("Movement", "movement", `movement-${player.id}`)}
+          </>
+        ) : (
+          <>
+            {stat("Contact", "contact", `contact-${player.id}`)}
+            {stat("Power", "power", `power-${player.id}`)}
+            {stat("Speed", "speed", `speed-${player.id}`)}
+          </>
+        )}
       </StatsGrid>
+      {isPitcher
+        ? (() => {
+            const vel = player.velocity ?? 0;
+            const ctrl = player.control ?? 0;
+            const mov = player.movement ?? 0;
+            const pitcherTotal = pitcherStatTotal(vel, ctrl, mov);
+            const pitcherRem = pitcherRemaining(vel, ctrl, mov);
+            const overCap = pitcherRem < 0;
+            return (
+              <StatBudgetRow $overCap={overCap}>
+                {overCap
+                  ? `⚠ ${pitcherTotal} / ${PITCHER_STAT_CAP} — ${Math.abs(pitcherRem)} over cap`
+                  : `Total: ${pitcherTotal} / ${PITCHER_STAT_CAP} (${pitcherRem} remaining)`}
+              </StatBudgetRow>
+            );
+          })()
+        : (() => {
+            const hitterTotal = hitterStatTotal(player.contact, player.power, player.speed);
+            const hitterRem = hitterRemaining(player.contact, player.power, player.speed);
+            const overCap = hitterRem < 0;
+            return (
+              <StatBudgetRow $overCap={overCap}>
+                {overCap
+                  ? `⚠ ${hitterTotal} / ${HITTER_STAT_CAP} — ${Math.abs(hitterRem)} over cap`
+                  : `Total: ${hitterTotal} / ${HITTER_STAT_CAP} (${hitterRem} remaining)`}
+              </StatBudgetRow>
+            );
+          })()}
     </PlayerCard>
   );
 };

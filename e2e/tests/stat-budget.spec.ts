@@ -99,21 +99,13 @@ test.describe("Stat Budget — over-cap save blocking", () => {
   test("save is blocked and error shown when a player is over the hitter stat cap", async ({
     page,
   }) => {
-    await page.getByTestId("home-manage-teams-button").click();
-    await page.getByTestId("manage-teams-create-button").click();
+    await openCreateEditorWithDefaults(page);
     await page.getByTestId("custom-team-name-input").fill("Over Cap Team");
-    await page.getByTestId("custom-team-abbreviation-input").fill("OCP");
-    await page.getByTestId("custom-team-add-lineup-player-button").click();
-    const nameInput = page
-      .getByTestId("custom-team-lineup-section")
-      .getByRole("textbox", { name: /player name/i })
-      .first();
-    await nameInput.fill("Maxed Player");
-    // Max all sliders (contact + power + speed = 300 >> 150 cap)
-    const sliders = page.getByTestId("custom-team-lineup-section").locator('input[type="range"]');
-    const sliderCount = await sliders.count();
-    for (let i = 0; i < sliderCount; i++) {
-      await sliders.nth(i).fill("100");
+    // Rename the first lineup player and max their stats (contact + power + speed = 300 >> 150 cap)
+    const lineupSection = page.getByTestId("custom-team-lineup-section");
+    await lineupSection.locator('[aria-label="Player name"]').first().fill("Maxed Player");
+    for (let i = 0; i < 3; i++) {
+      await lineupSection.locator('input[type="range"]').nth(i).fill("100");
     }
     await page.getByTestId("custom-team-save-button").click();
     const errorSummary = page.getByTestId("custom-team-editor-error-summary");
@@ -124,20 +116,13 @@ test.describe("Stat Budget — over-cap save blocking", () => {
   });
 
   test("over-cap error identifies the player by name", async ({ page }) => {
-    await page.getByTestId("home-manage-teams-button").click();
-    await page.getByTestId("manage-teams-create-button").click();
+    await openCreateEditorWithDefaults(page);
     await page.getByTestId("custom-team-name-input").fill("Named Cap Team");
-    await page.getByTestId("custom-team-abbreviation-input").fill("NCT");
-    await page.getByTestId("custom-team-add-lineup-player-button").click();
-    const nameInput = page
-      .getByTestId("custom-team-lineup-section")
-      .getByRole("textbox", { name: /player name/i })
-      .first();
-    await nameInput.fill("Homer Simpson");
-    const sliders = page.getByTestId("custom-team-lineup-section").locator('input[type="range"]');
-    const sliderCount = await sliders.count();
-    for (let i = 0; i < sliderCount; i++) {
-      await sliders.nth(i).fill("100");
+    // Name the first lineup player and max their stats
+    const lineupSection = page.getByTestId("custom-team-lineup-section");
+    await lineupSection.locator('[aria-label="Player name"]').first().fill("Homer Simpson");
+    for (let i = 0; i < 3; i++) {
+      await lineupSection.locator('input[type="range"]').nth(i).fill("100");
     }
     await page.getByTestId("custom-team-save-button").click();
     const errorSummary = page.getByTestId("custom-team-editor-error-summary");
@@ -148,20 +133,11 @@ test.describe("Stat Budget — over-cap save blocking", () => {
   test("save error hint near Save/Cancel buttons is visible on over-cap failure", async ({
     page,
   }) => {
-    await page.getByTestId("home-manage-teams-button").click();
-    await page.getByTestId("manage-teams-create-button").click();
+    await openCreateEditorWithDefaults(page);
     await page.getByTestId("custom-team-name-input").fill("Hint Check Team");
-    await page.getByTestId("custom-team-abbreviation-input").fill("HCT");
-    await page.getByTestId("custom-team-add-lineup-player-button").click();
-    const nameInput = page
-      .getByTestId("custom-team-lineup-section")
-      .getByRole("textbox", { name: /player name/i })
-      .first();
-    await nameInput.fill("Big Bat");
-    const sliders = page.getByTestId("custom-team-lineup-section").locator('input[type="range"]');
-    const sliderCount = await sliders.count();
-    for (let i = 0; i < sliderCount; i++) {
-      await sliders.nth(i).fill("100");
+    const lineupSection = page.getByTestId("custom-team-lineup-section");
+    for (let i = 0; i < 3; i++) {
+      await lineupSection.locator('input[type="range"]').nth(i).fill("100");
     }
     await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByTestId("custom-team-save-error-hint")).toBeVisible({ timeout: 3_000 });
