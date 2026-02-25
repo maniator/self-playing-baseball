@@ -180,7 +180,8 @@ const warnBattingStatsInvariant = (
 };
 
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
-  const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
+  const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides, lineupPositions } =
+    useGameContext();
   const { teams: customTeams } = useCustomTeams();
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
@@ -221,9 +222,16 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   }, [teams, activeTeam, lineupOrder, playerOverrides]);
 
   // Build slot→position map for the active team.
-  // Custom teams carry position on their roster docs; generated rosters use
-  // the positional archetype assigned by generateRoster.
+  // lineupPositions holds the in-game defensive slot assignment set at game-start
+  // (which stays fixed on substitution, preventing duplicate positions after a sub).
+  // Falls back to per-player natural positions for stock teams / older saves where
+  // lineupPositions is empty.
   const slotPositions = React.useMemo(() => {
+    const storedPositions = lineupPositions[activeTeam];
+    if (storedPositions.length > 0) {
+      return storedPositions.slice(0, 9);
+    }
+    // Fallback: derive from roster natural positions (stock teams / older saves).
     const teamId = teams[activeTeam];
     const roster = generateRoster(teamId);
     const order =
@@ -232,7 +240,6 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
         : roster.batters.map((p) => p.id);
     const idToGenerated = new Map(roster.batters.map((p) => [p.id, p.position]));
 
-    // For custom teams, build a position lookup from the stored roster doc.
     let customPositions: Map<string, string> | undefined;
     if (teamId.startsWith("custom:")) {
       const customId = teamId.slice("custom:".length);
@@ -244,7 +251,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     }
 
     return order.slice(0, 9).map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
-  }, [teams, activeTeam, lineupOrder, customTeams]);
+  }, [lineupPositions, teams, activeTeam, lineupOrder, customTeams]);
 
   const selectedStats = selectedSlot != null ? stats[selectedSlot] : null;
   const selectedName =

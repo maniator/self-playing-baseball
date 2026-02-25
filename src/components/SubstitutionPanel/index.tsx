@@ -21,7 +21,6 @@ type SubstitutePayload =
   | { kind: "pitcher"; pitcherIdx: number };
 
 type Props = {
-  teamIdx: 0 | 1;
   teamName: string;
   lineupOrder: string[];
   rosterBench: string[];
@@ -57,6 +56,32 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
     const alt = rosterPitchers.findIndex((_, i) => i !== activePitcherIdx);
     return alt >= 0 ? alt : activePitcherIdx;
   });
+
+  // Re-clamp lineup index when lineup length changes (e.g. team change or substitution).
+  React.useEffect(() => {
+    setSelectedLineupIdx((prev) => {
+      if (lineupOrder.length === 0) return 0;
+      const max = lineupOrder.length - 1;
+      return prev > max ? max : prev < 0 ? 0 : prev;
+    });
+  }, [lineupOrder.length]);
+
+  // Re-sync bench selection when bench roster changes.
+  React.useEffect(() => {
+    setSelectedBenchId((prev) => {
+      if (rosterBench.length === 0) return "";
+      if (prev && rosterBench.includes(prev)) return prev;
+      return rosterBench[0];
+    });
+  }, [rosterBench]);
+
+  // Re-sync pitcher selection when pitcher roster or active pitcher changes.
+  React.useEffect(() => {
+    setSelectedPitcherIdx(() => {
+      const alt = rosterPitchers.findIndex((_, i) => i !== activePitcherIdx);
+      return alt >= 0 ? alt : activePitcherIdx;
+    });
+  }, [rosterPitchers, activePitcherIdx]);
 
   const hasBench = rosterBench.length > 0;
   const currentPitcherId = rosterPitchers[activePitcherIdx] ?? "";

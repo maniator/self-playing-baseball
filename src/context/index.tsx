@@ -102,6 +102,15 @@ export interface State {
   rosterPitchers: [string[], string[]];
   /** Index into rosterPitchers of the currently active pitcher per team. [away, home] */
   activePitcherIdx: [number, number];
+  /**
+   * Defensive slot assignment for each batting-order position per team. [away, home]
+   * Each entry is the position (e.g. "SS", "CF") that the player in that batting slot
+   * is assigned to play for this game. Populated from the roster at game-start via
+   * `setTeams`; unchanged on substitution so the slot's assignment stays consistent
+   * even after a bench player with a different natural position comes in.
+   * Empty array = fall back to per-player natural position (stock teams / older saves).
+   */
+  lineupPositions: [string[], string[]];
 }
 
 export interface ContextValue extends State {

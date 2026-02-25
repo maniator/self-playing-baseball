@@ -36,7 +36,7 @@ const SubstitutionButton: React.FunctionComponent<{
       </SubButton>
       {showPanel && (
         <SubstitutionPanel
-          teamIdx={managedTeam}
+          key={managedTeam}
           teamName={teams[managedTeam] ?? "Team"}
           lineupOrder={lineupOrder[managedTeam]}
           rosterBench={rosterBench[managedTeam]}

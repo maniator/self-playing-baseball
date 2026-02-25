@@ -56,6 +56,7 @@ describe("createFreshGameState", () => {
     expect(state.rosterBench).toEqual([[], []]);
     expect(state.rosterPitchers).toEqual([[], []]);
     expect(state.activePitcherIdx).toEqual([0, 0]);
+    expect(state.lineupPositions).toEqual([[], []]);
   });
 
   it("returns different instances on each call (no shared references)", () => {
@@ -220,6 +221,14 @@ describe("backfillRestoredState", () => {
     delete restored.activePitcherIdx;
     const result = backfillRestoredState(restored);
     expect(result.activePitcherIdx).toEqual([0, 0]);
+  });
+
+  it("defaults lineupPositions to [[],[]] when missing (Stage 3B backfill)", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.lineupPositions;
+    const result = backfillRestoredState(restored);
+    expect(result.lineupPositions).toEqual([[], []]);
   });
 
   // -------------------------------------------------------------------------

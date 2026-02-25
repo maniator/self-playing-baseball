@@ -5,8 +5,7 @@ import {
   hitterStatTotal,
   PITCHER_STAT_CAP,
   pitcherStatTotal,
-} from "@components/CustomTeamEditor/statBudget";
-
+} from "../statBudget";
 import { generateDefaultCustomTeamDraft, makeAbbreviation } from "./generateDefaultTeam";
 
 describe("generateDefaultCustomTeamDraft", () => {

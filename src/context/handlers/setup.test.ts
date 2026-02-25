@@ -101,4 +101,57 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     // playerOverrides should remain unchanged (not reset)
     expect(next?.playerOverrides).toEqual(originalOverrides);
   });
+
+  it("computes lineupPositions from lineupOrder + playerOverrides positions", () => {
+    const state = makeState();
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [
+          ["p1", "p2"],
+          ["p3", "p4"],
+        ] as [string[], string[]],
+        playerOverrides: [
+          { p1: { position: "SS" }, p2: { position: "CF" } },
+          { p3: { position: "1B" }, p4: { position: "LF" } },
+        ] as never,
+      },
+    });
+    expect(next?.lineupPositions).toEqual([
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ]);
+  });
+
+  it("lineupPositions entries default to empty string when position is absent", () => {
+    const state = makeState();
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [["p1", "p2"], ["p3"]] as [string[], string[]],
+        playerOverrides: [{ p1: { nickname: "Alice" } }, {}] as never,
+      },
+    });
+    expect(next?.lineupPositions?.[0]).toEqual(["", ""]);
+    expect(next?.lineupPositions?.[1]).toEqual([""]);
+  });
+
+  it("preserves existing lineupPositions when lineupOrder is not provided", () => {
+    const state = makeState({
+      lineupPositions: [
+        ["SS", "CF"],
+        ["1B", "LF"],
+      ] as [string[], string[]],
+    });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: { teams: ["A", "B"] },
+    });
+    expect(next?.lineupPositions).toEqual([
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ]);
+  });
 });

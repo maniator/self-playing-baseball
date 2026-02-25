@@ -5,7 +5,6 @@ import { describe, expect, it, vi } from "vitest";
 import SubstitutionPanel from "./index";
 
 const defaultProps = {
-  teamIdx: 0 as const,
   teamName: "Away",
   lineupOrder: ["p1", "p2", "p3"],
   rosterBench: ["b1", "b2"],
