@@ -4,6 +4,7 @@ import getRandomInt from "@utils/getRandomInt";
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
 import { incrementPitcherFatigue, nextBatter, playerOut } from "./playerOut";
+import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
 // Vivid hit callouts — logged inside hitBall AFTER the pop-out check passes.
@@ -92,22 +93,23 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   const battingTeam = state.atBat as 0 | 1;
   const batterSlotIdx = state.batterIndex[battingTeam];
   const playerId = state.lineupOrder[battingTeam][batterSlotIdx] || undefined;
-  const batterOverrides = playerId ? state.playerOverrides[battingTeam][playerId] : undefined;
+  const batterMods = playerId
+    ? (state.resolvedMods?.[battingTeam]?.[playerId] ?? ZERO_MODS)
+    : ZERO_MODS;
 
   // Pitcher overrides
   const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
   const activePitcherId =
     state.rosterPitchers[pitchingTeam]?.[state.activePitcherIdx[pitchingTeam]];
-  const pitcherOverrides = activePitcherId
-    ? state.playerOverrides[pitchingTeam][activePitcherId]
-    : undefined;
+  const pitcherMods = activePitcherId
+    ? (state.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
+    : ZERO_MODS;
 
   // contactMod: higher contact = higher threshold (easier to get hits)
   // movementMod: higher movement = lower threshold (harder to hit clean)
   // velocityMod: higher velocity = slightly lower threshold (harder to make solid contact)
-  const contactFactor = 1 + (batterOverrides?.contactMod ?? 0) / 100;
-  const pitchingFactor =
-    1 - ((pitcherOverrides?.movementMod ?? 0) + (pitcherOverrides?.velocityMod ?? 0) / 2) / 100;
+  const contactFactor = 1 + batterMods.contactMod / 100;
+  const pitchingFactor = 1 - (pitcherMods.movementMod + pitcherMods.velocityMod / 2) / 100;
   const popOutThreshold = Math.round(
     750 *
       stratMod(strategy, "contact") *
@@ -117,7 +119,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   );
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
-    const powerBonus = Math.round(15 * (1 + (batterOverrides?.powerMod ?? 0) / 100));
+    const powerBonus = Math.round(15 * (1 + batterMods.powerMod / 100));
     if (strategy === "power" && getRandomInt(100) < powerBonus) {
       type = Hit.Homerun;
       log("Power hitter turns it around — Home Run!");

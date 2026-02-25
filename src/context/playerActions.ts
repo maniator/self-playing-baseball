@@ -6,6 +6,7 @@ import getRandomInt from "@utils/getRandomInt";
 import { hitBall } from "./hitBall";
 import { OnePitchModifier, State, Strategy } from "./index";
 import { playerOut } from "./playerOut";
+import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
 export { buntAttempt } from "./buntAttempt";
@@ -162,11 +163,11 @@ export const playerWait = (
   const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
   const activePitcherId =
     state.rosterPitchers[pitchingTeam]?.[state.activePitcherIdx[pitchingTeam]];
-  const pitcherOverrides = activePitcherId
-    ? state.playerOverrides[pitchingTeam][activePitcherId]
-    : undefined;
-  const pitcherControlMod = pitcherOverrides?.controlMod ?? 0;
-  const pitcherVelocityMod = pitcherOverrides?.velocityMod ?? 0;
+  const pitcherMods = activePitcherId
+    ? (state.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
+    : ZERO_MODS;
+  const pitcherControlMod = pitcherMods.controlMod;
+  const pitcherVelocityMod = pitcherMods.velocityMod;
   const outcome = computeWaitOutcome(
     random,
     strategy,

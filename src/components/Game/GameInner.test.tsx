@@ -449,8 +449,16 @@ describe("GameInner — custom team label resolution", () => {
 
   beforeEach(async () => {
     const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    // Two teams required so the self-matchup validation (away ≠ home) passes.
+    const CUSTOM_TEAM_DOC_2 = {
+      ...CUSTOM_TEAM_DOC,
+      id: "ct_abc999",
+      name: "Falcons",
+      city: "Denver",
+      abbreviation: "DEN",
+    };
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [CUSTOM_TEAM_DOC as any],
+      teams: [CUSTOM_TEAM_DOC as any, CUSTOM_TEAM_DOC_2 as any],
       loading: false,
       createTeam: vi.fn(),
       updateTeam: vi.fn(),

@@ -5,6 +5,7 @@ import { handleSimAction } from "./handlers/sim";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
 import { applyHandlersInOrder } from "./reducerHelpers";
+import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -29,7 +30,7 @@ const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy, state: State): 
   const base_pct = base === 0 ? 70 : 60;
   const runnerId = state.baseRunnerIds?.[base] ?? null;
   const runnerSpeedMod = runnerId
-    ? (state.playerOverrides[state.atBat as 0 | 1][runnerId]?.speedMod ?? 0)
+    ? (state.resolvedMods?.[state.atBat as 0 | 1]?.[runnerId] ?? ZERO_MODS).speedMod
     : 0;
   // speedMod: +20 → 10% better steal odds; -20 → 10% worse
   const speedFactor = 1 + runnerSpeedMod / 200;

@@ -38,14 +38,21 @@ export const handleDecisionsAction = (
       return { ...state, suppressNextDecision: false };
     case "set_pinch_hitter_strategy": {
       const ph = action.payload as Strategy;
-      log(`Pinch hitter in — playing ${ph} strategy.`);
+      const battingTeam = state.teams[state.atBat as 0 | 1];
+      log(`${battingTeam} manager: Pinch hitter in — playing ${ph} strategy.`);
       const result = { ...state, pinchHitterStrategy: ph, pendingDecision: null };
       return withDecisionLog(state, result, `${state.pitchKey}:pinch:${ph}`);
     }
     case "set_defensive_shift": {
       const shiftOn = action.payload as boolean;
-      if (shiftOn) log("Defensive shift deployed — outfield repositioned.");
-      else log("Normal alignment set.");
+      // Suppress re-announcement when the shift state hasn't actually changed.
+      if (shiftOn === state.defensiveShift) {
+        return { ...state, pendingDecision: null };
+      }
+      const fieldingTeam = state.teams[(1 - (state.atBat as number)) as 0 | 1];
+      if (shiftOn)
+        log(`${fieldingTeam} manager: Defensive shift deployed — outfield repositioned.`);
+      else log(`${fieldingTeam} manager: Normal alignment restored.`);
       const result = { ...state, defensiveShift: shiftOn, pendingDecision: null };
       return withDecisionLog(state, result, `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`);
     }
@@ -97,8 +104,9 @@ export const handleDecisionsAction = (
           teamIdx === 1 ? [...state.substitutedOut[1], oldPlayerId] : state.substitutedOut[1],
         ];
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
+        const teamName = state.teams[teamIdx];
         log(
-          `Substitution: ${getPlayerName(benchPlayerId)} in for ${getPlayerName(oldPlayerId)}${reasonSuffix}.`,
+          `${teamName}: ${getPlayerName(benchPlayerId)} in for ${getPlayerName(oldPlayerId)}${reasonSuffix}.`,
         );
         return {
           ...state,
@@ -139,7 +147,8 @@ export const handleDecisionsAction = (
           teamIdx === 1 ? 0 : state.pitcherBattersFaced[1],
         ];
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
-        log(`Pitching change: ${getPlayerName(newPitcherId)} now pitching${reasonSuffix}.`);
+        const teamName = state.teams[teamIdx];
+        log(`${teamName} manager: ${getPlayerName(newPitcherId)} now pitching${reasonSuffix}.`);
         return {
           ...state,
           activePitcherIdx: newActivePitcherIdx,
