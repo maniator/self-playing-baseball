@@ -170,7 +170,7 @@ test.describe("Visual", () => {
    *
    * Desktop-only to keep CI time reasonable; the accordion layout is the
    * same across all viewports.  We programmatically open every closed
-   * <details> element and then wait until all 7 sections are structurally
+   * <details> element and then wait until all 8 sections are structurally
    * open before snapshotting.
    */
   test("How to Play modal all sections expanded screenshot", async ({ page }, testInfo) => {
@@ -191,8 +191,8 @@ test.describe("Visual", () => {
     while ((await closedSummaries.count()) > 0) {
       await closedSummaries.first().click();
     }
-    // Wait until all 7 sections are structurally open before snapshotting.
-    await expect(page.locator('[data-testid="instructions-modal"] details[open]')).toHaveCount(7);
+    // Wait until all 8 sections are structurally open before snapshotting.
+    await expect(page.locator('[data-testid="instructions-modal"] details[open]')).toHaveCount(8);
     await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
       "instructions-modal-all-sections.png",
       { maxDiffPixelRatio: 0.05 },

@@ -10,6 +10,7 @@ export interface GeneratedPlayer {
   handedness?: "R" | "L" | "S";
   batting: { contact: number; power: number; speed: number };
   pitching?: { velocity: number; control: number; movement: number };
+  pitchingRole?: "SP" | "RP" | "SP/RP";
 }
 
 export interface CustomTeamDraft {
@@ -149,6 +150,15 @@ const randInt = (rng: () => number, min: number, max: number): number =>
 
 const pickFrom = <T>(rng: () => number, arr: T[]): T => arr[Math.floor(rng() * arr.length)];
 
+/** Fisher-Yates in-place shuffle using the seeded RNG. Returns the same array. */
+const shuffle = <T>(rng: () => number, arr: T[]): T[] => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 export function generateDefaultCustomTeamDraft(seed: string | number): CustomTeamDraft {
   const rng = makeMulberry32(seedToNumber(seed));
 
@@ -163,11 +173,15 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     return "S";
   };
 
+  // Shuffle batting positions so the batting order varies per seed.
+  // All 9 required positions (including DH) are still present, just in a random order.
+  const shuffledPositions = shuffle(rng, [...BATTING_POSITIONS]);
+
   const lineup: GeneratedPlayer[] = Array.from({ length: 9 }, (_, i) => ({
     id: `p_${seed}_L${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "batter" as const,
-    position: BATTING_POSITIONS[i] ?? "DH",
+    position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
     // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
     batting: {
@@ -177,12 +191,13 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     },
   }));
 
-  const bench: GeneratedPlayer[] = Array.from({ length: 2 }, (_, i) => ({
+  // Shuffle a copy of all batting positions for bench assignments so bench composition varies per seed.
+  const benchPositionPool = shuffle(rng, [...BATTING_POSITIONS]);
+  const bench: GeneratedPlayer[] = Array.from({ length: 4 }, (_, i) => ({
     id: `p_${seed}_B${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "batter" as const,
-    // Bench players get utility positions (OF spots or C) in rotation
-    position: (["LF", "CF", "C"] as const)[i % 3],
+    position: benchPositionPool[i % benchPositionPool.length],
     handedness: pickHandedness(),
     // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
     batting: {
@@ -192,24 +207,30 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     },
   }));
 
-  const pitchers: GeneratedPlayer[] = Array.from({ length: 3 }, (_, i) => ({
-    id: `p_${seed}_P${i}`,
-    name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
-    role: "pitcher" as const,
-    position: i === 0 ? "SP" : "RP",
-    handedness: pickHandedness(),
-    batting: {
-      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-    },
-    // Each stat is bounded so max sum = 3 × maxPerStat ≤ PITCHER_STAT_CAP − 1.
-    pitching: {
-      velocity: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-      control: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-      movement: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-    },
-  }));
+  // Shuffle bullpen roles: always 1 SP starter, then 4 relievers with varied SP/RP composition.
+  const bullpenRoles = shuffle(rng, ["RP", "RP", "RP", "SP/RP"] as ("RP" | "SP/RP")[]);
+  const pitchers: GeneratedPlayer[] = Array.from({ length: 5 }, (_, i) => {
+    const pitchingRole: "SP" | "RP" | "SP/RP" = i === 0 ? "SP" : bullpenRoles[i - 1];
+    return {
+      id: `p_${seed}_P${i}`,
+      name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
+      role: "pitcher" as const,
+      position: i === 0 ? "SP" : "RP",
+      pitchingRole,
+      handedness: pickHandedness(),
+      batting: {
+        contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+        power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+        speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      },
+      // Each stat is bounded so max sum = 3 × maxPerStat ≤ PITCHER_STAT_CAP − 1.
+      pitching: {
+        velocity: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
+        control: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
+        movement: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
+      },
+    };
+  });
 
   return {
     name: nickname,

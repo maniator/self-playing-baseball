@@ -2,7 +2,7 @@ import type { CustomTeamDraft } from "@features/customTeams/generation/generateD
 
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
 
-import { REQUIRED_FIELD_POSITIONS } from "./playerConstants";
+import { DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS } from "./playerConstants";
 import { HITTER_STAT_CAP, hitterStatTotal, PITCHER_STAT_CAP, pitcherStatTotal } from "./statBudget";
 
 /** A single player row as edited in the form (stats as numbers 0–100). */
@@ -19,6 +19,8 @@ export interface EditorPlayer {
   velocity?: number;
   control?: number;
   movement?: number;
+  /** Pitcher role eligibility. Only meaningful for pitchers. */
+  pitchingRole?: "SP" | "RP" | "SP/RP";
 }
 
 export interface EditorState {
@@ -126,6 +128,7 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
     control: p.pitching.control,
     movement: p.pitching.movement,
   }),
+  ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
 });
 
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
@@ -141,6 +144,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
     control: p.pitching.control,
     movement: p.pitching.movement,
   }),
+  ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
 });
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
@@ -163,6 +167,22 @@ export function validateEditorState(state: EditorState): string {
   if (state.lineup.length === 0) return "At least 1 lineup player is required.";
   for (const p of [...state.lineup, ...state.bench, ...state.pitchers]) {
     if (!p.name.trim()) return "All players must have a name.";
+  }
+
+  // Check starting lineup for duplicate or missing required positions.
+  const lineupPosCounts = new Map<string, number>();
+  for (const p of state.lineup) {
+    if (p.position) lineupPosCounts.set(p.position, (lineupPosCounts.get(p.position) ?? 0) + 1);
+  }
+  const duplicateLineupPos = DEFAULT_LINEUP_POSITIONS.filter(
+    (pos) => (lineupPosCounts.get(pos) ?? 0) > 1,
+  );
+  const missingLineupPos = DEFAULT_LINEUP_POSITIONS.filter((pos) => !lineupPosCounts.has(pos));
+  if (duplicateLineupPos.length > 0) {
+    return `Starting lineup has duplicate position(s): ${duplicateLineupPos.join(", ")}. Each position must appear exactly once.`;
+  }
+  if (missingLineupPos.length > 0) {
+    return `Starting lineup is missing position(s): ${missingLineupPos.join(", ")}.`;
   }
 
   // Check that all required field positions are covered in lineup + bench.
@@ -221,4 +241,5 @@ const editorToTeamPlayer =
       p.velocity !== undefined && {
         pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
       }),
+    ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
   });

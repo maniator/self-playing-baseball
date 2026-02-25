@@ -2,8 +2,10 @@ import * as React from "react";
 
 import { useLocalStorage } from "usehooks-ts";
 
+import type { PitchingRole } from "@components/SubstitutionPanel";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";
@@ -111,6 +113,32 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     pendingDecision,
   });
 
+  const { teams: customTeams } = useCustomTeams();
+
+  // Derive pitcher roles for both teams from custom team docs.
+  // Used by the AI manager to respect SP/RP role restrictions when making pitching changes.
+  const allTeamPitcherRoles = React.useMemo((): [
+    Record<string, PitchingRole>,
+    Record<string, PitchingRole>,
+  ] => {
+    return [0, 1].map((idx) => {
+      const teamId = teams[idx as 0 | 1];
+      if (!teamId || !teamId.startsWith("custom:")) return {};
+      const ctId = teamId.slice("custom:".length);
+      const doc = customTeams.find((t) => t.id === ctId);
+      if (!doc) return {};
+      const roles: Record<string, PitchingRole> = {};
+      for (const p of doc.roster.pitchers) {
+        if (p.pitchingRole) roles[p.id] = p.pitchingRole;
+      }
+      return roles;
+    }) as [Record<string, PitchingRole>, Record<string, PitchingRole>];
+  }, [teams, customTeams]);
+
+  const allTeamPitcherRolesRef =
+    React.useRef<[Record<string, PitchingRole>, Record<string, PitchingRole>]>(allTeamPitcherRoles);
+  allTeamPitcherRolesRef.current = allTeamPitcherRoles;
+
   const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
   const handleClickRef = usePitchDispatch(
     dispatch,
@@ -120,6 +148,8 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     managedTeamRef,
     skipDecisionRef,
     strikesRef,
+    dispatchLog,
+    allTeamPitcherRolesRef,
   );
 
   useAutoPlayScheduler(

@@ -253,3 +253,14 @@ export const Tab = styled.button<{ $active: boolean }>`
     border-radius: 3px 3px 0 0;
   }
 `;
+
+export const TeamValidationError = styled.p`
+  background: rgba(220, 40, 40, 0.15);
+  border: 1px solid rgba(220, 40, 40, 0.4);
+  border-radius: 6px;
+  color: #ff8080;
+  font-size: 12px;
+  margin: 6px 0 0;
+  padding: 7px 10px;
+  line-height: 1.4;
+`;

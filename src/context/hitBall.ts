@@ -3,7 +3,7 @@ import getRandomInt from "@utils/getRandomInt";
 
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
-import { nextBatter, playerOut } from "./playerOut";
+import { incrementPitcherFatigue, nextBatter, playerOut } from "./playerOut";
 import { stratMod } from "./strategy";
 
 // Vivid hit callouts — logged inside hitBall AFTER the pop-out check passes.
@@ -116,9 +116,12 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     runsScored,
   );
 
+  // Increment pitcher fatigue: batter reached base (hit or walk) — at-bat complete.
+  const withFatigue = incrementPitcherFatigue(withRuns);
+
   // nextBatter: batter reached base, rotate lineup to next batter.
   return nextBatter({
-    ...withRuns,
+    ...withFatigue,
     playLog: [...state.playLog, playEntry],
   });
 };

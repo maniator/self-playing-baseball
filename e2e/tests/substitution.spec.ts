@@ -63,7 +63,7 @@ test.describe("Manager Substitution Panel", () => {
     await expect(panel).not.toBeVisible({ timeout: 3_000 });
   });
 
-  test("pitcher section shows Stage 3C placeholder note", async ({ page }) => {
+  test("pitcher section shows no-eligible-relievers message for MLB teams", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "sub5", managedTeam: "0" });
     await waitForLogLines(page, 2);
     const subBtn = page.getByRole("button", { name: /substitution/i });
@@ -71,7 +71,10 @@ test.describe("Manager Substitution Panel", () => {
     await subBtn.click();
     const panel = page.getByTestId("substitution-panel");
     await expect(panel).toBeVisible({ timeout: 5_000 });
-    await expect(panel.getByText(/Stage 3C/i)).toBeVisible({ timeout: 3_000 });
+    // MLB teams have no pitcher roster, so should show no eligible relievers or no pitchers
+    await expect(
+      panel.getByText(/No eligible relievers available|No pitchers on roster/i),
+    ).toBeVisible({ timeout: 3_000 });
   });
 
   test("MLB team game shows no-bench placeholder in substitution panel", async ({ page }) => {

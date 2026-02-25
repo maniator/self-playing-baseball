@@ -7,6 +7,7 @@ import {
   customTeamToLineupOrder,
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
+  validateCustomTeamForGame,
 } from "@features/customTeams/adapters/customTeamAdapter";
 
 import type { TeamCustomPlayerOverrides } from "@context/index";
@@ -31,6 +32,7 @@ import {
   Select,
   Tab,
   TabRow,
+  TeamValidationError,
   Title,
 } from "./styles";
 import { usePlayerCustomization } from "./usePlayerCustomization";
@@ -90,6 +92,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
   const { teams: customTeams } = useCustomTeams();
   const [customAwayId, setCustomAwayId] = React.useState<string>("");
   const [customHomeId, setCustomHomeId] = React.useState<string>("");
+  const [teamValidationError, setTeamValidationError] = React.useState<string>("");
 
   // Keep custom selectors in sync with loaded teams list.
   // Resets to first/second team if the previously-selected ID was deleted.
@@ -101,6 +104,11 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       setCustomHomeId(customTeams[customTeams.length > 1 ? 1 : 0].id);
   }, [customTeams, customAwayId, customHomeId]);
 
+  // Clear validation error when selections change.
+  React.useEffect(() => {
+    setTeamValidationError("");
+  }, [customAwayId, customHomeId, gameType]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Apply the seed before game state is initialized; updates URL too.
@@ -111,6 +119,20 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       const awayDoc = customTeams.find((t) => t.id === customAwayId);
       const homeDoc = customTeams.find((t) => t.id === customHomeId);
       if (!awayDoc || !homeDoc) return;
+
+      // Validate both teams before starting the game.
+      const awayError = validateCustomTeamForGame(awayDoc);
+      if (awayError) {
+        setTeamValidationError(`Away team — ${awayError}`);
+        return;
+      }
+      const homeError = validateCustomTeamForGame(homeDoc);
+      if (homeError) {
+        setTeamValidationError(`Home team — ${homeError}`);
+        return;
+      }
+      setTeamValidationError("");
+
       onStart(customTeamToGameId(homeDoc), customTeamToGameId(awayDoc), mt, {
         away: customTeamToPlayerOverrides(awayDoc),
         home: customTeamToPlayerOverrides(homeDoc),
@@ -261,14 +283,21 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
             </FieldGroup>
           </>
         ) : (
-          <CustomTeamMatchup
-            teams={customTeams}
-            awayTeamId={customAwayId}
-            homeTeamId={customHomeId}
-            onAwayChange={setCustomAwayId}
-            onHomeChange={setCustomHomeId}
-            onManageTeams={onManageTeams}
-          />
+          <>
+            <CustomTeamMatchup
+              teams={customTeams}
+              awayTeamId={customAwayId}
+              homeTeamId={customHomeId}
+              onAwayChange={setCustomAwayId}
+              onHomeChange={setCustomHomeId}
+              onManageTeams={onManageTeams}
+            />
+            {teamValidationError && (
+              <TeamValidationError role="alert" data-testid="team-validation-error">
+                ⚠ {teamValidationError}
+              </TeamValidationError>
+            )}
+          </>
         )}
         <FieldGroup>
           <SectionLabel>Manage a team?</SectionLabel>

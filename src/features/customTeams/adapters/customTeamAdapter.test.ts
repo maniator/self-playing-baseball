@@ -11,6 +11,7 @@ import {
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
   resolveTeamLabel,
+  validateCustomTeamForGame,
 } from "./customTeamAdapter";
 
 const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
@@ -210,5 +211,103 @@ describe("resolveTeamLabel", () => {
   it("resolves a custom team ID that contains hyphens", () => {
     const teams = [{ ...makeTeam(), id: "ct-hyphen-id", city: "Test", name: "Rockets" }];
     expect(resolveTeamLabel("custom:ct-hyphen-id", teams)).toBe("Test Rockets");
+  });
+});
+
+const FULL_LINEUP_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
+const makeFullLineup = () =>
+  FULL_LINEUP_POSITIONS.map((pos, i) => ({
+    id: `pl_${i}`,
+    name: `Player ${i + 1}`,
+    role: "batter" as const,
+    batting: { contact: 50, power: 50, speed: 50 },
+    position: pos,
+  }));
+
+const makeValidTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
+  ...makeTeam(),
+  roster: {
+    schemaVersion: 1,
+    lineup: makeFullLineup(),
+    bench: [],
+    pitchers: [
+      {
+        id: "sp1",
+        name: "Ace Pitcher",
+        role: "pitcher",
+        batting: { contact: 30, power: 25, speed: 30 },
+        pitching: { velocity: 75, control: 65, movement: 70 },
+      },
+    ],
+  },
+  ...overrides,
+});
+
+describe("validateCustomTeamForGame", () => {
+  it("returns null for a valid team with all 9 lineup positions", () => {
+    expect(validateCustomTeamForGame(makeValidTeam())).toBeNull();
+  });
+
+  it("returns error when lineup has a duplicate position", () => {
+    const lineup = makeFullLineup();
+    // Replace DH with a second C (duplicate C, missing DH)
+    lineup[8] = { ...lineup[8], position: "C" };
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, lineup },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("C");
+    expect(err).toContain("duplicate");
+  });
+
+  it("returns error when lineup is missing a required position", () => {
+    const lineup = makeFullLineup().slice(0, 8); // drop DH
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, lineup },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("DH");
+    expect(err).toContain("missing");
+  });
+
+  it("reports all duplicate positions when multiple are duplicated", () => {
+    const lineup = makeFullLineup();
+    lineup[7] = { ...lineup[7], position: "C" }; // RF slot → C (second C)
+    lineup[8] = { ...lineup[8], position: "SS" }; // DH slot → SS (second SS)
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, lineup },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toContain("C");
+    expect(err).toContain("SS");
+  });
+
+  it("reports all missing positions when multiple are absent", () => {
+    // Lineup with only C and 1B (7 required positions missing)
+    const lineup = [
+      {
+        id: "p_a",
+        name: "Player A",
+        role: "batter" as const,
+        batting: { contact: 50, power: 50, speed: 50 },
+        position: "C",
+      },
+      {
+        id: "p_b",
+        name: "Player B",
+        role: "batter" as const,
+        batting: { contact: 50, power: 50, speed: 50 },
+        position: "1B",
+      },
+    ];
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, lineup },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toContain("2B");
+    expect(err).toContain("3B");
+    expect(err).toContain("SS");
   });
 });

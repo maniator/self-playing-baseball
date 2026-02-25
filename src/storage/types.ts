@@ -120,6 +120,12 @@ export interface TeamPlayer {
   isBenchEligible?: boolean;
   isPitcherEligible?: boolean;
   jerseyNumber?: number | null;
+  /**
+   * Pitcher role eligibility: SP = starter only, RP = reliever only, SP/RP = both (swingman).
+   * Only meaningful for pitchers (role === "pitcher" or "two-way").
+   * Absent on older saves — backfill as "SP" for index 0, "RP" for others when needed.
+   */
+  pitchingRole?: "SP" | "RP" | "SP/RP";
 }
 
 /** Roster embedded in a custom team document. */

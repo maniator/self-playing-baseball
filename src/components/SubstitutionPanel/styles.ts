@@ -133,11 +133,15 @@ export const EmptyNote = styled.p`
   font-style: italic;
 `;
 
-export const StageNote = styled.p`
-  font-size: 10px;
-  color: #4a6090;
-  margin: 4px 0 0;
-  font-style: italic;
+export const FatigueBar = styled.div``;
+
+export const FatigueLabel = styled.span<{ $level: "low" | "medium" | "high" }>`
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: ${({ $level }) =>
+    $level === "high" ? "#ff6b6b" : $level === "medium" ? "#ffd06b" : "#a0b4d0"};
 `;
 
 export const SubButton = styled.button`

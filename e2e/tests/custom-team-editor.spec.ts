@@ -18,7 +18,7 @@ import { resetAppState } from "../utils/helpers";
 
 const REQUIRED_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF"];
 
-/** Helper: open Manage Teams → click Create → Generate Defaults. Returns when name input is filled. */
+/** Helper: open Manage Teams → click Create → Generate Random. Returns when name input is filled. */
 async function openCreateEditorWithDefaults(page: Parameters<typeof resetAppState>[0]) {
   await page.getByTestId("home-manage-teams-button").click();
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
@@ -42,7 +42,7 @@ test.describe("Custom Team Editor — position dropdown", () => {
     await resetAppState(page);
   });
 
-  test("lineup player rows show a position dropdown after Generate Defaults", async ({ page }) => {
+  test("lineup player rows show a position dropdown after Generate Random", async ({ page }) => {
     await openCreateEditorWithDefaults(page);
     const positionSelects = page.getByTestId("custom-team-player-position-select");
     // Should be at least one visible (first lineup row)
@@ -167,7 +167,7 @@ test.describe("Custom Team Editor — edit mode loads positions and handedness",
   });
 
   test("editing a saved team shows the same position values that were stored", async ({ page }) => {
-    // Create a team with Generate Defaults (positions are pre-assigned)
+    // Create a team with Generate Random (positions are pre-assigned)
     await saveGeneratedTeam(page, "Position Edit Team");
 
     // Open the editor for this team
@@ -238,12 +238,34 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     });
   });
 
-  test("Generate Defaults populates the abbreviation field automatically", async ({ page }) => {
+  test("Generate Random populates the abbreviation field automatically", async ({ page }) => {
     await openCreateEditorWithDefaults(page);
     const abbrevInput = page.getByTestId("custom-team-abbreviation-input");
     const value = await abbrevInput.inputValue();
     expect(value.length).toBeGreaterThanOrEqual(2);
     expect(value.length).toBeLessThanOrEqual(3);
+  });
+
+  test("Create Team shows Generate Random button", async ({ page }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    const btn = page.getByTestId("custom-team-regenerate-defaults-button");
+    await expect(btn).toBeVisible({ timeout: 5_000 });
+    await expect(btn).toContainText(/Generate Random/i);
+  });
+
+  test("Edit Team does not show Generate Random button", async ({ page }) => {
+    // First create a team
+    await openCreateEditorWithDefaults(page);
+    await page.getByTestId("custom-team-name-input").fill("No Generate Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("No Generate Team")).toBeVisible({ timeout: 5_000 });
+    // Open edit mode
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    // Generate Random button should NOT be visible in edit mode
+    const btn = page.getByTestId("custom-team-regenerate-defaults-button");
+    await expect(btn).not.toBeVisible({ timeout: 3_000 });
   });
 
   test("attempting to save with empty abbreviation shows a validation error", async ({ page }) => {
@@ -270,8 +292,10 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     await expect(hint).toBeVisible({ timeout: 3_000 });
   });
 
-  test("saved team loads its abbreviation in edit mode", async ({ page }) => {
-    // Create a team with Generate Defaults (abbreviation is pre-filled)
+  test("Generate Random populates the abbreviation field automatically (abbreviation section)", async ({
+    page,
+  }) => {
+    // Create a team with Generate Random (abbreviation is pre-filled)
     await openCreateEditorWithDefaults(page);
     // Record the generated abbreviation
     const generated = await page.getByTestId("custom-team-abbreviation-input").inputValue();
