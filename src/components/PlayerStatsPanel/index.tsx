@@ -220,9 +220,36 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     });
   }, [teams, activeTeam, lineupOrder, playerOverrides]);
 
+  // Build slot→position map for the active team.
+  // Custom teams carry position on their roster docs; generated rosters use
+  // the positional archetype assigned by generateRoster.
+  const slotPositions = React.useMemo(() => {
+    const teamId = teams[activeTeam];
+    const roster = generateRoster(teamId);
+    const order =
+      lineupOrder[activeTeam].length > 0
+        ? lineupOrder[activeTeam]
+        : roster.batters.map((p) => p.id);
+    const idToGenerated = new Map(roster.batters.map((p) => [p.id, p.position]));
+
+    // For custom teams, build a position lookup from the stored roster doc.
+    let customPositions: Map<string, string> | undefined;
+    if (teamId.startsWith("custom:")) {
+      const customId = teamId.slice("custom:".length);
+      const doc = customTeams.find((t) => t.id === customId);
+      if (doc) {
+        const all = [...doc.roster.lineup, ...(doc.roster.bench ?? [])];
+        customPositions = new Map(all.map((p) => [p.id, p.position ?? ""]));
+      }
+    }
+
+    return order.slice(0, 9).map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
+  }, [teams, activeTeam, lineupOrder, customTeams]);
+
   const selectedStats = selectedSlot != null ? stats[selectedSlot] : null;
   const selectedName =
     selectedSlot != null ? slotNames[selectedSlot - 1] || `Batter ${selectedSlot}` : "";
+  const selectedPosition = selectedSlot != null ? (slotPositions[selectedSlot - 1] ?? "") : "";
 
   return (
     <div data-testid="player-stats-panel">
@@ -241,6 +268,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
             <thead>
               <tr>
                 <Th>#</Th>
+                <Th>Pos</Th>
                 <Th>AB</Th>
                 <Th>H</Th>
                 <Th>BB</Th>
@@ -263,6 +291,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
                     data-testid={`batter-row-${num}`}
                   >
                     <Td>{slotNames[num - 1] ?? num}</Td>
+                    <Td>{slotPositions[num - 1] || "–"}</Td>
                     <Td $highlight={s.atBats > 0}>{s.atBats || "–"}</Td>
                     <Td $highlight={s.hits > 0}>{s.hits || "–"}</Td>
                     <Td $highlight={s.walks > 0}>{s.walks || "–"}</Td>
@@ -277,6 +306,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
             slot={selectedSlot}
             name={selectedName}
             teamName={teamDisplayName}
+            position={selectedPosition}
             stats={selectedStats}
             onClear={() => setSelectedSlot(null)}
           />

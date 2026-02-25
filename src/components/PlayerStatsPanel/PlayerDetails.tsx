@@ -18,6 +18,8 @@ interface Props {
   slot: number | null;
   name: string;
   teamName: string;
+  /** Position abbreviation (e.g. "1B", "SS"). Empty string if unknown. */
+  position: string;
   stats: BatterStat | null;
   onClear: () => void;
 }
@@ -117,6 +119,7 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
   slot,
   name,
   teamName,
+  position,
   stats,
   onClear,
 }) => {
@@ -151,7 +154,7 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
 
       <PlayerName>{name}</PlayerName>
       <SubLabel>
-        {teamName} · #{slot} in lineup · This game
+        {teamName} · {position ? `${position} · ` : ""}#{slot} in lineup · This game
       </SubLabel>
 
       {/* Counting stats */}

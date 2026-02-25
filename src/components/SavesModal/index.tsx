@@ -1,9 +1,6 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
-
 import type { Strategy } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { SaveDoc } from "@storage/types";
 
 import {
@@ -76,13 +73,8 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleExport,
     handleImportPaste,
     handleFileImport,
+    resolveSaveName,
   } = useSavesModal(props);
-
-  // Resolve custom team IDs to human-readable labels for the saves list display.
-  const { teams: customTeams } = useCustomTeams();
-  /** Replace any `custom:ct_...` fragment in a save name with the resolved team name. */
-  const resolveSaveName = (name: string): string =>
-    name.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
 
   // When onRequestClose is provided it overrides the built-in close so the
   // caller can intercept close attempts (e.g. route back to Home).

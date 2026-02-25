@@ -40,6 +40,8 @@ export interface SavesModalState {
   handleExport: (slot: SaveDoc) => void;
   handleImportPaste: () => void;
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Replaces any `custom:<id>` fragment in a save name with the resolved display label. */
+  resolveSaveName: (name: string) => string;
 }
 
 export const useSavesModal = ({
@@ -244,6 +246,14 @@ export const useSavesModal = ({
     e.target.value = "";
   };
 
+  /**
+   * Replaces any `custom:<id>` fragment in a save name with the resolved
+   * display label. Uses a broad token pattern so hyphenated or otherwise
+   * non-alphanumeric-underscore IDs are also matched correctly.
+   */
+  const resolveSaveName = (name: string): string =>
+    name.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams));
+
   return {
     ref,
     saves,
@@ -258,5 +268,6 @@ export const useSavesModal = ({
     handleExport,
     handleImportPaste,
     handleFileImport,
+    resolveSaveName,
   };
 };

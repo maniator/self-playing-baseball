@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -132,5 +132,94 @@ describe("AppShell", () => {
     await user.click(screen.getByTestId("resume-current-mock"));
     expect(screen.getByTestId("game-mock")).toBeInTheDocument();
     expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+  });
+
+  describe("Browser History API (pushState / popstate)", () => {
+    it("calls replaceState with home screen on initial mount", () => {
+      const replaceState = vi.spyOn(window.history, "replaceState");
+      render(<AppShell />);
+      expect(replaceState).toHaveBeenCalledWith(expect.objectContaining({ screen: "home" }), "");
+    });
+
+    it("pushes a game history entry when New Game is clicked", async () => {
+      const pushState = vi.spyOn(window.history, "pushState");
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /new game/i }));
+      expect(pushState).toHaveBeenCalledWith(expect.objectContaining({ screen: "game" }), "");
+    });
+
+    it("pushes a game history entry when Load Saved Game is clicked", async () => {
+      const pushState = vi.spyOn(window.history, "pushState");
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /load saved game/i }));
+      expect(pushState).toHaveBeenCalledWith(expect.objectContaining({ screen: "game" }), "");
+    });
+
+    it("pushes a manage-teams history entry when Manage Teams is clicked", async () => {
+      const pushState = vi.spyOn(window.history, "pushState");
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /manage teams/i }));
+      expect(pushState).toHaveBeenCalledWith(
+        expect.objectContaining({ screen: "manage-teams" }),
+        "",
+      );
+    });
+
+    it("pushes a home history entry when Back to Home is triggered from game", async () => {
+      const pushState = vi.spyOn(window.history, "pushState");
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /new game/i }));
+      pushState.mockClear();
+      await user.click(screen.getByTestId("back-to-home-mock"));
+      expect(pushState).toHaveBeenCalledWith(expect.objectContaining({ screen: "home" }), "");
+    });
+
+    it("popstate with { screen: 'home' } restores the home screen", async () => {
+      const user = userEvent.setup();
+      render(<AppShell />);
+      // Navigate to game first
+      await user.click(screen.getByRole("button", { name: /new game/i }));
+      expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+
+      // Simulate browser Back via popstate
+      act(() => {
+        window.dispatchEvent(new PopStateEvent("popstate", { state: { screen: "home" } }));
+      });
+      expect(screen.getByTestId("home-screen-mock")).toBeInTheDocument();
+    });
+
+    it("popstate with { screen: 'game' } restores game screen without new game request", async () => {
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /new game/i }));
+      // Go back to home via popstate
+      act(() => {
+        window.dispatchEvent(new PopStateEvent("popstate", { state: { screen: "home" } }));
+      });
+      expect(screen.getByTestId("home-screen-mock")).toBeInTheDocument();
+
+      // Simulate browser Forward — game screen restored without new session
+      act(() => {
+        window.dispatchEvent(new PopStateEvent("popstate", { state: { screen: "game" } }));
+      });
+      expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+      expect(screen.getByTestId("game-mock")).toBeInTheDocument();
+    });
+
+    it("popstate with unknown state is ignored", async () => {
+      const user = userEvent.setup();
+      render(<AppShell />);
+      await user.click(screen.getByRole("button", { name: /new game/i }));
+      // Fire a popstate with no state — should not throw or change screen
+      expect(() => {
+        act(() => {
+          window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+        });
+      }).not.toThrow();
+    });
   });
 });

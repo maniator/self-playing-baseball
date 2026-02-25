@@ -216,6 +216,29 @@ describe("PlayerStatsPanel", () => {
     const avgCells = screen.getAllByText(".000");
     expect(avgCells.length).toBeGreaterThan(0);
   });
+
+  // ── Position column ────────────────────────────────────────────────────────
+
+  it("shows a 'Pos' column header in the batting stats table", () => {
+    renderWithContext();
+    expect(screen.getByText("Pos")).toBeInTheDocument();
+  });
+
+  it("shows position abbreviations for each lineup slot (generated roster)", () => {
+    // Generated roster assigns standard positions: C, 1B, 2B, 3B, SS, LF, CF, RF, DH
+    renderWithContext();
+    // Slot 1 → Catcher (C)
+    expect(screen.getByText("C")).toBeInTheDocument();
+    // Slot 5 → Shortstop (SS)
+    expect(screen.getByText("SS")).toBeInTheDocument();
+  });
+
+  it("shows position in Player Details SubLabel when a batter is selected", () => {
+    renderWithContext();
+    fireEvent.click(screen.getByTestId("batter-row-1"));
+    // Slot 1 is Catcher (C) for the generated roster
+    expect(screen.getByText(/C · #1 in lineup · This game/i)).toBeInTheDocument();
+  });
 });
 
 describe("warnBattingStatsInvariant (dev-mode invariant)", () => {

@@ -37,12 +37,12 @@ interface RowStats {
 
 async function readRowStats(rowLocator: import("@playwright/test").Locator): Promise<RowStats> {
   const cells = await rowLocator.locator("td").allTextContents();
-  // Column layout (from PlayerStatsPanel): name(0) AB(1) H(2) BB(3) K(4)
+  // Column layout (from PlayerStatsPanel): name(0) Pos(1) AB(2) H(3) BB(4) K(5) RBI(6)
   return {
-    ab: parseCell(cells[1] ?? "–"),
-    h: parseCell(cells[2] ?? "–"),
-    bb: parseCell(cells[3] ?? "–"),
-    k: parseCell(cells[4] ?? "–"),
+    ab: parseCell(cells[2] ?? "–"),
+    h: parseCell(cells[3] ?? "–"),
+    bb: parseCell(cells[4] ?? "–"),
+    k: parseCell(cells[5] ?? "–"),
   };
 }
 
