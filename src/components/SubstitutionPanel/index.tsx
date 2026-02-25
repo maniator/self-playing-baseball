@@ -65,39 +65,8 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
     .filter(({ idx }) => idx !== activePitcherIdx);
   const hasPitcherReplacement = availablePitcherOptions.length > 0;
 
-  // For the currently selected lineup slot, determine which positions are already
-  // occupied by OTHER slots so we can flag duplicate-position bench candidates.
-  const occupiedPositions = React.useMemo(() => {
-    const set = new Set<string>();
-    lineupOrder.forEach((id, i) => {
-      if (i === selectedLineupIdx) return; // the slot being replaced — excluded
-      const pos = playerOverrides[id]?.position;
-      if (pos) set.add(pos);
-    });
-    return set;
-  }, [lineupOrder, selectedLineupIdx, playerOverrides]);
-
-  // Valid bench options: bench players whose position does NOT conflict with the
-  // remaining active lineup positions. Bench players without a stored position are
-  // always shown (no data to conflict on).
-  const validBenchOptions = React.useMemo(
-    () =>
-      rosterBench.filter((id) => {
-        const pos = playerOverrides[id]?.position;
-        return !pos || !occupiedPositions.has(pos);
-      }),
-    [rosterBench, playerOverrides, occupiedPositions],
-  );
-
-  // Keep selectedBenchId valid when slot changes / bench changes.
-  React.useEffect(() => {
-    if (validBenchOptions.length > 0 && !validBenchOptions.includes(selectedBenchId)) {
-      setSelectedBenchId(validBenchOptions[0]);
-    }
-  }, [validBenchOptions, selectedBenchId]);
-
   const handleBatterSub = () => {
-    if (validBenchOptions.length === 0 || !selectedBenchId) return;
+    if (!hasBench || !selectedBenchId) return;
     onSubstitute({ kind: "batter", lineupIdx: selectedLineupIdx, benchPlayerId: selectedBenchId });
   };
 
@@ -118,37 +87,33 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
       <Section>
         <SectionTitle>Batter Substitution</SectionTitle>
         {hasBench ? (
-          validBenchOptions.length > 0 ? (
-            <Row>
-              <SelectField
-                value={selectedLineupIdx}
-                onChange={(e) => setSelectedLineupIdx(Number(e.target.value))}
-                aria-label="Player to replace"
-              >
-                {lineupOrder.map((id, i) => (
-                  <option key={id} value={i}>
-                    {i + 1}. {getPlayerLabel(id, playerOverrides)}
-                  </option>
-                ))}
-              </SelectField>
-              <SelectField
-                value={selectedBenchId}
-                onChange={(e) => setSelectedBenchId(e.target.value)}
-                aria-label="Bench player to bring in"
-              >
-                {validBenchOptions.map((id) => (
-                  <option key={id} value={id}>
-                    {getPlayerLabel(id, playerOverrides)}
-                  </option>
-                ))}
-              </SelectField>
-              <ActionButton type="button" onClick={handleBatterSub} disabled={!selectedBenchId}>
-                Sub In
-              </ActionButton>
-            </Row>
-          ) : (
-            <EmptyNote>No valid bench replacements for this position.</EmptyNote>
-          )
+          <Row>
+            <SelectField
+              value={selectedLineupIdx}
+              onChange={(e) => setSelectedLineupIdx(Number(e.target.value))}
+              aria-label="Player to replace"
+            >
+              {lineupOrder.map((id, i) => (
+                <option key={id} value={i}>
+                  {i + 1}. {getPlayerLabel(id, playerOverrides)}
+                </option>
+              ))}
+            </SelectField>
+            <SelectField
+              value={selectedBenchId}
+              onChange={(e) => setSelectedBenchId(e.target.value)}
+              aria-label="Bench player to bring in"
+            >
+              {rosterBench.map((id) => (
+                <option key={id} value={id}>
+                  {getPlayerLabel(id, playerOverrides)}
+                </option>
+              ))}
+            </SelectField>
+            <ActionButton type="button" onClick={handleBatterSub} disabled={!selectedBenchId}>
+              Sub In
+            </ActionButton>
+          </Row>
         ) : (
           <EmptyNote>No bench players available.</EmptyNote>
         )}

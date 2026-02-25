@@ -4,9 +4,11 @@ import type { CustomTeamDoc } from "@storage/types";
 
 import {
   customTeamToAbbreviation,
+  customTeamToBenchRoster,
   customTeamToDisplayName,
   customTeamToGameId,
   customTeamToLineupOrder,
+  customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
   resolveTeamLabel,
 } from "./customTeamAdapter";
@@ -81,6 +83,32 @@ describe("customTeamToDisplayName", () => {
 describe("customTeamToLineupOrder", () => {
   it("returns the lineup player IDs in order", () => {
     expect(customTeamToLineupOrder(makeTeam())).toEqual(["p1", "p2"]);
+  });
+});
+
+describe("customTeamToBenchRoster", () => {
+  it("returns bench player IDs in order", () => {
+    expect(customTeamToBenchRoster(makeTeam())).toEqual(["p3"]);
+  });
+
+  it("returns empty array when bench is empty", () => {
+    const team = makeTeam({
+      roster: { ...makeTeam().roster, bench: [] },
+    });
+    expect(customTeamToBenchRoster(team)).toEqual([]);
+  });
+});
+
+describe("customTeamToPitcherRoster", () => {
+  it("returns pitcher IDs in order", () => {
+    expect(customTeamToPitcherRoster(makeTeam())).toEqual(["p4"]);
+  });
+
+  it("returns empty array when pitchers is empty", () => {
+    const team = makeTeam({
+      roster: { ...makeTeam().roster, pitchers: [] },
+    });
+    expect(customTeamToPitcherRoster(team)).toEqual([]);
   });
 });
 

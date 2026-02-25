@@ -49,7 +49,7 @@ describe("SubstitutionPanel", () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
-  it("shows bench player names in the bench select", () => {
+  it("shows all bench player names in the bench select", () => {
     render(<SubstitutionPanel {...defaultProps} />);
     expect(screen.getByRole("option", { name: "Bench A" })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: "Bench B" })).toBeInTheDocument();
@@ -82,6 +82,26 @@ describe("SubstitutionPanel", () => {
   it("shows 'No bench players available' when rosterBench is empty", () => {
     render(<SubstitutionPanel {...defaultProps} rosterBench={[]} />);
     expect(screen.getByText(/No bench players available/)).toBeInTheDocument();
+  });
+
+  it("shows all bench players even when their position matches another active lineup slot", () => {
+    // Any bench player can substitute for any lineup slot; position is shown for context only.
+    render(
+      <SubstitutionPanel
+        {...defaultProps}
+        playerOverrides={{
+          p1: { nickname: "Alpha", position: "C" },
+          p2: { nickname: "Beta", position: "LF" },
+          p3: { nickname: "Gamma", position: "RF" },
+          b1: { nickname: "Bench A", position: "LF" }, // same position as p2 — still shown
+          b2: { nickname: "Bench B", position: "C" }, // same position as p1 — still shown
+          sp1: { nickname: "Starter" },
+          rp1: { nickname: "Reliever" },
+        }}
+      />,
+    );
+    expect(screen.getByRole("option", { name: /Bench A \(LF\)/ })).toBeInTheDocument();
+    expect(screen.getByRole("option", { name: /Bench B \(C\)/ })).toBeInTheDocument();
   });
 
   it("shows 'No pitchers on roster' when rosterPitchers is empty", () => {
@@ -125,67 +145,5 @@ describe("SubstitutionPanel", () => {
     );
     expect(screen.getByRole("option", { name: /Alpha \(C\)/ })).toBeInTheDocument();
     expect(screen.getByRole("option", { name: /Bench A \(LF\)/ })).toBeInTheDocument();
-  });
-
-  it("filters out bench player whose position conflicts with another active lineup player", () => {
-    render(
-      <SubstitutionPanel
-        {...defaultProps}
-        lineupOrder={["p1", "p2", "p3"]}
-        playerOverrides={{
-          p1: { nickname: "Alpha", position: "C" },
-          p2: { nickname: "Beta", position: "LF" },
-          p3: { nickname: "Gamma", position: "RF" },
-          // b1 has LF — same as p2; so when replacing p1 (C), b1 is invalid (LF already taken)
-          b1: { nickname: "Bench A", position: "LF" },
-          b2: { nickname: "Bench B", position: "DH" },
-          sp1: { nickname: "Starter" },
-          rp1: { nickname: "Reliever" },
-        }}
-      />,
-    );
-    // Bench B (DH) should be available; Bench A (LF) conflicts with p2
-    expect(screen.queryByRole("option", { name: /Bench A/ })).toBeNull();
-    expect(screen.getByRole("option", { name: /Bench B/ })).toBeInTheDocument();
-  });
-
-  it("shows 'No valid bench replacements' when all bench players conflict with active positions", () => {
-    render(
-      <SubstitutionPanel
-        {...defaultProps}
-        lineupOrder={["p1", "p2"]}
-        playerOverrides={{
-          p1: { nickname: "Alpha", position: "C" },
-          p2: { nickname: "Beta", position: "LF" },
-          // Both bench players share positions with other lineup players (not slot being replaced)
-          b1: { nickname: "Bench A", position: "LF" }, // LF taken by p2
-          b2: { nickname: "Bench B", position: "C" },  // C is the slot being replaced (p1, idx 0) — excluded from conflict
-          sp1: { nickname: "Starter" },
-          rp1: { nickname: "Reliever" },
-        }}
-      />,
-    );
-    // Replacing slot 0 (C): LF is occupied by p2, so b1 (LF) conflicts; b2 (C) is fine (C is the slot being replaced)
-    expect(screen.queryByText(/No valid bench replacements/)).toBeNull();
-    expect(screen.getByRole("option", { name: /Bench B/ })).toBeInTheDocument();
-  });
-
-  it("shows 'No valid bench replacements' when all bench players have conflicting positions", () => {
-    render(
-      <SubstitutionPanel
-        {...defaultProps}
-        lineupOrder={["p1", "p2", "p3"]}
-        rosterBench={["b1"]}
-        playerOverrides={{
-          p1: { nickname: "Alpha", position: "C" },
-          p2: { nickname: "Beta", position: "LF" },
-          p3: { nickname: "Gamma", position: "RF" },
-          b1: { nickname: "Bench A", position: "LF" }, // LF already taken by p2
-          sp1: { nickname: "Starter" },
-          rp1: { nickname: "Reliever" },
-        }}
-      />,
-    );
-    expect(screen.getByText(/No valid bench replacements/)).toBeInTheDocument();
   });
 });
