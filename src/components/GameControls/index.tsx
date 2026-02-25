@@ -133,6 +133,8 @@ const GameControls: React.FunctionComponent<Props> = ({
               managedTeam={managedTeam}
               teams={teams}
               notifPermission={notifPermission}
+              gameStarted={gameStarted}
+              gameOver={gameOver}
               onManagerModeChange={handleManagerModeChange}
               onStrategyChange={(e) => setStrategy(e.target.value as Strategy)}
               onManagedTeamChange={(e) => setManagedTeam(Number(e.target.value) === 1 ? 1 : 0)}

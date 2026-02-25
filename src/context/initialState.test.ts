@@ -51,6 +51,13 @@ describe("createFreshGameState", () => {
     expect(state.playerOverrides).toEqual([{}, {}]);
   });
 
+  it("initializes Stage 3B roster fields to empty defaults", () => {
+    const state = createFreshGameState(["A", "B"]);
+    expect(state.rosterBench).toEqual([[], []]);
+    expect(state.rosterPitchers).toEqual([[], []]);
+    expect(state.activePitcherIdx).toEqual([0, 0]);
+  });
+
   it("returns different instances on each call (no shared references)", () => {
     const a = createFreshGameState(["A", "B"]);
     const b = createFreshGameState(["A", "B"]);
@@ -189,6 +196,30 @@ describe("backfillRestoredState", () => {
     expect(result.inning).toBe(5);
     expect(result.score).toEqual([3, 2]);
     expect(result.outs).toBe(2);
+  });
+
+  it("defaults rosterBench to [[],[]] when missing (Stage 3B backfill)", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.rosterBench;
+    const result = backfillRestoredState(restored);
+    expect(result.rosterBench).toEqual([[], []]);
+  });
+
+  it("defaults rosterPitchers to [[],[]] when missing (Stage 3B backfill)", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.rosterPitchers;
+    const result = backfillRestoredState(restored);
+    expect(result.rosterPitchers).toEqual([[], []]);
+  });
+
+  it("defaults activePitcherIdx to [0,0] when missing (Stage 3B backfill)", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.activePitcherIdx;
+    const result = backfillRestoredState(restored);
+    expect(result.activePitcherIdx).toEqual([0, 0]);
   });
 
   // -------------------------------------------------------------------------

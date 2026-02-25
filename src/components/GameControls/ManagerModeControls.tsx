@@ -1,8 +1,10 @@
 import * as React from "react";
 
+import SubstitutionPanel from "@components/SubstitutionPanel";
+import { useGameContext } from "@context/index";
 import { Strategy } from "@context/index";
 
-import { NotifBadge, Select, ToggleLabel } from "./ManagerModeStyles";
+import { NotifBadge, Select, SubButton, ToggleLabel } from "./ManagerModeStyles";
 
 type Props = {
   managerMode: boolean;
@@ -10,10 +12,46 @@ type Props = {
   managedTeam: 0 | 1;
   teams: string[];
   notifPermission: NotificationPermission | "unavailable";
+  gameStarted?: boolean;
+  gameOver?: boolean;
   onManagerModeChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onStrategyChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onManagedTeamChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
   onRequestNotifPermission: () => void;
+};
+
+/** Inner sub-component that accesses game context for the substitution button. */
+const SubstitutionButton: React.FunctionComponent<{
+  managedTeam: 0 | 1;
+  teams: string[];
+}> = ({ managedTeam, teams }) => {
+  const { dispatch, lineupOrder, rosterBench, rosterPitchers, activePitcherIdx, playerOverrides } =
+    useGameContext();
+  const [showPanel, setShowPanel] = React.useState(false);
+
+  return (
+    <>
+      <SubButton type="button" onClick={() => setShowPanel((v) => !v)} aria-label="Substitution">
+        🔄 Substitution
+      </SubButton>
+      {showPanel && (
+        <SubstitutionPanel
+          teamIdx={managedTeam}
+          teamName={teams[managedTeam] ?? "Team"}
+          lineupOrder={lineupOrder[managedTeam]}
+          rosterBench={rosterBench[managedTeam]}
+          rosterPitchers={rosterPitchers[managedTeam]}
+          activePitcherIdx={activePitcherIdx[managedTeam]}
+          playerOverrides={playerOverrides[managedTeam]}
+          onSubstitute={(payload) => {
+            dispatch({ type: "make_substitution", payload: { teamIdx: managedTeam, ...payload } });
+            setShowPanel(false);
+          }}
+          onClose={() => setShowPanel(false)}
+        />
+      )}
+    </>
+  );
 };
 
 const ManagerModeControls: React.FunctionComponent<Props> = ({
@@ -22,6 +60,8 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
   managedTeam,
   teams,
   notifPermission,
+  gameStarted = false,
+  gameOver = false,
   onManagerModeChange,
   onStrategyChange,
   onManagedTeamChange,
@@ -56,6 +96,7 @@ const ManagerModeControls: React.FunctionComponent<Props> = ({
             <option value="power">Power</option>
           </Select>
         </ToggleLabel>
+        {gameStarted && !gameOver && <SubstitutionButton managedTeam={managedTeam} teams={teams} />}
         {notifPermission === "granted" && (
           <NotifBadge $ok={true} data-testid="notif-permission-badge">
             🔔 on

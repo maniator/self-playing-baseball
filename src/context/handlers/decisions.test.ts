@@ -239,3 +239,182 @@ describe("handleDecisionsAction — set_defensive_shift", () => {
     expect(next?.decisionLog).toContain("6:shift:on");
   });
 });
+
+// ---------------------------------------------------------------------------
+// make_substitution — batter
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — make_substitution (batter)", () => {
+  it("swaps bench player into lineup and sends old player to bench", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["batter1", "batter2", "batter3"], []],
+      rosterBench: [["bench1"], []],
+      playerOverrides: [
+        { bench1: { nickname: "Bench Player" }, batter1: { nickname: "Starter One" } },
+        {},
+      ],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "bench1" },
+      },
+      { log },
+    );
+    expect(next?.lineupOrder[0][0]).toBe("bench1");
+    expect(next?.rosterBench[0]).toContain("batter1");
+    expect(next?.rosterBench[0]).not.toContain("bench1");
+  });
+
+  it("logs the substitution with player names", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["p1", "p2"], []],
+      rosterBench: [["p3"], []],
+      playerOverrides: [{ p1: { nickname: "Alpha" }, p3: { nickname: "Gamma" } }, {}],
+    });
+    handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "p3" },
+      },
+      { log },
+    );
+    expect(logs.some((l) => l.includes("Gamma") && l.includes("Alpha"))).toBe(true);
+  });
+
+  it("does not modify other team lineup or bench", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [
+        ["a1", "a2"],
+        ["h1", "h2"],
+      ],
+      rosterBench: [["ab1"], ["hb1"]],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "ab1" },
+      },
+      { log },
+    );
+    expect(next?.lineupOrder[1]).toEqual(["h1", "h2"]);
+    expect(next?.rosterBench[1]).toEqual(["hb1"]);
+  });
+
+  it("returns unchanged state when benchPlayerId is not in bench roster", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["p1"], []],
+      rosterBench: [["bench1"], []],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "NOT_IN_BENCH" },
+      },
+      { log },
+    );
+    expect(next?.lineupOrder[0]).toEqual(["p1"]);
+    expect(next?.rosterBench[0]).toEqual(["bench1"]);
+  });
+
+  it("returns unchanged state when lineupIdx is out of range", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["p1"], []],
+      rosterBench: [["b1"], []],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 99, benchPlayerId: "b1" },
+      },
+      { log },
+    );
+    expect(next?.lineupOrder[0]).toEqual(["p1"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// make_substitution — pitcher
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — make_substitution (pitcher)", () => {
+  it("updates activePitcherIdx for the correct team", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      rosterPitchers: [["sp1", "rp1", "rp2"], ["sp2"]],
+      activePitcherIdx: [0, 0],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "pitcher", pitcherIdx: 2 },
+      },
+      { log },
+    );
+    expect(next?.activePitcherIdx[0]).toBe(2);
+    expect(next?.activePitcherIdx[1]).toBe(0);
+  });
+
+  it("logs the pitching change with pitcher name", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      rosterPitchers: [["sp1", "rp1"], []],
+      activePitcherIdx: [0, 0],
+      playerOverrides: [{ rp1: { nickname: "Relief Ace" } }, {}],
+    });
+    handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "pitcher", pitcherIdx: 1 },
+      },
+      { log },
+    );
+    expect(logs.some((l) => l.includes("Relief Ace"))).toBe(true);
+  });
+
+  it("returns unchanged state when pitcherIdx equals current active", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      rosterPitchers: [["sp1", "rp1"], []],
+      activePitcherIdx: [1, 0],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "pitcher", pitcherIdx: 1 },
+      },
+      { log },
+    );
+    expect(next?.activePitcherIdx[0]).toBe(1);
+  });
+
+  it("returns unchanged state when pitcherIdx is out of range", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      rosterPitchers: [["sp1"], []],
+      activePitcherIdx: [0, 0],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "pitcher", pitcherIdx: 99 },
+      },
+      { log },
+    );
+    expect(next?.activePitcherIdx[0]).toBe(0);
+  });
+});

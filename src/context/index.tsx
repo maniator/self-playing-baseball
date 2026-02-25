@@ -94,6 +94,12 @@ export interface State {
   outLog: StrikeoutEntry[]; // record of every batter-completed out (K + pop-out + groundout + FC + sac-bunt)
   playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
   lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
+  /** Bench player IDs available for substitution per team. [away, home] */
+  rosterBench: [string[], string[]];
+  /** Pitcher IDs in the bullpen per team. [away, home] */
+  rosterPitchers: [string[], string[]];
+  /** Index into rosterPitchers of the currently active pitcher per team. [away, home] */
+  activePitcherIdx: [number, number];
 }
 
 export interface ContextValue extends State {

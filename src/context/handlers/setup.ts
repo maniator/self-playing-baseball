@@ -14,6 +14,8 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
             teams: [string, string];
             playerOverrides?: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
             lineupOrder?: [string[], string[]];
+            rosterBench?: [string[], string[]];
+            rosterPitchers?: [string[], string[]];
           };
       if (Array.isArray(p)) {
         return { ...state, teams: p };
@@ -23,6 +25,8 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         teams: p.teams,
         ...(p.playerOverrides ? { playerOverrides: p.playerOverrides } : {}),
         ...(p.lineupOrder ? { lineupOrder: p.lineupOrder } : {}),
+        ...(p.rosterBench ? { rosterBench: p.rosterBench } : {}),
+        ...(p.rosterPitchers ? { rosterPitchers: p.rosterPitchers } : {}),
       };
     }
     default:

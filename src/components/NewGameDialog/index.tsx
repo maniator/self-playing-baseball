@@ -1,9 +1,11 @@
 import * as React from "react";
 
 import {
+  customTeamToBenchRoster,
   customTeamToDisplayName,
   customTeamToGameId,
   customTeamToLineupOrder,
+  customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
 } from "@features/customTeams/adapters/customTeamAdapter";
 
@@ -44,6 +46,10 @@ export type PlayerOverrides = {
   home: TeamCustomPlayerOverrides;
   awayOrder: string[];
   homeOrder: string[];
+  awayBench?: string[];
+  homeBench?: string[];
+  awayPitchers?: string[];
+  homePitchers?: string[];
 };
 
 type Props = {
@@ -110,6 +116,10 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
         home: customTeamToPlayerOverrides(homeDoc),
         awayOrder: customTeamToLineupOrder(awayDoc),
         homeOrder: customTeamToLineupOrder(homeDoc),
+        awayBench: customTeamToBenchRoster(awayDoc),
+        homeBench: customTeamToBenchRoster(homeDoc),
+        awayPitchers: customTeamToPitcherRoster(awayDoc),
+        homePitchers: customTeamToPitcherRoster(homeDoc),
       });
     } else {
       onStart(home, away, mt, { away: awayOverrides, home: homeOverrides, awayOrder, homeOrder });
