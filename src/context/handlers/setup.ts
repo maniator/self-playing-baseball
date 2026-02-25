@@ -21,14 +21,12 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
             lineupOrder?: [string[], string[]];
             rosterBench?: [string[], string[]];
             rosterPitchers?: [string[], string[]];
+            /** Override the starting pitcher index per team. null = use 0 (default). */
+            startingPitcherIdx?: [number | null, number | null];
           };
       if (Array.isArray(p)) {
         return { ...state, teams: p };
       }
-      // Compute lineupPositions from lineupOrder + playerOverrides when both are present
-      // and at least one player has a non-empty position. For MLB games, playerOverrides
-      // have no .position — producing all-empty-string arrays — so we keep the existing
-      // [[], []] default to let PlayerStatsPanel fall back to roster-position lookup.
       let lineupPositions: [string[], string[]] = state.lineupPositions;
       if (p.lineupOrder && p.playerOverrides) {
         const computed: [string[], string[]] = [
@@ -42,13 +40,22 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         }
       }
       const newPlayerOverrides = p.playerOverrides ?? state.playerOverrides;
-      // resolvedMods is a derived cache of playerOverrides — computed once here at setTeams
-      // time and recomputed by backfillRestoredState on save restore. See resolvePlayerMods.ts
-      // for the full invariant and stat wiring inventory.
       const newResolvedMods: [
         Record<string, ResolvedPlayerMods>,
         Record<string, ResolvedPlayerMods>,
       ] = [buildResolvedMods(newPlayerOverrides[0]), buildResolvedMods(newPlayerOverrides[1])];
+      // Apply starting pitcher index per team (clamped to valid range; default 0).
+      let newActivePitcherIdx: [number, number] = state.activePitcherIdx;
+      if (p.startingPitcherIdx && p.rosterPitchers) {
+        const clampIdx = (idx: number | null, pitchers: string[]) => {
+          if (idx === null || idx === undefined) return 0;
+          return idx >= 0 && idx < pitchers.length ? idx : 0;
+        };
+        newActivePitcherIdx = [
+          clampIdx(p.startingPitcherIdx[0], p.rosterPitchers[0]),
+          clampIdx(p.startingPitcherIdx[1], p.rosterPitchers[1]),
+        ];
+      }
       return {
         ...state,
         teams: p.teams,
@@ -56,6 +63,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         ...(p.lineupOrder ? { lineupOrder: p.lineupOrder } : {}),
         ...(p.rosterBench ? { rosterBench: p.rosterBench } : {}),
         ...(p.rosterPitchers ? { rosterPitchers: p.rosterPitchers } : {}),
+        activePitcherIdx: newActivePitcherIdx,
         lineupPositions,
         resolvedMods: newResolvedMods,
       };

@@ -103,13 +103,13 @@ const emptyBatterStat = (): BatterStat => ({
 /**
  * Returns the stat key for a log entry.
  *
- * Stage 3B+ entries carry `playerId` so stats are grouped by player rather than
+ * Entries carry `playerId` so stats are grouped by player rather than
  * by batting-order slot. This means a substitute's stat line starts at zero and
  * the replaced player's stats stay under their own ID.
  *
  * Older entries (no `playerId`) fall back to a slot-number string key
  * (`"slot:1"` … `"slot:9"`) so the legacy slot-based grouping still works for
- * saves predating Stage 3B.
+ * older saves.
  */
 const statKey = (entry: { playerId?: string; batterNum: number }): string =>
   entry.playerId ?? `slot:${entry.batterNum}`;
@@ -256,7 +256,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     return order.slice(0, 9).map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
   }, [lineupPositions, teams, activeTeam, lineupOrder, customTeams]);
 
-  // Look up stats for a slot by player ID (Stage 3B+) falling back to slot-number string key
+  // Look up stats for a slot by player ID falling back to slot-number string key
   // (legacy saves where playerId was not recorded). Always returns a defined BatterStat.
   const getSlotStats = React.useCallback(
     (slotNum: number): BatterStat => {

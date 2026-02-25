@@ -976,9 +976,35 @@ describe("pinch_hitter decision", () => {
     expect(d?.kind).toBe("pinch_hitter");
   });
 
+  it("detectDecision pinch_hitter decision includes teamIdx, lineupIdx, and candidates", () => {
+    const state = makeState({
+      baseLayout: [0, 0, 1],
+      outs: 0,
+      inning: 7,
+      atBat: 0,
+      batterIndex: [3, 0],
+      rosterBench: [["b1", "b2"], []],
+      substitutedOut: [["b2"], []],
+      playerOverrides: [{ b1: { nickname: "Bench1", position: "LF" } }, {}],
+    });
+    const d = detectDecision(state, "balanced", true);
+    expect(d?.kind).toBe("pinch_hitter");
+    if (d?.kind === "pinch_hitter") {
+      expect(d.teamIdx).toBe(0);
+      expect(d.lineupIdx).toBe(3);
+      // b2 is substituted out, so only b1 should be a candidate
+      expect(d.candidates).toHaveLength(1);
+      expect(d.candidates[0].id).toBe("b1");
+      expect(d.candidates[0].name).toBe("Bench1");
+      expect(d.candidates[0].position).toBe("LF");
+    }
+  });
+
   it("set_pinch_hitter_strategy stores strategy and clears pending decision", () => {
     const { state, logs } = dispatchAction(
-      makeState({ pendingDecision: { kind: "pinch_hitter" } }),
+      makeState({
+        pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+      }),
       "set_pinch_hitter_strategy",
       "contact",
     );

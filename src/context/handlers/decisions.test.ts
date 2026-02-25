@@ -166,7 +166,9 @@ describe("handleDecisionsAction — clear_suppress_decision", () => {
 describe("handleDecisionsAction — set_pinch_hitter_strategy", () => {
   it("stores the pinch hitter strategy and clears pendingDecision", () => {
     const { log } = makeLogs();
-    const state = makeState({ pendingDecision: { kind: "pinch_hitter" } });
+    const state = makeState({
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
     const next = handleDecisionsAction(
       state,
       { type: "set_pinch_hitter_strategy", payload: "contact" },
@@ -185,7 +187,10 @@ describe("handleDecisionsAction — set_pinch_hitter_strategy", () => {
 
   it("appends to decisionLog with pitchKey:pinch:strategy format", () => {
     const { log } = makeLogs();
-    const state = makeState({ pitchKey: 4, pendingDecision: { kind: "pinch_hitter" } });
+    const state = makeState({
+      pitchKey: 4,
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
     const next = handleDecisionsAction(
       state,
       { type: "set_pinch_hitter_strategy", payload: "patient" },
@@ -429,7 +434,7 @@ describe("handleDecisionsAction — manager announcer identity", () => {
     const state = makeState({
       teams: ["Mets", "Yankees"],
       atBat: 0,
-      pendingDecision: { kind: "pinch_hitter" },
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
     });
     handleDecisionsAction(state, { type: "set_pinch_hitter_strategy", payload: "power" }, { log });
     expect(logs.some((l) => l.includes("Mets") && /pinch hitter/i.test(l))).toBe(true);

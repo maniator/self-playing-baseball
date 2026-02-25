@@ -425,7 +425,7 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
 // previously broken on desktop due to an undersized first grid column.
 // Desktop-only: one stable baseline is sufficient to catch layout regressions;
 // mobile portrait is already covered in the section above.
-test.describe("Visual — Stage 3B: Create Team editor, desktop", () => {
+test.describe("Visual — Create Team editor, desktop", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
     await disableAnimations(page);

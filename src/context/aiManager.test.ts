@@ -242,9 +242,32 @@ describe("makeAiTacticalDecision", () => {
     }
   });
 
-  it("pinch_hitter: always uses contact strategy", () => {
+  it("pinch_hitter: dispatches make_substitution when bench candidates are available", () => {
     const state = makeState({ atBat: 0, inning: 8 });
-    const result = makeAiTacticalDecision(state, { kind: "pinch_hitter" });
+    const result = makeAiTacticalDecision(state, {
+      kind: "pinch_hitter",
+      candidates: [{ id: "b1", name: "Bench Player" }],
+      teamIdx: 0,
+      lineupIdx: 2,
+    });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("make_substitution");
+      const payload = result.payload as Record<string, unknown>;
+      expect(payload.benchPlayerId).toBe("b1");
+      expect(payload.lineupIdx).toBe(2);
+      expect(result.reasonText).toContain("Bench Player");
+    }
+  });
+
+  it("pinch_hitter: falls back to strategy when no bench candidates", () => {
+    const state = makeState({ atBat: 0, inning: 8 });
+    const result = makeAiTacticalDecision(state, {
+      kind: "pinch_hitter",
+      candidates: [],
+      teamIdx: 0,
+      lineupIdx: 0,
+    });
     expect(result.kind).toBe("tactical");
     if (result.kind === "tactical") {
       expect(result.actionType).toBe("set_pinch_hitter_strategy");

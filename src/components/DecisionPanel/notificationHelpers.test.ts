@@ -162,7 +162,9 @@ describe("closeManagerNotification", () => {
 
 describe("getNotificationBody – new decision types", () => {
   it("returns pinch_hitter message", () => {
-    expect(getNotificationBody({ kind: "pinch_hitter" })).toBe("Pinch hitter opportunity");
+    expect(
+      getNotificationBody({ kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 }),
+    ).toBe("Pinch hitter opportunity");
   });
 
   it("returns defensive_shift message", () => {
@@ -174,7 +176,12 @@ describe("getNotificationBody – new decision types", () => {
 
 describe("getNotificationActions – new decision types", () => {
   it("returns pinch_hitter actions with all 5 strategies and skip", () => {
-    const actions = getNotificationActions({ kind: "pinch_hitter" });
+    const actions = getNotificationActions({
+      kind: "pinch_hitter",
+      candidates: [],
+      teamIdx: 0,
+      lineupIdx: 0,
+    });
     expect(actions).toEqual([
       { action: "ph_contact", title: "🎯 Contact" },
       { action: "ph_patient", title: "👀 Patient" },

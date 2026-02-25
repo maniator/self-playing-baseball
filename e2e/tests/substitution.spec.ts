@@ -1,5 +1,5 @@
 /**
- * Manager Substitution (Stage 3B) — E2E tests for in-game roster substitutions.
+ * Manager Substitution — E2E tests for in-game roster substitutions.
  *
  * Covers:
  * 1. Substitution button appears in manager mode when a game is in progress
@@ -7,7 +7,6 @@
  * 3. Substitution panel shows batter and pitcher sections
  * 4. Panel can be closed without making a change
  * 5. "No bench players available" placeholder shown for MLB teams (no custom bench)
- * 6. Stage 3C placeholder note is present in pitcher section
  */
 import { expect, test } from "@playwright/test";
 

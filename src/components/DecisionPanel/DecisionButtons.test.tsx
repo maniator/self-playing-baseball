@@ -275,10 +275,15 @@ describe("DecisionButtons", () => {
   // ---------------------------------------------------------------------------
   // pinch_hitter
   // ---------------------------------------------------------------------------
-  describe("pinch_hitter", () => {
-    const decision: DecisionType = { kind: "pinch_hitter" };
+  describe("pinch_hitter — no bench (fallback to strategy buttons)", () => {
+    const decision: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [],
+      teamIdx: 0,
+      lineupIdx: 0,
+    };
 
-    it("renders pinch hitter prompt and strategy buttons", () => {
+    it("renders pinch hitter prompt and strategy buttons when no bench available", () => {
       render(
         <DecisionButtons
           pendingDecision={decision}
@@ -293,7 +298,7 @@ describe("DecisionButtons", () => {
       expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
     });
 
-    it("calls onDispatch with set_pinch_hitter_strategy on strategy click", async () => {
+    it("calls onDispatch with set_pinch_hitter_strategy on strategy click when no bench", async () => {
       const onDispatch = vi.fn();
       render(
         <DecisionButtons
@@ -307,6 +312,54 @@ describe("DecisionButtons", () => {
       expect(onDispatch).toHaveBeenCalledWith({
         type: "set_pinch_hitter_strategy",
         payload: "contact",
+      });
+    });
+  });
+
+  describe("pinch_hitter — with bench candidates", () => {
+    const decision: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b1", name: "Bench Player 1", position: "LF" },
+        { id: "b2", name: "Bench Player 2" },
+      ],
+      teamIdx: 0,
+      lineupIdx: 3,
+    };
+
+    it("renders player selector and confirm button when bench is available", () => {
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={noop}
+        />,
+      );
+      expect(screen.getByText(/send up a pinch hitter/i)).toBeTruthy();
+      expect(screen.getByTestId("pinch-hitter-select")).toBeTruthy();
+      expect(screen.getByRole("button", { name: /send up pinch hitter/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
+    });
+
+    it("dispatches make_substitution and set_pinch_hitter_strategy on confirm", async () => {
+      const onDispatch = vi.fn();
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={onDispatch}
+        />,
+      );
+      await userEvent.click(screen.getByRole("button", { name: /send up pinch hitter/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 3, benchPlayerId: "b1" },
+      });
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "set_pinch_hitter_strategy",
+        payload: "balanced",
       });
     });
   });

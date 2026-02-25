@@ -87,7 +87,17 @@ export const detectDecision = (
     balls === 0 &&
     strikes === 0
   ) {
-    return { kind: "pinch_hitter" };
+    const teamIdx = state.atBat as 0 | 1;
+    const lineupIdx = (state.batterIndex ?? [0, 0])[teamIdx];
+    const subOut = (state.substitutedOut ?? [[], []])[teamIdx];
+    const candidates = (state.rosterBench[teamIdx] ?? [])
+      .filter((id) => !subOut.includes(id))
+      .map((id) => ({
+        id,
+        name: state.playerOverrides[teamIdx]?.[id]?.nickname ?? id.slice(0, 8),
+        position: state.playerOverrides[teamIdx]?.[id]?.position,
+      }));
+    return { kind: "pinch_hitter", candidates, teamIdx, lineupIdx };
   }
 
   if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };

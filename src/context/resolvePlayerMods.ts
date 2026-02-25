@@ -1,7 +1,7 @@
 import type { PlayerCustomization, ResolvedPlayerMods } from "./index";
 
 /**
- * ## Stat Wiring Inventory (Stage 3D)
+ * ## Stat Wiring Inventory
  *
  * All stats listed here are editable in the CustomTeamEditor UI and persisted in the
  * `customTeams` RxDB collection (`TeamPlayer.batting` / `TeamPlayer.pitching`).
@@ -24,12 +24,12 @@ import type { PlayerCustomization, ResolvedPlayerMods } from "./index";
  *
  * ### Intentionally deferred stats (stored-only, not yet wired into sim)
  * - `handedness` (batter/pitcher): stored in TeamPlayer, not yet used to affect pitch outcomes.
- *   Planned for a future stage when batter-vs-pitcher matchup splits are added.
+ *   Planned for a future update when batter-vs-pitcher matchup splits are added.
  * - `pitchingRole` (SP/RP/SP-RP): stored in CustomTeamDoc, drives AI substitution logic only;
  *   does not yet affect pitch-by-pitch simulation.
  * - `staminaMod` (pitcher): editable in PlayerCustomizationPanel (via `PITCHER_MOD_FIELDS`) and
  *   stored in `PlayerCustomization`, but not part of `ResolvedPlayerMods` and not read by any
- *   simulation logic. Reserved for a future stage to drive pitcher fatigue/usage modeling.
+ *   simulation logic. Reserved for a future update to drive pitcher fatigue/usage modeling.
  *
  * ### Invariant: resolvedMods is a derived cache
  * `resolvedMods` is computed from `playerOverrides` exactly once at `setTeams` time

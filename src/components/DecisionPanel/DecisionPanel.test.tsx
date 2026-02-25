@@ -359,7 +359,10 @@ describe("DecisionPanel — service worker notification paths", () => {
     const dispatch = vi.fn();
     renderWithContext(
       <DecisionPanel strategy="balanced" />,
-      makeContextValue({ pendingDecision: { kind: "pinch_hitter" }, dispatch }),
+      makeContextValue({
+        pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+        dispatch,
+      }),
     );
     const handler = getRegisteredMessageHandler();
     const cases = [

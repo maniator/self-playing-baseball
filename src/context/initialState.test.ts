@@ -51,7 +51,7 @@ describe("createFreshGameState", () => {
     expect(state.playerOverrides).toEqual([{}, {}]);
   });
 
-  it("initializes Stage 3B roster fields to empty defaults", () => {
+  it("initializes roster fields to empty defaults", () => {
     const state = createFreshGameState(["A", "B"]);
     expect(state.rosterBench).toEqual([[], []]);
     expect(state.rosterPitchers).toEqual([[], []]);
@@ -199,7 +199,7 @@ describe("backfillRestoredState", () => {
     expect(result.outs).toBe(2);
   });
 
-  it("defaults rosterBench to [[],[]] when missing (Stage 3B backfill)", () => {
+  it("defaults rosterBench to [[],[]] when missing (backfill for older saves)", () => {
     const restored = makeState();
     // @ts-expect-error intentionally deleting to simulate older save
     delete restored.rosterBench;
@@ -207,7 +207,7 @@ describe("backfillRestoredState", () => {
     expect(result.rosterBench).toEqual([[], []]);
   });
 
-  it("defaults rosterPitchers to [[],[]] when missing (Stage 3B backfill)", () => {
+  it("defaults rosterPitchers to [[],[]] when missing (backfill for older saves)", () => {
     const restored = makeState();
     // @ts-expect-error intentionally deleting to simulate older save
     delete restored.rosterPitchers;
@@ -215,7 +215,7 @@ describe("backfillRestoredState", () => {
     expect(result.rosterPitchers).toEqual([[], []]);
   });
 
-  it("defaults activePitcherIdx to [0,0] when missing (Stage 3B backfill)", () => {
+  it("defaults activePitcherIdx to [0,0] when missing (backfill for older saves)", () => {
     const restored = makeState();
     // @ts-expect-error intentionally deleting to simulate older save
     delete restored.activePitcherIdx;
@@ -223,7 +223,7 @@ describe("backfillRestoredState", () => {
     expect(result.activePitcherIdx).toEqual([0, 0]);
   });
 
-  it("defaults lineupPositions to [[],[]] when missing (Stage 3B backfill)", () => {
+  it("defaults lineupPositions to [[],[]] when missing (backfill for older saves)", () => {
     const restored = makeState();
     // @ts-expect-error intentionally deleting to simulate older save
     delete restored.lineupPositions;
