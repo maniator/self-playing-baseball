@@ -17,6 +17,7 @@ import {
   playVictoryFanfare,
   setAlertVolume,
   setAnnouncementVolume,
+  setAnnouncePreprocessor,
   setSpeechRate,
 } from "./announce";
 
@@ -28,6 +29,7 @@ beforeEach(() => {
   setAnnouncementVolume(1);
   setAlertVolume(1);
   cancelAnnouncements();
+  setAnnouncePreprocessor(null);
 });
 
 // ---------------------------------------------------------------------------
@@ -114,6 +116,46 @@ describe("announce", () => {
     await vi.runAllTimersAsync();
     // speak should only be called once (batched)
     expect(synth.speak).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setAnnouncePreprocessor()
+// ---------------------------------------------------------------------------
+describe("setAnnouncePreprocessor", () => {
+  it("applies preprocessor to the message before it is queued for TTS", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    setAnnouncePreprocessor((msg) => msg.replace("hello", "world"));
+    announce("hello there");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).toContain("world there");
+    expect(utterance.text).not.toContain("hello");
+    vi.useRealTimers();
+  });
+
+  it("passes the message through unchanged when preprocessor is null", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    setAnnouncePreprocessor(null);
+    announce("hello there");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).toContain("hello there");
+    vi.useRealTimers();
+  });
+
+  it("resolves custom team IDs so TTS does not read raw custom: prefixes", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    setAnnouncePreprocessor((msg) => msg.replace(/custom:[a-zA-Z0-9_]+/g, "Austin Eagles"));
+    announce("custom:ct_abc123 are now up to bat!");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).not.toContain("custom:");
+    expect(utterance.text).toContain("Austin Eagles");
     vi.useRealTimers();
   });
 });

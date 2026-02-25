@@ -30,6 +30,7 @@ vi.mock("@utils/announce", () => ({
   setSpeechRate: vi.fn(),
   playVictoryFanfare: vi.fn(),
   play7thInningStretch: vi.fn(),
+  setAnnouncePreprocessor: vi.fn(),
 }));
 
 vi.mock("@utils/saves", async (importOriginal) => {

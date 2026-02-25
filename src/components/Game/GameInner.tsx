@@ -18,6 +18,7 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
+import { setAnnouncePreprocessor } from "@utils/announce";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -144,8 +145,17 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
 
-  // Custom teams for resolving human-readable names in the resume banner.
+  // Custom teams for resolving human-readable names in the resume banner and TTS.
   const { teams: customTeams } = useCustomTeams();
+
+  // Register a TTS preprocessor that resolves `custom:<id>` fragments to
+  // human-readable team names before they are spoken.  Cleared on unmount.
+  React.useEffect(() => {
+    setAnnouncePreprocessor((msg: string) =>
+      msg.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams)),
+    );
+    return () => setAnnouncePreprocessor(null);
+  }, [customTeams]);
 
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
   // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
