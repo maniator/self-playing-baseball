@@ -90,6 +90,17 @@ const GameInner: React.FunctionComponent<Props> = ({
     onBackToHome?.();
   }, [onBackToHome]);
 
+  // Same top-layer cleanup needed when navigating to Manage Teams from the
+  // New Game dialog's Custom Teams empty-state link.  Without this, the
+  // showModal() backdrop remains active and makes ManageTeams buttons inert.
+  const handleSafeManageTeams = React.useCallback(() => {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
+    }
+    setDialogOpen(false);
+    onManageTeams?.();
+  }, [onManageTeams]);
+
   // Re-open the New Game dialog when the user explicitly clicks "New Game" from Home
   // while Game is already mounted (the prop increments on each request).
   const prevNewGameRequestRef = React.useRef(newGameRequestCount ?? 0);
@@ -263,7 +274,7 @@ const GameInner: React.FunctionComponent<Props> = ({
           autoSaveName={autoSaveName}
           onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
           onBackToHome={handleSafeBackToHome}
-          onManageTeams={onManageTeams}
+          onManageTeams={handleSafeManageTeams}
         />
       )}
       <LineScore />

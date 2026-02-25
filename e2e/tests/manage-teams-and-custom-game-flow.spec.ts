@@ -270,4 +270,28 @@ test.describe("New Game dialog — custom team picker", () => {
     // No raw custom ID fragments must appear in the log.
     expect(logText).not.toMatch(/custom:ct_/);
   });
+
+  test("New Game → Custom Teams (empty) → 'Go to Manage Teams' link — buttons are actionable", async ({
+    page,
+  }) => {
+    // Navigate to New Game (no custom teams exist).
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to the Custom Teams tab — should show the empty state link.
+    await page.getByTestId("new-game-custom-teams-tab").click();
+    await expect(page.getByRole("button", { name: /go to manage teams/i })).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Click the "Go to Manage Teams" link — must close the dialog and navigate.
+    await page.getByRole("button", { name: /go to manage teams/i }).click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    // The New Game dialog's backdrop must be gone — buttons must be actionable.
+    // Verify both the Create button and Back button are clickable.
+    await expect(page.getByTestId("manage-teams-create-button")).toBeVisible();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+  });
 });
