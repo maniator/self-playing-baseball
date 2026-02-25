@@ -65,9 +65,16 @@ const Game: React.FunctionComponent<Props> = ({
         {dbResetNotice && (
           <DbResetNotice>
             <span>
-              Your local save data was reset due to an app update. Sorry for the inconvenience!
+              Your local game data (saves, events, teams, and custom teams) was reset due to an app
+              update. Sorry for the inconvenience!
             </span>
-            <button onClick={() => setDbResetNotice(false)}>×</button>
+            <button
+              type="button"
+              aria-label="Dismiss notice"
+              onClick={() => setDbResetNotice(false)}
+            >
+              ×
+            </button>
           </DbResetNotice>
         )}
         <GameInner

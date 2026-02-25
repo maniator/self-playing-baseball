@@ -82,6 +82,11 @@ export const LoadingScreen = styled.p`
 `;
 
 export const DbResetNotice = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
   background: #7a3200;
   color: #fff;
   padding: 10px 16px;

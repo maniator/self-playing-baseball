@@ -4,6 +4,7 @@ import {
   removeRxDatabase,
   type RxCollection,
   type RxDatabase,
+  RxError,
   type RxJsonSchema,
   type RxStorage,
 } from "rxdb";
@@ -219,17 +220,24 @@ export const wasDbReset = (): boolean => dbWasReset;
 export const getDb = (): Promise<BallgameDb> => {
   if (!dbPromise) {
     dbPromise = initDb(getRxStorageDexie()).catch(async (err: unknown) => {
-      // Graceful recovery: wipe the stale database and start fresh.
-      // This is a last-resort fallback — the schema migration above should
-      // handle normal upgrade paths. This path only fires if migration itself
-      // fails (e.g. corrupted storage or an unexpected schema delta).
-      appLog.warn("DB init failed; resetting local database for recovery:", err);
+      // Only attempt recovery for confirmed schema/migration hash-mismatch errors
+      // (RxError DB6). Transient errors (quota exceeded, blocked IndexedDB, etc.)
+      // are rethrown so the app can surface an appropriate failure state without
+      // silently wiping user data.
+      const isSchemaError = err instanceof RxError && err.code === "DB6";
+      if (!isSchemaError) throw err;
+
+      appLog.warn("DB schema mismatch (DB6) detected; resetting local database for recovery:", err);
+      // Only mark the DB as reset if removal actually succeeds; if removal also
+      // fails we still attempt a fresh init but don't show the reset notice.
+      let resetSucceeded = false;
       try {
         await removeRxDatabase("ballgame", getRxStorageDexie());
+        resetSucceeded = true;
       } catch {
         appLog.warn("DB removal also failed during recovery — proceeding anyway");
       }
-      dbWasReset = true;
+      dbWasReset = resetSucceeded;
       return initDb(getRxStorageDexie());
     });
   }
