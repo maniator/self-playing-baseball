@@ -150,6 +150,15 @@ const randInt = (rng: () => number, min: number, max: number): number =>
 
 const pickFrom = <T>(rng: () => number, arr: T[]): T => arr[Math.floor(rng() * arr.length)];
 
+/** Fisher-Yates in-place shuffle using the seeded RNG. Returns the same array. */
+const shuffle = <T>(rng: () => number, arr: T[]): T[] => {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+};
+
 export function generateDefaultCustomTeamDraft(seed: string | number): CustomTeamDraft {
   const rng = makeMulberry32(seedToNumber(seed));
 
@@ -164,11 +173,15 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     return "S";
   };
 
+  // Shuffle batting positions so the batting order varies per seed.
+  // All 9 required positions (including DH) are still present, just in a random order.
+  const shuffledPositions = shuffle(rng, [...BATTING_POSITIONS]);
+
   const lineup: GeneratedPlayer[] = Array.from({ length: 9 }, (_, i) => ({
     id: `p_${seed}_L${i}`,
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "batter" as const,
-    position: BATTING_POSITIONS[i] ?? "DH",
+    position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
     // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
     batting: {

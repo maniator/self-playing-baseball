@@ -200,4 +200,49 @@ describe("generateDefaultCustomTeamDraft — seed variability", () => {
     const combos = new Set(drafts.map((d) => `${d.city}-${d.name}`));
     expect(combos.size).toBeGreaterThan(1);
   });
+
+  it("batting order (position sequence) is not always fixed to standard positional order", () => {
+    // Generate a batch of teams with different seeds; the first batting slot should
+    // not always be "C" (which would indicate a fixed positional order).
+    const seeds = [1, 2, 3, 4, 5, 100, 200, 300, 400, 500];
+    const firstPositions = seeds.map(
+      (s) => generateDefaultCustomTeamDraft(s).roster.lineup[0].position,
+    );
+    // If batting order were fixed, all first positions would be "C".
+    // With shuffling, there should be at least 2 distinct first positions across 10 seeds.
+    const unique = new Set(firstPositions);
+    expect(unique.size).toBeGreaterThan(1);
+  });
+
+  it("same seed produces the same shuffled batting order (deterministic)", () => {
+    const a = generateDefaultCustomTeamDraft("shuffle-det");
+    const b = generateDefaultCustomTeamDraft("shuffle-det");
+    const aOrder = a.roster.lineup.map((p) => p.position);
+    const bOrder = b.roster.lineup.map((p) => p.position);
+    expect(aOrder).toEqual(bOrder);
+  });
+
+  it("different seeds produce different batting orders", () => {
+    // Use numeric seeds to avoid string-parsing collisions in seedToNumber.
+    const seeds = Array.from({ length: 20 }, (_, i) => i + 1);
+    const orders = seeds.map((s) =>
+      generateDefaultCustomTeamDraft(s)
+        .roster.lineup.map((p) => p.position)
+        .join(","),
+    );
+    const unique = new Set(orders);
+    expect(unique.size).toBeGreaterThan(1);
+  });
+
+  it("all 9 required positions still present after shuffle", () => {
+    // Required positions must not be lost during the shuffle.
+    const required = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
+    for (const seed of [1, 2, 3, 42, 999]) {
+      const draft = generateDefaultCustomTeamDraft(seed);
+      const positions = draft.roster.lineup.map((p) => p.position);
+      for (const pos of required) {
+        expect(positions).toContain(pos);
+      }
+    }
+  });
 });
