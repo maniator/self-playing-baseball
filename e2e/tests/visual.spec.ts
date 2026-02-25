@@ -450,8 +450,10 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
     );
 
     // Step 1: create two custom teams.
-    await createAndSaveTeam(page, "Visual Away Sox");
-    await createAndSaveTeam(page, "Visual Home Cubs");
+    // Note: generateDefaultTeam fills a city, so the display name becomes
+    // "GeneratedCity TeamName". We keep the names simple for readability.
+    await createAndSaveTeam(page, "Sox");
+    await createAndSaveTeam(page, "Cubs");
 
     // Step 2: start a new game using those custom teams.
     await page.getByTestId("home-new-game-button").click();
@@ -461,18 +463,17 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
     await page.getByTestId("new-game-custom-teams-tab").click();
 
     // The two custom team selects should now be visible.
-    await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
-      timeout: 5_000,
-    });
-    await expect(page.getByTestId("new-game-custom-home-team-select")).toBeVisible({
-      timeout: 5_000,
-    });
-
-    // Select our custom teams (they may already be selected as defaults).
     const awaySelect = page.getByTestId("new-game-custom-away-team-select");
     const homeSelect = page.getByTestId("new-game-custom-home-team-select");
-    await awaySelect.selectOption({ label: "Visual Away Sox" });
-    await homeSelect.selectOption({ label: "Visual Home Cubs" });
+    await expect(awaySelect).toBeVisible({ timeout: 5_000 });
+    await expect(homeSelect).toBeVisible({ timeout: 5_000 });
+
+    // Wait until the selects are populated with our two custom teams.
+    // (useCustomTeams loads asynchronously; options appear once it resolves.)
+    // The auto-selection in NewGameDialog already picks the first two teams —
+    // no explicit selectOption call needed, avoiding fragile label matching.
+    await expect(awaySelect.locator("option")).toHaveCount(2, { timeout: 5_000 });
+    await expect(homeSelect.locator("option")).toHaveCount(2, { timeout: 5_000 });
 
     // Fill seed for determinism.
     await page.getByTestId("seed-input").fill("saves-visual1");
