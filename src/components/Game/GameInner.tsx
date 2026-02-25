@@ -80,10 +80,13 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Dialogs opened via showModal() live in the browser's top layer and are NOT
   // affected by display:none on their parent container.  Close them explicitly
   // before routing Home so the backdrop never blocks the HomeScreen buttons.
+  // Also reset dialogOpen so the NewGameDialog is unmounted — this prevents
+  // residual top-layer state in WebKit when the Game div is later re-shown.
   const handleSafeBackToHome = React.useCallback(() => {
     if (typeof document !== "undefined") {
       document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
     }
+    setDialogOpen(false);
     onBackToHome?.();
   }, [onBackToHome]);
 

@@ -164,7 +164,7 @@ test.describe("Home button interactivity — regression guard", () => {
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Home → Load Saved → ← Home (controls button) → Home buttons still work", async ({
+  test("Home → Load Saved → Back to Home (modal close) → re-enter Load Saved works", async ({
     page,
   }) => {
     // Enter Load Saved — saves modal auto-opens.
@@ -172,14 +172,13 @@ test.describe("Home button interactivity — regression guard", () => {
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
 
-    // Close the modal via its close button first (to un-inert the rest of the page),
-    // then click ← Home button in the game controls.
+    // The close button is labelled "Back to Home" on the pre-load path and
+    // routes back to the Home screen when clicked.
     await page.getByTestId("saves-modal-close-button").click();
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
-    await page.getByTestId("back-to-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible();
 
-    // Repeated Load Saved click must work (no lingering backdrop).
+    // Repeated Load Saved click must work — no lingering backdrop should block it.
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("saves-modal").or(page.getByTestId("scoreboard"))).toBeVisible({
@@ -253,6 +252,9 @@ test.describe("Save current game gating", () => {
     await startGameViaPlayBall(page, { seed: "save-gate-2" });
     // Create the initial save.
     await saveCurrentGame(page);
+    // saveCurrentGame leaves the modal open; close it before re-opening.
+    await page.getByTestId("saves-modal-close-button").click();
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
     // Re-open saves modal — should now show "Update save".
     await openSavesModal(page);
     await expect(page.getByTestId("save-game-button")).toHaveText("Update save", {

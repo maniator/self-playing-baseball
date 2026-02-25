@@ -1,8 +1,10 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { mq } from "@utils/mediaQueries";
 
 const HeadingRow = styled.div`
@@ -69,8 +71,13 @@ const SCROLL_THRESHOLD = 60;
 
 const Announcements: React.FunctionComponent = () => {
   const { log } = useGameContext();
+  const { teams: customTeams } = useCustomTeams();
   const [expanded, setExpanded] = React.useState(false);
   const areaRef = React.useRef<HTMLDivElement>(null);
+
+  /** Replaces any `custom:<id>` fragment in a log entry with the team's display name. */
+  const resolveEntry = (entry: string): string =>
+    entry.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
 
   React.useEffect(() => {
     if (!expanded) return;
@@ -106,7 +113,7 @@ const Announcements: React.FunctionComponent = () => {
           ) : (
             log.map((announcement, idx) => (
               <Log key={idx} data-log-index={log.length - 1 - idx}>
-                {announcement}
+                {resolveEntry(announcement)}
               </Log>
             ))
           )}
