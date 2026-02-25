@@ -177,3 +177,27 @@ describe("makeAbbreviation", () => {
     expect(result).toBe(result.toUpperCase());
   });
 });
+
+describe("generateDefaultCustomTeamDraft — seed variability", () => {
+  it("timestamp-based seeds (simulating different page loads) produce different teams", () => {
+    // Simulate two different page loads by using different timestamp-derived seeds.
+    // This matches how _generateCounter is initialized in CustomTeamEditor.
+    const seed1 = Date.now() | 0;
+    const seed2 = (Date.now() + 1000) | 0; // 1 second later
+    const a = generateDefaultCustomTeamDraft(seed1);
+    const b = generateDefaultCustomTeamDraft(seed2);
+    // Very likely to differ on city or first player name
+    const differ =
+      a.city !== b.city || a.roster.lineup[0].name !== b.roster.lineup[0].name || a.name !== b.name;
+    expect(differ).toBe(true);
+  });
+
+  it("consecutive counter increments produce distinct outputs", () => {
+    // Simulates clicking Generate Random multiple times in one session.
+    let counter = Date.now() | 0;
+    const drafts = Array.from({ length: 5 }, () => generateDefaultCustomTeamDraft(++counter));
+    // All city+nickname combos should not all be the same
+    const combos = new Set(drafts.map((d) => `${d.city}-${d.name}`));
+    expect(combos.size).toBeGreaterThan(1);
+  });
+});

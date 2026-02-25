@@ -120,6 +120,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     managedTeamRef,
     skipDecisionRef,
     strikesRef,
+    dispatchLog,
   );
 
   useAutoPlayScheduler(

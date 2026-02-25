@@ -48,11 +48,13 @@ import {
   TextInput,
 } from "./styles";
 
-// Each "Generate Defaults" click gets its own unique seed so every generated
-// roster is different, whether you click the button multiple times or open the
-// editor in separate sessions.  The counter resets to 0 on every page load,
-// which keeps visual snapshot tests deterministic without any extra setup.
-let _generateCounter = 0;
+// The counter is seeded from the current timestamp on module load so that
+// each fresh page load produces different teams when "Generate Random" is clicked.
+// The counter increments on every click, so successive clicks in the same session
+// also produce distinct rosters.  Visual snapshot tests that need deterministic
+// output should call generateDefaultCustomTeamDraft() directly with a fixed seed
+// rather than going through the UI button.
+let _generateCounter = Date.now() | 0;
 
 type Props = {
   /** Existing team to edit. Undefined means create-new mode. */

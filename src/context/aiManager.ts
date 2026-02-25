@@ -10,7 +10,7 @@
  * - Only handles actions available in the current game state.
  */
 
-import type { State } from "./index";
+import type { DecisionType, State } from "./index";
 
 /** Reason codes for AI manager decisions. */
 export type AiDecisionReason =
@@ -20,7 +20,14 @@ export type AiDecisionReason =
   | "late_game_score_close"
   | "bench_hitter_opportunity"
   | "no_bench_available"
-  | "already_substituted";
+  | "already_substituted"
+  | "steal_high_success"
+  | "bunt_sacrifice_opportunity"
+  | "protect_plate"
+  | "work_count"
+  | "intentional_walk"
+  | "pinch_hitter_late_game"
+  | "defensive_shift_power";
 
 export interface AiPitchingChangeDecision {
   kind: "pitching_change";
@@ -30,15 +37,28 @@ export interface AiPitchingChangeDecision {
   reasonText: string;
 }
 
+/** AI auto-apply a tactical game decision (steal, bunt, count modifier, IBB, etc). */
+export interface AiTacticalDecision {
+  kind: "tactical";
+  /** The action type to dispatch (maps to GameAction types). */
+  actionType: string;
+  /** Action payload. */
+  payload: unknown;
+  reasonText: string;
+}
+
 export interface AiNoneDecision {
   kind: "none";
 }
 
-export type AiDecision = AiPitchingChangeDecision | AiNoneDecision;
+export type AiDecision = AiPitchingChangeDecision | AiTacticalDecision | AiNoneDecision;
 
 /** Batters-faced threshold above which the AI considers a pitching change. */
 export const AI_FATIGUE_THRESHOLD_HIGH = 18;
 export const AI_FATIGUE_THRESHOLD_MEDIUM = 12;
+
+/** Steal success % above which the AI sends the runner. */
+const AI_STEAL_THRESHOLD = 0.62;
 
 /**
  * Returns true if a pitcher ID is a viable in-game replacement:
@@ -152,4 +172,108 @@ export function makeAiPitchingDecision(
     reason,
     reasonText,
   };
+}
+
+/**
+ * AI tactical decision for the unmanaged batting/fielding team.
+ *
+ * Given a detected DecisionType (from `detectDecision`), returns what the AI
+ * manager would do with it — either acting (AiTacticalDecision) or passing
+ * (AiNoneDecision, meaning let the normal pitch proceed).
+ *
+ * Heuristics used (all deterministic, state-based):
+ * - steal: send runner when successPct > AI_STEAL_THRESHOLD
+ * - bunt: sacrifice when trailing by 1-2 runs in inning 7+ with 0 outs
+ * - count30: take the pitch (work the count)
+ * - count02: protect the plate (make contact)
+ * - ibb / ibb_or_steal: issue the intentional walk
+ * - pinch_hitter: use "contact" strategy in late game
+ * - defensive_shift: enable if trailing by 2+ runs (less aggressive)
+ */
+export function makeAiTacticalDecision(state: State, decision: DecisionType): AiDecision {
+  const { score, inning, outs, atBat } = state;
+  const scoreDiff = score[0] - score[1]; // positive = away leading
+
+  switch (decision.kind) {
+    case "steal": {
+      if (decision.successPct >= AI_STEAL_THRESHOLD) {
+        return {
+          kind: "tactical",
+          actionType: "steal_attempt",
+          payload: { base: decision.base, successPct: decision.successPct },
+          reasonText: "high-percentage steal opportunity",
+        };
+      }
+      return { kind: "none" };
+    }
+
+    case "bunt": {
+      // Sacrifice bunt when trailing by 1 in innings 7+, 0 outs, runner on first
+      const isBehind = atBat === 0 ? scoreDiff < 0 : scoreDiff > 0;
+      const isLateCloseGame = inning >= 7 && Math.abs(scoreDiff) <= 1 && outs === 0 && isBehind;
+      if (isLateCloseGame) {
+        return {
+          kind: "tactical",
+          actionType: "bunt_attempt",
+          payload: {},
+          reasonText: "sacrifice bunt in close late game",
+        };
+      }
+      return { kind: "none" };
+    }
+
+    case "count30": {
+      // Always take a 3-0 pitch (work the count, draw a walk)
+      return {
+        kind: "tactical",
+        actionType: "set_one_pitch_modifier",
+        payload: "take",
+        reasonText: "taking the pitch with a 3-0 count",
+      };
+    }
+
+    case "count02": {
+      // Protect the plate — swing at anything to avoid a strikeout
+      return {
+        kind: "tactical",
+        actionType: "set_one_pitch_modifier",
+        payload: "protect",
+        reasonText: "protecting the plate with two strikes",
+      };
+    }
+
+    case "ibb":
+    case "ibb_or_steal": {
+      // Always issue the intentional walk when the game situation calls for it
+      return {
+        kind: "tactical",
+        actionType: "intentional_walk",
+        payload: {},
+        reasonText: "intentional walk — set up the double play",
+      };
+    }
+
+    case "pinch_hitter": {
+      // Use contact strategy for pinch hitting late in the game
+      return {
+        kind: "tactical",
+        actionType: "set_pinch_hitter_strategy",
+        payload: "contact",
+        reasonText: "pinch hitter in, looking for contact late in the game",
+      };
+    }
+
+    case "defensive_shift": {
+      // Enable shift — AI always uses the shift when offered
+      return {
+        kind: "tactical",
+        actionType: "set_defensive_shift",
+        payload: true,
+        reasonText: "defensive shift deployed",
+      };
+    }
+
+    default:
+      return { kind: "none" };
+  }
 }

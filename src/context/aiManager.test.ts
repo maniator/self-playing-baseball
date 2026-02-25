@@ -11,6 +11,7 @@ import {
   findBestReliever,
   isPitcherEligibleForChange,
   makeAiPitchingDecision,
+  makeAiTacticalDecision,
 } from "./aiManager";
 
 describe("isPitcherEligibleForChange", () => {
@@ -156,5 +157,98 @@ describe("makeAiPitchingDecision", () => {
     delete (state as Record<string, unknown>)["pitcherBattersFaced"];
     const decision = makeAiPitchingDecision(state as typeof state, 1);
     expect(decision.kind).toBe("none");
+  });
+});
+
+describe("makeAiTacticalDecision", () => {
+  it("steal: sends runner when successPct is high", () => {
+    const state = makeState({ atBat: 0, score: [0, 0], inning: 5 });
+    const result = makeAiTacticalDecision(state, {
+      kind: "steal",
+      base: 0,
+      successPct: 0.7,
+    });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("steal_attempt");
+      expect(result.reasonText).toContain("steal");
+    }
+  });
+
+  it("steal: does NOT send runner when successPct is below threshold", () => {
+    const state = makeState({ atBat: 0 });
+    const result = makeAiTacticalDecision(state, {
+      kind: "steal",
+      base: 0,
+      successPct: 0.5,
+    });
+    expect(result.kind).toBe("none");
+  });
+
+  it("bunt: sacrifices in close late game when behind", () => {
+    // atBat=0 means away batting; score[0]-score[1] = 1-2 = -1 (away behind)
+    const result = makeAiTacticalDecision(
+      makeState({ atBat: 0, score: [1, 2], inning: 8, outs: 0 }),
+      { kind: "bunt" },
+    );
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("bunt_attempt");
+    }
+  });
+
+  it("bunt: does not bunt when team is winning", () => {
+    const state = makeState({ atBat: 0, score: [3, 1], inning: 8, outs: 0 });
+    const result = makeAiTacticalDecision(state, { kind: "bunt" });
+    expect(result.kind).toBe("none");
+  });
+
+  it("count30: always takes the pitch", () => {
+    const state = makeState({ atBat: 0 });
+    const result = makeAiTacticalDecision(state, { kind: "count30" });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("set_one_pitch_modifier");
+      expect(result.payload).toBe("take");
+    }
+  });
+
+  it("count02: always protects the plate", () => {
+    const state = makeState({ atBat: 0 });
+    const result = makeAiTacticalDecision(state, { kind: "count02" });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("set_one_pitch_modifier");
+      expect(result.payload).toBe("protect");
+    }
+  });
+
+  it("ibb: always issues intentional walk", () => {
+    const state = makeState({ atBat: 0 });
+    const result = makeAiTacticalDecision(state, { kind: "ibb" });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("intentional_walk");
+    }
+  });
+
+  it("defensive_shift: always enables shift", () => {
+    const state = makeState({ atBat: 0 });
+    const result = makeAiTacticalDecision(state, { kind: "defensive_shift" });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("set_defensive_shift");
+      expect(result.payload).toBe(true);
+    }
+  });
+
+  it("pinch_hitter: always uses contact strategy", () => {
+    const state = makeState({ atBat: 0, inning: 8 });
+    const result = makeAiTacticalDecision(state, { kind: "pinch_hitter" });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      expect(result.actionType).toBe("set_pinch_hitter_strategy");
+      expect(result.payload).toBe("contact");
+    }
   });
 });
