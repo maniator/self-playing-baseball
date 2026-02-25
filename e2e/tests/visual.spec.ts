@@ -244,7 +244,10 @@ async function createAndSaveTeam(
 // ─── 1. Manage Teams screen baseline ─────────────────────────────────────────
 test.describe("Visual — Stage 2B: Manage Teams screen", () => {
   test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
+    // Fixed seed URL so getSeed() returns a stable value across all CI runs —
+    // required because handleGenerate uses getSeed() as part of its draft seed.
+    await page.goto("/?seed=snap1");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
   });
 
@@ -289,7 +292,8 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
 // ─── 2. Create Team editor — mobile portrait ──────────────────────────────────
 test.describe("Visual — Stage 2B: Create Team editor, mobile portrait", () => {
   test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
+    await page.goto("/?seed=snap1");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
   });
 
@@ -336,7 +340,8 @@ test.describe("Visual — Stage 2B: Create Team editor, narrow landscape", () =>
   test.use({ viewport: { width: 731, height: 412 } });
 
   test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
+    await page.goto("/?seed=snap1");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
   });
 
@@ -381,7 +386,8 @@ test.describe("Visual — Stage 2B: Create Team editor, narrow landscape", () =>
 // ─── 4. Edit Team editor — mobile portrait ────────────────────────────────────
 test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
   test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
+    await page.goto("/?seed=snap1");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
   });
 
@@ -422,7 +428,8 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
 // ─── 5. Saves modal with custom-team saved game rows ──────────────────────────
 test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () => {
   test.beforeEach(async ({ page }) => {
-    await resetAppState(page);
+    await page.goto("/?seed=snap1");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
   });
 

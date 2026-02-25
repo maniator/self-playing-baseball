@@ -19,6 +19,7 @@ import { generateDefaultCustomTeamDraft } from "@features/customTeams/generation
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { CustomTeamDoc } from "@storage/types";
+import { getSeed } from "@utils/rng";
 
 import {
   type EditorPlayer,
@@ -82,6 +83,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   const [state, dispatch] = React.useReducer(editorReducer, team, initEditorState);
   const { createTeam, updateTeam } = useCustomTeams();
   const errorRef = React.useRef<HTMLParagraphElement>(null);
+  // Incremented each time Generate Defaults is clicked, so consecutive presses
+  // produce different (but reproducible) rosters.  The counter starts at 0 on
+  // every component mount, ensuring E2E/visual snapshot tests always get the
+  // same output on their first click.
+  const [draftCount, setDraftCount] = React.useState(0);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -99,7 +105,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   };
 
   const handleGenerate = () => {
-    const seed = `${Date.now()}`;
+    // Mix the current game seed (from the app-level deterministic PRNG) with a
+    // per-mount counter so the output is reproducible in tests that navigate
+    // with a fixed ?seed= URL, while still varying across consecutive presses.
+    const seed = ((getSeed() ?? 0) ^ draftCount) >>> 0;
+    setDraftCount((c) => c + 1);
     dispatch({ type: "APPLY_DRAFT", draft: generateDefaultCustomTeamDraft(seed) });
   };
 
