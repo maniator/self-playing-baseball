@@ -16,6 +16,7 @@ import {
   PlayerCard,
   PlayerHeader,
   PlayerMeta,
+  ReadOnlyInput,
   RemoveBtn,
   SelectInput,
   TextInput,
@@ -24,6 +25,7 @@ import {
 type Props = {
   player: EditorPlayer;
   isPitcher?: boolean;
+  isExistingPlayer?: boolean;
   onChange: (patch: Partial<EditorPlayer>) => void;
   onRemove: () => void;
 };
@@ -31,6 +33,7 @@ type Props = {
 const SortablePlayerRow: React.FunctionComponent<Props> = ({
   player,
   isPitcher = false,
+  isExistingPlayer = false,
   onChange,
   onRemove,
 }) => {
@@ -65,14 +68,24 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
         >
           ⠿
         </span>
-        <TextInput
-          value={player.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="Player name"
-          aria-label="Player name"
-          aria-invalid={!player.name.trim() ? "true" : undefined}
-          style={{ flex: 1 }}
-        />
+        {isExistingPlayer ? (
+          <ReadOnlyInput
+            value={player.name}
+            readOnly
+            aria-label="Player name"
+            aria-readonly="true"
+            style={{ flex: 1 }}
+          />
+        ) : (
+          <TextInput
+            value={player.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            placeholder="Player name"
+            aria-label="Player name"
+            aria-invalid={!player.name.trim() ? "true" : undefined}
+            style={{ flex: 1 }}
+          />
+        )}
         <RemoveBtn type="button" onClick={onRemove} aria-label="Remove player">
           ✕
         </RemoveBtn>

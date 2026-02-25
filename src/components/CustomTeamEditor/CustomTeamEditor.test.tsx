@@ -293,8 +293,119 @@ describe("CustomTeamEditor — edit mode", () => {
 
     expect(mockUpdate).toHaveBeenCalledWith(
       "ct_edit",
-      expect.objectContaining({ name: "Existing Eagles" }),
+      expect.objectContaining({ roster: expect.any(Object) }),
+    );
+    // Identity fields are locked and not passed in the update
+    expect(mockUpdate).toHaveBeenCalledWith(
+      "ct_edit",
+      expect.not.objectContaining({ name: expect.any(String) }),
     );
     await vi.waitFor(() => expect(onSave).toHaveBeenCalledWith("ct_edit"));
+  });
+});
+
+describe("CustomTeamEditor — edit mode identity immutability", () => {
+  const makePlayer = (id: string, name: string, position: string) => ({
+    id,
+    name,
+    role: "batter" as const,
+    batting: { contact: 45, power: 45, speed: 45 },
+    position,
+    handedness: "R" as const,
+  });
+
+  const existingTeam = {
+    id: "ct_edit2",
+    schemaVersion: 1 as const,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name: "Lock Eagles",
+    abbreviation: "LCK",
+    city: "Portland",
+    nickname: "Eagles",
+    source: "custom" as const,
+    roster: {
+      schemaVersion: 1 as const,
+      lineup: [
+        makePlayer("ep1", "Alice Smith", "C"),
+        makePlayer("ep2", "Bob Jones", "1B"),
+        makePlayer("ep3", "Carol Lee", "2B"),
+        makePlayer("ep4", "Dave Kim", "3B"),
+        makePlayer("ep5", "Eve Park", "SS"),
+        makePlayer("ep6", "Frank Liu", "LF"),
+        makePlayer("ep7", "Grace Wang", "CF"),
+        makePlayer("ep8", "Hank Chen", "RF"),
+        makePlayer("ep9", "Iris Tan", "DH"),
+      ],
+      bench: [makePlayer("eb1", "Bench Benny", "C")],
+      pitchers: [],
+    },
+    metadata: { archived: false },
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("team name is read-only in edit mode", () => {
+    renderEditor({ team: existingTeam });
+    const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
+    expect(nameInput.readOnly).toBe(true);
+  });
+
+  it("team abbreviation is read-only in edit mode", () => {
+    renderEditor({ team: existingTeam });
+    const abbrevInput = screen.getByTestId("custom-team-abbreviation-input") as HTMLInputElement;
+    expect(abbrevInput.readOnly).toBe(true);
+  });
+
+  it("city is read-only in edit mode", () => {
+    renderEditor({ team: existingTeam });
+    const cityInput = screen.getByTestId("custom-team-city-input") as HTMLInputElement;
+    expect(cityInput.readOnly).toBe(true);
+  });
+
+  it("existing player names are read-only", () => {
+    renderEditor({ team: existingTeam });
+    // All player name inputs for existing players should be read-only (no placeholder text)
+    const playerNameInputs = screen
+      .getAllByRole("textbox")
+      .filter(
+        (el) => (el as HTMLInputElement).getAttribute("aria-label") === "Player name",
+      ) as HTMLInputElement[];
+    // All lineup + bench players (ep1..ep9 + eb1) should be read-only
+    expect(playerNameInputs.length).toBeGreaterThanOrEqual(1);
+    playerNameInputs.forEach((input) => {
+      expect(input.readOnly).toBe(true);
+    });
+  });
+
+  it("new players added to lineup have editable names", async () => {
+    renderEditor({ team: existingTeam });
+    const addBtn = screen.getByTestId("custom-team-add-lineup-player-button");
+    await act(async () => {
+      fireEvent.click(addBtn);
+    });
+    // New player has a placeholder — only the new one will have placeholder text
+    const playerNameInputs = screen.getAllByPlaceholderText(/player name/i) as HTMLInputElement[];
+    expect(playerNameInputs.length).toBeGreaterThanOrEqual(1);
+    // The new player's name input should NOT be read-only
+    const lastInput = playerNameInputs[playerNameInputs.length - 1];
+    expect(lastInput.readOnly).toBe(false);
+  });
+
+  it("identity lock hint is shown in edit mode", () => {
+    renderEditor({ team: existingTeam });
+    expect(screen.getByText("Team identity fields are locked after creation.")).toBeTruthy();
+  });
+
+  it("create mode: all team identity fields are editable", () => {
+    renderEditor();
+    const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
+    expect(nameInput.readOnly).toBe(false);
+    const abbrevInput = screen.getByTestId("custom-team-abbreviation-input") as HTMLInputElement;
+    expect(abbrevInput.readOnly).toBe(false);
+    const cityInput = screen.getByTestId("custom-team-city-input") as HTMLInputElement;
+    expect(cityInput.readOnly).toBe(false);
   });
 });
