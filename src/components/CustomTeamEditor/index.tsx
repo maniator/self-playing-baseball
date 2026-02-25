@@ -41,6 +41,8 @@ import {
   FieldLabel,
   FormSection,
   GenerateBtn,
+  IdentityLockHint,
+  ReadOnlyInput,
   SaveBtn,
   SectionHeading,
   TeamInfoGrid,
@@ -91,6 +93,17 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   const { createTeam, updateTeam } = useCustomTeams();
   const errorRef = React.useRef<HTMLParagraphElement>(null);
 
+  const isEditMode = !!team;
+  const existingPlayerIds = React.useMemo(
+    () =>
+      new Set([
+        ...(team?.roster.lineup.map((p) => p.id) ?? []),
+        ...(team?.roster.bench.map((p) => p.id) ?? []),
+        ...(team?.roster.pitchers.map((p) => p.id) ?? []),
+      ]),
+    [team],
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -125,10 +138,6 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       const input = editorStateToCreateInput(state);
       if (team) {
         await updateTeam(team.id, {
-          name: input.name,
-          abbreviation: input.abbreviation,
-          city: input.city,
-          nickname: input.nickname,
           roster: input.roster,
         });
         onSave(team.id);
@@ -162,6 +171,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             <SortablePlayerRow
               key={p.id}
               player={p}
+              isExistingPlayer={existingPlayerIds.has(p.id)}
               onChange={(patch) =>
                 dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
               }
@@ -199,6 +209,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           index={i}
           total={state[key].length}
           isPitcher={isPitcher}
+          isExistingPlayer={existingPlayerIds.has(p.id)}
           onChange={(patch) =>
             dispatch({ type: "UPDATE_PLAYER", section: key, index: i, player: patch })
           }
@@ -232,57 +243,90 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
         <TeamInfoGrid>
           <FieldGroup>
             <FieldLabel htmlFor="ct-name">Team Name *</FieldLabel>
-            <TextInput
-              id="ct-name"
-              value={state.name}
-              onChange={(e) =>
-                dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
-              }
-              placeholder="e.g. Eagles"
-              aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
-              data-testid="custom-team-name-input"
-            />
+            {isEditMode ? (
+              <ReadOnlyInput
+                id="ct-name"
+                value={state.name}
+                readOnly
+                aria-readonly="true"
+                data-testid="custom-team-name-input"
+              />
+            ) : (
+              <TextInput
+                id="ct-name"
+                value={state.name}
+                onChange={(e) =>
+                  dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
+                }
+                placeholder="e.g. Eagles"
+                aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
+                data-testid="custom-team-name-input"
+              />
+            )}
           </FieldGroup>
           <TeamInfoSecondRow>
             <FieldGroup>
               <FieldLabel htmlFor="ct-abbrev">Abbrev * (2–3 chars)</FieldLabel>
-              <TextInput
-                id="ct-abbrev"
-                value={state.abbreviation}
-                onChange={(e) =>
-                  dispatch({
-                    type: "SET_FIELD",
-                    field: "abbreviation",
-                    value: e.target.value.toUpperCase(),
-                  })
-                }
-                placeholder="e.g. EAG"
-                maxLength={3}
-                aria-invalid={
-                  !!state.error &&
-                  (!state.abbreviation.trim() ||
-                    state.abbreviation.trim().length < 2 ||
-                    state.abbreviation.trim().length > 3)
-                    ? "true"
-                    : undefined
-                }
-                data-testid="custom-team-abbreviation-input"
-              />
+              {isEditMode ? (
+                <ReadOnlyInput
+                  id="ct-abbrev"
+                  value={state.abbreviation}
+                  readOnly
+                  aria-readonly="true"
+                  data-testid="custom-team-abbreviation-input"
+                />
+              ) : (
+                <TextInput
+                  id="ct-abbrev"
+                  value={state.abbreviation}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "SET_FIELD",
+                      field: "abbreviation",
+                      value: e.target.value.toUpperCase(),
+                    })
+                  }
+                  placeholder="e.g. EAG"
+                  maxLength={3}
+                  aria-invalid={
+                    !!state.error &&
+                    (!state.abbreviation.trim() ||
+                      state.abbreviation.trim().length < 2 ||
+                      state.abbreviation.trim().length > 3)
+                      ? "true"
+                      : undefined
+                  }
+                  data-testid="custom-team-abbreviation-input"
+                />
+              )}
             </FieldGroup>
             <FieldGroup>
               <FieldLabel htmlFor="ct-city">City</FieldLabel>
-              <TextInput
-                id="ct-city"
-                value={state.city}
-                onChange={(e) =>
-                  dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
-                }
-                placeholder="e.g. Austin"
-                data-testid="custom-team-city-input"
-              />
+              {isEditMode ? (
+                <ReadOnlyInput
+                  id="ct-city"
+                  value={state.city}
+                  readOnly
+                  aria-readonly="true"
+                  data-testid="custom-team-city-input"
+                />
+              ) : (
+                <TextInput
+                  id="ct-city"
+                  value={state.city}
+                  onChange={(e) =>
+                    dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
+                  }
+                  placeholder="e.g. Austin"
+                  data-testid="custom-team-city-input"
+                />
+              )}
             </FieldGroup>
           </TeamInfoSecondRow>
         </TeamInfoGrid>
+        {isEditMode && (
+          <IdentityLockHint>Team identity fields are locked after creation.</IdentityLockHint>
+        )}
         {!team && (
           <GenerateBtn
             type="button"

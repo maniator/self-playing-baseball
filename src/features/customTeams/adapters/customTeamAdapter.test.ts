@@ -135,6 +135,12 @@ describe("customTeamToPlayerOverrides", () => {
     expect(overrides["p4"].controlMod).toBeDefined();
   });
 
+  it("includes movementMod for pitchers with non-default movement", () => {
+    const overrides = customTeamToPlayerOverrides(makeTeam());
+    // p4 has movement: 70 → offset = 70 - 60 = 10 → movementMod = 10
+    expect(overrides["p4"].movementMod).toBe(10);
+  });
+
   it("does not include pitching mods for batters", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].velocityMod).toBeUndefined();

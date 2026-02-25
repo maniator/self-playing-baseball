@@ -13,6 +13,7 @@ import {
   PlayerCard,
   PlayerHeader,
   PlayerMeta,
+  ReadOnlyInput,
   RemoveBtn,
   SelectInput,
   SmallIconBtn,
@@ -24,6 +25,7 @@ type Props = {
   index: number;
   total: number;
   isPitcher?: boolean;
+  isExistingPlayer?: boolean;
   onChange: (patch: Partial<EditorPlayer>) => void;
   onRemove: () => void;
   onMoveUp: () => void;
@@ -35,6 +37,7 @@ const PlayerRow: React.FunctionComponent<Props> = ({
   index,
   total,
   isPitcher = false,
+  isExistingPlayer = false,
   onChange,
   onRemove,
   onMoveUp,
@@ -45,14 +48,24 @@ const PlayerRow: React.FunctionComponent<Props> = ({
   return (
     <PlayerCard>
       <PlayerHeader>
-        <TextInput
-          value={player.name}
-          onChange={(e) => onChange({ name: e.target.value })}
-          placeholder="Player name"
-          aria-label="Player name"
-          aria-invalid={!player.name.trim() ? "true" : undefined}
-          style={{ flex: 1 }}
-        />
+        {isExistingPlayer ? (
+          <ReadOnlyInput
+            value={player.name}
+            readOnly
+            aria-label="Player name"
+            aria-readonly="true"
+            style={{ flex: 1 }}
+          />
+        ) : (
+          <TextInput
+            value={player.name}
+            onChange={(e) => onChange({ name: e.target.value })}
+            placeholder="Player name"
+            aria-label="Player name"
+            aria-invalid={!player.name.trim() ? "true" : undefined}
+            style={{ flex: 1 }}
+          />
+        )}
         <SmallIconBtn
           type="button"
           onClick={onMoveUp}

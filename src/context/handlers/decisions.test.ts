@@ -418,3 +418,142 @@ describe("handleDecisionsAction — make_substitution (pitcher)", () => {
     expect(next?.activePitcherIdx[0]).toBe(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Manager announcer identity — team name in log messages
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — manager announcer identity", () => {
+  it("set_pinch_hitter_strategy includes batting team name in log", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      teams: ["Mets", "Yankees"],
+      atBat: 0,
+      pendingDecision: { kind: "pinch_hitter" },
+    });
+    handleDecisionsAction(state, { type: "set_pinch_hitter_strategy", payload: "power" }, { log });
+    expect(logs.some((l) => l.includes("Mets") && /pinch hitter/i.test(l))).toBe(true);
+  });
+
+  it("set_defensive_shift includes fielding team name in log", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      teams: ["Mets", "Yankees"],
+      atBat: 0, // Mets batting → Yankees fielding
+      defensiveShift: false,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: true }, { log });
+    expect(logs.some((l) => l.includes("Yankees") && /shift/i.test(l))).toBe(true);
+  });
+
+  it("set_defensive_shift false includes fielding team name in normal alignment message", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      teams: ["Mets", "Yankees"],
+      atBat: 1, // Yankees batting → Mets fielding
+      defensiveShift: true,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: false }, { log });
+    expect(logs.some((l) => l.includes("Mets") && /normal alignment/i.test(l))).toBe(true);
+  });
+
+  it("make_substitution (batter) includes team name in log", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      teams: ["RedSox", "Cubs"],
+      lineupOrder: [["starter1"], []],
+      rosterBench: [["bench1"], []],
+      playerOverrides: [{ starter1: { nickname: "Starter" }, bench1: { nickname: "Sub" } }, {}],
+    });
+    handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "bench1" },
+      },
+      { log },
+    );
+    expect(logs.some((l) => l.includes("RedSox"))).toBe(true);
+  });
+
+  it("make_substitution (pitcher) includes team name in manager log", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      teams: ["RedSox", "Cubs"],
+      rosterPitchers: [["sp1", "rp1"], []],
+      activePitcherIdx: [0, 0],
+      playerOverrides: [{ rp1: { nickname: "Reliever" } }, {}],
+    });
+    handleDecisionsAction(
+      state,
+      { type: "make_substitution", payload: { teamIdx: 0, kind: "pitcher", pitcherIdx: 1 } },
+      { log },
+    );
+    expect(logs.some((l) => l.includes("RedSox") && l.includes("manager"))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Defensive shift de-spam — no re-announcement when shift state unchanged
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — defensive shift de-spam", () => {
+  it("suppresses log when shift is already ON and player selects ON again", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      defensiveShift: true,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: true }, { log });
+    expect(logs).toHaveLength(0);
+  });
+
+  it("suppresses log when shift is already OFF and player selects OFF again", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      defensiveShift: false,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: false }, { log });
+    expect(logs).toHaveLength(0);
+  });
+
+  it("clears pendingDecision even when shift state is unchanged (no-op)", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      defensiveShift: true,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    const next = handleDecisionsAction(
+      state,
+      { type: "set_defensive_shift", payload: true },
+      { log },
+    );
+    expect(next?.pendingDecision).toBeNull();
+    expect(next?.defensiveShift).toBe(true);
+  });
+
+  it("still announces when shift state actually changes (OFF → ON)", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      defensiveShift: false,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: true }, { log });
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.some((l) => /shift/i.test(l))).toBe(true);
+  });
+
+  it("still announces when shift state actually changes (ON → OFF)", () => {
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      defensiveShift: true,
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    handleDecisionsAction(state, { type: "set_defensive_shift", payload: false }, { log });
+    expect(logs.length).toBeGreaterThan(0);
+    expect(logs.some((l) => /normal alignment/i.test(l))).toBe(true);
+  });
+});

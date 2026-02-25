@@ -16,6 +16,7 @@ export const nextHalfInning = (state: State, log): State => {
   const newState = {
     ...state,
     baseLayout: [0, 0, 0] as [number, number, number],
+    baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
     outs: 0,
     strikes: 0,
     balls: 0,
@@ -53,8 +54,18 @@ export const nextHalfInning = (state: State, log): State => {
   }
 
   const isExtra = newInning > 9;
+  let extraRunnerId: string | null = null;
+  if (isExtra) {
+    const lineupSize = Math.max(1, next.lineupOrder[newHalfInning].length);
+    const lastBatterIdx = (next.batterIndex[newHalfInning] - 1 + lineupSize) % lineupSize;
+    extraRunnerId = next.lineupOrder[newHalfInning][lastBatterIdx] || null;
+  }
   const nextWithBase = isExtra
-    ? { ...next, baseLayout: [0, 1, 0] as [number, number, number] }
+    ? {
+        ...next,
+        baseLayout: [0, 1, 0] as [number, number, number],
+        baseRunnerIds: [null, extraRunnerId, null] as [string | null, string | null, string | null],
+      }
     : next;
 
   log(`${state.teams[newHalfInning]} are now up to bat!`);

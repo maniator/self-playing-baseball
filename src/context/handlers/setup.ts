@@ -1,4 +1,5 @@
-import type { GameAction, State, TeamCustomPlayerOverrides } from "../index";
+import type { GameAction, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "../index";
+import { buildResolvedMods } from "../resolvePlayerMods";
 
 /** Computes the defensive slot assignments for a lineup from player overrides. */
 const computeLineupPositions = (order: string[], overrides: TeamCustomPlayerOverrides): string[] =>
@@ -40,6 +41,14 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
           lineupPositions = computed;
         }
       }
+      const newPlayerOverrides = p.playerOverrides ?? state.playerOverrides;
+      // resolvedMods is a derived cache of playerOverrides — computed once here at setTeams
+      // time and recomputed by backfillRestoredState on save restore. See resolvePlayerMods.ts
+      // for the full invariant and stat wiring inventory.
+      const newResolvedMods: [
+        Record<string, ResolvedPlayerMods>,
+        Record<string, ResolvedPlayerMods>,
+      ] = [buildResolvedMods(newPlayerOverrides[0]), buildResolvedMods(newPlayerOverrides[1])];
       return {
         ...state,
         teams: p.teams,
@@ -48,6 +57,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         ...(p.rosterBench ? { rosterBench: p.rosterBench } : {}),
         ...(p.rosterPitchers ? { rosterPitchers: p.rosterPitchers } : {}),
         lineupPositions,
+        resolvedMods: newResolvedMods,
       };
     }
     default:

@@ -57,10 +57,21 @@ export type PlayerCustomization = {
   speedMod?: ModPreset;
   controlMod?: ModPreset;
   velocityMod?: ModPreset;
+  movementMod?: ModPreset;
   staminaMod?: ModPreset;
 };
 
 export type TeamCustomPlayerOverrides = Record<string, PlayerCustomization>;
+
+/** Pre-computed player mods with all fields defaulted to 0. Computed once at setTeams. */
+export type ResolvedPlayerMods = {
+  contactMod: number;
+  powerMod: number;
+  speedMod: number;
+  velocityMod: number;
+  controlMod: number;
+  movementMod: number;
+};
 
 export type DecisionType =
   | { kind: "steal"; base: 0 | 1; successPct: number }
@@ -127,6 +138,17 @@ export interface State {
    * [away, home]
    */
   substitutedOut: [string[], string[]];
+  /**
+   * Player IDs occupying each base. Index 0=1st, 1=2nd, 2=3rd.
+   * null = empty or identity unknown (stock teams, older saves).
+   */
+  baseRunnerIds: [string | null, string | null, string | null];
+  /**
+   * Pre-computed flat mods per player per team. Derived from playerOverrides at setTeams time.
+   * All fields are guaranteed to be numbers (defaulted to 0 if absent in playerOverrides).
+   * [away, home]
+   */
+  resolvedMods: [Record<string, ResolvedPlayerMods>, Record<string, ResolvedPlayerMods>];
 }
 
 export interface ContextValue extends State {

@@ -1,4 +1,5 @@
-import type { PlayLogEntry, State, TeamCustomPlayerOverrides } from "./index";
+import type { PlayLogEntry, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "./index";
+import { buildResolvedMods } from "./resolvePlayerMods";
 
 /** Fallback team names used when a very old save is missing the `teams` field. */
 const FALLBACK_TEAMS: [string, string] = ["Away", "Home"];
@@ -39,6 +40,11 @@ export const createFreshGameState = (teams: [string, string]): State => ({
   lineupPositions: [[], []] as [string[], string[]],
   pitcherBattersFaced: [0, 0] as [number, number],
   substitutedOut: [[], []] as [string[], string[]],
+  baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
+  resolvedMods: [{}, {}] as [
+    Record<string, ResolvedPlayerMods>,
+    Record<string, ResolvedPlayerMods>,
+  ],
 });
 
 /**
@@ -85,5 +91,10 @@ export const backfillRestoredState = (restored: State): State => {
     lineupPositions: base.lineupPositions ?? [[], []],
     pitcherBattersFaced: base.pitcherBattersFaced ?? [0, 0],
     substitutedOut: base.substitutedOut ?? [[], []],
+    baseRunnerIds: base.baseRunnerIds ?? [null, null, null],
+    resolvedMods:
+      base.resolvedMods && Object.keys(base.resolvedMods[0]).length > 0
+        ? base.resolvedMods
+        : [buildResolvedMods(base.playerOverrides[0]), buildResolvedMods(base.playerOverrides[1])],
   };
 };

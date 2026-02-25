@@ -35,11 +35,24 @@ export const buntAttempt = (
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
+    // Shift runner IDs: lead runner is out, remaining runners advance per base movement
+    const fcOldIds =
+      state.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
+    const fcNewRunnerIds: [string | null, string | null, string | null] = [null, null, null];
+    if (oldBase[0]) {
+      // lead runner on 1st is out; if runner on 2nd, they move to 3rd
+      if (oldBase[1]) fcNewRunnerIds[2] = fcOldIds[1];
+      // runner on 3rd scores (ID drops)
+    } else if (oldBase[1]) {
+      // lead runner on 2nd is out; runner on 3rd scores (ID drops)
+    }
+    // batter goes to 1st — ID unknown here (null)
     const afterFC = addInningRuns(
       {
         ...state,
         baseLayout: newBase,
         score: newScore,
+        baseRunnerIds: fcNewRunnerIds,
         pendingDecision: null as DecisionType | null,
         onePitchModifier: null as OnePitchModifier,
         strikes: 0,
@@ -63,11 +76,19 @@ export const buntAttempt = (
     const newScore: [number, number] = [state.score[0], state.score[1]];
     newScore[state.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
+    // Shift runner IDs following the same movement as bases
+    const sacOldIds =
+      state.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
+    const sacNewRunnerIds: [string | null, string | null, string | null] = [null, null, null];
+    if (oldBase[1]) sacNewRunnerIds[2] = sacOldIds[1]; // 2nd → 3rd
+    if (oldBase[0]) sacNewRunnerIds[1] = sacOldIds[0]; // 1st → 2nd
+    // runner on 3rd scores — ID drops; batter out — no ID placed
     const afterBunt = addInningRuns(
       {
         ...state,
         baseLayout: newBase,
         score: newScore,
+        baseRunnerIds: sacNewRunnerIds,
         pendingDecision: null as DecisionType | null,
         onePitchModifier: null as OnePitchModifier,
         pinchHitterStrategy: null as Strategy | null,

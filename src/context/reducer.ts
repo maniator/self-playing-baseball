@@ -5,6 +5,7 @@ import { handleSimAction } from "./handlers/sim";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
 import { applyHandlersInOrder } from "./reducerHelpers";
+import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
 // Re-export stratMod so existing consumers (e.g. tests) can import from this module.
@@ -25,9 +26,15 @@ const createLogger = (dispatchLogger: (action: LogAction) => void) => (message: 
   dispatchLogger({ type: "log", payload: message });
 };
 
-const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy): number => {
+const computeStealSuccessPct = (base: 0 | 1, strategy: Strategy, state: State): number => {
   const base_pct = base === 0 ? 70 : 60;
-  return Math.round(base_pct * stratMod(strategy, "steal"));
+  const runnerId = state.baseRunnerIds?.[base] ?? null;
+  const runnerSpeedMod = runnerId
+    ? (state.resolvedMods?.[state.atBat as 0 | 1]?.[runnerId] ?? ZERO_MODS).speedMod
+    : 0;
+  // speedMod: +20 → 10% better steal odds; -20 → 10% worse
+  const speedFactor = 1 + runnerSpeedMod / 200;
+  return Math.round(base_pct * stratMod(strategy, "steal") * speedFactor);
 };
 
 // Minimum steal success probability required to offer the steal decision (>72 means 73%+).
@@ -55,11 +62,11 @@ export const detectDecision = (
   let stealDecision: { kind: "steal"; base: 0 | 1; successPct: number } | null = null;
   if (outs < 2) {
     if (baseLayout[0] && !baseLayout[1]) {
-      const pct = computeStealSuccessPct(0, strategy);
+      const pct = computeStealSuccessPct(0, strategy, state);
       if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 0, successPct: pct };
     }
     if (!stealDecision && baseLayout[1] && !baseLayout[2]) {
-      const pct = computeStealSuccessPct(1, strategy);
+      const pct = computeStealSuccessPct(1, strategy, state);
       if (pct > STEAL_MIN_PCT) stealDecision = { kind: "steal", base: 1, successPct: pct };
     }
   }

@@ -93,6 +93,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
       ...(player.pitching && {
         velocityMod: clampMod((player.pitching.velocity ?? 60) - 60),
         controlMod: clampMod((player.pitching.control ?? 60) - 60),
+        movementMod: clampMod((player.pitching.movement ?? 60) - 60),
       }),
     };
   }

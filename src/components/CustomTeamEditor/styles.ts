@@ -341,3 +341,18 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
   font-size: 12px;
   color: ${({ $overCap }) => ($overCap ? "#ff8888" : "#6680aa")};
 `;
+
+export const ReadOnlyInput = styled(TextInput)`
+  opacity: 0.7;
+  cursor: default;
+  background: rgba(255, 255, 255, 0.04);
+  color: #8899bb;
+  border-color: #2a3a5a;
+`;
+
+export const IdentityLockHint = styled.p`
+  font-size: 11px;
+  color: #5577aa;
+  margin: 2px 0 8px;
+  font-style: italic;
+`;
