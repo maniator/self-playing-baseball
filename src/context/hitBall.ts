@@ -94,12 +94,18 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
 
   // Record this at-bat in the play log (batter reached base).
-  const batterNum = state.batterIndex[state.atBat as 0 | 1] + 1;
+  const battingTeam = state.atBat as 0 | 1;
+  const batterSlotIdx = state.batterIndex[battingTeam];
+  const batterNum = batterSlotIdx + 1;
+  // Use player ID from lineupOrder when available (Stage 3B+) for player-keyed stat tracking.
+  // Falls back gracefully for stock teams and older saves that have no lineupOrder entries.
+  const playerId = state.lineupOrder[battingTeam][batterSlotIdx] || undefined;
   const playEntry: PlayLogEntry = {
     inning: state.inning,
-    half: state.atBat as 0 | 1,
+    half: battingTeam,
     batterNum,
-    team: state.atBat as 0 | 1,
+    ...(playerId ? { playerId } : {}),
+    team: battingTeam,
     event: type,
     runs: runsScored,
     rbi: runsScored,

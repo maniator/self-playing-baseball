@@ -87,100 +87,104 @@ const Tr = styled.tr<{ $selected?: boolean }>`
  *     restore time (`restore_game`); stat aggregation falls back to 0 via
  *     `entry.rbi ?? 0` only for entries that are still absent after backfill
  */
+/** Returns a blank batting stat record. */
+const emptyBatterStat = (): BatterStat => ({
+  atBats: 0,
+  hits: 0,
+  walks: 0,
+  strikeouts: 0,
+  rbi: 0,
+  singles: 0,
+  doubles: 0,
+  triples: 0,
+  homers: 0,
+});
+
+/**
+ * Returns the stat key for a log entry.
+ *
+ * Stage 3B+ entries carry `playerId` so stats are grouped by player rather than
+ * by batting-order slot. This means a substitute's stat line starts at zero and
+ * the replaced player's stats stay under their own ID.
+ *
+ * Older entries (no `playerId`) fall back to a slot-number string key
+ * (`"slot:1"` … `"slot:9"`) so the legacy slot-based grouping still works for
+ * saves predating Stage 3B.
+ */
+const statKey = (entry: { playerId?: string; batterNum: number }): string =>
+  entry.playerId ?? `slot:${entry.batterNum}`;
+
 const computeStats = (
   team: 0 | 1,
   playLog: PlayLogEntry[],
   strikeoutLog: StrikeoutEntry[],
   outLog: StrikeoutEntry[],
-): Record<number, BatterStat> => {
-  const stats: Record<number, BatterStat> = {};
-  for (let i = 1; i <= 9; i++) {
-    stats[i] = {
-      atBats: 0,
-      hits: 0,
-      walks: 0,
-      strikeouts: 0,
-      rbi: 0,
-      singles: 0,
-      doubles: 0,
-      triples: 0,
-      homers: 0,
-    };
-  }
+): Record<string, BatterStat> => {
+  const stats: Record<string, BatterStat> = {};
+  const getOrCreate = (key: string): BatterStat => {
+    if (!stats[key]) stats[key] = emptyBatterStat();
+    return stats[key];
+  };
   for (const entry of playLog) {
     if (entry.team !== team) continue;
+    const s = getOrCreate(statKey(entry));
     if (entry.event === Hit.Walk) {
-      stats[entry.batterNum].walks++;
+      s.walks++;
     } else {
-      stats[entry.batterNum].hits++;
-      if (entry.event === Hit.Single) stats[entry.batterNum].singles++;
-      else if (entry.event === Hit.Double) stats[entry.batterNum].doubles++;
-      else if (entry.event === Hit.Triple) stats[entry.batterNum].triples++;
-      else if (entry.event === Hit.Homerun) stats[entry.batterNum].homers++;
+      s.hits++;
+      if (entry.event === Hit.Single) s.singles++;
+      else if (entry.event === Hit.Double) s.doubles++;
+      else if (entry.event === Hit.Triple) s.triples++;
+      else if (entry.event === Hit.Homerun) s.homers++;
     }
-    stats[entry.batterNum].rbi += entry.rbi ?? 0;
+    s.rbi += entry.rbi ?? 0;
   }
   for (const entry of strikeoutLog) {
     if (entry.team !== team) continue;
-    stats[entry.batterNum].strikeouts++;
+    getOrCreate(statKey(entry)).strikeouts++;
   }
   // AB = H + outLog entries (outLog includes K + regular outs; walks are excluded from AB)
   for (const entry of outLog) {
     if (entry.team !== team) continue;
-    stats[entry.batterNum].atBats++;
+    getOrCreate(statKey(entry)).atBats++;
   }
-  for (let i = 1; i <= 9; i++) {
-    stats[i].atBats += stats[i].hits;
+  // AB must also include hits (reached-base events are not in outLog)
+  for (const key of Object.keys(stats)) {
+    stats[key].atBats += stats[key].hits;
   }
   return stats;
 };
 
 /**
- * Dev-mode invariant: verify batting-order PA consistency and that K ≤ AB.
+ * Dev-mode invariant: verify that K ≤ AB for each player's stat record.
  *
- * An earlier lineup slot must never have *fewer* plate appearances (AB + BB)
- * than a later slot — regardless of walk counts.  If it does, stat attribution
- * is broken.  K > AB is a separate hard impossibility (strikeouts always count
- * as official at-bats).
- *
- * Plate appearances here means AB + BB only (walks are the only non-AB PA
- * type modelled in this simulator — no sac flies, HBP, or CI).
+ * Note: the previous slot-ordering invariant (slot N must have ≥ PAs as slot N+1)
+ * no longer applies once we track stats by player ID — after a substitution the
+ * replaced player's ID is no longer in any active slot, so slot-order PA checks
+ * would produce false positives.
  *
  * Only runs when import.meta.env.DEV is true; completely dead-code-eliminated
  * in production builds.
  */
 const warnBattingStatsInvariant = (
-  stats: Record<number, BatterStat>,
+  stats: Record<string, BatterStat>,
   team: 0 | 1,
   teamName: string,
 ): void => {
   if (!import.meta.env.DEV) return;
-  for (let slot = 1; slot <= 9; slot++) {
-    const s = stats[slot];
-    const pa = s.atBats + s.walks;
-    // K > AB is truly impossible — strikeouts always count as official at-bats.
+  for (const [key, s] of Object.entries(stats)) {
     if (s.strikeouts > s.atBats) {
       appLog.warn(
-        `[BattingStats] IMPOSSIBLE: slot ${slot} team=${team} (${teamName}) ` +
+        `[BattingStats] IMPOSSIBLE: key=${key} team=${team} (${teamName}) ` +
           `K=${s.strikeouts} > AB=${s.atBats}`,
       );
-    }
-    // Earlier batter must not have fewer PAs than the next batter.
-    if (slot < 9) {
-      const nextPA = stats[slot + 1].atBats + stats[slot + 1].walks;
-      if (pa < nextPA) {
-        appLog.warn(
-          `[BattingStats] PA ordering violation: slot ${slot} PA=${pa} < slot ${slot + 1} PA=${nextPA} ` +
-            `team=${team} (${teamName}). ` +
-            `Note: AB can legitimately differ due to walks — check PA, not AB.`,
-        );
-      }
     }
   }
 };
 
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
-  const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
+  const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides, lineupPositions } =
+    useGameContext();
   const { teams: customTeams } = useCustomTeams();
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
@@ -221,9 +225,16 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   }, [teams, activeTeam, lineupOrder, playerOverrides]);
 
   // Build slot→position map for the active team.
-  // Custom teams carry position on their roster docs; generated rosters use
-  // the positional archetype assigned by generateRoster.
+  // lineupPositions holds the in-game defensive slot assignment set at game-start
+  // (which stays fixed on substitution, preventing duplicate positions after a sub).
+  // Falls back to per-player natural positions for stock teams / older saves where
+  // lineupPositions is empty.
   const slotPositions = React.useMemo(() => {
+    const storedPositions = lineupPositions[activeTeam];
+    if (storedPositions.length > 0) {
+      return storedPositions.slice(0, 9);
+    }
+    // Fallback: derive from roster natural positions (stock teams / older saves).
     const teamId = teams[activeTeam];
     const roster = generateRoster(teamId);
     const order =
@@ -232,7 +243,6 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
         : roster.batters.map((p) => p.id);
     const idToGenerated = new Map(roster.batters.map((p) => [p.id, p.position]));
 
-    // For custom teams, build a position lookup from the stored roster doc.
     let customPositions: Map<string, string> | undefined;
     if (teamId.startsWith("custom:")) {
       const customId = teamId.slice("custom:".length);
@@ -244,9 +254,21 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     }
 
     return order.slice(0, 9).map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
-  }, [teams, activeTeam, lineupOrder, customTeams]);
+  }, [lineupPositions, teams, activeTeam, lineupOrder, customTeams]);
 
-  const selectedStats = selectedSlot != null ? stats[selectedSlot] : null;
+  // Look up stats for a slot by player ID (Stage 3B+) falling back to slot-number string key
+  // (legacy saves where playerId was not recorded). Always returns a defined BatterStat.
+  const getSlotStats = React.useCallback(
+    (slotNum: number): BatterStat => {
+      const playerId = lineupOrder[activeTeam][slotNum - 1];
+      return (
+        (playerId ? stats[playerId] : undefined) ?? stats[`slot:${slotNum}`] ?? emptyBatterStat()
+      );
+    },
+    [stats, lineupOrder, activeTeam],
+  );
+
+  const selectedStats = selectedSlot != null ? getSlotStats(selectedSlot) : null;
   const selectedName =
     selectedSlot != null ? slotNames[selectedSlot - 1] || `Batter ${selectedSlot}` : "";
   const selectedPosition = selectedSlot != null ? (slotPositions[selectedSlot - 1] ?? "") : "";
@@ -278,7 +300,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
             </thead>
             <tbody>
               {Array.from({ length: 9 }, (_, i) => i + 1).map((num) => {
-                const s = stats[num];
+                const s = getSlotStats(num);
                 return (
                   <Tr
                     key={num}

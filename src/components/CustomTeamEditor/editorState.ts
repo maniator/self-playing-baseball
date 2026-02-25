@@ -3,6 +3,7 @@ import type { CustomTeamDraft } from "@features/customTeams/generation/generateD
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import { REQUIRED_FIELD_POSITIONS } from "./playerConstants";
+import { HITTER_STAT_CAP, hitterStatTotal, PITCHER_STAT_CAP, pitcherStatTotal } from "./statBudget";
 
 /** A single player row as edited in the form (stats as numbers 0–100). */
 export interface EditorPlayer {
@@ -170,6 +171,22 @@ export function validateEditorState(state: EditorState): string {
   const missingPositions = REQUIRED_FIELD_POSITIONS.filter((pos) => !coveredPositions.has(pos));
   if (missingPositions.length > 0) {
     return `Roster must include at least one player at each of: ${missingPositions.join(", ")}.`;
+  }
+
+  // Check hitter stat cap (contact + power + speed ≤ HITTER_STAT_CAP).
+  for (const player of [...state.lineup, ...state.bench]) {
+    const total = hitterStatTotal(player.contact, player.power, player.speed);
+    if (total > HITTER_STAT_CAP) {
+      return `${player.name || "A hitter"} is over the stat cap (${total} / ${HITTER_STAT_CAP}).`;
+    }
+  }
+
+  // Check pitcher stat cap (velocity + control + movement ≤ PITCHER_STAT_CAP).
+  for (const player of state.pitchers) {
+    const total = pitcherStatTotal(player.velocity ?? 0, player.control ?? 0, player.movement ?? 0);
+    if (total > PITCHER_STAT_CAP) {
+      return `${player.name || "A pitcher"} is over the stat cap (${total} / ${PITCHER_STAT_CAP}).`;
+    }
   }
 
   return "";

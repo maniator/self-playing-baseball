@@ -9,7 +9,9 @@ import reducer from "./reducer";
 export type PlayLogEntry = {
   inning: number;
   half: 0 | 1; // 0 = top (away bats), 1 = bottom (home bats)
-  batterNum: number; // 1–9
+  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
+  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  playerId?: string;
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
   runs: number; // runs scored on this play
@@ -29,7 +31,9 @@ export type PlayLogEntry = {
 
 export type StrikeoutEntry = {
   team: 0 | 1;
-  batterNum: number; // 1–9
+  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
+  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  playerId?: string;
 };
 
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
@@ -46,6 +50,8 @@ export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 export type PlayerCustomization = {
   nickname?: string;
+  /** Defensive position string (e.g. "C", "LF") — populated for custom-team players. */
+  position?: string;
   contactMod?: ModPreset;
   powerMod?: ModPreset;
   speedMod?: ModPreset;
@@ -94,6 +100,21 @@ export interface State {
   outLog: StrikeoutEntry[]; // record of every batter-completed out (K + pop-out + groundout + FC + sac-bunt)
   playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides]; // [away, home]
   lineupOrder: [string[], string[]]; // [away, home] batter IDs in batting order (empty = default)
+  /** Bench player IDs available for substitution per team. [away, home] */
+  rosterBench: [string[], string[]];
+  /** Pitcher IDs in the bullpen per team. [away, home] */
+  rosterPitchers: [string[], string[]];
+  /** Index into rosterPitchers of the currently active pitcher per team. [away, home] */
+  activePitcherIdx: [number, number];
+  /**
+   * Defensive slot assignment for each batting-order position per team. [away, home]
+   * Each entry is the position (e.g. "SS", "CF") that the player in that batting slot
+   * is assigned to play for this game. Populated from the roster at game-start via
+   * `setTeams`; unchanged on substitution so the slot's assignment stays consistent
+   * even after a bench player with a different natural position comes in.
+   * Empty array = fall back to per-player natural position (stock teams / older saves).
+   */
+  lineupPositions: [string[], string[]];
 }
 
 export interface ContextValue extends State {

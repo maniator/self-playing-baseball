@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 
+import {
+  HITTER_STAT_CAP,
+  hitterStatTotal,
+  PITCHER_STAT_CAP,
+  pitcherStatTotal,
+} from "../statBudget";
 import { generateDefaultCustomTeamDraft, makeAbbreviation } from "./generateDefaultTeam";
 
 describe("generateDefaultCustomTeamDraft", () => {
@@ -24,16 +30,16 @@ describe("generateDefaultCustomTeamDraft", () => {
     expect(draft.roster.pitchers).toHaveLength(3);
   });
 
-  it("batter batting stats are in [40, 80]", () => {
+  it("batter batting stats are in [20, 50]", () => {
     const draft = generateDefaultCustomTeamDraft("testbatters");
     const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
     for (const p of allBatters) {
-      expect(p.batting.contact).toBeGreaterThanOrEqual(40);
-      expect(p.batting.contact).toBeLessThanOrEqual(80);
-      expect(p.batting.power).toBeGreaterThanOrEqual(40);
-      expect(p.batting.power).toBeLessThanOrEqual(80);
-      expect(p.batting.speed).toBeGreaterThanOrEqual(40);
-      expect(p.batting.speed).toBeLessThanOrEqual(80);
+      expect(p.batting.contact).toBeGreaterThanOrEqual(20);
+      expect(p.batting.contact).toBeLessThanOrEqual(50);
+      expect(p.batting.power).toBeGreaterThanOrEqual(20);
+      expect(p.batting.power).toBeLessThanOrEqual(50);
+      expect(p.batting.speed).toBeGreaterThanOrEqual(20);
+      expect(p.batting.speed).toBeLessThanOrEqual(50);
     }
   });
 
@@ -63,12 +69,34 @@ describe("generateDefaultCustomTeamDraft", () => {
     const draft = generateDefaultCustomTeamDraft("pitchingstats");
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();
-      expect(p.pitching!.velocity).toBeGreaterThanOrEqual(40);
-      expect(p.pitching!.velocity).toBeLessThanOrEqual(80);
-      expect(p.pitching!.control).toBeGreaterThanOrEqual(40);
-      expect(p.pitching!.control).toBeLessThanOrEqual(80);
-      expect(p.pitching!.movement).toBeGreaterThanOrEqual(40);
-      expect(p.pitching!.movement).toBeLessThanOrEqual(80);
+      expect(p.pitching!.velocity).toBeGreaterThanOrEqual(25);
+      expect(p.pitching!.velocity).toBeLessThanOrEqual(53);
+      expect(p.pitching!.control).toBeGreaterThanOrEqual(25);
+      expect(p.pitching!.control).toBeLessThanOrEqual(53);
+      expect(p.pitching!.movement).toBeGreaterThanOrEqual(25);
+      expect(p.pitching!.movement).toBeLessThanOrEqual(53);
+    }
+  });
+
+  it("generated hitter stat total does not exceed HITTER_STAT_CAP", () => {
+    const draft = generateDefaultCustomTeamDraft("cap-check-hitters");
+    const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
+    for (const p of allBatters) {
+      const total = hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed);
+      expect(total).toBeLessThanOrEqual(HITTER_STAT_CAP);
+    }
+  });
+
+  it("generated pitcher pitching stat total does not exceed PITCHER_STAT_CAP", () => {
+    const draft = generateDefaultCustomTeamDraft("cap-check-pitchers");
+    for (const p of draft.roster.pitchers) {
+      expect(p.pitching).toBeDefined();
+      const total = pitcherStatTotal(
+        p.pitching!.velocity,
+        p.pitching!.control,
+        p.pitching!.movement,
+      );
+      expect(total).toBeLessThanOrEqual(PITCHER_STAT_CAP);
     }
   });
 

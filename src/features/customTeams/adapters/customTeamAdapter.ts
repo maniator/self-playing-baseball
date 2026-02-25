@@ -85,6 +85,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
   for (const player of allPlayers) {
     overrides[player.id] = {
       nickname: player.name,
+      ...(player.position ? { position: player.position } : {}),
       contactMod: clampMod(player.batting.contact - 60),
       powerMod: clampMod(player.batting.power - 60),
       speedMod: clampMod(player.batting.speed - 60),
@@ -95,4 +96,20 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
     };
   }
   return overrides;
+}
+
+/**
+ * Returns the ordered list of bench player IDs for a custom team.
+ * Used to populate `rosterBench` when a custom team game is started.
+ */
+export function customTeamToBenchRoster(team: CustomTeamDoc): string[] {
+  return team.roster.bench.map((p) => p.id);
+}
+
+/**
+ * Returns the ordered list of pitcher IDs for a custom team.
+ * Used to populate `rosterPitchers` when a custom team game is started.
+ */
+export function customTeamToPitcherRoster(team: CustomTeamDoc): string[] {
+  return team.roster.pitchers.map((p) => p.id);
 }

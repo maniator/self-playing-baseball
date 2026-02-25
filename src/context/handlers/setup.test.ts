@@ -101,4 +101,80 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     // playerOverrides should remain unchanged (not reset)
     expect(next?.playerOverrides).toEqual(originalOverrides);
   });
+
+  it("computes lineupPositions from lineupOrder + playerOverrides positions", () => {
+    const state = makeState();
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [
+          ["p1", "p2"],
+          ["p3", "p4"],
+        ] as [string[], string[]],
+        playerOverrides: [
+          { p1: { position: "SS" }, p2: { position: "CF" } },
+          { p3: { position: "1B" }, p4: { position: "LF" } },
+        ] as never,
+      },
+    });
+    expect(next?.lineupPositions).toEqual([
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ]);
+  });
+
+  it("does NOT set lineupPositions when no player has a position (MLB path)", () => {
+    // MLB playerOverrides have no .position — all entries would be empty strings.
+    // The fix: keep state.lineupPositions unchanged so UI falls back to roster lookup.
+    const existing: [string[], string[]] = [
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ];
+    const state = makeState({ lineupPositions: existing });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [
+          ["p1", "p2"],
+          ["p3", "p4"],
+        ] as [string[], string[]],
+        // No position fields — mimics stock MLB playerOverrides
+        playerOverrides: [{ p1: { nickname: "Alice" } }, { p3: { nickname: "Bob" } }] as never,
+      },
+    });
+    // lineupPositions must NOT have been overwritten with all-empty-string arrays
+    expect(next?.lineupPositions).toEqual(existing);
+  });
+
+  it("lineupPositions stays [[], []] (initial) when MLB playerOverrides have no positions", () => {
+    const state = makeState(); // lineupPositions defaults to [[], []]
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [["p1"], ["p2"]] as [string[], string[]],
+        playerOverrides: [{}, {}] as never,
+      },
+    });
+    expect(next?.lineupPositions).toEqual([[], []]);
+  });
+
+  it("preserves existing lineupPositions when lineupOrder is not provided", () => {
+    const state = makeState({
+      lineupPositions: [
+        ["SS", "CF"],
+        ["1B", "LF"],
+      ] as [string[], string[]],
+    });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: { teams: ["A", "B"] },
+    });
+    expect(next?.lineupPositions).toEqual([
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ]);
+  });
 });

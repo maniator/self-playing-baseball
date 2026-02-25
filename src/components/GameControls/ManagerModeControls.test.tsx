@@ -4,9 +4,16 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
+import { GameContext } from "@context/index";
+import { makeContextValue } from "@test/testHelpers";
+
 import ManagerModeControls from "./ManagerModeControls";
 
 const noop = () => {};
+
+/** Wraps the component with a minimal GameContext (needed for SubstitutionButton). */
+const renderWithContext = (ui: React.ReactElement) =>
+  render(<GameContext.Provider value={makeContextValue()}>{ui}</GameContext.Provider>);
 
 describe("ManagerModeControls", () => {
   const defaultProps = {
@@ -93,5 +100,53 @@ describe("ManagerModeControls", () => {
     expect(screen.queryByText(/🔔 on/)).toBeNull();
     expect(screen.queryByText(/blocked/)).toBeNull();
     expect(screen.queryByText(/click to enable/)).toBeNull();
+  });
+
+  it("shows substitution button when managerMode is true, gameStarted is true, and gameOver is false", () => {
+    renderWithContext(
+      <ManagerModeControls
+        {...defaultProps}
+        managerMode={true}
+        gameStarted={true}
+        gameOver={false}
+      />,
+    );
+    expect(screen.getByRole("button", { name: /substitution/i })).toBeTruthy();
+  });
+
+  it("hides substitution button when gameStarted is false", () => {
+    renderWithContext(
+      <ManagerModeControls
+        {...defaultProps}
+        managerMode={true}
+        gameStarted={false}
+        gameOver={false}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /substitution/i })).toBeNull();
+  });
+
+  it("hides substitution button when gameOver is true", () => {
+    renderWithContext(
+      <ManagerModeControls
+        {...defaultProps}
+        managerMode={true}
+        gameStarted={true}
+        gameOver={true}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /substitution/i })).toBeNull();
+  });
+
+  it("hides substitution button when managerMode is false", () => {
+    renderWithContext(
+      <ManagerModeControls
+        {...defaultProps}
+        managerMode={false}
+        gameStarted={true}
+        gameOver={false}
+      />,
+    );
+    expect(screen.queryByRole("button", { name: /substitution/i })).toBeNull();
   });
 });

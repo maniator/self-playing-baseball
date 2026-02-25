@@ -419,7 +419,90 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
   });
 });
 
-// ─── 5. Saves modal with custom-team saved game rows ──────────────────────────
+// ─── 5. Create Team editor — desktop (empty + filled states) ─────────────────
+//
+// Covers the Team Info two-column layout (Abbrev 150px + City) that was
+// previously broken on desktop due to an undersized first grid column.
+// Desktop-only: one stable baseline is sufficient to catch layout regressions;
+// mobile portrait is already covered in the section above.
+test.describe("Visual — Stage 3B: Create Team editor, desktop", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Empty form state: editor is open but no defaults have been generated yet.
+   * Verifies Team Info row (Name / Abbrev + City) renders without overlap
+   * before any user input.
+   */
+  test("create team — empty form state, Team Info layout (desktop)", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Create Team desktop empty-state snapshot is desktop-only",
+    );
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+
+    // Non-visual assertion: Abbrev and City inputs must not overlap.
+    const abbrevBox = await page.getByTestId("custom-team-abbreviation-input").boundingBox();
+    const cityBox = await page.getByTestId("custom-team-city-input").boundingBox();
+    expect(abbrevBox).not.toBeNull();
+    expect(cityBox).not.toBeNull();
+    // In two-column layout the City box left edge must be to the right of the Abbrev box.
+    expect(cityBox!.x).toBeGreaterThan(abbrevBox!.x + abbrevBox!.width / 2);
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "create-team-desktop-empty.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * Filled / generated state: Team Info populated + a generated roster.
+   * Verifies the Abbrev (150 px) + City side-by-side row and the generated
+   * player cards (lineup + bench + pitchers) render cleanly on desktop.
+   */
+  test("create team — filled state after Generate Defaults (desktop)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Create Team desktop filled-state snapshot is desktop-only",
+    );
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+
+    // Generate defaults to populate fields deterministically (counter = 0 on fresh page).
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 3_000,
+    });
+
+    // Overwrite the name with a stable value so the snapshot is deterministic.
+    await page.getByTestId("custom-team-name-input").fill("Desktop Test Team");
+
+    // Non-visual assertion: Abbrev and City must be side by side (two-column layout).
+    const abbrevBox = await page.getByTestId("custom-team-abbreviation-input").boundingBox();
+    const cityBox = await page.getByTestId("custom-team-city-input").boundingBox();
+    expect(abbrevBox).not.toBeNull();
+    expect(cityBox).not.toBeNull();
+    expect(cityBox!.x).toBeGreaterThan(abbrevBox!.x + abbrevBox!.width / 2);
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "create-team-desktop-filled.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 6. Saves modal with custom-team saved game rows ──────────────────────────
 test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);

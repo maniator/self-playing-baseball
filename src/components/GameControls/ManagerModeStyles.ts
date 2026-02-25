@@ -32,3 +32,26 @@ export const NotifBadge = styled.span<{ $ok: boolean }>`
   cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
   white-space: nowrap;
 `;
+
+export const SubButton = styled.button`
+  background: transparent;
+  color: #88bbee;
+  border: 1px solid #4a6090;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 30px;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #0d1b2e;
+    border-color: #88bbee;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+  }
+`;

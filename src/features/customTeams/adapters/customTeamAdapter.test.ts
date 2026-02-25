@@ -4,9 +4,11 @@ import type { CustomTeamDoc } from "@storage/types";
 
 import {
   customTeamToAbbreviation,
+  customTeamToBenchRoster,
   customTeamToDisplayName,
   customTeamToGameId,
   customTeamToLineupOrder,
+  customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
   resolveTeamLabel,
 } from "./customTeamAdapter";
@@ -84,6 +86,32 @@ describe("customTeamToLineupOrder", () => {
   });
 });
 
+describe("customTeamToBenchRoster", () => {
+  it("returns bench player IDs in order", () => {
+    expect(customTeamToBenchRoster(makeTeam())).toEqual(["p3"]);
+  });
+
+  it("returns empty array when bench is empty", () => {
+    const team = makeTeam({
+      roster: { ...makeTeam().roster, bench: [] },
+    });
+    expect(customTeamToBenchRoster(team)).toEqual([]);
+  });
+});
+
+describe("customTeamToPitcherRoster", () => {
+  it("returns pitcher IDs in order", () => {
+    expect(customTeamToPitcherRoster(makeTeam())).toEqual(["p4"]);
+  });
+
+  it("returns empty array when pitchers is empty", () => {
+    const team = makeTeam({
+      roster: { ...makeTeam().roster, pitchers: [] },
+    });
+    expect(customTeamToPitcherRoster(team)).toEqual([]);
+  });
+});
+
 describe("customTeamToPlayerOverrides", () => {
   it("includes all players (lineup + bench + pitchers)", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
@@ -109,6 +137,32 @@ describe("customTeamToPlayerOverrides", () => {
   it("does not include pitching mods for batters", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].velocityMod).toBeUndefined();
+  });
+
+  it("includes position in override when player has a position set", () => {
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Tom Adams",
+            role: "batter",
+            position: "C",
+            batting: { contact: 70, power: 65, speed: 60 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const overrides = customTeamToPlayerOverrides(team);
+    expect(overrides["p1"].position).toBe("C");
+  });
+
+  it("omits position in override when player has no position set", () => {
+    const overrides = customTeamToPlayerOverrides(makeTeam());
+    expect(overrides["p1"].position).toBeUndefined();
   });
 });
 

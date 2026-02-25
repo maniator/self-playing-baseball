@@ -9,6 +9,7 @@ import {
   HANDEDNESS_OPTIONS,
   PITCHER_POSITION_OPTIONS,
 } from "./playerConstants";
+import PlayerStatFields from "./PlayerStatFields";
 import {
   FieldLabel,
   MetaGroup,
@@ -17,11 +18,6 @@ import {
   PlayerMeta,
   RemoveBtn,
   SelectInput,
-  StatInput,
-  StatLabel,
-  StatRow,
-  StatsGrid,
-  StatValue,
   TextInput,
 } from "./styles";
 
@@ -49,24 +45,6 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
   };
 
   const positionOptions = isPitcher ? PITCHER_POSITION_OPTIONS : BATTER_POSITION_OPTIONS;
-
-  const stat = (label: string, key: keyof EditorPlayer, htmlFor: string) => {
-    const val = (player[key] as number | undefined) ?? 0;
-    return (
-      <StatRow key={`stat-${key}`}>
-        <StatLabel htmlFor={htmlFor}>{label}</StatLabel>
-        <StatInput
-          id={htmlFor}
-          type="range"
-          min={0}
-          max={100}
-          value={val}
-          onChange={(e) => onChange({ [key]: Number(e.target.value) })}
-        />
-        <StatValue>{val}</StatValue>
-      </StatRow>
-    );
-  };
 
   return (
     <PlayerCard ref={setNodeRef} style={style}>
@@ -134,14 +112,7 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
           </SelectInput>
         </MetaGroup>
       </PlayerMeta>
-      <StatsGrid>
-        {stat("Contact", "contact", `contact-${player.id}`)}
-        {stat("Power", "power", `power-${player.id}`)}
-        {stat("Speed", "speed", `speed-${player.id}`)}
-        {isPitcher && stat("Velocity", "velocity", `velocity-${player.id}`)}
-        {isPitcher && stat("Control", "control", `control-${player.id}`)}
-        {isPitcher && stat("Movement", "movement", `movement-${player.id}`)}
-      </StatsGrid>
+      <PlayerStatFields player={player} isPitcher={isPitcher} onChange={onChange} />
     </PlayerCard>
   );
 };

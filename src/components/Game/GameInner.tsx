@@ -200,6 +200,14 @@ const GameInner: React.FunctionComponent<Props> = ({
         teams: [awayTeam, homeTeam],
         playerOverrides: [playerOverrides.away, playerOverrides.home],
         lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
+        ...(playerOverrides.awayBench !== undefined &&
+          playerOverrides.homeBench !== undefined && {
+            rosterBench: [playerOverrides.awayBench, playerOverrides.homeBench],
+          }),
+        ...(playerOverrides.awayPitchers !== undefined &&
+          playerOverrides.homePitchers !== undefined && {
+            rosterPitchers: [playerOverrides.awayPitchers, playerOverrides.homePitchers],
+          }),
       },
     });
 

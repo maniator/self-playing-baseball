@@ -239,7 +239,7 @@ export const TeamInfoSecondRow = styled.div`
   gap: 8px;
 
   ${mq.desktop} {
-    grid-template-columns: 100px 1fr;
+    grid-template-columns: 150px 1fr;
     gap: 12px;
   }
 `;
@@ -331,4 +331,13 @@ export const GenerateBtn = styled.button`
     outline: 2px solid aquamarine;
     outline-offset: 2px;
   }
+`;
+
+export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: ${({ $overCap }) => ($overCap ? "#ff8888" : "#6680aa")};
 `;

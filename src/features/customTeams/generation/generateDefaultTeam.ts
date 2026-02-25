@@ -1,5 +1,7 @@
 import { BATTING_POSITIONS } from "@utils/roster";
 
+import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "../statBudget";
+
 export interface GeneratedPlayer {
   id: string;
   name: string;
@@ -167,10 +169,11 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: BATTING_POSITIONS[i] ?? "DH",
     handedness: pickHandedness(),
+    // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
     batting: {
-      contact: randInt(rng, 40, 80),
-      power: randInt(rng, 40, 80),
-      speed: randInt(rng, 40, 80),
+      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
     },
   }));
 
@@ -181,10 +184,11 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     // Bench players get utility positions (OF spots or C) in rotation
     position: (["LF", "CF", "C"] as const)[i % 3],
     handedness: pickHandedness(),
+    // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
     batting: {
-      contact: randInt(rng, 40, 80),
-      power: randInt(rng, 40, 80),
-      speed: randInt(rng, 40, 80),
+      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
     },
   }));
 
@@ -195,14 +199,15 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     position: i === 0 ? "SP" : "RP",
     handedness: pickHandedness(),
     batting: {
-      contact: randInt(rng, 20, 50),
-      power: randInt(rng, 20, 50),
-      speed: randInt(rng, 20, 50),
+      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
+      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
     },
+    // Each stat is bounded so max sum = 3 × maxPerStat ≤ PITCHER_STAT_CAP − 1.
     pitching: {
-      velocity: randInt(rng, 40, 80),
-      control: randInt(rng, 40, 80),
-      movement: randInt(rng, 40, 80),
+      velocity: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
+      control: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
+      movement: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
     },
   }));
 

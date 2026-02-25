@@ -1,6 +1,9 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+
 import { Strategy } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
@@ -57,6 +60,13 @@ const GameControls: React.FunctionComponent<Props> = ({
     currentSaveId,
     setCurrentSaveId,
   } = useGameControls({ gameStarted });
+
+  const { teams: customTeamDocs } = useCustomTeams();
+  // Resolve display labels for raw game-state team IDs (e.g. `custom:ct_...` → team name)
+  const resolvedTeamLabels: [string, string] = [
+    resolveTeamLabel(teams[0], customTeamDocs),
+    resolveTeamLabel(teams[1], customTeamDocs),
+  ];
 
   return (
     <>
@@ -131,8 +141,10 @@ const GameControls: React.FunctionComponent<Props> = ({
               managerMode={managerMode}
               strategy={strategy}
               managedTeam={managedTeam}
-              teams={teams}
+              teams={resolvedTeamLabels}
               notifPermission={notifPermission}
+              gameStarted={gameStarted}
+              gameOver={gameOver}
               onManagerModeChange={handleManagerModeChange}
               onStrategyChange={(e) => setStrategy(e.target.value as Strategy)}
               onManagedTeamChange={(e) => setManagedTeam(Number(e.target.value) === 1 ? 1 : 0)}
