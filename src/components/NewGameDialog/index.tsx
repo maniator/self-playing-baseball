@@ -74,6 +74,14 @@ type Props = {
   onManageTeams?: () => void;
 };
 
+/** Returns SP-eligible pitchers from a roster, preserving their original index. */
+const getSpEligiblePitchers = (
+  pitchers: { id: string; name: string; pitchingRole?: string }[],
+): Array<{ id: string; name: string; pitchingRole?: string; idx: number }> =>
+  pitchers
+    .map((p, i) => ({ ...p, idx: i }))
+    .filter((p) => !p.pitchingRole || p.pitchingRole === "SP" || p.pitchingRole === "SP/RP");
+
 const NewGameDialog: React.FunctionComponent<Props> = ({
   onStart,
   autoSaveName,
@@ -109,28 +117,28 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       setCustomHomeId(customTeams[customTeams.length > 1 ? 1 : 0].id);
   }, [customTeams, customAwayId, customHomeId]);
 
-  // Starting pitcher selection for managed custom-team games.
-  // Tracks the chosen starter pitcher index (into the team's pitchers array) per team.
-  const [awayStarterIdx, setAwayStarterIdx] = React.useState<number>(0);
-  const [homeStarterIdx, setHomeStarterIdx] = React.useState<number>(0);
-
-  // Reset starter index when the selected team changes.
-  React.useEffect(() => {
-    setAwayStarterIdx(0);
-  }, [customAwayId]);
-  React.useEffect(() => {
-    setHomeStarterIdx(0);
-  }, [customHomeId]);
-
   // Derive SP-eligible pitchers for each custom team (SP or SP/RP roles, or unset).
   const awayDoc = customTeams.find((t) => t.id === customAwayId);
   const homeDoc = customTeams.find((t) => t.id === customHomeId);
-  const spEligiblePitchers = (pitchers: { id: string; name: string; pitchingRole?: string }[]) =>
-    pitchers
-      .map((p, i) => ({ ...p, idx: i }))
-      .filter((p) => !p.pitchingRole || p.pitchingRole === "SP" || p.pitchingRole === "SP/RP");
-  const awaySpPitchers = spEligiblePitchers(awayDoc?.roster?.pitchers ?? []);
-  const homeSpPitchers = spEligiblePitchers(homeDoc?.roster?.pitchers ?? []);
+  const awaySpPitchers = getSpEligiblePitchers(awayDoc?.roster?.pitchers ?? []);
+  const homeSpPitchers = getSpEligiblePitchers(homeDoc?.roster?.pitchers ?? []);
+
+  // Starting pitcher selection for managed custom-team games.
+  // Initialized to 0; the useEffect below corrects to the first SP-eligible idx after mount.
+  const [awayStarterIdx, setAwayStarterIdx] = React.useState<number>(0);
+  const [homeStarterIdx, setHomeStarterIdx] = React.useState<number>(0);
+
+  // Reset starter index to first SP-eligible pitcher when the selected team changes.
+  React.useEffect(() => {
+    const doc = customTeams.find((t) => t.id === customAwayId);
+    const sp = getSpEligiblePitchers(doc?.roster?.pitchers ?? []);
+    setAwayStarterIdx(sp[0]?.idx ?? 0);
+  }, [customAwayId, customTeams]);
+  React.useEffect(() => {
+    const doc = customTeams.find((t) => t.id === customHomeId);
+    const sp = getSpEligiblePitchers(doc?.roster?.pitchers ?? []);
+    setHomeStarterIdx(sp[0]?.idx ?? 0);
+  }, [customHomeId, customTeams]);
 
   // Clear validation error when selections change.
   React.useEffect(() => {

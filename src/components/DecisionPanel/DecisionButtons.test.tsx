@@ -320,8 +320,8 @@ describe("DecisionButtons", () => {
     const decision: DecisionType = {
       kind: "pinch_hitter",
       candidates: [
-        { id: "b1", name: "Bench Player 1", position: "LF" },
-        { id: "b2", name: "Bench Player 2" },
+        { id: "b1", name: "Bench Player 1", position: "LF", contactMod: 10, powerMod: 5 },
+        { id: "b2", name: "Bench Player 2", contactMod: 0, powerMod: 0 },
       ],
       teamIdx: 0,
       lineupIdx: 3,

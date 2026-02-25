@@ -997,6 +997,9 @@ describe("pinch_hitter decision", () => {
       expect(d.candidates[0].id).toBe("b1");
       expect(d.candidates[0].name).toBe("Bench1");
       expect(d.candidates[0].position).toBe("LF");
+      // stat mods default to 0 when no resolvedMods are set
+      expect(d.candidates[0].contactMod).toBe(0);
+      expect(d.candidates[0].powerMod).toBe(0);
     }
   });
 

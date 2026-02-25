@@ -586,3 +586,118 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
     );
   });
 });
+
+// ─── 7. Starting pitcher selector in New Game dialog ─────────────────────────
+//
+// Captures the pitcher-selection UI that appears in the New Game dialog when
+// a user starts a managed custom-team game. Desktop-only since this UI element
+// renders identically across viewport sizes.
+test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Shows the starting pitcher dropdown that appears when a user chooses
+   * to manage a custom team. The dropdown only shows SP-eligible pitchers.
+   */
+  test("starting pitcher selector visible for managed custom game (desktop)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Starting pitcher selector snapshot is desktop-only",
+    );
+
+    // Create two custom teams with pitchers (generateDefaultTeam creates an SP + bullpen).
+    await createAndSaveTeam(page, "Pitcher Test Home");
+    await createAndSaveTeam(page, "Pitcher Test Away");
+
+    // Open the New Game dialog.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to Custom Teams tab.
+    await page.getByTestId("new-game-custom-teams-tab").click();
+
+    // Wait for both custom team selects to populate.
+    const awaySelect = page.getByTestId("new-game-custom-away-team-select");
+    const homeSelect = page.getByTestId("new-game-custom-home-team-select");
+    await expect(awaySelect).toBeVisible({ timeout: 5_000 });
+    await expect(homeSelect).toBeVisible({ timeout: 5_000 });
+    await expect(awaySelect.locator("option")).toHaveCount(2, { timeout: 5_000 });
+
+    // Select the away team as managed to trigger the pitcher selector.
+    await page.locator('input[name="managed"][value="0"]').check();
+
+    // The starting pitcher selector should appear.
+    await expect(page.getByTestId("starting-pitcher-select")).toBeVisible({ timeout: 3_000 });
+
+    // Snapshot the New Game dialog with the pitcher selector visible.
+    await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot(
+      "new-game-dialog-with-pitcher-selector.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 8. Pinch hitter player dropdown in Decision Panel ───────────────────────
+//
+// Captures the player-selection dropdown that appears in the Decision Panel
+// when a pinch hitter opportunity arises in a managed custom-team game.
+// Restricted to desktop to keep CI runtime reasonable.
+test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Captures the pinch hitter player selector dropdown inside the Decision Panel.
+   * Requires a managed custom-team game with bench players to reach a pinch-hit
+   * opportunity (inning 7+, runner on 2nd/3rd, 0-0 count).
+   *
+   * Desktop-only; uses seed "visual-ph1" which is expected to reach an opportunity.
+   */
+  test("pinch hitter player dropdown visible in Decision Panel (desktop)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Pinch hitter dropdown snapshot is desktop-only",
+    );
+    // Allow extra time for the game to reach inning 7+ with runners on base.
+    test.setTimeout(200_000);
+
+    // Create two custom teams; generateDefaultTeam includes bench players.
+    await createAndSaveTeam(page, "PH Visual Home");
+    await createAndSaveTeam(page, "PH Visual Away");
+
+    // Navigate into the New Game dialog and start a managed custom-team game.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to Custom Teams tab.
+    await page.getByTestId("new-game-custom-teams-tab").click();
+
+    // Wait for selects to populate.
+    const awaySelect = page.getByTestId("new-game-custom-away-team-select");
+    await expect(awaySelect.locator("option")).toHaveCount(2, { timeout: 5_000 });
+
+    // Choose managed (away team), set a deterministic seed, start.
+    await page.locator('input[name="managed"][value="0"]').check();
+    await page.getByTestId("seed-input").fill("visual-ph1");
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+
+    // Wait for a pinch hitter decision that has player candidates (custom team bench).
+    await expect(page.getByTestId("pinch-hitter-select")).toBeVisible({ timeout: 180_000 });
+
+    // Snapshot just the decision panel for stability.
+    await expect(page.getByTestId("manager-decision-panel")).toHaveScreenshot(
+      "manager-decision-panel-pinch-hitter-dropdown.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});

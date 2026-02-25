@@ -122,11 +122,12 @@ export const usePitchDispatch = (
           dispatch({ type: aiAction.actionType as GameAction["type"], payload: aiAction.payload });
           // After AI makes a concrete pinch-hit substitution, lock pinchHitterStrategy to
           // prevent the decision from being re-offered during this at-bat.
+          // Use "contact" to reflect the AI's late-game tactical intent.
           if (
             battingDecision.kind === "pinch_hitter" &&
             aiAction.actionType === "make_substitution"
           ) {
-            dispatch({ type: "set_pinch_hitter_strategy", payload: "balanced" });
+            dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
           }
           dispatchLog?.({
             type: "log",

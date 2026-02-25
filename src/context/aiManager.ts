@@ -256,8 +256,15 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
     case "pinch_hitter": {
       const { candidates, teamIdx, lineupIdx } = decision;
       if (candidates.length > 0) {
-        // Pick the first available bench player (heuristic: listed order = priority).
-        const bestCandidate = candidates[0];
+        // Pick the candidate with the best contact mod for late-game situational hitting.
+        // Falls back to first candidate when all mods are equal (e.g. stock/MLB teams).
+        const bestCandidate = candidates.reduce((best, c) =>
+          c.contactMod > best.contactMod ? c : best,
+        );
+        const reason =
+          bestCandidate.contactMod > 0
+            ? "pinch hitter — strong contact bat"
+            : "pinch hitter — best available";
         return {
           kind: "tactical",
           actionType: "make_substitution",
@@ -266,7 +273,7 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
             kind: "batter",
             lineupIdx,
             benchPlayerId: bestCandidate.id,
-            reason: "pinch hitter — contact play late in game",
+            reason,
           },
           reasonText: `${bestCandidate.name} in as pinch hitter`,
         };

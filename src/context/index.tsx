@@ -78,6 +78,10 @@ export type PinchHitterCandidate = {
   id: string;
   name: string;
   position?: string;
+  /** Resolved contact mod from playerOverrides — used by AI for stat-based selection. */
+  contactMod: number;
+  /** Resolved power mod from playerOverrides — used by AI for stat-based selection. */
+  powerMod: number;
 };
 
 export type DecisionType =

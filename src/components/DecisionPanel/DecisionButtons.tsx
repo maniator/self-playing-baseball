@@ -24,6 +24,16 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
     return "";
   });
 
+  // Reset the selected candidate whenever the decision changes (e.g. a new pinch_hitter
+  // opportunity for a different batter — rare but possible in long extra-inning games).
+  React.useEffect(() => {
+    if (pendingDecision.kind === "pinch_hitter" && pendingDecision.candidates.length > 0) {
+      setSelectedCandidateId(pendingDecision.candidates[0].id);
+    } else {
+      setSelectedCandidateId("");
+    }
+  }, [pendingDecision]);
+
   switch (pendingDecision.kind) {
     case "steal": {
       const { base, successPct } = pendingDecision;

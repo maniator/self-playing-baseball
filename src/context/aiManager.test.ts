@@ -246,7 +246,7 @@ describe("makeAiTacticalDecision", () => {
     const state = makeState({ atBat: 0, inning: 8 });
     const result = makeAiTacticalDecision(state, {
       kind: "pinch_hitter",
-      candidates: [{ id: "b1", name: "Bench Player" }],
+      candidates: [{ id: "b1", name: "Bench Player", contactMod: 0, powerMod: 0 }],
       teamIdx: 0,
       lineupIdx: 2,
     });
@@ -257,6 +257,27 @@ describe("makeAiTacticalDecision", () => {
       expect(payload.benchPlayerId).toBe("b1");
       expect(payload.lineupIdx).toBe(2);
       expect(result.reasonText).toContain("Bench Player");
+    }
+  });
+
+  it("pinch_hitter: selects bench player with highest contact mod (stat-based selection)", () => {
+    const state = makeState({ atBat: 0, inning: 8 });
+    const result = makeAiTacticalDecision(state, {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b1", name: "Average Hitter", contactMod: 0, powerMod: 0 },
+        { id: "b2", name: "Contact Hitter", contactMod: 10, powerMod: -5 },
+        { id: "b3", name: "Power Hitter", contactMod: -5, powerMod: 20 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 2,
+    });
+    expect(result.kind).toBe("tactical");
+    if (result.kind === "tactical") {
+      const payload = result.payload as Record<string, unknown>;
+      // b2 has the highest contactMod (10), so should be selected
+      expect(payload.benchPlayerId).toBe("b2");
+      expect(result.reasonText).toContain("Contact Hitter");
     }
   });
 
