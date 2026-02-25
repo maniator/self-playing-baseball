@@ -188,7 +188,7 @@ export function makeAiPitchingDecision(
  * - count02: protect the plate (make contact)
  * - ibb / ibb_or_steal: issue the intentional walk
  * - pinch_hitter: use "contact" strategy in late game
- * - defensive_shift: enable if trailing by 2+ runs (less aggressive)
+ * - defensive_shift: enable when offered (shift against power hitters)
  */
 export function makeAiTacticalDecision(state: State, decision: DecisionType): AiDecision {
   const { score, inning, outs, atBat } = state;
