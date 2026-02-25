@@ -88,9 +88,17 @@ export const stealAttempt = (
     const newBase: [number, number, number] = [...state.baseLayout] as [number, number, number];
     newBase[base] = 0;
     newBase[base + 1] = 1;
+    const newRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
+      string | null,
+      string | null,
+      string | null,
+    ];
+    newRunnerIds[base + 1] = newRunnerIds[base];
+    newRunnerIds[base] = null;
     return {
       ...state,
       baseLayout: newBase,
+      baseRunnerIds: newRunnerIds,
       pendingDecision: null,
       onePitchModifier: null,
       pitchKey: (state.pitchKey ?? 0) + 1,
@@ -99,11 +107,18 @@ export const stealAttempt = (
   log("Caught stealing!");
   const clearedBases: [number, number, number] = [...state.baseLayout] as [number, number, number];
   clearedBases[base] = 0;
+  const clearedRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
+    string | null,
+    string | null,
+    string | null,
+  ];
+  clearedRunnerIds[base] = null;
   return playerOut(
     {
       ...state,
       pendingDecision: null,
       baseLayout: clearedBases,
+      baseRunnerIds: clearedRunnerIds,
       pitchKey: (state.pitchKey ?? 0) + 1,
     },
     log,
@@ -116,14 +131,23 @@ const computeWaitOutcome = (
   strategy: Strategy,
   modifier: OnePitchModifier,
   pitchType?: PitchType,
+  pitcherControlMod: number = 0,
+  pitcherVelocityMod: number = 0,
 ): "ball" | "strike" => {
   const zoneMod = pitchType ? pitchStrikeZoneMod(pitchType) : 1.0;
+  // Higher control = pitcher more likely to throw strikes; higher velocity = harder to draw walks
+  const controlFactor = 1 + (pitcherControlMod + pitcherVelocityMod / 2) / 100;
   if (modifier === "take") {
-    const walkChance = Math.min(950, Math.round((750 * stratMod(strategy, "walk")) / zoneMod));
-    return random < walkChance ? "ball" : "strike";
+    const adjustedWalkChance = Math.min(
+      950,
+      Math.round((750 * stratMod(strategy, "walk")) / (zoneMod * controlFactor)),
+    );
+    return random < adjustedWalkChance ? "ball" : "strike";
   }
-  const strikeThreshold = Math.round((500 * zoneMod) / stratMod(strategy, "walk"));
-  return random < strikeThreshold ? "strike" : "ball";
+  const adjustedStrikeThreshold = Math.round(
+    (500 * zoneMod * controlFactor) / stratMod(strategy, "walk"),
+  );
+  return random < adjustedStrikeThreshold ? "strike" : "ball";
 };
 
 export const playerWait = (
@@ -134,7 +158,23 @@ export const playerWait = (
   pitchType?: PitchType,
 ): State => {
   const random = getRandomInt(1000);
-  const outcome = computeWaitOutcome(random, strategy, modifier, pitchType);
+  // Look up active pitcher's control and velocity mods
+  const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+  const activePitcherId =
+    state.rosterPitchers[pitchingTeam]?.[state.activePitcherIdx[pitchingTeam]];
+  const pitcherOverrides = activePitcherId
+    ? state.playerOverrides[pitchingTeam][activePitcherId]
+    : undefined;
+  const pitcherControlMod = pitcherOverrides?.controlMod ?? 0;
+  const pitcherVelocityMod = pitcherOverrides?.velocityMod ?? 0;
+  const outcome = computeWaitOutcome(
+    random,
+    strategy,
+    modifier,
+    pitchType,
+    pitcherControlMod,
+    pitcherVelocityMod,
+  );
   return outcome === "ball"
     ? playerBall(state, log, pitchType)
     : playerStrike(state, log, false, false, pitchType);

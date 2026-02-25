@@ -57,6 +57,7 @@ export type PlayerCustomization = {
   speedMod?: ModPreset;
   controlMod?: ModPreset;
   velocityMod?: ModPreset;
+  movementMod?: ModPreset;
   staminaMod?: ModPreset;
 };
 
@@ -127,6 +128,11 @@ export interface State {
    * [away, home]
    */
   substitutedOut: [string[], string[]];
+  /**
+   * Player IDs occupying each base. Index 0=1st, 1=2nd, 2=3rd.
+   * null = empty or identity unknown (stock teams, older saves).
+   */
+  baseRunnerIds: [string | null, string | null, string | null];
 }
 
 export interface ContextValue extends State {

@@ -5,6 +5,7 @@ import { makeLogs, makeState, mockRandom } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
 import { hitBall } from "./hitBall";
+import type { ModPreset, TeamCustomPlayerOverrides } from "./index";
 
 afterEach(() => vi.restoreAllMocks());
 
@@ -211,5 +212,60 @@ describe("hitBall — inningRuns tracking", () => {
       noop,
     );
     expect(final.inningRuns[0][1]).toBe(2);
+  });
+});
+
+describe("stat mods in hitBall", () => {
+  it("high contactMod increases hit rate (higher pop-out threshold)", () => {
+    // With contactMod=+20, threshold = 750 * 1.2 = 900; roll of 800 should be a hit
+    // With contactMod=0, threshold = 750; roll of 800 should be an out
+    const stateNoMod = makeState({ rosterPitchers: [[], []] as [string[], string[]] });
+    const stateHighContact = makeState({
+      playerOverrides: [{ b1: { contactMod: 20 as ModPreset } }, {}] as [
+        TeamCustomPlayerOverrides,
+        TeamCustomPlayerOverrides,
+      ],
+      lineupOrder: [["b1"], []] as [string[], string[]],
+      rosterPitchers: [[], []] as [string[], string[]],
+    });
+
+    // Roll 800/1000: above 750 (no mod) → out; below 900 (contact mod) → hit
+    // For no-mod out path: main roll=0.8 → 800, then grounder check=0.6 → 60>=40 → pop-out
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.8).mockReturnValueOnce(0.6);
+    const resultNoMod = hitBall(Hit.Single, stateNoMod, () => {});
+    expect(resultNoMod.outs).toBeGreaterThan(stateNoMod.outs);
+
+    vi.spyOn(rngModule, "random").mockReturnValue(0.8);
+    const resultHighContact = hitBall(Hit.Single, stateHighContact, () => {});
+    expect(resultHighContact.baseLayout[0]).toBe(1);
+  });
+
+  it("high movementMod decreases hit rate (lower pop-out threshold)", () => {
+    const stateNoPitcherMod = makeState({
+      rosterPitchers: [[], ["pitcher1"]] as [string[], string[]],
+      activePitcherIdx: [0, 0] as [number, number],
+      playerOverrides: [{}, {}] as [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides],
+      atBat: 0,
+    });
+    const stateHighMovement = makeState({
+      rosterPitchers: [[], ["pitcher1"]] as [string[], string[]],
+      activePitcherIdx: [0, 0] as [number, number],
+      playerOverrides: [{}, { pitcher1: { movementMod: 20 as ModPreset } }] as [
+        TeamCustomPlayerOverrides,
+        TeamCustomPlayerOverrides,
+      ],
+      atBat: 0,
+    });
+
+    // With movementMod=+20, threshold = 750 * 0.8 = 600
+    // Roll 700/1000: below 750 (no mod) → hit; above 600 (movement mod) → out
+    vi.spyOn(rngModule, "random").mockReturnValue(0.7);
+    const resultNoPitcherMod = hitBall(Hit.Single, stateNoPitcherMod, () => {});
+    expect(resultNoPitcherMod.baseLayout[0]).toBe(1); // hit
+
+    // For movement mod out path: main roll=0.7 → 700>=600, then grounder check=0.6 → pop-out
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.7).mockReturnValueOnce(0.6);
+    const resultHighMovement = hitBall(Hit.Single, stateHighMovement, () => {});
+    expect(resultHighMovement.outs).toBeGreaterThan(stateHighMovement.outs);
   });
 });

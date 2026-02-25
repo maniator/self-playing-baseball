@@ -39,6 +39,7 @@ export const createFreshGameState = (teams: [string, string]): State => ({
   lineupPositions: [[], []] as [string[], string[]],
   pitcherBattersFaced: [0, 0] as [number, number],
   substitutedOut: [[], []] as [string[], string[]],
+  baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
 });
 
 /**
@@ -85,5 +86,6 @@ export const backfillRestoredState = (restored: State): State => {
     lineupPositions: base.lineupPositions ?? [[], []],
     pitcherBattersFaced: base.pitcherBattersFaced ?? [0, 0],
     substitutedOut: base.substitutedOut ?? [[], []],
+    baseRunnerIds: base.baseRunnerIds ?? [null, null, null],
   };
 };

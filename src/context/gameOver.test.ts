@@ -138,3 +138,34 @@ describe("nextHalfInning — extra-inning tiebreak rule", () => {
     expect(next.baseLayout).toEqual([0, 0, 0]);
   });
 });
+
+describe("nextHalfInning extra innings runner ID", () => {
+  it("places the last batter's ID as the runner on 2nd in extra innings", () => {
+    const baseState = makeState({
+      inning: 9,
+      atBat: 1, // home just finished bottom of 9th, transitions to top of 10th (away bats)
+      score: [2, 2] as [number, number],
+      lineupOrder: [["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"], []],
+      batterIndex: [2, 0] as [number, number], // away team's next batter is slot 2 (p3)
+    });
+    const log = vi.fn();
+    const result = nextHalfInning(baseState, log);
+    // Last batter for away team was slot 1 (p2)
+    expect(result.baseRunnerIds[1]).toBe("p2");
+    expect(result.baseLayout).toEqual([0, 1, 0]);
+  });
+
+  it("clears baseRunnerIds when starting a normal half-inning", () => {
+    const baseState = makeState({
+      inning: 3,
+      atBat: 0,
+      score: [1, 0] as [number, number],
+      baseLayout: [1, 1, 0] as [number, number, number],
+      baseRunnerIds: ["p1", "p2", null] as [string | null, string | null, string | null],
+    });
+    const log = vi.fn();
+    const result = nextHalfInning(baseState, log);
+    expect(result.baseRunnerIds).toEqual([null, null, null]);
+    expect(result.baseLayout).toEqual([0, 0, 0]);
+  });
+});

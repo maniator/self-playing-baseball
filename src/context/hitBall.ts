@@ -30,15 +30,36 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
       // 6-4-3 / 5-4-3 double play: runner from 1st forced out at 2nd, batter out at 1st.
       log("Ground ball to the infield — double play!");
       const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
+      // Clear the runner ID from 1st (they were forced out)
+      const dpRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
+        string | null,
+        string | null,
+        string | null,
+      ];
+      dpRunnerIds[0] = null;
       // First out: runner from 1st forced out at 2nd (no lineup advance yet).
-      const afterFirst = playerOut({ ...groundedState, baseLayout: dpBase }, log);
+      const afterFirst = playerOut(
+        { ...groundedState, baseLayout: dpBase, baseRunnerIds: dpRunnerIds },
+        log,
+      );
       // Second out: batter thrown out at 1st, at-bat is over (advance lineup).
       return playerOut(afterFirst, log, true);
     }
     log("Ground ball to the infield — fielder's choice.");
     const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
+    // Batter reaches 1st; lead runner (from 1st) is out — clear their ID
+    const fcRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
+      string | null,
+      string | null,
+      string | null,
+    ];
+    fcRunnerIds[0] = null; // lead runner forced out
     // Batter reaches 1st safely; at-bat complete, so advance lineup.
-    return playerOut({ ...groundedState, baseLayout: fcBase }, log, true);
+    return playerOut(
+      { ...groundedState, baseLayout: fcBase, baseRunnerIds: fcRunnerIds },
+      log,
+      true,
+    );
   }
 
   log("Ground ball to the infield — out at first.");
@@ -67,12 +88,37 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   };
   const randomNumber = getRandomInt(1000);
 
+  // Batter overrides
+  const battingTeam = state.atBat as 0 | 1;
+  const batterSlotIdx = state.batterIndex[battingTeam];
+  const playerId = state.lineupOrder[battingTeam][batterSlotIdx] || undefined;
+  const batterOverrides = playerId ? state.playerOverrides[battingTeam][playerId] : undefined;
+
+  // Pitcher overrides
+  const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+  const activePitcherId =
+    state.rosterPitchers[pitchingTeam]?.[state.activePitcherIdx[pitchingTeam]];
+  const pitcherOverrides = activePitcherId
+    ? state.playerOverrides[pitchingTeam][activePitcherId]
+    : undefined;
+
+  // contactMod: higher contact = higher threshold (easier to get hits)
+  // movementMod: higher movement = lower threshold (harder to hit clean)
+  // velocityMod: higher velocity = slightly lower threshold (harder to make solid contact)
+  const contactFactor = 1 + (batterOverrides?.contactMod ?? 0) / 100;
+  const pitchingFactor =
+    1 - ((pitcherOverrides?.movementMod ?? 0) + (pitcherOverrides?.velocityMod ?? 0) / 2) / 100;
   const popOutThreshold = Math.round(
-    750 * stratMod(strategy, "contact") * (state.defensiveShift ? 0.85 : 1),
+    750 *
+      stratMod(strategy, "contact") *
+      (state.defensiveShift ? 0.85 : 1) *
+      contactFactor *
+      pitchingFactor,
   );
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
-    if (strategy === "power" && getRandomInt(100) < 15) {
+    const powerBonus = Math.round(15 * (1 + (batterOverrides?.powerMod ?? 0) / 100));
+    if (strategy === "power" && getRandomInt(100) < powerBonus) {
       type = Hit.Homerun;
       log("Power hitter turns it around — Home Run!");
     } else if (getRandomInt(100) < 40) {
@@ -87,19 +133,39 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
     log(HIT_CALLOUTS[type]);
   }
 
-  const { newBase, runsScored } = advanceRunners(type, state.baseLayout);
+  const currentRunnerIds =
+    state.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
+  const { newBase, runsScored, newRunnerIds } = advanceRunners(
+    type,
+    state.baseLayout,
+    currentRunnerIds,
+  );
   const newScore: [number, number] = [state.score[0], state.score[1]];
   newScore[state.atBat] += runsScored;
 
   if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
 
+  // Place batter on their destination base
+  const batterBase =
+    type === Hit.Single || type === Hit.Walk
+      ? 0
+      : type === Hit.Double
+        ? 1
+        : type === Hit.Triple
+          ? 2
+          : null; // HR: batter scores, no base
+
+  const finalRunnerIds: [string | null, string | null, string | null] = [...newRunnerIds] as [
+    string | null,
+    string | null,
+    string | null,
+  ];
+  if (batterBase !== null && playerId) {
+    finalRunnerIds[batterBase] = playerId;
+  }
+
   // Record this at-bat in the play log (batter reached base).
-  const battingTeam = state.atBat as 0 | 1;
-  const batterSlotIdx = state.batterIndex[battingTeam];
   const batterNum = batterSlotIdx + 1;
-  // Use player ID from lineupOrder when available (Stage 3B+) for player-keyed stat tracking.
-  // Falls back gracefully for stock teams and older saves that have no lineupOrder entries.
-  const playerId = state.lineupOrder[battingTeam][batterSlotIdx] || undefined;
   const playEntry: PlayLogEntry = {
     inning: state.inning,
     half: battingTeam,
@@ -112,7 +178,7 @@ export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "bala
   };
 
   const withRuns = addInningRuns(
-    { ...base, baseLayout: newBase, score: newScore, hitType: type },
+    { ...base, baseLayout: newBase, score: newScore, hitType: type, baseRunnerIds: finalRunnerIds },
     runsScored,
   );
 

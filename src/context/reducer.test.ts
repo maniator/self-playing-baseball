@@ -8,7 +8,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
-import type { DecisionType, State } from "./index";
+import type { DecisionType, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
 import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
 
@@ -1645,5 +1645,37 @@ describe("save → load → save round-trip scenarios", () => {
     expect(() =>
       dispatchAction(loaded, "hit", { hitType: Hit.Single, strategy: "balanced" }),
     ).not.toThrow();
+  });
+});
+
+describe("steal success pct with runner speed", () => {
+  it("fast runner gets higher steal successPct than default", () => {
+    const fastState = makeState({
+      atBat: 0,
+      outs: 1,
+      baseLayout: [1, 0, 0] as [number, number, number],
+      baseRunnerIds: ["fast-runner", null, null] as [string | null, string | null, string | null],
+      playerOverrides: [{ "fast-runner": { speedMod: 20 as ModPreset } }, {}] as [
+        TeamCustomPlayerOverrides,
+        TeamCustomPlayerOverrides,
+      ],
+    });
+    const slowState = makeState({
+      atBat: 0,
+      outs: 1,
+      baseLayout: [1, 0, 0] as [number, number, number],
+      baseRunnerIds: ["slow-runner", null, null] as [string | null, string | null, string | null],
+      playerOverrides: [{ "slow-runner": { speedMod: -20 as ModPreset } }, {}] as [
+        TeamCustomPlayerOverrides,
+        TeamCustomPlayerOverrides,
+      ],
+    });
+    const fastDecision = detectDecision(fastState, "aggressive", true);
+    const slowDecision = detectDecision(slowState, "aggressive", true);
+    expect(fastDecision?.kind).toBe("steal");
+    expect(slowDecision?.kind).toBe("steal");
+    if (fastDecision?.kind === "steal" && slowDecision?.kind === "steal") {
+      expect(fastDecision.successPct).toBeGreaterThan(slowDecision.successPct);
+    }
   });
 });
