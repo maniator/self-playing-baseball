@@ -14,10 +14,22 @@ import { LoadingScreen } from "./styles";
 
 type Props = {
   initialView?: InitialGameView;
+  newGameRequestCount?: number;
+  loadSavesRequestCount?: number;
   onBackToHome?: () => void;
+  onManageTeams?: () => void;
+  /** Called the first time a real game session starts or a save is loaded. */
+  onGameSessionStarted?: () => void;
 };
 
-const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome }) => {
+const Game: React.FunctionComponent<Props> = ({
+  initialView,
+  newGameRequestCount,
+  loadSavesRequestCount,
+  onBackToHome,
+  onManageTeams,
+  onGameSessionStarted,
+}) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
 
@@ -39,7 +51,11 @@ const Game: React.FunctionComponent<Props> = ({ initialView, onBackToHome }) => 
         <GameInner
           actionBufferRef={actionBufferRef}
           initialView={initialView}
+          newGameRequestCount={newGameRequestCount}
+          loadSavesRequestCount={loadSavesRequestCount}
           onBackToHome={onBackToHome}
+          onManageTeams={onManageTeams}
+          onGameSessionStarted={onGameSessionStarted}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>
