@@ -138,8 +138,8 @@ export const handleDecisionsAction = (
           teamIdx === 0 ? 0 : state.pitcherBattersFaced[0],
           teamIdx === 1 ? 0 : state.pitcherBattersFaced[1],
         ];
-        const reasonSuffix = p.reason ? ` ${p.reason}` : "";
-        log(`Pitching change: ${getPlayerName(newPitcherId)} now pitching.${reasonSuffix}`);
+        const reasonSuffix = p.reason ? ` (${p.reason})` : "";
+        log(`Pitching change: ${getPlayerName(newPitcherId)} now pitching${reasonSuffix}.`);
         return {
           ...state,
           activePitcherIdx: newActivePitcherIdx,
