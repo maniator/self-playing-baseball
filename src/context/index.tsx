@@ -103,7 +103,9 @@ export interface ContextValue extends State {
   log: string[];
 }
 
-export type LogAction = { type: "log"; payload: string } | { type: "reset" };
+export type LogAction =
+  | { type: "log"; payload: string; preprocessor?: (text: string) => string }
+  | { type: "reset" };
 export type GameAction = { type: string; payload?: unknown };
 
 function logReducer(
@@ -113,7 +115,7 @@ function logReducer(
   switch (action.type) {
     case "log": {
       const message = action.payload;
-      announce(message);
+      announce(message, { preprocessor: action.preprocessor });
       return { ...state, announcements: [message, ...state.announcements] };
     }
     case "reset":
@@ -127,13 +129,27 @@ const initialState: State = createFreshGameState(["A", "B"]);
 
 export const GameProviderWrapper: React.FunctionComponent<{
   onDispatch?: (action: GameAction) => void;
-}> = ({ children, onDispatch }) => {
+  announcePreprocessor?: (text: string) => string;
+}> = ({ children, onDispatch, announcePreprocessor }) => {
   const [logState, dispatchLogger] = React.useReducer(logReducer, { announcements: [] });
   const [state, rawDispatch] = React.useReducer(reducer(dispatchLogger), initialState);
 
   // Use a ref so the wrapped dispatch is stable even if onDispatch identity changes.
   const onDispatchRef = React.useRef(onDispatch);
   onDispatchRef.current = onDispatch;
+
+  // Use a ref so the preprocessor is always-current without re-creating the wrapper.
+  const preprocessorRef = React.useRef(announcePreprocessor);
+  preprocessorRef.current = announcePreprocessor;
+
+  // Wrap dispatchLogger to inject the per-call preprocessor into every log action.
+  const wrappedDispatchLogger: React.Dispatch<LogAction> = React.useCallback((action) => {
+    if (action.type === "log") {
+      dispatchLogger({ ...action, preprocessor: preprocessorRef.current });
+    } else {
+      dispatchLogger(action);
+    }
+  }, []);
 
   const dispatch: React.Dispatch<GameAction> = React.useCallback((action) => {
     onDispatchRef.current?.(action);
@@ -146,7 +162,7 @@ export const GameProviderWrapper: React.FunctionComponent<{
         ...state,
         dispatch,
         log: logState.announcements,
-        dispatchLog: dispatchLogger,
+        dispatchLog: wrappedDispatchLogger,
       }}
     >
       {children}

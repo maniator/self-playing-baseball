@@ -41,17 +41,6 @@ const toSpeechText = (msg: string): string => {
 // Default corresponds to SPEED_NORMAL (700 ms) → 1.15.
 let _speechRate = 1.15;
 
-let _preprocessor: ((text: string) => string) | null = null;
-
-/**
- * Registers a text preprocessor that is applied to every announcement before
- * it is queued for TTS.  Pass `null` to clear.  Used to resolve
- * `custom:<id>` fragments to human-readable team names before speech.
- */
-export const setAnnouncePreprocessor = (fn: ((text: string) => string) | null): void => {
-  _preprocessor = fn;
-};
-
 const flushBatch = (): void => {
   _batchTimer = null;
   const parts = _pendingMessages.map(toSpeechText).filter(Boolean);
@@ -80,9 +69,12 @@ export const setAnnouncementVolume = (v: number): void => {
 
 export const getAnnouncementVolume = (): number => _speechVolume;
 
-export const announce = (message: string): void => {
+export const announce = (
+  message: string,
+  opts?: { preprocessor?: (text: string) => string },
+): void => {
   if (_speechVolume === 0) return;
-  const processed = _preprocessor ? _preprocessor(message) : message;
+  const processed = opts?.preprocessor ? opts.preprocessor(message) : message;
   _pendingMessages.push(processed);
   if (_batchTimer !== null) clearTimeout(_batchTimer);
   _batchTimer = setTimeout(flushBatch, BATCH_DELAY);

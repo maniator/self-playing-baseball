@@ -17,7 +17,6 @@ import {
   playVictoryFanfare,
   setAlertVolume,
   setAnnouncementVolume,
-  setAnnouncePreprocessor,
   setSpeechRate,
 } from "./announce";
 
@@ -29,7 +28,6 @@ beforeEach(() => {
   setAnnouncementVolume(1);
   setAlertVolume(1);
   cancelAnnouncements();
-  setAnnouncePreprocessor(null);
 });
 
 // ---------------------------------------------------------------------------
@@ -121,14 +119,13 @@ describe("announce", () => {
 });
 
 // ---------------------------------------------------------------------------
-// setAnnouncePreprocessor()
+// announce() per-call preprocessor
 // ---------------------------------------------------------------------------
-describe("setAnnouncePreprocessor", () => {
-  it("applies preprocessor to the message before it is queued for TTS", async () => {
+describe("announce — per-call preprocessor option", () => {
+  it("applies the preprocessor to the message before it is queued for TTS", async () => {
     vi.useFakeTimers();
     setAnnouncementVolume(1);
-    setAnnouncePreprocessor((msg) => msg.replace("hello", "world"));
-    announce("hello there");
+    announce("hello there", { preprocessor: (msg) => msg.replace("hello", "world") });
     await vi.runAllTimersAsync();
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(utterance.text).toContain("world there");
@@ -136,10 +133,9 @@ describe("setAnnouncePreprocessor", () => {
     vi.useRealTimers();
   });
 
-  it("passes the message through unchanged when preprocessor is null", async () => {
+  it("passes the message through unchanged when no preprocessor is given", async () => {
     vi.useFakeTimers();
     setAnnouncementVolume(1);
-    setAnnouncePreprocessor(null);
     announce("hello there");
     await vi.runAllTimersAsync();
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
@@ -150,8 +146,9 @@ describe("setAnnouncePreprocessor", () => {
   it("resolves custom team IDs so TTS does not read raw custom: prefixes", async () => {
     vi.useFakeTimers();
     setAnnouncementVolume(1);
-    setAnnouncePreprocessor((msg) => msg.replace(/custom:[a-zA-Z0-9_]+/g, "Austin Eagles"));
-    announce("custom:ct_abc123 are now up to bat!");
+    announce("custom:ct_abc123 are now up to bat!", {
+      preprocessor: (msg) => msg.replace(/custom:[a-zA-Z0-9_]+/g, "Austin Eagles"),
+    });
     await vi.runAllTimersAsync();
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(utterance.text).not.toContain("custom:");
