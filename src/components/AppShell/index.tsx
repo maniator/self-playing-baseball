@@ -46,6 +46,13 @@ const AppShell: React.FunctionComponent = () => {
       const state = event.state as HistoryState | null;
       const next = state?.screen;
       if (next === "home" || next === "game" || next === "manage-teams") {
+        // Close any open <dialog> elements before changing screen so the
+        // top-layer does not leave modals blocking input on the incoming screen.
+        if (next !== "game") {
+          document.querySelectorAll("dialog[open]").forEach((d) => {
+            (d as HTMLDialogElement).close();
+          });
+        }
         setScreen(next);
       }
     };
