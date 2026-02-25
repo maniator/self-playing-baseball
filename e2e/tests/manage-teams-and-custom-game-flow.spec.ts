@@ -66,7 +66,9 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 5_000 });
   });
 
-  test("editing a custom team name updates the team list", async ({ page }) => {
+  test("editing a custom team: name is read-only in Edit mode; team remains in list after save", async ({
+    page,
+  }) => {
     // First create a team
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
@@ -75,12 +77,16 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByText("Original Name")).toBeVisible({ timeout: 5_000 });
 
-    // Edit it
+    // Open edit — name field must be read-only (identity immutability)
     await page.getByTestId("custom-team-edit-button").first().click();
-    await page.getByTestId("custom-team-name-input").fill("Updated Name");
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toHaveAttribute("readonly");
+
+    // Save without changing the name
     await page.getByTestId("custom-team-save-button").click();
 
-    await expect(page.getByText("Updated Name")).toBeVisible({ timeout: 5_000 });
+    // Team should still be in the list with its original name
+    await expect(page.getByText("Original Name")).toBeVisible({ timeout: 5_000 });
   });
 
   test("info banner warns that edits won't affect the current game when navigating from an active game", async ({
