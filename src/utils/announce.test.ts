@@ -119,6 +119,45 @@ describe("announce", () => {
 });
 
 // ---------------------------------------------------------------------------
+// announce() per-call preprocessor
+// ---------------------------------------------------------------------------
+describe("announce — per-call preprocessor option", () => {
+  it("applies the preprocessor to the message before it is queued for TTS", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    announce("hello there", { preprocessor: (msg) => msg.replace("hello", "world") });
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).toContain("world there");
+    expect(utterance.text).not.toContain("hello");
+    vi.useRealTimers();
+  });
+
+  it("passes the message through unchanged when no preprocessor is given", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    announce("hello there");
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).toContain("hello there");
+    vi.useRealTimers();
+  });
+
+  it("resolves custom team IDs so TTS does not read raw custom: prefixes", async () => {
+    vi.useFakeTimers();
+    setAnnouncementVolume(1);
+    announce("custom:ct_abc123 are now up to bat!", {
+      preprocessor: (msg) => msg.replace(/custom:[a-zA-Z0-9_]+/g, "Austin Eagles"),
+    });
+    await vi.runAllTimersAsync();
+    const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(utterance.text).not.toContain("custom:");
+    expect(utterance.text).toContain("Austin Eagles");
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // cancelAnnouncements()
 // ---------------------------------------------------------------------------
 describe("cancelAnnouncements", () => {

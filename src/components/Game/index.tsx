@@ -1,10 +1,12 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
 import type { InitialGameView } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { BallgameDb } from "@storage/db";
 import { getDb } from "@storage/db";
 import { appLog } from "@utils/logger";
@@ -33,6 +35,14 @@ const Game: React.FunctionComponent<Props> = ({
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
 
+  // Load custom teams to build the per-call TTS preprocessor that resolves
+  // `custom:<id>` fragments to human-readable names before speech.
+  const { teams: customTeams } = useCustomTeams();
+  const announcePreprocessor = React.useCallback(
+    (msg: string) => msg.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams)),
+    [customTeams],
+  );
+
   React.useEffect(() => {
     getDb()
       .then(setDb)
@@ -47,7 +57,7 @@ const Game: React.FunctionComponent<Props> = ({
 
   return (
     <RxDatabaseProvider database={db}>
-      <GameProviderWrapper onDispatch={onDispatch}>
+      <GameProviderWrapper onDispatch={onDispatch} announcePreprocessor={announcePreprocessor}>
         <GameInner
           actionBufferRef={actionBufferRef}
           initialView={initialView}

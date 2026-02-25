@@ -69,9 +69,13 @@ export const setAnnouncementVolume = (v: number): void => {
 
 export const getAnnouncementVolume = (): number => _speechVolume;
 
-export const announce = (message: string): void => {
+export const announce = (
+  message: string,
+  opts?: { preprocessor?: (text: string) => string },
+): void => {
   if (_speechVolume === 0) return;
-  _pendingMessages.push(message);
+  const processed = opts?.preprocessor ? opts.preprocessor(message) : message;
+  _pendingMessages.push(processed);
   if (_batchTimer !== null) clearTimeout(_batchTimer);
   _batchTimer = setTimeout(flushBatch, BATCH_DELAY);
 };
