@@ -37,10 +37,16 @@ export const wasStrikeout = (prev: State, next: State): boolean =>
   prev.strikes === 2 && next.strikes !== 2 && next.hitType == null;
 
 /** Builds the StrikeoutEntry for the batter who just struck out. */
-export const makeStrikeoutEntry = (state: State): StrikeoutEntry => ({
-  team: state.atBat as 0 | 1,
-  batterNum: state.batterIndex[state.atBat as 0 | 1] + 1,
-});
+export const makeStrikeoutEntry = (state: State): StrikeoutEntry => {
+  const battingTeam = state.atBat as 0 | 1;
+  const slotIdx = state.batterIndex[battingTeam];
+  const playerId = state.lineupOrder[battingTeam][slotIdx] || undefined;
+  return {
+    team: battingTeam,
+    batterNum: slotIdx + 1,
+    ...(playerId ? { playerId } : {}),
+  };
+};
 
 /**
  * Appends a strikeout log entry to `next` when the play was a strikeout.

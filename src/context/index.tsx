@@ -9,7 +9,9 @@ import reducer from "./reducer";
 export type PlayLogEntry = {
   inning: number;
   half: 0 | 1; // 0 = top (away bats), 1 = bottom (home bats)
-  batterNum: number; // 1–9
+  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
+  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  playerId?: string;
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
   runs: number; // runs scored on this play
@@ -29,7 +31,9 @@ export type PlayLogEntry = {
 
 export type StrikeoutEntry = {
   team: 0 | 1;
-  batterNum: number; // 1–9
+  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
+  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  playerId?: string;
 };
 
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);

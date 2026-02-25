@@ -18,8 +18,15 @@ export const nextBatter = (state: State): State => {
  */
 export const playerOut = (state: State, log, batterCompleted = false): State => {
   // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts).
+  const battingTeam = state.atBat as 0 | 1;
+  const slotIdx = state.batterIndex[battingTeam];
+  const playerId = state.lineupOrder[battingTeam][slotIdx] || undefined;
   const outEntry: StrikeoutEntry | null = batterCompleted
-    ? { team: state.atBat as 0 | 1, batterNum: state.batterIndex[state.atBat as 0 | 1] + 1 }
+    ? {
+        team: battingTeam,
+        batterNum: slotIdx + 1,
+        ...(playerId ? { playerId } : {}),
+      }
     : null;
   const stateWithOut = outEntry ? { ...state, outLog: [...state.outLog, outEntry] } : state;
   const stateAfterBatter = batterCompleted ? nextBatter(stateWithOut) : stateWithOut;

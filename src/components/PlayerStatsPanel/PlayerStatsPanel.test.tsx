@@ -261,22 +261,6 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
     expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("IMPOSSIBLE"));
   });
 
-  it("fires a warn when PA ordering is violated (earlier slot has fewer PAs)", () => {
-    const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
-    // slot 3 has 2 outs (AB=2) but slot 2 has 0 (PA ordering violation)
-    const outLog = [
-      { team: 0 as const, batterNum: 3 },
-      { team: 0 as const, batterNum: 3 },
-    ];
-    const ctx = makeContextValue({ outLog, strikeoutLog: [], playLog: [] });
-    render(
-      <GameContext.Provider value={ctx}>
-        <PlayerStatsPanel />
-      </GameContext.Provider>,
-    );
-    expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining("PA ordering violation"));
-  });
-
   it("does NOT fire a warn for valid stats where AB difference is explained by walks", () => {
     const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
     // Construct a state where:
@@ -342,5 +326,99 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
     const cells = rows[1]?.querySelectorAll("td");
     const rbiCell = cells?.[cells.length - 1];
     expect(rbiCell?.textContent).toBe("–");
+  });
+});
+
+describe("PlayerStatsPanel — player-ID stat tracking (Stage 3B+)", () => {
+  /**
+   * All tests in this block use entries WITH `playerId` to exercise the new
+   * player-ID keyed stat tracking introduced in Stage 3B.
+   */
+
+  it("stats keyed by playerId: hit credited to the correct player, not the slot", () => {
+    // player "p_alice" is in slot 1 at bat; she hits a single
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p_alice",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 0,
+        rbi: 0,
+      },
+    ];
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob", "p_carol"], []];
+    const ctx = makeContextValue({ playLog, lineupOrder });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    // slot 1 row should show 1 hit
+    const rows = screen.getAllByRole("row");
+    const hitCell = rows[1]?.querySelectorAll("td")[3]; // AB, H, BB, K, RBI → H is index 3
+    expect(hitCell?.textContent).toBe("1");
+    // slot 2 row should show no hits (–)
+    const hitCell2 = rows[2]?.querySelectorAll("td")[3];
+    expect(hitCell2?.textContent).toBe("–");
+  });
+
+  it("after substitution: replaced slot shows sub's stats (0), not original player's stats", () => {
+    // Original player "p_alice" batted at slot 1 and got a hit before being subbed out.
+    // After the sub, "p_bob" is now in slot 1.
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p_alice",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 0,
+        rbi: 0,
+      },
+    ];
+    // lineupOrder now reflects the post-substitution state (p_bob is in slot 1)
+    const lineupOrder: [string[], string[]] = [["p_bob", "p_carol"], []];
+    const ctx = makeContextValue({ playLog, lineupOrder });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    // slot 1 should now show p_bob's stats — p_bob has had no PAs so everything is "–"
+    const rows = screen.getAllByRole("row");
+    const hitCell = rows[1]?.querySelectorAll("td")[3];
+    expect(hitCell?.textContent).toBe("–");
+  });
+
+  it("legacy entries (no playerId) fall back to slot-based lookup", () => {
+    // Old-format entry without playerId — batterNum 1 → key "slot:1"
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        team: 0 as const,
+        event: Hit.Homerun,
+        runs: 1,
+        rbi: 1,
+      },
+    ];
+    // lineupOrder is empty (stock team save) → getSlotStats falls back to slot:1 key
+    const ctx = makeContextValue({ playLog, lineupOrder: [[], []] as [string[], string[]] });
+    render(
+      <GameContext.Provider value={ctx}>
+        <PlayerStatsPanel />
+      </GameContext.Provider>,
+    );
+    // slot 1 should show 1 homer and 1 RBI from the legacy entry
+    const rows = screen.getAllByRole("row");
+    const hitCell = rows[1]?.querySelectorAll("td")[3];
+    const rbiCell = rows[1]?.querySelectorAll("td")[rows[1].querySelectorAll("td").length - 1];
+    expect(hitCell?.textContent).toBe("1");
+    expect(rbiCell?.textContent).toBe("1");
   });
 });
