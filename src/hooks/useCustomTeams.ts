@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { CustomTeamStore } from "@storage/customTeamStore";
 import type { CreateCustomTeamInput, CustomTeamDoc, UpdateCustomTeamInput } from "@storage/types";
+import { appLog } from "@utils/logger";
 
 export interface CustomTeamsHook {
   teams: CustomTeamDoc[];
@@ -38,7 +39,11 @@ export function useCustomTeams(): CustomTeamsHook {
         }
       })
       .catch(() => {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          appLog.warn("Failed to load custom teams");
+          setTeams([]);
+          setLoading(false);
+        }
       });
     return () => {
       cancelled = true;

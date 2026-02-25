@@ -217,8 +217,10 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
 
 /**
  * Derives a deterministic 2–3 char abbreviation from city + nickname.
- * Strategy: take first letter of each word in the city name (up to 3 chars total),
- * or first 3 letters of the nickname if the city is one word.
+ * Strategy:
+ * - 3+ word city: first letter of each of the first 3 words.
+ * - 2-word city: first letter of each word + first letter of nickname.
+ * - Single-word city: first 2 letters of city + first letter of nickname.
  */
 export function makeAbbreviation(city: string, nickname: string): string {
   const cityWords = city.trim().toUpperCase().split(/\s+/).filter(Boolean);

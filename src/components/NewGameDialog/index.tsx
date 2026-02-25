@@ -85,12 +85,14 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
   const [customAwayId, setCustomAwayId] = React.useState<string>("");
   const [customHomeId, setCustomHomeId] = React.useState<string>("");
 
-  // Keep custom selectors in sync with loaded teams list
+  // Keep custom selectors in sync with loaded teams list.
+  // Resets to first/second team if the previously-selected ID was deleted.
   React.useEffect(() => {
-    if (customTeams.length > 0) {
-      if (!customAwayId) setCustomAwayId(customTeams[0].id);
-      if (!customHomeId) setCustomHomeId(customTeams[customTeams.length > 1 ? 1 : 0].id);
-    }
+    if (customTeams.length === 0) return;
+    const ids = customTeams.map((t) => t.id);
+    if (!customAwayId || !ids.includes(customAwayId)) setCustomAwayId(customTeams[0].id);
+    if (!customHomeId || !ids.includes(customHomeId))
+      setCustomHomeId(customTeams[customTeams.length > 1 ? 1 : 0].id);
   }, [customTeams, customAwayId, customHomeId]);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -149,9 +151,11 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
         </>
       )}
       <form onSubmit={handleSubmit}>
-        <TabRow>
+        <TabRow role="tablist" aria-label="Team type">
           <Tab
             type="button"
+            role="tab"
+            aria-selected={gameType === "mlb"}
             $active={gameType === "mlb"}
             onClick={() => setGameType("mlb")}
             data-testid="new-game-mlb-teams-tab"
@@ -160,6 +164,8 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
           </Tab>
           <Tab
             type="button"
+            role="tab"
+            aria-selected={gameType === "custom"}
             $active={gameType === "custom"}
             onClick={() => setGameType("custom")}
             data-testid="new-game-custom-teams-tab"

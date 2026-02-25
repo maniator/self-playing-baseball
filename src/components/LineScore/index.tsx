@@ -1,6 +1,9 @@
 import * as React from "react";
 
-import { customTeamToAbbreviation } from "@features/customTeams/adapters/customTeamAdapter";
+import {
+  customTeamToAbbreviation,
+  resolveTeamLabel,
+} from "@features/customTeams/adapters/customTeamAdapter";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
@@ -80,9 +83,9 @@ const LineScore: React.FunctionComponent = () => {
         <tbody>
           {([0, 1] as const).map((team) => (
             <tr key={team}>
-              <TeamTd $active={atBat === team} title={teams[team]}>
+              <TeamTd $active={atBat === team} title={resolveTeamLabel(teams[team], customTeams)}>
                 <TeamMobileLabel>{compactLabel(teams[team])}</TeamMobileLabel>
-                <TeamFullLabel>{teams[team]}</TeamFullLabel>
+                <TeamFullLabel>{resolveTeamLabel(teams[team], customTeams)}</TeamFullLabel>
               </TeamTd>
               {inningCols.map((n) => {
                 const val = getCellValue(team, n, inning, atBat, gameOver, inningRuns);
