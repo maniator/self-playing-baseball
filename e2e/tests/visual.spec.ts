@@ -199,3 +199,306 @@ test.describe("Visual", () => {
     );
   });
 });
+
+// ─── Stage 2B: Custom Team UI visual snapshots ────────────────────────────────
+//
+// These snapshots cover new Stage 2B surfaces:
+//   1. Manage Teams screen (desktop baseline)
+//   2. Create Team editor — Team Info section, mobile portrait
+//   3. Create Team editor — Team Info section, narrow phone landscape
+//   4. Edit Team editor — mobile portrait
+//   5. Saves modal with a custom-team saved game row (human-readable names)
+//
+// Viewport strategy:
+//   • Manage Teams / Create / Edit portrait: run on iphone-15 + desktop only
+//     to avoid 6× matrix for screens that look the same per-device class.
+//   • Narrow landscape: uses a fixed 731×412 viewport override (Pixel 8a-class
+//     landscape) inside a describe block with test.use() so it does not pollute
+//     the device-level viewports for other tests.
+//   • Saves modal: desktop + iphone-15 only (sufficient coverage of the row layout).
+
+/** Helper: navigate to Manage Teams, click Create, click Generate Defaults, and
+ *  fill in a deterministic team name. Returns once the name input is stable. */
+async function openCreateEditorWithName(page: Parameters<typeof resetAppState>[0], name: string) {
+  await page.getByTestId("home-manage-teams-button").click();
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId("manage-teams-create-button").click();
+  await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+  await page.getByTestId("custom-team-regenerate-defaults-button").click();
+  await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", { timeout: 3_000 });
+  await page.getByTestId("custom-team-name-input").fill(name);
+}
+
+/** Helper: create and save a custom team, then return to the home screen. */
+async function createAndSaveTeam(
+  page: Parameters<typeof resetAppState>[0],
+  name: string,
+): Promise<void> {
+  await openCreateEditorWithName(page, name);
+  await page.getByTestId("custom-team-save-button").click();
+  await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 });
+  await page.getByTestId("manage-teams-back-button").click();
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+}
+
+// ─── 1. Manage Teams screen baseline ─────────────────────────────────────────
+test.describe("Visual — Stage 2B: Manage Teams screen", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Desktop baseline: empty team list state (no custom teams yet).
+   * Desktop-only because the layout is identical across viewports and
+   * a single stable baseline is sufficient for regression detection.
+   */
+  test("manage teams screen — empty list (desktop)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Manage Teams baseline is desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
+      "manage-teams-screen-empty.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * Desktop baseline: team list with one team present.
+   * Captures the TeamListItem with Edit/Delete buttons.
+   */
+  test("manage teams screen — one team in list (desktop)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Manage Teams baseline is desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Snapshot City Sox");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Snapshot City Sox")).toBeVisible({ timeout: 5_000 });
+
+    await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
+      "manage-teams-screen-with-team.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 2. Create Team editor — mobile portrait ──────────────────────────────────
+test.describe("Visual — Stage 2B: Create Team editor, mobile portrait", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Team Info section visible/usable on mobile portrait.
+   * Restricted to iphone-15 (393×659) — one narrow-phone representative.
+   * Confirms name, abbreviation, and city fields are present and non-overlapping.
+   */
+  test("create team — Team Info section visible on mobile portrait (iphone-15)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "iphone-15",
+      "Create Team mobile portrait is iphone-15 only",
+    );
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 3_000,
+    });
+
+    // Scroll to the top of the editor shell so Team Info section is in view.
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+
+    // Snapshot just the editor shell element to keep the screenshot stable
+    // regardless of what is behind the semi-transparent overlay.
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "create-team-editor-mobile-portrait.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 3. Create Team editor — narrow phone landscape ───────────────────────────
+//
+// Uses test.use() to override the viewport to 731×412 (Pixel 8a-class landscape).
+// Restricted to the desktop project so the test.use viewport override does not
+// conflict with device-emulation viewports in mobile projects.
+// This catches the Abbrev/City two-column → single-column stacking regression.
+test.describe("Visual — Stage 2B: Create Team editor, narrow landscape", () => {
+  test.use({ viewport: { width: 731, height: 412 } });
+
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Narrow phone landscape (731×412 ≈ Pixel 8a landscape).
+   * At this width the TeamInfoSecondRow must stack Abbrev and City in a
+   * single column — NOT two columns which would overlap at narrow heights.
+   */
+  test("create team — no Abbrev/City overlap on narrow landscape (desktop@731x412)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Narrow landscape snapshot uses desktop project with viewport override",
+    );
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 3_000,
+    });
+
+    // Non-visual assertion: abbreviation and city inputs must not overlap.
+    const abbrevBox = await page.getByTestId("custom-team-abbreviation-input").boundingBox();
+    const cityBox = await page.getByTestId("custom-team-city-input").boundingBox();
+    expect(abbrevBox).not.toBeNull();
+    expect(cityBox).not.toBeNull();
+    // In single-column layout the city box top must be below the abbreviation box bottom.
+    expect(cityBox!.y + cityBox!.height / 2 > abbrevBox!.y + abbrevBox!.height / 2).toBe(true);
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "create-team-editor-narrow-landscape.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 4. Edit Team editor — mobile portrait ────────────────────────────────────
+test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Edit mode pre-fills all fields from the saved team.
+   * Restricted to iphone-15 (393×659) — one narrow-phone representative.
+   * Verifies the editor shell is usable in edit mode on mobile portrait.
+   */
+  test("edit team — editor loaded in edit mode, mobile portrait (iphone-15)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "iphone-15", "Edit Team mobile portrait is iphone-15 only");
+
+    // Create a team first so we have something to edit.
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Visual Edit Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Visual Edit Team")).toBeVisible({ timeout: 5_000 });
+
+    // Open edit mode for the saved team.
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+
+    // Name should be pre-filled.
+    await expect(page.getByTestId("custom-team-name-input")).toHaveValue("Visual Edit Team");
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "edit-team-editor-mobile-portrait.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ─── 5. Saves modal with custom-team saved game rows ──────────────────────────
+test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Saves modal shows human-readable team names (not raw `custom:ct_*` IDs).
+   *
+   * Flow:
+   *   1. Create two custom teams via Manage Teams.
+   *   2. Start a New Game using those custom teams (Custom Teams tab).
+   *   3. Wait for a few log lines, then save the game.
+   *   4. Open the saves modal and snapshot it.
+   *
+   * The save-row team label should read the custom team name, not an ID.
+   * Dates are masked (they change every run).
+   *
+   * Restricted to desktop only — the row layout is the same across viewports
+   * and a single stable baseline is sufficient.
+   */
+  test("saves modal — custom-team game row shows display names (desktop)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Custom-team saves modal snapshot is desktop-only",
+    );
+
+    // Step 1: create two custom teams.
+    await createAndSaveTeam(page, "Visual Away Sox");
+    await createAndSaveTeam(page, "Visual Home Cubs");
+
+    // Step 2: start a new game using those custom teams.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+
+    // Switch to Custom Teams tab.
+    await page.getByTestId("new-game-custom-teams-tab").click();
+
+    // The two custom team selects should now be visible.
+    await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
+      timeout: 5_000,
+    });
+    await expect(page.getByTestId("new-game-custom-home-team-select")).toBeVisible({
+      timeout: 5_000,
+    });
+
+    // Select our custom teams (they may already be selected as defaults).
+    const awaySelect = page.getByTestId("new-game-custom-away-team-select");
+    const homeSelect = page.getByTestId("new-game-custom-home-team-select");
+    await awaySelect.selectOption({ label: "Visual Away Sox" });
+    await homeSelect.selectOption({ label: "Visual Home Cubs" });
+
+    // Fill seed for determinism.
+    await page.getByTestId("seed-input").fill("saves-visual1");
+
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+
+    // Wait for a few log lines so the game is progressing.
+    await waitForLogLines(page, 5);
+
+    // Step 3: save the game.
+    await saveCurrentGame(page);
+
+    // Step 4: snapshot the saves modal — modal stays open after saving.
+    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 5_000 });
+
+    // Verify no raw IDs are visible in the modal (non-visual assertion).
+    const modalText = await page.getByTestId("saves-modal").textContent();
+    expect(modalText).not.toMatch(/custom:ct_/);
+
+    await expect(page.getByTestId("saves-modal")).toHaveScreenshot(
+      "saves-modal-with-custom-team-row.png",
+      {
+        mask: [page.getByTestId("slot-date")],
+        maxDiffPixelRatio: 0.05,
+      },
+    );
+  });
+});
