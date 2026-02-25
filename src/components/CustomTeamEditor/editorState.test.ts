@@ -237,7 +237,7 @@ describe("validateEditorState", () => {
     expect(err).toContain("RF");
   });
 
-  it("bench players count toward covering required positions", () => {
+  it("valid state with full lineup and extra bench players passes", () => {
     const state = {
       ...initEditorState(),
       name: "Eagles",
@@ -250,10 +250,107 @@ describe("validateEditorState", () => {
         makePlayer("P5", "SS"),
         makePlayer("P6", "LF"),
         makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
       ],
       bench: [makePlayer("Bench", "RF")],
     };
     expect(validateEditorState(state)).toBe("");
+  });
+
+  it("rejects duplicate position in starting lineup", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      // Two catchers, no DH
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "C"),
+        makePlayer("P3", "1B"),
+        makePlayer("P4", "2B"),
+        makePlayer("P5", "3B"),
+        makePlayer("P6", "SS"),
+        makePlayer("P7", "LF"),
+        makePlayer("P8", "CF"),
+        makePlayer("P9", "RF"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toBeTruthy();
+    expect(err).toContain("C");
+    expect(err).toContain("duplicate");
+  });
+
+  it("reports all duplicate positions when multiple are duplicated in lineup", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "C"),
+        makePlayer("P3", "SS"),
+        makePlayer("P4", "SS"),
+        makePlayer("P5", "1B"),
+        makePlayer("P6", "2B"),
+        makePlayer("P7", "3B"),
+        makePlayer("P8", "LF"),
+        makePlayer("P9", "CF"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("C");
+    expect(err).toContain("SS");
+    expect(err).toContain("duplicate");
+  });
+
+  it("rejects starting lineup missing a required position", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      // Full 9 players but CF replaced by a second RF (no CF)
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "RF"),
+        makePlayer("P8", "RF"),
+        makePlayer("P9", "DH"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toBeTruthy();
+    // RF is duplicated → duplicate error fires first
+    expect(err).toContain("RF");
+  });
+
+  it("reports missing positions when lineup has no duplicates but is missing positions", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      // 9 players but DH slot replaced by an extra C (duplicate) is handled above;
+      // here we have 8 unique valid positions (no DH)
+      lineup: [
+        makePlayer("P1", "C"),
+        makePlayer("P2", "1B"),
+        makePlayer("P3", "2B"),
+        makePlayer("P4", "3B"),
+        makePlayer("P5", "SS"),
+        makePlayer("P6", "LF"),
+        makePlayer("P7", "CF"),
+        makePlayer("P8", "RF"),
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toBeTruthy();
+    expect(err).toContain("DH");
+    expect(err).toContain("missing");
   });
 
   it("hitter within cap passes validation", () => {

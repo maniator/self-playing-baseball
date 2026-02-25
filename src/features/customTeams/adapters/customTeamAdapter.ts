@@ -1,5 +1,6 @@
 import type { TeamCustomPlayerOverrides } from "@context/index";
 import type { CustomTeamDoc } from "@storage/types";
+import { BATTING_POSITIONS } from "@utils/roster";
 
 /**
  * Returns a stable game-session ID for a custom team.
@@ -143,6 +144,20 @@ export function validateCustomTeamForGame(team: CustomTeamDoc): string | null {
     if (!pitcher.name || !pitcher.name.trim()) {
       return `"${team.name}" has a pitcher with no name. Edit the team to fix it before starting.`;
     }
+  }
+  // Validate starting lineup has exactly one of each required position (no duplicates, no missing).
+  const lineupPosCounts = new Map<string, number>();
+  for (const player of lineup) {
+    const pos = player.position ?? "";
+    if (pos) lineupPosCounts.set(pos, (lineupPosCounts.get(pos) ?? 0) + 1);
+  }
+  const duplicatePos = BATTING_POSITIONS.filter((pos) => (lineupPosCounts.get(pos) ?? 0) > 1);
+  const missingPos = BATTING_POSITIONS.filter((pos) => !lineupPosCounts.has(pos));
+  if (duplicatePos.length > 0) {
+    return `"${team.name}" starting lineup has duplicate position(s): ${duplicatePos.join(", ")}. Edit the team to fix it.`;
+  }
+  if (missingPos.length > 0) {
+    return `"${team.name}" starting lineup is missing position(s): ${missingPos.join(", ")}. Edit the team to fix it.`;
   }
   return null;
 }
