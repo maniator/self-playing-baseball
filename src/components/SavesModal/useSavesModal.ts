@@ -1,7 +1,10 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
@@ -20,6 +23,7 @@ interface Params {
   }) => void;
   onLoadActivate?: (saveId: string) => void;
   autoOpen?: boolean;
+  openSavesRequestCount?: number;
 }
 
 export interface SavesModalState {
@@ -47,6 +51,7 @@ export const useSavesModal = ({
   onSetupRestore,
   onLoadActivate,
   autoOpen,
+  openSavesRequestCount,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const {
@@ -64,6 +69,9 @@ export const useSavesModal = ({
   const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
     useSaveStore();
 
+  // Custom team docs for resolving human-readable labels on save names.
+  const { teams: customTeams } = useCustomTeams();
+
   const [importText, setImportText] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
 
@@ -80,8 +88,20 @@ export const useSavesModal = ({
     ref.current?.showModal();
   }, [autoOpen]);
 
+  // Counter-based open: fires whenever openSavesRequestCount increments so that
+  // repeated Home → Load Saved Game navigations always re-open the modal.
+  const prevOpenSavesRef = React.useRef(openSavesRequestCount ?? 0);
+  React.useEffect(() => {
+    const next = openSavesRequestCount ?? 0;
+    if (next > prevOpenSavesRef.current) {
+      prevOpenSavesRef.current = next;
+      if (!ref.current?.open) ref.current?.showModal();
+    }
+  }, [openSavesRequestCount]);
+
   const handleSave = () => {
-    const name = `${teams[0]} vs ${teams[1]} · Inning ${inning}`;
+    const teamLabel = (id: string) => resolveTeamLabel(id, customTeams);
+    const name = `${teamLabel(teams[0])} vs ${teamLabel(teams[1])} · Inning ${inning}`;
     const fullState: State = { ...gameStateRest, teams, inning, pitchKey } as State;
     const setup: GameSaveSetup = {
       strategy,

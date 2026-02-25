@@ -1,10 +1,12 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
 import { Hit } from "@constants/hitTypes";
 import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
 
@@ -179,15 +181,17 @@ const warnBattingStatsInvariant = (
 
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides } = useGameContext();
+  const { teams: customTeams } = useCustomTeams();
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
+  const teamDisplayName = resolveTeamLabel(teams[activeTeam], customTeams);
 
   React.useEffect(() => {
     setSelectedSlot(null);
   }, [activeTeam]);
 
   const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
-  warnBattingStatsInvariant(stats, activeTeam, teams[activeTeam]);
+  warnBattingStatsInvariant(stats, activeTeam, teamDisplayName);
 
   const handleRowSelect = (slot: number) => {
     setSelectedSlot((prev) => (prev === slot ? null : slot));
@@ -272,7 +276,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
           <PlayerDetails
             slot={selectedSlot}
             name={selectedName}
-            teamName={teams[activeTeam]}
+            teamName={teamDisplayName}
             stats={selectedStats}
             onClear={() => setSelectedSlot(null)}
           />

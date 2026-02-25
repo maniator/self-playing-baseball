@@ -1,6 +1,9 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+
 import type { Strategy } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { SaveDoc } from "@storage/types";
 
 import {
@@ -36,6 +39,9 @@ interface Props {
   }) => void;
   onLoadActivate?: (saveId: string) => void;
   autoOpen?: boolean;
+  openSavesRequestCount?: number;
+  /** When true a real game session is active and "Save current game" is shown. */
+  gameStarted?: boolean;
   /**
    * When provided, overrides the modal's built-in close action.
    * Called instead of closing the dialog when the user clicks Close,
@@ -71,6 +77,12 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleImportPaste,
     handleFileImport,
   } = useSavesModal(props);
+
+  // Resolve custom team IDs to human-readable labels for the saves list display.
+  const { teams: customTeams } = useCustomTeams();
+  /** Replace any `custom:ct_...` fragment in a save name with the resolved team name. */
+  const resolveSaveName = (name: string): string =>
+    name.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
 
   // When onRequestClose is provided it overrides the built-in close so the
   // caller can intercept close attempts (e.g. route back to Home).
@@ -114,30 +126,35 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
       >
         <DialogTitle>💾 Saves</DialogTitle>
 
-        <SmallButton onClick={handleSave} data-testid="save-game-button">
-          {props.currentSaveId ? "Update save" : "Save current game"}
-        </SmallButton>
+        {props.gameStarted && (
+          <SmallButton onClick={handleSave} data-testid="save-game-button">
+            {props.currentSaveId ? "Update save" : "Save current game"}
+          </SmallButton>
+        )}
 
         <SectionHeading>Saved games</SectionHeading>
         {saves.length === 0 ? (
           <EmptyMsg>No saves yet.</EmptyMsg>
         ) : (
           <SlotList>
-            {saves.map((s: SaveDoc) => (
-              <SlotItem key={s.id}>
-                <SlotName title={s.name}>{s.name}</SlotName>
-                <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
-                <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
-                  Load
-                </SmallButton>
-                <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
-                  Export
-                </SmallButton>
-                <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
-                  ✕
-                </DangerButton>
-              </SlotItem>
-            ))}
+            {saves.map((s: SaveDoc) => {
+              const displayName = resolveSaveName(s.name);
+              return (
+                <SlotItem key={s.id}>
+                  <SlotName title={displayName}>{displayName}</SlotName>
+                  <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
+                  <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
+                    Load
+                  </SmallButton>
+                  <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
+                    Export
+                  </SmallButton>
+                  <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
+                    ✕
+                  </DangerButton>
+                </SlotItem>
+              );
+            })}
           </SlotList>
         )}
 

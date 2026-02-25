@@ -1,7 +1,13 @@
 import * as React from "react";
 
+import {
+  customTeamToAbbreviation,
+  resolveTeamLabel,
+} from "@features/customTeams/adapters/customTeamAdapter";
+
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { getTeamAbbreviation } from "@utils/mlbTeams";
 
 import {
@@ -41,6 +47,16 @@ function getCellValue(
 const LineScore: React.FunctionComponent = () => {
   const { teams, score, inning, atBat, gameOver, inningRuns, playLog, balls, strikes, outs } =
     useGameContext();
+  const { teams: customTeams } = useCustomTeams();
+
+  /** Returns the compact label for a team, preferring custom abbreviation over MLB lookup. */
+  const compactLabel = (teamStr: string): string =>
+    customTeamToAbbreviation(teamStr, customTeams) ??
+    getTeamAbbreviation(teamStr) ??
+    teamStr
+      .replace(/^custom:/, "")
+      .slice(0, 3)
+      .toUpperCase();
 
   const displayInnings = gameOver && atBat === 0 ? inning - 1 : inning;
   const totalInnings = Math.max(9, displayInnings);
@@ -67,9 +83,9 @@ const LineScore: React.FunctionComponent = () => {
         <tbody>
           {([0, 1] as const).map((team) => (
             <tr key={team}>
-              <TeamTd $active={atBat === team} title={teams[team]}>
-                <TeamMobileLabel>{getTeamAbbreviation(teams[team]) ?? teams[team]}</TeamMobileLabel>
-                <TeamFullLabel>{teams[team]}</TeamFullLabel>
+              <TeamTd $active={atBat === team} title={resolveTeamLabel(teams[team], customTeams)}>
+                <TeamMobileLabel>{compactLabel(teams[team])}</TeamMobileLabel>
+                <TeamFullLabel>{resolveTeamLabel(teams[team], customTeams)}</TeamFullLabel>
               </TeamTd>
               {inningCols.map((n) => {
                 const val = getCellValue(team, n, inning, atBat, gameOver, inningRuns);

@@ -1,6 +1,9 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
+
+import { useCustomTeams } from "@hooks/useCustomTeams";
 
 const Tabs = styled.div`
   display: flex;
@@ -29,29 +32,34 @@ interface Props {
   onSelect: (team: 0 | 1) => void;
 }
 
-const TeamTabBar: React.FunctionComponent<Props> = ({ teams, activeTeam, onSelect }) => (
-  <Tabs role="tablist" data-testid="team-tab-bar">
-    <TabBtn
-      $active={activeTeam === 0}
-      type="button"
-      role="tab"
-      data-testid="team-tab-away"
-      aria-selected={activeTeam === 0}
-      onClick={() => onSelect(0)}
-    >
-      ▲ {teams[0]}
-    </TabBtn>
-    <TabBtn
-      $active={activeTeam === 1}
-      type="button"
-      role="tab"
-      data-testid="team-tab-home"
-      aria-selected={activeTeam === 1}
-      onClick={() => onSelect(1)}
-    >
-      ▼ {teams[1]}
-    </TabBtn>
-  </Tabs>
-);
+const TeamTabBar: React.FunctionComponent<Props> = ({ teams, activeTeam, onSelect }) => {
+  const { teams: customTeams } = useCustomTeams();
+  const label = (t: string) => resolveTeamLabel(t, customTeams);
+
+  return (
+    <Tabs role="tablist" data-testid="team-tab-bar">
+      <TabBtn
+        $active={activeTeam === 0}
+        type="button"
+        role="tab"
+        data-testid="team-tab-away"
+        aria-selected={activeTeam === 0}
+        onClick={() => onSelect(0)}
+      >
+        ▲ {label(teams[0])}
+      </TabBtn>
+      <TabBtn
+        $active={activeTeam === 1}
+        type="button"
+        role="tab"
+        data-testid="team-tab-home"
+        aria-selected={activeTeam === 1}
+        onClick={() => onSelect(1)}
+      >
+        ▼ {label(teams[1])}
+      </TabBtn>
+    </Tabs>
+  );
+};
 
 export default TeamTabBar;
