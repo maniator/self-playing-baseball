@@ -1,5 +1,8 @@
 import "fake-indexeddb/auto";
 
+import { addRxPlugin, createRxDatabase, type RxJsonSchema } from "rxdb";
+import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
+import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
@@ -186,5 +189,106 @@ describe("schema version and reset flag", () => {
 
   it("wasDbReset() returns false initially", () => {
     expect(wasDbReset()).toBe(false);
+  });
+});
+
+/**
+ * Upgrade-path test: simulates a user who had IndexedDB data created with the
+ * pre-Stage-3B v0 schema (simple nested objects, no explicit sub-properties).
+ *
+ * The fix bumped savesSchema.version from 0 to 1 and added an identity
+ * migrationStrategies[1] handler.  This test verifies that:
+ *   1. A v0 database with existing saves can be reopened with the v1 code.
+ *   2. The migration runs without throwing.
+ *   3. All save documents remain accessible and intact after migration.
+ */
+describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
+  it("migrates saves created with the pre-Stage-3B v0 schema to v1 without data loss", async () => {
+    // The pre-Stage-3B schema had plain `{ type: "object", additionalProperties: true }`
+    // for setup / scoreSnapshot / inningSnapshot / stateSnapshot.
+    const v0SavesSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 0,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        name: { type: "string" },
+        seed: { type: "string" },
+        matchupMode: { type: "string" },
+        homeTeamId: { type: "string" },
+        awayTeamId: { type: "string" },
+        createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        updatedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        progressIdx: { type: "number", minimum: -1, maximum: 9_999_999, multipleOf: 1 },
+        setup: { type: "object", additionalProperties: true },
+        scoreSnapshot: { type: "object", additionalProperties: true },
+        inningSnapshot: { type: "object", additionalProperties: true },
+        stateSnapshot: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "name",
+        "seed",
+        "matchupMode",
+        "homeTeamId",
+        "awayTeamId",
+        "createdAt",
+        "updatedAt",
+        "progressIdx",
+        "setup",
+        "schemaVersion",
+      ],
+      indexes: ["updatedAt"],
+    };
+
+    // Use a stable name so v0 and v1 open the SAME IndexedDB database.
+    // fake-indexeddb/auto (imported at the top) provides a shared in-process
+    // IndexedDB environment that persists data across close/reopen cycles.
+    const dbName = `migration_test_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── Step 1: Create v0 DB (simulates pre-Stage-3B user data) ──────────────
+    addRxPlugin(RxDBMigrationSchemaPlugin);
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ saves: { schema: v0SavesSchema } });
+    await v0Db.saves.insert({
+      id: "legacy_save",
+      name: "Pre-Stage-3B Save",
+      seed: "xyz",
+      matchupMode: "default",
+      homeTeamId: "Yankees",
+      awayTeamId: "Mets",
+      createdAt: 1000,
+      updatedAt: 2000,
+      progressIdx: 10,
+      setup: { strategy: "balanced", managerMode: true, homeTeam: "Yankees", awayTeam: "Mets" },
+      schemaVersion: 0,
+    });
+    await v0Db.close();
+
+    // ── Step 2: Open same DB with v1 schema (simulates app after Stage 3B fix) ─
+    // _createTestDb uses the current initDb which registers RxDBMigrationSchemaPlugin
+    // and opens savesSchema at version 1 with migrationStrategies[1] = identity.
+    const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    // ── Step 3: Verify save document survived migration intact ─────────────────
+    const doc = await v1Db.saves.findOne("legacy_save").exec();
+    expect(doc, "migrated document should exist after upgrade").not.toBeNull();
+    expect(doc?.name).toBe("Pre-Stage-3B Save");
+    expect(doc?.homeTeamId).toBe("Yankees");
+    expect(doc?.awayTeamId).toBe("Mets");
+    expect(doc?.progressIdx).toBe(10);
+    expect(doc?.setup).toMatchObject({
+      strategy: "balanced",
+      managerMode: true,
+      homeTeam: "Yankees",
+      awayTeam: "Mets",
+    });
+
+    await v1Db.close();
   });
 });
