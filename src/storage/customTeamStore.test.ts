@@ -177,6 +177,24 @@ describe("createCustomTeam", () => {
     const doc = await db.customTeams.findOne(id).exec();
     expect(doc?.statsProfile).toBe("power");
   });
+
+  it("uppercases and trims abbreviation on create", async () => {
+    const id = await store.createCustomTeam(makeInput({ abbreviation: " sox " }));
+    const team = await store.getCustomTeam(id);
+    expect(team?.abbreviation).toBe("SOX");
+  });
+
+  it("throws when abbreviation is too short on create", async () => {
+    await expect(store.createCustomTeam(makeInput({ abbreviation: "X" }))).rejects.toThrow(
+      "abbreviation must be 2–3 characters",
+    );
+  });
+
+  it("throws when abbreviation is too long on create", async () => {
+    await expect(store.createCustomTeam(makeInput({ abbreviation: "WXYZ" }))).rejects.toThrow(
+      "abbreviation must be 2–3 characters",
+    );
+  });
 });
 
 describe("getCustomTeam", () => {
@@ -314,6 +332,27 @@ describe("updateCustomTeam", () => {
     await store.updateCustomTeam(id, updates);
     // Caller's object should not be mutated
     expect(updates.name).toBe("  Clean  ");
+  });
+
+  it("uppercases and trims abbreviation on update", async () => {
+    const id = await store.createCustomTeam(makeInput({ abbreviation: "NY" }));
+    await store.updateCustomTeam(id, { abbreviation: " bos " });
+    const team = await store.getCustomTeam(id);
+    expect(team?.abbreviation).toBe("BOS");
+  });
+
+  it("throws when abbreviation is too short on update", async () => {
+    const id = await store.createCustomTeam(makeInput());
+    await expect(store.updateCustomTeam(id, { abbreviation: "A" })).rejects.toThrow(
+      "abbreviation must be 2–3 characters",
+    );
+  });
+
+  it("throws when abbreviation is too long on update", async () => {
+    const id = await store.createCustomTeam(makeInput());
+    await expect(store.updateCustomTeam(id, { abbreviation: "ABCD" })).rejects.toThrow(
+      "abbreviation must be 2–3 characters",
+    );
   });
 });
 

@@ -121,7 +121,11 @@ test.describe("Home button interactivity — regression guard", () => {
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     // Saves modal OR game UI must appear — proves the click was NOT intercepted by a lingering backdrop.
-    await expect(page.getByTestId("saves-modal").or(page.getByTestId("scoreboard"))).toBeVisible({
+    // Use .first() because on slower engines both the scoreboard (game screen just became visible)
+    // and the saves modal can be present simultaneously; strict-mode would fail on 2 elements.
+    await expect(
+      page.getByTestId("saves-modal").or(page.getByTestId("scoreboard")).first(),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -179,9 +183,13 @@ test.describe("Home button interactivity — regression guard", () => {
     await expect(page.getByTestId("saves-modal")).not.toBeVisible();
 
     // Repeated Load Saved click must work — no lingering backdrop should block it.
+    // Use .first() because on slower engines both the scoreboard (game screen just became visible)
+    // and the saves modal can be present simultaneously; strict-mode would fail on 2 elements.
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal").or(page.getByTestId("scoreboard"))).toBeVisible({
+    await expect(
+      page.getByTestId("saves-modal").or(page.getByTestId("scoreboard")).first(),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
