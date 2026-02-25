@@ -24,16 +24,22 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
       if (Array.isArray(p)) {
         return { ...state, teams: p };
       }
-      // Compute lineupPositions from lineupOrder + playerOverrides when both are present.
-      // This records the defensive slot assignment for each batting position at game-start.
-      // Substitutions keep the same slot assignments so positions stay unique per slot.
-      const lineupPositions: [string[], string[]] =
-        p.lineupOrder && p.playerOverrides
-          ? [
-              computeLineupPositions(p.lineupOrder[0], p.playerOverrides[0]),
-              computeLineupPositions(p.lineupOrder[1], p.playerOverrides[1]),
-            ]
-          : state.lineupPositions;
+      // Compute lineupPositions from lineupOrder + playerOverrides when both are present
+      // and at least one player has a non-empty position. For MLB games, playerOverrides
+      // have no .position — producing all-empty-string arrays — so we keep the existing
+      // [[], []] default to let PlayerStatsPanel fall back to roster-position lookup.
+      let lineupPositions: [string[], string[]] = state.lineupPositions;
+      if (p.lineupOrder && p.playerOverrides) {
+        const computed: [string[], string[]] = [
+          computeLineupPositions(p.lineupOrder[0], p.playerOverrides[0]),
+          computeLineupPositions(p.lineupOrder[1], p.playerOverrides[1]),
+        ];
+        const hasAnyPosition =
+          computed[0].some((pos) => pos !== "") || computed[1].some((pos) => pos !== "");
+        if (hasAnyPosition) {
+          lineupPositions = computed;
+        }
+      }
       return {
         ...state,
         teams: p.teams,

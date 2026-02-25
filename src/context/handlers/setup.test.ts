@@ -124,18 +124,41 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     ]);
   });
 
-  it("lineupPositions entries default to empty string when position is absent", () => {
-    const state = makeState();
+  it("does NOT set lineupPositions when no player has a position (MLB path)", () => {
+    // MLB playerOverrides have no .position — all entries would be empty strings.
+    // The fix: keep state.lineupPositions unchanged so UI falls back to roster lookup.
+    const existing: [string[], string[]] = [
+      ["SS", "CF"],
+      ["1B", "LF"],
+    ];
+    const state = makeState({ lineupPositions: existing });
     const next = handleSetupAction(state, {
       type: "setTeams",
       payload: {
         teams: ["A", "B"],
-        lineupOrder: [["p1", "p2"], ["p3"]] as [string[], string[]],
-        playerOverrides: [{ p1: { nickname: "Alice" } }, {}] as never,
+        lineupOrder: [
+          ["p1", "p2"],
+          ["p3", "p4"],
+        ] as [string[], string[]],
+        // No position fields — mimics stock MLB playerOverrides
+        playerOverrides: [{ p1: { nickname: "Alice" } }, { p3: { nickname: "Bob" } }] as never,
       },
     });
-    expect(next?.lineupPositions?.[0]).toEqual(["", ""]);
-    expect(next?.lineupPositions?.[1]).toEqual([""]);
+    // lineupPositions must NOT have been overwritten with all-empty-string arrays
+    expect(next?.lineupPositions).toEqual(existing);
+  });
+
+  it("lineupPositions stays [[], []] (initial) when MLB playerOverrides have no positions", () => {
+    const state = makeState(); // lineupPositions defaults to [[], []]
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        lineupOrder: [["p1"], ["p2"]] as [string[], string[]],
+        playerOverrides: [{}, {}] as never,
+      },
+    });
+    expect(next?.lineupPositions).toEqual([[], []]);
   });
 
   it("preserves existing lineupPositions when lineupOrder is not provided", () => {

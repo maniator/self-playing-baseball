@@ -238,7 +238,7 @@ export const TeamInfoSecondRow = styled.div`
   grid-template-columns: 1fr;
   gap: 8px;
 
-  ${mq.notMobile} {
+  ${mq.desktop} {
     grid-template-columns: 150px 1fr;
     gap: 12px;
   }
