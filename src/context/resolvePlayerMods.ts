@@ -1,5 +1,41 @@
 import type { PlayerCustomization, ResolvedPlayerMods } from "./index";
 
+/**
+ * ## Stat Wiring Inventory (Stage 3D)
+ *
+ * All stats listed here are editable in the CustomTeamEditor UI and persisted in the
+ * `customTeams` RxDB collection (`TeamPlayer.batting` / `TeamPlayer.pitching`).
+ * They are mapped into `playerOverrides` via `customTeamToPlayerOverrides` and cached
+ * at game-start in `state.resolvedMods` (see `resolvePlayerMods` / `buildResolvedMods`).
+ *
+ * ### Batter stats
+ * | Stat       | Stored | resolvedMods | Used in sim                                   |
+ * |------------|--------|--------------|-----------------------------------------------|
+ * | contact    | ✓      | contactMod   | hitBall: pop-out threshold (+/- hit chance)   |
+ * | power      | ✓      | powerMod     | hitBall: HR bonus probability                 |
+ * | speed      | ✓      | speedMod     | reducer: steal success % (via baseRunnerIds)  |
+ *
+ * ### Pitcher stats
+ * | Stat       | Stored | resolvedMods  | Used in sim                                   |
+ * |------------|--------|---------------|-----------------------------------------------|
+ * | velocity   | ✓      | velocityMod   | hitBall: pop-out threshold; playerWait: strike ↑ |
+ * | control    | ✓      | controlMod    | playerWait: strike probability ↑              |
+ * | movement   | ✓      | movementMod   | hitBall: pop-out threshold (hit difficulty ↑) |
+ *
+ * ### Intentionally deferred stats (stored-only, not yet wired into sim)
+ * - `handedness` (batter/pitcher): stored in TeamPlayer, not yet used to affect pitch outcomes.
+ *   Planned for a future stage when batter-vs-pitcher matchup splits are added.
+ * - `pitchingRole` (SP/RP/SP-RP): stored in CustomTeamDoc, drives AI substitution logic only;
+ *   does not yet affect pitch-by-pitch simulation.
+ *
+ * ### Invariant: resolvedMods is a derived cache
+ * `resolvedMods` is computed from `playerOverrides` exactly once at `setTeams` time
+ * and is recomputed from `playerOverrides` during `backfillRestoredState` for old saves.
+ * It must never be mutated independently of `playerOverrides`.
+ * If player overrides ever become mutable mid-game (e.g. stat upgrades), `resolvedMods`
+ * must be recomputed alongside any `playerOverrides` update.
+ */
+
 export const ZERO_MODS: ResolvedPlayerMods = {
   contactMod: 0,
   powerMod: 0,

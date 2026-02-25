@@ -269,3 +269,56 @@ describe("stat mods in hitBall", () => {
     expect(resultHighMovement.outs).toBeGreaterThan(stateHighMovement.outs);
   });
 });
+
+// ---------------------------------------------------------------------------
+// baseRunnerIds correctness in grounder paths
+// ---------------------------------------------------------------------------
+
+describe("hitBall — baseRunnerIds in grounder paths", () => {
+  it("fielder's choice: batter's playerId placed on 1st in baseRunnerIds", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone
+      .mockReturnValueOnce(0.2) // ground ball check → handleGrounder
+      .mockReturnValueOnce(0.7); // DP check: 70 >= 65 → fielder's choice
+    const state = makeState({
+      baseLayout: [1, 0, 0],
+      outs: 0,
+      lineupOrder: [["batter_fc", "b2", "b3", "b4", "b5", "b6", "b7", "b8", "b9"], []],
+      batterIndex: [0, 0],
+      baseRunnerIds: ["old_runner", null, null],
+    });
+    const next = hitBall(Hit.Single, state, () => {});
+    // Batter (batter_fc) should now be on 1st; old runner was forced out
+    expect(next.baseLayout[0]).toBe(1);
+    expect(next.baseRunnerIds[0]).toBe("batter_fc");
+  });
+
+  it("double play: baseRunnerIds[0] is cleared (runner forced out, batter out)", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone
+      .mockReturnValueOnce(0.2) // ground ball check → handleGrounder
+      .mockReturnValueOnce(0.5); // DP check: 50 < 65 → double play
+    const state = makeState({
+      baseLayout: [1, 0, 0],
+      outs: 0,
+      baseRunnerIds: ["dp_runner", null, null],
+    });
+    const next = hitBall(Hit.Single, state, () => {});
+    expect(next.outs).toBe(2);
+    expect(next.baseRunnerIds[0]).toBeNull();
+  });
+
+  it("simple ground out: baseRunnerIds unchanged (no base changes)", () => {
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.999) // main roll → pop-out zone
+      .mockReturnValueOnce(0.2); // ground ball check → handleGrounder (no runner on 1st)
+    const state = makeState({
+      baseLayout: [0, 1, 0],
+      outs: 0,
+      baseRunnerIds: [null, "runner_2nd", null],
+    });
+    const next = hitBall(Hit.Single, state, () => {});
+    // 2nd base runner unaffected; batter is out
+    expect(next.baseRunnerIds[1]).toBe("runner_2nd");
+  });
+});

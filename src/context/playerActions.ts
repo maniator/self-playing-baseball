@@ -136,17 +136,19 @@ const computeWaitOutcome = (
   pitcherVelocityMod: number = 0,
 ): "ball" | "strike" => {
   const zoneMod = pitchType ? pitchStrikeZoneMod(pitchType) : 1.0;
-  // Higher control = pitcher more likely to throw strikes; higher velocity = harder to draw walks
+  // Higher control = pitcher more likely to throw strikes; higher velocity = harder to draw walks.
+  // Clamp all thresholds to [0, 999] to stay within the getRandomInt(1000) RNG range.
   const controlFactor = 1 + (pitcherControlMod + pitcherVelocityMod / 2) / 100;
   if (modifier === "take") {
     const adjustedWalkChance = Math.min(
-      950,
-      Math.round((750 * stratMod(strategy, "walk")) / (zoneMod * controlFactor)),
+      999,
+      Math.max(0, Math.round((750 * stratMod(strategy, "walk")) / (zoneMod * controlFactor))),
     );
     return random < adjustedWalkChance ? "ball" : "strike";
   }
-  const adjustedStrikeThreshold = Math.round(
-    (500 * zoneMod * controlFactor) / stratMod(strategy, "walk"),
+  const adjustedStrikeThreshold = Math.min(
+    999,
+    Math.max(0, Math.round((500 * zoneMod * controlFactor) / stratMod(strategy, "walk"))),
   );
   return random < adjustedStrikeThreshold ? "strike" : "ball";
 };

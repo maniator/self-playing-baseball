@@ -26,12 +26,17 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
   const { baseLayout, outs } = state;
   const groundedState = { ...state, pitchKey, hitType: undefined as Hit | undefined };
 
+  // Batter identity — needed to assign runner ID when batter reaches on FC.
+  const battingTeam = state.atBat as 0 | 1;
+  const batterSlotIdx = state.batterIndex[battingTeam];
+  const batterId = state.lineupOrder[battingTeam][batterSlotIdx] || null;
+
   if (baseLayout[0] && outs < 2) {
     if (getRandomInt(100) < 65) {
       // 6-4-3 / 5-4-3 double play: runner from 1st forced out at 2nd, batter out at 1st.
       log("Ground ball to the infield — double play!");
       const dpBase: [number, number, number] = [0, baseLayout[1], baseLayout[2]];
-      // Clear the runner ID from 1st (they were forced out)
+      // Clear the runner ID from 1st (they were forced out); batter is also out.
       const dpRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
         string | null,
         string | null,
@@ -48,13 +53,13 @@ const handleGrounder = (state: State, log, pitchKey: number): State => {
     }
     log("Ground ball to the infield — fielder's choice.");
     const fcBase: [number, number, number] = [1, baseLayout[1], baseLayout[2]];
-    // Batter reaches 1st; lead runner (from 1st) is out — clear their ID
+    // Lead runner (1st) is forced out; batter reaches 1st safely — place batter's ID there.
     const fcRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
       string | null,
       string | null,
       string | null,
     ];
-    fcRunnerIds[0] = null; // lead runner forced out
+    fcRunnerIds[0] = batterId; // batter takes 1st; old runner ID (forced out) is replaced
     // Batter reaches 1st safely; at-bat complete, so advance lineup.
     return playerOut(
       { ...groundedState, baseLayout: fcBase, baseRunnerIds: fcRunnerIds },

@@ -42,6 +42,9 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         }
       }
       const newPlayerOverrides = p.playerOverrides ?? state.playerOverrides;
+      // resolvedMods is a derived cache of playerOverrides — computed once here at setTeams
+      // time and recomputed by backfillRestoredState on save restore. See resolvePlayerMods.ts
+      // for the full invariant and stat wiring inventory.
       const newResolvedMods: [
         Record<string, ResolvedPlayerMods>,
         Record<string, ResolvedPlayerMods>,
