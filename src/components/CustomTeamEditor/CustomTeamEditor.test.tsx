@@ -394,6 +394,22 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     expect(lastInput.readOnly).toBe(false);
   });
 
+  it("new player name in edit mode can be typed and updated", async () => {
+    renderEditor({ team: existingTeam });
+    const addBtn = screen.getByTestId("custom-team-add-bench-player-button");
+    await act(async () => {
+      fireEvent.click(addBtn);
+    });
+    const playerNameInputs = screen.getAllByPlaceholderText(/player name/i) as HTMLInputElement[];
+    const newPlayerInput = playerNameInputs[playerNameInputs.length - 1];
+    expect(newPlayerInput.readOnly).toBe(false);
+    // Typing must update the value (onChange is wired for new players)
+    await act(async () => {
+      fireEvent.change(newPlayerInput, { target: { value: "Brand New Slugger" } });
+    });
+    expect(newPlayerInput.value).toBe("Brand New Slugger");
+  });
+
   it("identity lock hint is shown in edit mode", () => {
     renderEditor({ team: existingTeam });
     expect(screen.getByText("Team identity fields are locked after creation.")).toBeTruthy();

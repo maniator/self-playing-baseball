@@ -89,6 +89,26 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await expect(page.getByText("Original Name")).toBeVisible({ timeout: 5_000 });
   });
 
+  test("editing a team: newly added player has an editable name field", async ({ page }) => {
+    // Create a team with generated defaults
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Test Squad");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Test Squad")).toBeVisible({ timeout: 5_000 });
+
+    // Open edit mode and add a new bench player
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await page.getByTestId("custom-team-add-bench-player-button").click();
+
+    // New player's name input must be editable (not locked like existing players)
+    const newPlayerNameInput = page.getByPlaceholder("Player name").last();
+    await expect(newPlayerNameInput).toBeEditable();
+    await newPlayerNameInput.fill("New Bench Star");
+    await expect(newPlayerNameInput).toHaveValue("New Bench Star");
+  });
+
   test("info banner warns that edits won't affect the current game when navigating from an active game", async ({
     page,
   }) => {
