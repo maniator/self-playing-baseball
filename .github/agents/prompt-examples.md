@@ -127,6 +127,23 @@ A new field (decisionType) was added to EventDoc. Audit the export/import flow:
 4. Update sample-save.json fixture if the format changed.
 ```
 
+### Add a new field to the saves schema
+
+```
+@rxdb-save-integrity
+
+Add a `tags: string[]` field to SaveDoc (src/storage/types.ts) and savesSchema (src/storage/db.ts).
+
+Requirements:
+- Bump savesSchema.version by 1 (e.g. 1 → 2).
+- Add migrationStrategies entry for the new version: pure function, never throws,
+  sets tags to [] for all existing docs (oldDoc.tags ?? []).
+- Add an upgrade-path unit test: create a v(N-1) DB, insert a legacy save,
+  close, reopen with new code, assert tags is [] and all other fields are intact.
+- Export/import FNV-1a signature must still verify correctly after the change.
+- save-load.spec.ts and import.spec.ts must still pass.
+```
+
 ### Batch appendEvents performance improvement
 
 ```
