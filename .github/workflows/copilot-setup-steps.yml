@@ -38,6 +38,8 @@ jobs:
             fonts-noto-color-emoji \
             fonts-dejavu-core
 
-      # Pre-build app so agent can run preview/tests quickly
+      # Pre-build app so agent can run preview/tests quickly.
+      # continue-on-error so a build failure here doesn't block Copilot from starting.
       - name: Build app
         run: yarn build
+        continue-on-error: true

@@ -75,8 +75,8 @@ export const PrimaryBtn = styled.button`
 
 export const SecondaryBtn = styled.button`
   background: transparent;
-  color: #bbb;
-  border: 1px solid #444;
+  color: #aaccff;
+  border: 1px solid #4a6090;
   border-radius: 6px;
   padding: 14px 20px;
   font-size: 0.95rem;
@@ -86,9 +86,13 @@ export const SecondaryBtn = styled.button`
   text-align: center;
 
   &:hover {
-    background: #111;
-    border-color: #666;
-    color: #ddd;
+    background: #0d1b2e;
+    border-color: #88bbee;
+    color: #cce0ff;
+  }
+
+  &:active {
+    background: #071020;
   }
 
   &:focus-visible {

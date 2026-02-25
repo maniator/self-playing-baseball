@@ -23,6 +23,18 @@ function requireNonEmpty(value: unknown, fieldPath: string): string {
   return value.trim();
 }
 
+/**
+ * Sanitizes an abbreviation: trims, uppercases, and enforces 2–3 characters.
+ * Throws if the result is outside that range so stored docs are always valid.
+ */
+function sanitizeAbbreviation(value: string): string {
+  const abbr = value.trim().toUpperCase();
+  if (abbr.length < 2 || abbr.length > 3) {
+    throw new Error(`abbreviation must be 2–3 characters (got "${abbr}")`);
+  }
+  return abbr;
+}
+
 function clampStat(value: number): number {
   return Math.max(STAT_MIN, Math.min(STAT_MAX, value));
 }
@@ -107,6 +119,9 @@ function buildStore(getDbFn: GetDb) {
         createdAt: now,
         updatedAt: now,
         name,
+        ...(input.abbreviation !== undefined && {
+          abbreviation: sanitizeAbbreviation(input.abbreviation),
+        }),
         ...(input.nickname !== undefined && { nickname: input.nickname }),
         ...(input.city !== undefined && { city: input.city }),
         ...(input.slug !== undefined && { slug: input.slug }),
@@ -138,6 +153,8 @@ function buildStore(getDbFn: GetDb) {
       };
 
       if (updates.name !== undefined) patch.name = requireNonEmpty(updates.name, "name");
+      if (updates.abbreviation !== undefined)
+        patch.abbreviation = sanitizeAbbreviation(updates.abbreviation);
       if (updates.nickname !== undefined) patch.nickname = updates.nickname;
       if (updates.city !== undefined) patch.city = updates.city;
       if (updates.slug !== undefined) patch.slug = updates.slug;

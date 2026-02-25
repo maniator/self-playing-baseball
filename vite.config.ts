@@ -47,6 +47,7 @@ export default defineConfig(({ mode }) => ({
       "@constants": path.resolve(__dirname, "src/constants"),
       "@storage": path.resolve(__dirname, "src/storage"),
       "@test": path.resolve(__dirname, "src/test"),
+      "@features": path.resolve(__dirname, "src/features"),
     },
   },
   define: {

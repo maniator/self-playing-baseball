@@ -6,14 +6,26 @@ type Props = {
   onNewGame: () => void;
   onLoadSaves: () => void;
   onManageTeams: () => void;
+  /** When provided, shows a "Resume Current Game" button above the other actions. */
+  onResumeCurrent?: () => void;
 };
 
-const HomeScreen: React.FunctionComponent<Props> = ({ onNewGame, onLoadSaves, onManageTeams }) => (
+const HomeScreen: React.FunctionComponent<Props> = ({
+  onNewGame,
+  onLoadSaves,
+  onManageTeams,
+  onResumeCurrent,
+}) => (
   <HomeContainer data-testid="home-screen">
     <HomeLogo>⚾</HomeLogo>
     <HomeTitle>Ballgame</HomeTitle>
     <HomeSubtitle>Self-playing baseball simulator</HomeSubtitle>
     <MenuGroup>
+      {onResumeCurrent && (
+        <PrimaryBtn onClick={onResumeCurrent} data-testid="home-resume-current-game-button">
+          ▶ Resume Current Game
+        </PrimaryBtn>
+      )}
       <PrimaryBtn onClick={onNewGame} data-testid="home-new-game-button">
         New Game
       </PrimaryBtn>

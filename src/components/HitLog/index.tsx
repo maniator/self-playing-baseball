@@ -1,9 +1,11 @@
 import * as React from "react";
 
+import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { mq } from "@utils/mediaQueries";
 
 const EVENT_LABEL: Record<Hit, string> = {
@@ -84,7 +86,9 @@ const EmptyState = styled.div`
 
 const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
   const { playLog, teams } = useGameContext();
+  const { teams: customTeams } = useCustomTeams();
   const [collapsed, setCollapsed] = React.useState(false);
+  const teamLabel = (t: string) => resolveTeamLabel(t, customTeams);
 
   const filtered = playLog.filter((entry) => entry.team === activeTeam);
 
@@ -111,7 +115,7 @@ const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) 
                   <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
                   <span>
                     {HALF_ARROW[entry.half]}
-                    {entry.inning} — {teams[entry.team]} #{entry.batterNum}
+                    {entry.inning} — {teamLabel(teams[entry.team])} #{entry.batterNum}
                   </span>
                   {entry.runs > 0 && (
                     <Runs>

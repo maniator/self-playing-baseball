@@ -112,11 +112,13 @@ describe("LineScore", () => {
     expect(screen.getAllByText("New York Mets").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("falls back to full team name when no abbreviation is known", () => {
+  it("uses first-3-chars fallback for unknown non-MLB team in mobile label, full name in desktop label", () => {
     renderWithContext(<LineScore />, makeContextValue({ teams: ["Custom Away", "Custom Home"] }));
-    // Both the mobile and full spans render the fallback full name (no abbreviation)
-    expect(screen.getAllByText("Custom Away").length).toBeGreaterThanOrEqual(2);
-    expect(screen.getAllByText("Custom Home").length).toBeGreaterThanOrEqual(2);
+    // Mobile compact label uses first-3-chars (CUS) fallback
+    expect(screen.getAllByText("CUS").length).toBeGreaterThanOrEqual(2);
+    // Desktop full label still shows the full team name
+    expect(screen.getAllByText("Custom Away").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Custom Home").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows R (runs) totals for each team", () => {
