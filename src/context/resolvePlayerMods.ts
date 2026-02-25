@@ -27,6 +27,9 @@ import type { PlayerCustomization, ResolvedPlayerMods } from "./index";
  *   Planned for a future stage when batter-vs-pitcher matchup splits are added.
  * - `pitchingRole` (SP/RP/SP-RP): stored in CustomTeamDoc, drives AI substitution logic only;
  *   does not yet affect pitch-by-pitch simulation.
+ * - `staminaMod` (pitcher): editable in PlayerCustomizationPanel (via `PITCHER_MOD_FIELDS`) and
+ *   stored in `PlayerCustomization`, but not part of `ResolvedPlayerMods` and not read by any
+ *   simulation logic. Reserved for a future stage to drive pitcher fatigue/usage modeling.
  *
  * ### Invariant: resolvedMods is a derived cache
  * `resolvedMods` is computed from `playerOverrides` exactly once at `setTeams` time
