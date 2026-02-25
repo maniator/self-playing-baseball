@@ -79,7 +79,10 @@ describe("makeAiPitchingDecision", () => {
   it("returns none when pitcher is not fatigued", () => {
     const state = makeState({
       pitcherBattersFaced: [5, 5],
-      rosterPitchers: [["sp1", "rp1"], ["sp1", "rp1"]],
+      rosterPitchers: [
+        ["sp1", "rp1"],
+        ["sp1", "rp1"],
+      ],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
     });

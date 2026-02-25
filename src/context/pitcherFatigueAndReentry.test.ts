@@ -5,7 +5,7 @@
 import { describe, expect, it } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
-import { makeState, makeLogs } from "@test/testHelpers";
+import { makeLogs, makeState } from "@test/testHelpers";
 
 import { handleDecisionsAction } from "./handlers/decisions";
 import { hitBall } from "./hitBall";
