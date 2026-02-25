@@ -121,14 +121,14 @@ describe("SavesModal", () => {
   });
 
   it("opens the dialog when Saves button is clicked", async () => {
-    renderModal();
+    renderModal({ gameStarted: true });
     await openPanel();
     expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
     expect(screen.getByRole("button", { name: /save current game/i })).toBeInTheDocument();
   });
 
   it("shows 'Update save' when currentSaveId is provided", async () => {
-    renderModal({ currentSaveId: "save_1" });
+    renderModal({ currentSaveId: "save_1", gameStarted: true });
     await openPanel();
     expect(screen.getByRole("button", { name: /update save/i })).toBeInTheDocument();
   });
@@ -138,7 +138,7 @@ describe("SavesModal", () => {
     const mockCreateSave = vi.fn().mockResolvedValue("save_1");
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ createSave: mockCreateSave }));
     const onSaveIdChange = vi.fn();
-    renderModal({ onSaveIdChange });
+    renderModal({ onSaveIdChange, gameStarted: true });
     await openPanel();
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /save current game/i }));
@@ -453,5 +453,17 @@ describe("SavesModal", () => {
     // Simulate the bubbled click that arrives after the dialog was already closed.
     fireEvent.click(dialog, { clientX: 200, clientY: 200 });
     expect(onRequestClose).not.toHaveBeenCalled();
+  });
+
+  it("hides 'Save current game' when gameStarted is false (passive load-saves entry)", async () => {
+    renderModal({ gameStarted: false });
+    await openPanel();
+    expect(screen.queryByTestId("save-game-button")).not.toBeInTheDocument();
+  });
+
+  it("shows 'Save current game' when gameStarted is true", async () => {
+    renderModal({ gameStarted: true });
+    await openPanel();
+    expect(screen.getByTestId("save-game-button")).toBeInTheDocument();
   });
 });

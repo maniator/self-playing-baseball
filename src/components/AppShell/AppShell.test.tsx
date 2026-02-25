@@ -6,12 +6,17 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock heavy child components so AppShell tests stay fast and isolated.
 vi.mock("@components/Game", () => ({
-  default: (props: { onBackToHome?: () => void }) => (
+  default: (props: { onBackToHome?: () => void; onGameSessionStarted?: () => void }) => (
     <div data-testid="game-mock">
       Game
       {props.onBackToHome && (
         <button onClick={props.onBackToHome} data-testid="back-to-home-mock">
           Back to Home
+        </button>
+      )}
+      {props.onGameSessionStarted && (
+        <button onClick={props.onGameSessionStarted} data-testid="game-session-started-mock">
+          Session Started
         </button>
       )}
     </div>
@@ -22,11 +27,17 @@ vi.mock("@components/HomeScreen", () => ({
     onNewGame: () => void;
     onLoadSaves: () => void;
     onManageTeams: () => void;
+    onResumeCurrent?: () => void;
   }) => (
     <div data-testid="home-screen-mock">
       <button onClick={props.onNewGame}>New Game</button>
       <button onClick={props.onLoadSaves}>Load Saved Game</button>
       <button onClick={props.onManageTeams}>Manage Teams</button>
+      {props.onResumeCurrent && (
+        <button onClick={props.onResumeCurrent} data-testid="resume-current-mock">
+          Resume
+        </button>
+      )}
     </div>
   ),
 }));
@@ -89,15 +100,37 @@ describe("AppShell", () => {
     await user.click(screen.getByRole("button", { name: /new game/i }));
     await user.click(screen.getByTestId("back-to-home-mock"));
     expect(screen.getByTestId("home-screen-mock")).toBeInTheDocument();
-    expect(screen.queryByTestId("game-mock")).not.toBeInTheDocument();
+    // Game stays mounted (CSS-hidden) so Resume is possible — it is not removed from DOM.
+    expect(screen.getByTestId("game-mock")).toBeInTheDocument();
   });
 
-  it("Manage Teams back button returns to the Home screen", async () => {
+  it("Resume button does NOT appear after entering game screen without starting a session", async () => {
     const user = userEvent.setup();
     render(<AppShell />);
-    await user.click(screen.getByRole("button", { name: /manage teams/i }));
-    await user.click(screen.getByRole("button", { name: /back/i }));
-    expect(screen.getByTestId("home-screen-mock")).toBeInTheDocument();
-    expect(screen.queryByTestId("manage-teams-screen-mock")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /new game/i }));
+    await user.click(screen.getByTestId("back-to-home-mock"));
+    // Back to home — but no game session was actually started
+    expect(screen.queryByTestId("resume-current-mock")).not.toBeInTheDocument();
+  });
+
+  it("Resume button appears after onGameSessionStarted fires", async () => {
+    const user = userEvent.setup();
+    render(<AppShell />);
+    await user.click(screen.getByRole("button", { name: /new game/i }));
+    // Simulate Game reporting a real game started
+    await user.click(screen.getByTestId("game-session-started-mock"));
+    await user.click(screen.getByTestId("back-to-home-mock"));
+    expect(screen.getByTestId("resume-current-mock")).toBeInTheDocument();
+  });
+
+  it("clicking Resume navigates back to game screen", async () => {
+    const user = userEvent.setup();
+    render(<AppShell />);
+    await user.click(screen.getByRole("button", { name: /new game/i }));
+    await user.click(screen.getByTestId("game-session-started-mock"));
+    await user.click(screen.getByTestId("back-to-home-mock"));
+    await user.click(screen.getByTestId("resume-current-mock"));
+    expect(screen.getByTestId("game-mock")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
   });
 });
