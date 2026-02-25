@@ -39,8 +39,7 @@ const Game: React.FunctionComponent<Props> = ({
   // `custom:<id>` fragments to human-readable names before speech.
   const { teams: customTeams } = useCustomTeams();
   const announcePreprocessor = React.useCallback(
-    (msg: string) =>
-      msg.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams)),
+    (msg: string) => msg.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams)),
     [customTeams],
   );
 

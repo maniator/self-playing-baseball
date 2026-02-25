@@ -171,13 +171,7 @@ export const useSavesModal = ({
       return;
     }
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    // Resolve any stored custom: IDs to display names so all downstream
-    // log messages and UI surfaces use human-readable team names.
-    const restoredTeams: [string, string] = [
-      resolveTeamLabel(snap.state.teams[0], customTeams),
-      resolveTeamLabel(snap.state.teams[1], customTeams),
-    ];
-    dispatch({ type: "restore_game", payload: { ...snap.state, teams: restoredTeams } });
+    dispatch({ type: "restore_game", payload: snap.state });
     if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
       const url = new URL(window.location.href);
       url.searchParams.set("seed", slot.seed);
