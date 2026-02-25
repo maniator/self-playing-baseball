@@ -81,6 +81,27 @@ export const LoadingScreen = styled.p`
   font-family: monospace;
 `;
 
+export const DbResetNotice = styled.div`
+  background: #7a3200;
+  color: #fff;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 0.9rem;
+
+  button {
+    background: none;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    color: #fff;
+    cursor: pointer;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 1rem;
+  }
+`;
+
 export const LogPanel = styled.div`
   min-width: 0;
   overflow-y: auto;

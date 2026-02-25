@@ -1,12 +1,16 @@
 import {
   addRxPlugin,
   createRxDatabase,
+  removeRxDatabase,
   type RxCollection,
   type RxDatabase,
   type RxJsonSchema,
   type RxStorage,
 } from "rxdb";
+import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
+
+import { appLog } from "@utils/logger";
 
 import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
 
@@ -20,7 +24,13 @@ type DbCollections = {
 export type BallgameDb = RxDatabase<DbCollections>;
 
 const savesSchema: RxJsonSchema<SaveDoc> = {
-  version: 0,
+  // Stage 3B added explicit `properties` sub-definitions to the nested
+  // `setup`, `scoreSnapshot`, `inningSnapshot`, and `stateSnapshot` fields
+  // without bumping the version, causing a DB6 schema-hash mismatch for
+  // users with existing data. Version bumped to 1; identity migration is
+  // sufficient because all required fields were already present and
+  // additionalProperties: true is retained on all changed sub-objects.
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -168,6 +178,8 @@ async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
+  addRxPlugin(RxDBMigrationSchemaPlugin);
+
   if (import.meta.env.MODE === "development") {
     devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
       addRxPlugin(RxDBDevModePlugin);
@@ -181,7 +193,14 @@ async function initDb(
     multiInstance: false,
   });
   await db.addCollections({
-    saves: { schema: savesSchema },
+    saves: {
+      schema: savesSchema,
+      migrationStrategies: {
+        // Identity migration: all new schema fields were optional; existing
+        // docs are already valid against the new schema.
+        1: (oldDoc) => oldDoc,
+      },
+    },
     events: { schema: eventsSchema },
     teams: { schema: teamsSchema },
     customTeams: { schema: customTeamsSchema },
@@ -191,10 +210,28 @@ async function initDb(
 
 let dbPromise: Promise<BallgameDb> | null = null;
 
+/** True if the database was wiped and recreated during this session due to an init error. */
+let dbWasReset = false;
+/** Returns true if the database was reset during this session. */
+export const wasDbReset = (): boolean => dbWasReset;
+
 /** Returns the singleton IndexedDB-backed database instance (lazy-initialized). */
 export const getDb = (): Promise<BallgameDb> => {
   if (!dbPromise) {
-    dbPromise = initDb(getRxStorageDexie());
+    dbPromise = initDb(getRxStorageDexie()).catch(async (err: unknown) => {
+      // Graceful recovery: wipe the stale database and start fresh.
+      // This is a last-resort fallback — the schema migration above should
+      // handle normal upgrade paths. This path only fires if migration itself
+      // fails (e.g. corrupted storage or an unexpected schema delta).
+      appLog.warn("DB init failed; resetting local database for recovery:", err);
+      try {
+        await removeRxDatabase("ballgame", getRxStorageDexie());
+      } catch {
+        appLog.warn("DB removal also failed during recovery — proceeding anyway");
+      }
+      dbWasReset = true;
+      return initDb(getRxStorageDexie());
+    });
   }
   return dbPromise;
 };

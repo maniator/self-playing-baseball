@@ -10,6 +10,7 @@ import {
   eventsCollection,
   getDb,
   savesCollection,
+  wasDbReset,
 } from "./db";
 
 let db: BallgameDb;
@@ -173,5 +174,17 @@ describe("teams collection", () => {
     const nlTeams = await db.teams.find({ selector: { league: "nl" } }).exec();
     expect(nlTeams).toHaveLength(1);
     await db.close();
+  });
+});
+
+describe("schema version and reset flag", () => {
+  it("saves collection has schema version 1", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    expect(testDb.saves.schema.version).toBe(1);
+    await testDb.close();
+  });
+
+  it("wasDbReset() returns false initially", () => {
+    expect(wasDbReset()).toBe(false);
   });
 });
