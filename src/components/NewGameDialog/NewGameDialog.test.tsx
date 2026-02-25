@@ -32,7 +32,7 @@ vi.mock("@hooks/useCustomTeams", () => ({
 }));
 
 import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
-import NewGameDialog from "./index";
+import NewGameDialog, { getSpEligiblePitchers } from "./index";
 
 HTMLDialogElement.prototype.showModal = vi.fn();
 HTMLDialogElement.prototype.close = vi.fn();
@@ -407,5 +407,70 @@ describe("NewGameDialog — custom team self-matchup validation", () => {
     });
     // Validation error should be cleared when the selection changes.
     expect(screen.queryByTestId("team-validation-error")).not.toBeInTheDocument();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getSpEligiblePitchers — unit tests
+// ---------------------------------------------------------------------------
+
+describe("getSpEligiblePitchers", () => {
+  it("includes pitchers with no role set (legacy/stock teams)", () => {
+    const pitchers = [
+      { id: "p1", name: "Pitcher One" },
+      { id: "p2", name: "Pitcher Two" },
+    ];
+    const result = getSpEligiblePitchers(pitchers);
+    expect(result).toHaveLength(2);
+    expect(result[0].idx).toBe(0);
+    expect(result[1].idx).toBe(1);
+  });
+
+  it("includes SP-role pitchers", () => {
+    const pitchers = [{ id: "p1", name: "Starter", pitchingRole: "SP" }];
+    const result = getSpEligiblePitchers(pitchers);
+    expect(result).toHaveLength(1);
+    expect(result[0].idx).toBe(0);
+  });
+
+  it("includes SP/RP-role pitchers", () => {
+    const pitchers = [{ id: "p1", name: "Two-way", pitchingRole: "SP/RP" }];
+    const result = getSpEligiblePitchers(pitchers);
+    expect(result).toHaveLength(1);
+  });
+
+  it("excludes RP-only pitchers", () => {
+    const pitchers = [
+      { id: "p1", name: "Reliever A", pitchingRole: "RP" },
+      { id: "p2", name: "Reliever B", pitchingRole: "RP" },
+    ];
+    const result = getSpEligiblePitchers(pitchers);
+    expect(result).toHaveLength(0);
+  });
+
+  it("when RP is at roster idx 0 and SP is at idx 1, returns only SP with its original idx", () => {
+    const pitchers = [
+      { id: "p1", name: "Reliever", pitchingRole: "RP" },
+      { id: "p2", name: "Starter", pitchingRole: "SP" },
+    ];
+    const result = getSpEligiblePitchers(pitchers);
+    // RP at index 0 is filtered out — SP at index 1 remains
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe("p2");
+    // Original roster index is preserved — idx is 1, not 0
+    expect(result[0].idx).toBe(1);
+  });
+
+  it("preserves original roster indices when filtering mixed roles", () => {
+    const pitchers = [
+      { id: "rp1", name: "Closer", pitchingRole: "RP" }, // idx 0 — excluded
+      { id: "sp1", name: "Ace", pitchingRole: "SP" }, // idx 1 — included
+      { id: "rp2", name: "Setup Man", pitchingRole: "RP" }, // idx 2 — excluded
+      { id: "sw1", name: "Swingman", pitchingRole: "SP/RP" }, // idx 3 — included
+    ];
+    const result = getSpEligiblePitchers(pitchers);
+    expect(result).toHaveLength(2);
+    expect(result[0].idx).toBe(1);
+    expect(result[1].idx).toBe(3);
   });
 });

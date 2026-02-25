@@ -420,3 +420,61 @@ describe("DecisionButtons", () => {
     });
   });
 });
+
+// ---------------------------------------------------------------------------
+// selectedCandidateId resets when pendingDecision changes
+// ---------------------------------------------------------------------------
+
+describe("pinch_hitter — selectedCandidateId resets when decision changes", () => {
+  it("resets selected candidate when pendingDecision prop changes to a new pinch_hitter decision", async () => {
+    const decision1: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b1", name: "First Sub", position: "LF", contactMod: 0, powerMod: 0 },
+        { id: "b2", name: "Second Sub", position: "RF", contactMod: 5, powerMod: 0 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 2,
+    };
+    const decision2: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b3", name: "Third Sub", position: "CF", contactMod: 0, powerMod: 0 },
+        { id: "b4", name: "Fourth Sub", position: "DH", contactMod: 0, powerMod: 0 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 5,
+    };
+
+    const { rerender } = render(
+      <DecisionButtons
+        pendingDecision={decision1}
+        strategy="balanced"
+        onSkip={noop}
+        onDispatch={noop}
+      />,
+    );
+
+    // Initial render: first candidate (b1) is selected.
+    const select = screen.getByTestId("pinch-hitter-select") as HTMLSelectElement;
+    expect(select.value).toBe("b1");
+
+    // Manually select the second candidate.
+    await userEvent.selectOptions(select, "b2");
+    expect(select.value).toBe("b2");
+
+    // Switch to a completely different pinch_hitter decision.
+    rerender(
+      <DecisionButtons
+        pendingDecision={decision2}
+        strategy="balanced"
+        onSkip={noop}
+        onDispatch={noop}
+      />,
+    );
+
+    // The selection must have reset to the first candidate of the new decision (b3).
+    const select2 = screen.getByTestId("pinch-hitter-select") as HTMLSelectElement;
+    expect(select2.value).toBe("b3");
+  });
+});

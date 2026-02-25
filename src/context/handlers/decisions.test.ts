@@ -562,3 +562,51 @@ describe("handleDecisionsAction — defensive shift de-spam", () => {
     expect(logs.some((l) => /normal alignment/i.test(l))).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Pinch hit mid at-bat: balls and strikes preserved, batter identity swapped
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — make_substitution (batter) preserves balls/strikes", () => {
+  it("preserves current balls and strikes after pinch hit substitution", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      strikes: 1,
+      lineupOrder: [["starter", "b2", "b3"], []],
+      rosterBench: [["pinch_hitter"], []],
+      batterIndex: [0, 0],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "pinch_hitter" },
+      },
+      { log },
+    );
+    // Batter identity swapped
+    expect(next?.lineupOrder[0][0]).toBe("pinch_hitter");
+    // Count unchanged
+    expect(next?.balls).toBe(3);
+    expect(next?.strikes).toBe(1);
+  });
+
+  it("clears pendingDecision so the new batter's at-bat proceeds without stale panel state", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["starter"], []],
+      rosterBench: [["sub1"], []],
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "sub1" },
+      },
+      { log },
+    );
+    expect(next?.pendingDecision).toBeNull();
+  });
+});
