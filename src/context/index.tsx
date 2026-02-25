@@ -103,7 +103,7 @@ export interface ContextValue extends State {
   log: string[];
 }
 
-export type LogAction = { type: "log"; payload: string };
+export type LogAction = { type: "log"; payload: string } | { type: "reset" };
 export type GameAction = { type: string; payload?: unknown };
 
 function logReducer(
@@ -116,6 +116,8 @@ function logReducer(
       announce(message);
       return { ...state, announcements: [message, ...state.announcements] };
     }
+    case "reset":
+      return { announcements: [] };
     default:
       throw new Error(`No such reducer type as ${action.type}`);
   }

@@ -20,7 +20,7 @@ export type Roster = {
   pitcher: Player;
 };
 
-const BATTING_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"] as const;
+export const BATTING_POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"] as const;
 
 const POSITION_NAMES: Record<string, string> = {
   C: "Catcher",
