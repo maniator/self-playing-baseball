@@ -46,6 +46,8 @@ export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 export type PlayerCustomization = {
   nickname?: string;
+  /** Defensive position string (e.g. "C", "LF") — populated for custom-team players. */
+  position?: string;
   contactMod?: ModPreset;
   powerMod?: ModPreset;
   speedMod?: ModPreset;

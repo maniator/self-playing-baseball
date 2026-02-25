@@ -85,6 +85,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
   for (const player of allPlayers) {
     overrides[player.id] = {
       nickname: player.name,
+      ...(player.position ? { position: player.position } : {}),
       contactMod: clampMod(player.batting.contact - 60),
       powerMod: clampMod(player.batting.power - 60),
       speedMod: clampMod(player.batting.speed - 60),
