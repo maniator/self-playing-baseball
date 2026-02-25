@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AL_FALLBACK, NL_FALLBACK } from "@utils/mlbTeams";
 import * as mlbTeamsModule from "@utils/mlbTeams";
@@ -19,6 +19,16 @@ vi.mock("@utils/mlbTeams", async (importOriginal) => {
 vi.mock("@utils/rng", () => ({
   getSeed: vi.fn(() => 0xdeadbeef),
   reinitSeed: vi.fn((s: string) => (s ? parseInt(s, 36) : 12345)),
+}));
+
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn(() => ({
+    teams: [],
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+  })),
 }));
 
 import { DEFAULT_AL_TEAM, DEFAULT_NL_TEAM } from "./constants";
@@ -282,5 +292,120 @@ describe("NewGameDialog", () => {
       fireEvent.click(screen.getByTestId("new-game-back-home-button"));
     });
     expect(onBackToHome).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Custom team self-matchup validation
+// ---------------------------------------------------------------------------
+
+describe("NewGameDialog — custom team self-matchup validation", () => {
+  const makeCustomTeam = (id: string, name: string) => ({
+    id,
+    schemaVersion: 1 as const,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name,
+    abbreviation: name.slice(0, 3).toUpperCase(),
+    roster: {
+      lineup: Array.from({ length: 9 }, (_, i) => ({
+        id: `${id}_b${i}`,
+        name: `Player ${i + 1}`,
+        role: "batter" as const,
+        batting: { contact: 60, power: 60, speed: 60 },
+        position: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"][i],
+        handedness: "R" as const,
+      })),
+      bench: [],
+      pitchers: [
+        {
+          id: `${id}_p1`,
+          name: "Pitcher One",
+          role: "pitcher" as const,
+          batting: { contact: 35, power: 35, speed: 35 },
+          pitching: { velocity: 60, control: 60, movement: 60 },
+          position: "SP",
+          handedness: "R" as const,
+        },
+      ],
+    },
+  });
+
+  const teamA = makeCustomTeam("ct_aaa", "Alpha");
+  const teamB = makeCustomTeam("ct_bbb", "Beta");
+
+  beforeEach(async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [teamA, teamB],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+    } as ReturnType<typeof useCustomTeams>);
+  });
+
+  const switchToCustomTab = async () => {
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("new-game-custom-teams-tab"));
+    });
+  };
+
+  it("shows a validation error when the same custom team is selected on both sides", async () => {
+    await act(async () => {
+      render(<NewGameDialog onStart={noop} />);
+    });
+    await switchToCustomTab();
+
+    // Both selectors default to different teams (teamA away, teamB home).
+    // Change home to teamA so both sides have the same team.
+    const homeSelect = screen.getByTestId("new-game-custom-home-team-select") as HTMLSelectElement;
+    await act(async () => {
+      fireEvent.change(homeSelect, { target: { value: teamA.id } });
+    });
+
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(/must be different/i);
+  });
+
+  it("does not show a self-matchup error when two different custom teams are selected", async () => {
+    await act(async () => {
+      render(<NewGameDialog onStart={noop} />);
+    });
+    await switchToCustomTab();
+    // Default selects teamA away, teamB home — already different.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    const errEl = screen.queryByTestId("team-validation-error");
+    // No self-matchup error
+    expect(errEl?.textContent ?? "").not.toMatch(/must be different/i);
+  });
+
+  it("clears the self-matchup error once the matchup becomes valid", async () => {
+    await act(async () => {
+      render(<NewGameDialog onStart={noop} />);
+    });
+    await switchToCustomTab();
+
+    // Force a self-matchup error first.
+    const homeSelect = screen.getByTestId("new-game-custom-home-team-select") as HTMLSelectElement;
+    await act(async () => {
+      fireEvent.change(homeSelect, { target: { value: teamA.id } });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(/must be different/i);
+
+    // Now fix the matchup by selecting a different home team.
+    await act(async () => {
+      fireEvent.change(homeSelect, { target: { value: teamB.id } });
+    });
+    // Validation error should be cleared when the selection changes.
+    expect(screen.queryByTestId("team-validation-error")).not.toBeInTheDocument();
   });
 });

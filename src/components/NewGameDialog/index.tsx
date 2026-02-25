@@ -120,6 +120,12 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       const homeDoc = customTeams.find((t) => t.id === customHomeId);
       if (!awayDoc || !homeDoc) return;
 
+      // Block self-matchup: a team cannot play against itself.
+      if (customAwayId === customHomeId) {
+        setTeamValidationError("Away and home teams must be different — choose two different teams.");
+        return;
+      }
+
       // Validate both teams before starting the game.
       const awayError = validateCustomTeamForGame(awayDoc);
       if (awayError) {
