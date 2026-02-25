@@ -40,6 +40,8 @@ interface Props {
   onLoadActivate?: (saveId: string) => void;
   autoOpen?: boolean;
   openSavesRequestCount?: number;
+  /** When true a real game session is active and "Save current game" is shown. */
+  gameStarted?: boolean;
   /**
    * When provided, overrides the modal's built-in close action.
    * Called instead of closing the dialog when the user clicks Close,
@@ -124,9 +126,11 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
       >
         <DialogTitle>💾 Saves</DialogTitle>
 
-        <SmallButton onClick={handleSave} data-testid="save-game-button">
-          {props.currentSaveId ? "Update save" : "Save current game"}
-        </SmallButton>
+        {props.gameStarted && (
+          <SmallButton onClick={handleSave} data-testid="save-game-button">
+            {props.currentSaveId ? "Update save" : "Save current game"}
+          </SmallButton>
+        )}
 
         <SectionHeading>Saved games</SectionHeading>
         {saves.length === 0 ? (

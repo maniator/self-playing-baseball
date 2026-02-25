@@ -339,4 +339,154 @@ describe("editorStateToCreateInput", () => {
     expect(input.roster.lineup[0].name).toBe("Tom Adams");
     expect(input.roster.lineup[0].role).toBe("batter");
   });
+
+  it("uppercases abbreviation in output", () => {
+    const player = makePlayer("Tom Adams");
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "eag",
+      lineup: [player],
+    };
+    const input = editorStateToCreateInput(state);
+    expect(input.abbreviation).toBe("EAG");
+  });
+
+  it("maps pitcher with pitching stats to CreateCustomTeamInput", () => {
+    const pitcher: ReturnType<typeof makePlayer> & {
+      velocity: number;
+      control: number;
+      movement: number;
+    } = {
+      ...makePlayer("Ace Pitcher"),
+      velocity: 88,
+      control: 70,
+      movement: 65,
+    };
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [makePlayer()],
+      pitchers: [pitcher],
+    };
+    const input = editorStateToCreateInput(state);
+    const p = input.roster.pitchers[0];
+    expect(p.role).toBe("pitcher");
+    expect(p.pitching?.velocity).toBe(88);
+    expect(p.pitching?.control).toBe(70);
+    expect(p.pitching?.movement).toBe(65);
+  });
+
+  it("omits pitching block for pitcher with no velocity set", () => {
+    const benchPitcher = makePlayer("No-stats Pitcher");
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [makePlayer()],
+      pitchers: [benchPitcher],
+    };
+    const input = editorStateToCreateInput(state);
+    expect(input.roster.pitchers[0].pitching).toBeUndefined();
+  });
+});
+
+describe("editorReducer — additional cases", () => {
+  it("UPDATE_PLAYER patches a player by index", () => {
+    const p1 = makePlayer("Alice");
+    const p2 = makePlayer("Bob");
+    const state = { ...initEditorState(), lineup: [p1, p2] };
+    const next = editorReducer(state, {
+      type: "UPDATE_PLAYER",
+      section: "lineup",
+      index: 1,
+      player: { name: "Robert", contact: 80 },
+    });
+    expect(next.lineup[1].name).toBe("Robert");
+    expect(next.lineup[1].contact).toBe(80);
+    expect(next.lineup[0].name).toBe("Alice");
+    expect(next.error).toBe("");
+  });
+
+  it("MOVE_DOWN at last index is a no-op", () => {
+    const p1 = makePlayer("A");
+    const state = { ...initEditorState(), lineup: [p1] };
+    const next = editorReducer(state, { type: "MOVE_DOWN", section: "lineup", index: 0 });
+    expect(next.lineup[0].name).toBe("A");
+  });
+
+  it("REORDER silently skips unknown IDs", () => {
+    const p1 = makePlayer("A");
+    const p2 = makePlayer("B");
+    const state = { ...initEditorState(), lineup: [p1, p2] };
+    const next = editorReducer(state, {
+      type: "REORDER",
+      section: "lineup",
+      orderedIds: [p2.id, "unknown-id", p1.id],
+    });
+    expect(next.lineup.map((p) => p.name)).toEqual(["B", "A"]);
+  });
+
+  it("SET_ERROR sets error field", () => {
+    const state = initEditorState();
+    const next = editorReducer(state, { type: "SET_ERROR", error: "Something went wrong" });
+    expect(next.error).toBe("Something went wrong");
+  });
+
+  it("APPLY_DRAFT populates all roster sections from draft", () => {
+    const draft = {
+      name: "Rockets",
+      abbreviation: "ROC",
+      city: "Houston",
+      nickname: "Rockets",
+      roster: {
+        lineup: [
+          {
+            id: "d1",
+            name: "Batter One",
+            role: "batter" as const,
+            batting: { contact: 70, power: 65, speed: 60 },
+          },
+        ],
+        bench: [
+          {
+            id: "d2",
+            name: "Bench Guy",
+            role: "batter" as const,
+            batting: { contact: 55, power: 50, speed: 55 },
+          },
+        ],
+        pitchers: [
+          {
+            id: "d3",
+            name: "Ace Pitcher",
+            role: "pitcher" as const,
+            batting: { contact: 30, power: 25, speed: 30 },
+            pitching: { velocity: 90, control: 72, movement: 68 },
+          },
+        ],
+      },
+    };
+    const state = initEditorState();
+    const next = editorReducer(state, { type: "APPLY_DRAFT", draft });
+    expect(next.name).toBe("Rockets");
+    expect(next.abbreviation).toBe("ROC");
+    expect(next.city).toBe("Houston");
+    expect(next.lineup).toHaveLength(1);
+    expect(next.lineup[0].name).toBe("Batter One");
+    expect(next.bench).toHaveLength(1);
+    expect(next.pitchers).toHaveLength(1);
+    expect(next.pitchers[0].velocity).toBe(90);
+    expect(next.error).toBe("");
+  });
+
+  it("default case returns state unchanged for unknown action type", () => {
+    const state = initEditorState();
+    // Cast to bypass TS exhaustiveness check
+    const next = editorReducer(state, { type: "UNKNOWN_ACTION" } as unknown as Parameters<
+      typeof editorReducer
+    >[1]);
+    expect(next).toBe(state);
+  });
 });

@@ -235,12 +235,12 @@ export const TeamInfoGrid = styled.div`
 
 export const TeamInfoSecondRow = styled.div`
   display: grid;
-  grid-template-columns: 100px 1fr;
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 
-  ${mq.mobile} {
-    grid-template-columns: 1fr;
-    gap: 8px;
+  ${mq.desktop} {
+    grid-template-columns: 100px 1fr;
+    gap: 12px;
   }
 `;
 

@@ -77,6 +77,16 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
 
+  // Dialogs opened via showModal() live in the browser's top layer and are NOT
+  // affected by display:none on their parent container.  Close them explicitly
+  // before routing Home so the backdrop never blocks the HomeScreen buttons.
+  const handleSafeBackToHome = React.useCallback(() => {
+    if (typeof document !== "undefined") {
+      document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
+    }
+    onBackToHome?.();
+  }, [onBackToHome]);
+
   // Re-open the New Game dialog when the user explicitly clicks "New Game" from Home
   // while Game is already mounted (the prop increments on each request).
   const prevNewGameRequestRef = React.useRef(newGameRequestCount ?? 0);
@@ -249,7 +259,7 @@ const GameInner: React.FunctionComponent<Props> = ({
           onStart={handleStart}
           autoSaveName={autoSaveName}
           onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
-          onBackToHome={onBackToHome}
+          onBackToHome={handleSafeBackToHome}
           onManageTeams={onManageTeams}
         />
       )}
@@ -261,10 +271,10 @@ const GameInner: React.FunctionComponent<Props> = ({
         onLoadActivate={handleLoadActivate}
         autoOpenSaves={initialView === "load-saves"}
         openSavesRequestCount={openSavesCount}
-        onBackToHome={onBackToHome}
+        onBackToHome={handleSafeBackToHome}
         onSavesClose={
           // Ref cleared synchronously in handleLoadActivate; state is belt-and-suspenders.
-          savesCloseActiveRef.current && !gameActive ? onBackToHome : undefined
+          savesCloseActiveRef.current && !gameActive ? handleSafeBackToHome : undefined
         }
       />
       <GameBody>
