@@ -144,7 +144,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
 
-  // Custom teams for resolving human-readable names in the resume banner and TTS.
+  // Custom teams for resolving human-readable names in the resume banner (autoSaveName).
   const { teams: customTeams } = useCustomTeams();
 
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
