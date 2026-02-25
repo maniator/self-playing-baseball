@@ -216,18 +216,27 @@ let dbWasReset = false;
 /** Returns true if the database was reset during this session. */
 export const wasDbReset = (): boolean => dbWasReset;
 
+/**
+ * Returns true when an error represents a migration failure:
+ * - DB6: schema hash mismatch at the same version (schema changed without bumping version)
+ * - DM4: migration strategy execution failed (strategy was run but returned an error)
+ * Transient errors (quota exceeded, blocked IndexedDB, etc.) are NOT included so we
+ * never silently wipe user data for non-schema faults.
+ */
+const isMigrationFailure = (err: unknown): boolean =>
+  err instanceof RxError && (err.code === "DB6" || err.code === "DM4");
+
 /** Returns the singleton IndexedDB-backed database instance (lazy-initialized). */
 export const getDb = (): Promise<BallgameDb> => {
   if (!dbPromise) {
     dbPromise = initDb(getRxStorageDexie()).catch(async (err: unknown) => {
-      // Only attempt recovery for confirmed schema/migration hash-mismatch errors
-      // (RxError DB6). Transient errors (quota exceeded, blocked IndexedDB, etc.)
-      // are rethrown so the app can surface an appropriate failure state without
-      // silently wiping user data.
-      const isSchemaError = err instanceof RxError && err.code === "DB6";
-      if (!isSchemaError) throw err;
+      // Only attempt recovery when migration itself failed — either a schema hash
+      // mismatch (DB6) or a migration strategy execution error (DM4). All other
+      // errors are rethrown so the app can surface the failure without silently
+      // wiping user data.
+      if (!isMigrationFailure(err)) throw err;
 
-      appLog.warn("DB schema mismatch (DB6) detected; resetting local database for recovery:", err);
+      appLog.warn("DB migration failed; resetting local database for recovery:", err);
       // Only mark the DB as reset if removal actually succeeds; if removal also
       // fails we still attempt a fresh init but don't show the reset notice.
       let resetSucceeded = false;
