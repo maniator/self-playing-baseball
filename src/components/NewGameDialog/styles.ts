@@ -27,21 +27,21 @@ export const Dialog = styled.dialog`
 `;
 
 export const Title = styled.h2`
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   font-size: 18px;
   color: aquamarine;
 
   ${mq.mobile} {
-    margin: 0 0 10px;
+    margin: 0 0 8px;
     font-size: 16px;
   }
 `;
 
 export const FieldGroup = styled.div`
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 
   ${mq.mobile} {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
   }
 `;
 
@@ -170,10 +170,10 @@ export const PlayBallButton = styled.button`
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
-  margin-top: 12px;
+  margin-top: 8px;
 
   ${mq.mobile} {
-    margin-top: 10px;
+    margin-top: 6px;
   }
 `;
 
@@ -217,5 +217,39 @@ export const BackHomeButton = styled.button`
 
   ${mq.mobile} {
     padding: 0 0 6px;
+  }
+`;
+
+export const TabRow = styled.div`
+  display: flex;
+  gap: 0;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #2a3f60;
+
+  ${mq.mobile} {
+    margin-bottom: 10px;
+  }
+`;
+
+export const Tab = styled.button<{ $active: boolean }>`
+  background: none;
+  border: none;
+  border-bottom: 2px solid ${({ $active }) => ($active ? "aquamarine" : "transparent")};
+  color: ${({ $active }) => ($active ? "aquamarine" : "#6680aa")};
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: ${({ $active }) => ($active ? "600" : "400")};
+  padding: 6px 14px 8px;
+  cursor: pointer;
+  margin-bottom: -2px;
+
+  &:hover {
+    color: #aaccff;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+    border-radius: 3px 3px 0 0;
   }
 `;
