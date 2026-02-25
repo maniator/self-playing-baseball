@@ -147,6 +147,10 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Custom teams for resolving human-readable names in the resume banner (autoSaveName).
   const { teams: customTeams } = useCustomTeams();
 
+  // Always-current ref so effects can read the latest list without re-running.
+  const customTeamsRef = React.useRef(customTeams);
+  customTeamsRef.current = customTeams;
+
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
   // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
   const restoredRef = React.useRef(false);
@@ -166,7 +170,13 @@ const GameInner: React.FunctionComponent<Props> = ({
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    // Resolve any stored custom: IDs to display names so all downstream
+    // log messages and UI surfaces use human-readable team names.
+    const restoredTeams: [string, string] = [
+      resolveTeamLabel(snap.state.teams[0], customTeamsRef.current),
+      resolveTeamLabel(snap.state.teams[1], customTeamsRef.current),
+    ];
+    dispatch({ type: "restore_game", payload: { ...snap.state, teams: restoredTeams } });
     setStrategy(setup.strategy);
     if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
     setManagerMode(setup.managerMode);
@@ -194,10 +204,14 @@ const GameInner: React.FunctionComponent<Props> = ({
     }
     dispatch({ type: "reset" });
     dispatchLog({ type: "reset" });
+    // Resolve custom team IDs to display names before storing in state so all
+    // downstream log messages and UI surfaces use human-readable team names.
+    const displayAway = resolveTeamLabel(awayTeam, customTeams);
+    const displayHome = resolveTeamLabel(homeTeam, customTeams);
     dispatch({
       type: "setTeams",
       payload: {
-        teams: [awayTeam, homeTeam],
+        teams: [displayAway, displayHome],
         playerOverrides: [playerOverrides.away, playerOverrides.home],
         lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
       },
@@ -223,7 +237,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         seed: currentSeedStr(),
         setup,
       },
-      { name: `${awayTeam} vs ${homeTeam}` },
+      { name: `${displayAway} vs ${displayHome}` },
     )
       .then((id) => {
         rxSaveIdRef.current = id;

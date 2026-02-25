@@ -81,6 +81,17 @@ vi.mock("@storage/db", async (importOriginal) => {
   return { ...actual, getDb: vi.fn().mockResolvedValue({}) };
 });
 
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn(() => ({
+    teams: [],
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+    refresh: vi.fn(),
+  })),
+}));
+
 describe("GameInner", () => {
   it("renders without crashing", () => {
     render(
@@ -339,5 +350,101 @@ describe("GameProviderWrapper — logReducer", () => {
       result.current.dispatchLog({ type: "log", payload: "hello" });
     });
     expect(result.current.log[0]).toBe("hello");
+  });
+});
+
+// ─── Custom-team label resolution ────────────────────────────────────────────
+
+describe("GameInner — custom team label resolution on new game start", () => {
+  const CUSTOM_TEAM_DOC = {
+    id: "ct_abc123",
+    name: "Eagles",
+    city: "Austin",
+    abbreviation: "ATX",
+    schemaVersion: 1 as const,
+    createdAt: 1000,
+    updatedAt: 1000,
+    lineup: {},
+    roster: { players: [], lineup: [], bench: [], pitchers: [] },
+    metadata: {},
+  };
+
+  beforeEach(async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [CUSTOM_TEAM_DOC as any],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+  });
+
+  it("resolves custom team IDs to display names before setting state on new game start", async () => {
+    const dispatch = vi.fn();
+    render(
+      <GameContext.Provider value={makeContextValue({ dispatch })}>
+        <GameInner />
+      </GameContext.Provider>,
+    );
+    // Switch to Custom Teams mode so the dialog calls onStart with custom:ct_... IDs
+    act(() => {
+      fireEvent.click(screen.getByTestId("new-game-custom-teams-tab"));
+    });
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    // The setTeams dispatch should have resolved display names, not raw custom: IDs
+    const setTeamsCall = dispatch.mock.calls.find((c) => c[0]?.type === "setTeams");
+    expect(setTeamsCall).toBeDefined();
+    const teams: [string, string] = setTeamsCall?.[0]?.payload?.teams;
+    expect(teams[0]).toBe("Austin Eagles");
+    expect(teams[1]).toBe("Austin Eagles"); // same team used for both slots in mock
+    expect(teams[0]).not.toContain("custom:");
+    expect(teams[1]).not.toContain("custom:");
+  });
+
+  it("auto-resume restores state with resolved team display names", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const snapState = makeState({ teams: ["custom:ct_abc123", "Home"] as [string, string] });
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [
+        {
+          ...makeAutoSaveSlot(),
+          stateSnapshot: { state: snapState, rngState: null },
+        } as SaveDoc,
+      ],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+    const dispatch = vi.fn();
+    await act(async () => {
+      render(
+        <GameContext.Provider value={makeContextValue({ dispatch })}>
+          <GameInner />
+        </GameContext.Provider>,
+      );
+    });
+    const restoreCall = dispatch.mock.calls.find((c) => c[0]?.type === "restore_game");
+    expect(restoreCall).toBeDefined();
+    const restoredTeams: [string, string] = restoreCall?.[0]?.payload?.teams;
+    // custom:ct_abc123 should be resolved to "Austin Eagles"
+    expect(restoredTeams[0]).toBe("Austin Eagles");
+    expect(restoredTeams[0]).not.toContain("custom:");
   });
 });

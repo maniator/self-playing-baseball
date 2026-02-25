@@ -466,4 +466,21 @@ describe("SavesModal", () => {
     await openPanel();
     expect(screen.getByTestId("save-game-button")).toBeInTheDocument();
   });
+
+  it("resolves custom team IDs in snapshot state to display names when loading a save", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const snapState = makeState({ teams: ["custom:ct_abc", "Home"] as [string, string] });
+    const slot = makeSlot({ stateSnapshot: { state: snapState, rngState: null } });
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
+    const dispatch = vi.fn();
+    renderModal({}, { dispatch });
+    await openPanel();
+    fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
+    const restoreCall = dispatch.mock.calls.find((c) => c[0]?.type === "restore_game");
+    expect(restoreCall).toBeDefined();
+    const teams: [string, string] = restoreCall?.[0]?.payload?.teams;
+    // custom:ct_abc has no matching doc → safe 8-char fallback (no full raw ID)
+    expect(teams[0]).not.toContain("custom:");
+    expect(teams[1]).toBe("Home");
+  });
 });
