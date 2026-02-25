@@ -149,4 +149,34 @@ test.describe("Home Screen", () => {
     await page.getByTestId("manage-teams-back-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
   });
+
+  // ── Home → New Game when a game is already active ──────────────────────────
+
+  test("New Game opens dialog even when an active game already exists", async ({ page }) => {
+    // Start a real game so the active-game session is created.
+    await startGameViaPlayBall(page, { seed: "home-new-game-active" });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    // Go back to Home — Resume Current Game button should appear.
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("home-resume-current-game-button")).toBeVisible();
+
+    // Click New Game — the New Game dialog MUST open.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("play-ball-button")).toBeVisible();
+  });
+
+  test("Resume Current Game returns to the in-progress game after going Home", async ({ page }) => {
+    await startGameViaPlayBall(page, { seed: "home-resume-active" });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("home-resume-current-game-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("home-screen")).not.toBeVisible();
+  });
 });
