@@ -115,6 +115,18 @@ export interface State {
    * Empty array = fall back to per-player natural position (stock teams / older saves).
    */
   lineupPositions: [string[], string[]];
+  /**
+   * Number of batters faced by the current pitcher per team since their last entry.
+   * Reset to 0 when a new pitcher comes in. Used for fatigue tracking.
+   * [away, home]
+   */
+  pitcherBattersFaced: [number, number];
+  /**
+   * Player IDs that have been substituted out (no-reentry rule) per team.
+   * Once a player is in this set they may not re-enter the game.
+   * [away, home]
+   */
+  substitutedOut: [string[], string[]];
 }
 
 export interface ContextValue extends State {

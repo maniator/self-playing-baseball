@@ -9,6 +9,17 @@ export const nextBatter = (state: State): State => {
 };
 
 /**
+ * Increments the pitching team's batters-faced counter (fatigue tracking).
+ * Called once per completed batter plate appearance.
+ */
+export const incrementPitcherFatigue = (state: State): State => {
+  const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+  const newFaced: [number, number] = [state.pitcherBattersFaced[0], state.pitcherBattersFaced[1]];
+  newFaced[pitchingTeam] = newFaced[pitchingTeam] + 1;
+  return { ...state, pitcherBattersFaced: newFaced };
+};
+
+/**
  * Record an out and handle half-inning transitions.
  *
  * batterCompleted: true  → the *batter's* at-bat is over (strikeout, pop-out, bunt out).
@@ -29,7 +40,9 @@ export const playerOut = (state: State, log, batterCompleted = false): State => 
       }
     : null;
   const stateWithOut = outEntry ? { ...state, outLog: [...state.outLog, outEntry] } : state;
-  const stateAfterBatter = batterCompleted ? nextBatter(stateWithOut) : stateWithOut;
+  // Increment pitcher fatigue when the batter's plate appearance is complete.
+  const stateWithFatigue = batterCompleted ? incrementPitcherFatigue(stateWithOut) : stateWithOut;
+  const stateAfterBatter = batterCompleted ? nextBatter(stateWithFatigue) : stateWithFatigue;
   const newOuts = stateAfterBatter.outs + 1;
   if (newOuts === 3) {
     const afterHalf = nextHalfInning(stateAfterBatter, log);

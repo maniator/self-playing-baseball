@@ -1,8 +1,10 @@
 import * as React from "react";
 
+import type { PitchingRole } from "@components/SubstitutionPanel";
 import SubstitutionPanel from "@components/SubstitutionPanel";
 import { useGameContext } from "@context/index";
 import { Strategy } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import { NotifBadge, Select, SubButton, ToggleLabel } from "./ManagerModeStyles";
 
@@ -25,9 +27,33 @@ const SubstitutionButton: React.FunctionComponent<{
   managedTeam: 0 | 1;
   teams: string[];
 }> = ({ managedTeam, teams }) => {
-  const { dispatch, lineupOrder, rosterBench, rosterPitchers, activePitcherIdx, playerOverrides } =
-    useGameContext();
+  const {
+    dispatch,
+    lineupOrder,
+    rosterBench,
+    rosterPitchers,
+    activePitcherIdx,
+    playerOverrides,
+    substitutedOut,
+    pitcherBattersFaced,
+    teams: gameTeams,
+  } = useGameContext();
+  const { teams: customTeams } = useCustomTeams();
   const [showPanel, setShowPanel] = React.useState(false);
+
+  // Derive pitcher roles from the custom team doc if this is a custom-team game.
+  const pitcherRoles = React.useMemo((): Record<string, PitchingRole> => {
+    const teamId = gameTeams[managedTeam];
+    if (!teamId.startsWith("custom:")) return {};
+    const ctId = teamId.slice("custom:".length);
+    const doc = customTeams.find((t) => t.id === ctId);
+    if (!doc) return {};
+    const roles: Record<string, PitchingRole> = {};
+    for (const p of doc.roster.pitchers) {
+      if (p.pitchingRole) roles[p.id] = p.pitchingRole;
+    }
+    return roles;
+  }, [gameTeams, managedTeam, customTeams]);
 
   return (
     <>
@@ -43,6 +69,9 @@ const SubstitutionButton: React.FunctionComponent<{
           rosterPitchers={rosterPitchers[managedTeam]}
           activePitcherIdx={activePitcherIdx[managedTeam]}
           playerOverrides={playerOverrides[managedTeam]}
+          substitutedOut={substitutedOut[managedTeam]}
+          pitcherRoles={pitcherRoles}
+          pitcherBattersFaced={pitcherBattersFaced[managedTeam]}
           onSubstitute={(payload) => {
             dispatch({ type: "make_substitution", payload: { teamIdx: managedTeam, ...payload } });
             setShowPanel(false);

@@ -10,6 +10,7 @@ export interface GeneratedPlayer {
   handedness?: "R" | "L" | "S";
   batting: { contact: number; power: number; speed: number };
   pitching?: { velocity: number; control: number; movement: number };
+  pitchingRole?: "SP" | "RP" | "SP/RP";
 }
 
 export interface CustomTeamDraft {
@@ -197,6 +198,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
     role: "pitcher" as const,
     position: i === 0 ? "SP" : "RP",
+    pitchingRole: (i === 0 ? "SP" : "RP") as "SP" | "RP",
     handedness: pickHandedness(),
     batting: {
       contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),

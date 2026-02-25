@@ -80,8 +80,8 @@ const InstructionsModal: React.FunctionComponent = () => {
           <Section title="Pre-game customization">
             <List>
               <Li>
-                Choose a <strong>Matchup</strong> type (AL vs AL, NL vs NL, or Interleague) and
-                select your Home and Away teams.
+                Choose a <strong>Matchup</strong> type (MLB: AL vs AL, NL vs NL, or Interleague) or{" "}
+                <strong>Custom</strong> to use your own teams. Select Home and Away teams.
               </Li>
               <Li>
                 Under <strong>Manage a team?</strong> pick Home, Away, or None. You can also change
@@ -89,10 +89,31 @@ const InstructionsModal: React.FunctionComponent = () => {
               </Li>
               <Li>
                 Expand <strong>▸ Customize Players</strong> to set nicknames, tweak stat presets,
-                and drag ⠿ to reorder the batting lineup — for both teams.
+                and drag ⠿ to reorder the batting lineup — for both teams (MLB games only).
               </Li>
               <Li>
                 Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
+              </Li>
+            </List>
+          </Section>
+
+          <Section title="Custom Teams">
+            <List>
+              <Li>
+                Click <strong>Manage Teams</strong> to create and edit your own teams with custom
+                players, stats, and positions.
+              </Li>
+              <Li>
+                Use <strong>✨ Generate Random</strong> to create a randomized team as a starting
+                point. Edit names, stats, and positions to customize it.
+              </Li>
+              <Li>
+                Each team needs at least one lineup player and one pitcher before it can be used in
+                a game.
+              </Li>
+              <Li>
+                Pitchers are marked SP (starter), RP (reliever), or SP/RP (swingman). Only
+                RP-eligible pitchers can be used for in-game pitching changes.
               </Li>
             </List>
           </Section>
@@ -122,6 +143,16 @@ const InstructionsModal: React.FunctionComponent = () => {
                 ready.
               </Li>
               <Li>You have 10 seconds to decide; the game auto-skips if you don&apos;t.</Li>
+              <Li>
+                Click <strong>🔄 Substitution</strong> to make in-game roster changes: swap a batter
+                from the bench or make a pitching change. Pitching changes show how many batters the
+                current pitcher has faced (BF). Once a player is substituted out they cannot
+                re-enter.
+              </Li>
+              <Li>
+                The opposing (unmanaged) team makes its own AI decisions — pitching changes when
+                their pitcher is tired, etc.
+              </Li>
             </List>
           </Section>
 

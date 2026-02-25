@@ -6,6 +6,7 @@ import {
   ActionButton,
   CloseButton,
   EmptyNote,
+  FatigueLabel,
   Panel,
   PanelHeader,
   PanelTitle,
@@ -13,12 +14,14 @@ import {
   Section,
   SectionTitle,
   SelectField,
-  StageNote,
 } from "./styles";
 
 type SubstitutePayload =
   | { kind: "batter"; lineupIdx: number; benchPlayerId: string }
   | { kind: "pitcher"; pitcherIdx: number };
+
+/** Role eligibility for a pitcher: SP = starter, RP = reliever, SP/RP = both. */
+export type PitchingRole = "SP" | "RP" | "SP/RP";
 
 type Props = {
   teamName: string;
@@ -27,6 +30,12 @@ type Props = {
   rosterPitchers: string[];
   activePitcherIdx: number;
   playerOverrides: TeamCustomPlayerOverrides;
+  /** Player IDs that have been substituted out (no-reentry). */
+  substitutedOut?: string[];
+  /** Map from pitcher ID to their role eligibility. Used to filter reliever candidates. */
+  pitcherRoles?: Record<string, PitchingRole>;
+  /** Batters faced by the current pitcher (for fatigue display). */
+  pitcherBattersFaced?: number;
   onSubstitute: (payload: SubstitutePayload) => void;
   onClose: () => void;
 };
@@ -40,6 +49,14 @@ const getPlayerLabel = (id: string, overrides: TeamCustomPlayerOverrides): strin
   return pos ? `${name} (${pos})` : name;
 };
 
+/** Returns true if a pitcher with the given role can be used as an in-game reliever. */
+const isRelieverEligible = (role?: PitchingRole): boolean =>
+  role === "RP" || role === "SP/RP" || role === undefined;
+
+/** Fatigue threshold above which a pitching change is strongly recommended. */
+const FATIGUE_HIGH = 15;
+const FATIGUE_MED = 9;
+
 const SubstitutionPanel: React.FunctionComponent<Props> = ({
   teamName,
   lineupOrder,
@@ -47,13 +64,20 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
   rosterPitchers,
   activePitcherIdx,
   playerOverrides,
+  substitutedOut = [],
+  pitcherRoles = {},
+  pitcherBattersFaced = 0,
   onSubstitute,
   onClose,
 }) => {
+  // Filter bench to only players who haven't been substituted out (no-reentry).
+  const eligibleBench = rosterBench.filter((id) => !substitutedOut.includes(id));
   const [selectedLineupIdx, setSelectedLineupIdx] = React.useState(0);
-  const [selectedBenchId, setSelectedBenchId] = React.useState(rosterBench[0] ?? "");
+  const [selectedBenchId, setSelectedBenchId] = React.useState(eligibleBench[0] ?? "");
   const [selectedPitcherIdx, setSelectedPitcherIdx] = React.useState<number>(() => {
-    const alt = rosterPitchers.findIndex((_, i) => i !== activePitcherIdx);
+    const alt = rosterPitchers.findIndex(
+      (id, i) => i !== activePitcherIdx && isRelieverEligible(pitcherRoles[id]),
+    );
     return alt >= 0 ? alt : activePitcherIdx;
   });
 
@@ -68,27 +92,46 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
 
   // Re-sync bench selection when bench roster changes.
   React.useEffect(() => {
-    setSelectedBenchId((prev) => {
-      if (rosterBench.length === 0) return "";
-      if (prev && rosterBench.includes(prev)) return prev;
-      return rosterBench[0];
+    setSelectedBenchId(() => {
+      if (eligibleBench.length === 0) return "";
+      return eligibleBench[0];
     });
-  }, [rosterBench]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rosterBench, substitutedOut]);
 
-  // Re-sync pitcher selection when pitcher roster or active pitcher changes.
+  // Re-sync pitcher selection when pitcher roster, active pitcher, or roles change.
   React.useEffect(() => {
     setSelectedPitcherIdx(() => {
-      const alt = rosterPitchers.findIndex((_, i) => i !== activePitcherIdx);
+      const alt = rosterPitchers.findIndex(
+        (id, i) =>
+          i !== activePitcherIdx &&
+          !substitutedOut.includes(id) &&
+          isRelieverEligible(pitcherRoles[id]),
+      );
       return alt >= 0 ? alt : activePitcherIdx;
     });
-  }, [rosterPitchers, activePitcherIdx]);
+  }, [rosterPitchers, activePitcherIdx, substitutedOut, pitcherRoles]);
 
-  const hasBench = rosterBench.length > 0;
+  const hasBench = eligibleBench.length > 0;
   const currentPitcherId = rosterPitchers[activePitcherIdx] ?? "";
+  // Only show reliever-eligible pitchers that haven't been substituted out.
   const availablePitcherOptions = rosterPitchers
     .map((id, i) => ({ id, idx: i }))
-    .filter(({ idx }) => idx !== activePitcherIdx);
+    .filter(
+      ({ id, idx }) =>
+        idx !== activePitcherIdx &&
+        !substitutedOut.includes(id) &&
+        isRelieverEligible(pitcherRoles[id]),
+    );
   const hasPitcherReplacement = availablePitcherOptions.length > 0;
+
+  // Fatigue UI: show the current pitcher's batters-faced and a warning if high.
+  const fatigueLevel =
+    pitcherBattersFaced >= FATIGUE_HIGH
+      ? "high"
+      : pitcherBattersFaced >= FATIGUE_MED
+        ? "medium"
+        : "low";
 
   const handleBatterSub = () => {
     if (!hasBench || !selectedBenchId) return;
@@ -129,7 +172,7 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
               onChange={(e) => setSelectedBenchId(e.target.value)}
               aria-label="Bench player to bring in"
             >
-              {rosterBench.map((id) => (
+              {eligibleBench.map((id) => (
                 <option key={id} value={id}>
                   {getPlayerLabel(id, playerOverrides)}
                 </option>
@@ -152,6 +195,12 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
               <span style={{ fontSize: "12px", color: "#a0b4d0" }}>
                 Current: {getPlayerLabel(currentPitcherId, playerOverrides)}
               </span>
+              {pitcherBattersFaced > 0 && (
+                <FatigueLabel data-testid="fatigue-label" $level={fatigueLevel}>
+                  {pitcherBattersFaced} BF
+                  {fatigueLevel === "high" ? " ⚠ tired" : fatigueLevel === "medium" ? " ~" : ""}
+                </FatigueLabel>
+              )}
             </Row>
             {hasPitcherReplacement ? (
               <Row>
@@ -163,6 +212,7 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
                   {availablePitcherOptions.map(({ id, idx }) => (
                     <option key={id} value={idx}>
                       {getPlayerLabel(id, playerOverrides)}
+                      {pitcherRoles[id] ? ` [${pitcherRoles[id]}]` : ""}
                     </option>
                   ))}
                 </SelectField>
@@ -171,13 +221,12 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
                 </ActionButton>
               </Row>
             ) : (
-              <EmptyNote>No other pitchers available.</EmptyNote>
+              <EmptyNote>No eligible relievers available.</EmptyNote>
             )}
           </>
         ) : (
           <EmptyNote>No pitchers on roster.</EmptyNote>
         )}
-        <StageNote>Full pitching strategy (fatigue, matchups) coming in Stage 3C.</StageNote>
       </Section>
     </Panel>
   );

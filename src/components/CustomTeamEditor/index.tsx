@@ -281,13 +281,15 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             </FieldGroup>
           </TeamInfoSecondRow>
         </TeamInfoGrid>
-        <GenerateBtn
-          type="button"
-          onClick={handleGenerate}
-          data-testid="custom-team-regenerate-defaults-button"
-        >
-          ✨ Generate Defaults
-        </GenerateBtn>
+        {!team && (
+          <GenerateBtn
+            type="button"
+            onClick={handleGenerate}
+            data-testid="custom-team-regenerate-defaults-button"
+          >
+            ✨ Generate Random
+          </GenerateBtn>
+        )}
       </FormSection>
 
       {state.error && (

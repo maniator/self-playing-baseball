@@ -19,6 +19,8 @@ export interface EditorPlayer {
   velocity?: number;
   control?: number;
   movement?: number;
+  /** Pitcher role eligibility. Only meaningful for pitchers. */
+  pitchingRole?: "SP" | "RP" | "SP/RP";
 }
 
 export interface EditorState {
@@ -126,6 +128,7 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
     control: p.pitching.control,
     movement: p.pitching.movement,
   }),
+  ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
 });
 
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
@@ -141,6 +144,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
     control: p.pitching.control,
     movement: p.pitching.movement,
   }),
+  ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
 });
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
@@ -221,4 +225,5 @@ const editorToTeamPlayer =
       p.velocity !== undefined && {
         pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
       }),
+    ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
   });

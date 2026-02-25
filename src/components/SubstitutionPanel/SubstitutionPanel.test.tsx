@@ -36,9 +36,10 @@ describe("SubstitutionPanel", () => {
     expect(screen.getByText("Pitching Change")).toBeInTheDocument();
   });
 
-  it("shows Stage 3C placeholder note in pitcher section", () => {
-    render(<SubstitutionPanel {...defaultProps} />);
-    expect(screen.getByText(/Stage 3C/)).toBeInTheDocument();
+  it("shows fatigue label when pitcherBattersFaced is provided", () => {
+    render(<SubstitutionPanel {...defaultProps} pitcherBattersFaced={12} />);
+    expect(screen.getByTestId("fatigue-label")).toBeInTheDocument();
+    expect(screen.getByTestId("fatigue-label").textContent).toMatch(/12 BF/);
   });
 
   it("calls onClose when close button is clicked", async () => {
@@ -108,9 +109,9 @@ describe("SubstitutionPanel", () => {
     expect(screen.getByText(/No pitchers on roster/)).toBeInTheDocument();
   });
 
-  it("shows 'No other pitchers available' when only one pitcher exists", () => {
+  it("shows 'No eligible relievers available' when only one pitcher exists", () => {
     render(<SubstitutionPanel {...defaultProps} rosterPitchers={["sp1"]} activePitcherIdx={0} />);
-    expect(screen.getByText(/No other pitchers available/)).toBeInTheDocument();
+    expect(screen.getByText(/No eligible relievers available/)).toBeInTheDocument();
   });
 
   it("uses shortened player ID when no override nickname is present", () => {

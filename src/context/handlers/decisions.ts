@@ -56,6 +56,7 @@ export const handleDecisionsAction = (
         lineupIdx?: number;
         benchPlayerId?: string;
         pitcherIdx?: number;
+        reason?: string;
       };
       const { teamIdx, kind } = p;
       const getPlayerName = (id: string): string =>
@@ -73,8 +74,13 @@ export const handleDecisionsAction = (
           return state;
         }
         const oldPlayerId = state.lineupOrder[teamIdx][lineupIdx];
+        // No-reentry: refuse if bench player was already substituted out.
+        if (state.substitutedOut[teamIdx].includes(benchPlayerId)) {
+          return state;
+        }
         const newLineup = [...state.lineupOrder[teamIdx]];
         newLineup[lineupIdx] = benchPlayerId;
+        // Remove incoming player from bench; return old player to bench but mark as substituted out.
         const newBench = state.rosterBench[teamIdx].filter((id) => id !== benchPlayerId);
         newBench.push(oldPlayerId);
         const newLineupOrder: [string[], string[]] = [
@@ -85,8 +91,21 @@ export const handleDecisionsAction = (
           teamIdx === 0 ? newBench : state.rosterBench[0],
           teamIdx === 1 ? newBench : state.rosterBench[1],
         ];
-        log(`Substitution: ${getPlayerName(benchPlayerId)} in for ${getPlayerName(oldPlayerId)}.`);
-        return { ...state, lineupOrder: newLineupOrder, rosterBench: newRosterBench };
+        // Track the old player as substituted out (no-reentry).
+        const newSubOut: [string[], string[]] = [
+          teamIdx === 0 ? [...state.substitutedOut[0], oldPlayerId] : state.substitutedOut[0],
+          teamIdx === 1 ? [...state.substitutedOut[1], oldPlayerId] : state.substitutedOut[1],
+        ];
+        const reasonSuffix = p.reason ? ` (${p.reason})` : "";
+        log(
+          `Substitution: ${getPlayerName(benchPlayerId)} in for ${getPlayerName(oldPlayerId)}${reasonSuffix}.`,
+        );
+        return {
+          ...state,
+          lineupOrder: newLineupOrder,
+          rosterBench: newRosterBench,
+          substitutedOut: newSubOut,
+        };
       }
 
       if (kind === "pitcher") {
@@ -99,13 +118,34 @@ export const handleDecisionsAction = (
         ) {
           return state;
         }
+        const newPitcherId = state.rosterPitchers[teamIdx][pitcherIdx];
+        // No-reentry: refuse if incoming pitcher was already substituted out.
+        if (state.substitutedOut[teamIdx].includes(newPitcherId)) {
+          return state;
+        }
+        const oldPitcherId = state.rosterPitchers[teamIdx][state.activePitcherIdx[teamIdx]];
         const newActivePitcherIdx: [number, number] = [
           teamIdx === 0 ? pitcherIdx : state.activePitcherIdx[0],
           teamIdx === 1 ? pitcherIdx : state.activePitcherIdx[1],
         ];
-        const newPitcherId = state.rosterPitchers[teamIdx][pitcherIdx];
-        log(`Pitching change: ${getPlayerName(newPitcherId)} now pitching.`);
-        return { ...state, activePitcherIdx: newActivePitcherIdx };
+        // Track the old pitcher as substituted out (no-reentry).
+        const newSubOut: [string[], string[]] = [
+          teamIdx === 0 ? [...state.substitutedOut[0], oldPitcherId] : state.substitutedOut[0],
+          teamIdx === 1 ? [...state.substitutedOut[1], oldPitcherId] : state.substitutedOut[1],
+        ];
+        // Reset batters-faced counter for the new pitcher.
+        const newBattersFaced: [number, number] = [
+          teamIdx === 0 ? 0 : state.pitcherBattersFaced[0],
+          teamIdx === 1 ? 0 : state.pitcherBattersFaced[1],
+        ];
+        const reasonSuffix = p.reason ? ` ${p.reason}` : "";
+        log(`Pitching change: ${getPlayerName(newPitcherId)} now pitching.${reasonSuffix}`);
+        return {
+          ...state,
+          activePitcherIdx: newActivePitcherIdx,
+          substitutedOut: newSubOut,
+          pitcherBattersFaced: newBattersFaced,
+        };
       }
 
       return state;

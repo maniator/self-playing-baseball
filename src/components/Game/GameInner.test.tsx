@@ -365,7 +365,28 @@ describe("GameInner — custom team label resolution", () => {
     createdAt: 1000,
     updatedAt: 1000,
     lineup: {},
-    roster: { players: [], lineup: [], bench: [], pitchers: [] },
+    roster: {
+      players: [],
+      lineup: [
+        {
+          id: "p1",
+          name: "John Doe",
+          role: "batter" as const,
+          batting: { contact: 60, power: 60, speed: 60 },
+        },
+      ],
+      bench: [],
+      pitchers: [
+        {
+          id: "p2",
+          name: "Jane Smith",
+          role: "pitcher" as const,
+          batting: { contact: 40, power: 40, speed: 40 },
+          pitching: { velocity: 65, control: 65, movement: 60 },
+          pitchingRole: "SP" as const,
+        },
+      ],
+    },
     metadata: {},
   };
 

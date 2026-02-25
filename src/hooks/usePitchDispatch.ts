@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { Hit } from "@constants/hitTypes";
 import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
+import { makeAiPitchingDecision } from "@context/aiManager";
 import { GameAction, State, Strategy } from "@context/index";
 import { detectDecision } from "@context/reducer";
 import getRandomInt from "@utils/getRandomInt";
@@ -55,6 +56,28 @@ export const usePitchDispatch = (
         if (decision) {
           dispatch({ type: "set_pending_decision", payload: decision });
           return;
+        }
+      }
+    }
+
+    // AI manager: at the start of each at-bat (0-0 count), evaluate pitching changes
+    // for the team that is NOT managed by the human (or either team when no manager).
+    if (currentState.balls === 0 && currentState.strikes === 0) {
+      const pitchingTeamIdx = (1 - currentState.atBat) as 0 | 1;
+      const isUnmanaged = !managerModeRef.current || pitchingTeamIdx !== managedTeamRef.current;
+      if (isUnmanaged) {
+        const aiDecision = makeAiPitchingDecision(currentState as State, pitchingTeamIdx);
+        if (aiDecision.kind === "pitching_change") {
+          dispatch({
+            type: "make_substitution",
+            payload: {
+              teamIdx: aiDecision.teamIdx,
+              kind: "pitcher",
+              pitcherIdx: aiDecision.pitcherIdx,
+              reason: aiDecision.reasonText,
+            },
+          });
+          // Continue processing this pitch after the substitution (do not return early).
         }
       }
     }

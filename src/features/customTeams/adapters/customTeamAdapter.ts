@@ -113,3 +113,30 @@ export function customTeamToBenchRoster(team: CustomTeamDoc): string[] {
 export function customTeamToPitcherRoster(team: CustomTeamDoc): string[] {
   return team.roster.pitchers.map((p) => p.id);
 }
+
+/**
+ * Validates a custom team document for use in a game.
+ * Returns null if valid, or an error message string describing what's wrong.
+ *
+ * Used by NewGameDialog to block game start with invalid (including legacy) teams.
+ */
+export function validateCustomTeamForGame(team: CustomTeamDoc): string | null {
+  if (!team.name || !team.name.trim()) {
+    return `Team has no name. Please edit it before starting a game.`;
+  }
+  const lineup = team.roster?.lineup ?? [];
+  if (lineup.length === 0) {
+    return `"${team.name}" has no lineup players. Edit the team to add batters before starting.`;
+  }
+  const pitchers = team.roster?.pitchers ?? [];
+  if (pitchers.length === 0) {
+    return `"${team.name}" has no pitchers. Edit the team to add at least one pitcher before starting.`;
+  }
+  // Validate each lineup player has a non-empty name.
+  for (const player of lineup) {
+    if (!player.name || !player.name.trim()) {
+      return `"${team.name}" has a lineup player with no name. Edit the team to fix it before starting.`;
+    }
+  }
+  return null;
+}
