@@ -238,8 +238,8 @@ export const TeamInfoSecondRow = styled.div`
   grid-template-columns: 1fr;
   gap: 8px;
 
-  ${mq.desktop} {
-    grid-template-columns: 100px 1fr;
+  ${mq.notMobile} {
+    grid-template-columns: 150px 1fr;
     gap: 12px;
   }
 `;
