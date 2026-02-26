@@ -55,8 +55,28 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
   const [seedInput, setSeedInput] = React.useState(() => getSeed()?.toString(36) ?? "");
   const [teamValidationError, setTeamValidationError] = React.useState<string>("");
 
-  const { mode, homeLeague, home, setHome, away, setAway, homeList, awayList, handleModeChange, handleHomeLeagueChange } = useTeamSelection(); // prettier-ignore
-  const { homeOverrides, setHomeOverrides, awayOverrides, setAwayOverrides, homeOrder, setHomeOrder, awayOrder, setAwayOrder } = usePlayerCustomization(home, away); // prettier-ignore
+  const {
+    mode,
+    homeLeague,
+    home,
+    setHome,
+    away,
+    setAway,
+    homeList,
+    awayList,
+    handleModeChange,
+    handleHomeLeagueChange,
+  } = useTeamSelection();
+  const {
+    homeOverrides,
+    setHomeOverrides,
+    awayOverrides,
+    setAwayOverrides,
+    homeOrder,
+    setHomeOrder,
+    awayOrder,
+    setAwayOrder,
+  } = usePlayerCustomization(home, away);
 
   const { teams: customTeams } = useCustomTeams();
   const [customAwayId, setCustomAwayId] = React.useState<string>("");
