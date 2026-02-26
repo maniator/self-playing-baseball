@@ -617,3 +617,101 @@ describe("Game — DbResetNotice", () => {
     expect(sessionStorage.getItem("db-reset-dismissed")).toBe("1");
   });
 });
+
+describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)", () => {
+  const pendingSetup = {
+    homeTeam: "Yankees",
+    awayTeam: "Mets",
+    managedTeam: null as null,
+    playerOverrides: {
+      away: {},
+      home: {},
+      awayOrder: [] as string[],
+      homeOrder: [] as string[],
+    },
+  };
+
+  it("auto-starts the game when pendingGameSetup is provided", () => {
+    const onConsumeGameSetup = vi.fn();
+    render(
+      <GameProviderWrapper>
+        <GameInner pendingGameSetup={pendingSetup} onConsumeGameSetup={onConsumeGameSetup} />
+      </GameProviderWrapper>,
+    );
+    // onConsumeGameSetup must be called to clear the pending setup
+    expect(onConsumeGameSetup).toHaveBeenCalled();
+    // New game dialog should be closed (game started)
+    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
+  });
+
+  it("calls onConsumeGameSetup after consuming the setup", () => {
+    const onConsumeGameSetup = vi.fn();
+    act(() => {
+      render(
+        <GameProviderWrapper>
+          <GameInner pendingGameSetup={pendingSetup} onConsumeGameSetup={onConsumeGameSetup} />
+        </GameProviderWrapper>,
+      );
+    });
+    expect(onConsumeGameSetup).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not auto-start twice for the same pendingGameSetup reference", () => {
+    const onConsumeGameSetup = vi.fn();
+    const { rerender } = render(
+      <GameProviderWrapper>
+        <GameInner pendingGameSetup={pendingSetup} onConsumeGameSetup={onConsumeGameSetup} />
+      </GameProviderWrapper>,
+    );
+    // Rerender with the same object reference — should NOT fire again
+    act(() => {
+      rerender(
+        <GameProviderWrapper>
+          <GameInner pendingGameSetup={pendingSetup} onConsumeGameSetup={onConsumeGameSetup} />
+        </GameProviderWrapper>,
+      );
+    });
+    expect(onConsumeGameSetup).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("GameInner — onNewGame prop (external navigation)", () => {
+  it("calls onNewGame when the in-game New Game button is clicked (game over)", () => {
+    const onNewGame = vi.fn();
+    render(
+      <GameContext.Provider
+        value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
+      >
+        <GameInner onNewGame={onNewGame} />
+      </GameContext.Provider>,
+    );
+    // Submit the open dialog to close it and make the scoreboard active
+    act(() => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    // Click the "New Game" button — with onNewGame provided it should call the callback
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /new game/i }));
+    });
+    expect(onNewGame).toHaveBeenCalled();
+  });
+
+  it("opens the dialog when no onNewGame prop is provided (fallback behavior)", () => {
+    render(
+      <GameContext.Provider
+        value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
+      >
+        <GameInner />
+      </GameContext.Provider>,
+    );
+    act(() => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: /new game/i }));
+    });
+    // Dialog re-opens since no external handler
+    expect(screen.getByTestId("new-game-dialog")).toBeInTheDocument();
+  });
+});

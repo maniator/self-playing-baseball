@@ -347,7 +347,7 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
 
     // Step 2: start a new game using those custom teams.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Switch to Custom Teams tab.
     await page.getByTestId("new-game-custom-teams-tab").click();
@@ -394,12 +394,12 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
   });
 });
 
-// ─── 7. Starting pitcher selector in New Game dialog ─────────────────────────
+// ─── 7. Starting pitcher selector in Exhibition Setup page ───────────────────
 //
 // Captures the pitcher-selection UI that appears in the New Game dialog when
 // a user starts a managed custom-team game. Desktop-only since this UI element
 // renders identically across viewport sizes.
-test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
+test.describe("Visual — Starting pitcher selector in Exhibition Setup page", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
     await disableAnimations(page);
@@ -423,7 +423,7 @@ test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
 
     // Open the New Game dialog.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Switch to Custom Teams tab.
     await page.getByTestId("new-game-custom-teams-tab").click();
@@ -443,7 +443,7 @@ test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
 
     // Snapshot the New Game dialog with the pitcher selector visible.
     // Mask the seed input since it shows a random value on every page load.
-    await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot(
+    await expect(page.getByTestId("exhibition-setup-page")).toHaveScreenshot(
       "new-game-dialog-with-pitcher-selector.png",
       {
         mask: [page.getByTestId("seed-input")],

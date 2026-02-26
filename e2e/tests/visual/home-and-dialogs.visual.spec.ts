@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import {
-  closeNewGameDialog,
-  disableAnimations,
-  resetAppState,
-  waitForNewGameDialog,
-} from "../../utils/helpers";
+import { disableAnimations, resetAppState, waitForNewGameDialog } from "../../utils/helpers";
 
 /**
  * Visual regression snapshots — run across all 6 non-determinism viewport projects
@@ -25,25 +20,32 @@ test.describe("Visual", () => {
     });
   });
 
-  test("New Game dialog screenshot", async ({ page }) => {
+  test("Exhibition Setup page screenshot", async ({ page }) => {
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot("new-game-dialog.png", {
-      mask: [page.getByTestId("seed-input")],
-      maxDiffPixelRatio: 0.05,
-    });
+    await expect(page.getByTestId("exhibition-setup-page")).toHaveScreenshot(
+      "new-game-dialog.png",
+      {
+        mask: [page.getByTestId("seed-input")],
+        maxDiffPixelRatio: 0.05,
+      },
+    );
   });
 
   /**
    * How to Play modal — default state.
    *
-   * Opens the dialog from the New Game screen.  The "Basics" section is open
-   * by default; all other sections are collapsed.  Runs on all 6 viewports
-   * so we catch any mobile / tablet layout regressions.
+   * Starts a game to reach the /game route where the "How to Play" button
+   * lives (inside GameControls). The "Basics" section is open by default;
+   * all other sections are collapsed.
    */
   test("How to Play modal default state screenshot", async ({ page }) => {
-    await waitForNewGameDialog(page);
-    // Close the New Game <dialog> so the rest of the page is no longer inert.
-    await closeNewGameDialog(page);
+    // Start a game so we're on /game where the How to Play button is available.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+    // Switch to MLB tab and submit to start the game quickly.
+    await page.getByTestId("new-game-mlb-teams-tab").click();
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
@@ -65,9 +67,12 @@ test.describe("Visual", () => {
       testInfo.project.name !== "desktop",
       "All sections expanded snapshot is desktop-only",
     );
-    await waitForNewGameDialog(page);
-    // Close the New Game <dialog> so the rest of the page is no longer inert.
-    await closeNewGameDialog(page);
+    // Start a game to reach /game where the How to Play button is available.
+    await page.getByTestId("home-new-game-button").click();
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("new-game-mlb-teams-tab").click();
+    await page.getByTestId("play-ball-button").click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     // Use Playwright clicks (correct screen coordinates) so the dialog's
