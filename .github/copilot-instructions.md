@@ -599,7 +599,7 @@ await loadFixture(page, "pending-decision.json");
 // No startGameViaPlayBall, no waitForLogLines, no long timeouts needed.
 ```
 
-`loadFixture` enters the game shell via **Home → "Load Saved Game"**, imports the file through the Saves modal's file input, waits for the auto-load to restore state, and confirms the scoreboard is visible — all in one call.
+`loadFixture` navigates to **Home → "Load Saved Game" → `/saves` page**, imports the file through the saves page file input, waits for the auto-load to restore state and navigate to `/game`, and confirms the scoreboard is visible — all in one call.
 
 ### Available fixtures
 

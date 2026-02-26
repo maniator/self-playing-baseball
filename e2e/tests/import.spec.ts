@@ -1,12 +1,12 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  configureNewGame,
   importSaveFromFixture,
   openSavesModal,
   resetAppState,
   startGameViaPlayBall,
   waitForLogLines,
-  waitForNewGameDialog,
 } from "../utils/helpers";
 
 test.describe("Import Save", () => {
@@ -17,7 +17,7 @@ test.describe("Import Save", () => {
   test("importing a save fixture auto-loads the game and save appears in list", async ({
     page,
   }) => {
-    await waitForNewGameDialog(page);
+    await configureNewGame(page);
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 

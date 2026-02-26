@@ -203,14 +203,10 @@ test.describe("Stage 2A regression guardrails", () => {
     await resetAppState(page);
   });
 
-  test("Home → Load Saved Game → no saves shows saves modal, close returns to new-game flow", async ({
-    page,
-  }) => {
+  test("Home → Load Saved Game → no saves shows saves page", async ({ page }) => {
     await page.getByTestId("home-load-saves-button").click();
-    // Should navigate into game UI with saves modal open
-    await expect(
-      page.getByTestId("exhibition-setup-page").or(page.getByTestId("saves-modal")),
-    ).toBeVisible({ timeout: 15_000 });
+    // Should navigate to the /saves page.
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 15_000 });
   });
 
   test("Home screen flow is intact: New Game navigates to exhibition setup", async ({ page }) => {
