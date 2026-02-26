@@ -48,7 +48,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
-    await page.getByTestId("home-new-game-button").click();
     await waitForNewGameDialog(page);
 
     // Select managed team on MLB tab
@@ -66,7 +65,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Test Home 1");
     await createAndSaveTeam(page, "SP Test Away 1");
 
-    await page.getByTestId("home-new-game-button").click();
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(
@@ -85,7 +83,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Test Home 2");
     await createAndSaveTeam(page, "SP Test Away 2");
 
-    await page.getByTestId("home-new-game-button").click();
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(
@@ -119,7 +116,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Apply Home");
     await createAndSaveTeam(page, "SP Apply Away");
 
-    await page.getByTestId("home-new-game-button").click();
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(

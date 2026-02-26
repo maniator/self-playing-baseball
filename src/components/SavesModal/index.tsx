@@ -1,11 +1,10 @@
 import * as React from "react";
 
+import SaveSlotList from "@components/SaveSlotList";
 import type { Strategy } from "@context/index";
-import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,
-  DangerButton,
   Dialog,
   DialogTitle,
   EmptyMsg,
@@ -15,10 +14,6 @@ import {
   Row,
   SavesButton,
   SectionHeading,
-  SlotDate,
-  SlotItem,
-  SlotList,
-  SlotName,
   SmallButton,
 } from "./styles";
 import { useSavesModal } from "./useSavesModal";
@@ -35,28 +30,9 @@ interface Props {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
-  autoOpen?: boolean;
-  openSavesRequestCount?: number;
   /** When true a real game session is active and "Save current game" is shown. */
   gameStarted?: boolean;
-  /**
-   * When provided, overrides the modal's built-in close action.
-   * Called instead of closing the dialog when the user clicks Close,
-   * the backdrop, or presses Escape. Used to route Home when no game
-   * has been started yet (Load Saved Game entry path).
-   */
-  onRequestClose?: () => void;
-  /** Label for the close button. Defaults to "Close". */
-  closeLabel?: string;
 }
-
-const formatDate = (ts: number): string =>
-  new Date(ts).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 const SavesModal: React.FunctionComponent<Props> = (props) => {
   const {
@@ -65,6 +41,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     importText,
     importError,
     setImportText,
+    importing,
     open,
     close,
     handleSave,
@@ -78,7 +55,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
 
   // When onRequestClose is provided it overrides the built-in close so the
   // caller can intercept close attempts (e.g. route back to Home).
-  const handleClose = props.onRequestClose ?? close;
+  const handleClose = close;
 
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     // Guard: if the dialog was already closed (e.g. by a programmatic close()
@@ -128,26 +105,14 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         {saves.length === 0 ? (
           <EmptyMsg>No saves yet.</EmptyMsg>
         ) : (
-          <SlotList>
-            {saves.map((s: SaveDoc) => {
-              const displayName = resolveSaveName(s.name);
-              return (
-                <SlotItem key={s.id}>
-                  <SlotName title={displayName}>{displayName}</SlotName>
-                  <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
-                  <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
-                    Load
-                  </SmallButton>
-                  <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
-                    Export
-                  </SmallButton>
-                  <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
-                    ✕
-                  </DangerButton>
-                </SlotItem>
-              );
-            })}
-          </SlotList>
+          <SaveSlotList
+            saves={saves}
+            resolveName={resolveSaveName}
+            onLoad={handleLoad}
+            onExport={handleExport}
+            onDelete={handleDelete}
+            listTestId="saves-modal-list"
+          />
         )}
 
         <SectionHeading>Import save</SectionHeading>
@@ -156,6 +121,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
             type="file"
             accept=".json,application/json"
             onChange={handleFileImport}
+            disabled={importing}
             data-testid="import-save-file-input"
           />
         </Row>
@@ -171,15 +137,15 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         <Row>
           <SmallButton
             onClick={handleImportPaste}
-            disabled={!importText.trim()}
+            disabled={!importText.trim() || importing}
             data-testid="import-save-button"
           >
-            Import from text
+            {importing ? "Importing…" : "Import from text"}
           </SmallButton>
         </Row>
 
         <CloseButton onClick={handleClose} data-testid="saves-modal-close-button">
-          {props.closeLabel ?? "Close"}
+          Close
         </CloseButton>
       </Dialog>
     </>

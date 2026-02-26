@@ -20,9 +20,9 @@ test.describe("Home Screen", () => {
     await expect(page.getByTestId("home-manage-teams-button")).toBeVisible();
   });
 
-  test("New Game button navigates to game setup dialog", async ({ page }) => {
+  test("New Game button navigates to exhibition setup page", async ({ page }) => {
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("play-ball-button")).toBeVisible();
     // Home screen should no longer be visible
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
@@ -33,30 +33,23 @@ test.describe("Home Screen", () => {
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Load Saved Game button navigates to game UI with saves modal open", async ({ page }) => {
+  test("Load Saved Game button navigates to /saves page", async ({ page }) => {
     await page.getByTestId("home-load-saves-button").click();
-    // Wait for DB to load
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    // Saves modal should open automatically
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
-    // Scoreboard should be visible in the background
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveURL(/\/saves/);
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
     // Home screen should no longer be visible
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
 
   // ── Stranded-close guard ───────────────────────────────────────────────────
 
-  test("Load Saved Game → close modal without loading returns to Home screen", async ({ page }) => {
+  test("Load Saved Game → back button returns to Home screen", async ({ page }) => {
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
-    // In the pre-load path, close button label should say "Back to Home"
-    await expect(page.getByTestId("saves-modal-close-button")).toHaveText("Back to Home");
-    // Click it — should route back to Home, not strand the user on an empty game shell
-    await page.getByTestId("saves-modal-close-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    // Back button on saves page should route back to Home
+    await page.getByTestId("saves-page-back-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible();
+    await expect(page.getByTestId("saves-page")).not.toBeVisible();
   });
 
   test("Load Saved Game → load a save → stays on game screen (regression guard)", async ({
@@ -73,29 +66,29 @@ test.describe("Home Screen", () => {
     await page.getByTestId("back-to-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
-    // Now enter via Load Saved Game path.
+    // Now enter via Load Saved Game path → saves page.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
 
-    // Load the save — should stay on game screen, NOT navigate back to Home.
-    await page.getByTestId("load-save-button").first().click();
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    // Load the save — should navigate to /game, NOT back to Home.
+    await page.getByTestId("saves-page").getByTestId("load-save-button").first().click();
+    await expect(page).toHaveURL(/\/game/);
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
     // Critically: Home screen must NOT appear.
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
 
-  test("New Game dialog shows a Back to Home button", async ({ page }) => {
+  test("New Game setup shows a Back to Home button", async ({ page }) => {
     await waitForNewGameDialog(page);
     await expect(page.getByTestId("new-game-back-home-button")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("New Game dialog Back to Home button returns to Home screen", async ({ page }) => {
+  test("New Game setup Back to Home button returns to Home screen", async ({ page }) => {
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-back-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible();
+    await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible();
   });
 
   // ── Back to Home button ────────────────────────────────────────────────────
@@ -112,11 +105,12 @@ test.describe("Home Screen", () => {
     await expect(page.getByTestId("scoreboard")).not.toBeVisible();
   });
 
-  test("Back to Home button is visible before game starts (New Game dialog open)", async ({
+  test("Back to Home button is visible before game starts (exhibition setup open)", async ({
     page,
   }) => {
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("back-to-home-button")).toBeVisible({ timeout: 10_000 });
+    // The exhibition setup page has its own back button (new-game-back-home-button).
+    await expect(page.getByTestId("new-game-back-home-button")).toBeVisible({ timeout: 10_000 });
   });
 
   test("normal in-game saves modal close button label is 'Close'", async ({ page }) => {
@@ -152,7 +146,9 @@ test.describe("Home Screen", () => {
 
   // ── Home → New Game when a game is already active ──────────────────────────
 
-  test("New Game opens dialog even when an active game already exists", async ({ page }) => {
+  test("New Game navigates to exhibition setup even when an active game already exists", async ({
+    page,
+  }) => {
     // Start a real game so the active-game session is created.
     await startGameViaPlayBall(page, { seed: "home-new-game-active" });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
@@ -162,9 +158,9 @@ test.describe("Home Screen", () => {
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("home-resume-current-game-button")).toBeVisible();
 
-    // Click New Game — the New Game dialog MUST open.
+    // Click New Game — the Exhibition Setup page MUST open.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("play-ball-button")).toBeVisible();
   });
 
@@ -177,6 +173,17 @@ test.describe("Home Screen", () => {
 
     await page.getByTestId("home-resume-current-game-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("home-screen")).not.toBeVisible();
+  });
+
+  // ── Help button ────────────────────────────────────────────────────────────
+
+  test("Help button navigates to /help page", async ({ page }) => {
+    await expect(page.getByTestId("home-help-button")).toBeVisible();
+    await page.getByTestId("home-help-button").click();
+    await expect(page).toHaveURL(/\/help/);
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+    // Home screen should no longer be visible
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
 });

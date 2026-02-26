@@ -1,136 +1,119 @@
 import * as React from "react";
 
-import Game from "@components/Game";
-import HomeScreen from "@components/HomeScreen";
-import ManageTeamsScreen from "@components/ManageTeamsScreen";
+import { Outlet, useNavigate } from "react-router";
 
-type Screen = "home" | "game" | "manage-teams";
-export type InitialGameView = "new-game" | "load-saves";
+import type { PlayerOverrides } from "@components/NewGameDialog";
+import type { SaveDoc } from "@storage/types";
 
-/** Shape stored in the History API state object. */
-interface HistoryState {
-  screen: Screen;
-}
+export type AppShellOutletContext = {
+  onStartGame: (setup: ExhibitionGameSetup) => void;
+  /** Called from the saves page when the user picks a save to load. */
+  onLoadSave: (slot: SaveDoc) => void;
+  /** Called by GamePage when a game session starts, to update hasActiveSession. */
+  onGameSessionStarted: () => void;
+  // Navigation callbacks consumed by route-level page components
+  onNewGame: () => void;
+  onLoadSaves: () => void;
+  onManageTeams: () => void;
+  onResumeCurrent: () => void;
+  onHelp: () => void;
+  onBackToHome: () => void;
+  hasActiveSession: boolean;
+};
 
-/** Push a new browser history entry for the given screen. */
-function pushScreenState(s: Screen): void {
-  if (typeof window !== "undefined" && typeof window.history?.pushState === "function") {
-    window.history.pushState({ screen: s } satisfies HistoryState, "");
-  }
-}
+/** Shape for a game setup originating from the /exhibition/new page. */
+export type ExhibitionGameSetup = {
+  homeTeam: string;
+  awayTeam: string;
+  managedTeam: 0 | 1 | null;
+  playerOverrides: PlayerOverrides;
+};
+
+/** Shape of the React Router location state used when navigating to /game. */
+export type GameLocationState = {
+  pendingGameSetup: ExhibitionGameSetup | null;
+  pendingLoadSave: SaveDoc | null;
+} | null;
 
 const AppShell: React.FunctionComponent = () => {
-  const [screen, setScreen] = React.useState<Screen>("home");
-  const [initialGameView, setInitialGameView] = React.useState<InitialGameView>("new-game");
+  const navigate = useNavigate();
+
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
-  // Whether Game has ever been mounted (controls CSS visibility wrapper).
-  const [gameEverMounted, setGameEverMounted] = React.useState(false);
-  // Incremented each time the user requests a new game; GameInner watches this.
-  const [newGameRequestCount, setNewGameRequestCount] = React.useState(0);
-  // Incremented each time the user navigates via "Load Saved Game"; GameInner watches this.
-  const [loadSavesRequestCount, setLoadSavesRequestCount] = React.useState(0);
 
-  // Seed the initial history entry so browser Back/Forward works from the start.
-  React.useEffect(() => {
-    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-      window.history.replaceState({ screen: "home" } satisfies HistoryState, "");
-    }
-  }, []);
-
-  // Listen for browser Back/Forward and restore the matching screen.
-  // Intentionally does NOT increment request counters — we only restore the
-  // screen that was visible; the Game component stays mounted throughout.
-  React.useEffect(() => {
-    const onPopState = (event: PopStateEvent) => {
-      const state = event.state as HistoryState | null;
-      const next = state?.screen;
-      if (next === "home" || next === "game" || next === "manage-teams") {
-        // Close any open <dialog> elements before changing screen so the
-        // top-layer does not leave modals blocking input on the incoming screen.
-        if (next !== "game") {
-          document.querySelectorAll("dialog[open]").forEach((d) => {
-            (d as HTMLDialogElement).close();
-          });
-        }
-        setScreen(next);
-      }
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, []);
-
-  const goHome = React.useCallback(() => {
-    setScreen("home");
-    pushScreenState("home");
-  }, []);
-
-  const goManageTeams = React.useCallback(() => {
-    setScreen("manage-teams");
-    pushScreenState("manage-teams");
-  }, []);
-
-  const handleBackToHome = React.useCallback(() => {
-    setScreen("home");
-    pushScreenState("home");
-  }, []);
-
-  // Called by Game/GameInner when setGameActive(true) fires.
   const handleGameSessionStarted = React.useCallback(() => {
     setHasActiveSession(true);
   }, []);
 
   const handleResumeCurrent = React.useCallback(() => {
-    setScreen("game");
-    pushScreenState("game");
-  }, []);
+    navigate("/game");
+  }, [navigate]);
 
   const handleNewGame = React.useCallback(() => {
-    setInitialGameView("new-game");
-    setGameEverMounted(true);
-    setNewGameRequestCount((c) => c + 1);
-    setScreen("game");
-    pushScreenState("game");
-  }, []);
+    // Primary "New Game" path from Home: navigate to the Exhibition Setup page.
+    navigate("/exhibition/new");
+  }, [navigate]);
 
   const handleLoadSaves = React.useCallback(() => {
-    setInitialGameView("load-saves");
-    setGameEverMounted(true);
-    setLoadSavesRequestCount((c) => c + 1);
-    setScreen("game");
-    pushScreenState("game");
-  }, []);
+    navigate("/saves");
+  }, [navigate]);
 
-  return (
-    <>
-      {/* Game is kept mounted once entered so in-memory state survives navigation. */}
-      <div style={{ display: screen === "game" ? undefined : "none" }}>
-        {gameEverMounted && (
-          <Game
-            initialView={initialGameView}
-            newGameRequestCount={newGameRequestCount}
-            loadSavesRequestCount={loadSavesRequestCount}
-            onBackToHome={handleBackToHome}
-            onManageTeams={goManageTeams}
-            onGameSessionStarted={handleGameSessionStarted}
-          />
-        )}
-      </div>
-
-      {screen === "home" && (
-        <HomeScreen
-          onNewGame={handleNewGame}
-          onLoadSaves={handleLoadSaves}
-          onManageTeams={goManageTeams}
-          onResumeCurrent={hasActiveSession ? handleResumeCurrent : undefined}
-        />
-      )}
-
-      {screen === "manage-teams" && (
-        <ManageTeamsScreen onBack={goHome} hasActiveGame={hasActiveSession} />
-      )}
-    </>
+  /** Called from the saves page — navigates to /game with the save as location state. */
+  const handleLoadSave = React.useCallback(
+    (slot: SaveDoc) => {
+      navigate("/game", { state: { pendingLoadSave: slot, pendingGameSetup: null } });
+    },
+    [navigate],
   );
+
+  const handleBackToHome = React.useCallback(() => {
+    navigate("/");
+  }, [navigate]);
+
+  const handleManageTeams = React.useCallback(() => {
+    navigate("/teams");
+  }, [navigate]);
+
+  const handleHelp = React.useCallback(() => {
+    navigate("/help");
+  }, [navigate]);
+
+  /** Called from /exhibition/new — navigates to /game with the setup as location state. */
+  const handleStartFromExhibition = React.useCallback(
+    (setup: ExhibitionGameSetup) => {
+      navigate("/game", { state: { pendingGameSetup: setup, pendingLoadSave: null } });
+    },
+    [navigate],
+  );
+
+  const outletContext: AppShellOutletContext = React.useMemo(
+    () => ({
+      onStartGame: handleStartFromExhibition,
+      onLoadSave: handleLoadSave,
+      onGameSessionStarted: handleGameSessionStarted,
+      onNewGame: handleNewGame,
+      onLoadSaves: handleLoadSaves,
+      onManageTeams: handleManageTeams,
+      onResumeCurrent: handleResumeCurrent,
+      onHelp: handleHelp,
+      onBackToHome: handleBackToHome,
+      hasActiveSession,
+    }),
+    [
+      handleStartFromExhibition,
+      handleLoadSave,
+      handleGameSessionStarted,
+      handleNewGame,
+      handleLoadSaves,
+      handleManageTeams,
+      handleResumeCurrent,
+      handleHelp,
+      handleBackToHome,
+      hasActiveSession,
+    ],
+  );
+
+  return <Outlet context={outletContext} />;
 };
 
 export default AppShell;

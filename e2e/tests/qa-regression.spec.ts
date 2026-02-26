@@ -108,59 +108,46 @@ test.describe("Home button interactivity — regression guard", () => {
   });
 
   test("Home → New Game → Back to Home → Home buttons still work", async ({ page }) => {
-    // Enter New Game flow.
+    // Enter New Game flow (navigates to /exhibition/new).
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Return to Home via the dialog's back button.
+    // Return to Home via the back button.
     await page.getByTestId("new-game-back-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
     // Home buttons must still be clickable — no backdrop should be blocking them.
     // Verify by clicking Load Saved Game (a different path) and checking it responds.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    // Saves modal OR game UI must appear — proves the click was NOT intercepted by a lingering backdrop.
-    // Use .first() because on slower engines both the scoreboard (game screen just became visible)
-    // and the saves modal can be present simultaneously; strict-mode would fail on 2 elements.
+    // Saves page OR game UI must appear — proves the click was NOT intercepted by a lingering backdrop.
     await expect(
-      page.getByTestId("saves-modal").or(page.getByTestId("scoreboard")).first(),
+      page.getByTestId("saves-page").or(page.getByTestId("scoreboard")).first(),
     ).toBeVisible({
       timeout: 10_000,
     });
   });
 
   test("Home → Load Saved → Back to Home → Home buttons still work", async ({ page }) => {
-    // Enter Load Saved flow.
+    // Enter Load Saved flow — navigates to /saves page.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
 
-    // Close via the "Back to Home" button in the modal.
-    await page.getByTestId("saves-modal-close-button").click();
+    // Back button on the saves page returns to Home.
+    await page.getByTestId("saves-page-back-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible();
 
-    // Now click New Game from Home — must work (no lingering backdrop).
+    // Now click New Game from Home — must navigate to exhibition setup.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Home → New Game → Back (← Home in controls) → Home buttons still work", async ({
-    page,
-  }) => {
-    // Navigate into game via New Game.
+  test("Home → New Game → Back (← Home) → Home buttons still work", async ({ page }) => {
+    // Navigate into New Game flow (/exhibition/new).
     await waitForNewGameDialog(page);
-    // Close dialog programmatically to reveal the ← Home button behind it.
-    await page.evaluate(() => {
-      (
-        document.querySelector('[data-testid="new-game-dialog"]') as HTMLDialogElement | null
-      )?.close();
-    });
-    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Click the ← Home button in the game controls.
-    await page.getByTestId("back-to-home-button").click();
+    // Use the back button on the exhibition setup page to return Home.
+    await page.getByTestId("new-game-back-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
     // Home buttons must respond. Click Manage Teams as a representative button.
@@ -171,27 +158,17 @@ test.describe("Home button interactivity — regression guard", () => {
   test("Home → Load Saved → Back to Home (modal close) → re-enter Load Saved works", async ({
     page,
   }) => {
-    // Enter Load Saved — saves modal auto-opens.
+    // Enter Load Saved — navigates to /saves page.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
 
-    // The close button is labelled "Back to Home" on the pre-load path and
-    // routes back to the Home screen when clicked.
-    await page.getByTestId("saves-modal-close-button").click();
+    // Back button returns to Home screen.
+    await page.getByTestId("saves-page-back-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible();
 
     // Repeated Load Saved click must work — no lingering backdrop should block it.
-    // Use .first() because on slower engines both the scoreboard (game screen just became visible)
-    // and the saves modal can be present simultaneously; strict-mode would fail on 2 elements.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(
-      page.getByTestId("saves-modal").or(page.getByTestId("scoreboard")).first(),
-    ).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
   });
 });
 
@@ -202,15 +179,14 @@ test.describe("Load Saved from fresh Home — no phantom game creation", () => {
     await resetAppState(page);
   });
 
-  test("fresh page load → Load Saved opens saves modal without starting a game", async ({
+  test("fresh page load → Load Saved navigates to saves page without starting a game", async ({
     page,
   }) => {
     // Click Load Saved from a completely fresh page load (no prior game session).
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
 
-    // Saves modal must open.
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    // Saves page must be visible.
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
   });
 
   test("'Save current game' button is hidden before any real game session starts", async ({
@@ -218,10 +194,9 @@ test.describe("Load Saved from fresh Home — no phantom game creation", () => {
   }) => {
     // Load Saved path — no game has been started or loaded.
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
 
-    // The "Save current game" button must NOT appear — there is nothing to save.
+    // The "Save current game" button must NOT appear anywhere — there is nothing to save.
     await expect(page.getByTestId("save-game-button")).not.toBeVisible();
   });
 
@@ -229,11 +204,12 @@ test.describe("Load Saved from fresh Home — no phantom game creation", () => {
     page,
   }) => {
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    // Wait for loading to finish.
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
 
     // No saved games should exist — the "No saves yet." empty state should be shown.
-    await expect(page.getByText("No saves yet.")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("saves-page-empty")).toBeVisible({ timeout: 5_000 });
     // Load buttons must not exist either.
     await expect(page.getByTestId("load-save-button")).not.toBeVisible();
   });
@@ -283,12 +259,12 @@ test.describe("Save current game gating", () => {
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
 
     // Load the save.
-    await page.getByTestId("load-save-button").first().click();
-    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("saves-page").getByTestId("load-save-button").first().click();
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 
     // Re-open saves — save button must be present since a save was loaded.
     await openSavesModal(page);

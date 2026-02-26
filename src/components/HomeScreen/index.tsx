@@ -8,6 +8,8 @@ type Props = {
   onManageTeams: () => void;
   /** When provided, shows a "Resume Current Game" button above the other actions. */
   onResumeCurrent?: () => void;
+  /** When provided, shows a "How to Play" button. */
+  onHelp?: () => void;
 };
 
 const HomeScreen: React.FunctionComponent<Props> = ({
@@ -15,6 +17,7 @@ const HomeScreen: React.FunctionComponent<Props> = ({
   onLoadSaves,
   onManageTeams,
   onResumeCurrent,
+  onHelp,
 }) => (
   <HomeContainer data-testid="home-screen">
     <HomeLogo>⚾</HomeLogo>
@@ -35,6 +38,11 @@ const HomeScreen: React.FunctionComponent<Props> = ({
       <SecondaryBtn onClick={onManageTeams} data-testid="home-manage-teams-button">
         Manage Teams
       </SecondaryBtn>
+      {onHelp && (
+        <SecondaryBtn onClick={onHelp} data-testid="home-help-button">
+          How to Play
+        </SecondaryBtn>
+      )}
     </MenuGroup>
   </HomeContainer>
 );

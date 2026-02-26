@@ -430,20 +430,13 @@ describe("SavesModal", () => {
     expect(screen.getByTestId("saves-modal-close-button")).toHaveTextContent("Close");
   });
 
-  it("uses a custom closeLabel when provided", async () => {
-    renderModal({ closeLabel: "Back to Home" });
-    await openPanel();
-    expect(screen.getByTestId("saves-modal-close-button")).toHaveTextContent("Back to Home");
-  });
-
-  it("does not invoke onRequestClose when dialog is already closed (post-programmatic-close click bubbling guard)", async () => {
+  it("does not close twice when dialog is already closed (post-programmatic-close click bubbling guard)", async () => {
     // Regression guard: when a child button handler calls close() programmatically,
     // the original click event continues to bubble up to the <dialog> element.
     // At that point dialog.open is false so getBoundingClientRect() returns all-zeros,
     // making every screen coordinate appear "outside" — which would falsely trigger
-    // onRequestClose (= route Home). The guard must prevent this.
-    const onRequestClose = vi.fn();
-    const { container } = renderModal({ onRequestClose });
+    // close() again. The guard must prevent this.
+    const { container } = renderModal();
     await openPanel();
     const dialog = container.querySelector('[data-testid="saves-modal"]') as HTMLDialogElement;
     expect(dialog.open).toBe(true);
@@ -451,8 +444,10 @@ describe("SavesModal", () => {
     dialog.removeAttribute("open");
     expect(dialog.open).toBe(false);
     // Simulate the bubbled click that arrives after the dialog was already closed.
+    // Should not throw and should not call showModal/close again.
     fireEvent.click(dialog, { clientX: 200, clientY: 200 });
-    expect(onRequestClose).not.toHaveBeenCalled();
+    // The close mock should only have been called 0 times (we removed the attr manually above).
+    expect(HTMLDialogElement.prototype.close).not.toHaveBeenCalled();
   });
 
   it("hides 'Save current game' when gameStarted is false (passive load-saves entry)", async () => {

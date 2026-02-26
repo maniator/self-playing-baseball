@@ -4,10 +4,12 @@ import "./index.scss";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
-import AppShell from "@components/AppShell";
-import { ErrorBoundary } from "@components/Game/ErrorBoundary";
+import { RouterProvider } from "react-router";
+
 import { appLog } from "@utils/logger";
 import { initSeedFromUrl } from "@utils/rng";
+
+import { router } from "./router";
 
 initSeedFromUrl({ writeToUrl: true });
 
@@ -18,8 +20,4 @@ if ("serviceWorker" in navigator) {
     .catch((err) => appLog.error("SW registration failed:", err));
 }
 
-createRoot(document.getElementById("game")!).render(
-  <ErrorBoundary>
-    <AppShell />
-  </ErrorBoundary>,
-);
+createRoot(document.getElementById("game")!).render(<RouterProvider router={router} />);

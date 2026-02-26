@@ -13,6 +13,9 @@ import { GameStateRef } from "./useGameRefs";
  * `gameOver` is included as an explicit parameter (and effect dependency) so
  * the scheduler restarts automatically when a new in-progress save is loaded
  * after a finished game — without it the timer chain would stay dead.
+ *
+ * With Game rendered as a proper route element, it unmounts when the user
+ * navigates away from /game, so no off-route guard is needed.
  */
 export const useAutoPlayScheduler = (
   gameStarted: boolean,

@@ -2,6 +2,8 @@ import styled from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
+export { BackBtn } from "@components/PageLayout/styles";
+
 export const ScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -28,31 +30,10 @@ export const ScreenHeader = styled.div`
   margin-bottom: 24px;
 `;
 
-export const BackBtn = styled.button`
-  background: transparent;
-  color: #6680aa;
-  border: none;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 4px 0;
-  min-height: 36px;
-
-  &:hover {
-    color: #aaccff;
-  }
-
-  &:focus-visible {
-    outline: 2px solid aquamarine;
-    outline-offset: 2px;
-    border-radius: 3px;
-  }
-`;
-
 export const ScreenTitle = styled.h1`
   color: white;
   font-size: 1.6rem;
-  margin: 0;
+  margin: 0 0 16px;
 
   ${mq.mobile} {
     font-size: 1.3rem;
@@ -80,7 +61,9 @@ export const CreateBtn = styled.button`
   font-family: inherit;
   cursor: pointer;
   min-height: 44px;
-  align-self: flex-start;
+  align-self: center;
+  width: min(100%, 340px);
+  margin-top: 8px;
   margin-bottom: 20px;
 
   &:hover {
@@ -185,9 +168,36 @@ export const EditorShellHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px 0;
+  padding: 24px 24px 0;
 
   ${mq.mobile} {
-    padding: 12px 16px 0;
+    padding: 16px 16px 0;
+  }
+`;
+
+export const EditorLoading = styled.p`
+  color: #6680aa;
+  font-size: 0.95rem;
+  padding: 24px;
+`;
+
+export const NotFoundMsg = styled.p`
+  color: #ff9977;
+  font-size: 0.95rem;
+  padding: 24px;
+`;
+
+export const TeamListLink = styled.button`
+  background: transparent;
+  color: #6680aa;
+  border: none;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover {
+    color: #aaccff;
   }
 `;

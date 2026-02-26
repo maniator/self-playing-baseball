@@ -1,19 +1,24 @@
 import * as React from "react";
 
+import { useLocation, useNavigate, useParams } from "react-router";
+
 import CustomTeamEditor from "@components/CustomTeamEditor";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import {
   BackBtn,
   CreateBtn,
+  EditorLoading,
   EditorShell,
   EditorShellHeader,
   EmptyState,
   InfoBanner,
+  NotFoundMsg,
   ScreenContainer,
   ScreenHeader,
   ScreenTitle,
   TeamList,
+  TeamListLink,
 } from "./styles";
 import TeamListItem from "./TeamListItem";
 
@@ -23,33 +28,73 @@ type Props = {
   hasActiveGame?: boolean;
 };
 
-type View = "list" | "create" | { edit: string };
-
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {
   const { teams, loading, deleteTeam, refresh } = useCustomTeams();
-  const [view, setView] = React.useState<View>("list");
+  const navigate = useNavigate();
+  const { teamId } = useParams<{ teamId: string }>();
+  const location = useLocation();
 
-  const editingTeam = typeof view === "object" ? teams.find((t) => t.id === view.edit) : undefined;
+  const isCreating = location.pathname === "/teams/new";
+  const isEditing = Boolean(teamId);
+  const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
 
-  if (view === "create" || typeof view === "object") {
+  const editorHeader = (
+    <EditorShellHeader>
+      <BackBtn
+        onClick={() => navigate("/teams")}
+        data-testid="manage-teams-editor-back-button"
+        aria-label="Back to team list"
+      >
+        ← Team List
+      </BackBtn>
+    </EditorShellHeader>
+  );
+
+  if (isCreating) {
     return (
       <EditorShell data-testid="manage-teams-editor-shell">
-        <EditorShellHeader>
-          <BackBtn
-            onClick={() => setView("list")}
-            data-testid="manage-teams-editor-back-button"
-            aria-label="Back to team list"
-          >
-            ← Team List
-          </BackBtn>
-        </EditorShellHeader>
+        {editorHeader}
+        <CustomTeamEditor
+          onSave={() => {
+            refresh();
+            navigate("/teams");
+          }}
+          onCancel={() => navigate("/teams")}
+        />
+      </EditorShell>
+    );
+  }
+
+  if (isEditing) {
+    if (loading) {
+      return (
+        <EditorShell data-testid="manage-teams-editor-shell">
+          {editorHeader}
+          <EditorLoading>Loading team…</EditorLoading>
+        </EditorShell>
+      );
+    }
+    if (!editingTeam) {
+      return (
+        <EditorShell data-testid="manage-teams-editor-shell">
+          {editorHeader}
+          <NotFoundMsg>
+            Team not found.{" "}
+            <TeamListLink onClick={() => navigate("/teams")}>Back to Team List</TeamListLink>
+          </NotFoundMsg>
+        </EditorShell>
+      );
+    }
+    return (
+      <EditorShell data-testid="manage-teams-editor-shell">
+        {editorHeader}
         <CustomTeamEditor
           team={editingTeam}
           onSave={() => {
             refresh();
-            setView("list");
+            navigate("/teams");
           }}
-          onCancel={() => setView("list")}
+          onCancel={() => navigate("/teams")}
         />
       </EditorShell>
     );
@@ -73,7 +118,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
 
       <CreateBtn
         type="button"
-        onClick={() => setView("create")}
+        onClick={() => navigate("/teams/new")}
         data-testid="manage-teams-create-button"
       >
         + Create New Team
@@ -89,7 +134,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             <TeamListItem
               key={team.id}
               team={team}
-              onEdit={(id) => setView({ edit: id })}
+              onEdit={(id) => navigate(`/teams/${id}/edit`)}
               onDelete={deleteTeam}
             />
           ))}

@@ -19,22 +19,15 @@ type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
   onLoadActivate?: (saveId: string) => void;
-  autoOpenSaves?: boolean;
-  openSavesRequestCount?: number;
   /** Routes back to the Home screen. When provided a "← Home" button is shown. */
   onBackToHome?: () => void;
-  /** Overrides saves-modal close — used to route Home when no game is active yet. */
-  onSavesClose?: () => void;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
   onNewGame,
   gameStarted = false,
   onLoadActivate,
-  autoOpenSaves,
-  openSavesRequestCount,
   onBackToHome,
-  onSavesClose,
 }) => {
   const {
     speed,
@@ -100,10 +93,6 @@ const GameControls: React.FunctionComponent<Props> = ({
               setManagerMode(setup.managerMode ?? false);
             }}
             onLoadActivate={onLoadActivate}
-            autoOpen={autoOpenSaves}
-            openSavesRequestCount={openSavesRequestCount}
-            onRequestClose={onSavesClose}
-            closeLabel={onSavesClose ? "Back to Home" : undefined}
             gameStarted={gameStarted}
           />
         </React.Suspense>

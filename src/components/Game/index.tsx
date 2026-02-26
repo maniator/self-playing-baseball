@@ -1,36 +1,44 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
-import type { InitialGameView } from "@components/AppShell";
+import type { ExhibitionGameSetup } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
+import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
 
 import GameInner from "./GameInner";
 import { DbResetNotice, LoadingScreen } from "./styles";
 
 type Props = {
-  initialView?: InitialGameView;
-  newGameRequestCount?: number;
-  loadSavesRequestCount?: number;
   onBackToHome?: () => void;
-  onManageTeams?: () => void;
+  /** Called when the in-game New Game button is clicked; navigates to /exhibition/new. */
+  onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
   onGameSessionStarted?: () => void;
+  /** Setup from /exhibition/new; consumed by GameInner to auto-start a game. */
+  pendingGameSetup?: ExhibitionGameSetup | null;
+  /** Called after pendingGameSetup is consumed so GamePage can clear it. */
+  onConsumeGameSetup?: () => void;
+  /** Save loaded from /saves page; consumed by GameInner to restore game state. */
+  pendingLoadSave?: SaveDoc | null;
+  /** Called after pendingLoadSave is consumed so GamePage can clear it. */
+  onConsumePendingLoad?: () => void;
 };
 
 const Game: React.FunctionComponent<Props> = ({
-  initialView,
-  newGameRequestCount,
-  loadSavesRequestCount,
   onBackToHome,
-  onManageTeams,
+  onNewGame,
   onGameSessionStarted,
+  pendingGameSetup,
+  onConsumeGameSetup,
+  pendingLoadSave,
+  onConsumePendingLoad,
 }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
@@ -40,7 +48,7 @@ const Game: React.FunctionComponent<Props> = ({
   // `custom:<id>` fragments to human-readable names before speech.
   const { teams: customTeams } = useCustomTeams();
   const announcePreprocessor = React.useCallback(
-    (msg: string) => msg.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams)),
+    (msg: string) => resolveCustomIdsInString(msg, customTeams),
     [customTeams],
   );
 
@@ -87,12 +95,13 @@ const Game: React.FunctionComponent<Props> = ({
         )}
         <GameInner
           actionBufferRef={actionBufferRef}
-          initialView={initialView}
-          newGameRequestCount={newGameRequestCount}
-          loadSavesRequestCount={loadSavesRequestCount}
           onBackToHome={onBackToHome}
-          onManageTeams={onManageTeams}
+          onNewGame={onNewGame}
           onGameSessionStarted={onGameSessionStarted}
+          pendingGameSetup={pendingGameSetup}
+          onConsumeGameSetup={onConsumeGameSetup}
+          pendingLoadSave={pendingLoadSave}
+          onConsumePendingLoad={onConsumePendingLoad}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>

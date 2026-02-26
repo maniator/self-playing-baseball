@@ -136,4 +136,28 @@ export const useRxdbGameSync = (
       appLog.error("useRxdbGameSync: failed to update progress (game over)", err);
     });
   }, [gameOver, rxSaveIdRef]);
+
+  // Save current state when the component unmounts (SPA navigation away from /game).
+  // This fires when React Router unmounts the GamePage route element.  It is NOT
+  // a replacement for useBeforeUnload (which fires on tab-close/browser-refresh);
+  // those are handled by the half-inning save above.  Refs are used here so the
+  // cleanup always captures the latest values without re-creating the effect.
+  React.useEffect(() => {
+    return () => {
+      const saveId = rxSaveIdRef.current; // eslint-disable-line react-hooks/exhaustive-deps -- intentional: reading latest ref value at unmount
+      if (!saveId || !gameStateRef.current) return;
+      const state = gameStateRef.current;
+      SaveStore.updateProgress(saveId, state.pitchKey, {
+        scoreSnapshot: { away: state.score[0], home: state.score[1] },
+        inningSnapshot: { inning: state.inning, atBat: state.atBat },
+        stateSnapshot: {
+          state: state,
+          rngState: getRngState(),
+        },
+      }).catch((err) => {
+        appLog.error("useRxdbGameSync: failed to save state on unmount", err);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: cleanup-only effect; refs always have latest values
+  }, []);
 };

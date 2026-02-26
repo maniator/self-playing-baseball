@@ -10,6 +10,7 @@ import {
   customTeamToLineupOrder,
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
+  resolveCustomIdsInString,
   resolveTeamLabel,
   validateCustomTeamForGame,
 } from "./customTeamAdapter";
@@ -217,6 +218,51 @@ describe("resolveTeamLabel", () => {
   it("resolves a custom team ID that contains hyphens", () => {
     const teams = [{ ...makeTeam(), id: "ct-hyphen-id", city: "Test", name: "Rockets" }];
     expect(resolveTeamLabel("custom:ct-hyphen-id", teams)).toBe("Test Rockets");
+  });
+});
+
+describe("resolveCustomIdsInString", () => {
+  it("replaces a single custom: token with the team display name", () => {
+    const teams = [{ ...makeTeam(), id: "ct_abc", city: "Austin", name: "Eagles" }];
+    expect(resolveCustomIdsInString("custom:ct_abc hit a single", teams)).toBe(
+      "Austin Eagles hit a single",
+    );
+  });
+
+  it("replaces multiple custom: tokens in the same string", () => {
+    const teams = [
+      { ...makeTeam(), id: "ct_home", city: "Dallas", name: "Stars" },
+      { ...makeTeam(), id: "ct_away", city: "Boston", name: "Reds" },
+    ];
+    const result = resolveCustomIdsInString("custom:ct_away at custom:ct_home", teams);
+    expect(result).toBe("Boston Reds at Dallas Stars");
+  });
+
+  it("leaves non-custom strings unchanged", () => {
+    expect(resolveCustomIdsInString("New York Yankees hit a homer", [])).toBe(
+      "New York Yankees hit a homer",
+    );
+  });
+
+  it("never emits raw custom: prefix for unknown IDs", () => {
+    const result = resolveCustomIdsInString("Team custom:ct_unknown123 scored", []);
+    expect(result).not.toContain("custom:");
+    expect(result).not.toContain("ct_unknown");
+  });
+
+  it("returns a safe short fallback for unknown IDs (not the full internal ID)", () => {
+    const result = resolveCustomIdsInString("custom:ct_verylongidthatshouldbetrimmed scored", []);
+    // The unknown-id fallback must not exceed 8 chars
+    const replacedPart = result.replace(" scored", "").trim();
+    expect(replacedPart.length).toBeLessThanOrEqual(8);
+  });
+
+  it("handles empty string without error", () => {
+    expect(resolveCustomIdsInString("", [])).toBe("");
+  });
+
+  it("handles a string with no tokens without error", () => {
+    expect(resolveCustomIdsInString("no tokens here", [])).toBe("no tokens here");
   });
 });
 

@@ -34,8 +34,7 @@ const makeSnap = (overrides: { gameOver?: boolean } = {}) => ({
 
 /**
  * Helper that invokes useAutoPlayScheduler with the standard 9-argument
- * signature, inserting a default `gameOver=false` in the 4th position so
- * existing tests remain unchanged while new tests can override it.
+ * signature.
  */
 const renderScheduler = ({
   gameStarted = false,

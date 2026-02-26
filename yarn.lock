@@ -3970,6 +3970,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cookie@npm:^1.0.1":
+  version: 1.1.1
+  resolution: "cookie@npm:1.1.1"
+  checksum: 10c0/79c4ddc0fcad9c4f045f826f42edf54bcc921a29586a4558b0898277fa89fb47be95bc384c2253f493af7b29500c830da28341274527328f18eba9f58afa112c
+  languageName: node
+  linkType: hard
+
 "core-js-compat@npm:^3.48.0":
   version: 3.48.0
   resolution: "core-js-compat@npm:3.48.0"
@@ -7616,6 +7623,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"react-router@npm:^7.6.0":
+  version: 7.13.1
+  resolution: "react-router@npm:7.13.1"
+  dependencies:
+    cookie: "npm:^1.0.1"
+    set-cookie-parser: "npm:^2.6.0"
+  peerDependencies:
+    react: ">=18"
+    react-dom: ">=18"
+  peerDependenciesMeta:
+    react-dom:
+      optional: true
+  checksum: 10c0/a64c645cede74251f21483fbfad740b36dc5133522d6f53f12317a873a22865fce659d4c2377d5e19c912f85c7b12b88224a2c70d8f70c082496b569cc4abc31
+  languageName: node
+  linkType: hard
+
 "react@npm:^19.2.4":
   version: 19.2.4
   resolution: "react@npm:19.2.4"
@@ -8233,6 +8256,7 @@ __metadata:
     react: "npm:^19.2.4"
     react-dom: "npm:^19.2.4"
     react-is: "npm:^19.2.4"
+    react-router: "npm:^7.6.0"
     rxdb: "npm:17.0.0-beta.7"
     rxjs: "npm:^7.8.2"
     sass: "npm:^1.97.3"
@@ -8284,6 +8308,13 @@ __metadata:
   dependencies:
     randombytes: "npm:^2.1.0"
   checksum: 10c0/2dd09ef4b65a1289ba24a788b1423a035581bef60817bea1f01eda8e3bda623f86357665fe7ac1b50f6d4f583f97db9615b3f07b2a2e8cbcb75033965f771dd2
+  languageName: node
+  linkType: hard
+
+"set-cookie-parser@npm:^2.6.0":
+  version: 2.7.2
+  resolution: "set-cookie-parser@npm:2.7.2"
+  checksum: 10c0/4381a9eb7ee951dfe393fe7aacf76b9a3b4e93a684d2162ab35594fa4053cc82a4d7d7582bf397718012c9adcf839b8cd8f57c6c42901ea9effe33c752da4a45
   languageName: node
   linkType: hard
 

@@ -24,39 +24,48 @@ export async function openNewGameDialog(page: Page): Promise<void> {
 }
 
 /**
- * Waits until the New Game dialog is visible on screen.
- * If the Home screen is currently showing, clicks "New Game" first to navigate
- * into the game UI — the dialog then opens automatically.
+ * Waits until the New Game setup UI is visible on screen.
+ * With the react-router setup, clicking "New Game" from Home navigates to
+ * `/exhibition/new` (an `exhibition-setup-page`). For the in-game New Game
+ * button, a `new-game-dialog` opens instead — both are handled here.
  */
 export async function waitForNewGameDialog(page: Page): Promise<void> {
-  // If neither the home screen nor the dialog is visible yet, wait for one of them.
-  await expect(page.getByTestId("home-screen").or(page.getByTestId("new-game-dialog"))).toBeVisible(
-    { timeout: 15_000 },
-  );
+  const setupUi = page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog"));
 
-  // If the home screen is showing, navigate into the game flow first.
-  if (await page.getByTestId("home-screen").isVisible()) {
+  // Wait for either home screen or the setup UI to become visible.
+  await expect(page.getByTestId("home-screen").or(setupUi)).toBeVisible({ timeout: 15_000 });
+
+  // Only navigate if we're on the home screen AND the setup UI hasn't already appeared
+  // (i.e., the caller may have already clicked the button and navigation is underway).
+  const homeVisible = await page.getByTestId("home-screen").isVisible();
+  const setupVisible = await setupUi.isVisible();
+  if (homeVisible && !setupVisible) {
     await page.getByTestId("home-new-game-button").click();
-    // Wait for the DB loading screen to clear, then wait for the dialog.
+    // Wait for the DB loading screen to clear, then wait for the setup UI.
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
   }
 
-  await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+  await expect(setupUi).toBeVisible({ timeout: 15_000 });
 }
 
 /**
- * Programmatically closes the New Game <dialog> so the backdrop no longer
- * inerts the rest of the page.  Call this before interacting with elements
- * outside the dialog (e.g. the "?" help button).
+ * Programmatically closes the New Game setup UI.
+ * On `/exhibition/new` (primary flow) this navigates back via the back button.
+ * For the in-game dialog it closes the `<dialog>` element.
  */
 export async function closeNewGameDialog(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const dialog = document.querySelector(
-      '[data-testid="new-game-dialog"]',
-    ) as HTMLDialogElement | null;
-    dialog?.close();
-  });
-  await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 15_000 });
+  if (await page.getByTestId("exhibition-setup-page").isVisible()) {
+    await page.getByTestId("new-game-back-home-button").click();
+    await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 15_000 });
+  } else {
+    await page.evaluate(() => {
+      const dialog = document.querySelector(
+        '[data-testid="new-game-dialog"]',
+      ) as HTMLDialogElement | null;
+      dialog?.close();
+    });
+    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 15_000 });
+  }
 }
 
 /**
@@ -78,6 +87,12 @@ export interface GameConfig {
    * from the very first pitch — no localStorage pre-seeding required.
    */
   managedTeam?: "0" | "1";
+  /**
+   * Which tab to activate on /exhibition/new before filling form fields.
+   * Defaults to "mlb" for backward compatibility with tests that use MLB team
+   * selects. Pass "custom" to stay on the Custom Teams tab.
+   */
+  tab?: "mlb" | "custom";
 }
 
 /**
@@ -91,6 +106,17 @@ export interface GameConfig {
  */
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);
+
+  // The exhibition setup page defaults to Custom Teams. Switch to the MLB tab
+  // unless the caller explicitly requests the Custom Teams tab. Most tests rely
+  // on MLB team selection (homeTeam/awayTeam selects), so "mlb" is the default.
+  const targetTab = options.tab ?? "mlb";
+  if (targetTab === "mlb" && (await page.getByTestId("exhibition-setup-page").isVisible())) {
+    const mlbTab = page.getByTestId("new-game-mlb-teams-tab");
+    if (await mlbTab.isVisible()) {
+      await mlbTab.click();
+    }
+  }
 
   if (options.seed !== undefined) {
     const seedField = page.getByTestId("seed-input");
@@ -121,8 +147,10 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await resetAppState(page);
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
-  // Wait for the new game dialog to close
-  await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
+  // The setup UI (either the exhibition page or the in-game dialog) should disappear.
+  await expect(
+    page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
+  ).not.toBeVisible({ timeout: 10_000 });
   // Wait for scoreboard to appear
   await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 }
@@ -269,13 +297,11 @@ export async function loadFixture(page: Page, fixtureName: string): Promise<void
   await page.goto("/");
   await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
-  // Enter the game shell via the "Load Saved Game" path on the Home screen.
+  // "Load Saved Game" navigates to the /saves page route.
   await page.getByTestId("home-load-saves-button").click();
-  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
-  // Import the fixture — auto-load replaces game state and closes the modal.
+  await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 15_000 });
+  // Import the fixture — auto-load replaces game state and navigates to /game.
   await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
-  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 15_000 });
   // Confirm the game shell is now active.
   await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }
@@ -316,4 +342,30 @@ export async function disableAnimations(page: Page): Promise<void> {
       }
     `,
   });
+}
+
+/**
+ * Asserts that the key in-game UI surfaces contain no raw `custom:` or `ct_`
+ * ID fragments — all custom team references must be resolved to friendly names
+ * before reaching the user.
+ *
+ * Checks: scoreboard, play-by-play log, hit log (if visible).
+ */
+export async function expectNoRawIdsVisible(page: Page): Promise<void> {
+  const RAW_ID_PATTERN = /custom:|ct_[a-z0-9]/i;
+
+  const scoreboardText = await page.getByTestId("scoreboard").textContent();
+  expect(scoreboardText ?? "").not.toMatch(RAW_ID_PATTERN);
+
+  const logEl = page.getByTestId("play-by-play-log");
+  if (await logEl.isVisible()) {
+    const logText = await logEl.textContent();
+    expect(logText ?? "").not.toMatch(RAW_ID_PATTERN);
+  }
+
+  const hitLogEl = page.getByTestId("hit-log");
+  if (await hitLogEl.isVisible()) {
+    const hitLogText = await hitLogEl.textContent();
+    expect(hitLogText ?? "").not.toMatch(RAW_ID_PATTERN);
+  }
 }

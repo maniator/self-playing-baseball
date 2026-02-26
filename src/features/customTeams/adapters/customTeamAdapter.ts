@@ -63,6 +63,15 @@ export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string
   return customTeamToDisplayName(doc);
 }
 
+/**
+ * Replaces all `custom:<id>` tokens in a string with their resolved display
+ * labels.  Used to sanitize log entries, save names, and TTS strings before
+ * they reach the UI.
+ */
+export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): string {
+  return text.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
+}
+
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 /** Rounds a raw offset to the nearest valid ModPreset value. */
