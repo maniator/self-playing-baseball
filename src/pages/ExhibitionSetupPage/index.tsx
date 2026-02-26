@@ -59,6 +59,18 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
     handleSubmit,
   } = useExhibitionSetup(onStartGame);
 
+  // Derive starting-pitcher selector values once (avoids IIFE in JSX).
+  const isAwayManaged = managed === "0";
+  const managedSpPitchers =
+    gameType === "custom" && managed !== "none"
+      ? isAwayManaged
+        ? awaySpPitchers
+        : homeSpPitchers
+      : [];
+  const managedStarterIdx = isAwayManaged ? awayStarterIdx : homeStarterIdx;
+  const managedSetStarterIdx = isAwayManaged ? setAwayStarterIdx : setHomeStarterIdx;
+  const managedTeamLabel = isAwayManaged ? awayLabel : homeLabel;
+
   return (
     <PageContainer data-testid="exhibition-setup-page">
       <BackHomeButton
@@ -138,34 +150,24 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
           ))}
         </FieldGroup>
 
-        {gameType === "custom" &&
-          managed !== "none" &&
-          (() => {
-            const isAway = managed === "0";
-            const spPitchers = isAway ? awaySpPitchers : homeSpPitchers;
-            const starterIdx = isAway ? awayStarterIdx : homeStarterIdx;
-            const setStarterIdx = isAway ? setAwayStarterIdx : setHomeStarterIdx;
-            const teamLabel = isAway ? awayLabel : homeLabel;
-            if (spPitchers.length === 0) return null;
-            return (
-              <FieldGroup>
-                <FieldLabel htmlFor="esp-starter">{teamLabel} starting pitcher</FieldLabel>
-                <Select
-                  id="esp-starter"
-                  data-testid="starting-pitcher-select"
-                  value={starterIdx}
-                  onChange={(e) => setStarterIdx(Number(e.target.value))}
-                >
-                  {spPitchers.map((p) => (
-                    <option key={p.id} value={p.idx}>
-                      {p.name}
-                      {p.pitchingRole ? ` (${p.pitchingRole})` : ""}
-                    </option>
-                  ))}
-                </Select>
-              </FieldGroup>
-            );
-          })()}
+        {gameType === "custom" && managed !== "none" && managedSpPitchers.length > 0 && (
+          <FieldGroup>
+            <FieldLabel htmlFor="esp-starter">{managedTeamLabel} starting pitcher</FieldLabel>
+            <Select
+              id="esp-starter"
+              data-testid="starting-pitcher-select"
+              value={managedStarterIdx}
+              onChange={(e) => managedSetStarterIdx(Number(e.target.value))}
+            >
+              {managedSpPitchers.map((p) => (
+                <option key={p.id} value={p.idx}>
+                  {p.name}
+                  {p.pitchingRole ? ` (${p.pitchingRole})` : ""}
+                </option>
+              ))}
+            </Select>
+          </FieldGroup>
+        )}
 
         <FieldGroup>
           <FieldLabel htmlFor="esp-seed">Seed</FieldLabel>

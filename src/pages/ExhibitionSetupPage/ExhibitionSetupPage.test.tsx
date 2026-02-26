@@ -55,8 +55,19 @@ function renderPage() {
 }
 
 describe("ExhibitionSetupPage", () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    // Reset useCustomTeams to empty-teams default so each test is hermetic.
+    // (vi.clearAllMocks does NOT reset mockReturnValue overrides.)
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
   });
 
   it("renders the exhibition setup page", () => {
@@ -177,7 +188,7 @@ describe("ExhibitionSetupPage", () => {
         bench: [],
       },
     });
-    vi.mocked(useCustomTeams).mockReturnValueOnce({
+    vi.mocked(useCustomTeams).mockReturnValue({
       teams: [mockTeam("ct_away", "Away Team"), mockTeam("ct_home", "Home Team")] as any,
       loading: false,
       createTeam: vi.fn(),
@@ -208,16 +219,6 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("clicking Go to Manage Teams navigates to /teams", async () => {
-    // Reset to empty teams (previous tests may have overridden the mock)
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
-    vi.mocked(useCustomTeams).mockReturnValueOnce({
-      teams: [] as any,
-      loading: false,
-      createTeam: vi.fn(),
-      updateTeam: vi.fn(),
-      deleteTeam: vi.fn(),
-      refresh: vi.fn(),
-    });
     // Default render has zero custom teams — the "Go to Manage Teams" link shows
     const user = userEvent.setup();
     renderPage();
