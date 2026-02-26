@@ -314,14 +314,10 @@ test.describe("Routing — direct-navigation smoke tests", () => {
     await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 15_000 });
   });
 
-  test("direct visit to /game shows game controls (scoreboard or new-game dialog)", async ({
-    page,
-  }) => {
+  test("direct visit to /game shows scoreboard", async ({ page }) => {
     await page.goto("/game");
-    // On a fresh visit the game is mounted with an empty state; the new-game dialog
-    // or the scoreboard (if autoplay already ran) should be visible.
-    const gamePresent = page.getByTestId("scoreboard").or(page.getByTestId("new-game-dialog"));
-    await expect(gamePresent).toBeVisible({ timeout: 15_000 });
+    // Direct visit with no pending setup auto-restores or shows empty game state.
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
   });
 });
 
