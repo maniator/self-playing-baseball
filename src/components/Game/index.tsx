@@ -16,27 +16,23 @@ import GameInner from "./GameInner";
 import { DbResetNotice, LoadingScreen } from "./styles";
 
 type Props = {
-  newGameRequestCount?: number;
   onBackToHome?: () => void;
   onManageTeams?: () => void;
-  /** Called from AppShell when the in-game New Game button is clicked. */
+  /** Called when the in-game New Game button is clicked; navigates to /exhibition/new. */
   onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
   onGameSessionStarted?: () => void;
   /** Setup from /exhibition/new; consumed by GameInner to auto-start a game. */
   pendingGameSetup?: ExhibitionGameSetup | null;
-  /** Called after pendingGameSetup is consumed so AppShell can clear it. */
+  /** Called after pendingGameSetup is consumed so GamePage can clear it. */
   onConsumeGameSetup?: () => void;
   /** Save loaded from /saves page; consumed by GameInner to restore game state. */
   pendingLoadSave?: SaveDoc | null;
-  /** Called after pendingLoadSave is consumed so AppShell can clear it. */
+  /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
-  /** True when the current route is /game; used to pause autoplay off-route. */
-  isOnGameRoute?: boolean;
 };
 
 const Game: React.FunctionComponent<Props> = ({
-  newGameRequestCount,
   onBackToHome,
   onManageTeams,
   onNewGame,
@@ -45,7 +41,6 @@ const Game: React.FunctionComponent<Props> = ({
   onConsumeGameSetup,
   pendingLoadSave,
   onConsumePendingLoad,
-  isOnGameRoute = true,
 }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
@@ -102,7 +97,6 @@ const Game: React.FunctionComponent<Props> = ({
         )}
         <GameInner
           actionBufferRef={actionBufferRef}
-          newGameRequestCount={newGameRequestCount}
           onBackToHome={onBackToHome}
           onManageTeams={onManageTeams}
           onNewGame={onNewGame}
@@ -111,7 +105,6 @@ const Game: React.FunctionComponent<Props> = ({
           onConsumeGameSetup={onConsumeGameSetup}
           pendingLoadSave={pendingLoadSave}
           onConsumePendingLoad={onConsumePendingLoad}
-          isOnGameRoute={isOnGameRoute}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>

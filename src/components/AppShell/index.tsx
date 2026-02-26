@@ -1,8 +1,7 @@
 import * as React from "react";
 
-import { Outlet, useLocation, useNavigate } from "react-router";
+import { Outlet, useNavigate } from "react-router";
 
-import Game from "@components/Game";
 import type { PlayerOverrides } from "@components/NewGameDialog";
 import type { SaveDoc } from "@storage/types";
 
@@ -10,6 +9,8 @@ export type AppShellOutletContext = {
   onStartGame: (setup: ExhibitionGameSetup) => void;
   /** Called from the saves page when the user picks a save to load. */
   onLoadSave: (slot: SaveDoc) => void;
+  /** Called by GamePage when a game session starts, to update hasActiveSession. */
+  onGameSessionStarted: () => void;
   // Navigation callbacks consumed by route-level page components
   onNewGame: () => void;
   onLoadSaves: () => void;
@@ -28,34 +29,17 @@ export type ExhibitionGameSetup = {
   playerOverrides: PlayerOverrides;
 };
 
-/** Returns true when the current pathname is exactly the /game route. */
-function isGameRoute(pathname: string): boolean {
-  return pathname === "/game";
-}
+/** Shape of the React Router location state used when navigating to /game. */
+export type GameLocationState = {
+  pendingGameSetup: ExhibitionGameSetup | null;
+  pendingLoadSave: SaveDoc | null;
+} | null;
 
 const AppShell: React.FunctionComponent = () => {
-  const location = useLocation();
   const navigate = useNavigate();
-
-  const onGameRoute = isGameRoute(location.pathname);
 
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
-  // Whether Game has ever been mounted (controls CSS visibility wrapper).
-  const [gameEverMounted, setGameEverMounted] = React.useState(false);
-  // Incremented each time the user requests a new game from within the game screen.
-  const [newGameRequestCount, setNewGameRequestCount] = React.useState(0);
-  // Pending setup from /exhibition/new — consumed by GameInner to auto-start a game.
-  const [pendingGameSetup, setPendingGameSetup] = React.useState<ExhibitionGameSetup | null>(null);
-  // Pending save loaded from /saves page — consumed by GameInner to restore game state.
-  const [pendingLoadSave, setPendingLoadSave] = React.useState<SaveDoc | null>(null);
-
-  // Keep Game mounted once we visit /game.
-  React.useEffect(() => {
-    if (onGameRoute) {
-      setGameEverMounted(true);
-    }
-  }, [onGameRoute]);
 
   const handleGameSessionStarted = React.useCallback(() => {
     setHasActiveSession(true);
@@ -70,28 +54,17 @@ const AppShell: React.FunctionComponent = () => {
     navigate("/exhibition/new");
   }, [navigate]);
 
-  const handleNewGameFromGame = React.useCallback(() => {
-    // In-game "New Game" button: re-open the New Game dialog within /game.
-    setNewGameRequestCount((c) => c + 1);
-  }, []);
-
   const handleLoadSaves = React.useCallback(() => {
     navigate("/saves");
   }, [navigate]);
 
-  /** Called from the saves page — stores the pending save and navigates to /game. */
+  /** Called from the saves page — navigates to /game with the save as location state. */
   const handleLoadSave = React.useCallback(
     (slot: SaveDoc) => {
-      setPendingLoadSave(slot);
-      setGameEverMounted(true);
-      navigate("/game");
+      navigate("/game", { state: { pendingLoadSave: slot } });
     },
     [navigate],
   );
-
-  const handleConsumePendingLoad = React.useCallback(() => {
-    setPendingLoadSave(null);
-  }, []);
 
   const handleBackToHome = React.useCallback(() => {
     navigate("/");
@@ -105,24 +78,19 @@ const AppShell: React.FunctionComponent = () => {
     navigate("/help");
   }, [navigate]);
 
-  /** Called from /exhibition/new — stores setup and navigates to /game. */
+  /** Called from /exhibition/new — navigates to /game with the setup as location state. */
   const handleStartFromExhibition = React.useCallback(
     (setup: ExhibitionGameSetup) => {
-      setPendingGameSetup(setup);
-      setGameEverMounted(true);
-      navigate("/game");
+      navigate("/game", { state: { pendingGameSetup: setup } });
     },
     [navigate],
   );
-
-  const handleConsumeGameSetup = React.useCallback(() => {
-    setPendingGameSetup(null);
-  }, []);
 
   const outletContext: AppShellOutletContext = React.useMemo(
     () => ({
       onStartGame: handleStartFromExhibition,
       onLoadSave: handleLoadSave,
+      onGameSessionStarted: handleGameSessionStarted,
       onNewGame: handleNewGame,
       onLoadSaves: handleLoadSaves,
       onManageTeams: handleManageTeams,
@@ -134,6 +102,7 @@ const AppShell: React.FunctionComponent = () => {
     [
       handleStartFromExhibition,
       handleLoadSave,
+      handleGameSessionStarted,
       handleNewGame,
       handleLoadSaves,
       handleManageTeams,
@@ -144,30 +113,7 @@ const AppShell: React.FunctionComponent = () => {
     ],
   );
 
-  return (
-    <>
-      {/* Game is kept mounted once entered so in-memory state survives navigation. */}
-      <div style={{ display: onGameRoute ? undefined : "none" }}>
-        {gameEverMounted && (
-          <Game
-            newGameRequestCount={newGameRequestCount}
-            onBackToHome={handleBackToHome}
-            onManageTeams={handleManageTeams}
-            onGameSessionStarted={handleGameSessionStarted}
-            onNewGame={handleNewGameFromGame}
-            pendingGameSetup={pendingGameSetup}
-            onConsumeGameSetup={handleConsumeGameSetup}
-            pendingLoadSave={pendingLoadSave}
-            onConsumePendingLoad={handleConsumePendingLoad}
-            isOnGameRoute={onGameRoute}
-          />
-        )}
-      </div>
-
-      {/* Every route has an explicit element defined in router.tsx. */}
-      <Outlet context={outletContext} />
-    </>
-  );
+  return <Outlet context={outletContext} />;
 };
 
 export default AppShell;

@@ -21,8 +21,6 @@ type Props = {
   onLoadActivate?: (saveId: string) => void;
   /** Routes back to the Home screen. When provided a "← Home" button is shown. */
   onBackToHome?: () => void;
-  /** True when the current route is /game; used to pause autoplay off-route. */
-  isOnGameRoute?: boolean;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
@@ -30,7 +28,6 @@ const GameControls: React.FunctionComponent<Props> = ({
   gameStarted = false,
   onLoadActivate,
   onBackToHome,
-  isOnGameRoute = true,
 }) => {
   const {
     speed,
@@ -55,7 +52,7 @@ const GameControls: React.FunctionComponent<Props> = ({
     handleShareReplay,
     currentSaveId,
     setCurrentSaveId,
-  } = useGameControls({ gameStarted, isOnGameRoute });
+  } = useGameControls({ gameStarted });
 
   const { teams: customTeamDocs } = useCustomTeams();
   // Resolve display labels for raw game-state team IDs (e.g. `custom:ct_...` → team name)

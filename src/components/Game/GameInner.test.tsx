@@ -136,13 +136,14 @@ describe("GameInner", () => {
     expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
   });
 
-  it("clicking New Game button re-opens the dialog", () => {
+  it("clicking New Game button calls onNewGame when provided", () => {
+    const onNewGame = vi.fn();
     // Render with a game-over context so the "New Game" button is visible in GameControls
     render(
       <GameContext.Provider
         value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
       >
-        <GameInner />
+        <GameInner onNewGame={onNewGame} />
       </GameContext.Provider>,
     );
     // Dialog starts open — close it by submitting the form
@@ -153,13 +154,13 @@ describe("GameInner", () => {
     expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
     // "New Game" button is present because gameOver=true in context
     expect(screen.getByRole("button", { name: /new game/i })).toBeInTheDocument();
-    // Click it to reopen the dialog
+    // Click it — should delegate to onNewGame (navigate to /exhibition/new)
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /new game/i }));
     });
-    // Dialog should be visible again with team name inputs
-    expect(screen.getByLabelText(/home team/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
+    expect(onNewGame).toHaveBeenCalled();
+    // Dialog does not reopen (navigation is handled externally)
+    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
   });
 });
 
@@ -696,7 +697,7 @@ describe("GameInner — onNewGame prop (external navigation)", () => {
     expect(onNewGame).toHaveBeenCalled();
   });
 
-  it("opens the dialog when no onNewGame prop is provided (fallback behavior)", () => {
+  it("dialog does not reopen when no onNewGame prop is provided (no-op behavior)", () => {
     render(
       <GameContext.Provider
         value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
@@ -711,7 +712,7 @@ describe("GameInner — onNewGame prop (external navigation)", () => {
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /new game/i }));
     });
-    // Dialog re-opens since no external handler
-    expect(screen.getByTestId("new-game-dialog")).toBeInTheDocument();
+    // Dialog does NOT reopen since no external handler is provided — navigation is handled externally
+    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
   });
 });

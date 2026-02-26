@@ -38,34 +38,26 @@ const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
 interface Props {
   /** Shared buffer populated by GameProviderWrapper's onDispatch callback. */
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
-  /**
-   * Incremented each time the user explicitly requests a New Game from Home.
-   * GameInner watches this and re-opens the dialog even when already mounted.
-   */
-  newGameRequestCount?: number;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
   onManageTeams?: () => void;
-  /** Called from AppShell when the in-game New Game button is clicked. */
+  /** Called when the in-game New Game button is clicked; navigates to /exhibition/new. */
   onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
   onGameSessionStarted?: () => void;
   /** Setup from /exhibition/new; auto-starts a game when it arrives. */
   pendingGameSetup?: ExhibitionGameSetup | null;
-  /** Called after pendingGameSetup is consumed so AppShell can clear it. */
+  /** Called after pendingGameSetup is consumed so GamePage can clear it. */
   onConsumeGameSetup?: () => void;
   /** Save loaded from /saves page; auto-restores game state when it arrives. */
   pendingLoadSave?: SaveDoc | null;
-  /** Called after pendingLoadSave is consumed so AppShell can clear it. */
+  /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
-  /** True when the current route is /game; used to pause autoplay off-route. */
-  isOnGameRoute?: boolean;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
-  newGameRequestCount,
   onBackToHome,
   onManageTeams,
   onNewGame,
@@ -74,7 +66,6 @@ const GameInner: React.FunctionComponent<Props> = ({
   onConsumeGameSetup,
   pendingLoadSave,
   onConsumePendingLoad,
-  isOnGameRoute = true,
 }) => {
   const { dispatch, dispatchLog, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -109,18 +100,6 @@ const GameInner: React.FunctionComponent<Props> = ({
     setDialogOpen(false);
     onManageTeams?.();
   }, [onManageTeams]);
-
-  // Re-open the New Game dialog when the user explicitly clicks "New Game" from Home
-  // while Game is already mounted (the prop increments on each request).
-  const prevNewGameRequestRef = React.useRef(newGameRequestCount ?? 0);
-  React.useEffect(() => {
-    const prev = prevNewGameRequestRef.current;
-    const next = newGameRequestCount ?? 0;
-    if (next > prev) {
-      setDialogOpen(true);
-      prevNewGameRequestRef.current = next;
-    }
-  }, [newGameRequestCount]);
 
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
@@ -242,12 +221,17 @@ const GameInner: React.FunctionComponent<Props> = ({
     dispatchLog({ type: "reset" });
     setGameActive(false);
     setGameKey((k) => k + 1);
-    // If an external onNewGame callback is provided (from AppShell in-game path),
-    // delegate to it. Otherwise fall back to the dialog re-open behaviour.
+    // Navigate to /exhibition/new to start a fresh game.
+    // onNewGame is optional only to support isolated unit tests; in production
+    // GamePage always provides it.
     if (onNewGame) {
       onNewGame();
-    } else {
-      setDialogOpen(true);
+    } else if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn(
+        "GameInner: onNewGame was not provided. " +
+          "In production this prop must always be supplied by GamePage.",
+      );
     }
   };
 
@@ -346,7 +330,6 @@ const GameInner: React.FunctionComponent<Props> = ({
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
         onBackToHome={handleSafeBackToHome}
-        isOnGameRoute={isOnGameRoute}
       />
       <GameBody>
         <FieldPanel>

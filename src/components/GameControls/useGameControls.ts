@@ -21,10 +21,8 @@ const VALID_SPEEDS = [SPEED_SLOW, SPEED_NORMAL, SPEED_FAST];
 /** Wires all game-controls hooks and localStorage state into a single value. */
 export const useGameControls = ({
   gameStarted = false,
-  isOnGameRoute = true,
 }: {
   gameStarted?: boolean;
-  isOnGameRoute?: boolean;
 } = {}) => {
   const {
     dispatch,
@@ -168,7 +166,6 @@ export const useGameControls = ({
     handleClickRef,
     gameStateRef,
     betweenInningsPauseRef,
-    isOnGameRoute,
   );
   useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
 

@@ -9,6 +9,7 @@ import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import RootLayout from "@components/RootLayout";
 
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
+const GamePage = React.lazy(() => import("./pages/GamePage"));
 const HelpPage = React.lazy(() => import("./pages/HelpPage"));
 const SavesPage = React.lazy(() => import("./pages/SavesPage"));
 
@@ -34,12 +35,14 @@ function TeamsRoute() {
 
 /**
  * Route element for `/game`.
- * The actual game UI is provided by AppShell's persistent wrapper (display:none / visible).
- * This element is intentionally empty — the layout handles the game rendering.
+ * Renders GamePage as a real route element.
  */
 function GameRoute() {
-  // Intentionally empty — game UI is managed by AppShell's persistent wrapper.
-  return null;
+  return (
+    <React.Suspense fallback={null}>
+      <GamePage />
+    </React.Suspense>
+  );
 }
 
 /**
@@ -47,9 +50,9 @@ function GameRoute() {
  *
  * Route tree:
  *   / (RootLayout – ErrorBoundary wrapper)
- *     AppShell – persistent layout; keeps Game mounted via display:none; provides outlet context
+ *     AppShell – layout; provides outlet context for child routes
  *       /                    → HomeRoute        → HomeScreen
- *       /game                → GameRoute        → null (game rendered by AppShell layer)
+ *       /game                → GameRoute        → GamePage → Game
  *       /teams               → TeamsRoute       → ManageTeamsScreen (list)
  *       /teams/new           → TeamsRoute       → ManageTeamsScreen (create editor)
  *       /teams/:teamId/edit  → TeamsRoute       → ManageTeamsScreen (edit editor)
