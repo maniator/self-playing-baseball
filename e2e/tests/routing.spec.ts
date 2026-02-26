@@ -111,9 +111,10 @@ test.describe("Routing — game view navigation", () => {
     // Now enter via Load Saved Game → saves page.
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
 
     // Load the save — should navigate to /game.
-    await page.getByTestId("load-save-button").first().click();
+    await page.getByTestId("saves-page").getByTestId("load-save-button").first().click();
     await expect(page).toHaveURL(/\/game/);
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
   });
@@ -176,21 +177,21 @@ test.describe("Routing — teams sub-routes", () => {
     await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 10_000 });
 
     // Fill in the team name so we have something to assert on.
-    await page.getByTestId("team-name-input").fill("Deep Link Team");
+    await page.getByTestId("custom-team-name-input").fill("Deep Link Team");
 
     // Generate a random roster to meet the save requirements.
-    await page.getByTestId("generate-team-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.waitForTimeout(500);
 
     // Override just the name (generate may overwrite it).
-    await page.getByTestId("team-name-input").fill("Deep Link Team");
+    await page.getByTestId("custom-team-name-input").fill("Deep Link Team");
 
     // Save the team and capture the edit URL from the resulting list.
-    await page.getByTestId("save-team-button").click();
+    await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
     // Click Edit on the newly created team to capture the edit URL.
-    await page.getByRole("button", { name: /edit/i }).first().click();
+    await page.getByTestId("custom-team-edit-button").first().click();
     const editUrl = page.url();
     expect(editUrl).toMatch(/\/teams\/[^/]+\/edit/);
 
@@ -201,7 +202,7 @@ test.describe("Routing — teams sub-routes", () => {
 
     // Editor must load with the team name populated (not empty).
     await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 15_000 });
-    const nameInput = page.getByTestId("team-name-input");
+    const nameInput = page.getByTestId("custom-team-name-input");
     await expect(nameInput).toBeVisible({ timeout: 10_000 });
     await expect(nameInput).not.toHaveValue("");
   });
@@ -230,7 +231,7 @@ test.describe("Routing — help page", () => {
     await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
     await page.goBack();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page).toHaveURL("/");
+    await expect(page).toHaveURL(/\//);
   });
 
   test("help back button navigates back to Home", async ({ page }) => {

@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { loadFixture, resetAppState, waitForNewGameDialog } from "../utils/helpers";
+import {
+  loadFixture,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForNewGameDialog,
+} from "../utils/helpers";
 
 /**
  * Notification / service-worker smoke tests.
@@ -72,9 +77,7 @@ test.describe("Notifications smoke — permission badge", () => {
   }) => {
     test.skip(browserName !== "chromium", "Notification badge test runs on Chromium only");
 
-    await waitForNewGameDialog(page);
-    await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await startGameViaPlayBall(page, { seed: "notif-badge1" });
 
     // Enable manager mode via the UI toggle.  handleManagerModeChange fires
     // which explicitly calls setNotifPermission(Notification.permission).

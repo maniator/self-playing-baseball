@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   assertFieldAndLogVisible,
+  configureNewGame,
   resetAppState,
   startGameViaPlayBall,
   waitForNewGameDialog,
@@ -39,7 +40,7 @@ test.describe("Responsive Smoke", () => {
   });
 
   test("critical form fields are visible within viewport on New Game dialog", async ({ page }) => {
-    await waitForNewGameDialog(page);
+    await configureNewGame(page);
     // These controls must all be fully visible without any scrolling on every viewport.
     const criticalTestIds = [
       "matchup-mode-select",

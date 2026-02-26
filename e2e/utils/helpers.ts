@@ -32,11 +32,14 @@ export async function openNewGameDialog(page: Page): Promise<void> {
 export async function waitForNewGameDialog(page: Page): Promise<void> {
   const setupUi = page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog"));
 
-  // If neither the home screen nor the setup UI is visible yet, wait for one.
+  // Wait for either home screen or the setup UI to become visible.
   await expect(page.getByTestId("home-screen").or(setupUi)).toBeVisible({ timeout: 15_000 });
 
-  // If the home screen is showing, navigate into the game flow first.
-  if (await page.getByTestId("home-screen").isVisible()) {
+  // Only navigate if we're on the home screen AND the setup UI hasn't already appeared
+  // (i.e., the caller may have already clicked the button and navigation is underway).
+  const homeVisible = await page.getByTestId("home-screen").isVisible();
+  const setupVisible = await setupUi.isVisible();
+  if (homeVisible && !setupVisible) {
     await page.getByTestId("home-new-game-button").click();
     // Wait for the DB loading screen to clear, then wait for the setup UI.
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });

@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import * as fs from "fs";
 
 import {
+  configureNewGame,
   loadFirstSave,
   openSavesModal,
   resetAppState,
@@ -115,7 +116,7 @@ test.describe("Save / Load", () => {
     // 5. Close the modal and reset to a fresh game state.
     await page.getByRole("button", { name: /close/i }).click();
     await resetAppState(page);
-    await waitForNewGameDialog(page);
+    await configureNewGame(page);
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 

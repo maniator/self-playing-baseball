@@ -69,9 +69,10 @@ test.describe("Home Screen", () => {
     // Now enter via Load Saved Game path → saves page.
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
 
     // Load the save — should navigate to /game, NOT back to Home.
-    await page.getByTestId("load-save-button").first().click();
+    await page.getByTestId("saves-page").getByTestId("load-save-button").first().click();
     await expect(page).toHaveURL(/\/game/);
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
     // Critically: Home screen must NOT appear.
