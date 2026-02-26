@@ -82,3 +82,4 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 | RxDB schema versioning | Any change to a collection's `properties`, `required`, or `indexes` at the same `version` causes DB6 for all existing users. Always bump `version`, add a migration strategy that never throws, and add an upgrade-path unit test. |
 | `useSaveStore` in tests | Requires `<RxDatabaseProvider>` in tree. Always mock with `vi.mock("@hooks/useSaveStore", ...)` in component tests. |
 | `dvh` vs `vh` | Always use `dvh` for modal `max-height` — `100vh` on mobile can exceed visible viewport. |
+| E2E test speed | If a test waits >30 s for autoplay to reach a game state (decision panel, RBI on board, specific inning), use `loadFixture(page, "name.json")` with a pre-crafted fixture instead. See "Save Fixtures for E2E Testing" in `copilot-instructions.md`. |

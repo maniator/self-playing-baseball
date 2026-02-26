@@ -113,6 +113,8 @@ export const handleDecisionsAction = (
           lineupOrder: newLineupOrder,
           rosterBench: newRosterBench,
           substitutedOut: newSubOut,
+          // Clear the pending decision so the new batter's at-bat proceeds immediately.
+          pendingDecision: null,
         };
       }
 

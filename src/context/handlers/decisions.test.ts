@@ -166,7 +166,9 @@ describe("handleDecisionsAction — clear_suppress_decision", () => {
 describe("handleDecisionsAction — set_pinch_hitter_strategy", () => {
   it("stores the pinch hitter strategy and clears pendingDecision", () => {
     const { log } = makeLogs();
-    const state = makeState({ pendingDecision: { kind: "pinch_hitter" } });
+    const state = makeState({
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
     const next = handleDecisionsAction(
       state,
       { type: "set_pinch_hitter_strategy", payload: "contact" },
@@ -185,7 +187,10 @@ describe("handleDecisionsAction — set_pinch_hitter_strategy", () => {
 
   it("appends to decisionLog with pitchKey:pinch:strategy format", () => {
     const { log } = makeLogs();
-    const state = makeState({ pitchKey: 4, pendingDecision: { kind: "pinch_hitter" } });
+    const state = makeState({
+      pitchKey: 4,
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
     const next = handleDecisionsAction(
       state,
       { type: "set_pinch_hitter_strategy", payload: "patient" },
@@ -429,7 +434,7 @@ describe("handleDecisionsAction — manager announcer identity", () => {
     const state = makeState({
       teams: ["Mets", "Yankees"],
       atBat: 0,
-      pendingDecision: { kind: "pinch_hitter" },
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
     });
     handleDecisionsAction(state, { type: "set_pinch_hitter_strategy", payload: "power" }, { log });
     expect(logs.some((l) => l.includes("Mets") && /pinch hitter/i.test(l))).toBe(true);
@@ -555,5 +560,53 @@ describe("handleDecisionsAction — defensive shift de-spam", () => {
     handleDecisionsAction(state, { type: "set_defensive_shift", payload: false }, { log });
     expect(logs.length).toBeGreaterThan(0);
     expect(logs.some((l) => /normal alignment/i.test(l))).toBe(true);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pinch hit mid at-bat: balls and strikes preserved, batter identity swapped
+// ---------------------------------------------------------------------------
+
+describe("handleDecisionsAction — make_substitution (batter) preserves balls/strikes", () => {
+  it("preserves current balls and strikes after pinch hit substitution", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      strikes: 1,
+      lineupOrder: [["starter", "b2", "b3"], []],
+      rosterBench: [["pinch_hitter"], []],
+      batterIndex: [0, 0],
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "pinch_hitter" },
+      },
+      { log },
+    );
+    // Batter identity swapped
+    expect(next?.lineupOrder[0][0]).toBe("pinch_hitter");
+    // Count unchanged
+    expect(next?.balls).toBe(3);
+    expect(next?.strikes).toBe(1);
+  });
+
+  it("clears pendingDecision so the new batter's at-bat proceeds without stale panel state", () => {
+    const { log } = makeLogs();
+    const state = makeState({
+      lineupOrder: [["starter"], []],
+      rosterBench: [["sub1"], []],
+      pendingDecision: { kind: "pinch_hitter", candidates: [], teamIdx: 0, lineupIdx: 0 },
+    });
+    const next = handleDecisionsAction(
+      state,
+      {
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 0, benchPlayerId: "sub1" },
+      },
+      { log },
+    );
+    expect(next?.pendingDecision).toBeNull();
   });
 });

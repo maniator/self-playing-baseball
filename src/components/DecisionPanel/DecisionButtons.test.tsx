@@ -275,10 +275,15 @@ describe("DecisionButtons", () => {
   // ---------------------------------------------------------------------------
   // pinch_hitter
   // ---------------------------------------------------------------------------
-  describe("pinch_hitter", () => {
-    const decision: DecisionType = { kind: "pinch_hitter" };
+  describe("pinch_hitter — no bench (fallback to strategy buttons)", () => {
+    const decision: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [],
+      teamIdx: 0,
+      lineupIdx: 0,
+    };
 
-    it("renders pinch hitter prompt and strategy buttons", () => {
+    it("renders pinch hitter prompt and strategy buttons when no bench available", () => {
       render(
         <DecisionButtons
           pendingDecision={decision}
@@ -293,7 +298,7 @@ describe("DecisionButtons", () => {
       expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
     });
 
-    it("calls onDispatch with set_pinch_hitter_strategy on strategy click", async () => {
+    it("calls onDispatch with set_pinch_hitter_strategy on strategy click when no bench", async () => {
       const onDispatch = vi.fn();
       render(
         <DecisionButtons
@@ -304,6 +309,54 @@ describe("DecisionButtons", () => {
         />,
       );
       await userEvent.click(screen.getByRole("button", { name: /^contact$/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "set_pinch_hitter_strategy",
+        payload: "contact",
+      });
+    });
+  });
+
+  describe("pinch_hitter — with bench candidates", () => {
+    const decision: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b1", name: "Bench Player 1", position: "LF", contactMod: 10, powerMod: 5 },
+        { id: "b2", name: "Bench Player 2", contactMod: 0, powerMod: 0 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 3,
+    };
+
+    it("renders player selector and confirm button when bench is available", () => {
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={noop}
+        />,
+      );
+      expect(screen.getByText(/send up a pinch hitter/i)).toBeTruthy();
+      expect(screen.getByTestId("pinch-hitter-select")).toBeTruthy();
+      expect(screen.getByRole("button", { name: /send up pinch hitter/i })).toBeTruthy();
+      expect(screen.getByRole("button", { name: /skip/i })).toBeTruthy();
+    });
+
+    it("dispatches make_substitution and set_pinch_hitter_strategy on confirm", async () => {
+      const onDispatch = vi.fn();
+      render(
+        <DecisionButtons
+          pendingDecision={decision}
+          strategy="balanced"
+          onSkip={noop}
+          onDispatch={onDispatch}
+        />,
+      );
+      await userEvent.click(screen.getByRole("button", { name: /send up pinch hitter/i }));
+      expect(onDispatch).toHaveBeenCalledWith({
+        type: "make_substitution",
+        payload: { teamIdx: 0, kind: "batter", lineupIdx: 3, benchPlayerId: "b1" },
+      });
       expect(onDispatch).toHaveBeenCalledWith({
         type: "set_pinch_hitter_strategy",
         payload: "contact",
@@ -365,5 +418,63 @@ describe("DecisionButtons", () => {
         payload: false,
       });
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// selectedCandidateId resets when pendingDecision changes
+// ---------------------------------------------------------------------------
+
+describe("pinch_hitter — selectedCandidateId resets when decision changes", () => {
+  it("resets selected candidate when pendingDecision prop changes to a new pinch_hitter decision", async () => {
+    const decision1: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b1", name: "First Sub", position: "LF", contactMod: 0, powerMod: 0 },
+        { id: "b2", name: "Second Sub", position: "RF", contactMod: 5, powerMod: 0 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 2,
+    };
+    const decision2: DecisionType = {
+      kind: "pinch_hitter",
+      candidates: [
+        { id: "b3", name: "Third Sub", position: "CF", contactMod: 0, powerMod: 0 },
+        { id: "b4", name: "Fourth Sub", position: "DH", contactMod: 0, powerMod: 0 },
+      ],
+      teamIdx: 0,
+      lineupIdx: 5,
+    };
+
+    const { rerender } = render(
+      <DecisionButtons
+        pendingDecision={decision1}
+        strategy="balanced"
+        onSkip={noop}
+        onDispatch={noop}
+      />,
+    );
+
+    // Initial render: first candidate (b1) is selected.
+    const select = screen.getByTestId("pinch-hitter-select") as HTMLSelectElement;
+    expect(select.value).toBe("b1");
+
+    // Manually select the second candidate.
+    await userEvent.selectOptions(select, "b2");
+    expect(select.value).toBe("b2");
+
+    // Switch to a completely different pinch_hitter decision.
+    rerender(
+      <DecisionButtons
+        pendingDecision={decision2}
+        strategy="balanced"
+        onSkip={noop}
+        onDispatch={noop}
+      />,
+    );
+
+    // The selection must have reset to the first candidate of the new decision (b3).
+    const select2 = screen.getByTestId("pinch-hitter-select") as HTMLSelectElement;
+    expect(select2.value).toBe("b3");
   });
 });

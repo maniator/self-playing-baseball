@@ -178,3 +178,67 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     ]);
   });
 });
+
+// ---------------------------------------------------------------------------
+// setTeams — startingPitcherIdx
+// ---------------------------------------------------------------------------
+
+describe("handleSetupAction — setTeams (startingPitcherIdx)", () => {
+  it("sets activePitcherIdx to the chosen starter when startingPitcherIdx is provided", () => {
+    const state = makeState({ activePitcherIdx: [0, 0] });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        rosterPitchers: [
+          ["sp1", "rp1", "rp2"],
+          ["sp2", "rp3"],
+        ],
+        startingPitcherIdx: [2, 1],
+      },
+    });
+    expect(next?.activePitcherIdx).toEqual([2, 1]);
+  });
+
+  it("clamps out-of-range startingPitcherIdx to 0", () => {
+    const state = makeState({ activePitcherIdx: [0, 0] });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        rosterPitchers: [["sp1", "rp1"], ["sp2"]],
+        startingPitcherIdx: [99, -1],
+      },
+    });
+    expect(next?.activePitcherIdx).toEqual([0, 0]);
+  });
+
+  it("treats null startingPitcherIdx entries as 0", () => {
+    const state = makeState({ activePitcherIdx: [0, 0] });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        rosterPitchers: [
+          ["sp1", "rp1"],
+          ["sp2", "rp2"],
+        ],
+        startingPitcherIdx: [null, 1],
+      },
+    });
+    expect(next?.activePitcherIdx).toEqual([0, 1]);
+  });
+
+  it("ignores startingPitcherIdx when rosterPitchers is not provided", () => {
+    const state = makeState({ activePitcherIdx: [0, 0] });
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        startingPitcherIdx: [1, 1],
+      },
+    });
+    // No rosterPitchers provided, so activePitcherIdx stays at state default
+    expect(next?.activePitcherIdx).toEqual([0, 0]);
+  });
+});

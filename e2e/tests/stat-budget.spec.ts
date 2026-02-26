@@ -1,5 +1,5 @@
 /**
- * Stat Budget (Stage 3B) — E2E tests for per-player stat cap validation.
+ * Stat Budget — E2E tests for per-player stat cap validation.
  *
  * Covers:
  * 1. Generated defaults produce a savable team (no cap violations on fresh generate)

@@ -208,6 +208,9 @@ const GameInner: React.FunctionComponent<Props> = ({
           playerOverrides.homePitchers !== undefined && {
             rosterPitchers: [playerOverrides.awayPitchers, playerOverrides.homePitchers],
           }),
+        ...(playerOverrides.startingPitcherIdx !== undefined && {
+          startingPitcherIdx: playerOverrides.startingPitcherIdx,
+        }),
       },
     });
 

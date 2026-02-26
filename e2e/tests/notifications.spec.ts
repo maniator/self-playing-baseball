@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import {
-  resetAppState,
-  startGameViaPlayBall,
-  waitForLogLines,
-  waitForNewGameDialog,
-} from "../utils/helpers";
+import { loadFixture, resetAppState, waitForNewGameDialog } from "../utils/helpers";
 
 /**
  * Notification / service-worker smoke tests.
@@ -42,21 +37,16 @@ test.describe("Notifications smoke — decision panel", () => {
   }) => {
     // Notification API behavior varies; run on Chromium where it is reliable.
     test.skip(browserName !== "chromium", "Notification smoke runs on Chromium only");
-    // The decision panel wait is 120 s; add headroom beyond the 90 s global limit.
-    test.setTimeout(150_000);
 
     // Collect app console output to verify the notification attempt.
     const consoleMsgs: string[] = [];
     page.on("console", (msg) => consoleMsgs.push(msg.text()));
 
-    // managedTeam "0" causes handleStart to call setManagerMode(true) so the
-    // manager mode is active from the very first pitch.
-    await startGameViaPlayBall(page, { seed: "notif42", managedTeam: "0" });
-    await waitForLogLines(page, 3);
-
-    // With manager mode active from the first pitch, autoplay pauses at the
-    // first decision point and the DecisionPanel is rendered.
-    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
+    // Load a fixture with pendingDecision=defensive_shift and managerMode=true.
+    // The DecisionPanel mounts immediately on restore, triggering
+    // showManagerNotification — no autoplay wait needed.
+    await loadFixture(page, "pending-decision.json");
+    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 10_000 });
 
     // The app logs the notification attempt via appLog.log before sending it.
     // This is a reliable in-process signal that the notification code path ran.

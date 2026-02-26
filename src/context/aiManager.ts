@@ -83,7 +83,7 @@ export function isPitcherEligibleForChange(
 /**
  * Returns the index of the best available reliever for a given team, or -1 if none.
  * "Best" is determined by a simple heuristic: prefer RP over SP/RP over no-role.
- * For simplicity within Stage 3C, picks the first eligible candidate.
+ * Picks the first eligible candidate using priority order: RP > SP/RP > no-role.
  */
 export function findBestReliever(
   rosterPitchers: string[],
@@ -254,7 +254,31 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
     }
 
     case "pinch_hitter": {
-      // Use contact strategy for pinch hitting late in the game
+      const { candidates, teamIdx, lineupIdx } = decision;
+      if (candidates.length > 0) {
+        // Pick the candidate with the best contact mod for late-game situational hitting.
+        // Falls back to first candidate when all mods are equal (e.g. stock/MLB teams).
+        const bestCandidate = candidates.reduce((best, c) =>
+          c.contactMod > best.contactMod ? c : best,
+        );
+        const reason =
+          bestCandidate.contactMod > 0
+            ? "pinch hitter — strong contact bat"
+            : "pinch hitter — best available";
+        return {
+          kind: "tactical",
+          actionType: "make_substitution",
+          payload: {
+            teamIdx,
+            kind: "batter",
+            lineupIdx,
+            benchPlayerId: bestCandidate.id,
+            reason,
+          },
+          reasonText: `${bestCandidate.name} in as pinch hitter`,
+        };
+      }
+      // No bench available — fall back to strategy override
       return {
         kind: "tactical",
         actionType: "set_pinch_hitter_strategy",

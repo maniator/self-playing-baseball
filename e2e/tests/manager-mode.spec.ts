@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  loadFixture,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForLogLines,
+} from "../utils/helpers";
 
 test.describe("Manager Mode", () => {
   test.beforeEach(async ({ page }) => {
@@ -29,22 +34,11 @@ test.describe("Manager Mode", () => {
   });
 
   test("manager decision panel appears and action can be taken", async ({ page }) => {
-    // This test waits up to 120 s for a decision point — set a generous
-    // test-level timeout so the global 90 s limit doesn't fire first.
-    test.setTimeout(150_000);
+    // Load a fixture that already has pendingDecision=defensive_shift and
+    // managerMode=true — the panel is visible immediately, no autoplay wait needed.
+    await loadFixture(page, "pending-decision.json");
 
-    // Selecting managedTeam "0" (away team) via the New Game dialog causes
-    // GameInner's handleStart to call setManagerMode(true).  This is the
-    // correct way to enable manager mode — it avoids the race condition where
-    // handleStart would otherwise override any localStorage pre-set value.
-    await startGameViaPlayBall(page, { seed: "mgr42", managedTeam: "0" });
-    await waitForLogLines(page, 3);
-
-    // With manager mode active from the start, autoplay pauses at the first
-    // decision point (defensive_shift at the start of the home team's first
-    // at-bat, or bunt / count30 / count02 — all happen within the first inning).
-    // Allow 120 s so even slow CI runners have enough headroom.
-    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
+    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 10_000 });
 
     // Take the first available action button to resolve the decision.
     const actionButtons = page.getByTestId("manager-decision-panel").getByRole("button");

@@ -10,7 +10,7 @@ export type PlayLogEntry = {
   inning: number;
   half: 0 | 1; // 0 = top (away bats), 1 = bottom (home bats)
   batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
-  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
   playerId?: string;
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
@@ -32,7 +32,7 @@ export type PlayLogEntry = {
 export type StrikeoutEntry = {
   team: 0 | 1;
   batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
-  /** Player ID of the batter. Present for all events from Stage 3B onward; absent in older saves. */
+  /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
   playerId?: string;
 };
 
@@ -73,6 +73,17 @@ export type ResolvedPlayerMods = {
   movementMod: number;
 };
 
+/** Bench player info surfaced in the pinch_hitter decision for concrete player selection. */
+export type PinchHitterCandidate = {
+  id: string;
+  name: string;
+  position?: string;
+  /** Resolved contact mod from playerOverrides — used by AI for stat-based selection. */
+  contactMod: number;
+  /** Resolved power mod from playerOverrides — used by AI for stat-based selection. */
+  powerMod: number;
+};
+
 export type DecisionType =
   | { kind: "steal"; base: 0 | 1; successPct: number }
   | { kind: "bunt" }
@@ -80,7 +91,15 @@ export type DecisionType =
   | { kind: "count02" }
   | { kind: "ibb" }
   | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number }
-  | { kind: "pinch_hitter" }
+  | {
+      kind: "pinch_hitter";
+      /** Available bench players for selection (empty = MLB / no custom bench). */
+      candidates: PinchHitterCandidate[];
+      /** Team index that is batting (the team making the substitution). */
+      teamIdx: 0 | 1;
+      /** Lineup position index of the current batter being replaced. */
+      lineupIdx: number;
+    }
   | { kind: "defensive_shift" };
 
 export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;

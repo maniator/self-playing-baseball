@@ -329,10 +329,10 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
   });
 });
 
-describe("PlayerStatsPanel — player-ID stat tracking (Stage 3B+)", () => {
+describe("PlayerStatsPanel — player-ID stat tracking", () => {
   /**
    * All tests in this block use entries WITH `playerId` to exercise the new
-   * player-ID keyed stat tracking introduced in Stage 3B.
+   * player-ID keyed stat tracking.
    */
 
   it("stats keyed by playerId: hit credited to the correct player, not the slot", () => {

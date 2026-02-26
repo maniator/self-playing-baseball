@@ -50,6 +50,22 @@ Before adding sharding:
 - **Never run `yarn test:e2e:update-snapshots` locally and commit the result.** Use the `update-visual-snapshots` workflow instead (Actions → "Update Visual Snapshots" → Run workflow → select branch). It commits the updated PNGs back automatically inside the container.
 - Do not change the container image version without regenerating all snapshot baselines via the workflow.
 
+### Save fixtures for fast E2E tests
+
+Pre-crafted save files in `e2e/fixtures/` let tests start in a specific game state instantly — eliminating 90–150 s autoplay waits.
+
+**Use `loadFixture(page, "filename.json")` instead of `startGameViaPlayBall` + long timeouts** whenever a test needs a pre-existing game state (decision panel, RBI on the board, specific inning, etc.). Use real `startGameViaPlayBall` only for simulation-correctness tests that require actual game progression.
+
+Available fixtures:
+
+| File | State | Replaces |
+|---|---|---|
+| `pending-decision.json` | Inning 4, defensive_shift pending, managerMode on | 120 s wait for decision panel |
+| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending + candidates | Pinch-hitter visual that never completed |
+| `mid-game-with-rbi.json` | Inning 5, RBI in playLog | 80 log-line wait for RBI values |
+
+To author a new fixture, use the Python script pattern in the `e2e/fixtures/` directory and compute the FNV-1a signature as documented in the "Save Fixtures for E2E Testing" section of `copilot-instructions.md`.
+
 ## Copilot Setup Steps workflow (CRITICAL REPO-SPECIFIC NOTE)
 
 > **The `.github/workflows/copilot-setup-steps.yml` workflow must NOT use `container:`.**

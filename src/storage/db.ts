@@ -25,7 +25,7 @@ type DbCollections = {
 export type BallgameDb = RxDatabase<DbCollections>;
 
 const savesSchema: RxJsonSchema<SaveDoc> = {
-  // Stage 3B added explicit `properties` sub-definitions to the nested
+  // A schema update added explicit `properties` sub-definitions to the nested
   // `setup`, `scoreSnapshot`, `inningSnapshot`, and `stateSnapshot` fields
   // without bumping the version, causing a DB6 schema-hash mismatch for
   // users with existing data. Version bumped to 1; identity migration is

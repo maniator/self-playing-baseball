@@ -52,6 +52,11 @@ export type PlayerOverrides = {
   homeBench?: string[];
   awayPitchers?: string[];
   homePitchers?: string[];
+  /**
+   * Starting pitcher index into awayPitchers/homePitchers for each team.
+   * null = use index 0 (default). Only meaningful for managed custom-team games.
+   */
+  startingPitcherIdx?: [number | null, number | null];
 };
 
 type Props = {
@@ -68,6 +73,14 @@ type Props = {
   /** When provided, the custom-team empty-state CTA navigates here. */
   onManageTeams?: () => void;
 };
+
+/** Returns SP-eligible pitchers from a roster, preserving their original index. */
+export const getSpEligiblePitchers = (
+  pitchers: { id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP" }[],
+): Array<{ id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP"; idx: number }> =>
+  pitchers
+    .map((p, i) => ({ ...p, idx: i }))
+    .filter((p) => !p.pitchingRole || p.pitchingRole === "SP" || p.pitchingRole === "SP/RP");
 
 const NewGameDialog: React.FunctionComponent<Props> = ({
   onStart,
@@ -104,6 +117,29 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       setCustomHomeId(customTeams[customTeams.length > 1 ? 1 : 0].id);
   }, [customTeams, customAwayId, customHomeId]);
 
+  // Derive SP-eligible pitchers for each custom team (SP or SP/RP roles, or unset).
+  const awayDoc = customTeams.find((t) => t.id === customAwayId);
+  const homeDoc = customTeams.find((t) => t.id === customHomeId);
+  const awaySpPitchers = getSpEligiblePitchers(awayDoc?.roster?.pitchers ?? []);
+  const homeSpPitchers = getSpEligiblePitchers(homeDoc?.roster?.pitchers ?? []);
+
+  // Starting pitcher selection for managed custom-team games.
+  // Initialized to 0; the useEffect below corrects to the first SP-eligible idx after mount.
+  const [awayStarterIdx, setAwayStarterIdx] = React.useState<number>(0);
+  const [homeStarterIdx, setHomeStarterIdx] = React.useState<number>(0);
+
+  // Reset starter index to first SP-eligible pitcher when the selected team changes.
+  React.useEffect(() => {
+    const doc = customTeams.find((t) => t.id === customAwayId);
+    const sp = getSpEligiblePitchers(doc?.roster?.pitchers ?? []);
+    setAwayStarterIdx(sp[0]?.idx ?? 0);
+  }, [customAwayId, customTeams]);
+  React.useEffect(() => {
+    const doc = customTeams.find((t) => t.id === customHomeId);
+    const sp = getSpEligiblePitchers(doc?.roster?.pitchers ?? []);
+    setHomeStarterIdx(sp[0]?.idx ?? 0);
+  }, [customHomeId, customTeams]);
+
   // Clear validation error when selections change.
   React.useEffect(() => {
     setTeamValidationError("");
@@ -116,9 +152,9 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
 
     if (gameType === "custom") {
-      const awayDoc = customTeams.find((t) => t.id === customAwayId);
-      const homeDoc = customTeams.find((t) => t.id === customHomeId);
-      if (!awayDoc || !homeDoc) return;
+      const awayDocForSubmit = customTeams.find((t) => t.id === customAwayId);
+      const homeDocForSubmit = customTeams.find((t) => t.id === customHomeId);
+      if (!awayDocForSubmit || !homeDocForSubmit) return;
 
       // Block self-matchup: a team cannot play against itself.
       if (customAwayId === customHomeId) {
@@ -129,27 +165,46 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       }
 
       // Validate both teams before starting the game.
-      const awayError = validateCustomTeamForGame(awayDoc);
+      const awayError = validateCustomTeamForGame(awayDocForSubmit);
       if (awayError) {
         setTeamValidationError(`Away team — ${awayError}`);
         return;
       }
-      const homeError = validateCustomTeamForGame(homeDoc);
+      const homeError = validateCustomTeamForGame(homeDocForSubmit);
       if (homeError) {
         setTeamValidationError(`Home team — ${homeError}`);
         return;
       }
       setTeamValidationError("");
 
-      onStart(customTeamToGameId(homeDoc), customTeamToGameId(awayDoc), mt, {
-        away: customTeamToPlayerOverrides(awayDoc),
-        home: customTeamToPlayerOverrides(homeDoc),
-        awayOrder: customTeamToLineupOrder(awayDoc),
-        homeOrder: customTeamToLineupOrder(homeDoc),
-        awayBench: customTeamToBenchRoster(awayDoc),
-        homeBench: customTeamToBenchRoster(homeDoc),
-        awayPitchers: customTeamToPitcherRoster(awayDoc),
-        homePitchers: customTeamToPitcherRoster(homeDoc),
+      // Block start if the managed team has no SP-eligible pitchers.
+      if (mt !== null) {
+        const managedSpPitchers = mt === 0 ? awaySpPitchers : homeSpPitchers;
+        const managedLabel = mt === 0 ? awayLabel : homeLabel;
+        if (managedSpPitchers.length === 0) {
+          setTeamValidationError(
+            `${managedLabel} has no SP-eligible pitchers. Add at least one SP or SP/RP pitcher to start a managed game.`,
+          );
+          return;
+        }
+      }
+
+      onStart(customTeamToGameId(homeDocForSubmit), customTeamToGameId(awayDocForSubmit), mt, {
+        away: customTeamToPlayerOverrides(awayDocForSubmit),
+        home: customTeamToPlayerOverrides(homeDocForSubmit),
+        awayOrder: customTeamToLineupOrder(awayDocForSubmit),
+        homeOrder: customTeamToLineupOrder(homeDocForSubmit),
+        awayBench: customTeamToBenchRoster(awayDocForSubmit),
+        homeBench: customTeamToBenchRoster(homeDocForSubmit),
+        awayPitchers: customTeamToPitcherRoster(awayDocForSubmit),
+        homePitchers: customTeamToPitcherRoster(homeDocForSubmit),
+        startingPitcherIdx:
+          mt !== null
+            ? [
+                awaySpPitchers.find((p) => p.idx === awayStarterIdx)?.idx ?? 0,
+                homeSpPitchers.find((p) => p.idx === homeStarterIdx)?.idx ?? 0,
+              ]
+            : undefined,
       });
     } else {
       onStart(home, away, mt, { away: awayOverrides, home: homeOverrides, awayOrder, homeOrder });
@@ -326,6 +381,37 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
             </RadioLabel>
           ))}
         </FieldGroup>
+        {gameType === "custom" && managed !== "none" && (
+          <>
+            {(managed === "0" || managed === "1") &&
+              (() => {
+                const isAway = managed === "0";
+                const spPitchers = isAway ? awaySpPitchers : homeSpPitchers;
+                const starterIdx = isAway ? awayStarterIdx : homeStarterIdx;
+                const setStarterIdx = isAway ? setAwayStarterIdx : setHomeStarterIdx;
+                const teamLabel = isAway ? awayLabel : homeLabel;
+                if (spPitchers.length === 0) return null;
+                return (
+                  <FieldGroup>
+                    <FieldLabel htmlFor="ng-starter">{teamLabel} starting pitcher</FieldLabel>
+                    <Select
+                      id="ng-starter"
+                      data-testid="starting-pitcher-select"
+                      value={starterIdx}
+                      onChange={(e) => setStarterIdx(Number(e.target.value))}
+                    >
+                      {spPitchers.map((p) => (
+                        <option key={p.id} value={p.idx}>
+                          {p.name}
+                          {p.pitchingRole ? ` (${p.pitchingRole})` : ""}
+                        </option>
+                      ))}
+                    </Select>
+                  </FieldGroup>
+                );
+              })()}
+          </>
+        )}
         {gameType === "mlb" && (
           <PlayerCustomizationPanel
             awayTeam={away}

@@ -272,7 +272,7 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     });
     await v0Db.close();
 
-    // ── Step 2: Open same DB with v1 schema (simulates app after Stage 3B fix) ─
+    // ── Step 2: Open same DB with v1 schema (schema migration to v1) ─
     // _createTestDb uses the current initDb which registers RxDBMigrationSchemaPlugin
     // and opens savesSchema at version 1 with migrationStrategies[1] = identity.
     const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
