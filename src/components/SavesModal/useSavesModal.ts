@@ -8,8 +8,9 @@ import {
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { useImportSave } from "@hooks/useImportSave";
 import { useSaveStore } from "@hooks/useSaveStore";
-import { downloadJson, readFileAsText, saveFilename } from "@storage/saveIO";
+import { downloadJson, saveFilename } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
@@ -31,9 +32,12 @@ interface Params {
 export interface SavesModalState {
   ref: React.RefObject<HTMLDialogElement | null>;
   saves: SaveDoc[];
+  /** Current paste-JSON textarea value (alias: pasteJson from useImportSave). */
   importText: string;
   importError: string | null;
   setImportText: (v: string) => void;
+  /** True while an import is in-flight — use to disable the import button. */
+  importing: boolean;
   open: () => void;
   close: () => void;
   handleSave: () => void;
@@ -73,9 +77,6 @@ export const useSavesModal = ({
 
   // Custom team docs for resolving human-readable labels on save names.
   const { teams: customTeams } = useCustomTeams();
-
-  const [importText, setImportText] = React.useState("");
-  const [importError, setImportError] = React.useState<string | null>(null);
 
   const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
 
@@ -190,29 +191,24 @@ export const useSavesModal = ({
       });
   };
 
-  const applyImport = (json: string) => {
-    importRxdbSave(json)
-      .then((importedSave) => {
-        setImportText("");
-        setImportError(null);
-        log("Save imported!");
-        if (importedSave) handleLoad(importedSave);
-      })
-      .catch((e: Error) => {
-        setImportError(e.message);
-      });
-  };
-
-  const handleImportPaste = () => applyImport(importText);
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    readFileAsText(file)
-      .then(applyImport)
-      .catch(() => setImportError("Failed to read file"));
-    e.target.value = "";
-  };
+  // Use the shared import hook; pass raw error messages (modal consumers are
+  // in-game and can tolerate technical wording; friendlyImportError is default
+  // for the full-page SavesPage).
+  const {
+    pasteJson: importText,
+    setPasteJson: setImportText,
+    importError,
+    importing,
+    handleFileImport,
+    handlePasteImport: handleImportPaste,
+  } = useImportSave({
+    importFn: importRxdbSave,
+    onSuccess: (importedSave) => {
+      log("Save imported!");
+      handleLoad(importedSave);
+    },
+    formatError: (raw) => raw,
+  });
 
   /**
    * Replaces any `custom:<id>` fragment in a save name with the resolved
@@ -227,6 +223,7 @@ export const useSavesModal = ({
     importText,
     importError,
     setImportText,
+    importing,
     open,
     close,
     handleSave,

@@ -4,7 +4,8 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 
 import type { AppShellOutletContext } from "@components/AppShell";
 import SaveSlotList from "@components/SaveSlotList";
-import { downloadJson, readFileAsText, saveFilename } from "@storage/saveIO";
+import { useImportSave } from "@hooks/useImportSave";
+import { downloadJson, saveFilename } from "@storage/saveIO";
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
@@ -38,8 +39,19 @@ const SavesPage: React.FunctionComponent = () => {
   const { onLoadSave } = useOutletContext<AppShellOutletContext>();
   const [saves, setSaves] = React.useState<SaveDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [importError, setImportError] = React.useState<string | null>(null);
-  const [pasteJson, setPasteJson] = React.useState("");
+
+  const {
+    pasteJson,
+    setPasteJson,
+    importError,
+    importing,
+    handleFileImport,
+    handlePasteImport,
+    handlePasteFromClipboard,
+  } = useImportSave({
+    importFn: SaveStore.importRxdbSave.bind(SaveStore),
+    onSuccess: onLoadSave,
+  });
 
   const loadSaves = React.useCallback(() => {
     setLoading(true);
@@ -63,51 +75,6 @@ const SavesPage: React.FunctionComponent = () => {
     SaveStore.exportRxdbSave(slot.id)
       .then((json) => downloadJson(json, saveFilename(slot.name)))
       .catch((err: unknown) => appLog.error("Failed to export save:", err));
-  };
-
-  const applyImport = (json: string) => {
-    setImportError(null);
-    SaveStore.importRxdbSave(json)
-      .then((importedSave) => {
-        onLoadSave(importedSave);
-      })
-      .catch((err: unknown) => {
-        const raw = err instanceof Error ? err.message : String(err);
-        const isSignature = /signature|invalid|corrupt/i.test(raw);
-        setImportError(
-          isSignature
-            ? "The file you selected is not a valid Ballgame save file."
-            : "Import failed. Please check the file and try again.",
-        );
-      });
-  };
-
-  const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    readFileAsText(file)
-      .then(applyImport)
-      .catch(() => setImportError("Failed to read file"));
-    e.target.value = "";
-  };
-
-  const handlePasteImport = () => {
-    const trimmed = pasteJson.trim();
-    if (!trimmed) {
-      setImportError("Please paste save JSON before importing.");
-      return;
-    }
-    applyImport(trimmed);
-    setPasteJson("");
-  };
-
-  const handlePasteFromClipboard = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      setPasteJson(text);
-    } catch {
-      setImportError("Could not read clipboard. Please paste manually.");
-    }
   };
 
   return (
@@ -145,6 +112,7 @@ const SavesPage: React.FunctionComponent = () => {
             type="file"
             accept=".json,application/json"
             onChange={handleFileImport}
+            disabled={importing}
             data-testid="import-save-file-input"
           />
         </div>
@@ -162,9 +130,10 @@ const SavesPage: React.FunctionComponent = () => {
               type="button"
               $variant="primary"
               onClick={handlePasteImport}
+              disabled={importing}
               data-testid="paste-save-button"
             >
-              Import from text
+              {importing ? "Importing…" : "Import from text"}
             </ActionBtn>
             {typeof navigator !== "undefined" && navigator.clipboard && (
               <ActionBtn

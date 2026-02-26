@@ -41,6 +41,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     importText,
     importError,
     setImportText,
+    importing,
     open,
     close,
     handleSave,
@@ -135,10 +136,10 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         <Row>
           <SmallButton
             onClick={handleImportPaste}
-            disabled={!importText.trim()}
+            disabled={!importText.trim() || importing}
             data-testid="import-save-button"
           >
-            Import from text
+            {importing ? "Importing…" : "Import from text"}
           </SmallButton>
         </Row>
 
