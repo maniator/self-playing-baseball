@@ -52,14 +52,12 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
   const [homeStarterIdx, setHomeStarterIdx] = React.useState<number>(0);
 
   React.useEffect(() => {
-    const doc = customTeams.find((t) => t.id === customAwayId);
-    setAwayStarterIdx(getSpEligiblePitchers(doc?.roster?.pitchers ?? [])[0]?.idx ?? 0);
-  }, [customAwayId, customTeams]);
+    setAwayStarterIdx(getSpEligiblePitchers(awayDoc?.roster?.pitchers ?? [])[0]?.idx ?? 0);
+  }, [awayDoc]);
 
   React.useEffect(() => {
-    const doc = customTeams.find((t) => t.id === customHomeId);
-    setHomeStarterIdx(getSpEligiblePitchers(doc?.roster?.pitchers ?? [])[0]?.idx ?? 0);
-  }, [customHomeId, customTeams]);
+    setHomeStarterIdx(getSpEligiblePitchers(homeDoc?.roster?.pitchers ?? [])[0]?.idx ?? 0);
+  }, [homeDoc]);
 
   React.useEffect(() => {
     setTeamValidationError("");
