@@ -126,19 +126,28 @@ export const SaveActions = styled.div`
   }
 `;
 
+const VARIANT_COLOR: Record<string, string> = {
+  primary: "#6effc0",
+  danger: "#ff7777",
+  secondary: "#88bbee",
+};
+
+const VARIANT_BORDER: Record<string, string> = {
+  primary: "#3a7a5a",
+  danger: "#883333",
+  secondary: "#4a6090",
+};
+
+const VARIANT_HOVER_BG: Record<string, string> = {
+  primary: "#1a3a2a",
+  danger: "#2a0000",
+  secondary: "#0d1b2e",
+};
+
 export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
   background: transparent;
-  color: ${({ $variant }) => {
-    if ($variant === "primary") return "#6effc0";
-    if ($variant === "danger") return "#ff7777";
-    return "#88bbee";
-  }};
-  border: 1px solid
-    ${({ $variant }) => {
-      if ($variant === "primary") return "#3a7a5a";
-      if ($variant === "danger") return "#883333";
-      return "#4a6090";
-    }};
+  color: ${({ $variant }) => VARIANT_COLOR[$variant ?? "secondary"]};
+  border: 1px solid ${({ $variant }) => VARIANT_BORDER[$variant ?? "secondary"]};
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 12px;
@@ -147,11 +156,7 @@ export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "d
   min-height: 32px;
 
   &:hover {
-    background: ${({ $variant }) => {
-      if ($variant === "primary") return "#1a3a2a";
-      if ($variant === "danger") return "#2a0000";
-      return "#0d1b2e";
-    }};
+    background: ${({ $variant }) => VARIANT_HOVER_BG[$variant ?? "secondary"]};
   }
 
   &:focus-visible {
