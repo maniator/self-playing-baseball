@@ -13,7 +13,6 @@ import {
   RadioLabel,
   SectionLabel,
   SeedHint,
-  Select,
   Tab,
   TabRow,
   TeamValidationError,
@@ -21,6 +20,7 @@ import {
 } from "@components/NewGameDialog/styles";
 
 import MlbTeamsSection from "./MlbTeamsSection";
+import StarterPitcherSelector from "./StarterPitcherSelector";
 import { PageContainer } from "./styles";
 import { useExhibitionSetup } from "./useExhibitionSetup";
 
@@ -151,22 +151,12 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
         </FieldGroup>
 
         {gameType === "custom" && managed !== "none" && managedSpPitchers.length > 0 && (
-          <FieldGroup>
-            <FieldLabel htmlFor="esp-starter">{managedTeamLabel} starting pitcher</FieldLabel>
-            <Select
-              id="esp-starter"
-              data-testid="starting-pitcher-select"
-              value={managedStarterIdx}
-              onChange={(e) => managedSetStarterIdx(Number(e.target.value))}
-            >
-              {managedSpPitchers.map((p) => (
-                <option key={p.id} value={p.idx}>
-                  {p.name}
-                  {p.pitchingRole ? ` (${p.pitchingRole})` : ""}
-                </option>
-              ))}
-            </Select>
-          </FieldGroup>
+          <StarterPitcherSelector
+            teamLabel={managedTeamLabel}
+            startIdx={managedStarterIdx}
+            pitchers={managedSpPitchers}
+            onSelect={managedSetStarterIdx}
+          />
         )}
 
         <FieldGroup>

@@ -126,6 +126,7 @@
     │   ├── AppShell/
     │   │   └── index.tsx           # Persistent layout (display:none trick keeps Game mounted); provides AppShellOutletContext
     │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave }
+    │   │                           #   pathnameToScreen() maps URL → Screen type; "other" is the intentional catch-all for outlet-rendered routes (/exhibition/new, etc.)
     │   ├── HomeScreen/
     │   │   ├── index.tsx           # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
     │   │   └── styles.ts           # Styled components for home screen
@@ -189,7 +190,9 @@
         │   ├── index.tsx           # Full-page Exhibition Setup — primary New Game entry point (/exhibition/new)
         │   │                       #   Defaults to Custom Teams tab; uses useExhibitionSetup hook
         │   │                       #   No IIFEs in JSX: computed variables derive managedSpPitchers/managedStarterIdx before return
+        │   │                       #   Starter pitcher selector extracted to StarterPitcherSelector.tsx
         │   ├── MlbTeamsSection.tsx # MLB-specific form fields (matchup radios, team selects, player customization)
+        │   ├── StarterPitcherSelector.tsx  # Dropdown for managed-team starting pitcher — independently testable
         │   ├── styles.ts           # Styled components for the exhibition setup page
         │   └── useExhibitionSetup.ts  # Hook: orchestrates team selection, custom team logic, starter pitcher, form submit
         ├── HelpPage/
@@ -693,7 +696,7 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden.
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
-- **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX.
+- **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX. For non-trivial conditional rendering blocks, extract them into a named sub-component (e.g. `StarterPitcherSelector` in `ExhibitionSetupPage/`) to keep them independently testable.
 - **`SavesModal` no longer has `autoOpen`/`openSavesRequestCount`/`onRequestClose`/`closeLabel` props** — these were removed when "Load Saved Game" became a dedicated `/saves` route. The modal now always closes with a simple `close()`. Do not re-add these props.
 - **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
 - **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.

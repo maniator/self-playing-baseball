@@ -24,12 +24,20 @@ export type ExhibitionGameSetup = {
 
 type Screen = "home" | "game" | "manage-teams" | "saves" | "help" | "other";
 
+/**
+ * Maps the current pathname to a screen discriminant.
+ * Routes rendered directly by AppShell (home, game, manage-teams) get a dedicated
+ * value. Routes rendered via `<Outlet>` — including `/exhibition/new` and any
+ * future outlet-rendered pages — all return `"other"`, which is the intentional
+ * catch-all for outlet-driven screens.
+ */
 function pathnameToScreen(pathname: string): Screen {
   if (pathname === "/" || pathname === "") return "home";
   if (pathname === "/game") return "game";
   if (pathname.startsWith("/teams")) return "manage-teams";
   if (pathname === "/saves") return "saves";
   if (pathname === "/help") return "help";
+  // /exhibition/new (and any future outlet-rendered routes) intentionally return "other".
   return "other";
 }
 

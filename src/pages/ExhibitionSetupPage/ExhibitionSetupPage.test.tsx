@@ -227,7 +227,7 @@ describe("ExhibitionSetupPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/teams");
   });
 
-  it("custom teams: clicking managed-Away radio exercises the starter-pitcher IIFE", async () => {
+  it("custom teams: clicking managed-Away radio shows the StarterPitcherSelector", async () => {
     const { useCustomTeams } = await import("@hooks/useCustomTeams");
     const mockPlayer = (id: string) => ({
       id,
