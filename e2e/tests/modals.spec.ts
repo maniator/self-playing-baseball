@@ -23,26 +23,19 @@ test.describe("Modals", () => {
     await resetAppState(page);
   });
 
-  // ── New Game dialog ────────────────────────────────────────────────────────
+  // ── New Game setup ────────────────────────────────────────────────────────
 
-  test.describe("New Game dialog", () => {
+  test.describe("New Game setup", () => {
     test("opens via New Game button and shows Play Ball button", async ({ page }) => {
       await waitForNewGameDialog(page);
-      await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId("play-ball-button")).toBeVisible();
     });
 
-    test("Escape key does NOT close the dialog", async ({ page }) => {
-      await waitForNewGameDialog(page);
-      // The dialog has onCancel={(e) => e.preventDefault()} so Escape is a no-op.
-      await page.keyboard.press("Escape");
-      await expect(page.getByTestId("new-game-dialog")).toBeVisible();
-    });
-
-    test("submitting the form (Play Ball!) dismisses the dialog", async ({ page }) => {
+    test("submitting the form (Play Ball!) navigates to the game", async ({ page }) => {
       await waitForNewGameDialog(page);
       await page.getByTestId("play-ball-button").click();
-      await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
+      await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 10_000 });
       await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
     });
   });

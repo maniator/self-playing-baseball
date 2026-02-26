@@ -108,11 +108,11 @@ test.describe("Home button interactivity — regression guard", () => {
   });
 
   test("Home → New Game → Back to Home → Home buttons still work", async ({ page }) => {
-    // Enter New Game flow.
+    // Enter New Game flow (navigates to /exhibition/new).
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Return to Home via the dialog's back button.
+    // Return to Home via the back button.
     await page.getByTestId("new-game-back-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
@@ -141,26 +141,18 @@ test.describe("Home button interactivity — regression guard", () => {
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("saves-modal")).not.toBeVisible();
 
-    // Now click New Game from Home — must work (no lingering backdrop).
+    // Now click New Game from Home — must navigate to exhibition setup.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Home → New Game → Back (← Home in controls) → Home buttons still work", async ({
-    page,
-  }) => {
-    // Navigate into game via New Game.
+  test("Home → New Game → Back (← Home) → Home buttons still work", async ({ page }) => {
+    // Navigate into New Game flow (/exhibition/new).
     await waitForNewGameDialog(page);
-    // Close dialog programmatically to reveal the ← Home button behind it.
-    await page.evaluate(() => {
-      (
-        document.querySelector('[data-testid="new-game-dialog"]') as HTMLDialogElement | null
-      )?.close();
-    });
-    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Click the ← Home button in the game controls.
-    await page.getByTestId("back-to-home-button").click();
+    // Use the back button on the exhibition setup page to return Home.
+    await page.getByTestId("new-game-back-home-button").click();
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
     // Home buttons must respond. Click Manage Teams as a representative button.

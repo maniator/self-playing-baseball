@@ -24,39 +24,45 @@ export async function openNewGameDialog(page: Page): Promise<void> {
 }
 
 /**
- * Waits until the New Game dialog is visible on screen.
- * If the Home screen is currently showing, clicks "New Game" first to navigate
- * into the game UI — the dialog then opens automatically.
+ * Waits until the New Game setup UI is visible on screen.
+ * With the react-router setup, clicking "New Game" from Home navigates to
+ * `/exhibition/new` (an `exhibition-setup-page`). For the in-game New Game
+ * button, a `new-game-dialog` opens instead — both are handled here.
  */
 export async function waitForNewGameDialog(page: Page): Promise<void> {
-  // If neither the home screen nor the dialog is visible yet, wait for one of them.
-  await expect(page.getByTestId("home-screen").or(page.getByTestId("new-game-dialog"))).toBeVisible(
-    { timeout: 15_000 },
-  );
+  const setupUi = page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog"));
+
+  // If neither the home screen nor the setup UI is visible yet, wait for one.
+  await expect(page.getByTestId("home-screen").or(setupUi)).toBeVisible({ timeout: 15_000 });
 
   // If the home screen is showing, navigate into the game flow first.
   if (await page.getByTestId("home-screen").isVisible()) {
     await page.getByTestId("home-new-game-button").click();
-    // Wait for the DB loading screen to clear, then wait for the dialog.
+    // Wait for the DB loading screen to clear, then wait for the setup UI.
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
   }
 
-  await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 15_000 });
+  await expect(setupUi).toBeVisible({ timeout: 15_000 });
 }
 
 /**
- * Programmatically closes the New Game <dialog> so the backdrop no longer
- * inerts the rest of the page.  Call this before interacting with elements
- * outside the dialog (e.g. the "?" help button).
+ * Programmatically closes the New Game setup UI.
+ * On `/exhibition/new` (primary flow) this navigates back via the back button.
+ * For the in-game dialog it closes the `<dialog>` element.
  */
 export async function closeNewGameDialog(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const dialog = document.querySelector(
-      '[data-testid="new-game-dialog"]',
-    ) as HTMLDialogElement | null;
-    dialog?.close();
-  });
-  await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 15_000 });
+  if (await page.getByTestId("exhibition-setup-page").isVisible()) {
+    await page.getByTestId("new-game-back-home-button").click();
+    await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 15_000 });
+  } else {
+    await page.evaluate(() => {
+      const dialog = document.querySelector(
+        '[data-testid="new-game-dialog"]',
+      ) as HTMLDialogElement | null;
+      dialog?.close();
+    });
+    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 15_000 });
+  }
 }
 
 /**
@@ -92,6 +98,17 @@ export interface GameConfig {
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);
 
+  // The exhibition setup page defaults to Custom Teams. Switch to the MLB tab
+  // for backward-compatible tests that rely on MLB team selection (the default
+  // for most tests that only specify a seed). Tests that explicitly create and
+  // select custom teams do their own tab switching.
+  if (await page.getByTestId("exhibition-setup-page").isVisible()) {
+    const mlbTab = page.getByTestId("new-game-mlb-teams-tab");
+    if (await mlbTab.isVisible()) {
+      await mlbTab.click();
+    }
+  }
+
   if (options.seed !== undefined) {
     const seedField = page.getByTestId("seed-input");
     await seedField.clear();
@@ -121,8 +138,10 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await resetAppState(page);
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
-  // Wait for the new game dialog to close
-  await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
+  // The setup UI (either the exhibition page or the in-game dialog) should disappear.
+  await expect(
+    page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
+  ).not.toBeVisible({ timeout: 10_000 });
   // Wait for scoreboard to appear
   await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 }

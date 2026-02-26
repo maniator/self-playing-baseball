@@ -35,7 +35,9 @@ async function runGameInFreshContext(
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
     await configureNewGame(page, { ...config, seed });
     await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
+    ).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
     // Wait for 5 lines with a generous 60 s budget — on CI runners autoplay
     // can be slower. We only need 5 lines because captureGameSignature reads

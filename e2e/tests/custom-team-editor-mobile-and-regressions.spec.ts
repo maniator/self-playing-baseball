@@ -137,7 +137,7 @@ test.describe("Resume Current Game — false-positive gating", () => {
   }) => {
     // Click New Game (enters game screen, shows dialog)
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Navigate back to home via dialog's Back to Home button
     const backBtn = page.getByRole("button", { name: /back to home/i });
@@ -209,13 +209,13 @@ test.describe("Stage 2A regression guardrails", () => {
     await page.getByTestId("home-load-saves-button").click();
     // Should navigate into game UI with saves modal open
     await expect(
-      page.getByTestId("new-game-dialog").or(page.getByTestId("saves-modal")),
+      page.getByTestId("exhibition-setup-page").or(page.getByTestId("saves-modal")),
     ).toBeVisible({ timeout: 15_000 });
   });
 
-  test("Home screen flow is intact: New Game opens new-game-dialog", async ({ page }) => {
+  test("Home screen flow is intact: New Game navigates to exhibition setup", async ({ page }) => {
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible();
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible();
     await expect(page.getByTestId("play-ball-button")).toBeVisible();
   });
 

@@ -185,9 +185,9 @@ test.describe("New Game dialog — custom team picker", () => {
     await resetAppState(page);
   });
 
-  test("MLB Teams tab is selected by default and shows team selectors", async ({ page }) => {
+  test("MLB Teams tab is accessible and shows team selectors when clicked", async ({ page }) => {
     await waitForNewGameDialog(page);
-    await expect(page.getByTestId("new-game-mlb-teams-tab")).toBeVisible();
+    await page.getByTestId("new-game-mlb-teams-tab").click();
     await expect(page.getByTestId("home-team-select")).toBeVisible();
   });
 
@@ -216,7 +216,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Go back home and open New Game
     await page.getByTestId("manage-teams-back-button").click();
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Switch to Custom Teams tab
     await page.getByTestId("new-game-custom-teams-tab").click();
@@ -247,7 +247,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Go back to Home → New Game
     await page.getByTestId("manage-teams-back-button").click();
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Switch to custom tab and start game
     await page.getByTestId("new-game-custom-teams-tab").click();
@@ -256,7 +256,7 @@ test.describe("New Game dialog — custom team picker", () => {
     });
     await page.getByTestId("play-ball-button").click();
 
-    await expect(page.getByTestId("new-game-dialog")).not.toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
   });
 
@@ -279,7 +279,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Start a game with the two custom teams.
     await page.getByTestId("manage-teams-back-button").click();
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
       timeout: 5_000,
@@ -302,7 +302,7 @@ test.describe("New Game dialog — custom team picker", () => {
   }) => {
     // Navigate to New Game (no custom teams exist).
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
     // Switch to the Custom Teams tab — should show the empty state link.
     await page.getByTestId("new-game-custom-teams-tab").click();
