@@ -1,6 +1,6 @@
 /**
  * Pure utility functions shared between SavesModal (in-game) and SavesPage (/saves route).
- * No React, no RxDB hooks — these can be called from any context.
+ * No React, no RxDB hooks — these are browser-context only (use document, Blob, URL, FileReader).
  */
 
 /** Formats a Unix-ms timestamp as a short human-readable date/time string. */
@@ -14,7 +14,9 @@ export const formatSaveDate = (ts: number): string =>
 
 /**
  * Triggers a browser download of a JSON string with the given filename.
- * Creates a temporary object URL, clicks it, then revokes it.
+ * Creates a temporary object URL, appends the anchor to the DOM, clicks it,
+ * then removes it and revokes the URL on the next tick (deferred revoke avoids
+ * intermittent download failures in some browsers).
  */
 export const downloadJson = (json: string, filename: string): void => {
   const blob = new Blob([json], { type: "application/json" });
@@ -22,8 +24,10 @@ export const downloadJson = (json: string, filename: string): void => {
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 };
 
 /**
@@ -57,9 +61,10 @@ const compactTimestamp = (date: Date): string => {
  * same save don't overwrite each other on disk.
  */
 export const saveFilename = (saveName: string): string => {
-  const slug = saveName
-    .replace(/[^a-z0-9]+/gi, "-")
-    .replace(/^-|-$/g, "")
-    .toLowerCase();
+  const slug =
+    saveName
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase() || "save";
   return `ballgame-${slug}-${compactTimestamp(new Date())}.json`;
 };
