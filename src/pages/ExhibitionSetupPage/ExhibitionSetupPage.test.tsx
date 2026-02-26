@@ -206,4 +206,36 @@ describe("ExhibitionSetupPage", () => {
       }),
     );
   });
+
+  it("shows 'create more teams' error when exactly one custom team exists", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_solo",
+          name: "Solo Team",
+          city: "",
+          abbreviation: "SOL",
+          roster: { lineup: [], pitchers: [], bench: [] },
+        },
+      ] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /create at least two custom teams/i,
+    );
+  });
 });

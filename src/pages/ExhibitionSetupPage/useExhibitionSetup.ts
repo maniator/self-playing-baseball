@@ -77,12 +77,15 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
     const mt: ManagedTeam = managed === "none" ? null : (Number(managed) as 0 | 1);
 
     if (gameType === "custom") {
-      if (!awayDoc || !homeDoc) {
+      if (customTeams.length < 2) {
         setTeamValidationError(
-          customTeams.length === 0
-            ? "Create at least two custom teams before starting a custom exhibition."
-            : "Select valid away and home custom teams before starting the game.",
+          "Create at least two custom teams before starting a custom exhibition.",
         );
+        return;
+      }
+
+      if (!awayDoc || !homeDoc) {
+        setTeamValidationError("Select valid away and home custom teams before starting the game.");
         return;
       }
 
