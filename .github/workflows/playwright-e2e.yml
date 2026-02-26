@@ -9,6 +9,12 @@ on:
       - master
   workflow_dispatch:
 
+# Cancel any in-progress or queued run for the same ref when a new push lands,
+# so that stale runs don't consume unnecessary workflow compute time.
+concurrency:
+  group: playwright-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     name: E2E (${{ matrix.browser }}-shard-${{ matrix.shardIndex }})
