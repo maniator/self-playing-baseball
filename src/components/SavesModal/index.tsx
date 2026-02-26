@@ -121,6 +121,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
             type="file"
             accept=".json,application/json"
             onChange={handleFileImport}
+            disabled={importing}
             data-testid="import-save-file-input"
           />
         </Row>

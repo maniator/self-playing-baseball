@@ -61,7 +61,7 @@ const AppShell: React.FunctionComponent = () => {
   /** Called from the saves page — navigates to /game with the save as location state. */
   const handleLoadSave = React.useCallback(
     (slot: SaveDoc) => {
-      navigate("/game", { state: { pendingLoadSave: slot } });
+      navigate("/game", { state: { pendingLoadSave: slot, pendingGameSetup: null } });
     },
     [navigate],
   );
@@ -81,7 +81,7 @@ const AppShell: React.FunctionComponent = () => {
   /** Called from /exhibition/new — navigates to /game with the setup as location state. */
   const handleStartFromExhibition = React.useCallback(
     (setup: ExhibitionGameSetup) => {
-      navigate("/game", { state: { pendingGameSetup: setup } });
+      navigate("/game", { state: { pendingGameSetup: setup, pendingLoadSave: null } });
     },
     [navigate],
   );
