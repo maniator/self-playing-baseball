@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -103,6 +103,48 @@ describe("SavesPage", () => {
     renderSavesPage();
     await waitFor(() => expect(screen.getByTestId("saves-page")).toBeInTheDocument());
     expect(screen.getByTestId("import-save-file-input")).toBeInTheDocument();
+  });
+
+  it("shows paste save textarea and import button", async () => {
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("saves-page")).toBeInTheDocument());
+    expect(screen.getByTestId("paste-save-textarea")).toBeInTheDocument();
+    expect(screen.getByTestId("paste-save-button")).toBeInTheDocument();
+  });
+
+  it("shows error when paste-save-button clicked with empty textarea", async () => {
+    const user = userEvent.setup();
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("paste-save-button")).toBeInTheDocument());
+    await user.click(screen.getByTestId("paste-save-button"));
+    await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
+    expect(screen.getByText(/paste save json before importing/i)).toBeInTheDocument();
+  });
+
+  it("calls onLoadSave after successful paste import", async () => {
+    const importedSave = makeSave({ id: "pasted_save" });
+    vi.mocked(SaveStore.importRxdbSave).mockResolvedValue(importedSave);
+    const user = userEvent.setup();
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("paste-save-textarea")).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId("paste-save-textarea"), {
+      target: { value: '{"version":1}' },
+    });
+    await user.click(screen.getByTestId("paste-save-button"));
+    await waitFor(() => expect(mockOnLoadSave).toHaveBeenCalledWith(importedSave));
+  });
+
+  it("shows import error when paste import fails", async () => {
+    vi.mocked(SaveStore.importRxdbSave).mockRejectedValue(new Error("Invalid signature"));
+    const user = userEvent.setup();
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("paste-save-textarea")).toBeInTheDocument());
+    fireEvent.change(screen.getByTestId("paste-save-textarea"), {
+      target: { value: '{"bad":"data"}' },
+    });
+    await user.click(screen.getByTestId("paste-save-button"));
+    await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
+    expect(screen.getByText(/not a valid Ballgame save file/i)).toBeInTheDocument();
   });
 
   it("Back to Home button navigates to /", async () => {

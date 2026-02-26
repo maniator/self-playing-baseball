@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import type { Strategy } from "@context/index";
+import { formatSaveDate } from "@storage/saveIO";
 import type { SaveDoc } from "@storage/types";
 
 import {
@@ -38,14 +39,6 @@ interface Props {
   /** When true a real game session is active and "Save current game" is shown. */
   gameStarted?: boolean;
 }
-
-const formatDate = (ts: number): string =>
-  new Date(ts).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 const SavesModal: React.FunctionComponent<Props> = (props) => {
   const {
@@ -123,7 +116,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
               return (
                 <SlotItem key={s.id}>
                   <SlotName title={displayName}>{displayName}</SlotName>
-                  <SlotDate data-testid="slot-date">{formatDate(s.updatedAt)}</SlotDate>
+                  <SlotDate data-testid="slot-date">{formatSaveDate(s.updatedAt)}</SlotDate>
                   <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
                     Load
                   </SmallButton>

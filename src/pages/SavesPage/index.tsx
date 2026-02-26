@@ -3,6 +3,7 @@ import * as React from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 import type { AppShellOutletContext } from "@components/AppShell";
+import { downloadJson, formatSaveDate, readFileAsText, saveFilename } from "@storage/saveIO";
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
@@ -14,10 +15,13 @@ import {
   ErrorMessage,
   FileInput,
   ImportSection,
+  ImportSectionTitle,
   LoadingState,
   PageContainer,
   PageHeader,
   PageTitle,
+  PasteActions,
+  PasteTextarea,
   SaveActions,
   SaveCard,
   SaveDate,
@@ -25,14 +29,6 @@ import {
   SaveList,
   SaveName,
 } from "./styles";
-
-const formatDate = (ts: number): string =>
-  new Date(ts).toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
 
 /**
  * Standalone Exhibition Saves page.
@@ -48,6 +44,7 @@ const SavesPage: React.FunctionComponent = () => {
   const [saves, setSaves] = React.useState<SaveDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [importError, setImportError] = React.useState<string | null>(null);
+  const [pasteJson, setPasteJson] = React.useState("");
 
   const loadSaves = React.useCallback(() => {
     setLoading(true);
@@ -69,18 +66,7 @@ const SavesPage: React.FunctionComponent = () => {
 
   const handleExport = (slot: SaveDoc) => {
     SaveStore.exportRxdbSave(slot.id)
-      .then((json) => {
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `ballgame-${slot.name
-          .replace(/[^a-z0-9]+/gi, "-")
-          .replace(/^-|-$/g, "")
-          .toLowerCase()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-      })
+      .then((json) => downloadJson(json, saveFilename(slot.name)))
       .catch((err: unknown) => appLog.error("Failed to export save:", err));
   };
 
@@ -104,14 +90,29 @@ const SavesPage: React.FunctionComponent = () => {
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result;
-      if (typeof result === "string") applyImport(result);
-    };
-    reader.onerror = () => setImportError("Failed to read file");
-    reader.readAsText(file);
+    readFileAsText(file)
+      .then(applyImport)
+      .catch(() => setImportError("Failed to read file"));
     e.target.value = "";
+  };
+
+  const handlePasteImport = () => {
+    const trimmed = pasteJson.trim();
+    if (!trimmed) {
+      setImportError("Please paste save JSON before importing.");
+      return;
+    }
+    applyImport(trimmed);
+    setPasteJson("");
+  };
+
+  const handlePasteFromClipboard = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      setPasteJson(text);
+    } catch {
+      setImportError("Could not read clipboard. Please paste manually.");
+    }
   };
 
   return (
@@ -139,7 +140,7 @@ const SavesPage: React.FunctionComponent = () => {
             <SaveCard key={s.id} data-testid="saves-list-item">
               <SaveInfo>
                 <SaveName>{s.name}</SaveName>
-                <SaveDate data-testid="slot-date">{formatDate(s.updatedAt)}</SaveDate>
+                <SaveDate data-testid="slot-date">{formatSaveDate(s.updatedAt)}</SaveDate>
               </SaveInfo>
               <SaveActions>
                 <ActionBtn
@@ -173,12 +174,44 @@ const SavesPage: React.FunctionComponent = () => {
       )}
 
       <ImportSection>
-        <FileInput
-          type="file"
-          accept=".json,application/json"
-          onChange={handleFileImport}
-          data-testid="import-save-file-input"
-        />
+        <div>
+          <ImportSectionTitle>Import from file</ImportSectionTitle>
+          <FileInput
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileImport}
+            data-testid="import-save-file-input"
+          />
+        </div>
+        <div>
+          <ImportSectionTitle>Paste save JSON</ImportSectionTitle>
+          <PasteTextarea
+            value={pasteJson}
+            onChange={(e) => setPasteJson(e.target.value)}
+            placeholder='{"version":1,"header":{…},"events":[…],"sig":"…"}'
+            data-testid="paste-save-textarea"
+            aria-label="Paste save JSON"
+          />
+          <PasteActions>
+            <ActionBtn
+              type="button"
+              $variant="primary"
+              onClick={handlePasteImport}
+              data-testid="paste-save-button"
+            >
+              Import from text
+            </ActionBtn>
+            {typeof navigator !== "undefined" && navigator.clipboard && (
+              <ActionBtn
+                type="button"
+                onClick={handlePasteFromClipboard}
+                data-testid="paste-from-clipboard-button"
+              >
+                Paste from clipboard
+              </ActionBtn>
+            )}
+          </PasteActions>
+        </div>
       </ImportSection>
 
       {importError && <ErrorMessage data-testid="import-error">{importError}</ErrorMessage>}

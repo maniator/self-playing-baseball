@@ -6,6 +6,7 @@ import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useSaveStore } from "@hooks/useSaveStore";
+import { downloadJson, readFileAsText, saveFilename } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
@@ -179,16 +180,7 @@ export const useSavesModal = ({
   const handleExport = (slot: SaveDoc) => {
     exportRxdbSave(slot.id)
       .then((json) => {
-        const blob = new Blob([json], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `ballgame-${slot.name
-          .replace(/[^a-z0-9]+/gi, "-")
-          .replace(/^-|-$/g, "")
-          .toLowerCase()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
+        downloadJson(json, saveFilename(slot.name));
       })
       .catch((err: unknown) => {
         log(`Failed to export save: ${err instanceof Error ? err.message : String(err)}`);
@@ -213,13 +205,9 @@ export const useSavesModal = ({
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const result = ev.target?.result;
-      if (typeof result === "string") applyImport(result);
-    };
-    reader.onerror = () => setImportError("Failed to read file");
-    reader.readAsText(file);
+    readFileAsText(file)
+      .then(applyImport)
+      .catch(() => setImportError("Failed to read file"));
     e.target.value = "";
   };
 
