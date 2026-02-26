@@ -621,6 +621,45 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
     });
     expect(onConsumeGameSetup).toHaveBeenCalledTimes(1);
   });
+
+  it("does not auto-resume a finished-game save when pendingGameSetup is provided", async () => {
+    // Simulate the bug scenario: there is a finished game in RxDB saves, but the user
+    // is starting a brand-new game.  The auto-resume logic must NOT overwrite the fresh
+    // session with the finished-game state.
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const finishedSave = {
+      ...makeAutoSaveSlot(),
+      id: "finished-save",
+      stateSnapshot: {
+        state: makeState({ gameOver: true, teams: ["Mets", "Yankees"] as [string, string] }),
+        rngState: 99,
+      },
+    } as SaveDoc;
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [finishedSave],
+      createSave: vi.fn().mockResolvedValue("save_new"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+    vi.mocked(rngModule.restoreRng).mockClear();
+
+    const onGameSessionStarted = vi.fn();
+    await act(async () => {
+      render(
+        <GameProviderWrapper>
+          <GameInner pendingGameSetup={pendingSetup} onGameSessionStarted={onGameSessionStarted} />
+        </GameProviderWrapper>,
+      );
+    });
+
+    // New game session must have started via handleStart
+    expect(onGameSessionStarted).toHaveBeenCalled();
+    // restoreRng is only called by the auto-resume (restore_game) path — must NOT fire
+    expect(rngModule.restoreRng).not.toHaveBeenCalled();
+  });
 });
 
 describe("GameInner — onNewGame prop (external navigation)", () => {

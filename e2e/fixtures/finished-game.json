@@ -1,0 +1,111 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_finished_game_fixture",
+    "name": "Mets vs Yankees (Final)",
+    "seed": "fngame",
+    "matchupMode": "default",
+    "homeTeamId": "New York Yankees",
+    "awayTeamId": "New York Mets",
+    "createdAt": 1700000000000,
+    "updatedAt": 1700000000000,
+    "progressIdx": 60,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": null,
+      "managerMode": false,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "New York Mets",
+      "playerOverrides": [
+        {},
+        {}
+      ],
+      "lineupOrder": [
+        [],
+        []
+      ]
+    },
+    "schemaVersion": 1,
+    "stateSnapshot": {
+      "state": {
+        "inning": 9,
+        "score": [
+          3,
+          5
+        ],
+        "teams": [
+          "Mets",
+          "Yankees"
+        ],
+        "baseLayout": [
+          0,
+          0,
+          0
+        ],
+        "outs": 3,
+        "strikes": 0,
+        "balls": 0,
+        "atBat": 2,
+        "gameOver": true,
+        "pendingDecision": null,
+        "onePitchModifier": null,
+        "pitchKey": 60,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": false,
+        "defensiveShiftOffered": false,
+        "batterIndex": [
+          0,
+          0
+        ],
+        "inningRuns": [
+          [
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0,
+            1,
+            0,
+            2
+          ]
+        ],
+        "playLog": [],
+        "strikeoutLog": [],
+        "outLog": [],
+        "playerOverrides": [
+          {},
+          {}
+        ],
+        "lineupOrder": [
+          [],
+          []
+        ]
+      },
+      "rngState": 9876543210
+    },
+    "scoreSnapshot": {
+      "away": 3,
+      "home": 5
+    },
+    "inningSnapshot": {
+      "inning": 9,
+      "atBat": 2
+    }
+  },
+  "events": [],
+  "sig": "617d60c7"
+}
