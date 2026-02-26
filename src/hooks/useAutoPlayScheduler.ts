@@ -13,6 +13,9 @@ import { GameStateRef } from "./useGameRefs";
  * `gameOver` is included as an explicit parameter (and effect dependency) so
  * the scheduler restarts automatically when a new in-progress save is loaded
  * after a finished game — without it the timer chain would stay dead.
+ *
+ * `isRouteActive` pauses the scheduler when the user navigates away from
+ * the /game route, preventing background log spam and TTS while off-route.
  */
 export const useAutoPlayScheduler = (
   gameStarted: boolean,
@@ -24,11 +27,13 @@ export const useAutoPlayScheduler = (
   handleClickRef: React.MutableRefObject<() => void>,
   gameStateRef: GameStateRef,
   betweenInningsPauseRef: React.MutableRefObject<boolean>,
+  isRouteActive = true,
 ): void => {
   React.useEffect(() => {
     if (!gameStarted) return;
     if (gameOver) return;
     if (pendingDecision && managerMode) return;
+    if (!isRouteActive) return;
 
     let timerId: ReturnType<typeof setTimeout>;
     let extraWait = 0;
@@ -72,6 +77,7 @@ export const useAutoPlayScheduler = (
     pendingDecision,
     managerMode,
     gameOver,
+    isRouteActive,
     betweenInningsPauseRef,
     gameStateRef,
     handleClickRef,

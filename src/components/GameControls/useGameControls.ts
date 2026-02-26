@@ -19,7 +19,13 @@ const VALID_STRATEGIES: Strategy[] = ["balanced", "aggressive", "patient", "cont
 const VALID_SPEEDS = [SPEED_SLOW, SPEED_NORMAL, SPEED_FAST];
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
-export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean } = {}) => {
+export const useGameControls = ({
+  gameStarted = false,
+  isOnGameRoute = true,
+}: {
+  gameStarted?: boolean;
+  isOnGameRoute?: boolean;
+} = {}) => {
   const {
     dispatch,
     dispatchLog,
@@ -162,6 +168,7 @@ export const useGameControls = ({ gameStarted = false }: { gameStarted?: boolean
     handleClickRef,
     gameStateRef,
     betweenInningsPauseRef,
+    isOnGameRoute,
   );
   useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
 

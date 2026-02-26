@@ -4,10 +4,13 @@ import "./index.scss";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
-import AppShell from "@components/AppShell";
+import { RouterProvider } from "react-router-dom";
+
 import { ErrorBoundary } from "@components/Game/ErrorBoundary";
 import { appLog } from "@utils/logger";
 import { initSeedFromUrl } from "@utils/rng";
+
+import { router } from "./router";
 
 initSeedFromUrl({ writeToUrl: true });
 
@@ -20,6 +23,6 @@ if ("serviceWorker" in navigator) {
 
 createRoot(document.getElementById("game")!).render(
   <ErrorBoundary>
-    <AppShell />
+    <RouterProvider router={router} />
   </ErrorBoundary>,
 );

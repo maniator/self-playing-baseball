@@ -25,6 +25,8 @@ type Props = {
   onBackToHome?: () => void;
   /** Overrides saves-modal close — used to route Home when no game is active yet. */
   onSavesClose?: () => void;
+  /** True when the current route is /game; used to pause autoplay off-route. */
+  isOnGameRoute?: boolean;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
@@ -35,6 +37,7 @@ const GameControls: React.FunctionComponent<Props> = ({
   openSavesRequestCount,
   onBackToHome,
   onSavesClose,
+  isOnGameRoute = true,
 }) => {
   const {
     speed,
@@ -59,7 +62,7 @@ const GameControls: React.FunctionComponent<Props> = ({
     handleShareReplay,
     currentSaveId,
     setCurrentSaveId,
-  } = useGameControls({ gameStarted });
+  } = useGameControls({ gameStarted, isOnGameRoute });
 
   const { teams: customTeamDocs } = useCustomTeams();
   // Resolve display labels for raw game-state team IDs (e.g. `custom:ct_...` → team name)

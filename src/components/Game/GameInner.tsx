@@ -4,7 +4,7 @@ import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapt
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
-import type { InitialGameView } from "@components/AppShell";
+import type { ExhibitionGameSetup, InitialGameView } from "@components/AppShell";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
@@ -54,8 +54,16 @@ interface Props {
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
   onManageTeams?: () => void;
+  /** Called from AppShell when the in-game New Game button is clicked. */
+  onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
   onGameSessionStarted?: () => void;
+  /** Setup from /exhibition/new; auto-starts a game when it arrives. */
+  pendingGameSetup?: ExhibitionGameSetup | null;
+  /** Called after pendingGameSetup is consumed so AppShell can clear it. */
+  onConsumeGameSetup?: () => void;
+  /** True when the current route is /game; used to pause autoplay off-route. */
+  isOnGameRoute?: boolean;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
@@ -65,7 +73,11 @@ const GameInner: React.FunctionComponent<Props> = ({
   loadSavesRequestCount,
   onBackToHome,
   onManageTeams,
+  onNewGame,
   onGameSessionStarted,
+  pendingGameSetup,
+  onConsumeGameSetup,
+  isOnGameRoute = true,
 }) => {
   const { dispatch, dispatchLog, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -253,8 +265,34 @@ const GameInner: React.FunctionComponent<Props> = ({
     dispatchLog({ type: "reset" });
     setGameActive(false);
     setGameKey((k) => k + 1);
-    setDialogOpen(true);
+    // If an external onNewGame callback is provided (from AppShell in-game path),
+    // delegate to it. Otherwise fall back to the dialog re-open behaviour.
+    if (onNewGame) {
+      onNewGame();
+    } else {
+      setDialogOpen(true);
+    }
   };
+
+  // Keep a stable ref to handleStart so the pendingGameSetup effect can call
+  // it without including it in the dependency array (it captures many setters).
+  const handleStartRef = React.useRef(handleStart);
+  handleStartRef.current = handleStart;
+
+  // Auto-start the game when AppShell delivers a setup from /exhibition/new.
+  const prevPendingSetup = React.useRef<ExhibitionGameSetup | null>(null);
+  React.useEffect(() => {
+    if (!pendingGameSetup) return;
+    if (pendingGameSetup === prevPendingSetup.current) return;
+    prevPendingSetup.current = pendingGameSetup;
+    handleStartRef.current(
+      pendingGameSetup.homeTeam,
+      pendingGameSetup.awayTeam,
+      pendingGameSetup.managedTeam,
+      pendingGameSetup.playerOverrides,
+    );
+    onConsumeGameSetup?.();
+  }, [pendingGameSetup, onConsumeGameSetup]);
 
   const handleLoadActivate = React.useCallback(
     (saveId: string) => {
@@ -301,6 +339,7 @@ const GameInner: React.FunctionComponent<Props> = ({
           // Ref cleared synchronously in handleLoadActivate; state is belt-and-suspenders.
           savesCloseActiveRef.current && !gameActive ? handleSafeBackToHome : undefined
         }
+        isOnGameRoute={isOnGameRoute}
       />
       <GameBody>
         <FieldPanel>
