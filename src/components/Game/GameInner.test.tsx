@@ -239,7 +239,7 @@ describe("GameInner — auto-save resume", () => {
     expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
   });
 
-  it("calls createSave when starting a new game via pendingGameSetup", async () => {
+  it("calls createSave and onGameSessionStarted when starting a new game via pendingGameSetup", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const mockCreateSave = vi.fn().mockResolvedValue("save_1");
     vi.mocked(useSaveStore).mockReturnValue({
@@ -262,13 +262,15 @@ describe("GameInner — auto-save resume", () => {
         homeOrder: [] as string[],
       },
     };
+    const onGameSessionStarted = vi.fn();
     render(
       <GameProviderWrapper>
-        <GameInner pendingGameSetup={pendingSetup} />
+        <GameInner pendingGameSetup={pendingSetup} onGameSessionStarted={onGameSessionStarted} />
       </GameProviderWrapper>,
     );
     await act(async () => {});
     expect(mockCreateSave).toHaveBeenCalled();
+    expect(onGameSessionStarted).toHaveBeenCalled();
   });
 });
 
