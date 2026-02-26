@@ -1,0 +1,172 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_mid_game_rbi_fixture",
+    "name": "Mid-Game with RBI",
+    "seed": "rbi-fixture-01",
+    "matchupMode": "default",
+    "homeTeamId": "New York Yankees",
+    "awayTeamId": "New York Mets",
+    "createdAt": 1700003000000,
+    "updatedAt": 1700003000000,
+    "progressIdx": 44,
+    "schemaVersion": 1,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": null,
+      "managerMode": false,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "New York Mets",
+      "playerOverrides": [
+        {},
+        {}
+      ],
+      "lineupOrder": [
+        [],
+        []
+      ]
+    },
+    "stateSnapshot": {
+      "state": {
+        "gameOver": false,
+        "onePitchModifier": null,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": false,
+        "defensiveShiftOffered": false,
+        "playLog": [
+          {
+            "inning": 1,
+            "half": 0,
+            "batterNum": 2,
+            "team": 0,
+            "event": 0,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 1,
+            "half": 0,
+            "batterNum": 4,
+            "team": 0,
+            "event": 0,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 3,
+            "half": 0,
+            "batterNum": 6,
+            "team": 0,
+            "event": 0,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 2,
+            "half": 1,
+            "batterNum": 3,
+            "team": 1,
+            "event": 1,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 4,
+            "half": 1,
+            "batterNum": 5,
+            "team": 1,
+            "event": 0,
+            "runs": 1,
+            "rbi": 1
+          }
+        ],
+        "strikeoutLog": [],
+        "outLog": [],
+        "rosterBench": [
+          [],
+          []
+        ],
+        "rosterPitchers": [
+          [],
+          []
+        ],
+        "activePitcherIdx": [
+          0,
+          0
+        ],
+        "lineupPositions": [
+          [],
+          []
+        ],
+        "pitcherBattersFaced": [
+          15,
+          12
+        ],
+        "substitutedOut": [
+          [],
+          []
+        ],
+        "baseRunnerIds": [
+          null,
+          null,
+          null
+        ],
+        "resolvedMods": [
+          {},
+          {}
+        ],
+        "inning": 5,
+        "score": [
+          3,
+          2
+        ],
+        "teams": [
+          "Mets",
+          "Yankees"
+        ],
+        "baseLayout": [
+          0,
+          0,
+          0
+        ],
+        "outs": 2,
+        "strikes": 1,
+        "balls": 1,
+        "atBat": 0,
+        "pendingDecision": null,
+        "pitchKey": 44,
+        "batterIndex": [
+          3,
+          0
+        ],
+        "inningRuns": [
+          [
+            2,
+            0,
+            1,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            1
+          ]
+        ],
+        "playerOverrides": [
+          {},
+          {}
+        ],
+        "lineupOrder": [
+          [],
+          []
+        ]
+      },
+      "rngState": 5566778899
+    }
+  },
+  "events": [],
+  "sig": "05a3e423"
+}

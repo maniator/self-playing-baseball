@@ -1,0 +1,127 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_pending_decision_fixture",
+    "name": "Pending Decision (defensive shift)",
+    "seed": "pd-fixture-01",
+    "matchupMode": "default",
+    "homeTeamId": "New York Yankees",
+    "awayTeamId": "New York Mets",
+    "createdAt": 1700001000000,
+    "updatedAt": 1700001000000,
+    "progressIdx": 28,
+    "schemaVersion": 1,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": 0,
+      "managerMode": true,
+      "homeTeam": "New York Yankees",
+      "awayTeam": "New York Mets",
+      "playerOverrides": [
+        {},
+        {}
+      ],
+      "lineupOrder": [
+        [],
+        []
+      ]
+    },
+    "stateSnapshot": {
+      "state": {
+        "gameOver": false,
+        "onePitchModifier": null,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": false,
+        "defensiveShiftOffered": false,
+        "playLog": [],
+        "strikeoutLog": [],
+        "outLog": [],
+        "rosterBench": [
+          [],
+          []
+        ],
+        "rosterPitchers": [
+          [],
+          []
+        ],
+        "activePitcherIdx": [
+          0,
+          0
+        ],
+        "lineupPositions": [
+          [],
+          []
+        ],
+        "pitcherBattersFaced": [
+          12,
+          3
+        ],
+        "substitutedOut": [
+          [],
+          []
+        ],
+        "baseRunnerIds": [
+          null,
+          null,
+          null
+        ],
+        "resolvedMods": [
+          {},
+          {}
+        ],
+        "inning": 4,
+        "score": [
+          2,
+          1
+        ],
+        "teams": [
+          "Mets",
+          "Yankees"
+        ],
+        "baseLayout": [
+          0,
+          0,
+          0
+        ],
+        "outs": 0,
+        "strikes": 0,
+        "balls": 0,
+        "atBat": 1,
+        "pendingDecision": {
+          "kind": "defensive_shift"
+        },
+        "pitchKey": 28,
+        "batterIndex": [
+          0,
+          0
+        ],
+        "inningRuns": [
+          [
+            1,
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "playerOverrides": [
+          {},
+          {}
+        ],
+        "lineupOrder": [
+          [],
+          []
+        ]
+      },
+      "rngState": 1122334455
+    }
+  },
+  "events": [],
+  "sig": "53581c29"
+}

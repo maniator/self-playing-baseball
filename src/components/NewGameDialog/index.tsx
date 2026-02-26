@@ -177,6 +177,18 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       }
       setTeamValidationError("");
 
+      // Block start if the managed team has no SP-eligible pitchers.
+      if (mt !== null) {
+        const managedSpPitchers = mt === 0 ? awaySpPitchers : homeSpPitchers;
+        const managedLabel = mt === 0 ? awayLabel : homeLabel;
+        if (managedSpPitchers.length === 0) {
+          setTeamValidationError(
+            `${managedLabel} has no SP-eligible pitchers. Add at least one SP or SP/RP pitcher to start a managed game.`,
+          );
+          return;
+        }
+      }
+
       onStart(customTeamToGameId(homeDocForSubmit), customTeamToGameId(awayDocForSubmit), mt, {
         away: customTeamToPlayerOverrides(awayDocForSubmit),
         home: customTeamToPlayerOverrides(homeDocForSubmit),

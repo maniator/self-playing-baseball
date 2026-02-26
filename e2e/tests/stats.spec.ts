@@ -1,7 +1,12 @@
 import { expect, type Locator, type Page, test } from "@playwright/test";
 import path from "path";
 
-import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  loadFixture,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForLogLines,
+} from "../utils/helpers";
 
 /**
  * Player Stats Panel E2E tests.
@@ -78,39 +83,31 @@ test.describe("Player Stats Panel — structure", () => {
 
 test.describe("Player Stats Panel — RBI values (desktop only)", () => {
   test("RBI values update after a scoring play", async ({ page }, testInfo) => {
-    // Restrict to desktop: this test waits up to 90 s for a scoring play.
-    // Running on all 6 projects × 90 s would make CI unacceptably slow.
+    // Restrict to desktop to keep CI runtime lean.
     test.skip(testInfo.project.name !== "desktop", "RBI scoring test is desktop-only");
-    test.setTimeout(120_000);
-    await resetAppState(page);
 
-    // Use a seed known to produce scoring within 80 log entries.
-    await startGameViaPlayBall(page, { seed: "rbi-save1" });
+    // Load a fixture that already has playLog entries with rbi>0 — no need to
+    // wait for autoplay to reach a scoring play.
+    await loadFixture(page, "mid-game-with-rbi.json");
+
     const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 10_000 });
 
-    // Wait for enough log entries that scoring is virtually certain.
-    // 80 play-by-play entries ≈ several innings of at-bats; almost all
-    // simulated games score within that span.
-    await waitForLogLines(page, 80, 90_000);
-
-    // A run has scored — at least one team's batter must have a non-zero RBI.
-    // Check BOTH team tabs: scoring could be by away or home first.
+    // At least one team must have a non-zero RBI cell.
     const allRbi = await getBothTabsRbi(page, statsPanel);
     expect(allRbi.some((t) => t !== "–" && t.trim() !== "")).toBe(true);
   });
 
   test("RBI stats are preserved after save and reload", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "RBI save/load test is desktop-only");
-    test.setTimeout(120_000);
-    await resetAppState(page);
 
-    await startGameViaPlayBall(page, { seed: "rbi-save1" });
+    // Load fixture that already has RBI values — no autoplay wait needed.
+    await loadFixture(page, "mid-game-with-rbi.json");
+
     const statsPanel = page.getByTestId("player-stats-panel");
+    await expect(statsPanel).toBeVisible({ timeout: 10_000 });
 
-    // Wait for enough log entries that scoring is virtually certain.
-    await waitForLogLines(page, 50, 90_000);
-
-    // Capture both-tab RBI state before saving.
+    // Confirm RBI values are present before saving.
     const rbiBeforeSave = await getBothTabsRbi(page, statsPanel);
     expect(rbiBeforeSave.some((t) => t !== "–")).toBe(true);
 
@@ -124,7 +121,7 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
     await page.getByTestId("load-save-button").first().click();
     await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
 
-    // RBI values after reload: at least one team must still have non-zero RBI.
+    // RBI values must still be non-zero after reload.
     const rbiAfterLoad = await getBothTabsRbi(page, statsPanel);
     expect(rbiAfterLoad.some((t) => t !== "–" && t.trim() !== "")).toBe(true);
   });

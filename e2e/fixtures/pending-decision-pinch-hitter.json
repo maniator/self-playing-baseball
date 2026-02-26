@@ -1,0 +1,433 @@
+{
+  "version": 1,
+  "header": {
+    "id": "save_pinch_hitter_visual_fixture",
+    "name": "Pinch Hitter Decision",
+    "seed": "ph-visual-01",
+    "matchupMode": "custom",
+    "homeTeamId": "custom:ct_vis_locals",
+    "awayTeamId": "custom:ct_vis_visitors",
+    "createdAt": 1700002000000,
+    "updatedAt": 1700002000000,
+    "progressIdx": 42,
+    "schemaVersion": 1,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": 0,
+      "managerMode": true,
+      "homeTeam": "Locals",
+      "awayTeam": "Visitors",
+      "playerOverrides": [
+        {
+          "vis_b0": {
+            "nickname": "A. Torres",
+            "position": "CF"
+          },
+          "vis_b1": {
+            "nickname": "B. Smith",
+            "position": "RF"
+          },
+          "vis_b2": {
+            "nickname": "C. Park",
+            "position": "SS"
+          },
+          "vis_b3": {
+            "nickname": "D. Rivera",
+            "position": "1B"
+          },
+          "vis_b4": {
+            "nickname": "E. Nguyen",
+            "position": "2B"
+          },
+          "vis_b5": {
+            "nickname": "F. Castro",
+            "position": "3B"
+          },
+          "vis_b6": {
+            "nickname": "G. Brooks",
+            "position": "LF"
+          },
+          "vis_b7": {
+            "nickname": "H. Ford",
+            "position": "C"
+          },
+          "vis_b8": {
+            "nickname": "I. Diaz",
+            "position": "DH"
+          },
+          "vis_ph1": {
+            "nickname": "J. Lee",
+            "position": "LF",
+            "contactMod": 10
+          },
+          "vis_ph2": {
+            "nickname": "K. Patel",
+            "position": "DH",
+            "powerMod": 10
+          },
+          "vis_p0": {
+            "nickname": "L. Ace",
+            "position": "SP"
+          }
+        },
+        {
+          "loc_b0": {
+            "nickname": "H0.Player",
+            "position": "C"
+          },
+          "loc_b1": {
+            "nickname": "H1.Player",
+            "position": "1B"
+          },
+          "loc_b2": {
+            "nickname": "H2.Player",
+            "position": "2B"
+          },
+          "loc_b3": {
+            "nickname": "H3.Player",
+            "position": "3B"
+          },
+          "loc_b4": {
+            "nickname": "H4.Player",
+            "position": "SS"
+          },
+          "loc_b5": {
+            "nickname": "H5.Player",
+            "position": "LF"
+          },
+          "loc_b6": {
+            "nickname": "H6.Player",
+            "position": "CF"
+          },
+          "loc_b7": {
+            "nickname": "H7.Player",
+            "position": "RF"
+          },
+          "loc_b8": {
+            "nickname": "H8.Player",
+            "position": "DH"
+          },
+          "loc_p0": {
+            "nickname": "M. Closer",
+            "position": "SP"
+          }
+        }
+      ],
+      "lineupOrder": [
+        [
+          "vis_b0",
+          "vis_b1",
+          "vis_b2",
+          "vis_b3",
+          "vis_b4",
+          "vis_b5",
+          "vis_b6",
+          "vis_b7",
+          "vis_b8"
+        ],
+        [
+          "loc_b0",
+          "loc_b1",
+          "loc_b2",
+          "loc_b3",
+          "loc_b4",
+          "loc_b5",
+          "loc_b6",
+          "loc_b7",
+          "loc_b8"
+        ]
+      ],
+      "awayBench": [
+        "vis_ph1",
+        "vis_ph2"
+      ],
+      "homeBench": [],
+      "awayPitchers": [
+        "vis_p0"
+      ],
+      "homePitchers": [
+        "loc_p0"
+      ],
+      "startingPitcherIdx": [
+        0,
+        0
+      ]
+    },
+    "stateSnapshot": {
+      "state": {
+        "gameOver": false,
+        "onePitchModifier": null,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": false,
+        "defensiveShiftOffered": false,
+        "playLog": [],
+        "strikeoutLog": [],
+        "outLog": [],
+        "rosterBench": [
+          [
+            "vis_ph1",
+            "vis_ph2"
+          ],
+          []
+        ],
+        "rosterPitchers": [
+          [
+            "vis_p0"
+          ],
+          [
+            "loc_p0"
+          ]
+        ],
+        "activePitcherIdx": [
+          0,
+          0
+        ],
+        "lineupPositions": [
+          [
+            "CF",
+            "RF",
+            "SS",
+            "1B",
+            "2B",
+            "3B",
+            "LF",
+            "C",
+            "DH"
+          ],
+          [
+            "C",
+            "1B",
+            "2B",
+            "3B",
+            "SS",
+            "LF",
+            "CF",
+            "RF",
+            "DH"
+          ]
+        ],
+        "pitcherBattersFaced": [
+          18,
+          0
+        ],
+        "substitutedOut": [
+          [],
+          []
+        ],
+        "baseRunnerIds": [
+          null,
+          "vis_b0",
+          null
+        ],
+        "resolvedMods": [
+          {
+            "vis_ph1": {
+              "contactMod": 10,
+              "powerMod": 0,
+              "speedMod": 0,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "vis_ph2": {
+              "contactMod": 0,
+              "powerMod": 10,
+              "speedMod": 0,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            }
+          },
+          {}
+        ],
+        "inning": 7,
+        "score": [
+          2,
+          3
+        ],
+        "teams": [
+          "Visitors",
+          "Locals"
+        ],
+        "baseLayout": [
+          0,
+          1,
+          0
+        ],
+        "outs": 1,
+        "strikes": 0,
+        "balls": 0,
+        "atBat": 0,
+        "pendingDecision": {
+          "kind": "pinch_hitter",
+          "candidates": [
+            {
+              "id": "vis_ph1",
+              "name": "J. Lee",
+              "position": "LF",
+              "contactMod": 10,
+              "powerMod": 0
+            },
+            {
+              "id": "vis_ph2",
+              "name": "K. Patel",
+              "position": "DH",
+              "contactMod": 0,
+              "powerMod": 10
+            }
+          ],
+          "teamIdx": 0,
+          "lineupIdx": 2
+        },
+        "pitchKey": 42,
+        "batterIndex": [
+          2,
+          0
+        ],
+        "inningRuns": [
+          [
+            0,
+            0,
+            2,
+            0,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0,
+            2,
+            0,
+            0
+          ]
+        ],
+        "playerOverrides": [
+          {
+            "vis_b0": {
+              "nickname": "A. Torres",
+              "position": "CF"
+            },
+            "vis_b1": {
+              "nickname": "B. Smith",
+              "position": "RF"
+            },
+            "vis_b2": {
+              "nickname": "C. Park",
+              "position": "SS"
+            },
+            "vis_b3": {
+              "nickname": "D. Rivera",
+              "position": "1B"
+            },
+            "vis_b4": {
+              "nickname": "E. Nguyen",
+              "position": "2B"
+            },
+            "vis_b5": {
+              "nickname": "F. Castro",
+              "position": "3B"
+            },
+            "vis_b6": {
+              "nickname": "G. Brooks",
+              "position": "LF"
+            },
+            "vis_b7": {
+              "nickname": "H. Ford",
+              "position": "C"
+            },
+            "vis_b8": {
+              "nickname": "I. Diaz",
+              "position": "DH"
+            },
+            "vis_ph1": {
+              "nickname": "J. Lee",
+              "position": "LF",
+              "contactMod": 10
+            },
+            "vis_ph2": {
+              "nickname": "K. Patel",
+              "position": "DH",
+              "powerMod": 10
+            },
+            "vis_p0": {
+              "nickname": "L. Ace",
+              "position": "SP"
+            }
+          },
+          {
+            "loc_b0": {
+              "nickname": "H0.Player",
+              "position": "C"
+            },
+            "loc_b1": {
+              "nickname": "H1.Player",
+              "position": "1B"
+            },
+            "loc_b2": {
+              "nickname": "H2.Player",
+              "position": "2B"
+            },
+            "loc_b3": {
+              "nickname": "H3.Player",
+              "position": "3B"
+            },
+            "loc_b4": {
+              "nickname": "H4.Player",
+              "position": "SS"
+            },
+            "loc_b5": {
+              "nickname": "H5.Player",
+              "position": "LF"
+            },
+            "loc_b6": {
+              "nickname": "H6.Player",
+              "position": "CF"
+            },
+            "loc_b7": {
+              "nickname": "H7.Player",
+              "position": "RF"
+            },
+            "loc_b8": {
+              "nickname": "H8.Player",
+              "position": "DH"
+            },
+            "loc_p0": {
+              "nickname": "M. Closer",
+              "position": "SP"
+            }
+          }
+        ],
+        "lineupOrder": [
+          [
+            "vis_b0",
+            "vis_b1",
+            "vis_b2",
+            "vis_b3",
+            "vis_b4",
+            "vis_b5",
+            "vis_b6",
+            "vis_b7",
+            "vis_b8"
+          ],
+          [
+            "loc_b0",
+            "loc_b1",
+            "loc_b2",
+            "loc_b3",
+            "loc_b4",
+            "loc_b5",
+            "loc_b6",
+            "loc_b7",
+            "loc_b8"
+          ]
+        ]
+      },
+      "rngState": 987654321
+    }
+  },
+  "events": [],
+  "sig": "7dfe343d"
+}

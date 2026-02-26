@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import {
   closeNewGameDialog,
   disableAnimations,
+  loadFixture,
   resetAppState,
   saveCurrentGame,
   startGameViaPlayBall,
@@ -121,22 +122,19 @@ test.describe("Visual", () => {
    * Manager decision panel screenshot — captures the DecisionPanel UI that
    * appears when Manager Mode is active and a decision point is reached.
    *
-   * Restricted to desktop (Chromium 1280×800) because:
-   * - Waiting up to 120 s × 6 viewports would make CI prohibitively slow.
-   * - The decision panel layout is identical across viewports (it renders in the
-   *   controls bar, not the game field area).
-   * - Notification API / console assertions in the companion notifications.spec.ts
-   *   tests already cover this path on all Chromium projects.
+   * Uses a pre-crafted save fixture (pending-decision.json) that already has
+   * pendingDecision set to "defensive_shift", making this test instant instead
+   * of waiting up to 120 s for autoplay to reach a decision point.
+   *
+   * Restricted to desktop because the panel layout is identical across viewports.
    */
   test("manager decision panel screenshot", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Decision panel snapshot is desktop-only");
-    // The decision panel wait is 120 s; add headroom beyond the 90 s global limit.
-    test.setTimeout(150_000);
 
-    await startGameViaPlayBall(page, { seed: "visual3", managedTeam: "0" });
-    await waitForLogLines(page, 3);
-    // Wait for the first decision point — autoplay pauses until the panel is dismissed.
-    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 120_000 });
+    await loadFixture(page, "pending-decision.json");
+    // The fixture has pendingDecision=defensive_shift and managerMode=true,
+    // so the panel is visible immediately after load.
+    await expect(page.getByTestId("manager-decision-panel")).toBeVisible({ timeout: 10_000 });
 
     // Snapshot just the decision panel itself so the screenshot is stable
     // regardless of what is happening in the scoreboard / log behind it.
@@ -644,9 +642,11 @@ test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
 
 // ─── 8. Pinch hitter player dropdown in Decision Panel ───────────────────────
 //
-// Captures the player-selection dropdown that appears in the Decision Panel
-// when a pinch hitter opportunity arises in a managed custom-team game.
-// Restricted to desktop to keep CI runtime reasonable.
+// Captures the player-selection dropdown inside the DecisionPanel when a
+// pinch-hitter opportunity arises in a managed custom-team game.
+// Uses a pre-crafted save fixture so the panel is visible immediately —
+// no autoplay or real-time game progression needed.
+// Restricted to desktop only.
 test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
@@ -654,11 +654,10 @@ test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () =>
   });
 
   /**
-   * Captures the pinch hitter player selector dropdown inside the Decision Panel.
-   * Requires a managed custom-team game with bench players to reach a pinch-hit
-   * opportunity (inning 7+, runner on 2nd/3rd, 0-0 count).
-   *
-   * Desktop-only; uses seed "visual-ph1" which is expected to reach an opportunity.
+   * Loads a fixture whose stateSnapshot has pendingDecision set to a
+   * pinch_hitter decision with two named bench candidates.  Because the
+   * fixture also carries managerMode=true, the DecisionPanel mounts
+   * instantly and shows the player-selection dropdown.
    */
   test("pinch hitter player dropdown visible in Decision Panel (desktop)", async ({
     page,
@@ -667,34 +666,13 @@ test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () =>
       testInfo.project.name !== "desktop",
       "Pinch hitter dropdown snapshot is desktop-only",
     );
-    // Allow extra time for the game to reach inning 7+ with runners on base.
-    test.setTimeout(200_000);
 
-    // Create two custom teams; generateDefaultTeam includes bench players.
-    await createAndSaveTeam(page, "PH Visual Home");
-    await createAndSaveTeam(page, "PH Visual Away");
+    await loadFixture(page, "pending-decision-pinch-hitter.json");
+    // The fixture has pendingDecision=pinch_hitter with candidates, so the
+    // player-selection dropdown is visible immediately after load.
+    await expect(page.getByTestId("pinch-hitter-select")).toBeVisible({ timeout: 10_000 });
 
-    // Navigate into the New Game dialog and start a managed custom-team game.
-    await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("new-game-dialog")).toBeVisible({ timeout: 10_000 });
-
-    // Switch to Custom Teams tab.
-    await page.getByTestId("new-game-custom-teams-tab").click();
-
-    // Wait for selects to populate.
-    const awaySelect = page.getByTestId("new-game-custom-away-team-select");
-    await expect(awaySelect.locator("option")).toHaveCount(2, { timeout: 5_000 });
-
-    // Choose managed (away team), set a deterministic seed, start.
-    await page.locator('input[name="managed"][value="0"]').check();
-    await page.getByTestId("seed-input").fill("visual-ph1");
-    await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
-
-    // Wait for a pinch hitter decision that has player candidates (custom team bench).
-    await expect(page.getByTestId("pinch-hitter-select")).toBeVisible({ timeout: 180_000 });
-
-    // Snapshot just the decision panel for stability.
+    // Snapshot the decision panel with the dropdown visible.
     await expect(page.getByTestId("manager-decision-panel")).toHaveScreenshot(
       "manager-decision-panel-pinch-hitter-dropdown.png",
       { maxDiffPixelRatio: 0.05 },

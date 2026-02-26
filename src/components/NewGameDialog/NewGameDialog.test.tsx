@@ -474,3 +474,134 @@ describe("getSpEligiblePitchers", () => {
     expect(result[1].idx).toBe(3);
   });
 });
+
+// ---------------------------------------------------------------------------
+// SP-eligibility validation when managed team has only RP pitchers
+// ---------------------------------------------------------------------------
+
+describe("NewGameDialog — managed custom team SP-eligibility validation", () => {
+  const makeTeamWithRpOnly = (id: string, name: string) => ({
+    id,
+    schemaVersion: 1 as const,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name,
+    abbreviation: name.slice(0, 3).toUpperCase(),
+    roster: {
+      lineup: Array.from({ length: 9 }, (_, i) => ({
+        id: `${id}_b${i}`,
+        name: `Player ${i + 1}`,
+        role: "batter" as const,
+        batting: { contact: 60, power: 60, speed: 60 },
+        position: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"][i],
+        handedness: "R" as const,
+      })),
+      bench: [],
+      pitchers: [
+        {
+          id: `${id}_rp1`,
+          name: "Closer",
+          role: "pitcher" as const,
+          batting: { contact: 35, power: 35, speed: 35 },
+          pitching: { velocity: 60, control: 60, movement: 60 },
+          position: "RP",
+          handedness: "R" as const,
+          pitchingRole: "RP" as const,
+        },
+      ],
+    },
+  });
+
+  const makeTeamWithSp = (id: string, name: string) => ({
+    id,
+    schemaVersion: 1 as const,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name,
+    abbreviation: name.slice(0, 3).toUpperCase(),
+    roster: {
+      lineup: Array.from({ length: 9 }, (_, i) => ({
+        id: `${id}_b${i}`,
+        name: `Player ${i + 1}`,
+        role: "batter" as const,
+        batting: { contact: 60, power: 60, speed: 60 },
+        position: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"][i],
+        handedness: "R" as const,
+      })),
+      bench: [],
+      pitchers: [
+        {
+          id: `${id}_sp1`,
+          name: "Ace",
+          role: "pitcher" as const,
+          batting: { contact: 35, power: 35, speed: 35 },
+          pitching: { velocity: 60, control: 60, movement: 60 },
+          position: "SP",
+          handedness: "R" as const,
+          pitchingRole: "SP" as const,
+        },
+      ],
+    },
+  });
+
+  const rpTeam = makeTeamWithRpOnly("ct_rp", "Bullpen FC");
+  const spTeam = makeTeamWithSp("ct_sp", "Starters SC");
+
+  beforeEach(async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [rpTeam, spTeam],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+    } as ReturnType<typeof useCustomTeams>);
+  });
+
+  it("blocks game start and shows validation error when managed team has only RP pitchers", async () => {
+    const onStart = vi.fn();
+    await act(async () => {
+      render(<NewGameDialog onStart={onStart} />);
+    });
+    // Switch to custom tab.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("new-game-custom-teams-tab"));
+    });
+    // Select managed = away (rpTeam is away by default).
+    const managedAwayRadio = screen.getByLabelText(/away.*\(bullpen/i);
+    await act(async () => {
+      fireEvent.click(managedAwayRadio);
+    });
+    // Attempt to start.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    // Should show an SP-eligibility error and NOT start the game.
+    expect(onStart).not.toHaveBeenCalled();
+    const errEl = screen.getByTestId("team-validation-error");
+    expect(errEl.textContent).toMatch(/no SP-eligible pitchers/i);
+  });
+
+  it("allows game start when managed team has an SP pitcher", async () => {
+    const onStart = vi.fn();
+    await act(async () => {
+      render(<NewGameDialog onStart={onStart} />);
+    });
+    // Switch to custom tab.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("new-game-custom-teams-tab"));
+    });
+    // Default: away=rpTeam (RP-only), home=spTeam (has SP). Manage the home team.
+    const managedHomeRadio = screen.getByLabelText(/home.*\(starters/i);
+    await act(async () => {
+      fireEvent.click(managedHomeRadio);
+    });
+    // Attempt to start.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("play-ball-button"));
+    });
+    // No SP error — onStart should have been called.
+    expect(screen.queryByTestId("team-validation-error")).not.toBeInTheDocument();
+    expect(onStart).toHaveBeenCalledTimes(1);
+  });
+});

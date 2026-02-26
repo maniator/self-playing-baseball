@@ -147,8 +147,11 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
           type: "make_substitution",
           payload: { teamIdx, kind: "batter", lineupIdx, benchPlayerId: selectedCandidateId },
         });
-        // Lock pinchHitterStrategy to prevent re-offering the decision for this at-bat.
-        onDispatch({ type: "set_pinch_hitter_strategy", payload: strategy });
+        // Always lock as "contact" — the pinch-hit scenario is a contact situation
+        // regardless of the current overall strategy; this prevents re-offering the
+        // decision for the rest of the at-bat without silently overriding the user's
+        // chosen game strategy for the next at-bat.
+        onDispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
       };
       const candidateLabel = (c: PinchHitterCandidate) =>
         c.position ? `${c.name} (${c.position})` : c.name;

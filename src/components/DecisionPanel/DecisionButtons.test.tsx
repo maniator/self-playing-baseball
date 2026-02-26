@@ -359,7 +359,7 @@ describe("DecisionButtons", () => {
       });
       expect(onDispatch).toHaveBeenCalledWith({
         type: "set_pinch_hitter_strategy",
-        payload: "balanced",
+        payload: "contact",
       });
     });
   });

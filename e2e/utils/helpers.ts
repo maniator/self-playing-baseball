@@ -229,6 +229,9 @@ export async function loadSaveByName(page: Page, name: string): Promise<void> {
 /**
  * Imports a save fixture via the file-input path.
  * Reads the fixture JSON from disk and sets it on the file input.
+ *
+ * Requires a game to already be active (saves-button visible).
+ * For loading from the Home screen, use {@link loadFixture} instead.
  */
 export async function importSaveFromFixture(page: Page, fixtureName: string): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
@@ -236,6 +239,37 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
   await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
   // Auto-load closes the modal after a successful import
   await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+}
+
+/**
+ * Loads a pre-crafted save fixture directly from the Home screen.
+ *
+ * Navigates into the game via "Load Saved Game", imports the fixture JSON via
+ * the file input in the Saves modal, waits for the auto-load to restore game
+ * state, and confirms the scoreboard is visible.
+ *
+ * Use this instead of `startGameViaPlayBall` + long wait whenever the test
+ * needs a specific game situation (e.g. a pending manager decision, RBI values
+ * already on the board, a specific inning/count).  The fixture's embedded
+ * `stateSnapshot` is applied immediately — no autoplay or real-time
+ * progression required.
+ *
+ * Fixtures live in `e2e/fixtures/` and must carry a valid FNV-1a signature
+ * computed by `fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events}))`.
+ * See the "Save Fixtures for E2E Testing" section in
+ * `.github/copilot-instructions.md` for the full authoring guide.
+ */
+export async function loadFixture(page: Page, fixtureName: string): Promise<void> {
+  const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Enter the game shell via the "Load Saved Game" path on the Home screen.
+  await page.getByTestId("home-load-saves-button").click();
+  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
+  // Import the fixture — auto-load replaces game state and closes the modal.
+  await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
+  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 15_000 });
+  // Confirm the game shell is now active.
+  await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }
 
 /**
