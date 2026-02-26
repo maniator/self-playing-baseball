@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Ballgame** is a **self-playing baseball simulator** built as a single-page React/TypeScript PWA. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users can trigger pitches via a "Batter Up!" button or the spacebar, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
+**Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
 **Repository size:** ~96 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
@@ -37,25 +37,43 @@
 ├── dist/                           # Build output (gitignored)
 ├── e2e/                            # Playwright E2E tests
 │   ├── fixtures/
-│   │   └── sample-save.json        # FNV-1a signed save fixture for import tests
+│   │   ├── sample-save.json        # FNV-1a signed save fixture for import tests
+│   │   ├── pending-decision.json   # Inning 4 bottom, defensive_shift pending, managerMode on
+│   │   ├── pending-decision-pinch-hitter.json  # Inning 7 top, pinch_hitter pending
+│   │   └── mid-game-with-rbi.json  # Inning 5 top, 3-2 score, playLog has RBI entries
 │   ├── tests/
 │   │   ├── smoke.spec.ts           # App loads, Play Ball starts game, autoplay progresses
 │   │   ├── determinism.spec.ts     # Same seed → same play-by-play (desktop-only project, two fresh IndexedDB contexts)
 │   │   ├── save-load.spec.ts       # Save game, load game, autoplay resumes
 │   │   ├── import.spec.ts          # Import fixture, save visible in list
+│   │   ├── routing.spec.ts         # Route transitions: Home→/exhibition/new, /saves, /help, /teams/:id/edit (desktop-only)
+│   │   ├── home.spec.ts            # Home screen buttons + resume-current-game flow
+│   │   ├── modals.spec.ts          # In-game Saves modal + InstructionsModal smoke
 │   │   ├── responsive-smoke.spec.ts # Scoreboard/field/log visible & non-zero on all viewports
-│   │   ├── visual.spec.ts          # Pixel-diff snapshots (New Game dialog, scoreboard, saves modal)
-│   │   ├── manager-mode.spec.ts    # Manager Mode toggle + strategy selector; deep flow test.skip TODO
-│   │   └── visual.spec.ts-snapshots/  # Committed baseline PNGs per project
+│   │   ├── layout.spec.ts          # Layout pixel-diff snapshots
+│   │   ├── manage-teams-and-custom-game-flow.spec.ts  # Full Create/Edit/Delete team + start custom game
+│   │   ├── custom-team-editor.spec.ts  # Team editor form interactions (desktop)
+│   │   ├── custom-team-editor-mobile-and-regressions.spec.ts  # Mobile team editor regressions
+│   │   ├── stats.spec.ts           # Live batting stats + hit log correctness
+│   │   ├── batting-stats.spec.ts   # Stat-budget regression
+│   │   ├── stat-budget.spec.ts     # Stat-budget smoke
+│   │   ├── starting-pitcher-selection.spec.ts  # Custom-game starting pitcher selector
+│   │   ├── manager-mode.spec.ts    # Manager Mode toggle + strategy selector
+│   │   ├── notifications.spec.ts   # Browser notification permission + service worker message
+│   │   ├── substitution.spec.ts    # Pinch hitter substitution flow
+│   │   ├── qa-regression.spec.ts   # Miscellaneous QA regression tests
+│   │   └── visual/                 # Pixel-diff snapshots per page (baselines per project)
 │   └── utils/
 │       └── helpers.ts              # resetAppState, startGameViaPlayBall, waitForLogLines(page, count, timeout?),
 │                                   # captureGameSignature(page, minLines?, logTimeout?), openSavesModal,
 │                                   # saveCurrentGame, loadFirstSave, importSaveFromFixture,
-│                                   # assertFieldAndLogVisible, disableAnimations
+│                                   # assertFieldAndLogVisible, disableAnimations, loadFixture,
+│                                   # configureNewGame(page, options?)
 └── src/
     ├── index.html                  # HTML entry point for Vite (script has type="module", image hrefs are absolute /…)
     ├── index.scss                  # Global styles + mobile media queries
     ├── index.tsx                   # React entry: initSeedFromUrl, registers /sw.js, createRoot
+    ├── router.tsx                  # createBrowserRouter + RouterProvider; defines full route tree (/, /exhibition/new, /game, /teams, /teams/:id/edit, /saves, /help)
     ├── sw.ts                       # Service worker: uses self.__WB_MANIFEST (injected by vite-plugin-pwa), caches bundles, handles notificationclick
     ├── constants/
     │   ├── hitTypes.ts             # Hit enum: Single, Double, Triple, Homerun, Walk
@@ -95,15 +113,26 @@
     │   ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
     │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
     │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
-    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler
+    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; pauses when isRouteActive=false (off /game route)
     │   ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
     │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
     │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
     │   │                           #   calls updateProgress (with full stateSnapshot) on half-inning / game-over
     │   ├── useSaveStore.ts         # useLiveRxQuery wrapper for reactive saves list + stable write callbacks
+    │   ├── useCustomTeams.ts       # useLiveRxQuery wrapper for the customTeams RxDB collection
     │   └── useShareReplay.ts       # Clipboard copy of replay URL
     ├── components/                 # All UI components
+    │   ├── AppShell/
+    │   │   └── index.tsx           # Persistent layout (display:none trick keeps Game mounted); provides AppShellOutletContext
+    │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave }
+    │   ├── HomeScreen/
+    │   │   ├── index.tsx           # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
+    │   │   └── styles.ts           # Styled components for home screen
+    │   ├── ManageTeamsScreen/
+    │   │   ├── index.tsx           # Route-aware screen: list view at /teams, editor at /teams/:id/edit and /teams/new
+    │   │   ├── TeamListItem.tsx    # Single team row (edit/delete buttons)
+    │   │   └── styles.ts           # Styled components for manage teams screen
     │   ├── Announcements/index.tsx # Play-by-play log with heading + empty-state placeholder
     │   ├── Ball/
     │   │   ├── constants.ts        # hitDistances: pixel travel distance per Hit type
@@ -148,9 +177,28 @@
     │       ├── index.tsx           # Save management overlay: list, create, load, delete, export, import
     │       ├── styles.ts           # Styled components for saves modal
     │       └── useSavesModal.ts    # Hook: calls useSaveStore for all save CRUD operations
-    └── test/                       # Shared test infrastructure only
-        ├── setup.ts                # @testing-library/jest-dom + global mocks (SpeechSynthesis, AudioContext, Notification)
-        └── testHelpers.ts          # makeState, makeContextValue, makeLogs, mockRandom
+    ├── features/
+    │   └── customTeams/
+    │       └── adapters/
+    │           └── customTeamAdapter.ts  # customTeamToDisplayName, customTeamToGameId,
+    │                                     #   customTeamToPlayerOverrides, customTeamToLineupOrder,
+    │                                     #   customTeamToPitcherRoster, customTeamToBenchRoster,
+    │                                     #   resolveTeamLabel (resolves `custom:<id>` or raw team name)
+    └── pages/
+        ├── ExhibitionSetupPage/
+        │   ├── index.tsx           # Full-page Exhibition Setup — primary New Game entry point (/exhibition/new)
+        │   │                       #   Defaults to Custom Teams tab; uses useExhibitionSetup hook
+        │   │                       #   No IIFEs in JSX: computed variables derive managedSpPitchers/managedStarterIdx before return
+        │   ├── MlbTeamsSection.tsx # MLB-specific form fields (matchup radios, team selects, player customization)
+        │   ├── styles.ts           # Styled components for the exhibition setup page
+        │   └── useExhibitionSetup.ts  # Hook: orchestrates team selection, custom team logic, starter pitcher, form submit
+        ├── HelpPage/
+        │   ├── index.tsx           # Standalone How to Play page at /help; browser back returns to previous page
+        │   └── styles.ts           # Styled components for help page
+        └── SavesPage/
+            ├── index.tsx           # Exhibition Saves page at /saves; loads from SaveStore directly (no RxDatabaseProvider needed)
+            │                       #   Load action routes through AppShellOutletContext → AppShell mounts Game and navigates to /game
+            └── styles.ts           # Styled components for saves page
 ```
 
 Tests are **co-located** next to their source files (e.g. `src/context/strategy.test.ts`, `src/hooks/useGameAudio.test.ts`, `src/components/Ball/Ball.test.tsx`). The only test files that do NOT live next to a source file are the shared helpers in `src/test/`.
@@ -314,11 +362,33 @@ All randomness is routed through `src/utils/rng.ts` (mulberry32 PRNG):
 
 ---
 
-## Auto-play Mode
+## Route Architecture (Stage 4A)
+
+The app uses React Router's data router (`createBrowserRouter` + `RouterProvider`) defined in `src/router.tsx`. `AppShell` is the persistent layout element; it keeps the `Game` component mounted using a `display:none` trick so game state survives route transitions.
+
+| Route | Component | Notes |
+|---|---|---|
+| `/` | `HomeScreen` | New Game, Load Saved Game, Manage Teams, Help buttons |
+| `/exhibition/new` | `ExhibitionSetupPage` | Primary new-game entry point; defaults to Custom Teams tab |
+| `/game` | `Game` (via AppShell) | The game is always mounted; autoplay pauses when not on this route |
+| `/teams` | `ManageTeamsScreen` | Custom team list |
+| `/teams/new` | `ManageTeamsScreen` (create view) | URL-routed editor; browser-back returns to list |
+| `/teams/:id/edit` | `ManageTeamsScreen` (edit view) | Loader redirects to `/teams` if team ID missing; shows loading/not-found states on deep-link |
+| `/saves` | `SavesPage` | Standalone saves list; navigates to `/game` only after a save is loaded |
+| `/help` | `HelpPage` | How to Play; browser back returns to previous page |
+
+**AppShellOutletContext** — child routes (`/exhibition/new`, `/saves`) call back to AppShell via outlet context:
+- `onStartGame(setup: ExhibitionGameSetup)` — mounts game with the provided setup and navigates to `/game`
+- `onLoadSave(slot: SaveDoc)` — restores game from a save and navigates to `/game`
+
+---
+
+
 
 Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 - Speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses refs so speed changes take effect immediately without stale closures.
+- **Route-aware pause** — when `isRouteActive` is `false` (i.e., the user is not on `/game`), the scheduler returns early and does not advance the game. It resumes automatically when `isRouteActive` becomes `true` again.
 - Manager Mode pausing — when `pendingDecision` is set, the scheduler returns early and restarts once the decision resolves.
 - All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
 
@@ -434,8 +504,9 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 | Helper | Purpose |
 |---|---|
 | `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
-| `startGameViaPlayBall(page, options?)` | Fill seed-input field (if provided), configure teams, click Play Ball |
-| `loadFixture(page, fixtureName)` | Navigate to `/` and load a pre-crafted save — self-contained, no prior `resetAppState` needed |
+| `startGameViaPlayBall(page, options?)` | Navigate to `/exhibition/new`, fill seed-input field (if provided), configure teams, click Play Ball |
+| `configureNewGame(page, options?)` | Fill seed/team fields on `/exhibition/new` without submitting |
+| `loadFixture(page, fixtureName)` | Navigate to `/` → Load Saved Game → import file fixture → auto-load restores state — self-contained, no prior `resetAppState` needed |
 | `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
 | `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
 | `openSavesModal(page)` | Click saves button, wait for modal |
@@ -449,7 +520,19 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 
 All stable test selectors added to the app:
 
-`new-game-dialog`, `play-ball-button`, `matchup-mode-select`, `home-team-select`, `away-team-select`, `scoreboard`, `field-view`, `play-by-play-log`, `log-panel`, `hit-log`, `saves-button`, `saves-modal`, `save-game-button`, `load-save-button`, `import-save-file-input`, `import-save-textarea`, `import-save-button`, `manager-mode-toggle`, `manager-decision-panel`
+**Home screen:** `home-screen`, `home-new-game-button`, `home-resume-current-game-button`, `home-load-saves-button`, `home-manage-teams-button`, `home-help-button`
+
+**Exhibition Setup page (`/exhibition/new`):** `exhibition-setup-page`, `new-game-back-home-button`, `new-game-mlb-teams-tab`, `new-game-custom-teams-tab`, `matchup-mode-select`, `home-team-select`, `away-team-select`, `seed-input`, `play-ball-button`, `team-validation-error`, `starting-pitcher-select`
+
+**Saves page (`/saves`):** `saves-page`, `saves-page-back-button`, `saves-list`, `saves-list-item`, `saves-page-empty`, `load-save-button`, `export-save-button`, `delete-save-button`, `import-save-file-input`, `import-error`
+
+**Help page (`/help`):** `help-page`, `help-page-back-button`
+
+**Manage Teams (`/teams`, `/teams/new`, `/teams/:id/edit`):** `manage-teams-screen`, `manage-teams-back-button`, `manage-teams-create-button`, `custom-team-list`, `custom-team-list-item`, `custom-team-edit-button`, `custom-team-delete-button`, `manage-teams-editor-shell`, `manage-teams-editor-back-button`
+
+**In-game controls (GameControls / SavesModal):** `saves-button`, `saves-modal`, `saves-modal-close-button`, `save-game-button`, `import-save-textarea`, `import-save-button`, `back-to-home-button`
+
+**Game view:** `new-game-dialog`, `scoreboard`, `field-view`, `play-by-play-log`, `log-panel`, `hit-log`, `manager-mode-toggle`, `manager-decision-panel`, `db-reset-notice`
 
 ### Visual snapshots
 
@@ -610,7 +693,9 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden.
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
-- **Seed input in New Game dialog** — the seed is now settable via the UI text input (`data-testid="seed-input"`). On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
+- **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX.
+- **`SavesModal` no longer has `autoOpen`/`openSavesRequestCount`/`onRequestClose`/`closeLabel` props** — these were removed when "Load Saved Game" became a dedicated `/saves` route. The modal now always closes with a simple `close()`. Do not re-add these props.
+- **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
 - **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.
 - **NewGameDialog mobile compaction** — `NewGameDialog/styles.ts` uses `${mq.mobile}` blocks on every styled component (Dialog, Title, FieldGroup, FieldLabel, Input, Select, SectionLabel, RadioLabel, ResumeButton, Divider, PlayBallButton, SeedHint) to reduce padding/margins so the modal fits without scrolling on phone viewports. `PlayerCustomizationPanel.styles.ts` does the same for `PanelSection`. The Dialog's `max-height` uses `min(96dvh, 820px)` on mobile (vs `90dvh` on desktop) to reclaim browser-chrome space. Never revert these to desktop-only values.
 - **Viewport-safe modal sizing** — always use `dvh` (dynamic viewport height) units, not bare `vh`, for modal `max-height`. `100vh` on mobile browsers can exceed the visible area because it ignores browser chrome (address bar, navigation bar). `dvh` tracks the actual visible viewport. The `responsive-smoke.spec.ts` E2E test verifies the Play Ball button bottom edge is within `viewport.height` on all projects.
