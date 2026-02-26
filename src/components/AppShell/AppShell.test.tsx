@@ -34,6 +34,7 @@ vi.mock("@components/HomeScreen", () => ({
     onLoadSaves: () => void;
     onManageTeams: () => void;
     onResumeCurrent?: () => void;
+    onHelp?: () => void;
   }) => (
     <div data-testid="home-screen-mock">
       <button onClick={props.onNewGame}>New Game</button>
@@ -42,6 +43,11 @@ vi.mock("@components/HomeScreen", () => ({
       {props.onResumeCurrent && (
         <button onClick={props.onResumeCurrent} data-testid="resume-current-mock">
           Resume
+        </button>
+      )}
+      {props.onHelp && (
+        <button onClick={props.onHelp} data-testid="help-mock">
+          Help
         </button>
       )}
     </div>
@@ -177,5 +183,12 @@ describe("AppShell", () => {
       // Game is still mounted (display:none) but isOnGameRoute should be false
       expect(screen.getByTestId("game-route-active")).toHaveTextContent("false");
     });
+  });
+
+  it("clicking Help navigates away from home (to /help)", async () => {
+    const user = userEvent.setup();
+    renderAppShell("/");
+    await user.click(screen.getByTestId("help-mock"));
+    expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
   });
 });

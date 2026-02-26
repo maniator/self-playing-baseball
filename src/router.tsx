@@ -7,6 +7,7 @@ import RootLayout from "@components/RootLayout";
 import { CustomTeamStore } from "@storage/customTeamStore";
 
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
+const HelpPage = React.lazy(() => import("./pages/HelpPage"));
 const SavesPage = React.lazy(() => import("./pages/SavesPage"));
 
 /**
@@ -21,6 +22,7 @@ const SavesPage = React.lazy(() => import("./pages/SavesPage"));
  *       /teams/new           → ManageTeamsScreen (create editor)
  *       /teams/:teamId/edit  → ManageTeamsScreen (edit editor; redirects if team not found)
  *       /saves               → SavesPage (exhibition saves)
+ *       /help                → HelpPage (how to play)
  *       /exhibition/new      → ExhibitionSetupPage (via <Outlet />)
  *     * → redirect to /
  */
@@ -48,6 +50,14 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={null}>
                 <SavesPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "help",
+            element: (
+              <React.Suspense fallback={null}>
+                <HelpPage />
               </React.Suspense>
             ),
           },

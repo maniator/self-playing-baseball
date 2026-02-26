@@ -25,13 +25,14 @@ export type ExhibitionGameSetup = {
   playerOverrides: PlayerOverrides;
 };
 
-type Screen = "home" | "game" | "manage-teams" | "saves" | "other";
+type Screen = "home" | "game" | "manage-teams" | "saves" | "help" | "other";
 
 function pathnameToScreen(pathname: string): Screen {
   if (pathname === "/" || pathname === "") return "home";
   if (pathname === "/game") return "game";
   if (pathname.startsWith("/teams")) return "manage-teams";
   if (pathname === "/saves") return "saves";
+  if (pathname === "/help") return "help";
   return "other";
 }
 
@@ -103,6 +104,10 @@ const AppShell: React.FunctionComponent = () => {
     navigate("/teams");
   }, [navigate]);
 
+  const handleHelp = React.useCallback(() => {
+    navigate("/help");
+  }, [navigate]);
+
   /** Called from /exhibition/new — stores setup and navigates to /game. */
   const handleStartFromExhibition = React.useCallback(
     (setup: ExhibitionGameSetup) => {
@@ -148,6 +153,7 @@ const AppShell: React.FunctionComponent = () => {
           onLoadSaves={handleLoadSaves}
           onManageTeams={handleManageTeams}
           onResumeCurrent={hasActiveSession ? handleResumeCurrent : undefined}
+          onHelp={handleHelp}
         />
       )}
 
@@ -155,7 +161,9 @@ const AppShell: React.FunctionComponent = () => {
         <ManageTeamsScreen onBack={handleBackToHome} hasActiveGame={hasActiveSession} />
       )}
 
-      {(screen === "saves" || screen === "other") && <Outlet context={outletContext} />}
+      {(screen === "saves" || screen === "help" || screen === "other") && (
+        <Outlet context={outletContext} />
+      )}
     </>
   );
 };

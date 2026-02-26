@@ -79,4 +79,21 @@ describe("HomeScreen", () => {
     fireEvent.click(screen.getByTestId("home-resume-current-game-button"));
     expect(onResumeCurrent).toHaveBeenCalled();
   });
+
+  it("does NOT show Help button when onHelp is not provided", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
+    expect(screen.queryByTestId("home-help-button")).not.toBeInTheDocument();
+  });
+
+  it("shows Help button when onHelp is provided", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onHelp={noop} />);
+    expect(screen.getByTestId("home-help-button")).toBeInTheDocument();
+  });
+
+  it("calls onHelp when Help button is clicked", () => {
+    const onHelp = vi.fn();
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onHelp={onHelp} />);
+    fireEvent.click(screen.getByTestId("home-help-button"));
+    expect(onHelp).toHaveBeenCalled();
+  });
 });
