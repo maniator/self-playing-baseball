@@ -11,7 +11,7 @@ vi.mock("@storage/saveStore", () => ({
     listSaves: vi.fn().mockResolvedValue([]),
     deleteSave: vi.fn().mockResolvedValue(undefined),
     exportRxdbSave: vi.fn().mockResolvedValue("{}"),
-    importRxdbSave: vi.fn().mockResolvedValue({ id: "save_1", name: "Test Save" }),
+    importRxdbSave: vi.fn(),
   },
 }));
 
@@ -58,6 +58,7 @@ describe("SavesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
+    vi.mocked(SaveStore.importRxdbSave).mockResolvedValue(makeSave({ id: "imported_save" }));
   });
 
   it("renders the saves page", async () => {

@@ -308,7 +308,11 @@ const GameInner: React.FunctionComponent<Props> = ({
     prevPendingLoad.current = pendingLoadSave;
 
     const snap = pendingLoadSave.stateSnapshot;
-    if (!snap) return;
+    if (!snap) {
+      // No snapshot available — clear the pending state but don't restore.
+      onConsumePendingLoad?.();
+      return;
+    }
 
     if (snap.rngState !== null) restoreRng(snap.rngState);
     dispatch({ type: "restore_game", payload: snap.state });

@@ -40,7 +40,8 @@ export const router = createBrowserRouter([
           {
             path: "teams/:teamId/edit",
             loader: async ({ params }) => {
-              const team = await CustomTeamStore.getCustomTeam(params.teamId!);
+              if (!params.teamId) return redirect("/teams");
+              const team = await CustomTeamStore.getCustomTeam(params.teamId);
               if (!team) return redirect("/teams");
               return null;
             },
