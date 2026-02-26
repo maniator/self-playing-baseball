@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router";
 
 import AppShell from "@components/AppShell";
 import RootLayout from "@components/RootLayout";

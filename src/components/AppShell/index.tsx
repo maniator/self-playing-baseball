@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router";
 
 import Game from "@components/Game";
 import HomeScreen from "@components/HomeScreen";

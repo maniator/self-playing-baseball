@@ -45,9 +45,18 @@ export const readFileAsText = (file: File): Promise<string> =>
     reader.readAsText(file);
   });
 
-/** Derives a safe download filename from a save's name field. */
-export const saveFilename = (saveName: string): string =>
-  `ballgame-${saveName
+/**
+ * Derives a safe download filename from a save's name field.
+ * Appends a compact timestamp (YYYYMMDDTHHmmss) so repeated exports of the
+ * same save don't overwrite each other on disk.
+ */
+export const saveFilename = (saveName: string): string => {
+  const slug = saveName
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-|-$/g, "")
-    .toLowerCase()}.json`;
+    .toLowerCase();
+  const now = new Date();
+  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  return `ballgame-${slug}-${ts}.json`;
+};

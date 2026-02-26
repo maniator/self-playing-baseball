@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@components/Game/ErrorBoundary", () => ({

@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { act, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@utils/mlbTeams", async (importOriginal) => {
@@ -31,8 +31,8 @@ vi.mock("@hooks/useCustomTeams", () => ({
 const mockOnStartGame = vi.fn();
 const mockNavigate = vi.fn();
 
-vi.mock("react-router-dom", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("react-router-dom")>();
+vi.mock("react-router", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("react-router")>();
   return {
     ...mod,
     useOutletContext: vi.fn(() => ({ onStartGame: mockOnStartGame })),

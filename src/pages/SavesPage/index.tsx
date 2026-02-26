@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
-import { useNavigate, useOutletContext } from "react-router-dom";
+import { useNavigate, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";
 import SaveSlotList from "@components/SaveSlotList";
