@@ -113,7 +113,7 @@
     │   ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
     │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
     │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
-    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; pauses when isRouteActive=false (off /game route)
+    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; pauses on manager decisions; stops naturally when GamePage unmounts
     │   ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
     │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
@@ -124,9 +124,8 @@
     │   └── useShareReplay.ts       # Clipboard copy of replay URL
     ├── components/                 # All UI components
     │   ├── AppShell/
-    │   │   └── index.tsx           # Persistent layout (display:none trick keeps Game mounted); provides AppShellOutletContext
-    │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave }
-    │   │                           #   pathnameToScreen() maps URL → Screen type; "other" is the intentional catch-all for outlet-rendered routes (/exhibition/new, etc.)
+    │   │   └── index.tsx           # Pure layout component: renders <Outlet context={outletContext} />; provides AppShellOutletContext
+    │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave, onGameSessionStarted, onNewGame, onLoadSaves, onManageTeams, onResumeCurrent, onHelp, onBackToHome, hasActiveSession }
     │   ├── HomeScreen/
     │   │   ├── index.tsx           # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
     │   │   └── styles.ts           # Styled components for home screen
@@ -200,7 +199,7 @@
         │   └── styles.ts           # Styled components for help page
         └── SavesPage/
             ├── index.tsx           # Exhibition Saves page at /saves; loads from SaveStore directly (no RxDatabaseProvider needed)
-            │                       #   Load action routes through AppShellOutletContext → AppShell mounts Game and navigates to /game
+            │                       #   Load action navigates to /game via React Router location.state (GameLocationState)
             └── styles.ts           # Styled components for saves page
 ```
 
@@ -367,22 +366,24 @@ All randomness is routed through `src/utils/rng.ts` (mulberry32 PRNG):
 
 ## Route Architecture (Stage 4A)
 
-The app uses React Router's data router (`createBrowserRouter` + `RouterProvider`) defined in `src/router.tsx`. `AppShell` is the persistent layout element; it keeps the `Game` component mounted using a `display:none` trick so game state survives route transitions.
+The app uses **React Router v7** (`react-router` package — not `react-router-dom`) with the data router API (`createBrowserRouter` + `RouterProvider`) defined in `src/router.tsx`. `AppShell` is a **pure layout component** that renders only `<Outlet context={outletContext} />` — it does NOT mount the game persistently. `Game` lives at the `/game` route as a real route element (`GamePage`) that mounts on entry and unmounts on navigation away.
 
 | Route | Component | Notes |
 |---|---|---|
 | `/` | `HomeScreen` | New Game, Load Saved Game, Manage Teams, Help buttons |
 | `/exhibition/new` | `ExhibitionSetupPage` | Primary new-game entry point; defaults to Custom Teams tab |
-| `/game` | `Game` (via AppShell) | The game is always mounted; autoplay pauses when not on this route |
+| `/game` | `GamePage` | Mounts on entry, unmounts on navigate-away; state persisted to RxDB on unmount |
 | `/teams` | `ManageTeamsScreen` | Custom team list |
 | `/teams/new` | `ManageTeamsScreen` (create view) | URL-routed editor; browser-back returns to list |
 | `/teams/:id/edit` | `ManageTeamsScreen` (edit view) | Loader redirects to `/teams` if team ID missing; shows loading/not-found states on deep-link |
 | `/saves` | `SavesPage` | Standalone saves list; navigates to `/game` only after a save is loaded |
 | `/help` | `HelpPage` | How to Play; browser back returns to previous page |
 
-**AppShellOutletContext** — child routes (`/exhibition/new`, `/saves`) call back to AppShell via outlet context:
-- `onStartGame(setup: ExhibitionGameSetup)` — mounts game with the provided setup and navigates to `/game`
-- `onLoadSave(slot: SaveDoc)` — restores game from a save and navigates to `/game`
+**AppShellOutletContext** — all navigation callbacks and session state passed through outlet context to child routes:
+- `onStartGame(setup: ExhibitionGameSetup)` — navigates to `/game` with `pendingGameSetup` in `location.state`
+- `onLoadSave(slot: SaveDoc)` — navigates to `/game` with `pendingLoadSave` in `location.state`
+- `onGameSessionStarted()` — called by `GamePage` once a session is active (gates "Resume Current Game" button)
+- `hasActiveSession` — `true` once a real game session has started or been loaded
 
 ---
 
@@ -391,7 +392,7 @@ The app uses React Router's data router (`createBrowserRouter` + `RouterProvider
 Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 - Speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses refs so speed changes take effect immediately without stale closures.
-- **Route-aware pause** — when `isRouteActive` is `false` (i.e., the user is not on `/game`), the scheduler returns early and does not advance the game. It resumes automatically when `isRouteActive` becomes `true` again.
+- **Route-aware pause** — `GamePage` unmounts when the user navigates away from `/game`, which cancels the scheduler's cleanup function. No `isRouteActive` flag needed — the component lifecycle handles it.
 - Manager Mode pausing — when `pendingDecision` is set, the scheduler returns early and restarts once the decision resolves.
 - All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
 
