@@ -279,10 +279,16 @@ describe("ExhibitionSetupPage", () => {
     await user.click(nlRadio);
     // Change home team select
     const homeSelect = screen.getByTestId("home-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(homeSelect, homeSelect.options[1]?.value ?? homeSelect.options[0].value);
+    await userEvent.selectOptions(
+      homeSelect,
+      homeSelect.options[1]?.value ?? homeSelect.options[0].value,
+    );
     // Change away team select
     const awaySelect = screen.getByTestId("away-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(awaySelect, awaySelect.options[1]?.value ?? awaySelect.options[0].value);
+    await userEvent.selectOptions(
+      awaySelect,
+      awaySelect.options[1]?.value ?? awaySelect.options[0].value,
+    );
     // No assertion needed beyond exercising the handlers without throwing
     expect(homeSelect).toBeInTheDocument();
   });

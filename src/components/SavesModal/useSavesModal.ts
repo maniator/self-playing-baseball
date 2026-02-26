@@ -22,8 +22,6 @@ interface Params {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
-  autoOpen?: boolean;
-  openSavesRequestCount?: number;
 }
 
 export interface SavesModalState {
@@ -52,8 +50,6 @@ export const useSavesModal = ({
   onSaveIdChange,
   onSetupRestore,
   onLoadActivate,
-  autoOpen,
-  openSavesRequestCount,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
   const {
@@ -81,25 +77,6 @@ export const useSavesModal = ({
 
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
-
-  // Auto-open when requested (e.g. navigating via "Load Saved Game").
-  // Uses ref.current directly instead of closing over `open` so that the
-  // effect only depends on `autoOpen` and no stale-closure suppression is needed.
-  React.useEffect(() => {
-    if (!autoOpen || ref.current?.open) return;
-    ref.current?.showModal();
-  }, [autoOpen]);
-
-  // Counter-based open: fires whenever openSavesRequestCount increments so that
-  // repeated Home → Load Saved Game navigations always re-open the modal.
-  const prevOpenSavesRef = React.useRef(openSavesRequestCount ?? 0);
-  React.useEffect(() => {
-    const next = openSavesRequestCount ?? 0;
-    if (next > prevOpenSavesRef.current) {
-      prevOpenSavesRef.current = next;
-      if (!ref.current?.open) ref.current?.showModal();
-    }
-  }, [openSavesRequestCount]);
 
   const handleSave = () => {
     const teamLabel = (id: string) => resolveTeamLabel(id, customTeams);

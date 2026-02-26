@@ -43,11 +43,6 @@ interface Props {
    * GameInner watches this and re-opens the dialog even when already mounted.
    */
   newGameRequestCount?: number;
-  /**
-   * Incremented each time the user navigates via "Load Saved Game" from Home.
-   * GameInner watches this and opens the Saves modal even when already mounted.
-   */
-  loadSavesRequestCount?: number;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
   /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
@@ -71,7 +66,6 @@ interface Props {
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   newGameRequestCount,
-  loadSavesRequestCount,
   onBackToHome,
   onManageTeams,
   onNewGame,
@@ -128,31 +122,12 @@ const GameInner: React.FunctionComponent<Props> = ({
     }
   }, [newGameRequestCount]);
 
-  // Open the Saves modal when the user navigates via "Load Saved Game" from Home
-  // while Game is already mounted (the prop increments on each request).
-  const [openSavesCount, setOpenSavesCount] = React.useState(0);
-  const prevLoadSavesRef = React.useRef(loadSavesRequestCount ?? 0);
-  React.useEffect(() => {
-    const prev = prevLoadSavesRef.current;
-    const next = loadSavesRequestCount ?? 0;
-    if (next > prev) {
-      prevLoadSavesRef.current = next;
-      savesCloseActiveRef.current = true;
-      setOpenSavesCount((c) => c + 1);
-    }
-  }, [loadSavesRequestCount]);
-
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
   const actionBufferRef = externalBufferRef ?? localBufferRef;
 
   // Tracks the RxDB save ID for the current game session.
   const rxSaveIdRef = React.useRef<string | null>(null);
-
-  // Guards the "route Home on saves-modal close" behavior for the load-saves
-  // entry path. Cleared synchronously in handleLoadActivate so there is no
-  // timing window where a successful load could accidentally trigger the guard.
-  const savesCloseActiveRef = React.useRef(false);
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
@@ -318,7 +293,6 @@ const GameInner: React.FunctionComponent<Props> = ({
     setManagedTeam(setup.managedTeam ?? 0);
     setStrategy(setup.strategy);
 
-    savesCloseActiveRef.current = false;
     rxSaveIdRef.current = pendingLoadSave.id;
     setGameActive(true);
     setDialogOpen(false);
@@ -339,10 +313,6 @@ const GameInner: React.FunctionComponent<Props> = ({
 
   const handleLoadActivate = React.useCallback(
     (saveId: string) => {
-      // Clear the stranded-close guard synchronously — before any React state
-      // updates — so there is zero timing window where a "close" event could
-      // accidentally route the user back to Home after a successful load.
-      savesCloseActiveRef.current = false;
       rxSaveIdRef.current = saveId;
       setGameActive(true);
       onGameSessionStarted?.();
@@ -375,13 +345,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         onNewGame={handleNewGame}
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
-        autoOpenSaves={false}
-        openSavesRequestCount={openSavesCount}
         onBackToHome={handleSafeBackToHome}
-        onSavesClose={
-          // Ref cleared synchronously in handleLoadActivate; state is belt-and-suspenders.
-          savesCloseActiveRef.current && !gameActive ? handleSafeBackToHome : undefined
-        }
         isOnGameRoute={isOnGameRoute}
       />
       <GameBody>

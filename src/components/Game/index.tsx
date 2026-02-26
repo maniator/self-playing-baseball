@@ -17,7 +17,6 @@ import { DbResetNotice, LoadingScreen } from "./styles";
 
 type Props = {
   newGameRequestCount?: number;
-  loadSavesRequestCount?: number;
   onBackToHome?: () => void;
   onManageTeams?: () => void;
   /** Called from AppShell when the in-game New Game button is clicked. */
@@ -38,7 +37,6 @@ type Props = {
 
 const Game: React.FunctionComponent<Props> = ({
   newGameRequestCount,
-  loadSavesRequestCount,
   onBackToHome,
   onManageTeams,
   onNewGame,
@@ -105,7 +103,6 @@ const Game: React.FunctionComponent<Props> = ({
         <GameInner
           actionBufferRef={actionBufferRef}
           newGameRequestCount={newGameRequestCount}
-          loadSavesRequestCount={loadSavesRequestCount}
           onBackToHome={onBackToHome}
           onManageTeams={onManageTeams}
           onNewGame={onNewGame}

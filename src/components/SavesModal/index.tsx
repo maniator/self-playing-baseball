@@ -35,19 +35,8 @@ interface Props {
     managerMode: boolean;
   }) => void;
   onLoadActivate?: (saveId: string) => void;
-  autoOpen?: boolean;
-  openSavesRequestCount?: number;
   /** When true a real game session is active and "Save current game" is shown. */
   gameStarted?: boolean;
-  /**
-   * When provided, overrides the modal's built-in close action.
-   * Called instead of closing the dialog when the user clicks Close,
-   * the backdrop, or presses Escape. Used to route Home when no game
-   * has been started yet (Load Saved Game entry path).
-   */
-  onRequestClose?: () => void;
-  /** Label for the close button. Defaults to "Close". */
-  closeLabel?: string;
 }
 
 const formatDate = (ts: number): string =>
@@ -78,7 +67,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
 
   // When onRequestClose is provided it overrides the built-in close so the
   // caller can intercept close attempts (e.g. route back to Home).
-  const handleClose = props.onRequestClose ?? close;
+  const handleClose = close;
 
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
     // Guard: if the dialog was already closed (e.g. by a programmatic close()
@@ -179,7 +168,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         </Row>
 
         <CloseButton onClick={handleClose} data-testid="saves-modal-close-button">
-          {props.closeLabel ?? "Close"}
+          Close
         </CloseButton>
       </Dialog>
     </>
