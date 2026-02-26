@@ -17,7 +17,6 @@ import { DbResetNotice, LoadingScreen } from "./styles";
 
 type Props = {
   onBackToHome?: () => void;
-  onManageTeams?: () => void;
   /** Called when the in-game New Game button is clicked; navigates to /exhibition/new. */
   onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
@@ -34,7 +33,6 @@ type Props = {
 
 const Game: React.FunctionComponent<Props> = ({
   onBackToHome,
-  onManageTeams,
   onNewGame,
   onGameSessionStarted,
   pendingGameSetup,
@@ -98,7 +96,6 @@ const Game: React.FunctionComponent<Props> = ({
         <GameInner
           actionBufferRef={actionBufferRef}
           onBackToHome={onBackToHome}
-          onManageTeams={onManageTeams}
           onNewGame={onNewGame}
           onGameSessionStarted={onGameSessionStarted}
           pendingGameSetup={pendingGameSetup}

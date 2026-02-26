@@ -1,6 +1,5 @@
 import * as React from "react";
 
-import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -9,12 +8,11 @@ import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
 import LineScore from "@components/LineScore";
-import NewGameDialog, { type PlayerOverrides } from "@components/NewGameDialog";
+import type { PlayerOverrides } from "@components/NewGameDialog";
 import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
@@ -41,8 +39,6 @@ interface Props {
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
   /** Routes back to the Home screen in AppShell. */
   onBackToHome?: () => void;
-  /** Routes to the Manage Teams screen from the New Game dialog custom-team CTA. */
-  onManageTeams?: () => void;
   /** Called when the in-game New Game button is clicked; navigates to /exhibition/new. */
   onNewGame?: () => void;
   /** Called the first time a real game session starts or a save is loaded. */
@@ -60,7 +56,6 @@ interface Props {
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
   onBackToHome,
-  onManageTeams,
   onNewGame,
   onGameSessionStarted,
   pendingGameSetup,
@@ -73,30 +68,9 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
-  const [dialogOpen, setDialogOpen] = React.useState(true);
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
-
-  // Close any open dialogs (top-layer) before navigating away so no backdrop
-  // lingers over the destination page.
-  const handleSafeBackToHome = React.useCallback(() => {
-    if (typeof document !== "undefined") {
-      document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
-    }
-    setDialogOpen(false);
-    onBackToHome?.();
-  }, [onBackToHome]);
-
-  // Same top-layer cleanup when navigating to Manage Teams from the New Game
-  // dialog's Custom Teams empty-state link.
-  const handleSafeManageTeams = React.useCallback(() => {
-    if (typeof document !== "undefined") {
-      document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
-    }
-    setDialogOpen(false);
-    onManageTeams?.();
-  }, [onManageTeams]);
 
   // Fallback buffer when rendered without the Game wrapper (e.g. in tests).
   const localBufferRef = React.useRef<GameAction[]>([]);
@@ -110,9 +84,6 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
 
-  // Custom teams for resolving human-readable names in the resume banner (autoSaveName).
-  const { teams: customTeams } = useCustomTeams();
-
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
   // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
   const restoredRef = React.useRef(false);
@@ -125,7 +96,7 @@ const GameInner: React.FunctionComponent<Props> = ({
     setRxAutoSave(matched);
   }, [saves]);
 
-  // Restore state from the RxDB save as soon as it is loaded.
+  // Restore state from the RxDB save as soon as it is loaded and auto-activate the session.
   React.useEffect(() => {
     if (!rxAutoSave) return;
     const { stateSnapshot: snap, setup } = rxAutoSave;
@@ -135,17 +106,10 @@ const GameInner: React.FunctionComponent<Props> = ({
     setStrategy(setup.strategy);
     if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
     setManagerMode(setup.managerMode);
-  }, [dispatch, rxAutoSave, setStrategy, setManagedTeam, setManagerMode]);
-
-  const handleResume = () => {
-    // State is already restored by the effect above; wire up the save ID.
-    if (rxAutoSave) {
-      rxSaveIdRef.current = rxAutoSave.id;
-    }
+    rxSaveIdRef.current = rxAutoSave.id;
     setGameActive(true);
     onGameSessionStarted?.();
-    setDialogOpen(false);
-  };
+  }, [dispatch, rxAutoSave, setStrategy, setManagedTeam, setManagerMode, onGameSessionStarted]);
 
   const handleStart = (
     homeTeam: string,
@@ -209,7 +173,6 @@ const GameInner: React.FunctionComponent<Props> = ({
     setGameActive(true);
     onGameSessionStarted?.();
     setGameKey((k) => k + 1);
-    setDialogOpen(false);
   };
 
   const handleNewGame = () => {
@@ -275,7 +238,6 @@ const GameInner: React.FunctionComponent<Props> = ({
 
     rxSaveIdRef.current = pendingLoadSave.id;
     setGameActive(true);
-    setDialogOpen(false);
     onGameSessionStarted?.();
     onConsumePendingLoad?.();
     return () => {
@@ -296,36 +258,19 @@ const GameInner: React.FunctionComponent<Props> = ({
       rxSaveIdRef.current = saveId;
       setGameActive(true);
       onGameSessionStarted?.();
-      setDialogOpen(false);
     },
     [onGameSessionStarted],
   );
 
-  // Resolve custom team IDs in the auto-save name to human-readable labels.
-  const autoSaveName = React.useMemo(() => {
-    const name = rxAutoSave?.name;
-    if (!name) return undefined;
-    return resolveCustomIdsInString(name, customTeams);
-  }, [rxAutoSave?.name, customTeams]);
-
   return (
     <GameDiv>
-      {dialogOpen && (
-        <NewGameDialog
-          onStart={handleStart}
-          autoSaveName={autoSaveName}
-          onResume={rxAutoSave?.stateSnapshot ? handleResume : undefined}
-          onBackToHome={handleSafeBackToHome}
-          onManageTeams={handleSafeManageTeams}
-        />
-      )}
       <LineScore />
       <GameControls
         key={gameKey}
         onNewGame={handleNewGame}
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
-        onBackToHome={handleSafeBackToHome}
+        onBackToHome={onBackToHome}
       />
       <GameBody>
         <FieldPanel>

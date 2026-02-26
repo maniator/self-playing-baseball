@@ -46,7 +46,6 @@ const GamePage: React.FunctionComponent = () => {
   return (
     <Game
       onBackToHome={ctx.onBackToHome}
-      onManageTeams={ctx.onManageTeams}
       onNewGame={handleNewGame}
       onGameSessionStarted={ctx.onGameSessionStarted}
       pendingGameSetup={pendingSetupRef.current}
