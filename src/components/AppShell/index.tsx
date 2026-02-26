@@ -27,7 +27,7 @@ type Screen = "home" | "game" | "manage-teams" | "other";
 function pathnameToScreen(pathname: string): Screen {
   if (pathname === "/" || pathname === "") return "home";
   if (pathname === "/game") return "game";
-  if (pathname === "/teams") return "manage-teams";
+  if (pathname.startsWith("/teams")) return "manage-teams";
   return "other";
 }
 

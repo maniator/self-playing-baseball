@@ -1,5 +1,7 @@
 import * as React from "react";
 
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+
 import CustomTeamEditor from "@components/CustomTeamEditor";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 
@@ -23,20 +25,22 @@ type Props = {
   hasActiveGame?: boolean;
 };
 
-type View = "list" | "create" | { edit: string };
-
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {
   const { teams, loading, deleteTeam, refresh } = useCustomTeams();
-  const [view, setView] = React.useState<View>("list");
+  const navigate = useNavigate();
+  const { teamId } = useParams<{ teamId: string }>();
+  const location = useLocation();
 
-  const editingTeam = typeof view === "object" ? teams.find((t) => t.id === view.edit) : undefined;
+  const isCreating = location.pathname === "/teams/new";
+  const isEditing = Boolean(teamId);
+  const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
 
-  if (view === "create" || typeof view === "object") {
+  if (isCreating || isEditing) {
     return (
       <EditorShell data-testid="manage-teams-editor-shell">
         <EditorShellHeader>
           <BackBtn
-            onClick={() => setView("list")}
+            onClick={() => navigate("/teams")}
             data-testid="manage-teams-editor-back-button"
             aria-label="Back to team list"
           >
@@ -47,9 +51,9 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
           team={editingTeam}
           onSave={() => {
             refresh();
-            setView("list");
+            navigate("/teams");
           }}
-          onCancel={() => setView("list")}
+          onCancel={() => navigate("/teams")}
         />
       </EditorShell>
     );
@@ -73,7 +77,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
 
       <CreateBtn
         type="button"
-        onClick={() => setView("create")}
+        onClick={() => navigate("/teams/new")}
         data-testid="manage-teams-create-button"
       >
         + Create New Team
@@ -89,7 +93,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             <TeamListItem
               key={team.id}
               team={team}
-              onEdit={(id) => setView({ edit: id })}
+              onEdit={(id) => navigate(`/teams/${id}/edit`)}
               onDelete={deleteTeam}
             />
           ))}

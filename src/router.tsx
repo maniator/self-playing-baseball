@@ -1,9 +1,10 @@
 import * as React from "react";
 
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 
 import AppShell from "@components/AppShell";
 import RootLayout from "@components/RootLayout";
+import { CustomTeamStore } from "@storage/customTeamStore";
 
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
 
@@ -13,10 +14,12 @@ const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage
  * Route tree:
  *   / (RootLayout – ErrorBoundary wrapper)
  *     AppShell – persistent layout; keeps Game mounted via display:none
- *       /               → HomeScreen
- *       /game           → Game view (display block)
- *       /teams          → ManageTeamsScreen
- *       /exhibition/new → ExhibitionSetupPage (via <Outlet />)
+ *       /                    → HomeScreen
+ *       /game                → Game view (display block)
+ *       /teams               → ManageTeamsScreen (list)
+ *       /teams/new           → ManageTeamsScreen (create editor)
+ *       /teams/:teamId/edit  → ManageTeamsScreen (edit editor; redirects if team not found)
+ *       /exhibition/new      → ExhibitionSetupPage (via <Outlet />)
  *     * → redirect to /
  */
 export const router = createBrowserRouter([
@@ -29,6 +32,15 @@ export const router = createBrowserRouter([
           { index: true },
           { path: "game" },
           { path: "teams" },
+          { path: "teams/new" },
+          {
+            path: "teams/:teamId/edit",
+            loader: async ({ params }) => {
+              const team = await CustomTeamStore.getCustomTeam(params.teamId!);
+              if (!team) return redirect("/teams");
+              return null;
+            },
+          },
           {
             path: "exhibition/new",
             element: (

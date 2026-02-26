@@ -103,6 +103,18 @@ describe("AppShell", () => {
     expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
   });
 
+  it("/teams/new path shows the Manage Teams screen", () => {
+    renderAppShell("/teams/new");
+    expect(screen.getByTestId("manage-teams-screen-mock")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+  });
+
+  it("/teams/:id/edit path shows the Manage Teams screen", () => {
+    renderAppShell("/teams/some-team-id/edit");
+    expect(screen.getByTestId("manage-teams-screen-mock")).toBeInTheDocument();
+    expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+  });
+
   it("Game component receives an onBackToHome callback", async () => {
     const user = userEvent.setup();
     renderAppShell("/");
