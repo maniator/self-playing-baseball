@@ -18,6 +18,7 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
+import { appLog } from "@utils/logger";
 import { getSeed, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
@@ -227,8 +228,7 @@ const GameInner: React.FunctionComponent<Props> = ({
     if (onNewGame) {
       onNewGame();
     } else if (process.env.NODE_ENV !== "production") {
-      // eslint-disable-next-line no-console
-      console.warn(
+      appLog.warn(
         "GameInner: onNewGame was not provided. " +
           "In production this prop must always be supplied by GamePage.",
       );

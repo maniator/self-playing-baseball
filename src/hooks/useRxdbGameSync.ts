@@ -142,8 +142,7 @@ export const useRxdbGameSync = (
   // needing them as effect dependencies (this effect intentionally runs once).
   React.useEffect(() => {
     return () => {
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: read latest ref value at unmount time
-      const saveId = rxSaveIdRef.current;
+      const saveId = rxSaveIdRef.current; // eslint-disable-line react-hooks/exhaustive-deps -- intentional: reading latest ref value at unmount
       if (!saveId) return;
       const state = gameStateRef.current;
       SaveStore.updateProgress(saveId, state.pitchKey, {
@@ -157,6 +156,6 @@ export const useRxdbGameSync = (
         appLog.error("useRxdbGameSync: failed to save state on unmount", err);
       });
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // intentional: cleanup-only effect; refs always have latest values
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: cleanup-only effect; refs always have latest values
+  }, []);
 };
