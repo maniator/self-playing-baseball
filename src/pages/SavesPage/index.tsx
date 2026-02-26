@@ -6,11 +6,10 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import type { AppShellOutletContext } from "@components/AppShell";
 import SaveSlotList from "@components/SaveSlotList";
 import { useImportSave } from "@hooks/useImportSave";
+import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { customTeamsCollection } from "@storage/db";
-import { downloadJson, saveFilename } from "@storage/saveIO";
 import { SaveStore } from "@storage/saveStore";
 import type { CustomTeamDoc, SaveDoc } from "@storage/types";
-import { appLog } from "@utils/logger";
 
 import {
   ActionBtn,
@@ -74,17 +73,11 @@ const SavesPage: React.FunctionComponent = () => {
     loadSaves();
   }, [loadSaves]);
 
-  const handleDelete = (id: string) => {
-    SaveStore.deleteSave(id)
-      .then(() => setSaves((prev) => prev.filter((s) => s.id !== id)))
-      .catch((err: unknown) => appLog.error("Failed to delete save:", err));
-  };
-
-  const handleExport = (slot: SaveDoc) => {
-    SaveStore.exportRxdbSave(slot.id)
-      .then((json) => downloadJson(json, saveFilename(slot.name)))
-      .catch((err: unknown) => appLog.error("Failed to export save:", err));
-  };
+  const { handleDelete, handleExport } = useSaveSlotActions({
+    deleteSave: (id) => SaveStore.deleteSave(id),
+    exportSave: (id) => SaveStore.exportRxdbSave(id),
+    onDeleted: (id) => setSaves((prev) => prev.filter((s) => s.id !== id)),
+  });
 
   return (
     <PageContainer data-testid="saves-page">

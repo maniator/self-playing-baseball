@@ -9,8 +9,8 @@ import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useImportSave } from "@hooks/useImportSave";
+import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
-import { downloadJson, saveFilename } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState, restoreRng } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
@@ -171,25 +171,14 @@ export const useSavesModal = ({
     close();
   };
 
-  const handleDelete = (id: string) => {
-    deleteSave(id)
-      .then(() => {
-        if (currentSaveId === id) onSaveIdChange(null);
-      })
-      .catch((err: unknown) => {
-        log(`Failed to delete save: ${err instanceof Error ? err.message : String(err)}`);
-      });
-  };
-
-  const handleExport = (slot: SaveDoc) => {
-    exportRxdbSave(slot.id)
-      .then((json) => {
-        downloadJson(json, saveFilename(slot.name));
-      })
-      .catch((err: unknown) => {
-        log(`Failed to export save: ${err instanceof Error ? err.message : String(err)}`);
-      });
-  };
+  const { handleDelete, handleExport } = useSaveSlotActions({
+    deleteSave,
+    exportSave: exportRxdbSave,
+    onDeleted: (id) => {
+      if (currentSaveId === id) onSaveIdChange(null);
+    },
+    onError: (msg, err) => log(`${msg}: ${err instanceof Error ? err.message : String(err)}`),
+  });
 
   // Use the shared import hook; pass raw error messages (modal consumers are
   // in-game and can tolerate technical wording; friendlyImportError is default
