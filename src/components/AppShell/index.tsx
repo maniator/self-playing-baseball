@@ -3,8 +3,6 @@ import * as React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
 import Game from "@components/Game";
-import HomeScreen from "@components/HomeScreen";
-import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import type { PlayerOverrides } from "@components/NewGameDialog";
 import type { SaveDoc } from "@storage/types";
 
@@ -12,6 +10,14 @@ export type AppShellOutletContext = {
   onStartGame: (setup: ExhibitionGameSetup) => void;
   /** Called from the saves page when the user picks a save to load. */
   onLoadSave: (slot: SaveDoc) => void;
+  // Navigation callbacks consumed by route-level page components
+  onNewGame: () => void;
+  onLoadSaves: () => void;
+  onManageTeams: () => void;
+  onResumeCurrent: () => void;
+  onHelp: () => void;
+  onBackToHome: () => void;
+  hasActiveSession: boolean;
 };
 
 /** Shape for a game setup originating from the /exhibition/new page. */
@@ -22,30 +28,16 @@ export type ExhibitionGameSetup = {
   playerOverrides: PlayerOverrides;
 };
 
-type Screen = "home" | "game" | "manage-teams" | "saves" | "help" | "other";
-
-/**
- * Maps the current pathname to a screen discriminant.
- * Routes rendered directly by AppShell (home, game, manage-teams) get a dedicated
- * value. Routes rendered via `<Outlet>` — including `/exhibition/new` and any
- * future outlet-rendered pages — all return `"other"`, which is the intentional
- * catch-all for outlet-driven screens.
- */
-function pathnameToScreen(pathname: string): Screen {
-  if (pathname === "/" || pathname === "") return "home";
-  if (pathname === "/game") return "game";
-  if (pathname.startsWith("/teams")) return "manage-teams";
-  if (pathname === "/saves") return "saves";
-  if (pathname === "/help") return "help";
-  // /exhibition/new (and any future outlet-rendered routes) intentionally return "other".
-  return "other";
+/** Returns true when the current pathname is exactly the /game route. */
+function isGameRoute(pathname: string): boolean {
+  return pathname === "/game";
 }
 
 const AppShell: React.FunctionComponent = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const screen = pathnameToScreen(location.pathname);
+  const onGameRoute = isGameRoute(location.pathname);
 
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
@@ -60,10 +52,10 @@ const AppShell: React.FunctionComponent = () => {
 
   // Keep Game mounted once we visit /game.
   React.useEffect(() => {
-    if (screen === "game") {
+    if (onGameRoute) {
       setGameEverMounted(true);
     }
-  }, [screen]);
+  }, [onGameRoute]);
 
   const handleGameSessionStarted = React.useCallback(() => {
     setHasActiveSession(true);
@@ -128,14 +120,34 @@ const AppShell: React.FunctionComponent = () => {
   }, []);
 
   const outletContext: AppShellOutletContext = React.useMemo(
-    () => ({ onStartGame: handleStartFromExhibition, onLoadSave: handleLoadSave }),
-    [handleStartFromExhibition, handleLoadSave],
+    () => ({
+      onStartGame: handleStartFromExhibition,
+      onLoadSave: handleLoadSave,
+      onNewGame: handleNewGame,
+      onLoadSaves: handleLoadSaves,
+      onManageTeams: handleManageTeams,
+      onResumeCurrent: handleResumeCurrent,
+      onHelp: handleHelp,
+      onBackToHome: handleBackToHome,
+      hasActiveSession,
+    }),
+    [
+      handleStartFromExhibition,
+      handleLoadSave,
+      handleNewGame,
+      handleLoadSaves,
+      handleManageTeams,
+      handleResumeCurrent,
+      handleHelp,
+      handleBackToHome,
+      hasActiveSession,
+    ],
   );
 
   return (
     <>
       {/* Game is kept mounted once entered so in-memory state survives navigation. */}
-      <div style={{ display: screen === "game" ? undefined : "none" }}>
+      <div style={{ display: onGameRoute ? undefined : "none" }}>
         {gameEverMounted && (
           <Game
             newGameRequestCount={newGameRequestCount}
@@ -147,28 +159,13 @@ const AppShell: React.FunctionComponent = () => {
             onConsumeGameSetup={handleConsumeGameSetup}
             pendingLoadSave={pendingLoadSave}
             onConsumePendingLoad={handleConsumePendingLoad}
-            isOnGameRoute={screen === "game"}
+            isOnGameRoute={onGameRoute}
           />
         )}
       </div>
 
-      {screen === "home" && (
-        <HomeScreen
-          onNewGame={handleNewGame}
-          onLoadSaves={handleLoadSaves}
-          onManageTeams={handleManageTeams}
-          onResumeCurrent={hasActiveSession ? handleResumeCurrent : undefined}
-          onHelp={handleHelp}
-        />
-      )}
-
-      {screen === "manage-teams" && (
-        <ManageTeamsScreen onBack={handleBackToHome} hasActiveGame={hasActiveSession} />
-      )}
-
-      {(screen === "saves" || screen === "help" || screen === "other") && (
-        <Outlet context={outletContext} />
-      )}
+      {/* Every route has an explicit element defined in router.tsx. */}
+      <Outlet context={outletContext} />
     </>
   );
 };

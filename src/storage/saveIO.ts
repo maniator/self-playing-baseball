@@ -45,6 +45,12 @@ export const readFileAsText = (file: File): Promise<string> =>
     reader.readAsText(file);
   });
 
+/** Formats a Date as a compact ISO-like timestamp: `YYYYMMDDTHHmmss`. */
+const compactTimestamp = (date: Date): string => {
+  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
+  return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
+};
+
 /**
  * Derives a safe download filename from a save's name field.
  * Appends a compact timestamp (YYYYMMDDTHHmmss) so repeated exports of the
@@ -55,8 +61,5 @@ export const saveFilename = (saveName: string): string => {
     .replace(/[^a-z0-9]+/gi, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase();
-  const now = new Date();
-  const pad = (n: number, len = 2) => String(n).padStart(len, "0");
-  const ts = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}T${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-  return `ballgame-${slug}-${ts}.json`;
+  return `ballgame-${slug}-${compactTimestamp(new Date())}.json`;
 };

@@ -250,6 +250,64 @@ test.describe("Routing — deep-link and unknown paths", () => {
   });
 });
 
+/**
+ * Direct-navigation smoke tests — each top-level route is visited via `page.goto`
+ * (simulating a deep link / fresh tab) and asserts its stable page-level element.
+ * These tests are desktop-only to keep CI time reasonable; the behaviour is
+ * viewport-independent because it's purely router correctness.
+ */
+test.describe("Routing — direct-navigation smoke tests", () => {
+  test.skip(({ project }) => project.name !== "desktop", "Deep-link smoke runs on desktop only");
+
+  test("direct visit to / shows Home screen", async ({ page }) => {
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /exhibition/new shows Exhibition Setup page", async ({ page }) => {
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /teams shows Manage Teams screen", async ({ page }) => {
+    await page.goto("/teams");
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /teams/new shows team editor shell", async ({ page }) => {
+    await page.goto("/teams/new");
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /teams/:id/edit with unknown id shows not-found in editor", async ({
+    page,
+  }) => {
+    await page.goto("/teams/nonexistent-direct-link/edit");
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText(/team not found/i)).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("direct visit to /saves shows Saves page", async ({ page }) => {
+    await page.goto("/saves");
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /help shows Help page", async ({ page }) => {
+    await page.goto("/help");
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 15_000 });
+  });
+
+  test("direct visit to /game shows game controls (scoreboard or new-game dialog)", async ({
+    page,
+  }) => {
+    await page.goto("/game");
+    // On a fresh visit the game is mounted with an empty state; the new-game dialog
+    // or the scoreboard (if autoplay already ran) should be visible.
+    const gamePresent = page.getByTestId("scoreboard").or(page.getByTestId("new-game-dialog"));
+    await expect(gamePresent).toBeVisible({ timeout: 15_000 });
+  });
+});
+
 test.describe("Routing — autoplay pauses off /game", () => {
   test("autoplay stops producing log entries when navigating away from /game", async ({
     page,

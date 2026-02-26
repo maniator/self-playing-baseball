@@ -2,8 +2,10 @@ import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter, Route, Routes } from "react-router";
+import { MemoryRouter, Route, Routes, useOutletContext } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import type { AppShellOutletContext } from "./index";
 
 // Mock heavy child components so AppShell tests stay fast and isolated.
 vi.mock("@components/Game", () => ({
@@ -28,47 +30,55 @@ vi.mock("@components/Game", () => ({
     </div>
   ),
 }));
-vi.mock("@components/HomeScreen", () => ({
-  default: (props: {
-    onNewGame: () => void;
-    onLoadSaves: () => void;
-    onManageTeams: () => void;
-    onResumeCurrent?: () => void;
-    onHelp?: () => void;
-  }) => (
+
+/**
+ * Inline route elements that consume AppShell's outlet context.
+ * These mirror the HomeRoute / TeamsRoute / GameRoute in router.tsx
+ * without depending on the full application router.
+ */
+function HomeRouteEl() {
+  const ctx = useOutletContext<AppShellOutletContext>();
+  return (
     <div data-testid="home-screen-mock">
-      <button onClick={props.onNewGame}>New Game</button>
-      <button onClick={props.onLoadSaves}>Load Saved Game</button>
-      <button onClick={props.onManageTeams}>Manage Teams</button>
-      {props.onResumeCurrent && (
-        <button onClick={props.onResumeCurrent} data-testid="resume-current-mock">
+      <button onClick={ctx.onNewGame}>New Game</button>
+      <button onClick={ctx.onLoadSaves}>Load Saved Game</button>
+      <button onClick={ctx.onManageTeams}>Manage Teams</button>
+      {ctx.hasActiveSession && (
+        <button onClick={ctx.onResumeCurrent} data-testid="resume-current-mock">
           Resume
         </button>
       )}
-      {props.onHelp && (
-        <button onClick={props.onHelp} data-testid="help-mock">
-          Help
-        </button>
-      )}
+      <button onClick={ctx.onHelp} data-testid="help-mock">
+        Help
+      </button>
     </div>
-  ),
-}));
-vi.mock("@components/ManageTeamsScreen", () => ({
-  default: (props: { onBack: () => void }) => (
+  );
+}
+
+function TeamsRouteEl() {
+  const ctx = useOutletContext<AppShellOutletContext>();
+  return (
     <div data-testid="manage-teams-screen-mock">
-      <button onClick={props.onBack}>Back</button>
+      <button onClick={ctx.onBackToHome}>Back</button>
     </div>
-  ),
-}));
+  );
+}
 
 import AppShell from "./index";
 
-/** Renders AppShell inside MemoryRouter at the given initial path. */
+/** Renders AppShell inside MemoryRouter with proper child routes at the given initial path. */
 function renderAppShell(initialPath = "/") {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        <Route path="/*" element={<AppShell />} />
+        <Route path="/" element={<AppShell />}>
+          <Route index element={<HomeRouteEl />} />
+          <Route path="game" element={null} />
+          <Route path="teams/*" element={<TeamsRouteEl />} />
+          <Route path="exhibition/new" element={<div data-testid="exhibition-mock" />} />
+          <Route path="saves" element={<div data-testid="saves-mock" />} />
+          <Route path="help" element={<div data-testid="help-page-mock" />} />
+        </Route>
       </Routes>
     </MemoryRouter>,
   );
