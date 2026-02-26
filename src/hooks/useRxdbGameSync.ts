@@ -136,4 +136,27 @@ export const useRxdbGameSync = (
       appLog.error("useRxdbGameSync: failed to update progress (game over)", err);
     });
   }, [gameOver, rxSaveIdRef]);
+
+  // Save current state when the component unmounts (user navigates away from /game).
+  // Uses refs so the cleanup always captures the latest state and saveId without
+  // needing them as effect dependencies (this effect intentionally runs once).
+  React.useEffect(() => {
+    return () => {
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: read latest ref value at unmount time
+      const saveId = rxSaveIdRef.current;
+      if (!saveId) return;
+      const state = gameStateRef.current;
+      SaveStore.updateProgress(saveId, state.pitchKey, {
+        scoreSnapshot: { away: state.score[0], home: state.score[1] },
+        inningSnapshot: { inning: state.inning, atBat: state.atBat },
+        stateSnapshot: {
+          state: state,
+          rngState: getRngState(),
+        },
+      }).catch((err) => {
+        appLog.error("useRxdbGameSync: failed to save state on unmount", err);
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // intentional: cleanup-only effect; refs always have latest values
 };
