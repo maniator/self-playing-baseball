@@ -32,7 +32,7 @@ test.describe("Visual", () => {
   test("New Game dialog screenshot", async ({ page }) => {
     await waitForNewGameDialog(page);
     await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot("new-game-dialog.png", {
-      mask: [],
+      mask: [page.getByTestId("seed-input")],
       maxDiffPixelRatio: 0.05,
     });
   });
@@ -633,9 +633,13 @@ test.describe("Visual — Starting pitcher selector in New Game dialog", () => {
     await expect(page.getByTestId("starting-pitcher-select")).toBeVisible({ timeout: 3_000 });
 
     // Snapshot the New Game dialog with the pitcher selector visible.
+    // Mask the seed input since it shows a random value on every page load.
     await expect(page.getByTestId("new-game-dialog")).toHaveScreenshot(
       "new-game-dialog-with-pitcher-selector.png",
-      { maxDiffPixelRatio: 0.05 },
+      {
+        mask: [page.getByTestId("seed-input")],
+        maxDiffPixelRatio: 0.05,
+      },
     );
   });
 });
