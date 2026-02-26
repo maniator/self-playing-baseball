@@ -76,8 +76,8 @@ type Props = {
 
 /** Returns SP-eligible pitchers from a roster, preserving their original index. */
 export const getSpEligiblePitchers = (
-  pitchers: { id: string; name: string; pitchingRole?: string }[],
-): Array<{ id: string; name: string; pitchingRole?: string; idx: number }> =>
+  pitchers: { id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP" }[],
+): Array<{ id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP"; idx: number }> =>
   pitchers
     .map((p, i) => ({ ...p, idx: i }))
     .filter((p) => !p.pitchingRole || p.pitchingRole === "SP" || p.pitchingRole === "SP/RP");

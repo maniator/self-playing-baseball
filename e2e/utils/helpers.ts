@@ -244,9 +244,12 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
 /**
  * Loads a pre-crafted save fixture directly from the Home screen.
  *
- * Navigates into the game via "Load Saved Game", imports the fixture JSON via
- * the file input in the Saves modal, waits for the auto-load to restore game
- * state, and confirms the scoreboard is visible.
+ * Navigates to `/`, enters the game via "Load Saved Game", imports the
+ * fixture JSON via the file input in the Saves modal, waits for the
+ * auto-load to restore game state, and confirms the scoreboard is visible.
+ *
+ * **Self-contained** — callers do not need to call `resetAppState` first;
+ * this helper always starts from `/` so the Home screen is guaranteed.
  *
  * Use this instead of `startGameViaPlayBall` + long wait whenever the test
  * needs a specific game situation (e.g. a pending manager decision, RBI values
@@ -261,6 +264,11 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
  */
 export async function loadFixture(page: Page, fixtureName: string): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Always start from the Home screen so this helper is self-contained.
+  // Callers do not need to call resetAppState beforehand.
+  await page.goto("/");
+  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
   // Enter the game shell via the "Load Saved Game" path on the Home screen.
   await page.getByTestId("home-load-saves-button").click();
   await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });

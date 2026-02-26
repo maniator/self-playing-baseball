@@ -435,7 +435,7 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 |---|---|
 | `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
 | `startGameViaPlayBall(page, options?)` | Fill seed-input field (if provided), configure teams, click Play Ball |
-| `loadFixture(page, fixtureName)` | Load a pre-crafted save from the Home screen — game active with fixture state applied instantly |
+| `loadFixture(page, fixtureName)` | Navigate to `/` and load a pre-crafted save — self-contained, no prior `resetAppState` needed |
 | `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
 | `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
 | `openSavesModal(page)` | Click saves button, wait for modal |

@@ -25,7 +25,7 @@ import type { PlayerCustomization, ResolvedPlayerMods } from "./index";
  * ### Intentionally deferred stats (stored-only, not yet wired into sim)
  * - `handedness` (batter/pitcher): stored in TeamPlayer, not yet used to affect pitch outcomes.
  *   Planned for a future update when batter-vs-pitcher matchup splits are added.
- * - `pitchingRole` (SP/RP/SP-RP): stored in CustomTeamDoc, drives AI substitution logic only;
+ * - `pitchingRole` ("SP" | "RP" | "SP/RP"): stored in CustomTeamDoc, drives AI substitution logic only;
  *   does not yet affect pitch-by-pitch simulation.
  * - `staminaMod` (pitcher): editable in PlayerCustomizationPanel (via `PITCHER_MOD_FIELDS`) and
  *   stored in `PlayerCustomization`, but not part of `ResolvedPlayerMods` and not read by any

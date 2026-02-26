@@ -95,12 +95,20 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     // Select managed away team
     await page.locator('input[name="managed"][value="0"]').check();
 
-    // Pitcher selector should appear
+    // Pitcher selector should appear with at least one SP-eligible option.
     await expect(page.getByTestId("starting-pitcher-select")).toBeVisible({ timeout: 3_000 });
-    // Should have at least one option (the SP-eligible pitcher)
     const options = page.getByTestId("starting-pitcher-select").locator("option");
     const count = await options.count();
     expect(count).toBeGreaterThanOrEqual(1);
+
+    // Every option must be SP or SP/RP — pure RP pitchers must not appear.
+    // Default rosters always include 3 RP relievers; this confirms they are filtered out.
+    const optionTexts = await options.allTextContents();
+    for (const text of optionTexts) {
+      // Option format: "Name (role)" or just "Name" when role is unset.
+      // A pure RP pitcher always renders as "Name (RP)".
+      expect(text).not.toContain("(RP)");
+    }
   });
 
   test("selecting a starter and starting the game applies the chosen pitcher", async ({
@@ -118,19 +126,35 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
       page.getByTestId("new-game-custom-away-team-select").locator("option"),
     ).toHaveCount(2, { timeout: 5_000 });
 
-    // Manage the away team and select first SP-eligible pitcher
+    // Manage the away team and read all SP-eligible options.
     await page.locator('input[name="managed"][value="0"]').check();
     await expect(page.getByTestId("starting-pitcher-select")).toBeVisible({ timeout: 3_000 });
 
-    // Start the game
+    // Read the options and capture the text of the first SP-eligible pitcher (the default
+    // selected starter).  Default rosters always place the sole SP at index 0, so the first
+    // option is always the SP.  We store the name to assert it appears in the SubstitutionPanel
+    // after the game starts.
+    const options = page.getByTestId("starting-pitcher-select").locator("option");
+    const firstOptionText = await options.first().textContent();
+    // Strip the role suffix "(SP)" to get the bare pitcher name for the UI assertion below.
+    const chosenPitcherName = (firstOptionText ?? "").replace(/\s*\([^)]*\)\s*$/, "").trim();
+    expect(chosenPitcherName).toBeTruthy();
+
+    // Start the game with the chosen (default) starter.
     await page.getByTestId("seed-input").fill("sp-select1");
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
-
-    // Game should start successfully
     await waitForLogLines(page, 2);
-    // Scoreboard should show inning 1 (game started, not still in dialog)
-    const scoreboardText = await page.getByTestId("scoreboard").textContent();
-    expect(scoreboardText).toBeTruthy();
+
+    // Enable manager mode so the Substitution button is rendered, then open the panel
+    // to confirm "Current:" shows the pitcher we selected pregame.
+    await page.getByTestId("manager-mode-toggle").check();
+    await page.getByRole("button", { name: "Substitution" }).click();
+    await expect(page.getByTestId("substitution-panel")).toBeVisible({ timeout: 5_000 });
+
+    // The panel shows "Current: <pitcher name>" in the Pitching Change section.
+    await expect(page.getByTestId("substitution-panel")).toContainText(
+      `Current: ${chosenPitcherName}`,
+    );
   });
 });
