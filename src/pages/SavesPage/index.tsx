@@ -7,6 +7,25 @@ import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
 
+import {
+  ActionBtn,
+  BackBtn,
+  EmptyState,
+  ErrorMessage,
+  FileInput,
+  ImportSection,
+  LoadingState,
+  PageContainer,
+  PageHeader,
+  PageTitle,
+  SaveActions,
+  SaveCard,
+  SaveDate,
+  SaveInfo,
+  SaveList,
+  SaveName,
+} from "./styles";
+
 const formatDate = (ts: number): string =>
   new Date(ts).toLocaleString(undefined, {
     month: "short",
@@ -96,62 +115,74 @@ const SavesPage: React.FunctionComponent = () => {
   };
 
   return (
-    <div data-testid="saves-page">
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        data-testid="saves-page-back-button"
-        aria-label="Back to Home"
-      >
-        ← Back to Home
-      </button>
+    <PageContainer data-testid="saves-page">
+      <PageHeader>
+        <BackBtn
+          type="button"
+          onClick={() => navigate("/")}
+          data-testid="saves-page-back-button"
+          aria-label="Back to Home"
+        >
+          ← Back to Home
+        </BackBtn>
+      </PageHeader>
 
-      <h2>Exhibition Saves</h2>
+      <PageTitle>💾 Exhibition Saves</PageTitle>
 
       {loading ? (
-        <p>Loading saves…</p>
+        <LoadingState>Loading saves…</LoadingState>
       ) : saves.length === 0 ? (
-        <p data-testid="saves-page-empty">No saves yet.</p>
+        <EmptyState data-testid="saves-page-empty">No saves yet.</EmptyState>
       ) : (
-        <ul data-testid="saves-list">
+        <SaveList data-testid="saves-list">
           {saves.map((s) => (
-            <li key={s.id} data-testid="saves-list-item">
-              <span>{s.name}</span>
-              <span data-testid="slot-date">{formatDate(s.updatedAt)}</span>
-              <button type="button" onClick={() => onLoadSave(s)} data-testid="load-save-button">
-                Load
-              </button>
-              <button
-                type="button"
-                onClick={() => handleExport(s)}
-                data-testid="export-save-button"
-              >
-                Export
-              </button>
-              <button
-                type="button"
-                onClick={() => handleDelete(s.id)}
-                aria-label="Delete save"
-                data-testid="delete-save-button"
-              >
-                ✕
-              </button>
-            </li>
+            <SaveCard key={s.id} data-testid="saves-list-item">
+              <SaveInfo>
+                <SaveName>{s.name}</SaveName>
+                <SaveDate data-testid="slot-date">{formatDate(s.updatedAt)}</SaveDate>
+              </SaveInfo>
+              <SaveActions>
+                <ActionBtn
+                  type="button"
+                  $variant="primary"
+                  onClick={() => onLoadSave(s)}
+                  data-testid="load-save-button"
+                >
+                  Load
+                </ActionBtn>
+                <ActionBtn
+                  type="button"
+                  onClick={() => handleExport(s)}
+                  data-testid="export-save-button"
+                >
+                  Export
+                </ActionBtn>
+                <ActionBtn
+                  type="button"
+                  $variant="danger"
+                  onClick={() => handleDelete(s.id)}
+                  aria-label="Delete save"
+                  data-testid="delete-save-button"
+                >
+                  ✕
+                </ActionBtn>
+              </SaveActions>
+            </SaveCard>
           ))}
-        </ul>
+        </SaveList>
       )}
 
-      <div>
-        <input
+      <ImportSection>
+        <FileInput
           type="file"
           accept=".json,application/json"
           onChange={handleFileImport}
           data-testid="import-save-file-input"
         />
-      </div>
+      </ImportSection>
 
-      {importError && <p data-testid="import-error">{importError}</p>}
-    </div>
+      {importError && <ErrorMessage data-testid="import-error">{importError}</ErrorMessage>}
+    </PageContainer>
   );
 };
 

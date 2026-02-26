@@ -4,7 +4,7 @@ import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapt
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
-import type { ExhibitionGameSetup, InitialGameView } from "@components/AppShell";
+import type { ExhibitionGameSetup } from "@components/AppShell";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
@@ -38,8 +38,6 @@ const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
 interface Props {
   /** Shared buffer populated by GameProviderWrapper's onDispatch callback. */
   actionBufferRef?: React.MutableRefObject<GameAction[]>;
-  /** Determines initial screen: show New Game dialog or auto-open saves modal. */
-  initialView?: InitialGameView;
   /**
    * Incremented each time the user explicitly requests a New Game from Home.
    * GameInner watches this and re-opens the dialog even when already mounted.
@@ -72,7 +70,6 @@ interface Props {
 
 const GameInner: React.FunctionComponent<Props> = ({
   actionBufferRef: externalBufferRef,
-  initialView,
   newGameRequestCount,
   loadSavesRequestCount,
   onBackToHome,
@@ -90,7 +87,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
-  const [dialogOpen, setDialogOpen] = React.useState(initialView !== "load-saves");
+  const [dialogOpen, setDialogOpen] = React.useState(true);
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
@@ -133,7 +130,7 @@ const GameInner: React.FunctionComponent<Props> = ({
 
   // Open the Saves modal when the user navigates via "Load Saved Game" from Home
   // while Game is already mounted (the prop increments on each request).
-  const [openSavesCount, setOpenSavesCount] = React.useState(initialView === "load-saves" ? 1 : 0);
+  const [openSavesCount, setOpenSavesCount] = React.useState(0);
   const prevLoadSavesRef = React.useRef(loadSavesRequestCount ?? 0);
   React.useEffect(() => {
     const prev = prevLoadSavesRef.current;
@@ -155,7 +152,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Guards the "route Home on saves-modal close" behavior for the load-saves
   // entry path. Cleared synchronously in handleLoadActivate so there is no
   // timing window where a successful load could accidentally trigger the guard.
-  const savesCloseActiveRef = React.useRef(initialView === "load-saves");
+  const savesCloseActiveRef = React.useRef(false);
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
 
@@ -171,12 +168,11 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
     if (restoredRef.current) return;
-    if (initialView === "load-saves") return;
     const matched = findMatchedSave(saves);
     if (!matched) return;
     restoredRef.current = true;
     setRxAutoSave(matched);
-  }, [saves, initialView]);
+  }, [saves]);
 
   // Restore state from the RxDB save as soon as it is loaded.
   React.useEffect(() => {
@@ -379,7 +375,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         onNewGame={handleNewGame}
         gameStarted={gameActive}
         onLoadActivate={handleLoadActivate}
-        autoOpenSaves={initialView === "load-saves"}
+        autoOpenSaves={false}
         openSavesRequestCount={openSavesCount}
         onBackToHome={handleSafeBackToHome}
         onSavesClose={

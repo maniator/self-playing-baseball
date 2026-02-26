@@ -2,6 +2,18 @@ import * as React from "react";
 
 import { useNavigate } from "react-router-dom";
 
+import {
+  BackBtn,
+  Li,
+  List,
+  PageContainer,
+  PageHeader,
+  PageTitle,
+  SectionBody,
+  SectionDetails,
+  SectionSummary,
+} from "./styles";
+
 /**
  * Standalone help page — renders the same content as InstructionsModal
  * but as a full page accessible from Home without starting a game.
@@ -15,167 +27,169 @@ interface SectionProps {
 }
 
 const Section: React.FunctionComponent<SectionProps> = ({ title, defaultOpen, children }) => (
-  <details open={defaultOpen}>
-    <summary>{title}</summary>
-    <div>{children}</div>
-  </details>
+  <SectionDetails open={defaultOpen}>
+    <SectionSummary>{title}</SectionSummary>
+    <SectionBody>{children}</SectionBody>
+  </SectionDetails>
 );
 
 const HelpPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
 
   return (
-    <div data-testid="help-page">
-      <button
-        type="button"
-        onClick={() => navigate("/")}
-        data-testid="help-page-back-button"
-        aria-label="Go back"
-      >
-        ← Back
-      </button>
+    <PageContainer data-testid="help-page">
+      <PageHeader>
+        <BackBtn
+          type="button"
+          onClick={() => navigate("/")}
+          data-testid="help-page-back-button"
+          aria-label="Go back"
+        >
+          ← Back
+        </BackBtn>
+      </PageHeader>
 
-      <h2>⚾ How to Play</h2>
+      <PageTitle>⚾ How to Play</PageTitle>
 
       <Section title="Basics" defaultOpen>
-        <ul>
-          <li>
+        <List>
+          <Li>
             Press <strong>Play Ball!</strong> to start.
-          </li>
-          <li>The game runs automatically pitch-by-pitch — no clicking needed.</li>
-          <li>Outcomes are randomized but seeded — same seed always plays out the same way.</li>
-          <li>3 strikes = out · 4 balls = walk · 3 outs = half-inning over.</li>
-          <li>
+          </Li>
+          <Li>The game runs automatically pitch-by-pitch — no clicking needed.</Li>
+          <Li>Outcomes are randomized but seeded — same seed always plays out the same way.</Li>
+          <Li>3 strikes = out · 4 balls = walk · 3 outs = half-inning over.</Li>
+          <Li>
             Home team wins if ahead after the top of the 9th. Walk-off ends the game immediately.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
 
       <Section title="Pre-game customization">
-        <ul>
-          <li>
+        <List>
+          <Li>
             Choose a <strong>Matchup</strong> type (MLB: AL vs AL, NL vs NL, or Interleague) or{" "}
             <strong>Custom</strong> to use your own teams. Select Home and Away teams.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Under <strong>Manage a team?</strong> pick Home, Away, or None. You can also change this
             after the game starts.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Expand <strong>▸ Customize Players</strong> to set nicknames, tweak stat presets, and
             drag ⠿ to reorder the batting lineup — for both teams (MLB games only).
-          </li>
-          <li>
+          </Li>
+          <Li>
             Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
 
       <Section title="Custom Teams">
-        <ul>
-          <li>
+        <List>
+          <Li>
             Click <strong>Manage Teams</strong> to create and edit your own teams with custom
             players, stats, and positions.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
             Edit names, stats, and positions to customize it.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Each team needs at least one lineup player and one pitcher before it can be used in a
             game.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Pitchers are marked SP (starter), RP (reliever), or SP/RP (swingman). Only RP-eligible
             pitchers can be used for in-game pitching changes.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
 
       <Section title="Game Flow">
-        <ul>
-          <li>The game runs automatically once started — sit back and watch.</li>
-          <li>Choose Slow / Normal / Fast speed to control the pace.</li>
-          <li>🔊 slider = play-by-play voice volume · 🔔 slider = chime &amp; fanfare volume.</li>
-        </ul>
+        <List>
+          <Li>The game runs automatically once started — sit back and watch.</Li>
+          <Li>Choose Slow / Normal / Fast speed to control the pace.</Li>
+          <Li>🔊 slider = play-by-play voice volume · 🔔 slider = chime &amp; fanfare volume.</Li>
+        </List>
       </Section>
 
       <Section title="Manager Mode">
-        <ul>
-          <li>
+        <List>
+          <Li>
             Enable <strong>Manager Mode</strong>, pick which team to manage, and choose a{" "}
             <strong>Strategy</strong> (Balanced, Aggressive, Patient, Contact, or Power).
-          </li>
-          <li>
+          </Li>
+          <Li>
             The game keeps running between decisions. At key moments it pauses and asks — steal,
             bunt, intentional walk, pinch-hitter, or defensive shift.
-          </li>
-          <li>
+          </Li>
+          <Li>
             A chime sounds and a browser notification appears (if allowed) when a decision is ready.
-          </li>
-          <li>You have 10 seconds to decide; the game auto-skips if you don&apos;t.</li>
-          <li>
+          </Li>
+          <Li>You have 10 seconds to decide; the game auto-skips if you don&apos;t.</Li>
+          <Li>
             Click <strong>🔄 Substitution</strong> to make in-game roster changes: swap a batter
             from the bench or make a pitching change. Pitching changes show how many batters the
             current pitcher has faced (BF). Once a player is substituted out they cannot re-enter.
-          </li>
-          <li>
+          </Li>
+          <Li>
             The opposing (unmanaged) team makes its own AI decisions — pitching changes when their
             pitcher is tired, etc.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
 
       <Section title="Live batting stats">
-        <ul>
-          <li>
+        <List>
+          <Li>
             The <strong>Batting Stats</strong> panel shows AB, H, BB, K, and RBI for every batter.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Tap or click a batter&apos;s row to see <strong>Player Details</strong> — expanded stats
             appear below the table.
-          </li>
-          <li>The game keeps running while you browse stats.</li>
-        </ul>
+          </Li>
+          <Li>The game keeps running while you browse stats.</Li>
+        </List>
       </Section>
 
       <Section title="Saves &amp; Sharing">
-        <ul>
-          <li>
+        <List>
+          <Li>
             Click <strong>💾 Saves</strong> to save, load, export, or import a game. Saves are
             stored locally — no account needed.
-          </li>
-          <li>
+          </Li>
+          <Li>
             <strong>Export save</strong> downloads a JSON file you can back up or share.{" "}
             <strong>Import save</strong> restores it.
-          </li>
-          <li>
+          </Li>
+          <Li>
             Click <strong>Share seed</strong> to copy a link. Anyone with it sees the same pitches —
             Manager decisions are yours to replay.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
 
       <Section title="Hit types">
-        <ul>
-          <li>
+        <List>
+          <Li>
             <strong>Single</strong> — batter to 1st; runner on 3rd scores; others advance one base.
-          </li>
-          <li>
+          </Li>
+          <Li>
             <strong>Double</strong> — batter to 2nd; runners on 2nd/3rd score; runner on 1st to 3rd.
-          </li>
-          <li>
+          </Li>
+          <Li>
             <strong>Triple</strong> — batter to 3rd; all runners score.
-          </li>
-          <li>
+          </Li>
+          <Li>
             <strong>Home run</strong> — everyone scores.
-          </li>
-          <li>
+          </Li>
+          <Li>
             <strong>Walk</strong> — batter to 1st; force advancement only.
-          </li>
-        </ul>
+          </Li>
+        </List>
       </Section>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -8,9 +8,6 @@ import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import type { PlayerOverrides } from "@components/NewGameDialog";
 import type { SaveDoc } from "@storage/types";
 
-export type InitialGameView = "new-game" | "load-saves";
-
-/** Passed via <Outlet context> to child routes like /exhibition/new and /saves. */
 export type AppShellOutletContext = {
   onStartGame: (setup: ExhibitionGameSetup) => void;
   /** Called from the saves page when the user picks a save to load. */

@@ -3,7 +3,7 @@ import * as React from "react";
 import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
-import type { ExhibitionGameSetup, InitialGameView } from "@components/AppShell";
+import type { ExhibitionGameSetup } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
@@ -16,7 +16,6 @@ import GameInner from "./GameInner";
 import { DbResetNotice, LoadingScreen } from "./styles";
 
 type Props = {
-  initialView?: InitialGameView;
   newGameRequestCount?: number;
   loadSavesRequestCount?: number;
   onBackToHome?: () => void;
@@ -38,7 +37,6 @@ type Props = {
 };
 
 const Game: React.FunctionComponent<Props> = ({
-  initialView,
   newGameRequestCount,
   loadSavesRequestCount,
   onBackToHome,
@@ -106,7 +104,6 @@ const Game: React.FunctionComponent<Props> = ({
         )}
         <GameInner
           actionBufferRef={actionBufferRef}
-          initialView={initialView}
           newGameRequestCount={newGameRequestCount}
           loadSavesRequestCount={loadSavesRequestCount}
           onBackToHome={onBackToHome}

@@ -24,6 +24,8 @@ vi.mock("@components/CustomTeamEditor", () => ({
   ),
 }));
 
+import { useCustomTeams } from "@hooks/useCustomTeams";
+
 import ManageTeamsScreen from "./index";
 
 /** Renders ManageTeamsScreen inside a MemoryRouter with the teams routes set up. */
@@ -99,8 +101,7 @@ describe("ManageTeamsScreen", () => {
     expect(screen.getByTestId("custom-team-editor")).toBeInTheDocument();
   });
 
-  it("shows the editor shell at /teams/:id/edit directly", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+  it("shows the editor shell at /teams/:id/edit directly", () => {
     vi.mocked(useCustomTeams).mockReturnValueOnce({
       teams: [
         {
@@ -134,8 +135,7 @@ describe("ManageTeamsScreen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows loading state when teams are loading", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+  it("shows loading state when teams are loading", () => {
     vi.mocked(useCustomTeams).mockReturnValueOnce({
       teams: [],
       loading: true,
