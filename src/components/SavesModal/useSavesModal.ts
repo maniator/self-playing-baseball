@@ -1,6 +1,9 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import {
+  resolveCustomIdsInString,
+  resolveTeamLabel,
+} from "@features/customTeams/adapters/customTeamAdapter";
 
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
@@ -216,8 +219,7 @@ export const useSavesModal = ({
    * display label. Uses a broad token pattern so hyphenated or otherwise
    * non-alphanumeric-underscore IDs are also matched correctly.
    */
-  const resolveSaveName = (name: string): string =>
-    name.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams));
+  const resolveSaveName = (name: string): string => resolveCustomIdsInString(name, customTeams);
 
   return {
     ref,

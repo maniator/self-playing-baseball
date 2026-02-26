@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -325,7 +325,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const autoSaveName = React.useMemo(() => {
     const name = rxAutoSave?.name;
     if (!name) return undefined;
-    return name.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams));
+    return resolveCustomIdsInString(name, customTeams);
   }, [rxAutoSave?.name, customTeams]);
 
   return (
