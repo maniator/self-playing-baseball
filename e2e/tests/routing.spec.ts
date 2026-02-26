@@ -84,6 +84,21 @@ test.describe("Routing — game view navigation", () => {
     await expect(page).toHaveURL("/");
   });
 
+  test("saves page shows empty state and back button works when no saves exist", async ({
+    page,
+  }) => {
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    // Wait for loading to finish
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+    // Empty state message must be visible (no load button)
+    await expect(page.getByTestId("saves-page-empty")).toBeVisible();
+    await expect(page.getByTestId("load-save-button")).not.toBeVisible();
+    // Back button still works
+    await page.getByTestId("saves-page-back-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+  });
+
   test("Load Saved Game → load a save → navigates to /game", async ({ page }) => {
     // First start a game, save it, then go back to Home.
     await startGameViaPlayBall(page, { seed: "routing-load-save1" });

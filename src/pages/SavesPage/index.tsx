@@ -71,8 +71,14 @@ const SavesPage: React.FunctionComponent = () => {
       .then((importedSave) => {
         onLoadSave(importedSave);
       })
-      .catch((err: Error) => {
-        setImportError(err.message);
+      .catch((err: unknown) => {
+        const raw = err instanceof Error ? err.message : String(err);
+        const isSignature = /signature|invalid|corrupt/i.test(raw);
+        setImportError(
+          isSignature
+            ? "The file you selected is not a valid Ballgame save file."
+            : "Import failed. Please check the file and try again.",
+        );
       });
   };
 

@@ -35,6 +35,12 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const isEditing = Boolean(teamId);
   const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
 
+  // Guard: team not found after hook has finished loading (e.g. deleted in another tab).
+  // The router loader handles the initial redirect, but the hook may lag behind.
+  React.useEffect(() => {
+    if (isEditing && !loading && !editingTeam) navigate("/teams", { replace: true });
+  }, [isEditing, loading, editingTeam, navigate]);
+
   if (isCreating || isEditing) {
     return (
       <EditorShell data-testid="manage-teams-editor-shell">

@@ -28,7 +28,7 @@ const HelpPage: React.FunctionComponent = () => {
     <div data-testid="help-page">
       <button
         type="button"
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/")}
         data-testid="help-page-back-button"
         aria-label="Go back"
       >

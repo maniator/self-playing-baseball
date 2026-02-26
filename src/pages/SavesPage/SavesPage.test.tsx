@@ -114,7 +114,7 @@ describe("SavesPage", () => {
   });
 
   it("shows import error when import fails", async () => {
-    vi.mocked(SaveStore.importRxdbSave).mockRejectedValue(new Error("Invalid JSON"));
+    vi.mocked(SaveStore.importRxdbSave).mockRejectedValue(new Error("Invalid signature"));
     const user = userEvent.setup();
     renderSavesPage();
     await waitFor(() => expect(screen.getByTestId("saves-page")).toBeInTheDocument());
@@ -124,7 +124,7 @@ describe("SavesPage", () => {
     await user.upload(input, file);
 
     await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
-    expect(screen.getByText(/invalid json/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a valid Ballgame save file/i)).toBeInTheDocument();
   });
 
   it("calls onLoadSave after successful file import", async () => {

@@ -328,6 +328,9 @@ const GameInner: React.FunctionComponent<Props> = ({
     setDialogOpen(false);
     onGameSessionStarted?.();
     onConsumePendingLoad?.();
+    return () => {
+      prevPendingLoad.current = null;
+    };
   }, [
     pendingLoadSave,
     dispatch,

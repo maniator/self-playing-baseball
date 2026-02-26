@@ -99,7 +99,24 @@ describe("ManageTeamsScreen", () => {
     expect(screen.getByTestId("custom-team-editor")).toBeInTheDocument();
   });
 
-  it("shows the editor shell at /teams/:id/edit directly", () => {
+  it("shows the editor shell at /teams/:id/edit directly", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [
+        {
+          id: "some-team-id",
+          name: "Test Team",
+          roster: { lineup: [], pitchers: [], bench: [] },
+          abbreviation: "TST",
+          city: "Testville",
+        },
+      ],
+      loading: false,
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+    });
     renderAt("/teams/some-team-id/edit");
     expect(screen.getByTestId("manage-teams-editor-shell")).toBeInTheDocument();
     expect(screen.getByTestId("custom-team-editor")).toBeInTheDocument();
