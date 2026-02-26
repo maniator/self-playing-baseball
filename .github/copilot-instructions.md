@@ -475,6 +475,41 @@ Validate changes by:
 
 ---
 
+## No Duplication Policy
+
+**Before building anything, check whether the logic or UI already exists elsewhere.** If the same behaviour is needed in two or more places, extract it to a shared home first, then have both consumers import from there.
+
+### Decision tree
+
+| What is duplicated? | Where to put the shared version |
+|---|---|
+| Pure utility function (formatting, file I/O, math) | `src/utils/` or `src/storage/` (e.g. `saveIO.ts`) |
+| Domain adapter / resolver (label resolution, ID mapping) | `src/features/<domain>/adapters/` |
+| React hook (state management, side effects) | `src/hooks/` |
+| Styled-component definitions used by ≥ 2 pages/screens | `src/components/<SharedName>/styles.ts` |
+| JSX content block rendered in ≥ 2 surfaces (modal + page) | `src/components/<SharedName>/index.tsx` |
+| Page-level layout chrome (`PageContainer`, `BackBtn`, etc.) | `src/components/PageLayout/styles.ts` |
+
+### Existing shared modules (extend these, do not re-implement)
+
+| Module | What it provides |
+|---|---|
+| `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename` |
+| `@components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` (used by SavesPage, HelpPage, ManageTeamsScreen) |
+| `@components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |
+| `@components/SaveSlotList` | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage) |
+| `@features/customTeams/adapters/customTeamAdapter` | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc. |
+| `@test/testHelpers` | `makeState`, `makeContextValue`, `makeLogs`, `mockRandom` |
+
+### Rules
+
+- **Never copy a utility function** — if it exists in the table above, import it.
+- **Never redefine styled-components** that are already in a shared styles file — import them.
+- **When you notice duplication**, fix it before adding more: extract first, then wire both consumers.
+- **Duplication in tests is acceptable** when it aids test readability, but shared test setup belongs in `@test/testHelpers`.
+
+---
+
 ## E2E Tests (`e2e/`)
 
 Playwright E2E tests live in `e2e/` and are separate from the Vitest unit tests in `src/`.
