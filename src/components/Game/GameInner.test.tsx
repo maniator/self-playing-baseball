@@ -99,41 +99,7 @@ describe("GameInner", () => {
         <GameInner />
       </GameProviderWrapper>,
     );
-    expect(screen.getByText(/New Game/i)).toBeInTheDocument();
-  });
-
-  it("shows the new game dialog on first render", () => {
-    render(
-      <GameProviderWrapper>
-        <GameInner />
-      </GameProviderWrapper>,
-    );
-    expect(screen.getByLabelText(/home team/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/away team/i)).toBeInTheDocument();
-  });
-
-  it("starts the game after Play Ball is clicked (dialog closes)", () => {
-    render(
-      <GameProviderWrapper>
-        <GameInner />
-      </GameProviderWrapper>,
-    );
-    act(() => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
-    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
-  });
-
-  it("game screen is visible after Play Ball is clicked", () => {
-    render(
-      <GameProviderWrapper>
-        <GameInner />
-      </GameProviderWrapper>,
-    );
-    act(() => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
-    expect(screen.getAllByText(/play-by-play/i).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("scoreboard")).toBeInTheDocument();
   });
 
   it("clicking New Game button calls onNewGame when provided", () => {
@@ -146,21 +112,15 @@ describe("GameInner", () => {
         <GameInner onNewGame={onNewGame} />
       </GameContext.Provider>,
     );
-    // Dialog starts open — close it by submitting the form
-    act(() => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
-    // Dialog should now be closed
-    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
-    // "New Game" button is present because gameOver=true in context
+    // "New Game" button is present because gameOver=true in context and onNewGame provided
     expect(screen.getByRole("button", { name: /new game/i })).toBeInTheDocument();
     // Click it — should delegate to onNewGame (navigate to /exhibition/new)
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /new game/i }));
     });
     expect(onNewGame).toHaveBeenCalled();
-    // Dialog does not reopen (navigation is handled externally)
-    expect(screen.queryByLabelText(/home team/i)).not.toBeInTheDocument();
+    // No dialog should be present
+    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
   });
 });
 
@@ -211,7 +171,7 @@ describe("GameInner — auto-save resume", () => {
     vi.mocked(rngModule.getSeed).mockReturnValue(SEED_NUM);
   });
 
-  it("shows Resume button when a seed-matched auto-save exists", async () => {
+  it("auto-restores from rxAutoSave without dialog when snapshot exists", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [makeAutoSaveSlot() as SaveDoc],
@@ -222,53 +182,22 @@ describe("GameInner — auto-save resume", () => {
       exportRxdbSave: vi.fn().mockResolvedValue("{}"),
       importRxdbSave: vi.fn().mockResolvedValue(undefined),
     });
+    const onGameSessionStarted = vi.fn();
     await act(async () => {
       render(
         <GameProviderWrapper>
-          <GameInner />
+          <GameInner onGameSessionStarted={onGameSessionStarted} />
         </GameProviderWrapper>,
       );
     });
-    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
+    // Auto-restore fires onGameSessionStarted without any dialog interaction
+    expect(onGameSessionStarted).toHaveBeenCalled();
+    expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
   });
 
-  it("does NOT show Resume button when no auto-save exists", async () => {
-    const { SaveStore } = await import("@storage/saveStore");
-    vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
-  });
-
-  it("shows Resume button as fallback when seed does not match but snapshot exists", async () => {
+  it("does not auto-restore when no snapshot exists", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
-    vi.mocked(useSaveStore).mockReturnValue({
-      saves: [{ ...makeAutoSaveSlot(), seed: "zzzzz" } as SaveDoc],
-      createSave: vi.fn().mockResolvedValue("save_1"),
-      appendEvents: vi.fn().mockResolvedValue(undefined),
-      updateProgress: vi.fn().mockResolvedValue(undefined),
-      deleteSave: vi.fn().mockResolvedValue(undefined),
-      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
-      importRxdbSave: vi.fn().mockResolvedValue(undefined),
-    });
-    await act(async () => {
-      render(
-        <GameProviderWrapper>
-          <GameInner />
-        </GameProviderWrapper>,
-      );
-    });
-    expect(screen.getByRole("button", { name: /resume/i, hidden: true })).toBeInTheDocument();
-  });
-
-  it("does NOT show Resume button when no save has a stateSnapshot", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
-    const noSnapshotSlot = { ...makeAutoSaveSlot(), seed: "zzzzz", stateSnapshot: undefined };
+    const noSnapshotSlot = { ...makeAutoSaveSlot(), stateSnapshot: undefined };
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [noSnapshotSlot as SaveDoc],
       createSave: vi.fn().mockResolvedValue("save_1"),
@@ -278,14 +207,15 @@ describe("GameInner — auto-save resume", () => {
       exportRxdbSave: vi.fn().mockResolvedValue("{}"),
       importRxdbSave: vi.fn().mockResolvedValue(undefined),
     });
+    const onGameSessionStarted = vi.fn();
     await act(async () => {
       render(
         <GameProviderWrapper>
-          <GameInner />
+          <GameInner onGameSessionStarted={onGameSessionStarted} />
         </GameProviderWrapper>,
       );
     });
-    expect(screen.queryByRole("button", { name: /resume/i, hidden: true })).not.toBeInTheDocument();
+    expect(onGameSessionStarted).not.toHaveBeenCalled();
   });
 
   it("calls restoreRng when a matched auto-save is present on mount", async () => {
@@ -309,7 +239,7 @@ describe("GameInner — auto-save resume", () => {
     expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
   });
 
-  it("calls createSave when starting a new game", async () => {
+  it("calls createSave when starting a new game via pendingGameSetup", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const mockCreateSave = vi.fn().mockResolvedValue("save_1");
     vi.mocked(useSaveStore).mockReturnValue({
@@ -321,14 +251,23 @@ describe("GameInner — auto-save resume", () => {
       exportRxdbSave: vi.fn().mockResolvedValue("{}"),
       importRxdbSave: vi.fn().mockResolvedValue(undefined),
     });
+    const pendingSetup = {
+      homeTeam: "Yankees",
+      awayTeam: "Mets",
+      managedTeam: null as null,
+      playerOverrides: {
+        away: {},
+        home: {},
+        awayOrder: [] as string[],
+        homeOrder: [] as string[],
+      },
+    };
     render(
       <GameProviderWrapper>
-        <GameInner />
+        <GameInner pendingGameSetup={pendingSetup} />
       </GameProviderWrapper>,
     );
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
+    await act(async () => {});
     expect(mockCreateSave).toHaveBeenCalled();
   });
 });
@@ -338,7 +277,7 @@ describe("Game", () => {
     await act(async () => {
       render(<Game />);
     });
-    expect(HTMLDialogElement.prototype.showModal).toHaveBeenCalled();
+    expect(screen.getByTestId("scoreboard")).toBeInTheDocument();
   });
 });
 
@@ -479,19 +418,25 @@ describe("GameInner — custom team label resolution", () => {
   });
 
   it("preserves custom: IDs in state.teams so downstream logic can branch on them", async () => {
-    // NewGameDialog passes custom:<id> strings to handleStart; state should keep them intact.
+    // pendingGameSetup passes custom:<id> strings to handleStart; state should keep them intact.
     const dispatch = vi.fn();
+    const customPendingSetup = {
+      homeTeam: "custom:ct_abc999",
+      awayTeam: "custom:ct_abc123",
+      managedTeam: null as null,
+      playerOverrides: {
+        away: {},
+        home: {},
+        awayOrder: [] as string[],
+        homeOrder: [] as string[],
+      },
+    };
     render(
       <GameContext.Provider value={makeContextValue({ dispatch })}>
-        <GameInner />
+        <GameInner pendingGameSetup={customPendingSetup} />
       </GameContext.Provider>,
     );
-    act(() => {
-      fireEvent.click(screen.getByTestId("new-game-custom-teams-tab"));
-    });
-    await act(async () => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
+    await act(async () => {});
     const setTeamsCall = dispatch.mock.calls.find((c) => c[0]?.type === "setTeams");
     expect(setTeamsCall).toBeDefined();
     const teams: [string, string] = setTeamsCall?.[0]?.payload?.teams;
@@ -641,7 +586,7 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
     );
     // onConsumeGameSetup must be called to clear the pending setup
     expect(onConsumeGameSetup).toHaveBeenCalled();
-    // New game dialog should be closed (game started)
+    // No new-game-dialog should exist (it has been removed)
     expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
   });
 
@@ -686,33 +631,12 @@ describe("GameInner — onNewGame prop (external navigation)", () => {
         <GameInner onNewGame={onNewGame} />
       </GameContext.Provider>,
     );
-    // Submit the open dialog to close it and make the scoreboard active
-    act(() => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
-    // Click the "New Game" button — with onNewGame provided it should call the callback
+    // "New Game" button is visible because gameOver=true in context and onNewGame provided
+    expect(screen.getByRole("button", { name: /new game/i })).toBeInTheDocument();
+    // Click it — should delegate to onNewGame (navigate to /exhibition/new)
     act(() => {
       fireEvent.click(screen.getByRole("button", { name: /new game/i }));
     });
     expect(onNewGame).toHaveBeenCalled();
-  });
-
-  it("dialog does not reopen when no onNewGame prop is provided (no-op behavior)", () => {
-    render(
-      <GameContext.Provider
-        value={makeContextValue({ gameOver: true, teams: ["Yankees", "Mets"] })}
-      >
-        <GameInner />
-      </GameContext.Provider>,
-    );
-    act(() => {
-      fireEvent.click(screen.getByTestId("play-ball-button"));
-    });
-    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
-    act(() => {
-      fireEvent.click(screen.getByRole("button", { name: /new game/i }));
-    });
-    // Dialog does NOT reopen since no external handler is provided — navigation is handled externally
-    expect(screen.queryByTestId("new-game-dialog")).not.toBeInTheDocument();
   });
 });
