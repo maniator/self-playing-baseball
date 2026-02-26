@@ -56,15 +56,44 @@ any job fails.  Download them from the GitHub Actions summary page.
 
 ## Updating visual snapshots
 
-After an intentional UI change that alters the baseline screenshots:
+After an intentional UI change that alters the baseline screenshots, trigger the
+**Update Visual Snapshots** workflow from GitHub Actions (Actions → "Update Visual
+Snapshots" → Run workflow → select branch).  The workflow runs inside the same
+Playwright container as CI, regenerates all PNGs, and commits them back to the branch.
 
-```bash
-yarn test:e2e:update-snapshots
-```
+**Never run `yarn test:e2e:update-snapshots` locally and commit the result** — local OS
+fonts and rendering differ from the CI container and cause false-diff failures.
 
-This regenerates the PNG files in `e2e/tests/visual.spec.ts-snapshots/`.  Commit the
-updated images.  Only regenerate when you have made an intentional visual change — do
-not regenerate to silence a failure caused by an unintentional regression.
+The workflow targets the `e2e/tests/visual/` directory and `e2e/tests/layout.spec.ts`.
+
+## CI: sharding and combined report
+
+The `playwright-e2e` workflow runs **4 parallel jobs** (2 browser groups × 2 shards each):
+
+| Job | Browser | Projects | Shard |
+|---|---|---|---|
+| chromium-shard-1 | Chromium | determinism, desktop, pixel-7, pixel-5 | 1/2 |
+| chromium-shard-2 | Chromium | determinism, desktop, pixel-7, pixel-5 | 2/2 |
+| webkit-shard-1 | WebKit | tablet, iphone-15-pro-max, iphone-15 | 1/2 |
+| webkit-shard-2 | WebKit | tablet, iphone-15-pro-max, iphone-15 | 2/2 |
+
+Each shard uploads a **blob report** artifact. After all shards complete, a
+`merge-reports` job merges them into a single HTML report (`playwright-report-merged`
+artifact, 14-day retention).
+
+To download the merged report after a CI run: Actions run summary → Artifacts →
+`playwright-report-merged`.
+
+## Spec size guardrails
+
+A lightweight CI check (`scripts/check-spec-sizes.mjs`) scans all `*.spec.ts` files
+under `e2e/tests/` on every push:
+
+- **Warn** (≥ 500 lines): printed to the log but does not fail CI.
+- **Fail** (≥ 900 lines): fails the lint job.
+
+If a spec approaches the warning threshold, split it into smaller feature-focused files
+inside `e2e/tests/visual/` or a new subdirectory.
 
 ## Architecture
 
@@ -78,7 +107,25 @@ not regenerate to silence a failure caused by an unintentional regression.
 | `manager-mode.spec.ts` | Manager Mode toggle, strategy selector, decision panel action |
 | `notifications.spec.ts` | Notification permission + decision panel trigger (Chromium only) |
 | `responsive-smoke.spec.ts` | Layout visible and non-zero on all 6 viewport projects |
-| `visual.spec.ts` | Pixel-diff snapshot regression for key screens |
+| `visual/home-and-dialogs.visual.spec.ts` | Home screen, New Game dialog, How to Play modal |
+| `visual/game-ui.visual.spec.ts` | Scoreboard, team tab bar, player stats panel, saves modal |
+| `visual/team-editor.visual.spec.ts` | Manage Teams, Create/Edit Team editors, pitcher selector |
+| `visual/manager-decision.visual.spec.ts` | Manager decision panel, pinch hitter dropdown |
+
+### Fixtures (`e2e/fixtures/`)
+
+Pre-crafted save files for tests that need a specific game state immediately:
+
+| Fixture | State |
+|---|---|
+| `sample-save.json` | Inning 2, no pending decision |
+| `pending-decision.json` | Inning 4, defensive_shift pending |
+| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending with candidates |
+| `mid-game-with-rbi.json` | Inning 5, 3–2 score with RBI entries |
+
+Use `loadFixture(page, "filename.json")` to load a fixture in a test.  The helper
+navigates to `/`, opens the Saves modal, imports the file, and waits for the game state
+to restore — all in one call, typically under 15 s.
 
 ### Browser / viewport matrix
 

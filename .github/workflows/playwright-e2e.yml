@@ -11,8 +11,10 @@ on:
 
 jobs:
   e2e:
-    name: E2E (${{ matrix.browser }})
+    name: E2E (${{ matrix.browser }}-shard-${{ matrix.shardIndex }})
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     # The official Playwright container image ships all required OS/system
     # dependencies, fonts, and browser binaries pre-installed at /ms-playwright
     # (PLAYWRIGHT_BROWSERS_PATH is set in the image). No browser installation or
@@ -24,15 +26,36 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Chromium: determinism + desktop + Pixel devices
+          # Chromium shard 1: determinism + desktop + Pixel devices
           - browser: chromium
+            shardIndex: 1
+            shardTotal: 2
             projects: >-
               --project=determinism
               --project=desktop
               --project=pixel-7
               --project=pixel-5
-          # WebKit: tablet + iPhone devices
+          # Chromium shard 2: determinism + desktop + Pixel devices
+          - browser: chromium
+            shardIndex: 2
+            shardTotal: 2
+            projects: >-
+              --project=determinism
+              --project=desktop
+              --project=pixel-7
+              --project=pixel-5
+          # WebKit shard 1: tablet + iPhone devices
           - browser: webkit
+            shardIndex: 1
+            shardTotal: 2
+            projects: >-
+              --project=tablet
+              --project=iphone-15-pro-max
+              --project=iphone-15
+          # WebKit shard 2: tablet + iPhone devices
+          - browser: webkit
+            shardIndex: 2
+            shardTotal: 2
             projects: >-
               --project=tablet
               --project=iphone-15-pro-max
@@ -64,16 +87,75 @@ jobs:
         run: yarn build
 
       - name: Run Playwright E2E tests
-        run: npx playwright test ${{ matrix.projects }}
+        run: npx playwright test ${{ matrix.projects }} --shard=${{ matrix.shardIndex }}/${{ matrix.shardTotal }}
         env:
           CI: true
 
+      # Always upload the blob report so the merge-reports job can combine
+      # results from all shards into a single HTML report.
+      - name: Upload blob report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blob-report-${{ matrix.browser }}-${{ matrix.shardIndex }}
+          path: blob-report/
+          retention-days: 1
+
+      # Keep raw test-results (traces, screenshots, videos) for debugging
+      # failures without having to re-run.
       - name: Upload test artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-artifacts-${{ matrix.browser }}
-          path: |
-            playwright-report/
-            test-results/
+          name: test-results-${{ matrix.browser }}-${{ matrix.shardIndex }}
+          path: test-results/
           retention-days: 7
+
+  # After all shards complete, download every blob report and merge them into
+  # a single HTML report.  Runs on plain ubuntu-latest — no Playwright container
+  # needed; the merge step only requires the @playwright/test CLI.
+  merge-reports:
+    name: Merge Playwright reports
+    needs: [e2e]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Consistent with the e2e job; harmless outside a container but keeps
+      # git commands reliable in any future container migration.
+      - name: Mark workspace as safe git directory
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install dependencies
+        run: yarn install
+
+      # Download all per-shard blob reports into a single directory so the
+      # merge command can find them together.
+      - name: Download blob reports
+        uses: actions/download-artifact@v4
+        with:
+          path: all-blob-reports
+          pattern: blob-report-*
+          merge-multiple: true
+
+      - name: Merge into HTML report
+        run: npx playwright merge-reports --reporter html ./all-blob-reports
+
+      - name: Upload merged HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-merged
+          path: playwright-report/
+          retention-days: 14

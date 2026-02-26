@@ -15,7 +15,7 @@ name: Update Visual Snapshots
 #
 # Run this whenever:
 #  - The container image version changes (font/rendering environment changes)
-#  - An intentional UI change requires new baselines (visual.spec.ts)
+#  - An intentional UI change requires new baselines (e2e/tests/visual/)
 #  - The game layout changes (layout.spec.ts)
 
 on:
@@ -86,7 +86,7 @@ jobs:
         run: yarn build
 
       - name: Update visual snapshots
-        run: npx playwright test e2e/tests/visual.spec.ts e2e/tests/layout.spec.ts ${{ matrix.projects }} --update-snapshots
+        run: npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts ${{ matrix.projects }} --update-snapshots
         env:
           CI: true
 
@@ -95,7 +95,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update snapshots for ${{ matrix.browser }}"
-          file_pattern: "e2e/tests/visual.spec.ts-snapshots/ e2e/tests/layout.spec.ts-snapshots/"
+          file_pattern: "e2e/tests/visual/*.spec.ts-snapshots/ e2e/tests/layout.spec.ts-snapshots/"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
 

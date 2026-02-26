@@ -9,7 +9,9 @@ export default defineConfig({
   retries: isCI ? 1 : 0,
   workers: isCI ? 4 : undefined,
   timeout: 90_000,
-  reporter: isCI ? [["github"], ["html", { open: "never" }]] : "list",
+  // In CI: each shard writes a blob report; the merge-reports job combines them
+  // into a single HTML report (playwright-report-merged artifact, 14-day retention).
+  reporter: isCI ? [["github"], ["blob"]] : "list",
   use: {
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",

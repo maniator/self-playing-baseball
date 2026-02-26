@@ -34,3 +34,6 @@ jobs:
 
       - name: Format check
         run: yarn format:check
+
+      - name: Check E2E spec sizes
+        run: node scripts/check-spec-sizes.mjs
