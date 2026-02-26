@@ -5,7 +5,6 @@ import { useNavigate, useOutletContext } from "react-router-dom";
 import type { AppShellOutletContext } from "@components/AppShell";
 import CustomTeamMatchup from "@components/NewGameDialog/CustomTeamMatchup";
 import {
-  BackHomeButton,
   FieldGroup,
   FieldLabel,
   Input,
@@ -16,12 +15,11 @@ import {
   Tab,
   TabRow,
   TeamValidationError,
-  Title,
 } from "@components/NewGameDialog/styles";
 
 import MlbTeamsSection from "./MlbTeamsSection";
 import StarterPitcherSelector from "./StarterPitcherSelector";
-import { PageContainer } from "./styles";
+import { BackBtn, PageContainer, PageHeader, PageTitle } from "./styles";
 import { useExhibitionSetup } from "./useExhibitionSetup";
 
 /**
@@ -73,14 +71,17 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
 
   return (
     <PageContainer data-testid="exhibition-setup-page">
-      <BackHomeButton
-        type="button"
-        onClick={() => navigate("/")}
-        data-testid="new-game-back-home-button"
-      >
-        ← Home
-      </BackHomeButton>
-      <Title>⚾ New Exhibition Game</Title>
+      <PageHeader>
+        <BackBtn
+          type="button"
+          onClick={() => navigate("/")}
+          data-testid="new-game-back-home-button"
+          aria-label="Back to Home"
+        >
+          ← Back to Home
+        </BackBtn>
+      </PageHeader>
+      <PageTitle>⚾ New Exhibition Game</PageTitle>
       <form onSubmit={handleSubmit}>
         <TabRow role="tablist" aria-label="Team type">
           <Tab

@@ -61,7 +61,9 @@ export const CreateBtn = styled.button`
   font-family: inherit;
   cursor: pointer;
   min-height: 44px;
-  align-self: flex-start;
+  align-self: center;
+  width: min(100%, 340px);
+  margin-top: 8px;
   margin-bottom: 20px;
 
   &:hover {
@@ -166,10 +168,10 @@ export const EditorShellHeader = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 16px 24px 0;
+  padding: 24px 24px 0;
 
   ${mq.mobile} {
-    padding: 12px 16px 0;
+    padding: 16px 16px 0;
   }
 `;
 
