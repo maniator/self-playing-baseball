@@ -78,11 +78,8 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
 
-  // Dialogs opened via showModal() live in the browser's top layer and are NOT
-  // affected by display:none on their parent container.  Close them explicitly
-  // before routing Home so the backdrop never blocks the HomeScreen buttons.
-  // Also reset dialogOpen so the NewGameDialog is unmounted — this prevents
-  // residual top-layer state in WebKit when the Game div is later re-shown.
+  // Close any open dialogs (top-layer) before navigating away so no backdrop
+  // lingers over the destination page.
   const handleSafeBackToHome = React.useCallback(() => {
     if (typeof document !== "undefined") {
       document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());
@@ -91,9 +88,8 @@ const GameInner: React.FunctionComponent<Props> = ({
     onBackToHome?.();
   }, [onBackToHome]);
 
-  // Same top-layer cleanup needed when navigating to Manage Teams from the
-  // New Game dialog's Custom Teams empty-state link.  Without this, the
-  // showModal() backdrop remains active and makes ManageTeams buttons inert.
+  // Same top-layer cleanup when navigating to Manage Teams from the New Game
+  // dialog's Custom Teams empty-state link.
   const handleSafeManageTeams = React.useCallback(() => {
     if (typeof document !== "undefined") {
       document.querySelectorAll<HTMLDialogElement>("dialog[open]").forEach((d) => d.close());

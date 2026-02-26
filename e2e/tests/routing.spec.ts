@@ -257,7 +257,9 @@ test.describe("Routing — deep-link and unknown paths", () => {
  * viewport-independent because it's purely router correctness.
  */
 test.describe("Routing — direct-navigation smoke tests", () => {
-  test.skip(({ project }) => project.name !== "desktop", "Deep-link smoke runs on desktop only");
+  test.beforeEach(({}, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Deep-link smoke runs on desktop only");
+  });
 
   test("direct visit to / shows Home screen", async ({ page }) => {
     await page.goto("/");
