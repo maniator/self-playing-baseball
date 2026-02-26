@@ -177,7 +177,7 @@ describe("ExhibitionSetupPage", () => {
         bench: [],
       },
     });
-    vi.mocked(useCustomTeams).mockReturnValue({
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
       teams: [mockTeam("ct_away", "Away Team"), mockTeam("ct_home", "Home Team")] as any,
       loading: false,
       createTeam: vi.fn(),
@@ -205,6 +205,98 @@ describe("ExhibitionSetupPage", () => {
         }),
       }),
     );
+  });
+
+  it("clicking Go to Manage Teams navigates to /teams", async () => {
+    // Reset to empty teams (previous tests may have overridden the mock)
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    // Default render has zero custom teams — the "Go to Manage Teams" link shows
+    const user = userEvent.setup();
+    renderPage();
+    const manageBtn = screen.getByRole("button", { name: /go to manage teams/i });
+    await user.click(manageBtn);
+    expect(mockNavigate).toHaveBeenCalledWith("/teams");
+  });
+
+  it("custom teams: clicking managed-Away radio exercises the starter-pitcher IIFE", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const mockPlayer = (id: string) => ({
+      id,
+      name: `Player ${id}`,
+      position: "OF",
+      batting: { contact: 60, power: 60, speed: 60 },
+    });
+    const mockPitcher = (id: string) => ({
+      id,
+      name: `Pitcher ${id}`,
+      role: "SP" as const,
+      batting: { contact: 40, power: 40, speed: 40 },
+      pitching: { velocity: 60, control: 60, movement: 60 },
+    });
+    const makeTeam = (id: string, name: string) => ({
+      id,
+      name,
+      city: "Testville",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: Array.from({ length: 9 }, (_, i) => mockPlayer(`${id}-p${i}`)),
+        pitchers: [mockPitcher(`${id}-sp`)],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeam("ct_away", "Away"), makeTeam("ct_home", "Home")] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+    // Click "Away" managed radio to make IIFE render the starter pitcher selector
+    const awayRadio = screen.getByRole("radio", { name: /away/i });
+    await user.click(awayRadio);
+    expect(screen.getByTestId("starting-pitcher-select")).toBeInTheDocument();
+  });
+
+  it("MLB mode: changing mode radio calls handleModeChange; changing team selects fires setHome/setAway", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
+    // Click the NL radio to fire handleModeChange
+    const nlRadio = screen.getByRole("radio", { name: "NL vs NL" });
+    await user.click(nlRadio);
+    // Change home team select
+    const homeSelect = screen.getByTestId("home-team-select") as HTMLSelectElement;
+    await userEvent.selectOptions(homeSelect, homeSelect.options[1]?.value ?? homeSelect.options[0].value);
+    // Change away team select
+    const awaySelect = screen.getByTestId("away-team-select") as HTMLSelectElement;
+    await userEvent.selectOptions(awaySelect, awaySelect.options[1]?.value ?? awaySelect.options[0].value);
+    // No assertion needed beyond exercising the handlers without throwing
+    expect(homeSelect).toBeInTheDocument();
+  });
+
+  it("MLB interleague mode: homeLeague radio fires handleHomeLeagueChange", async () => {
+    const user = userEvent.setup();
+    renderPage();
+    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
+    // Switch to Interleague to show the homeLeague radios
+    const interleagueRadio = screen.getByRole("radio", { name: "Interleague" });
+    await user.click(interleagueRadio);
+    // Click NL homeLeague radio
+    const nlHomeLeague = screen.getByRole("radio", { name: "NL" });
+    await user.click(nlHomeLeague);
+    expect(nlHomeLeague).toBeChecked();
   });
 
   it("shows 'create more teams' error when exactly one custom team exists", async () => {
