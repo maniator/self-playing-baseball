@@ -362,7 +362,7 @@ test.describe("Label resolution — no raw IDs in any user-facing surface", () =
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
     // Wait for several play-by-play entries so the log is populated.
-    await waitForLogLines(page, 5, 45_000);
+    await waitForLogLines(page, 5, 30_000);
 
     // Check scoreboard, log, and hit-log for raw IDs.
     await expectNoRawIdsVisible(page);
