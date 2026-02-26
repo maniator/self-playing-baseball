@@ -33,7 +33,7 @@ export const ScreenHeader = styled.div`
 export const ScreenTitle = styled.h1`
   color: white;
   font-size: 1.6rem;
-  margin: 0;
+  margin: 0 0 16px;
 
   ${mq.mobile} {
     font-size: 1.3rem;
