@@ -435,12 +435,13 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 |---|---|
 | `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
 | `startGameViaPlayBall(page, options?)` | Fill seed-input field (if provided), configure teams, click Play Ball |
+| `loadFixture(page, fixtureName)` | Load a pre-crafted save from the Home screen — game active with fixture state applied instantly |
 | `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
 | `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
 | `openSavesModal(page)` | Click saves button, wait for modal |
 | `saveCurrentGame(page)` | Open modal + click Save current game |
 | `loadFirstSave(page)` | Open modal + click first Load button, wait for modal to close |
-| `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path |
+| `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path (requires active game) |
 | `assertFieldAndLogVisible(page)` | Assert field-view + scoreboard visible with non-zero bounding boxes |
 | `disableAnimations(page)` | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
 
@@ -487,7 +488,101 @@ Once `update-visual-snapshots` commits the new baselines, a *second* `playwright
 
 ---
 
-## Common Gotchas
+## Save Fixtures for E2E Testing
+
+Pre-crafted save files in `e2e/fixtures/` let E2E tests jump straight into a specific game situation without waiting for autoplay to reach it. This slashes test time from 90–150 s (waiting for decisions or scoring plays) to under 15 s.
+
+### When to use a fixture instead of `startGameViaPlayBall`
+
+| Situation | Use fixture? |
+|---|---|
+| Need a manager decision panel visible immediately | ✅ `pending-decision.json` |
+| Need specific pending decision (pinch hitter, shift, etc.) | ✅ craft a new fixture |
+| Need RBI / stats already on the board | ✅ `mid-game-with-rbi.json` |
+| Testing visual snapshot of a mid-game UI element | ✅ craft a fixture for that state |
+| Testing correctness of the simulation (seed regression, determinism) | ❌ must use real `startGameViaPlayBall` |
+| Testing the full game-completion flow (FINAL banner) | ❌ must use real autoplay |
+
+### The `loadFixture` helper
+
+```typescript
+import { loadFixture } from "../utils/helpers";
+
+await loadFixture(page, "pending-decision.json");
+// Game is now active with the fixture's stateSnapshot applied.
+// No startGameViaPlayBall, no waitForLogLines, no long timeouts needed.
+```
+
+`loadFixture` enters the game shell via **Home → "Load Saved Game"**, imports the file through the Saves modal's file input, waits for the auto-load to restore state, and confirms the scoreboard is visible — all in one call.
+
+### Available fixtures
+
+| File | State summary | Covers |
+|---|---|---|
+| `sample-save.json` | Inning 2, Mets vs Yankees, no pending decision | Import smoke tests |
+| `pending-decision.json` | Inning 4 bottom, defensive_shift pending, managerMode on | Manager decision panel UI, notification smoke |
+| `pending-decision-pinch-hitter.json` | Inning 7 top, pinch_hitter pending + 2 candidates, custom teams | Pinch-hitter dropdown visual snapshot |
+| `mid-game-with-rbi.json` | Inning 5 top, 3-2 score, playLog has RBI entries | RBI stats display + save/reload persistence |
+
+### Authoring a new fixture
+
+Fixtures are signed JSON bundles (`RxdbExportedSave` format). The signature is a FNV-1a 32-bit checksum:
+
+```python
+RXDB_EXPORT_KEY = "ballgame:rxdb:v1"
+
+def fnv1a(s: str) -> str:
+    h = 0x811c9dc5
+    for c in s:
+        h ^= ord(c)
+        h = (h * 0x01000193) & 0xFFFFFFFF
+    return format(h, '08x')
+
+def make_sig(header, events):
+    # JSON.stringify with no extra whitespace (separators=(',', ':'))
+    inner = json.dumps({"header": header, "events": events}, separators=(',', ':'))
+    return fnv1a(RXDB_EXPORT_KEY + inner)
+
+payload = {"version": 1, "header": header, "events": events, "sig": make_sig(header, events)}
+```
+
+**Key fields in `header.stateSnapshot.state`:**
+
+| Field | Purpose | Notes |
+|---|---|---|
+| `pendingDecision` | Decision panel state | `null` = no panel; `{ kind: "defensive_shift" }` = shift panel; `{ kind: "pinch_hitter", candidates: [...], teamIdx: 0, lineupIdx: N }` = dropdown |
+| `managerMode` (in `setup`) | Shows the DecisionPanel | Must be `true` for any pending-decision fixture |
+| `managedTeam` (in `setup`) | Which team is managed | `0` = away, `1` = home |
+| `playLog` | RBI / hit stats | Each entry needs `{ inning, half, batterNum, team, event, runs, rbi }` where `event` is the Hit enum value (Single=0, Double=1, Triple=2, Homerun=3, Walk=4) |
+| `inningRuns` | Line-score display | `inningRuns[team][inning-1]` = runs that team scored in that inning |
+| `lineupOrder` | Player IDs in batting order | `[[], []]` for default MLB games; populate for custom-team games |
+| `playerOverrides` | Custom names/positions/stat mods | Use player IDs as keys |
+| `resolvedMods` | Pre-computed stat mods | Needed for `pinch_hitter` candidates' `contactMod`/`powerMod` to be accurate |
+| `rosterBench` | Bench player IDs | Required for `pinch_hitter` decisions to show candidates |
+
+**Minimal fixture checklist:**
+
+1. Build `header` dict with `id`, `name`, `seed`, `matchupMode`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
+2. Start from `BASE_STATE` (all array/object fields present with safe defaults) and override only what you need
+3. Compute `sig = make_sig(header, events=[])` in Python using the snippet above
+4. Place file in `e2e/fixtures/<name>.json`
+5. Use `await loadFixture(page, "<name>.json")` in the test
+
+**Using the Python generator script in `/tmp/gen-fixtures.py`** (see existing fixtures) is the recommended approach — it produces all fixtures in one run and prints each signature for verification.
+
+### State restoration mechanics
+
+When `loadFixture` imports a save, `useSavesModal.ts` calls `handleLoad` which:
+1. `dispatch({ type: "restore_game", payload: snap.state })` — applies `stateSnapshot.state` via `backfillRestoredState` (safe-defaults for any missing fields)
+2. `onSetupRestore({ strategy, managedTeam, managerMode })` — writes to localStorage
+3. `onLoadActivate(slot.id)` — sets `gameActive = true` so the DecisionPanel renders
+4. Closes the modal
+
+Because `pendingDecision` is part of `State` and `backfillRestoredState` merges `restored` over `fresh` defaults, a fixture that carries `pendingDecision: { kind: "defensive_shift" }` will render the manager decision panel instantly on load — no pitch needs to be thrown.
+
+---
+
+
 
 - **`tsconfig.json`** has `moduleResolution: "node"`, `jsx: "react-jsx"`, and path aliases. Vite reads it automatically via `vite.config.ts`. Do not change `moduleResolution` without testing the build and tests.
 - **Single config file:** `vite.config.ts` is the only config for both Vite (build/dev) and Vitest (tests). It imports `defineConfig` from `vitest/config`. There is no separate `vitest.config.ts`.

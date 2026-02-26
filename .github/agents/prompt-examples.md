@@ -156,3 +156,40 @@ before writing to RxDB. Verify:
 - progressIdx in the saves doc stays accurate.
 - save-load.spec.ts and import.spec.ts still pass.
 ```
+
+---
+
+## E2E save fixtures
+
+### Add a fixture for a specific game state
+
+```
+@ci-workflow
+
+Add an E2E save fixture for testing the [X] UI element.
+
+Requirements:
+- The fixture must put the game in state [describe state: inning N, pendingDecision=Y, RBI on board, etc.].
+- Use the Python FNV-1a script pattern from the existing fixtures in e2e/fixtures/.
+- The `sig` field must be computed as fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events})).
+- Add a test that calls loadFixture(page, "new-fixture.json") and asserts [expected UI element] is visible.
+- Remove any test.setTimeout() that was previously needed for the long autoplay wait.
+- Document the fixture in the fixtures table in copilot-instructions.md.
+```
+
+### Convert a slow E2E test to use a fixture
+
+```
+@ci-workflow
+
+The test "[test name]" in [spec file] has a [N]s timeout waiting for autoplay to reach [state].
+Convert it to use a pre-crafted save fixture instead.
+
+Requirements:
+1. Identify the minimum game state needed (inning, pendingDecision, playLog entries, etc.).
+2. Generate a fixture JSON using the Python FNV-1a pattern in /tmp/gen-fixtures.py (see existing fixtures).
+3. Replace startGameViaPlayBall + long waitForLogLines / toBeVisible timeout with loadFixture(page, "fixture.json").
+4. Remove test.setTimeout() — the fixture makes the test instant.
+5. Update the fixtures table in copilot-instructions.md.
+6. Confirm the test still asserts the same behavior it did before.
+```
