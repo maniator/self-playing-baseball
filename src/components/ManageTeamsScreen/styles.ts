@@ -2,6 +2,8 @@ import styled from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
+export { BackBtn } from "@components/PageLayout/styles";
+
 export const ScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -26,27 +28,6 @@ export const ScreenHeader = styled.div`
   align-items: center;
   gap: 12px;
   margin-bottom: 24px;
-`;
-
-export const BackBtn = styled.button`
-  background: transparent;
-  color: #6680aa;
-  border: none;
-  font-size: 13px;
-  font-family: inherit;
-  cursor: pointer;
-  padding: 4px 0;
-  min-height: 36px;
-
-  &:hover {
-    color: #aaccff;
-  }
-
-  &:focus-visible {
-    outline: 2px solid aquamarine;
-    outline-offset: 2px;
-    border-radius: 3px;
-  }
 `;
 
 export const ScreenTitle = styled.h1`
