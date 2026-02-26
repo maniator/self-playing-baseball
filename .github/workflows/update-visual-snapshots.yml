@@ -95,7 +95,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: update snapshots for ${{ matrix.browser }}"
-          file_pattern: "e2e/tests/visual/*.spec.ts-snapshots/ e2e/tests/layout.spec.ts-snapshots/"
+          file_pattern: "e2e/tests/visual/ e2e/tests/layout.spec.ts-snapshots/"
           commit_user_name: github-actions[bot]
           commit_user_email: github-actions[bot]@users.noreply.github.com
 
