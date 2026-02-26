@@ -7,6 +7,7 @@ import RootLayout from "@components/RootLayout";
 import { CustomTeamStore } from "@storage/customTeamStore";
 
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
+const SavesPage = React.lazy(() => import("./pages/SavesPage"));
 
 /**
  * Application data router.
@@ -19,6 +20,7 @@ const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage
  *       /teams               → ManageTeamsScreen (list)
  *       /teams/new           → ManageTeamsScreen (create editor)
  *       /teams/:teamId/edit  → ManageTeamsScreen (edit editor; redirects if team not found)
+ *       /saves               → SavesPage (exhibition saves)
  *       /exhibition/new      → ExhibitionSetupPage (via <Outlet />)
  *     * → redirect to /
  */
@@ -40,6 +42,14 @@ export const router = createBrowserRouter([
               if (!team) return redirect("/teams");
               return null;
             },
+          },
+          {
+            path: "saves",
+            element: (
+              <React.Suspense fallback={null}>
+                <SavesPage />
+              </React.Suspense>
+            ),
           },
           {
             path: "exhibition/new",

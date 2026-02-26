@@ -62,6 +62,10 @@ interface Props {
   pendingGameSetup?: ExhibitionGameSetup | null;
   /** Called after pendingGameSetup is consumed so AppShell can clear it. */
   onConsumeGameSetup?: () => void;
+  /** Save loaded from /saves page; auto-restores game state when it arrives. */
+  pendingLoadSave?: SaveDoc | null;
+  /** Called after pendingLoadSave is consumed so AppShell can clear it. */
+  onConsumePendingLoad?: () => void;
   /** True when the current route is /game; used to pause autoplay off-route. */
   isOnGameRoute?: boolean;
 }
@@ -77,6 +81,8 @@ const GameInner: React.FunctionComponent<Props> = ({
   onGameSessionStarted,
   pendingGameSetup,
   onConsumeGameSetup,
+  pendingLoadSave,
+  onConsumePendingLoad,
   isOnGameRoute = true,
 }) => {
   const { dispatch, dispatchLog, teams } = useGameContext();
@@ -293,6 +299,40 @@ const GameInner: React.FunctionComponent<Props> = ({
     );
     onConsumeGameSetup?.();
   }, [pendingGameSetup, onConsumeGameSetup]);
+
+  // Restore game state when AppShell delivers a save loaded from the /saves page.
+  const prevPendingLoad = React.useRef<SaveDoc | null>(null);
+  React.useEffect(() => {
+    if (!pendingLoadSave) return;
+    if (pendingLoadSave === prevPendingLoad.current) return;
+    prevPendingLoad.current = pendingLoadSave;
+
+    const snap = pendingLoadSave.stateSnapshot;
+    if (!snap) return;
+
+    if (snap.rngState !== null) restoreRng(snap.rngState);
+    dispatch({ type: "restore_game", payload: snap.state });
+
+    const { setup } = pendingLoadSave;
+    setManagerMode(setup.managerMode);
+    setManagedTeam(setup.managedTeam ?? 0);
+    setStrategy(setup.strategy);
+
+    savesCloseActiveRef.current = false;
+    rxSaveIdRef.current = pendingLoadSave.id;
+    setGameActive(true);
+    setDialogOpen(false);
+    onGameSessionStarted?.();
+    onConsumePendingLoad?.();
+  }, [
+    pendingLoadSave,
+    dispatch,
+    setManagerMode,
+    setManagedTeam,
+    setStrategy,
+    onGameSessionStarted,
+    onConsumePendingLoad,
+  ]);
 
   const handleLoadActivate = React.useCallback(
     (saveId: string) => {

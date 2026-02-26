@@ -6,12 +6,15 @@ import Game from "@components/Game";
 import HomeScreen from "@components/HomeScreen";
 import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import type { PlayerOverrides } from "@components/NewGameDialog";
+import type { SaveDoc } from "@storage/types";
 
 export type InitialGameView = "new-game" | "load-saves";
 
-/** Passed via <Outlet context> to child routes like /exhibition/new. */
+/** Passed via <Outlet context> to child routes like /exhibition/new and /saves. */
 export type AppShellOutletContext = {
   onStartGame: (setup: ExhibitionGameSetup) => void;
+  /** Called from the saves page when the user picks a save to load. */
+  onLoadSave: (slot: SaveDoc) => void;
 };
 
 /** Shape for a game setup originating from the /exhibition/new page. */
@@ -22,12 +25,13 @@ export type ExhibitionGameSetup = {
   playerOverrides: PlayerOverrides;
 };
 
-type Screen = "home" | "game" | "manage-teams" | "other";
+type Screen = "home" | "game" | "manage-teams" | "saves" | "other";
 
 function pathnameToScreen(pathname: string): Screen {
   if (pathname === "/" || pathname === "") return "home";
   if (pathname === "/game") return "game";
   if (pathname.startsWith("/teams")) return "manage-teams";
+  if (pathname === "/saves") return "saves";
   return "other";
 }
 
@@ -37,17 +41,16 @@ const AppShell: React.FunctionComponent = () => {
 
   const screen = pathnameToScreen(location.pathname);
 
-  const [initialGameView, setInitialGameView] = React.useState<InitialGameView>("new-game");
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
   // Whether Game has ever been mounted (controls CSS visibility wrapper).
   const [gameEverMounted, setGameEverMounted] = React.useState(false);
   // Incremented each time the user requests a new game from within the game screen.
   const [newGameRequestCount, setNewGameRequestCount] = React.useState(0);
-  // Incremented each time the user navigates via "Load Saved Game"; GameInner watches this.
-  const [loadSavesRequestCount, setLoadSavesRequestCount] = React.useState(0);
   // Pending setup from /exhibition/new — consumed by GameInner to auto-start a game.
   const [pendingGameSetup, setPendingGameSetup] = React.useState<ExhibitionGameSetup | null>(null);
+  // Pending save loaded from /saves page — consumed by GameInner to restore game state.
+  const [pendingLoadSave, setPendingLoadSave] = React.useState<SaveDoc | null>(null);
 
   // Keep Game mounted once we visit /game.
   React.useEffect(() => {
@@ -75,11 +78,22 @@ const AppShell: React.FunctionComponent = () => {
   }, []);
 
   const handleLoadSaves = React.useCallback(() => {
-    setInitialGameView("load-saves");
-    setGameEverMounted(true);
-    setLoadSavesRequestCount((c) => c + 1);
-    navigate("/game");
+    navigate("/saves");
   }, [navigate]);
+
+  /** Called from the saves page — stores the pending save and navigates to /game. */
+  const handleLoadSave = React.useCallback(
+    (slot: SaveDoc) => {
+      setPendingLoadSave(slot);
+      setGameEverMounted(true);
+      navigate("/game");
+    },
+    [navigate],
+  );
+
+  const handleConsumePendingLoad = React.useCallback(() => {
+    setPendingLoadSave(null);
+  }, []);
 
   const handleBackToHome = React.useCallback(() => {
     navigate("/");
@@ -104,8 +118,8 @@ const AppShell: React.FunctionComponent = () => {
   }, []);
 
   const outletContext: AppShellOutletContext = React.useMemo(
-    () => ({ onStartGame: handleStartFromExhibition }),
-    [handleStartFromExhibition],
+    () => ({ onStartGame: handleStartFromExhibition, onLoadSave: handleLoadSave }),
+    [handleStartFromExhibition, handleLoadSave],
   );
 
   return (
@@ -114,15 +128,15 @@ const AppShell: React.FunctionComponent = () => {
       <div style={{ display: screen === "game" ? undefined : "none" }}>
         {gameEverMounted && (
           <Game
-            initialView={initialGameView}
             newGameRequestCount={newGameRequestCount}
-            loadSavesRequestCount={loadSavesRequestCount}
             onBackToHome={handleBackToHome}
             onManageTeams={handleManageTeams}
             onGameSessionStarted={handleGameSessionStarted}
             onNewGame={handleNewGameFromGame}
             pendingGameSetup={pendingGameSetup}
             onConsumeGameSetup={handleConsumeGameSetup}
+            pendingLoadSave={pendingLoadSave}
+            onConsumePendingLoad={handleConsumePendingLoad}
             isOnGameRoute={screen === "game"}
           />
         )}
@@ -141,7 +155,7 @@ const AppShell: React.FunctionComponent = () => {
         <ManageTeamsScreen onBack={handleBackToHome} hasActiveGame={hasActiveSession} />
       )}
 
-      {screen === "other" && <Outlet context={outletContext} />}
+      {(screen === "saves" || screen === "other") && <Outlet context={outletContext} />}
     </>
   );
 };

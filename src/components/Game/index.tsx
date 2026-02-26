@@ -9,6 +9,7 @@ import { GameProviderWrapper } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
+import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
 
 import GameInner from "./GameInner";
@@ -28,6 +29,10 @@ type Props = {
   pendingGameSetup?: ExhibitionGameSetup | null;
   /** Called after pendingGameSetup is consumed so AppShell can clear it. */
   onConsumeGameSetup?: () => void;
+  /** Save loaded from /saves page; consumed by GameInner to restore game state. */
+  pendingLoadSave?: SaveDoc | null;
+  /** Called after pendingLoadSave is consumed so AppShell can clear it. */
+  onConsumePendingLoad?: () => void;
   /** True when the current route is /game; used to pause autoplay off-route. */
   isOnGameRoute?: boolean;
 };
@@ -42,6 +47,8 @@ const Game: React.FunctionComponent<Props> = ({
   onGameSessionStarted,
   pendingGameSetup,
   onConsumeGameSetup,
+  pendingLoadSave,
+  onConsumePendingLoad,
   isOnGameRoute = true,
 }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
@@ -108,6 +115,8 @@ const Game: React.FunctionComponent<Props> = ({
           onGameSessionStarted={onGameSessionStarted}
           pendingGameSetup={pendingGameSetup}
           onConsumeGameSetup={onConsumeGameSetup}
+          pendingLoadSave={pendingLoadSave}
+          onConsumePendingLoad={onConsumePendingLoad}
           isOnGameRoute={isOnGameRoute}
         />
       </GameProviderWrapper>
