@@ -55,9 +55,8 @@ describe("StarterPitcherSelector", () => {
     expect(onSelect).toHaveBeenCalledWith(2);
   });
 
-  it("renders no options when pitchers array is empty", () => {
-    renderSelector({ pitchers: [] });
-    const select = screen.getByTestId("starting-pitcher-select") as HTMLSelectElement;
-    expect(select.options).toHaveLength(0);
+  it("renders nothing when pitchers array is empty", () => {
+    const { container } = renderSelector({ pitchers: [] });
+    expect(container.firstChild).toBeNull();
   });
 });

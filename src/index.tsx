@@ -6,7 +6,6 @@ import { createRoot } from "react-dom/client";
 
 import { RouterProvider } from "react-router-dom";
 
-import { ErrorBoundary } from "@components/Game/ErrorBoundary";
 import { appLog } from "@utils/logger";
 import { initSeedFromUrl } from "@utils/rng";
 
@@ -21,8 +20,4 @@ if ("serviceWorker" in navigator) {
     .catch((err) => appLog.error("SW registration failed:", err));
 }
 
-createRoot(document.getElementById("game")!).render(
-  <ErrorBoundary>
-    <RouterProvider router={router} />
-  </ErrorBoundary>,
-);
+createRoot(document.getElementById("game")!).render(<RouterProvider router={router} />);

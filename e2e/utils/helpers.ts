@@ -288,13 +288,11 @@ export async function loadFixture(page: Page, fixtureName: string): Promise<void
   await page.goto("/");
   await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
-  // Enter the game shell via the "Load Saved Game" path on the Home screen.
+  // "Load Saved Game" navigates to the /saves page route.
   await page.getByTestId("home-load-saves-button").click();
-  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-  await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 15_000 });
-  // Import the fixture — auto-load replaces game state and closes the modal.
+  await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 15_000 });
+  // Import the fixture — auto-load replaces game state and navigates to /game.
   await page.getByTestId("import-save-file-input").setInputFiles(fixturePath);
-  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 15_000 });
   // Confirm the game shell is now active.
   await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }

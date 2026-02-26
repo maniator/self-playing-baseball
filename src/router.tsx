@@ -4,7 +4,6 @@ import { createBrowserRouter, Navigate, redirect } from "react-router-dom";
 
 import AppShell from "@components/AppShell";
 import RootLayout from "@components/RootLayout";
-import { CustomTeamStore } from "@storage/customTeamStore";
 
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
 const HelpPage = React.lazy(() => import("./pages/HelpPage"));
@@ -40,9 +39,10 @@ export const router = createBrowserRouter([
           {
             path: "teams/:teamId/edit",
             loader: async ({ params }) => {
+              // Only redirect when the :teamId segment is missing entirely.
+              // If the team document doesn't exist in the DB, ManageTeamsScreen
+              // renders its own "Team not found" state (loading → not-found → loaded).
               if (!params.teamId) return redirect("/teams");
-              const team = await CustomTeamStore.getCustomTeam(params.teamId);
-              if (!team) return redirect("/teams");
               return null;
             },
           },
