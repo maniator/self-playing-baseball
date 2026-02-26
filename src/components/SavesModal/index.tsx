@@ -1,12 +1,10 @@
 import * as React from "react";
 
+import SaveSlotList from "@components/SaveSlotList";
 import type { Strategy } from "@context/index";
-import { formatSaveDate } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,
-  DangerButton,
   Dialog,
   DialogTitle,
   EmptyMsg,
@@ -16,10 +14,6 @@ import {
   Row,
   SavesButton,
   SectionHeading,
-  SlotDate,
-  SlotItem,
-  SlotList,
-  SlotName,
   SmallButton,
 } from "./styles";
 import { useSavesModal } from "./useSavesModal";
@@ -110,26 +104,14 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         {saves.length === 0 ? (
           <EmptyMsg>No saves yet.</EmptyMsg>
         ) : (
-          <SlotList>
-            {saves.map((s: SaveDoc) => {
-              const displayName = resolveSaveName(s.name);
-              return (
-                <SlotItem key={s.id}>
-                  <SlotName title={displayName}>{displayName}</SlotName>
-                  <SlotDate data-testid="slot-date">{formatSaveDate(s.updatedAt)}</SlotDate>
-                  <SmallButton onClick={() => handleLoad(s)} data-testid="load-save-button">
-                    Load
-                  </SmallButton>
-                  <SmallButton onClick={() => handleExport(s)} data-testid="export-save-button">
-                    Export
-                  </SmallButton>
-                  <DangerButton onClick={() => handleDelete(s.id)} aria-label="Delete save">
-                    ✕
-                  </DangerButton>
-                </SlotItem>
-              );
-            })}
-          </SlotList>
+          <SaveSlotList
+            saves={saves}
+            resolveName={resolveSaveName}
+            onLoad={handleLoad}
+            onExport={handleExport}
+            onDelete={handleDelete}
+            listTestId="saves-modal-list"
+          />
         )}
 
         <SectionHeading>Import save</SectionHeading>

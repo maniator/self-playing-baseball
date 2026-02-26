@@ -3,7 +3,8 @@ import * as React from "react";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 import type { AppShellOutletContext } from "@components/AppShell";
-import { downloadJson, formatSaveDate, readFileAsText, saveFilename } from "@storage/saveIO";
+import SaveSlotList from "@components/SaveSlotList";
+import { downloadJson, readFileAsText, saveFilename } from "@storage/saveIO";
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
@@ -22,12 +23,6 @@ import {
   PageTitle,
   PasteActions,
   PasteTextarea,
-  SaveActions,
-  SaveCard,
-  SaveDate,
-  SaveInfo,
-  SaveList,
-  SaveName,
 } from "./styles";
 
 /**
@@ -135,42 +130,12 @@ const SavesPage: React.FunctionComponent = () => {
       ) : saves.length === 0 ? (
         <EmptyState data-testid="saves-page-empty">No saves yet.</EmptyState>
       ) : (
-        <SaveList data-testid="saves-list">
-          {saves.map((s) => (
-            <SaveCard key={s.id} data-testid="saves-list-item">
-              <SaveInfo>
-                <SaveName>{s.name}</SaveName>
-                <SaveDate data-testid="slot-date">{formatSaveDate(s.updatedAt)}</SaveDate>
-              </SaveInfo>
-              <SaveActions>
-                <ActionBtn
-                  type="button"
-                  $variant="primary"
-                  onClick={() => onLoadSave(s)}
-                  data-testid="load-save-button"
-                >
-                  Load
-                </ActionBtn>
-                <ActionBtn
-                  type="button"
-                  onClick={() => handleExport(s)}
-                  data-testid="export-save-button"
-                >
-                  Export
-                </ActionBtn>
-                <ActionBtn
-                  type="button"
-                  $variant="danger"
-                  onClick={() => handleDelete(s.id)}
-                  aria-label="Delete save"
-                  data-testid="delete-save-button"
-                >
-                  ✕
-                </ActionBtn>
-              </SaveActions>
-            </SaveCard>
-          ))}
-        </SaveList>
+        <SaveSlotList
+          saves={saves}
+          onLoad={onLoadSave}
+          onExport={handleExport}
+          onDelete={handleDelete}
+        />
       )}
 
       <ImportSection>
