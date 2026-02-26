@@ -5,7 +5,8 @@ import { disableAnimations, resetAppState, waitForNewGameDialog } from "../../ut
 /**
  * Visual regression snapshots — run across all 6 non-determinism viewport projects
  * (desktop, tablet, iphone-15-pro-max, iphone-15, pixel-7, pixel-5).
- * Captures home screen and dialog/modal screens.
+ * Captures home screen, dialog/modal screens, and the new route pages
+ * (/help, /saves, /teams/new).
  */
 test.describe("Visual", () => {
   test.beforeEach(async ({ page }) => {
@@ -89,5 +90,89 @@ test.describe("Visual", () => {
       "instructions-modal-all-sections.png",
       { maxDiffPixelRatio: 0.05 },
     );
+  });
+});
+
+// ─── Help page (/help) ─────────────────────────────────────────────────────
+/**
+ * Help page — reachable via "How to Play" link on Home.
+ * Desktop-only: the page is a styled scrollable list; one baseline
+ * is sufficient to catch copy regressions and layout changes.
+ */
+test.describe("Visual — Help page", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  test("help page screenshot (desktop)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Help page snapshot is desktop-only");
+
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByTestId("help-page")).toHaveScreenshot("help-page.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  /**
+   * iphone-15 representative: confirms the help page is readable and
+   * the Back button is not obscured on narrow viewports.
+   */
+  test("help page screenshot (iphone-15)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "iphone-15", "Help page mobile snapshot is iphone-15 only");
+
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByTestId("help-page")).toHaveScreenshot("help-page-mobile.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+});
+
+// ─── Saves page (/saves) ──────────────────────────────────────────────────
+/**
+ * Exhibition Saves page — reachable via "Load Saved Game" on Home.
+ * Captures the empty-state and the back-button layout.
+ * Desktop-only: one baseline is sufficient for a simple list page.
+ */
+test.describe("Visual — Saves page", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  test("saves page empty state screenshot (desktop)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Saves page snapshot is desktop-only");
+
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    // Wait for loading indicator to clear
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+
+    await expect(page.getByTestId("saves-page")).toHaveScreenshot("saves-page-empty.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+
+  /**
+   * iphone-15 representative: confirms the page header and back button
+   * fit without overflow on narrow viewports.
+   */
+  test("saves page empty state screenshot (iphone-15)", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "iphone-15",
+      "Saves page mobile snapshot is iphone-15 only",
+    );
+
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+
+    await expect(page.getByTestId("saves-page")).toHaveScreenshot("saves-page-empty-mobile.png", {
+      maxDiffPixelRatio: 0.05,
+    });
   });
 });

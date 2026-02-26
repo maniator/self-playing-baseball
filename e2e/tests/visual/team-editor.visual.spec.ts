@@ -452,3 +452,70 @@ test.describe("Visual — Starting pitcher selector in Exhibition Setup page", (
     );
   });
 });
+
+// ─── 8. /teams/new URL route — editor opens at routed URL ────────────────────
+//
+// Verifies the Create Team editor is reachable and renders correctly
+// when navigated to via the /teams/new URL (Stage 4A route).
+// Desktop-only: the editor layout is identical across device classes.
+test.describe("Visual — /teams/new URL route", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  /**
+   * Navigating to /teams → Create New Team → URL becomes /teams/new.
+   * The editor shell renders immediately; checks URL and snapshot.
+   */
+  test("create team editor accessible via /teams/new URL (desktop)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "/teams/new URL route snapshot is desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("manage-teams-create-button").click();
+
+    // URL must update to /teams/new
+    await expect(page).toHaveURL(/\/teams\/new/);
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "teams-new-route-editor.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  /**
+   * Edit team editor accessible via /teams/:id/edit URL.
+   * Creates a team, clicks Edit, and verifies the URL updates accordingly.
+   */
+  test("edit team editor accessible via /teams/:id/edit URL (desktop)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "/teams/:id/edit URL route snapshot is desktop-only",
+    );
+
+    // Create a team so there is something to edit.
+    await page.getByTestId("home-manage-teams-button").click();
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Route Edit Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Route Edit Team")).toBeVisible({ timeout: 5_000 });
+
+    // Click Edit — URL must update to /teams/<id>/edit
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page).toHaveURL(/\/teams\/.+\/edit/);
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toHaveValue("Route Edit Team");
+
+    await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
+    await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
+      "teams-id-edit-route-editor.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
