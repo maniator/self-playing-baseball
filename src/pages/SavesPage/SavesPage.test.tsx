@@ -125,4 +125,36 @@ describe("SavesPage", () => {
     await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
     expect(screen.getByText(/invalid json/i)).toBeInTheDocument();
   });
+
+  it("calls onLoadSave after successful file import", async () => {
+    const importedSave = makeSave({ id: "imported_save" });
+    vi.mocked(SaveStore.importRxdbSave).mockResolvedValue(importedSave);
+    const user = userEvent.setup();
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("saves-page")).toBeInTheDocument());
+
+    const file = new File(['{"valid": true}'], "save.json", { type: "application/json" });
+    const input = screen.getByTestId("import-save-file-input");
+    await user.upload(input, file);
+
+    await waitFor(() => expect(mockOnLoadSave).toHaveBeenCalledWith(importedSave));
+  });
+
+  it("calls exportRxdbSave when Export button is clicked", async () => {
+    const save = makeSave();
+    vi.mocked(SaveStore.listSaves).mockResolvedValue([save]);
+    vi.mocked(SaveStore.exportRxdbSave).mockResolvedValue(JSON.stringify({ test: "data" }));
+    const user = userEvent.setup();
+    // Mock URL.createObjectURL and URL.revokeObjectURL
+    const createObjectURL = vi.fn().mockReturnValue("blob:test");
+    const revokeObjectURL = vi.fn();
+    Object.defineProperty(window, "URL", {
+      value: { createObjectURL, revokeObjectURL },
+      writable: true,
+    });
+    renderSavesPage();
+    await waitFor(() => expect(screen.getByTestId("export-save-button")).toBeInTheDocument());
+    await user.click(screen.getByTestId("export-save-button"));
+    await waitFor(() => expect(SaveStore.exportRxdbSave).toHaveBeenCalledWith("save_1"));
+  });
 });

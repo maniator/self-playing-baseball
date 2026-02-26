@@ -5,13 +5,21 @@
  * - Home → /exhibition/new page (primary New Game path)
  * - Exhibition Setup defaults to Custom Teams tab
  * - Home ↔ Game ↔ Resume Current Game
+ * - Home → /saves page (Load Saved Game path)
+ * - Home → /help page (How to Play path)
+ * - Teams URL routes: /teams/new, /teams/:id/edit
  * - Autoplay pauses when navigating away from /game
  * - Deep-link unknown paths redirect to Home
  */
 
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  resetAppState,
+  saveCurrentGame,
+  startGameViaPlayBall,
+  waitForLogLines,
+} from "../utils/helpers";
 
 test.describe("Routing — exhibition setup page", () => {
   test.beforeEach(async ({ page }) => {
@@ -62,11 +70,37 @@ test.describe("Routing — game view navigation", () => {
     await resetAppState(page);
   });
 
-  test("Home → Load Saved Game navigates to /game", async ({ page }) => {
+  test("Home → Load Saved Game navigates to /saves page", async ({ page }) => {
     await page.getByTestId("home-load-saves-button").click();
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+    await expect(page).toHaveURL(/\/saves/);
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("Load Saved Game → back button returns to Home screen", async ({ page }) => {
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("saves-page-back-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveURL("/");
+  });
+
+  test("Load Saved Game → load a save → navigates to /game", async ({ page }) => {
+    // First start a game, save it, then go back to Home.
+    await startGameViaPlayBall(page, { seed: "routing-load-save1" });
+    await saveCurrentGame(page);
+    await page.getByTestId("saves-modal-close-button").click();
+    await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Now enter via Load Saved Game → saves page.
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+
+    // Load the save — should navigate to /game.
+    await page.getByTestId("load-save-button").first().click();
     await expect(page).toHaveURL(/\/game/);
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
   });
 
   test("Back to Home from game navigates to /", async ({ page }) => {
@@ -91,6 +125,56 @@ test.describe("Routing — game view navigation", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page).toHaveURL(/\/teams/);
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("Routing — teams sub-routes", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("Create Team button navigates to /teams/new", async ({ page }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page).toHaveURL(/\/teams\/new/);
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("browser Back from /teams/new returns to /teams list", async ({ page }) => {
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 10_000 });
+    await page.goBack();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+test.describe("Routing — help page", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("Home → Help navigates to /help", async ({ page }) => {
+    await page.getByTestId("home-help-button").click();
+    await expect(page).toHaveURL(/\/help/);
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("browser Back from /help returns to Home", async ({ page }) => {
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+    await page.goBack();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page).toHaveURL("/");
+  });
+
+  test("help back button navigates back to Home", async ({ page }) => {
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("help-page-back-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
   });
 });
 
