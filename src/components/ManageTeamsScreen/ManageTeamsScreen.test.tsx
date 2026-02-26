@@ -135,7 +135,7 @@ describe("ManageTeamsScreen", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("shows loading state when teams are loading", () => {
+  it("shows loading state when editing and teams are still loading", () => {
     vi.mocked(useCustomTeams).mockReturnValueOnce({
       teams: [],
       loading: true,
@@ -144,8 +144,23 @@ describe("ManageTeamsScreen", () => {
       createTeam: vi.fn(),
       updateTeam: vi.fn(),
     });
-    renderAt("/teams");
-    expect(screen.getByText(/loading teams/i)).toBeInTheDocument();
+    renderAt("/teams/some-team-id/edit");
+    expect(screen.getByText(/loading team/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("custom-team-editor")).not.toBeInTheDocument();
+  });
+
+  it("shows not-found state at /teams/:id/edit when team does not exist", () => {
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [],
+      loading: false,
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+    });
+    renderAt("/teams/nonexistent-id/edit");
+    expect(screen.getByText(/team not found/i)).toBeInTheDocument();
+    expect(screen.queryByTestId("custom-team-editor")).not.toBeInTheDocument();
   });
 
   it("shows back-to-list button inside editor shell", () => {

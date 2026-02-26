@@ -164,6 +164,54 @@ test.describe("Routing — teams sub-routes", () => {
     await page.goBack();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
   });
+
+  test("direct navigation to /teams/:id/edit loads the team form", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Runs on desktop only");
+    test.setTimeout(60_000);
+
+    // Create a team via the UI so we have a real ID in the DB.
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 10_000 });
+
+    // Fill in the team name so we have something to assert on.
+    await page.getByTestId("team-name-input").fill("Deep Link Team");
+
+    // Generate a random roster to meet the save requirements.
+    await page.getByTestId("generate-team-button").click();
+    await page.waitForTimeout(500);
+
+    // Override just the name (generate may overwrite it).
+    await page.getByTestId("team-name-input").fill("Deep Link Team");
+
+    // Save the team and capture the edit URL from the resulting list.
+    await page.getByTestId("save-team-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Click Edit on the newly created team to capture the edit URL.
+    await page.getByRole("button", { name: /edit/i }).first().click();
+    const editUrl = page.url();
+    expect(editUrl).toMatch(/\/teams\/[^/]+\/edit/);
+
+    // Navigate away then deep-link back to the same edit URL.
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await page.goto(editUrl);
+
+    // Editor must load with the team name populated (not empty).
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 15_000 });
+    const nameInput = page.getByTestId("team-name-input");
+    await expect(nameInput).toBeVisible({ timeout: 10_000 });
+    await expect(nameInput).not.toHaveValue("");
+  });
+
+  test("/teams/:id/edit with unknown id shows not-found state", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Runs on desktop only");
+    await page.goto("/teams/nonexistent-team-id/edit");
+    await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/team not found/i)).toBeVisible({ timeout: 5_000 });
+  });
 });
 
 test.describe("Routing — help page", () => {

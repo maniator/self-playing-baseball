@@ -8,14 +8,17 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import {
   BackBtn,
   CreateBtn,
+  EditorLoading,
   EditorShell,
   EditorShellHeader,
   EmptyState,
   InfoBanner,
+  NotFoundMsg,
   ScreenContainer,
   ScreenHeader,
   ScreenTitle,
   TeamList,
+  TeamListLink,
 } from "./styles";
 import TeamListItem from "./TeamListItem";
 
@@ -35,24 +38,56 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const isEditing = Boolean(teamId);
   const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
 
-  // Guard: team not found after hook has finished loading (e.g. deleted in another tab).
-  // The router loader handles the initial redirect, but the hook may lag behind.
-  React.useEffect(() => {
-    if (isEditing && !loading && !editingTeam) navigate("/teams", { replace: true });
-  }, [isEditing, loading, editingTeam, navigate]);
+  const editorHeader = (
+    <EditorShellHeader>
+      <BackBtn
+        onClick={() => navigate("/teams")}
+        data-testid="manage-teams-editor-back-button"
+        aria-label="Back to team list"
+      >
+        ← Team List
+      </BackBtn>
+    </EditorShellHeader>
+  );
 
-  if (isCreating || isEditing) {
+  if (isCreating) {
     return (
       <EditorShell data-testid="manage-teams-editor-shell">
-        <EditorShellHeader>
-          <BackBtn
-            onClick={() => navigate("/teams")}
-            data-testid="manage-teams-editor-back-button"
-            aria-label="Back to team list"
-          >
-            ← Team List
-          </BackBtn>
-        </EditorShellHeader>
+        {editorHeader}
+        <CustomTeamEditor
+          onSave={() => {
+            refresh();
+            navigate("/teams");
+          }}
+          onCancel={() => navigate("/teams")}
+        />
+      </EditorShell>
+    );
+  }
+
+  if (isEditing) {
+    if (loading) {
+      return (
+        <EditorShell data-testid="manage-teams-editor-shell">
+          {editorHeader}
+          <EditorLoading>Loading team…</EditorLoading>
+        </EditorShell>
+      );
+    }
+    if (!editingTeam) {
+      return (
+        <EditorShell data-testid="manage-teams-editor-shell">
+          {editorHeader}
+          <NotFoundMsg>
+            Team not found.{" "}
+            <TeamListLink onClick={() => navigate("/teams")}>Back to Team List</TeamListLink>
+          </NotFoundMsg>
+        </EditorShell>
+      );
+    }
+    return (
+      <EditorShell data-testid="manage-teams-editor-shell">
+        {editorHeader}
         <CustomTeamEditor
           team={editingTeam}
           onSave={() => {

@@ -191,3 +191,30 @@ export const EditorShellHeader = styled.div`
     padding: 12px 16px 0;
   }
 `;
+
+export const EditorLoading = styled.p`
+  color: #6680aa;
+  font-size: 0.95rem;
+  padding: 24px;
+`;
+
+export const NotFoundMsg = styled.p`
+  color: #ff9977;
+  font-size: 0.95rem;
+  padding: 24px;
+`;
+
+export const TeamListLink = styled.button`
+  background: transparent;
+  color: #6680aa;
+  border: none;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+
+  &:hover {
+    color: #aaccff;
+  }
+`;
