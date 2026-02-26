@@ -295,4 +295,48 @@ describe("useRxdbGameSync", () => {
 
     expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
   });
+
+  it("calls updateProgress with stateSnapshot on unmount (navigate-away from /game)", () => {
+    const refs = makeRefs();
+    const ctx = makeContextValue({
+      pitchKey: 7,
+      inning: 3,
+      atBat: 0,
+      score: [1, 2] as [number, number],
+      gameOver: false,
+    });
+    const { unmount } = renderHook(() => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+      ),
+    });
+
+    vi.clearAllMocks();
+    unmount();
+
+    expect(saveStoreModule.SaveStore.updateProgress).toHaveBeenCalledWith(
+      "save_1",
+      7,
+      expect.objectContaining({
+        scoreSnapshot: { away: 1, home: 2 },
+        inningSnapshot: { inning: 3, atBat: 0 },
+        stateSnapshot: expect.objectContaining({ rngState: 42 }),
+      }),
+    );
+  });
+
+  it("does not call updateProgress on unmount when saveId is not set", () => {
+    const refs = makeRefs(null);
+    const ctx = makeContextValue({ pitchKey: 5, inning: 2, atBat: 1 });
+    const { unmount } = renderHook(() => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+      ),
+    });
+
+    vi.clearAllMocks();
+    unmount();
+
+    expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
+  });
 });

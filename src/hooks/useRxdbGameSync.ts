@@ -137,9 +137,11 @@ export const useRxdbGameSync = (
     });
   }, [gameOver, rxSaveIdRef]);
 
-  // Save current state when the component unmounts (user navigates away from /game).
-  // Uses refs so the cleanup always captures the latest state and saveId without
-  // needing them as effect dependencies (this effect intentionally runs once).
+  // Save current state when the component unmounts (SPA navigation away from /game).
+  // This fires when React Router unmounts the GamePage route element.  It is NOT
+  // a replacement for useBeforeUnload (which fires on tab-close/browser-refresh);
+  // those are handled by the half-inning save above.  Refs are used here so the
+  // cleanup always captures the latest values without re-creating the effect.
   React.useEffect(() => {
     return () => {
       const saveId = rxSaveIdRef.current; // eslint-disable-line react-hooks/exhaustive-deps -- intentional: reading latest ref value at unmount

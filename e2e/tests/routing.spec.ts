@@ -127,6 +127,21 @@ test.describe("Routing — game view navigation", () => {
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
   });
 
+  test("game UI is unmounted (not visible) after navigating away from /game", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Runs on desktop only");
+    await startGameViaPlayBall(page, { seed: "routing-unmount1" });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5_000 });
+
+    // The scoreboard should not exist in the DOM once the /game route is unmounted.
+    await expect(page.getByTestId("scoreboard")).not.toBeVisible({ timeout: 3_000 });
+    await expect(page.getByTestId("field-view")).not.toBeVisible({ timeout: 3_000 });
+  });
+
   test("Resume Current Game navigates back to /game", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "routing-resume1" });
     await page.getByTestId("back-to-home-button").click();
