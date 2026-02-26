@@ -337,3 +337,29 @@ export async function disableAnimations(page: Page): Promise<void> {
     `,
   });
 }
+
+/**
+ * Asserts that the key in-game UI surfaces contain no raw `custom:` or `ct_`
+ * ID fragments — all custom team references must be resolved to friendly names
+ * before reaching the user.
+ *
+ * Checks: scoreboard, play-by-play log, hit log (if visible).
+ */
+export async function expectNoRawIdsVisible(page: Page): Promise<void> {
+  const RAW_ID_PATTERN = /custom:|ct_[a-z0-9]/i;
+
+  const scoreboardText = await page.getByTestId("scoreboard").textContent();
+  expect(scoreboardText ?? "").not.toMatch(RAW_ID_PATTERN);
+
+  const logEl = page.getByTestId("play-by-play-log");
+  if (await logEl.isVisible()) {
+    const logText = await logEl.textContent();
+    expect(logText ?? "").not.toMatch(RAW_ID_PATTERN);
+  }
+
+  const hitLogEl = page.getByTestId("hit-log");
+  if (await hitLogEl.isVisible()) {
+    const hitLogText = await hitLogEl.textContent();
+    expect(hitLogText ?? "").not.toMatch(RAW_ID_PATTERN);
+  }
+}

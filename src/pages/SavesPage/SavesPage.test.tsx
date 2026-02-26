@@ -15,6 +15,13 @@ vi.mock("@storage/saveStore", () => ({
   },
 }));
 
+// Mock customTeamsCollection so tests don't need IndexedDB
+vi.mock("@storage/db", () => ({
+  customTeamsCollection: vi.fn().mockResolvedValue({
+    find: () => ({ exec: () => Promise.resolve([]) }),
+  }),
+}));
+
 import { SaveStore } from "@storage/saveStore";
 import type { SaveDoc } from "@storage/types";
 

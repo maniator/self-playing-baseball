@@ -1,13 +1,15 @@
 import * as React from "react";
 
+import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
 import { useNavigate, useOutletContext } from "react-router-dom";
 
 import type { AppShellOutletContext } from "@components/AppShell";
 import SaveSlotList from "@components/SaveSlotList";
 import { useImportSave } from "@hooks/useImportSave";
+import { customTeamsCollection } from "@storage/db";
 import { downloadJson, saveFilename } from "@storage/saveIO";
 import { SaveStore } from "@storage/saveStore";
-import type { SaveDoc } from "@storage/types";
+import type { CustomTeamDoc, SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
 
 import {
@@ -39,6 +41,7 @@ const SavesPage: React.FunctionComponent = () => {
   const { onLoadSave } = useOutletContext<AppShellOutletContext>();
   const [saves, setSaves] = React.useState<SaveDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [customTeams, setCustomTeams] = React.useState<CustomTeamDoc[]>([]);
 
   const {
     pasteJson,
@@ -55,9 +58,15 @@ const SavesPage: React.FunctionComponent = () => {
 
   const loadSaves = React.useCallback(() => {
     setLoading(true);
-    SaveStore.listSaves()
-      .then(setSaves)
-      .catch(() => setSaves([]))
+    Promise.all([SaveStore.listSaves(), customTeamsCollection().then((col) => col.find().exec())])
+      .then(([saveDocs, teamDocs]) => {
+        setSaves(saveDocs);
+        setCustomTeams(teamDocs);
+      })
+      .catch(() => {
+        setSaves([]);
+        setCustomTeams([]);
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -99,6 +108,7 @@ const SavesPage: React.FunctionComponent = () => {
       ) : (
         <SaveSlotList
           saves={saves}
+          resolveName={(name) => resolveCustomIdsInString(name, customTeams)}
           onLoad={onLoadSave}
           onExport={handleExport}
           onDelete={handleDelete}
