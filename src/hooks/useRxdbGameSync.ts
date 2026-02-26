@@ -145,7 +145,7 @@ export const useRxdbGameSync = (
   React.useEffect(() => {
     return () => {
       const saveId = rxSaveIdRef.current; // eslint-disable-line react-hooks/exhaustive-deps -- intentional: reading latest ref value at unmount
-      if (!saveId) return;
+      if (!saveId || !gameStateRef.current) return;
       const state = gameStateRef.current;
       SaveStore.updateProgress(saveId, state.pitchKey, {
         scoreSnapshot: { away: state.score[0], home: state.score[1] },

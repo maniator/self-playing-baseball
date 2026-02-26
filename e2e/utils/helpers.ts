@@ -87,6 +87,12 @@ export interface GameConfig {
    * from the very first pitch — no localStorage pre-seeding required.
    */
   managedTeam?: "0" | "1";
+  /**
+   * Which tab to activate on /exhibition/new before filling form fields.
+   * Defaults to "mlb" for backward compatibility with tests that use MLB team
+   * selects. Pass "custom" to stay on the Custom Teams tab.
+   */
+  tab?: "mlb" | "custom";
 }
 
 /**
@@ -102,10 +108,10 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
   await waitForNewGameDialog(page);
 
   // The exhibition setup page defaults to Custom Teams. Switch to the MLB tab
-  // for backward-compatible tests that rely on MLB team selection (the default
-  // for most tests that only specify a seed). Tests that explicitly create and
-  // select custom teams do their own tab switching.
-  if (await page.getByTestId("exhibition-setup-page").isVisible()) {
+  // unless the caller explicitly requests the Custom Teams tab. Most tests rely
+  // on MLB team selection (homeTeam/awayTeam selects), so "mlb" is the default.
+  const targetTab = options.tab ?? "mlb";
+  if (targetTab === "mlb" && (await page.getByTestId("exhibition-setup-page").isVisible())) {
     const mlbTab = page.getByTestId("new-game-mlb-teams-tab");
     if (await mlbTab.isVisible()) {
       await mlbTab.click();

@@ -22,14 +22,17 @@ const GamePage: React.FunctionComponent = () => {
   );
   const pendingLoadRef = React.useRef<SaveDoc | null>(gameState?.pendingLoadSave ?? null);
 
-  // Clear location state immediately after capturing so browser back doesn't re-trigger.
-  // `navigate` is stable across renders (guaranteed by React Router), so it is safe
-  // and correct to include it as the only dependency.
+  // Guard prevents re-clearing on subsequent renders if location.state changes.
+  const hasClearedStateRef = React.useRef(false);
+
+  // Clear location state after capturing so browser back/forward doesn't re-trigger.
+  // hasClearedStateRef ensures this runs at most once regardless of re-renders.
   React.useEffect(() => {
-    if (location.state) {
+    if (!hasClearedStateRef.current && location.state) {
+      hasClearedStateRef.current = true;
       navigate("/game", { replace: true, state: null });
     }
-  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps -- runs once on mount; location.state captured in refs above
+  }, [location.state, navigate]);
 
   const handleConsumeSetup = React.useCallback(() => {
     pendingSetupRef.current = null;
