@@ -125,7 +125,7 @@ describe("ExhibitionSetupPage", () => {
     );
   });
 
-  it("shows validation error when custom teams are missing on submit", async () => {
+  it("shows validation error message when no custom teams are available on submit", async () => {
     const user = userEvent.setup();
     renderPage();
     // Stay on Custom Teams tab (default) — no teams available
@@ -134,5 +134,76 @@ describe("ExhibitionSetupPage", () => {
     });
     // onStartGame must NOT be called with no custom teams
     expect(mockOnStartGame).not.toHaveBeenCalled();
+    // A user-visible error must be rendered — not a silent no-op
+    expect(screen.getByTestId("team-validation-error")).toBeInTheDocument();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /create at least two custom teams/i,
+    );
+  });
+
+  it("custom teams happy path: calls onStartGame with correct custom team payload", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const mockPlayer = (id: string, name: string, position: string) => ({
+      id,
+      name,
+      position,
+      batting: { contact: 60, power: 60, speed: 60 },
+    });
+    const mockPitcher = (id: string, name: string) => ({
+      id,
+      name,
+      role: "SP" as const,
+      batting: { contact: 40, power: 40, speed: 40 },
+      pitching: { velocity: 60, control: 60, movement: 60 },
+    });
+    const mockTeam = (id: string, name: string) => ({
+      id,
+      name,
+      city: "Testville",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: [
+          mockPlayer(`${id}-p1`, "A One", "C"),
+          mockPlayer(`${id}-p2`, "B Two", "1B"),
+          mockPlayer(`${id}-p3`, "C Three", "2B"),
+          mockPlayer(`${id}-p4`, "D Four", "3B"),
+          mockPlayer(`${id}-p5`, "E Five", "SS"),
+          mockPlayer(`${id}-p6`, "F Six", "LF"),
+          mockPlayer(`${id}-p7`, "G Seven", "CF"),
+          mockPlayer(`${id}-p8`, "H Eight", "RF"),
+          mockPlayer(`${id}-p9`, "I Nine", "DH"),
+        ],
+        pitchers: [mockPitcher(`${id}-sp`, "Starter")],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [mockTeam("ct_away", "Away Team"), mockTeam("ct_home", "Home Team")] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Custom Teams tab is default — just submit
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).toHaveBeenCalledWith(
+      expect.objectContaining({
+        homeTeam: "custom:ct_home",
+        awayTeam: "custom:ct_away",
+        managedTeam: null,
+        playerOverrides: expect.objectContaining({
+          awayOrder: expect.any(Array),
+          homeOrder: expect.any(Array),
+        }),
+      }),
+    );
   });
 });

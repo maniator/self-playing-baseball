@@ -215,4 +215,59 @@ describe("useAutoPlayScheduler", () => {
     vi.advanceTimersByTime(200);
     expect(handleClick).toHaveBeenCalled();
   });
+
+  // -------------------------------------------------------------------------
+  // isRouteActive — autoplay must pause when the user navigates off /game
+  // -------------------------------------------------------------------------
+
+  it("does not call handleClick when isRouteActive is false", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+    renderHook(() =>
+      useAutoPlayScheduler(
+        true, // gameStarted
+        null, // pendingDecision
+        false, // managerMode
+        false, // gameOver
+        { current: true } as any, // mutedRef
+        { current: 100 } as any, // speedRef
+        { current: handleClick } as any, // handleClickRef
+        { current: makeSnap() } as any, // gameStateRef
+        { current: false } as any, // betweenInningsPauseRef
+        false, // isRouteActive — off-route, scheduler must not fire
+      ),
+    );
+    vi.advanceTimersByTime(500);
+    expect(handleClick).not.toHaveBeenCalled();
+  });
+
+  it("resumes calling handleClick when isRouteActive flips from false to true", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+
+    const { rerender } = renderHook(
+      ({ isRouteActive }: { isRouteActive: boolean }) =>
+        useAutoPlayScheduler(
+          true,
+          null,
+          false,
+          false,
+          { current: true } as any,
+          { current: 100 } as any,
+          { current: handleClick } as any,
+          { current: makeSnap() } as any,
+          { current: false } as any,
+          isRouteActive,
+        ),
+      { initialProps: { isRouteActive: false } },
+    );
+
+    vi.advanceTimersByTime(300);
+    expect(handleClick).not.toHaveBeenCalled();
+
+    // User navigates back to /game
+    rerender({ isRouteActive: true });
+    vi.advanceTimersByTime(200);
+    expect(handleClick).toHaveBeenCalled();
+  });
 });
