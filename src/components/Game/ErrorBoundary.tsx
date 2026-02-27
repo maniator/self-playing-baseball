@@ -130,6 +130,15 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
                 ⚡ Hard reload (clear cache)
               </button>
             </div>
+            <p style={{ color: "#888", fontSize: 12, maxWidth: 480, marginTop: 24 }}>
+              Still broken after reloading?
+            </p>
+            <button
+              onClick={this.handleReset}
+              style={{ ...BTN_STYLE, background: "#374151", color: "#fff", fontSize: 13 }}
+            >
+              🗑️ Clear all app data &amp; reload
+            </button>
           </>
         ) : (
           <>

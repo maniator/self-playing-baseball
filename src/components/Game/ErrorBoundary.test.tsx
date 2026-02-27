@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ErrorBoundary, isChunkLoadError } from "./ErrorBoundary";
@@ -135,13 +135,22 @@ describe("ErrorBoundary", () => {
       expect(screen.getByRole("button", { name: /hard reload/i })).toBeTruthy();
     });
 
-    it("does NOT show Reset & Reload button", () => {
+    it("does NOT show a primary Reset & Reload button", () => {
       render(
         <ErrorBoundary>
           <Thrower message="Loading chunk 3 failed." />
         </ErrorBoundary>,
       );
-      expect(screen.queryByRole("button", { name: /reset/i })).toBeNull();
+      expect(screen.queryByRole("button", { name: /reset & reload/i })).toBeNull();
+    });
+
+    it("shows a last-resort Clear all app data button", () => {
+      render(
+        <ErrorBoundary>
+          <Thrower message="Loading chunk 3 failed." />
+        </ErrorBoundary>,
+      );
+      expect(screen.getByRole("button", { name: /clear all app data/i })).toBeTruthy();
     });
 
     it("shows the update hint copy", () => {
@@ -169,6 +178,43 @@ describe("ErrorBoundary", () => {
       expect(reloadMock).toHaveBeenCalled();
     });
 
+    it("hard reload unregisters service workers, clears caches, and reloads", async () => {
+      const reloadMock = vi.fn();
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: { reload: reloadMock },
+      });
+
+      const unregisterMock = vi.fn().mockResolvedValue(true);
+      Object.defineProperty(navigator, "serviceWorker", {
+        configurable: true,
+        value: {
+          getRegistrations: vi.fn().mockResolvedValue([{ unregister: unregisterMock }]),
+        },
+      });
+
+      const deleteMock = vi.fn().mockResolvedValue(true);
+      Object.defineProperty(window, "caches", {
+        configurable: true,
+        value: {
+          keys: vi.fn().mockResolvedValue(["cache-v1", "cache-v2"]),
+          delete: deleteMock,
+        },
+      });
+
+      render(
+        <ErrorBoundary>
+          <Thrower message="Failed to fetch dynamically imported module: /assets/foo.js" />
+        </ErrorBoundary>,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /hard reload/i }));
+
+      await waitFor(() => expect(reloadMock).toHaveBeenCalled());
+      expect(unregisterMock).toHaveBeenCalled();
+      expect(deleteMock).toHaveBeenCalledTimes(2);
+    });
+
     it("also works for ChunkLoadError by error name", () => {
       render(
         <ErrorBoundary>
@@ -176,7 +222,7 @@ describe("ErrorBoundary", () => {
         </ErrorBoundary>,
       );
       expect(screen.getByRole("button", { name: /reload app/i })).toBeTruthy();
-      expect(screen.queryByRole("button", { name: /reset/i })).toBeNull();
+      expect(screen.queryByRole("button", { name: /reset & reload/i })).toBeNull();
     });
   });
 });
