@@ -35,7 +35,6 @@ import {
   makePlayerId,
   validateEditorState,
 } from "./editorState";
-import PlayerRow from "./PlayerRow";
 import SortablePlayerRow from "./SortablePlayerRow";
 import {
   AddPlayerBtn,
@@ -195,14 +194,39 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
-  const handleLineupDragEnd = (event: DragEndEvent) => {
+  const handleLineupBenchDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = state.lineup.findIndex((p) => p.id === active.id);
-    const newIndex = state.lineup.findIndex((p) => p.id === over.id);
+    const activeInLineup = state.lineup.some((p) => p.id === active.id);
+    const overInLineup = state.lineup.some((p) => p.id === over.id);
+    const activeSection: "lineup" | "bench" = activeInLineup ? "lineup" : "bench";
+    const overSection: "lineup" | "bench" = overInLineup ? "lineup" : "bench";
+    if (activeSection === overSection) {
+      const oldIndex = state[activeSection].findIndex((p) => p.id === active.id);
+      const newIndex = state[activeSection].findIndex((p) => p.id === over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const reordered = arrayMove(state[activeSection], oldIndex, newIndex);
+      dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
+    } else {
+      const toIndex = state[overSection].findIndex((p) => p.id === over.id);
+      dispatch({
+        type: "TRANSFER_PLAYER",
+        fromSection: activeSection,
+        toSection: overSection,
+        playerId: String(active.id),
+        toIndex: toIndex === -1 ? state[overSection].length : toIndex,
+      });
+    }
+  };
+
+  const handlePitchersDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = state.pitchers.findIndex((p) => p.id === active.id);
+    const newIndex = state.pitchers.findIndex((p) => p.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(state.lineup, oldIndex, newIndex);
-    dispatch({ type: "REORDER", section: "lineup", orderedIds: reordered.map((p) => p.id) });
+    const reordered = arrayMove(state.pitchers, oldIndex, newIndex);
+    dispatch({ type: "REORDER", section: "pitchers", orderedIds: reordered.map((p) => p.id) });
   };
 
   const handleGenerate = () => {
@@ -240,10 +264,10 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     }
   };
 
-  /** DnD-enabled lineup section. */
-  const lineupSection = () => (
+  /** DnD-enabled lineup section (shares DndContext with bench). */
+  const lineupFormSection = () => (
     <FormSection data-testid="custom-team-lineup-section">
-      <SectionHeading>Lineup (drag to reorder)</SectionHeading>
+      <SectionHeading>Lineup (drag to reorder; drag to/from Bench)</SectionHeading>
       {pendingPlayerImport?.section === "lineup" && (
         <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
           ⚠ {pendingPlayerImport.warning}
@@ -268,29 +292,20 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           </PlayerDuplicateActions>
         </PlayerDuplicateBanner>
       )}
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleLineupDragEnd}
-      >
-        <SortableContext
-          items={state.lineup.map((p) => p.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          {state.lineup.map((p, i) => (
-            <SortablePlayerRow
-              key={p.id}
-              player={p}
-              isExistingPlayer={existingPlayerIds.has(p.id)}
-              onChange={(patch) =>
-                dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
-              }
-              onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
-              onExport={() => handleExportPlayer(p, "batter")}
-            />
-          ))}
-        </SortableContext>
-      </DndContext>
+      <SortableContext items={state.lineup.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        {state.lineup.map((p, i) => (
+          <SortablePlayerRow
+            key={p.id}
+            player={p}
+            isExistingPlayer={existingPlayerIds.has(p.id)}
+            onChange={(patch) =>
+              dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
+            }
+            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
+            onExport={() => handleExportPlayer(p, "batter")}
+          />
+        ))}
+      </SortableContext>
       <AddPlayerBtn
         type="button"
         data-testid="custom-team-add-lineup-player-button"
@@ -315,17 +330,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     </FormSection>
   );
 
-  /** Plain up/down section for bench and pitchers. */
-  const plainSection = (
-    key: "bench" | "pitchers",
-    label: string,
-    testId: string,
-    addTestId: string,
-    isPitcher = false,
-  ) => (
-    <FormSection data-testid={testId}>
-      <SectionHeading>{label}</SectionHeading>
-      {pendingPlayerImport?.section === key && (
+  /** DnD-enabled bench section (shares DndContext with lineup). */
+  const benchFormSection = () => (
+    <FormSection data-testid="custom-team-bench-section">
+      <SectionHeading>Bench (drag to reorder; drag to/from Lineup)</SectionHeading>
+      {pendingPlayerImport?.section === "bench" && (
         <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
           ⚠ {pendingPlayerImport.warning}
           <PlayerDuplicateActions>
@@ -333,7 +342,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
               type="button"
               data-testid="player-import-confirm-button"
               onClick={() => {
-                dispatch({ type: "ADD_PLAYER", section: key, player: pendingPlayerImport.player });
+                dispatch({
+                  type: "ADD_PLAYER",
+                  section: "bench",
+                  player: pendingPlayerImport.player,
+                });
                 setPendingPlayerImport(null);
               }}
             >
@@ -345,50 +358,116 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           </PlayerDuplicateActions>
         </PlayerDuplicateBanner>
       )}
-      {state[key].map((p, i) => (
-        <PlayerRow
-          key={p.id}
-          player={p}
-          index={i}
-          total={state[key].length}
-          isPitcher={isPitcher}
-          isExistingPlayer={existingPlayerIds.has(p.id)}
-          onChange={(patch) =>
-            dispatch({ type: "UPDATE_PLAYER", section: key, index: i, player: patch })
-          }
-          onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: key, index: i })}
-          onMoveUp={() => dispatch({ type: "MOVE_UP", section: key, index: i })}
-          onMoveDown={() => dispatch({ type: "MOVE_DOWN", section: key, index: i })}
-          onExport={() => handleExportPlayer(p, isPitcher ? "pitcher" : "batter")}
-        />
-      ))}
+      <SortableContext items={state.bench.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        {state.bench.map((p, i) => (
+          <SortablePlayerRow
+            key={p.id}
+            player={p}
+            isExistingPlayer={existingPlayerIds.has(p.id)}
+            onChange={(patch) =>
+              dispatch({ type: "UPDATE_PLAYER", section: "bench", index: i, player: patch })
+            }
+            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "bench", index: i })}
+            onExport={() => handleExportPlayer(p, "batter")}
+          />
+        ))}
+      </SortableContext>
       <AddPlayerBtn
         type="button"
-        data-testid={addTestId}
+        data-testid="custom-team-add-bench-player-button"
         onClick={() =>
-          dispatch({
-            type: "ADD_PLAYER",
-            section: key,
-            player: isPitcher ? makeBlankPitcher() : makeBlankBatter(),
-          })
+          dispatch({ type: "ADD_PLAYER", section: "bench", player: makeBlankBatter() })
         }
       >
-        + Add {isPitcher ? "Pitcher" : "Player"}
+        + Add Player
       </AddPlayerBtn>
       <input
-        ref={key === "bench" ? benchFileRef : pitchersFileRef}
+        ref={benchFileRef}
         type="file"
         accept=".json"
         style={{ display: "none" }}
-        onChange={handleImportPlayerFile(key)}
-        data-testid={`import-${key}-player-input`}
-        aria-label={`Import ${isPitcher ? "pitcher" : "player"} from file`}
+        onChange={handleImportPlayerFile("bench")}
+        data-testid="import-bench-player-input"
+        aria-label="Import player from file"
       />
-      <ImportPlayerBtn
-        type="button"
-        onClick={() => (key === "bench" ? benchFileRef : pitchersFileRef).current?.click()}
+      <ImportPlayerBtn type="button" onClick={() => benchFileRef.current?.click()}>
+        ↑ Import Player
+      </ImportPlayerBtn>
+    </FormSection>
+  );
+
+  /** DnD-enabled pitchers section with its own DndContext (no cross-section transfer). */
+  const pitchersSection = () => (
+    <FormSection data-testid="custom-team-pitchers-section">
+      <SectionHeading>Pitchers (drag to reorder)</SectionHeading>
+      {pendingPlayerImport?.section === "pitchers" && (
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+          ⚠ {pendingPlayerImport.warning}
+          <PlayerDuplicateActions>
+            <SmallIconBtn
+              type="button"
+              data-testid="player-import-confirm-button"
+              onClick={() => {
+                dispatch({
+                  type: "ADD_PLAYER",
+                  section: "pitchers",
+                  player: pendingPlayerImport.player,
+                });
+                setPendingPlayerImport(null);
+              }}
+            >
+              Import Anyway
+            </SmallIconBtn>
+            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
+              Cancel
+            </SmallIconBtn>
+          </PlayerDuplicateActions>
+        </PlayerDuplicateBanner>
+      )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handlePitchersDragEnd}
       >
-        ↑ Import {isPitcher ? "Pitcher" : "Player"}
+        <SortableContext
+          items={state.pitchers.map((p) => p.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          {state.pitchers.map((p, i) => (
+            <SortablePlayerRow
+              key={p.id}
+              player={p}
+              isPitcher
+              isExistingPlayer={existingPlayerIds.has(p.id)}
+              onChange={(patch) =>
+                dispatch({ type: "UPDATE_PLAYER", section: "pitchers", index: i, player: patch })
+              }
+              onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "pitchers", index: i })}
+              onExport={() => handleExportPlayer(p, "pitcher")}
+            />
+          ))}
+        </SortableContext>
+      </DndContext>
+      <AddPlayerBtn
+        type="button"
+        data-testid="custom-team-add-pitcher-button"
+        onClick={() =>
+          dispatch({ type: "ADD_PLAYER", section: "pitchers", player: makeBlankPitcher() })
+        }
+      >
+        + Add Pitcher
+      </AddPlayerBtn>
+      <input
+        ref={pitchersFileRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={handleImportPlayerFile("pitchers")}
+        data-testid="import-pitchers-player-input"
+        aria-label="Import pitcher from file"
+      />
+      <ImportPlayerBtn type="button" onClick={() => pitchersFileRef.current?.click()}>
+        ↑ Import Pitcher
       </ImportPlayerBtn>
     </FormSection>
   );
@@ -508,20 +587,17 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
         </ErrorMsg>
       )}
 
-      {lineupSection()}
-      {plainSection(
-        "bench",
-        "Bench",
-        "custom-team-bench-section",
-        "custom-team-add-bench-player-button",
-      )}
-      {plainSection(
-        "pitchers",
-        "Pitchers",
-        "custom-team-pitchers-section",
-        "custom-team-add-pitcher-button",
-        true,
-      )}
+      <div data-testid="lineup-bench-dnd-container">
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleLineupBenchDragEnd}
+        >
+          {lineupFormSection()}
+          {benchFormSection()}
+        </DndContext>
+      </div>
+      {pitchersSection()}
 
       <ButtonRow>
         <SaveBtn type="button" onClick={handleSave} data-testid="custom-team-save-button">

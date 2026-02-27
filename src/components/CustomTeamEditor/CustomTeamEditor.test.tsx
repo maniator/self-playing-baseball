@@ -180,7 +180,7 @@ describe("CustomTeamEditor — create mode", () => {
     expect(screen.queryAllByPlaceholderText(/player name/i)).toHaveLength(0);
   });
 
-  it("add two bench players and test move up/down", async () => {
+  it("add two bench players and verify they are rendered with drag handles", async () => {
     renderEditor();
     const addBenchBtn = screen.getByTestId("custom-team-add-bench-player-button");
 
@@ -192,18 +192,11 @@ describe("CustomTeamEditor — create mode", () => {
       fireEvent.click(addBenchBtn);
     });
 
-    const moveUpBtns = screen.getAllByRole("button", { name: /move up/i });
-    const moveDownBtns = screen.getAllByRole("button", { name: /move down/i });
-
-    // Move down on first player, move up on second player (covers handlers).
-    await act(async () => {
-      fireEvent.click(moveDownBtns[0]);
-    });
-    await act(async () => {
-      fireEvent.click(moveUpBtns[0]);
-    });
-    // Both operations complete without error.
+    // Both players should be rendered.
     expect(screen.getAllByPlaceholderText(/player name/i)).toHaveLength(2);
+    // Up/down buttons are gone — replaced by drag handles.
+    expect(screen.queryAllByRole("button", { name: /move up/i })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: /move down/i })).toHaveLength(0);
   });
 
   it("add pitcher and interact with pitcher-specific stat inputs", async () => {

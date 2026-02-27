@@ -345,3 +345,29 @@ test.describe("Custom Team Editor — pitcher handedness label", () => {
     await expect(batsLabels.first()).toBeVisible({ timeout: 3_000 });
   });
 });
+
+// ─── Drag handles in bench and pitchers ─────────────────────────────────────
+test.describe("Custom Team Editor — drag handles in bench and pitchers", () => {
+  test.use({ viewport: { width: 1280, height: 800 } }); // desktop only
+
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("bench and pitchers sections show drag handles (no up/down buttons)", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+
+    // Bench section should be visible
+    const benchSection = page.getByTestId("custom-team-bench-section");
+    await expect(benchSection).toBeVisible({ timeout: 5_000 });
+
+    // No up/down buttons anywhere in the editor
+    await expect(page.locator('button[aria-label="Move up"]')).toHaveCount(0);
+    await expect(page.locator('button[aria-label="Move down"]')).toHaveCount(0);
+
+    // Drag handles should be present in bench section (generated defaults include bench players)
+    const dragHandles = benchSection.locator('span[aria-label*="Drag"]');
+    const handleCount = await dragHandles.count();
+    expect(handleCount).toBeGreaterThan(0);
+  });
+});

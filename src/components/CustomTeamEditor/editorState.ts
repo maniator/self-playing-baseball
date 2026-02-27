@@ -49,6 +49,14 @@ export type EditorAction =
   | { type: "MOVE_DOWN"; section: "lineup" | "bench" | "pitchers"; index: number }
   /** Reorder section by new ordered list of player IDs (used by DnD drag-end). */
   | { type: "REORDER"; section: "lineup" | "bench" | "pitchers"; orderedIds: string[] }
+  /** Move a player from one section (lineup/bench) to the other at a given index. */
+  | {
+      type: "TRANSFER_PLAYER";
+      fromSection: "lineup" | "bench";
+      toSection: "lineup" | "bench";
+      playerId: string;
+      toIndex: number;
+    }
   | { type: "APPLY_DRAFT"; draft: CustomTeamDraft }
   | { type: "SET_ERROR"; error: string };
 
@@ -85,6 +93,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         return p ? [p] : [];
       });
       return { ...state, [action.section]: reordered };
+    }
+    case "TRANSFER_PLAYER": {
+      const player = state[action.fromSection].find((p) => p.id === action.playerId);
+      if (!player) return state;
+      const fromList = state[action.fromSection].filter((p) => p.id !== action.playerId);
+      const toList = [...state[action.toSection]];
+      const clampedIndex = Math.min(action.toIndex, toList.length);
+      toList.splice(clampedIndex, 0, player);
+      return { ...state, [action.fromSection]: fromList, [action.toSection]: toList };
     }
     case "MOVE_UP":
       return {
