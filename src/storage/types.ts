@@ -161,6 +161,8 @@ export interface CustomTeamDoc {
   metadata: CustomTeamMetadata;
   /** Optional future hint for stat generation (e.g. "balanced", "power"). */
   statsProfile?: string;
+  /** FNV-1a fingerprint of name+abbreviation+sorted lineup names — used for duplicate detection on import. */
+  fingerprint?: string;
 }
 
 /** Input shape for creating a new custom team. */
@@ -223,4 +225,15 @@ export interface RxdbExportedSave {
   events: EventDoc[];
   /** FNV-1a 32-bit signature of RXDB_EXPORT_KEY + JSON.stringify({header, events}) */
   sig: string;
+}
+
+/** Keyed JSON export format for custom teams. */
+export interface ExportedCustomTeams {
+  type: "customTeams";
+  formatVersion: 1;
+  exportedAt: string;
+  appVersion?: string;
+  payload: {
+    teams: CustomTeamDoc[];
+  };
 }

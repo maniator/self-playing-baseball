@@ -201,3 +201,71 @@ export const TeamListLink = styled.button`
     color: #aaccff;
   }
 `;
+
+export const ImportExportSection = styled.div`
+  border-top: 1px solid #4a6090;
+  margin-top: 24px;
+  padding-top: 20px;
+`;
+
+export const ImportExportTitle = styled.p`
+  text-transform: uppercase;
+  color: #6680aa;
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  margin: 0 0 8px;
+`;
+
+export const SuccessMessage = styled.p`
+  color: #6effc0;
+  background: #0d2016;
+  border: 1px solid #3a7a5a;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-top: 8px;
+`;
+
+export const FileInput = styled.input`
+  display: none;
+`;
+
+export const ImportExportRow = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+`;
+
+export const ImportExportBtn = styled.button`
+  background: transparent;
+  color: #88bbee;
+  border: 1px solid #4a6090;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 36px;
+
+  &:hover {
+    background: #0d1b2e;
+    border-color: #88bbee;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+  }
+`;
+
+export const ErrorMessage = styled.p`
+  color: #ff9977;
+  font-size: 13px;
+  margin-top: 8px;
+`;

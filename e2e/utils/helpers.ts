@@ -369,3 +369,28 @@ export async function expectNoRawIdsVisible(page: Page): Promise<void> {
     expect(hitLogText ?? "").not.toMatch(RAW_ID_PATTERN);
   }
 }
+
+/**
+ * Computes the FNV-1a 32-bit signature for a save export bundle.
+ * Uses page.evaluate so it runs the same algorithm in the browser context,
+ * matching the implementation in saveStore.ts.
+ */
+export async function computeSaveSignature(
+  page: Page,
+  header: unknown,
+  events: unknown[],
+): Promise<string> {
+  return page.evaluate(
+    ([h, ev]) => {
+      const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
+      let hash = 0x811c9dc5;
+      const str = RXDB_EXPORT_KEY + JSON.stringify({ header: h, events: ev });
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+      }
+      return hash.toString(16).padStart(8, "0");
+    },
+    [header, events] as const,
+  );
+}

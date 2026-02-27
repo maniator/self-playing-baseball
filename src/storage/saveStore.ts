@@ -219,6 +219,33 @@ function buildStore(getDbFn: GetDb) {
       const expectedSig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
+
+      // Reject saves that reference custom teams that don't exist locally.
+      const customTeamRefs: Array<{ id: string; label: string }> = [];
+      for (const [field, labelField] of [
+        [header.homeTeamId, header.setup?.homeTeam ?? header.homeTeamId],
+        [header.awayTeamId, header.setup?.awayTeam ?? header.awayTeamId],
+      ] as Array<[string, string]>) {
+        if (field.startsWith("ct_") || field.startsWith("custom:")) {
+          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
+          customTeamRefs.push({ id, label: labelField });
+        }
+      }
+      if (customTeamRefs.length > 0) {
+        const db = await getDbFn();
+        const missing: Array<{ id: string; label: string }> = [];
+        for (const ref of customTeamRefs) {
+          const found = await db.customTeams.findOne(ref.id).exec();
+          if (!found) missing.push(ref);
+        }
+        if (missing.length > 0) {
+          const descriptions = missing.map((m) => `"${m.label}" (${m.id})`).join(", ");
+          throw new Error(
+            `Cannot import save: missing custom team(s): ${descriptions}. Import the missing team(s) first via Teams import, then retry the save import.`,
+          );
+        }
+      }
+
       const db = await getDbFn();
       await db.saves.upsert(header);
       if (Array.isArray(events) && events.length > 0) {

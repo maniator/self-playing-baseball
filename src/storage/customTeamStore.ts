@@ -1,3 +1,9 @@
+import {
+  buildTeamFingerprint,
+  exportCustomTeams as exportCustomTeamsJson,
+  importCustomTeams as importCustomTeamsParser,
+  type ImportCustomTeamsResult,
+} from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
 import type {
   CreateCustomTeamInput,
@@ -134,6 +140,7 @@ function buildStore(getDbFn: GetDb) {
         },
         ...(input.statsProfile !== undefined && { statsProfile: input.statsProfile }),
       };
+      doc.fingerprint = buildTeamFingerprint(doc);
       const db = await getDbFn();
       await db.customTeams.insert(doc);
       return id;
@@ -174,6 +181,23 @@ function buildStore(getDbFn: GetDb) {
         patch.metadata = { ...currentMeta, ...updates.metadata } as CustomTeamMetadata;
       }
 
+      // Recompute fingerprint if any identity field changed.
+      if (
+        updates.name !== undefined ||
+        updates.abbreviation !== undefined ||
+        updates.roster !== undefined
+      ) {
+        const currentDoc = doc.toJSON() as unknown as CustomTeamDoc;
+        // Merge currentDoc with all effective changes so fingerprint uses final values.
+        const merged: CustomTeamDoc = {
+          ...currentDoc,
+          ...(patch.name !== undefined && { name: patch.name }),
+          ...(patch.abbreviation !== undefined && { abbreviation: patch.abbreviation }),
+          ...(patch.roster !== undefined && { roster: patch.roster }),
+        };
+        patch.fingerprint = buildTeamFingerprint(merged);
+      }
+
       await doc.patch(patch);
     },
 
@@ -182,6 +206,31 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const doc = await db.customTeams.findOne(id).exec();
       if (doc) await doc.remove();
+    },
+
+    /**
+     * Exports the specified teams (by id) as a portable JSON string.
+     * If `ids` is omitted, all non-archived teams are exported.
+     */
+    async exportCustomTeams(ids?: string[]): Promise<string> {
+      const all = await this.listCustomTeams({ includeArchived: true });
+      const toExport = ids ? all.filter((t) => ids.includes(t.id)) : all;
+      return exportCustomTeamsJson(toExport);
+    },
+
+    /**
+     * Imports teams from a JSON string produced by `exportCustomTeams`.
+     * Remaps IDs on collision and upserts all resulting teams into the DB.
+     * @returns A summary of created/remapped counts and duplicate warnings.
+     */
+    async importCustomTeams(json: string): Promise<ImportCustomTeamsResult> {
+      const existing = await this.listCustomTeams({ includeArchived: true });
+      const result = importCustomTeamsParser(json, existing);
+      const db = await getDbFn();
+      for (const team of result.teams) {
+        await db.customTeams.upsert(team);
+      }
+      return result;
     },
   };
 }

@@ -4,6 +4,10 @@ import { useLocation, useNavigate, useParams } from "react-router";
 
 import CustomTeamEditor from "@components/CustomTeamEditor";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
+import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
+import { CustomTeamStore } from "@storage/customTeamStore";
+import { downloadJson } from "@storage/saveIO";
 
 import {
   BackBtn,
@@ -12,11 +16,18 @@ import {
   EditorShell,
   EditorShellHeader,
   EmptyState,
+  ErrorMessage,
+  FileInput,
+  ImportExportBtn,
+  ImportExportRow,
+  ImportExportSection,
+  ImportExportTitle,
   InfoBanner,
   NotFoundMsg,
   ScreenContainer,
   ScreenHeader,
   ScreenTitle,
+  SuccessMessage,
   TeamList,
   TeamListLink,
 } from "./styles";
@@ -28,11 +39,46 @@ type Props = {
   hasActiveGame?: boolean;
 };
 
+const compactTimestamp = () =>
+  new Date()
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d+Z$/, "");
+
+const formatImportSuccessMessage = (result: ImportCustomTeamsResult): string => {
+  if (result.teams.length === 0) return "No teams imported.";
+  const count = result.created + result.remapped;
+  const remapNote = result.remapped > 0 ? ` (${result.remapped} ID(s) remapped)` : "";
+  const dupNote =
+    result.duplicateWarnings.length > 0 ? ` Note: ${result.duplicateWarnings[0]}` : "";
+  return `Imported ${count} team(s).${remapNote}${dupNote}`;
+};
+
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {
   const { teams, loading, deleteTeam, refresh } = useCustomTeams();
   const navigate = useNavigate();
   const { teamId } = useParams<{ teamId: string }>();
   const location = useLocation();
+  const importFileRef = React.useRef<HTMLInputElement>(null);
+  const [importSuccess, setImportSuccess] = React.useState<string | null>(null);
+
+  const { importError, importing, handleFileImport } = useImportCustomTeams({
+    importFn: (json) => CustomTeamStore.importCustomTeams(json),
+    onSuccess: (result) => {
+      refresh();
+      setImportSuccess(formatImportSuccessMessage(result));
+    },
+  });
+
+  const handleExportTeam = async (id: string) => {
+    const json = await CustomTeamStore.exportCustomTeams([id]);
+    downloadJson(json, `ballgame-teams-${compactTimestamp()}.json`);
+  };
+
+  const handleExportAll = async () => {
+    const json = await CustomTeamStore.exportCustomTeams();
+    downloadJson(json, `ballgame-teams-${compactTimestamp()}.json`);
+  };
 
   const isCreating = location.pathname === "/teams/new";
   const isEditing = Boolean(teamId);
@@ -136,10 +182,49 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
               team={team}
               onEdit={(id) => navigate(`/teams/${id}/edit`)}
               onDelete={deleteTeam}
+              onExport={handleExportTeam}
             />
           ))}
         </TeamList>
       )}
+
+      <ImportExportSection data-testid="teams-import-export-section">
+        <ImportExportTitle>Import / Export Teams</ImportExportTitle>
+        <ImportExportRow>
+          {teams.length > 0 && (
+            <ImportExportBtn
+              type="button"
+              onClick={handleExportAll}
+              data-testid="export-all-teams-button"
+            >
+              ↓ Export All Teams
+            </ImportExportBtn>
+          )}
+          <ImportExportBtn
+            type="button"
+            onClick={() => {
+              setImportSuccess(null);
+              importFileRef.current?.click();
+            }}
+            disabled={importing}
+            data-testid="import-teams-button"
+          >
+            {importing ? "Importing…" : "↑ Import Teams"}
+          </ImportExportBtn>
+          <FileInput
+            ref={importFileRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileImport}
+            data-testid="import-teams-file-input"
+            aria-label="Import teams file"
+          />
+        </ImportExportRow>
+        {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
+        {importSuccess && !importError && (
+          <SuccessMessage data-testid="import-teams-success">{importSuccess}</SuccessMessage>
+        )}
+      </ImportExportSection>
     </ScreenContainer>
   );
 };

@@ -10,9 +10,10 @@ type Props = {
   team: CustomTeamDoc;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
+  onExport: (id: string) => void;
 };
 
-const TeamListItem: React.FunctionComponent<Props> = ({ team, onEdit, onDelete }) => {
+const TeamListItem: React.FunctionComponent<Props> = ({ team, onEdit, onDelete, onExport }) => {
   const displayName = customTeamToDisplayName(team);
   const lineupCount = team.roster.lineup.length;
   const pitcherCount = team.roster.pitchers.length;
@@ -39,6 +40,9 @@ const TeamListItem: React.FunctionComponent<Props> = ({ team, onEdit, onDelete }
           data-testid="custom-team-edit-button"
         >
           Edit
+        </ActionBtn>
+        <ActionBtn type="button" onClick={() => onExport(team.id)} data-testid="export-team-button">
+          Export
         </ActionBtn>
         <ActionBtn
           type="button"
