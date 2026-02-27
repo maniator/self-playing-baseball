@@ -285,7 +285,9 @@ test.describe("New game after finished game — no end-of-game state replay", ()
     await loadFixture(page, "finished-game.json");
 
     // The FINAL banner must be present — confirming the fixture loaded correctly.
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard").getByText("FINAL")).toBeVisible({
+      timeout: 10_000,
+    });
 
     // Navigate back to Home.
     await page.getByTestId("back-to-home-button").click();
@@ -305,7 +307,7 @@ test.describe("New game after finished game — no end-of-game state replay", ()
     // Positive assertion: the game is in progress, not finished.
     // FINAL only renders when gameOver=true; its absence proves the finished-game
     // state was NOT restored on top of the new session.
-    const finalText = page.getByText("FINAL");
+    const finalText = page.getByTestId("scoreboard").getByText("FINAL");
     const isFinalVisible = await finalText.isVisible();
     expect(isFinalVisible, "FINAL banner must not be visible after starting a new game").toBe(
       false,
