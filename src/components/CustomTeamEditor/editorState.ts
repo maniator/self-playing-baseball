@@ -169,6 +169,23 @@ export function validateEditorState(state: EditorState): string {
     if (!p.name.trim()) return "All players must have a name.";
   }
 
+  // Enforce unique player names within the team (case-insensitive across all slots).
+  const allNames = [...state.lineup, ...state.bench, ...state.pitchers]
+    .map((p) => p.name.trim().toLowerCase())
+    .filter(Boolean);
+  const seenNames = new Set<string>();
+  const dupNames = new Set<string>();
+  for (const n of allNames) {
+    if (seenNames.has(n)) dupNames.add(n);
+    seenNames.add(n);
+  }
+  if (dupNames.size > 0) {
+    const display = [...dupNames]
+      .map((n) => `"${n}"`)
+      .join(", ");
+    return `Duplicate player name(s) within this team: ${display}. Each player must have a unique name.`;
+  }
+
   // Check starting lineup for duplicate or missing required positions.
   const lineupPosCounts = new Map<string, number>();
   for (const p of state.lineup) {

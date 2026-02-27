@@ -551,3 +551,28 @@ describe("sanitizePlayer — fingerprint storage", () => {
     expect(stored?.fingerprint).toBe(buildPlayerSig(stored!));
   });
 });
+
+describe("createCustomTeam — name uniqueness", () => {
+  it("throws when creating a team with the same name as an existing team", async () => {
+    await store.createCustomTeam(makeInput({ name: "Duplicate Team" }));
+    await expect(store.createCustomTeam(makeInput({ name: "Duplicate Team" }))).rejects.toThrow(
+      "already exists",
+    );
+  });
+
+  it("is case-insensitive for duplicate name check", async () => {
+    await store.createCustomTeam(makeInput({ name: "Eagles" }));
+    await expect(store.createCustomTeam(makeInput({ name: "eagles" }))).rejects.toThrow(
+      "already exists",
+    );
+    await expect(store.createCustomTeam(makeInput({ name: "EAGLES" }))).rejects.toThrow(
+      "already exists",
+    );
+  });
+
+  it("allows two teams with different names", async () => {
+    const id1 = await store.createCustomTeam(makeInput({ name: "Hawks" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Falcons" }));
+    expect(id1).not.toBe(id2);
+  });
+});

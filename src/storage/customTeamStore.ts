@@ -120,10 +120,22 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Creates a new custom team.
+     * Throws if a team with the same name (case-insensitive) already exists
+     * to ensure team names remain unique within the local install.
      * @returns The generated team id.
      */
     async createCustomTeam(input: CreateCustomTeamInput, meta?: { id?: string }): Promise<string> {
       const name = requireNonEmpty(input.name, "name");
+
+      // Enforce unique team names (case-insensitive) across the local install.
+      const existing = await this.listCustomTeams({ includeArchived: true });
+      const nameLower = name.toLowerCase();
+      const duplicate = existing.find((t) => t.name.toLowerCase() === nameLower);
+      if (duplicate) {
+        throw new Error(
+          `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+        );
+      }
       const roster = buildRoster(input.roster);
       const now = new Date().toISOString();
       const id = meta?.id ?? generateTeamId();
