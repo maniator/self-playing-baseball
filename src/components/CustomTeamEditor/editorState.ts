@@ -1,5 +1,6 @@
 import type { CustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
 
+import { generateSeed } from "@storage/generateId";
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import { DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS } from "./playerConstants";
@@ -152,6 +153,9 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+  // Draft players have no persistent seed yet — assign one now so exports
+  // are stable even before the team is first saved to the DB.
+  playerSeed: generateSeed(),
 });
 
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({

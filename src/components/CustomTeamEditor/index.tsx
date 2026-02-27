@@ -23,6 +23,7 @@ import {
   exportCustomPlayer,
   parseExportedCustomPlayer,
 } from "@storage/customTeamExportImport";
+import { generateSeed } from "@storage/generateId";
 import { downloadJson, playerFilename } from "@storage/saveIO";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
@@ -78,6 +79,7 @@ type Props = {
 
 const makeBlankBatter = (): EditorPlayer => ({
   id: makePlayerId(),
+  playerSeed: generateSeed(),
   name: "",
   position: "",
   handedness: "R",
@@ -88,6 +90,7 @@ const makeBlankBatter = (): EditorPlayer => ({
 
 const makeBlankPitcher = (): EditorPlayer => ({
   id: makePlayerId(),
+  playerSeed: generateSeed(),
   name: "",
   position: "",
   handedness: "R",
@@ -445,23 +448,46 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             ...(importedPlayer.playerSeed && { playerSeed: importedPlayer.playerSeed }),
           };
 
-          // Check if this player's fingerprint already exists in any team.
+          // Check if this player's fingerprint already exists in any saved team OR the
+          // current editor state (to block re-import in the same unsaved editing session).
           // Use the role that will actually be stored for the destination section
           // so the sig matches what will be written to the DB.
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
           const playerForSig = { ...importedPlayer, role: sectionRole };
           const incomingFp = buildPlayerSig(playerForSig);
+
+          // Check saved teams first, then current editor state.
           const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
             ),
           );
+          const editorHasDuplicate =
+            !existingTeamWithPlayer &&
+            [...state.lineup, ...state.bench, ...state.pitchers].some(
+              (p) =>
+                buildPlayerSig({
+                  name: p.name,
+                  role: p.velocity !== undefined ? "pitcher" : "batter",
+                  batting: { contact: p.contact, power: p.power, speed: p.speed },
+                  pitching:
+                    p.velocity !== undefined
+                      ? {
+                          velocity: p.velocity,
+                          control: p.control ?? 60,
+                          movement: p.movement ?? 60,
+                        }
+                      : undefined,
+                  playerSeed: p.playerSeed,
+                }) === incomingFp,
+            );
 
-          if (existingTeamWithPlayer) {
+          if (existingTeamWithPlayer || editorHasDuplicate) {
+            const teamName = existingTeamWithPlayer?.name ?? "this team";
             setPendingPlayerImport({
               player: editorPlayer,
               section,
-              warning: `"${importedPlayer.name}" may already exist on team "${existingTeamWithPlayer.name}". Import anyway?`,
+              warning: `"${importedPlayer.name}" may already exist on team "${teamName}". Import anyway?`,
             });
           } else {
             dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
@@ -475,7 +501,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       };
       reader.readAsText(file);
     },
-    [allTeams],
+    [allTeams, state.lineup, state.bench, state.pitchers],
   );
 
   const sensors = useSensors(
