@@ -219,19 +219,15 @@ function buildStore(getDbFn: GetDb) {
         patch.metadata = { ...currentMeta, ...updates.metadata } as CustomTeamMetadata;
       }
 
-      // Recompute fingerprint if any identity field changed.
-      if (
-        updates.name !== undefined ||
-        updates.abbreviation !== undefined ||
-        updates.roster !== undefined
-      ) {
+      // Recompute fingerprint only when identity fields (name/abbreviation/teamSeed) change.
+      // roster changes do not affect the fingerprint.
+      if (updates.name !== undefined || updates.abbreviation !== undefined) {
         const currentDoc = doc.toJSON() as unknown as CustomTeamDoc;
         // Merge currentDoc with all effective changes so fingerprint uses final values.
         const merged: CustomTeamDoc = {
           ...currentDoc,
           ...(patch.name !== undefined && { name: patch.name }),
           ...(patch.abbreviation !== undefined && { abbreviation: patch.abbreviation }),
-          ...(patch.roster !== undefined && { roster: patch.roster }),
         };
         patch.fingerprint = buildTeamFingerprint(merged);
       }

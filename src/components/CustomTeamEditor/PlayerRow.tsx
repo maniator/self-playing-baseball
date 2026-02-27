@@ -30,8 +30,6 @@ type Props = {
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
-  /** Called when the user clicks the export button. Undefined = no export button shown. */
-  onExport?: () => void;
 };
 
 const PlayerRow: React.FunctionComponent<Props> = ({
@@ -44,7 +42,6 @@ const PlayerRow: React.FunctionComponent<Props> = ({
   onRemove,
   onMoveUp,
   onMoveDown,
-  onExport,
 }) => {
   const positionOptions = isPitcher ? PITCHER_POSITION_OPTIONS : BATTER_POSITION_OPTIONS;
 
@@ -87,17 +84,6 @@ const PlayerRow: React.FunctionComponent<Props> = ({
         >
           ↓
         </SmallIconBtn>
-        {onExport && (
-          <SmallIconBtn
-            type="button"
-            onClick={onExport}
-            aria-label="Export player"
-            title="Export player"
-            data-testid="export-player-button"
-          >
-            ↓ Export
-          </SmallIconBtn>
-        )}
         <RemoveBtn type="button" onClick={onRemove} aria-label="Remove player">
           ✕
         </RemoveBtn>

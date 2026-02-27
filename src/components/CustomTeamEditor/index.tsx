@@ -279,12 +279,12 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     <FormSection data-testid="custom-team-lineup-section">
       <SectionHeading>Lineup (drag to reorder; drag to/from Bench)</SectionHeading>
       {pendingPlayerImport?.section === "lineup" && (
-        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-lineup-duplicate-banner">
           ⚠ {pendingPlayerImport.warning}
           <PlayerDuplicateActions>
             <SmallIconBtn
               type="button"
-              data-testid="player-import-confirm-button"
+              data-testid="player-import-lineup-confirm-button"
               onClick={() => {
                 dispatch({
                   type: "ADD_PLAYER",
@@ -345,12 +345,12 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     <FormSection data-testid="custom-team-bench-section">
       <SectionHeading>Bench (drag to reorder; drag to/from Lineup)</SectionHeading>
       {pendingPlayerImport?.section === "bench" && (
-        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-bench-duplicate-banner">
           ⚠ {pendingPlayerImport.warning}
           <PlayerDuplicateActions>
             <SmallIconBtn
               type="button"
-              data-testid="player-import-confirm-button"
+              data-testid="player-import-bench-confirm-button"
               onClick={() => {
                 dispatch({
                   type: "ADD_PLAYER",
@@ -411,12 +411,12 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     <FormSection data-testid="custom-team-pitchers-section">
       <SectionHeading>Pitchers (drag to reorder)</SectionHeading>
       {pendingPlayerImport?.section === "pitchers" && (
-        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-pitchers-duplicate-banner">
           ⚠ {pendingPlayerImport.warning}
           <PlayerDuplicateActions>
             <SmallIconBtn
               type="button"
-              data-testid="player-import-confirm-button"
+              data-testid="player-import-pitchers-confirm-button"
               onClick={() => {
                 dispatch({
                   type: "ADD_PLAYER",
