@@ -311,8 +311,19 @@ test.describe("New game after finished game — no end-of-game state replay", ()
       false,
     );
 
-    // Scoreboard must reflect a fresh start (both teams at 0).
-    const scoreText = await page.getByTestId("scoreboard").textContent();
-    expect(scoreText).toContain("0");
+    // Scoreboard must reflect a fresh start: both teams' run totals in the R column are 0.
+    const scoreboard = page.getByTestId("scoreboard");
+    const awayRow = scoreboard.getByRole("row").nth(1);
+    const homeRow = scoreboard.getByRole("row").nth(2);
+
+    const awayRunsText = (await awayRow.getByRole("cell").last().textContent())?.trim();
+    const homeRunsText = (await homeRow.getByRole("cell").last().textContent())?.trim();
+
+    expect(awayRunsText, "Away team run total should be 0 at the start of a brand-new game").toBe(
+      "0",
+    );
+    expect(homeRunsText, "Home team run total should be 0 at the start of a brand-new game").toBe(
+      "0",
+    );
   });
 });

@@ -42,10 +42,10 @@
           0,
           0
         ],
-        "outs": 3,
+        "outs": 0,
         "strikes": 0,
         "balls": 0,
-        "atBat": 2,
+        "atBat": 1,
         "gameOver": true,
         "pendingDecision": null,
         "onePitchModifier": null,
@@ -103,9 +103,9 @@
     },
     "inningSnapshot": {
       "inning": 9,
-      "atBat": 2
+      "atBat": 1
     }
   },
   "events": [],
-  "sig": "617d60c7"
+  "sig": "62b5a964"
 }
