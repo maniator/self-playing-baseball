@@ -27,19 +27,3 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-
-      # Optional: install fonts so Playwright screenshots are closer to CI
-      # (adjust package names as needed for your app/font strategy)
-      - name: Install common fonts for visual consistency
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            fonts-liberation \
-            fonts-noto-color-emoji \
-            fonts-dejavu-core
-
-      # Pre-build app so agent can run preview/tests quickly.
-      # continue-on-error so a build failure here doesn't block Copilot from starting.
-      - name: Build app
-        run: yarn build
-        continue-on-error: true
