@@ -11,6 +11,7 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  configureNewGame,
   loadFixture,
   openSavesModal,
   resetAppState,
@@ -292,7 +293,10 @@ test.describe("New game after finished game — no end-of-game state replay", ()
 
     // Start a brand-new game from Home.
     await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+    // configureNewGame switches to the MLB tab (exhibition setup defaults to Custom Teams;
+    // with no custom teams defined, Play Ball would trigger a validation error instead of
+    // starting the game — causing the scoreboard to never appear).
+    await configureNewGame(page);
     await page.getByTestId("play-ball-button").click();
 
     // Wait for the game to be active (scoreboard visible) — then assert fresh state.
