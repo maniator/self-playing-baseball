@@ -150,11 +150,12 @@ test.describe("Custom Teams — Import/Export", () => {
     const tmpPath = path.join(testInfo.outputDir, "dup-team.json");
     await download.saveAs(tmpPath);
 
-    // Re-import without deleting — should warn about duplicate players
+    // Re-import without deleting — should warn about duplicate players and mention the team name
     await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
     await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
     const successText = await page.getByTestId("import-teams-success").textContent();
     expect(successText).toMatch(/player duplicate/i);
+    expect(successText).toMatch(/Dup Player Team/i);
   });
 
   test("import shows error for a file with wrong type", async ({ page, testInfo }) => {

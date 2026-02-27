@@ -5,6 +5,9 @@ export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 /** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */
 export const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
 
+/** `TeamPlayer` carrying the export-only `sig` field before it is stripped for DB storage. */
+type TeamPlayerWithSig = TeamPlayer & { sig?: string };
+
 export interface ImportCustomTeamsResult {
   teams: CustomTeamDoc[];
   created: number;
@@ -126,8 +129,8 @@ export function exportCustomTeams(teams: CustomTeamDoc[]): string {
 
 /**
  * Parses and validates a custom-teams export JSON string.
- * Verifies (1) the bundle-level FNV-1a signature and (2) every player's sig.
- * Throws a descriptive error on any validation or integrity failure.
+ * Performs checks in order: (1) structural validation, (2) bundle-level FNV-1a
+ * signature, (3) per-player signatures. Throws a descriptive error on any failure.
  */
 export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   let parsed: unknown;
@@ -182,8 +185,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
     const fingerprint = team["fingerprint"] as string;
     const roster = team["roster"] as Record<string, unknown>;
     (["lineup", "bench", "pitchers"] as const).forEach((slot) => {
-      ((roster[slot] ?? []) as Record<string, unknown>[]).forEach((rawPlayer, pi) => {
-        const player = rawPlayer as TeamPlayer & { sig?: string };
+      ((roster[slot] ?? []) as TeamPlayerWithSig[]).forEach((player, pi) => {
         const expectedPlayerSig = buildPlayerSig(fingerprint, player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(
@@ -281,7 +283,7 @@ export function importCustomTeams(
     ];
     for (const { player } of allSlotPlayers) {
       // Use the sig embedded in the export; fall back to computing it if absent.
-      const pSig = (player as TeamPlayer & { sig?: string }).sig ?? buildPlayerSig(teamFp, player);
+      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(teamFp, player);
       if (existingPlayerSigs.has(pSig)) {
         duplicatePlayerWarnings.push(
           `Player "${player.name}" in "${team.name}" may already exist in your teams.`,
