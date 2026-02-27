@@ -45,6 +45,3 @@ jobs:
 
       - name: Build
         run: yarn build
-
-      - name: Typecheck E2E tests
-        run: yarn typecheck:e2e

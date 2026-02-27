@@ -240,7 +240,7 @@ test.describe("Custom Teams — Import/Export", () => {
       "Taylor Brooks",
     ];
     for (const name of playerNames) {
-      await expect(page.getByDisplayValue(name)).toBeVisible();
+      await expect(page.locator(`input[value="${name}"]`)).toBeVisible();
     }
   });
 

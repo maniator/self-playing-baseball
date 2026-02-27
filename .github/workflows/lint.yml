@@ -37,3 +37,6 @@ jobs:
 
       - name: Check E2E spec sizes
         run: node scripts/check-spec-sizes.mjs
+
+      - name: Typecheck E2E tests
+        run: yarn typecheck:e2e
