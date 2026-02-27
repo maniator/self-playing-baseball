@@ -153,6 +153,31 @@ describe("ErrorBoundary", () => {
       expect(screen.getByRole("button", { name: /clear all app data/i })).toBeTruthy();
     });
 
+    it('clears app data and reloads when "Clear all app data & reload" is clicked', () => {
+      const reloadMock = vi.fn();
+      Object.defineProperty(window, "location", {
+        configurable: true,
+        value: { reload: reloadMock },
+      });
+
+      const deleteDatabaseMock = vi.fn();
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: { deleteDatabase: deleteDatabaseMock },
+      });
+
+      render(
+        <ErrorBoundary>
+          <Thrower message="Loading chunk 3 failed." />
+        </ErrorBoundary>,
+      );
+
+      fireEvent.click(screen.getByRole("button", { name: /clear all app data/i }));
+
+      expect(deleteDatabaseMock).toHaveBeenCalledWith("ballgame");
+      expect(reloadMock).toHaveBeenCalled();
+    });
+
     it("shows the update hint copy", () => {
       render(
         <ErrorBoundary>
