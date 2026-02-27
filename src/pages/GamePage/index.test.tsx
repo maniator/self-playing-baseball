@@ -26,8 +26,9 @@ vi.mock("@components/Game", () => ({
   ),
 }));
 
-import GamePage from "./index";
 import type { AppShellOutletContext } from "@components/AppShell";
+
+import GamePage from "./index";
 
 const mockCtx: AppShellOutletContext = {
   onStartGame: vi.fn(),
@@ -43,11 +44,7 @@ const mockCtx: AppShellOutletContext = {
 };
 
 /** Renders GamePage inside a minimal router with outlet context. */
-function renderGamePage(
-  initialPath = "/game",
-  state: unknown = null,
-  ctx = mockCtx,
-) {
+function renderGamePage(initialPath = "/game", state: unknown = null, ctx = mockCtx) {
   return render(
     <MemoryRouter initialEntries={[{ pathname: initialPath, state }]}>
       <Routes>

@@ -7,6 +7,9 @@ import {
   waitForLogLines,
 } from "../../utils/helpers";
 
+/** Shared snapshot diff tolerance for all visual snapshots in this file. */
+const IMPORT_EXPORT_SNAPSHOT_OPTIONS = { maxDiffPixelRatio: 0.05 } as const;
+
 // ─── Stage 2B: Custom Team UI visual snapshots ────────────────────────────────
 //
 // These snapshots cover new Stage 2B surfaces:
@@ -68,7 +71,7 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-empty.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -88,7 +91,7 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-with-team.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -128,7 +131,7 @@ test.describe("Visual — Stage 2B: Create Team editor, mobile portrait", () => 
     // regardless of what is behind the semi-transparent overlay.
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-editor-mobile-portrait.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -180,7 +183,7 @@ test.describe("Visual — Stage 2B: Create Team editor, narrow landscape", () =>
 
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-editor-narrow-landscape.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -221,7 +224,7 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
 
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "edit-team-editor-mobile-portrait.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -264,7 +267,7 @@ test.describe("Visual — Create Team editor, desktop", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-desktop-empty.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -304,7 +307,7 @@ test.describe("Visual — Create Team editor, desktop", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-desktop-filled.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -482,7 +485,7 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "teams-new-route-editor.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -515,7 +518,110 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "teams-id-edit-route-editor.png",
-      { maxDiffPixelRatio: 0.05 },
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
+    );
+  });
+});
+
+// ─── Teams Import/Export UI visual snapshots ─────────────────────────────────
+//
+// Four states as required by the issue testing requirements:
+//   1. Import/export section — empty state (no teams, default view)
+//   2. Import error state (invalid file)
+//   3. Import success summary (team imported)
+//   4. Export-all button visible after team exists
+
+test.describe("Visual — Teams Import/Export UI states", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+  });
+
+  test("import/export section empty state (no teams)", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("teams-import-export-section")).toBeVisible();
+
+    await expect(page.getByTestId("teams-import-export-section")).toHaveScreenshot(
+      "teams-import-export-empty.png",
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
+    );
+  });
+
+  test("import error state after invalid file", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Upload a file with wrong type to trigger an error
+    const { writeFileSync } = await import("fs");
+    const { join } = await import("path");
+    const tmpFile = join(testInfo.outputDir, "bad-import.json");
+    writeFileSync(tmpFile, '{"type":"saves","formatVersion":1,"payload":{}}');
+
+    await page.getByTestId("import-teams-file-input").setInputFiles(tmpFile);
+    await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 5_000 });
+
+    await expect(page.getByTestId("teams-import-export-section")).toHaveScreenshot(
+      "teams-import-export-error.png",
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
+    );
+  });
+
+  test("import success summary after importing a team", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
+
+    // Create a team, export it, delete it, then re-import to reach success state
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Snapshot Success Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-all-teams-button").click();
+    const download = await downloadPromise;
+
+    const { join } = await import("path");
+    const tmpFile = join(testInfo.outputDir, "snapshot-success-team.json");
+    await download.saveAs(tmpFile);
+
+    page.once("dialog", (d) => d.accept());
+    await page.getByTestId("custom-team-delete-button").click();
+    await expect(page.getByText(/no custom teams yet/i)).toBeVisible({ timeout: 5_000 });
+
+    await page.getByTestId("import-teams-file-input").setInputFiles(tmpFile);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByTestId("teams-import-export-section")).toHaveScreenshot(
+      "teams-import-export-success.png",
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
+    );
+  });
+
+  test("export-all button visible when teams exist", async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Export Button Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await expect(page.getByTestId("export-all-teams-button")).toBeVisible();
+
+    await expect(page.getByTestId("teams-import-export-section")).toHaveScreenshot(
+      "teams-import-export-with-export-button.png",
+      IMPORT_EXPORT_SNAPSHOT_OPTIONS,
     );
   });
 });

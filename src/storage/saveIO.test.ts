@@ -1,6 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { downloadJson, formatSaveDate, readFileAsText, saveFilename, teamsFilename } from "./saveIO";
+import {
+  downloadJson,
+  formatSaveDate,
+  readFileAsText,
+  saveFilename,
+  teamsFilename,
+} from "./saveIO";
 
 describe("formatSaveDate", () => {
   it("returns a non-empty string for a valid timestamp", () => {
@@ -51,7 +57,7 @@ describe("downloadJson", () => {
     vi.restoreAllMocks();
   });
 
-  it("creates an anchor with the given filename and clicks it", () => {
+  it("downloadJson creates an anchor with the given filename and clicks it", () => {
     const mockUrl = "blob:test";
     const createObjectURL = vi.fn().mockReturnValue(mockUrl);
     const revokeObjectURL = vi.fn();
@@ -62,8 +68,9 @@ describe("downloadJson", () => {
     vi.spyOn(document, "createElement").mockImplementation((tag: string) => {
       const el = origCreate(tag);
       if (tag === "a") {
-        vi.spyOn(el as HTMLAnchorElement, "click").mockImplementation(() => {
-          clicks.push((el as HTMLAnchorElement).download);
+        const anchor = el as HTMLAnchorElement;
+        vi.spyOn(anchor, "click").mockImplementation(() => {
+          clicks.push(anchor.download);
         });
       }
       return el;

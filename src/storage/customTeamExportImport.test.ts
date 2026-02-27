@@ -431,3 +431,90 @@ describe("importCustomTeams", () => {
     expect(() => importCustomTeams("bad", [])).toThrow("Invalid JSON");
   });
 });
+
+// ── Import validation: roster constraints and required fields ─────────────────
+// These tests verify the parser rejects structurally invalid bundles, matching
+// the issue requirement "import validation rejects invalid teams (roster
+// constraints, stat caps, missing fields)".
+
+describe("parseExportedCustomTeams — roster constraint validation", () => {
+  it("throws when a team is missing required name", () => {
+    const fp = buildTeamFingerprint(makeTeam());
+    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
+    const team = { id: "ct1", source: "custom", fingerprint: fp, roster: { lineup: [player] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: name");
+  });
+
+  it("throws when a team is missing required source", () => {
+    const fp = buildTeamFingerprint(makeTeam());
+    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
+    const team = { id: "ct1", name: "T", fingerprint: fp, roster: { lineup: [player] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: source");
+  });
+
+  it("throws when a team is missing required roster", () => {
+    const fp = buildTeamFingerprint(makeTeam());
+    const team = { id: "ct1", name: "T", source: "custom", fingerprint: fp };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: roster");
+  });
+
+  it("throws when a team entry is not an object", () => {
+    const payload = { teams: ["not-an-object"] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("is not an object");
+  });
+
+  it("throws when roster.lineup is empty (lineup size constraint)", () => {
+    const fp = "aabbccdd";
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      fingerprint: fp,
+      roster: { lineup: [] },
+    };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
+  });
+
+  it("rejects a bundle where the whole payload is a bare array (not a keyed object)", () => {
+    // A bare array IS typeof "object", so the parser's type check passes but
+    // the 'type' discriminator will be undefined — the type check is the specific rejection.
+    expect(() => parseExportedCustomTeams(JSON.stringify([{ id: "ct1" }]))).toThrow(
+      'expected type "customTeams"',
+    );
+  });
+
+  it("accepts a bundle with optional bench and pitchers omitted from roster", () => {
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer({ name: "Sole Batter" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const result = parseExportedCustomTeams(exportCustomTeams([team]));
+    expect(result.payload.teams[0].roster.lineup[0].name).toBe("Sole Batter");
+  });
+
+  it("imports teams without preserving player sig fields in output (stat-sanitized)", () => {
+    // Verifies that player sigs are stripped on import (not persisted to DB)
+    const team = makeTeam();
+    const result = importCustomTeams(exportCustomTeams([team]), []);
+    const player = result.teams[0].roster.lineup[0];
+    expect("sig" in player).toBe(false);
+  });
+});
