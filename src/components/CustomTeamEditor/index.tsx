@@ -503,6 +503,21 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     [allTeams, state.lineup, state.bench, state.pitchers],
   );
 
+  // Pre-bind per-section import handlers so JSX receives stable references
+  // instead of creating a new function on every render.
+  const handleImportLineupFile = React.useMemo(
+    () => handleImportPlayerFile("lineup"),
+    [handleImportPlayerFile],
+  );
+  const handleImportBenchFile = React.useMemo(
+    () => handleImportPlayerFile("bench"),
+    [handleImportPlayerFile],
+  );
+  const handleImportPitchersFile = React.useMemo(
+    () => handleImportPlayerFile("pitchers"),
+    [handleImportPlayerFile],
+  );
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -712,7 +727,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             dispatch={dispatch}
             setPendingPlayerImport={setPendingPlayerImport}
             lineupFileRef={lineupFileRef}
-            onImportFile={handleImportPlayerFile("lineup")}
+            onImportFile={handleImportLineupFile}
             handleExportPlayer={handleExportPlayer}
           />
           <BenchFormSection
@@ -722,7 +737,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             dispatch={dispatch}
             setPendingPlayerImport={setPendingPlayerImport}
             benchFileRef={benchFileRef}
-            onImportFile={handleImportPlayerFile("bench")}
+            onImportFile={handleImportBenchFile}
             handleExportPlayer={handleExportPlayer}
           />
         </DndContext>
@@ -734,7 +749,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
         dispatch={dispatch}
         setPendingPlayerImport={setPendingPlayerImport}
         pitchersFileRef={pitchersFileRef}
-        onImportFile={handleImportPlayerFile("pitchers")}
+        onImportFile={handleImportPitchersFile}
         handleExportPlayer={handleExportPlayer}
         sensors={sensors}
         handlePitchersDragEnd={handlePitchersDragEnd}

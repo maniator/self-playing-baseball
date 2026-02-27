@@ -277,6 +277,15 @@ export interface ImportCustomTeamsOptions {
  * non-empty `playerSeed`).  As a result, duplicate detection silently misses duplicates for
  * legacy imports.  This is intentional — legacy files lack the seed needed to reproduce the
  * stored fingerprint — and is documented here so callers are aware of the limitation.
+ *
+ * **Legacy team fingerprint limitation:** Teams in legacy bundles lack a `team.fingerprint`
+ * field, so the pre-scan falls back to `buildTeamFingerprint(team)` with an empty `teamSeed`.
+ * However, a previously-imported legacy team will have been migrated to v3 and now has a
+ * non-empty `teamSeed` in the DB, producing a seed-based fingerprint that will never match
+ * the seed-free fallback.  As a result, re-importing a legacy teams bundle after the DB has
+ * been migrated to v3 will not be blocked by the pre-scan's team-fingerprint check, and the
+ * teams may be duplicated.  The same inherent limitation applies as for legacy player sigs:
+ * without the original seed in the bundle, there is no way to reproduce the stored fingerprint.
  */
 export function importCustomTeams(
   json: string,

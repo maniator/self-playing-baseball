@@ -287,14 +287,15 @@ async function initDb(
           }
         },
         // Backfill teamSeed and per-player playerSeed for seed-based instance fingerprints.
-        // Uses Math.random()-derived seeds (~93 bits of entropy) because migration
+        // Uses Math.random()-derived seeds (~83 bits of entropy) because migration
         // strategies must be pure synchronous functions — they cannot `import` other
         // modules or call async APIs, so `generateSeed()` from `generateId.ts` (which
         // relies on `nanoid`) cannot be used here.
         3: (oldDoc: Record<string, unknown>) => {
           try {
             // Inline fallback seed generator — synchronous, no module dependencies.
-            // Two Math.random() calls give ~18 base-36 chars ≈ 93 bits of entropy,
+            // Two Math.random() calls give ~18 base-36 chars: 12 chars (~62 bits)
+            // plus 4 chars (~21 bits) ≈ 83 bits of entropy total,
             // which is sufficient for a migration backfill where CSPRNG is unavailable.
             const fallbackSeed = (): string =>
               Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
