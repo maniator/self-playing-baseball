@@ -9,15 +9,30 @@ import {
   pitcherRemaining,
   pitcherStatTotal,
 } from "./statBudget";
-import { StatBudgetRow, StatInput, StatLabel, StatRow, StatsGrid, StatValue } from "./styles";
+import {
+  IdentityLockHint,
+  StatBudgetRow,
+  StatInput,
+  StatLabel,
+  StatRow,
+  StatsGrid,
+  StatValue,
+} from "./styles";
 
 type Props = {
   player: EditorPlayer;
   isPitcher: boolean;
+  /** When true, stat sliders are disabled — stats are immutable after player creation. */
+  isExistingPlayer?: boolean;
   onChange: (patch: Partial<EditorPlayer>) => void;
 };
 
-const PlayerStatFields: React.FunctionComponent<Props> = ({ player, isPitcher, onChange }) => {
+const PlayerStatFields: React.FunctionComponent<Props> = ({
+  player,
+  isPitcher,
+  isExistingPlayer = false,
+  onChange,
+}) => {
   const vel = player.velocity ?? 0;
   const ctrl = player.control ?? 0;
   const mov = player.movement ?? 0;
@@ -45,7 +60,10 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({ player, isPitcher, o
           min={0}
           max={100}
           value={val}
-          onChange={(e) => onChange({ [key]: Number(e.target.value) })}
+          disabled={isExistingPlayer}
+          onChange={(e) => {
+            if (!isExistingPlayer) onChange({ [key]: Number(e.target.value) });
+          }}
         />
         <StatValue>{val}</StatValue>
       </StatRow>
@@ -69,11 +87,12 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({ player, isPitcher, o
           </>
         )}
       </StatsGrid>
-      <StatBudgetRow $overCap={overCap}>
-        {overCap
+      <StatBudgetRow $overCap={!isExistingPlayer && overCap}>
+        {overCap && !isExistingPlayer
           ? `⚠ ${total} / ${cap} — ${Math.abs(rem)} over cap`
-          : `Total: ${total} / ${cap} (${rem} remaining)`}
+          : `Total: ${total} / ${cap}`}
       </StatBudgetRow>
+      {isExistingPlayer && <IdentityLockHint>Stats are locked after creation.</IdentityLockHint>}
     </>
   );
 };

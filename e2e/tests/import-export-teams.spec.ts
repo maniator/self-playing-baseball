@@ -125,7 +125,7 @@ test.describe("Custom Teams — Import/Export", () => {
     await expect(page.getByText("Import Round Trip")).toBeVisible();
   });
 
-  test("re-importing the same team surfaces a duplicate player warning", async ({
+  test("re-importing the same team is silently skipped (no duplicate created)", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
@@ -135,9 +135,13 @@ test.describe("Custom Teams — Import/Export", () => {
 
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
-    await page.getByTestId("custom-team-name-input").fill("Dup Player Team");
+    await page.getByTestId("custom-team-name-input").fill("Skip Dup Team");
     await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Verify only 1 team before re-import
+    const listBefore = page.getByTestId("custom-team-list-item");
+    await expect(listBefore).toHaveCount(1);
 
     // Export the team
     const downloadPromise = page.waitForEvent("download");
@@ -146,12 +150,15 @@ test.describe("Custom Teams — Import/Export", () => {
     const tmpPath = path.join(testInfo.outputDir, "dup-team.json");
     await download.saveAs(tmpPath);
 
-    // Re-import without deleting — should warn about duplicate players and mention the team name
+    // Re-import without deleting — exact duplicate should be skipped, not create a second entry
     await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
     await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
     const successText = await page.getByTestId("import-teams-success").textContent();
-    expect(successText).toMatch(/player duplicate/i);
-    expect(successText).toMatch(/Dup Player Team/i);
+    expect(successText).toMatch(/already exist/i);
+
+    // Still only 1 team — no duplicate created
+    const listAfter = page.getByTestId("custom-team-list-item");
+    await expect(listAfter).toHaveCount(1);
   });
 
   test("import shows error for a file with wrong type", async ({ page }, testInfo) => {

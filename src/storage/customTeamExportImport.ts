@@ -30,7 +30,7 @@ export interface ImportCustomTeamsResult {
 
 /**
  * Builds a stable content fingerprint for a team (excludes id so it survives re-import).
- * Used both for team-level duplicate detection and as the anchor for per-player sigs.
+ * Used for team-level duplicate detection.
  */
 export function buildTeamFingerprint(team: CustomTeamDoc): string {
   const key =
@@ -46,31 +46,25 @@ export function buildTeamFingerprint(team: CustomTeamDoc): string {
 }
 
 /**
- * Computes an integrity signature for a single player, anchored to the parent team's
- * fingerprint. Covers the player's stable identity fields (id, role, batting, pitching,
- * position, handedness, jerseyNumber, pitchingRole) — name is intentionally excluded
- * because the team fingerprint already tracks lineup names for duplicate detection.
+ * Computes a content-based integrity signature for a single player.
+ * Covers only the player's immutable identity fields: name, role, and stats
+ * (batting for hitters; pitching for pitchers).
  *
- * The player sig serves two purposes:
- *   1. Tamper detection: any post-export mutation of these fields is detectable on import.
- *   2. Duplicate detection: a player whose sig matches a player already in the DB is likely
- *      a duplicate and the user should be prompted before the import proceeds.
+ * Design notes:
+ *   - `id` is intentionally excluded: IDs are remapped on import collision and must
+ *     not affect duplicate detection — two players with identical stats and name but
+ *     different DB IDs are the same person.
+ *   - `position`, `handedness`, `jerseyNumber`, `pitchingRole` are intentionally excluded:
+ *     these are editable after creation and must not invalidate a previously issued sig.
+ *
+ * The sig serves two purposes:
+ *   1. Tamper detection: any post-export mutation of name or stats is detectable on import.
+ *   2. Duplicate detection: a player whose sig matches one already in the DB is a likely
+ *      duplicate even if imported to a different team or with a remapped ID.
  */
-export function buildPlayerSig(teamFingerprint: string, player: TeamPlayer): string {
-  const { id, role, batting, pitching, position, handedness, jerseyNumber, pitchingRole } = player;
-  return fnv1a(
-    teamFingerprint +
-      JSON.stringify({
-        id,
-        role,
-        batting,
-        pitching,
-        position,
-        handedness,
-        jerseyNumber,
-        pitchingRole,
-      }),
-  );
+export function buildPlayerSig(player: TeamPlayer): string {
+  const { name, role, batting, pitching } = player;
+  return fnv1a(JSON.stringify({ name, role, batting, pitching }));
 }
 
 /** Returns a copy of `player` with its `sig` field stripped (export-only metadata). */
@@ -94,9 +88,9 @@ export function stripTeamPlayerSigs(team: CustomTeamDoc): CustomTeamDoc {
   };
 }
 
-/** Attaches a `sig` to every player in `players` using the team fingerprint. */
-function signPlayers(players: TeamPlayer[], teamFingerprint: string): TeamPlayer[] {
-  return players.map((p) => ({ ...stripPlayerSig(p), sig: buildPlayerSig(teamFingerprint, p) }));
+/** Attaches a `sig` to every player in `players`. */
+function signPlayers(players: TeamPlayer[]): TeamPlayer[] {
+  return players.map((p) => ({ ...stripPlayerSig(p), sig: buildPlayerSig(p) }));
 }
 
 /**
@@ -104,7 +98,7 @@ function signPlayers(players: TeamPlayer[], teamFingerprint: string): TeamPlayer
  *
  * Signing order (important — bundle sig must cover player sigs):
  *   1. Compute each team's fingerprint.
- *   2. Compute per-player sigs using the team fingerprint.
+ *   2. Compute per-player sigs over immutable player identity fields (name, role, stats).
  *   3. Compute the bundle-level sig over the whole payload (which now includes player sigs).
  */
 export function exportCustomTeams(teams: CustomTeamDoc[]): string {
@@ -112,12 +106,12 @@ export function exportCustomTeams(teams: CustomTeamDoc[]): string {
     const fingerprint = buildTeamFingerprint(team);
     return {
       ...team,
-      fingerprint, // always embed so import can verify player sigs
+      fingerprint, // always embed for team-level duplicate detection on import
       roster: {
         ...team.roster,
-        lineup: signPlayers(team.roster.lineup, fingerprint),
-        bench: signPlayers(team.roster.bench, fingerprint),
-        pitchers: signPlayers(team.roster.pitchers, fingerprint),
+        lineup: signPlayers(team.roster.lineup),
+        bench: signPlayers(team.roster.bench),
+        pitchers: signPlayers(team.roster.pitchers),
       },
     };
   });
@@ -188,7 +182,6 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
 
   // ── 2. Per-player signatures ───────────────────────────────────────────────
   (payload["teams"] as Record<string, unknown>[]).forEach((team, ti) => {
-    const fingerprint = team["fingerprint"] as string;
     const roster = team["roster"] as Record<string, unknown>;
     (["lineup", "bench", "pitchers"] as const).forEach((slot) => {
       const slotValue = roster[slot] ?? [];
@@ -196,7 +189,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
         throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
       }
       (slotValue as TeamPlayerWithSig[]).forEach((player, pi) => {
-        const expectedPlayerSig = buildPlayerSig(fingerprint, player);
+        const expectedPlayerSig = buildPlayerSig(player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(
             `Team[${ti}] ${slot}[${pi}] player signature mismatch — ` +
@@ -270,9 +263,8 @@ export function importCustomTeams(
   // Pre-compute player sigs for all existing players so we can detect duplicates.
   const existingPlayerSigs = new Set<string>();
   for (const t of existingTeams) {
-    const fp = t.fingerprint ?? buildTeamFingerprint(t);
     for (const p of [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers]) {
-      existingPlayerSigs.add(buildPlayerSig(fp, p));
+      existingPlayerSigs.add(buildPlayerSig(p));
     }
   }
 
@@ -300,7 +292,6 @@ export function importCustomTeams(
     let anyIdCollision = false;
 
     // ── Duplicate player detection (before ID remapping, using sigs from export) ──
-    const teamFp = incomingFp;
     const allSlotPlayers: { player: TeamPlayer; slot: string }[] = [
       ...team.roster.lineup.map((p) => ({ player: p, slot: "lineup" })),
       ...(team.roster.bench ?? []).map((p) => ({ player: p, slot: "bench" })),
@@ -308,7 +299,7 @@ export function importCustomTeams(
     ];
     for (const { player } of allSlotPlayers) {
       // Use the sig embedded in the export; fall back to computing it if absent.
-      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(teamFp, player);
+      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
       if (existingPlayerSigs.has(pSig)) {
         duplicatePlayerWarnings.push(
           `Player "${player.name}" in "${team.name}" may already exist in your teams.`,

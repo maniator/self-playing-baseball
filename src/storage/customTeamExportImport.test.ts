@@ -90,48 +90,40 @@ describe("buildTeamFingerprint", () => {
 
 describe("buildPlayerSig", () => {
   it("returns an 8-char hex string", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    expect(buildPlayerSig(fp, team.roster.lineup[0])).toMatch(/^[0-9a-f]{8}$/);
+    const p = makePlayer();
+    expect(buildPlayerSig(p)).toMatch(/^[0-9a-f]{8}$/);
   });
 
   it("is stable for the same inputs", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    const p = team.roster.lineup[0];
-    expect(buildPlayerSig(fp, p)).toBe(buildPlayerSig(fp, p));
-  });
-
-  it("differs when the player id changes", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    const p = team.roster.lineup[0];
-    expect(buildPlayerSig(fp, { ...p, id: "p_other" })).not.toBe(buildPlayerSig(fp, p));
+    const p = makePlayer();
+    expect(buildPlayerSig(p)).toBe(buildPlayerSig(p));
   });
 
   it("differs when batting stats change", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    const p = team.roster.lineup[0];
+    const p = makePlayer();
     const pAltered = { ...p, batting: { ...p.batting, contact: 99 } };
-    expect(buildPlayerSig(fp, pAltered)).not.toBe(buildPlayerSig(fp, p));
+    expect(buildPlayerSig(pAltered)).not.toBe(buildPlayerSig(p));
   });
 
-  it("differs when the team fingerprint changes", () => {
-    const teamA = makeTeam({ name: "Alpha" });
-    const teamB = makeTeam({ name: "Beta" });
-    const p = teamA.roster.lineup[0];
-    expect(buildPlayerSig(buildTeamFingerprint(teamA), p)).not.toBe(
-      buildPlayerSig(buildTeamFingerprint(teamB), p),
-    );
+  it("differs when player name changes", () => {
+    const p = makePlayer();
+    expect(buildPlayerSig({ ...p, name: "Bob" })).not.toBe(buildPlayerSig(p));
   });
 
-  it("does NOT depend on player name (name tracked by team fingerprint)", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    const p = team.roster.lineup[0];
-    // Changing the name alone should not change the player sig
-    expect(buildPlayerSig(fp, { ...p, name: "Bob" })).toBe(buildPlayerSig(fp, p));
+  it("does NOT depend on player id (id is remapped on import and must not affect dup detection)", () => {
+    const p = makePlayer();
+    expect(buildPlayerSig({ ...p, id: "p_other" })).toBe(buildPlayerSig(p));
+  });
+
+  it("does NOT depend on team (sig is team-independent so players can move between teams)", () => {
+    const p = makePlayer();
+    // Same player in two different teams must produce the same sig
+    expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));
+  });
+
+  it("does NOT depend on position (position is editable after creation)", () => {
+    const p = makePlayer();
+    expect(buildPlayerSig({ ...p, position: "DH" })).toBe(buildPlayerSig(p));
   });
 });
 
@@ -241,9 +233,8 @@ describe("parseExportedCustomTeams", () => {
   });
 
   it("throws when a team is missing required id", () => {
-    const fp = buildTeamFingerprint(makeTeam());
-    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
-    const team = { name: "No ID", source: "custom", fingerprint: fp, roster: { lineup: [player] } };
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = { name: "No ID", source: "custom", fingerprint: "aabbccdd", roster: { lineup: [player] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -497,9 +488,8 @@ describe("importCustomTeams", () => {
 
 describe("parseExportedCustomTeams — roster constraint validation", () => {
   it("throws when a team is missing required name", () => {
-    const fp = buildTeamFingerprint(makeTeam());
-    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
-    const team = { id: "ct1", source: "custom", fingerprint: fp, roster: { lineup: [player] } };
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = { id: "ct1", source: "custom", fingerprint: "aabbccdd", roster: { lineup: [player] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -507,9 +497,8 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
   });
 
   it("throws when a team is missing required source", () => {
-    const fp = buildTeamFingerprint(makeTeam());
-    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
-    const team = { id: "ct1", name: "T", fingerprint: fp, roster: { lineup: [player] } };
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = { id: "ct1", name: "T", fingerprint: "aabbccdd", roster: { lineup: [player] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });

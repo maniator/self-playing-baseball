@@ -53,7 +53,7 @@ describe("PlayerStatFields", () => {
     render(
       <PlayerStatFields player={makeHitter(30, 30, 30)} isPitcher={false} onChange={vi.fn()} />,
     );
-    expect(screen.getByText(`Total: 90 / ${HITTER_STAT_CAP} (60 remaining)`)).toBeInTheDocument();
+    expect(screen.getByText(`Total: 90 / ${HITTER_STAT_CAP}`)).toBeInTheDocument();
   });
 
   it("shows hitter over-cap warning when over cap", () => {
@@ -68,7 +68,7 @@ describe("PlayerStatFields", () => {
     render(
       <PlayerStatFields player={makePitcher(40, 40, 40)} isPitcher={true} onChange={vi.fn()} />,
     );
-    expect(screen.getByText(`Total: 120 / ${PITCHER_STAT_CAP} (40 remaining)`)).toBeInTheDocument();
+    expect(screen.getByText(`Total: 120 / ${PITCHER_STAT_CAP}`)).toBeInTheDocument();
   });
 
   it("shows pitcher over-cap warning when over cap", () => {
@@ -93,13 +93,68 @@ describe("PlayerStatFields", () => {
     render(
       <PlayerStatFields player={makeHitter(50, 50, 50)} isPitcher={false} onChange={vi.fn()} />,
     );
-    expect(screen.getByText(`Total: 150 / ${HITTER_STAT_CAP} (0 remaining)`)).toBeInTheDocument();
+    expect(screen.getByText(`Total: 150 / ${HITTER_STAT_CAP}`)).toBeInTheDocument();
   });
 
   it("shows 0 remaining when pitcher is exactly at cap", () => {
     render(
       <PlayerStatFields player={makePitcher(53, 53, 54)} isPitcher={true} onChange={vi.fn()} />,
     );
-    expect(screen.getByText(`Total: 160 / ${PITCHER_STAT_CAP} (0 remaining)`)).toBeInTheDocument();
+    expect(screen.getByText(`Total: 160 / ${PITCHER_STAT_CAP}`)).toBeInTheDocument();
+  });
+
+  describe("isExistingPlayer=true (stats locked after creation)", () => {
+    it("renders sliders as disabled", () => {
+      render(
+        <PlayerStatFields
+          player={makeHitter(40, 40, 40)}
+          isPitcher={false}
+          isExistingPlayer={true}
+          onChange={vi.fn()}
+        />,
+      );
+      expect(screen.getByLabelText(/contact/i)).toBeDisabled();
+      expect(screen.getByLabelText(/power/i)).toBeDisabled();
+      expect(screen.getByLabelText(/speed/i)).toBeDisabled();
+    });
+
+    it("shows locked hint", () => {
+      render(
+        <PlayerStatFields
+          player={makeHitter(40, 40, 40)}
+          isPitcher={false}
+          isExistingPlayer={true}
+          onChange={vi.fn()}
+        />,
+      );
+      expect(screen.getByText(/stats are locked after creation/i)).toBeInTheDocument();
+    });
+
+    it("does not show over-cap warning even when over cap", () => {
+      render(
+        <PlayerStatFields
+          player={makeHitter(60, 60, 60)}
+          isPitcher={false}
+          isExistingPlayer={true}
+          onChange={vi.fn()}
+        />,
+      );
+      expect(screen.queryByText(/over cap/i)).not.toBeInTheDocument();
+    });
+
+    it("does not call onChange when slider is changed (disabled)", () => {
+      const onChange = vi.fn();
+      render(
+        <PlayerStatFields
+          player={makeHitter(30, 30, 30)}
+          isPitcher={false}
+          isExistingPlayer={true}
+          onChange={onChange}
+        />,
+      );
+      const contactSlider = screen.getByLabelText(/contact/i);
+      fireEvent.change(contactSlider, { target: { value: "99" } });
+      expect(onChange).not.toHaveBeenCalled();
+    });
   });
 });
