@@ -6,10 +6,13 @@
  * 2. Home buttons remain actionable after returning from New Game or Load Saved
  * 3. Load Saved Game from fresh Home does NOT create a phantom game
  * 4. "Save current game" is gated — only shown when a real game session exists
+ * 5. New game after a finished game must not replay end-of-game state
  */
 import { expect, test } from "@playwright/test";
 
 import {
+  configureNewGame,
+  loadFixture,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
@@ -269,5 +272,58 @@ test.describe("Save current game gating", () => {
     // Re-open saves — save button must be present since a save was loaded.
     await openSavesModal(page);
     await expect(page.getByTestId("save-game-button")).toBeVisible({ timeout: 5_000 });
+  });
+});
+
+// ─── 5. New game after finished game ─────────────────────────────────────────
+
+test.describe("New game after finished game — no end-of-game state replay", () => {
+  test("loading a finished-game fixture then starting a new game shows fresh state", async ({
+    page,
+  }) => {
+    // Import the finished-game fixture (gameOver=true, inning 9, score 3-5).
+    await loadFixture(page, "finished-game.json");
+
+    // The FINAL banner must be present — confirming the fixture loaded correctly.
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: 10_000 });
+
+    // Navigate back to Home.
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Start a brand-new game from Home.
+    await page.getByTestId("home-new-game-button").click();
+    // configureNewGame switches to the MLB tab (exhibition setup defaults to Custom Teams;
+    // with no custom teams defined, Play Ball would trigger a validation error instead of
+    // starting the game — causing the scoreboard to never appear).
+    await configureNewGame(page);
+    await page.getByTestId("play-ball-button").click();
+
+    // Wait for the game to be active (scoreboard visible) — then assert fresh state.
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+
+    // Positive assertion: the game is in progress, not finished.
+    // FINAL only renders when gameOver=true; its absence proves the finished-game
+    // state was NOT restored on top of the new session.
+    const finalText = page.getByText("FINAL");
+    const isFinalVisible = await finalText.isVisible();
+    expect(isFinalVisible, "FINAL banner must not be visible after starting a new game").toBe(
+      false,
+    );
+
+    // Scoreboard must reflect a fresh start: both teams' run totals in the R column are 0.
+    const scoreboard = page.getByTestId("scoreboard");
+    const awayRow = scoreboard.getByRole("row").nth(1);
+    const homeRow = scoreboard.getByRole("row").nth(2);
+
+    const awayRunsText = (await awayRow.getByRole("cell").last().textContent())?.trim();
+    const homeRunsText = (await homeRow.getByRole("cell").last().textContent())?.trim();
+
+    expect(awayRunsText, "Away team run total should be 0 at the start of a brand-new game").toBe(
+      "0",
+    );
+    expect(homeRunsText, "Home team run total should be 0 at the start of a brand-new game").toBe(
+      "0",
+    );
   });
 });

@@ -85,8 +85,10 @@ const GameInner: React.FunctionComponent<Props> = ({
   const { saves, createSave } = useSaveStore();
 
   // Set rxAutoSave once when the first seed-matched save appears in the reactive list.
-  // Skip auto-restore when navigating via "Load Saved Game" — the user will pick from the modal.
-  const restoredRef = React.useRef(false);
+  // Skip auto-restore when navigating via "Load Saved Game" — the user explicitly chose a save.
+  // Also skip when a fresh new game is pending — pendingGameSetup takes precedence over any
+  // existing save so the finished-game state is never replayed on top of the new session.
+  const restoredRef = React.useRef(pendingGameSetup != null || pendingLoadSave != null);
   const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
   React.useEffect(() => {
     if (restoredRef.current) return;
@@ -205,6 +207,9 @@ const GameInner: React.FunctionComponent<Props> = ({
     if (!pendingGameSetup) return;
     if (pendingGameSetup === prevPendingSetup.current) return;
     prevPendingSetup.current = pendingGameSetup;
+    // Prevent auto-resume from overwriting this fresh session even if RxDB saves
+    // load asynchronously after this effect fires.
+    restoredRef.current = true;
     handleStartRef.current(
       pendingGameSetup.homeTeam,
       pendingGameSetup.awayTeam,
