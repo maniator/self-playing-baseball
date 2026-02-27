@@ -40,21 +40,27 @@ export interface ImportCustomTeamsResult {
 }
 
 /**
- * Builds a stable content fingerprint for a team (excludes id so it survives re-import).
- * Covers only team-identity fields (name + abbreviation, case-insensitive).
+ * Builds a stable seed-based fingerprint for a team (excludes id so it survives re-import).
+ * Covers only team-identity fields (name + abbreviation, case-insensitive) plus the
+ * per-team random seed generated at creation time.
  * Roster changes do NOT affect the fingerprint — the same team remains the same
  * fingerprint after trades, roster edits, or any player moves.
  * Used for team-level duplicate detection on import.
+ * The `teamSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  */
-export function buildTeamFingerprint(team: CustomTeamDoc): string {
+export function buildTeamFingerprint(
+  team: Pick<CustomTeamDoc, "name" | "abbreviation" | "teamSeed">,
+): string {
+  const seed = team.teamSeed ?? "";
   const key = team.name.toLowerCase() + "|" + (team.abbreviation ?? "").toLowerCase();
-  return fnv1a(key);
+  return fnv1a(seed + key);
 }
 
 /**
- * Computes a content-based integrity signature for a single player.
+ * Computes a seed-based integrity signature for a single player.
  * Covers only the player's immutable identity fields: name, role, and stats
- * (batting for hitters; pitching for pitchers).
+ * (batting for hitters; pitching for pitchers), plus the per-player random seed
+ * generated at creation time.
  *
  * Design notes:
  *   - `id` is intentionally excluded: IDs are remapped on import collision and must
@@ -65,15 +71,19 @@ export function buildTeamFingerprint(team: CustomTeamDoc): string {
  *   - For pure hitters `pitching` is `undefined`. `JSON.stringify` omits `undefined` values
  *     consistently on both the export side and the re-import side, so the sig is
  *     deterministic across round-trips with no special normalisation needed.
+ *   - `playerSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  *
  * The sig serves two purposes:
  *   1. Tamper detection: any post-export mutation of name or stats is detectable on import.
  *   2. Duplicate detection: a player whose sig matches one already in the DB is a likely
  *      duplicate even if imported to a different team or with a remapped ID.
  */
-export function buildPlayerSig(player: TeamPlayer): string {
+export function buildPlayerSig(
+  player: Pick<TeamPlayer, "name" | "role" | "batting" | "pitching" | "playerSeed">,
+): string {
+  const seed = player.playerSeed ?? "";
   const { name, role, batting, pitching } = player;
-  return fnv1a(JSON.stringify({ name, role, batting, pitching }));
+  return fnv1a(seed + JSON.stringify({ name, role, batting, pitching }));
 }
 
 /** Returns a copy of `player` with its `sig` field stripped (export-only metadata). */

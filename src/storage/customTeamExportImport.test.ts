@@ -99,6 +99,24 @@ describe("buildTeamFingerprint", () => {
     };
     expect(buildTeamFingerprint(base)).toBe(buildTeamFingerprint(differentRoster));
   });
+
+  it("differs when teamSeed changes (same name and abbreviation)", () => {
+    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-aaa" });
+    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-bbb" });
+    expect(buildTeamFingerprint(a)).not.toBe(buildTeamFingerprint(b));
+  });
+
+  it("is stable for the same teamSeed, name, and abbreviation", () => {
+    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
+    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
+    expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
+  });
+
+  it("falls back gracefully when teamSeed is absent (legacy bundles)", () => {
+    const team = makeTeam({ name: "Legacy", abbreviation: "LGC" });
+    // No teamSeed — must not throw and must return an 8-char hex string
+    expect(buildTeamFingerprint(team)).toMatch(/^[0-9a-f]{8}$/);
+  });
 });
 
 // ── buildPlayerSig ───────────────────────────────────────────────────────────
@@ -139,6 +157,24 @@ describe("buildPlayerSig", () => {
   it("does NOT depend on position (position is editable after creation)", () => {
     const p = makePlayer();
     expect(buildPlayerSig({ ...p, position: "DH" })).toBe(buildPlayerSig(p));
+  });
+
+  it("differs when playerSeed changes (same content)", () => {
+    const p = makePlayer();
+    expect(buildPlayerSig({ ...p, playerSeed: "seed-aaa" })).not.toBe(
+      buildPlayerSig({ ...p, playerSeed: "seed-bbb" }),
+    );
+  });
+
+  it("is stable for the same playerSeed and content", () => {
+    const p = makePlayer({ playerSeed: "stableABC123" });
+    expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));
+  });
+
+  it("falls back gracefully when playerSeed is absent (legacy bundles)", () => {
+    const p = makePlayer();
+    // No playerSeed — must not throw and must return 8-char hex
+    expect(buildPlayerSig(p)).toMatch(/^[0-9a-f]{8}$/);
   });
 });
 

@@ -150,7 +150,10 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   // Each player's fingerprint is a FNV-1a hash of {name, role, batting, pitching},
   // enabling O(1) global duplicate detection without re-reading all teams on every
   // check. Migration backfills fingerprints for all players in existing documents.
-  version: 2,
+  //
+  // Version 3: adds `teamSeed` and per-player `playerSeed` for instance-unique fingerprints.
+  // Migration backfills random seeds for all existing docs and recomputes fingerprints.
+  version: 3,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -175,6 +178,12 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
      * Computed by `buildTeamFingerprint` from `customTeamExportImport.ts`.
      */
     fingerprint: { type: "string", maxLength: 8 },
+    /**
+     * Random seed generated once at team creation. Stored permanently so the
+     * fingerprint (fnv1a(teamSeed + name + abbreviation)) can be re-verified.
+     * Absent on documents created before schema v3 — backfilled by v2→v3 migration.
+     */
+    teamSeed: { type: "string", maxLength: 32 },
   },
   required: [
     "id",
@@ -269,6 +278,72 @@ async function initDb(
                   : roster["bench"],
                 pitchers: Array.isArray(roster["pitchers"])
                   ? roster["pitchers"].map(addFp)
+                  : roster["pitchers"],
+              },
+            };
+          } catch {
+            // Migration must never throw — return unchanged doc as a safe fallback.
+            return oldDoc;
+          }
+        },
+        // Backfill teamSeed and per-player playerSeed for seed-based instance fingerprints.
+        // Uses Math.random()-derived seeds (~93 bits of entropy) because migration
+        // strategies must be pure synchronous functions — they cannot `import` other
+        // modules or call async APIs, so `generateSeed()` from `generateId.ts` (which
+        // relies on `nanoid`) cannot be used here.
+        3: (oldDoc: Record<string, unknown>) => {
+          try {
+            // Inline fallback seed generator — synchronous, no module dependencies.
+            // Two Math.random() calls give ~18 base-36 chars ≈ 93 bits of entropy,
+            // which is sufficient for a migration backfill where CSPRNG is unavailable.
+            const fallbackSeed = (): string =>
+              Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
+
+            // Backfill teamSeed and recompute team fingerprint.
+            const teamSeed = (oldDoc["teamSeed"] as string | undefined) ?? fallbackSeed();
+            const teamFingerprint = fnv1a(
+              teamSeed +
+                ((oldDoc["name"] as string | undefined) ?? "").toLowerCase() +
+                "|" +
+                ((oldDoc["abbreviation"] as string | undefined) ?? "").toLowerCase(),
+            );
+
+            // Backfill playerSeed and recompute each player's fingerprint.
+            const addSeed = (player: unknown): unknown => {
+              if (!player || typeof player !== "object") return player;
+              const p = player as Record<string, unknown>;
+              const playerSeed = (p["playerSeed"] as string | undefined) ?? fallbackSeed();
+              const { name, role, batting, pitching } = p as {
+                name?: string;
+                role?: string;
+                batting?: Record<string, number>;
+                pitching?: Record<string, number>;
+              };
+              const fingerprint = fnv1a(
+                playerSeed + JSON.stringify({ name, role, batting, pitching }),
+              );
+              return { ...p, playerSeed, fingerprint };
+            };
+
+            const roster = oldDoc["roster"] as Record<string, unknown> | undefined;
+            if (!roster || typeof roster !== "object") {
+              return { ...oldDoc, teamSeed, fingerprint: teamFingerprint };
+            }
+
+            return {
+              ...oldDoc,
+              teamSeed,
+              fingerprint: teamFingerprint,
+              roster: {
+                ...roster,
+                lineup: Array.isArray(roster["lineup"])
+                  ? roster["lineup"].map(addSeed)
+                  : roster["lineup"],
+                bench: Array.isArray(roster["bench"])
+                  ? roster["bench"].map(addSeed)
+                  : roster["bench"],
+                pitchers: Array.isArray(roster["pitchers"])
+                  ? roster["pitchers"].map(addSeed)
                   : roster["pitchers"],
               },
             };

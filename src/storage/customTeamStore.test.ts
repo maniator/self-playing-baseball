@@ -576,3 +576,72 @@ describe("createCustomTeam — name uniqueness", () => {
     expect(id1).not.toBe(id2);
   });
 });
+
+describe("createCustomTeam — teamSeed", () => {
+  it("sets a non-empty teamSeed on create", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Seeded Team" }));
+    const team = await store.getCustomTeam(id);
+    expect(typeof team?.teamSeed).toBe("string");
+    expect(team!.teamSeed!.length).toBeGreaterThan(0);
+  });
+
+  it("generates a unique teamSeed for each team", async () => {
+    const id1 = await store.createCustomTeam(makeInput({ name: "Seed Team 1" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Seed Team 2" }));
+    const t1 = await store.getCustomTeam(id1);
+    const t2 = await store.getCustomTeam(id2);
+    expect(t1?.teamSeed).not.toBe(t2?.teamSeed);
+  });
+});
+
+describe("createCustomTeam — playerSeed", () => {
+  it("sets a non-empty playerSeed on each player when team is created", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Player Seed Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_s1", name: "Seeded Batter" })],
+          bench: [],
+          pitchers: [
+            makePlayer({
+              id: "p_s2",
+              name: "Seeded Pitcher",
+              role: "pitcher",
+              pitching: { velocity: 80, control: 70, movement: 65 },
+            }),
+          ],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(id);
+    const batter = team?.roster.lineup[0];
+    const pitcher = team?.roster.pitchers[0];
+    expect(typeof batter?.playerSeed).toBe("string");
+    expect(batter!.playerSeed!.length).toBeGreaterThan(0);
+    expect(typeof pitcher?.playerSeed).toBe("string");
+    expect(pitcher!.playerSeed!.length).toBeGreaterThan(0);
+  });
+});
+
+describe("updateCustomTeam — teamSeed preservation", () => {
+  it("preserves the original teamSeed after name update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Preserve Seed" }));
+    const before = await store.getCustomTeam(id);
+    const originalSeed = before?.teamSeed;
+    expect(originalSeed).toBeTruthy();
+
+    await store.updateCustomTeam(id, { name: "Preserve Seed Renamed" });
+    const after = await store.getCustomTeam(id);
+    expect(after?.teamSeed).toBe(originalSeed);
+  });
+
+  it("preserves the original teamSeed after metadata-only update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Meta Seed Team" }));
+    const before = await store.getCustomTeam(id);
+    const originalSeed = before?.teamSeed;
+
+    await store.updateCustomTeam(id, { metadata: { notes: "updated notes" } });
+    const after = await store.getCustomTeam(id);
+    expect(after?.teamSeed).toBe(originalSeed);
+  });
+});

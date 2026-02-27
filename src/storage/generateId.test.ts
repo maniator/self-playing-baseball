@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { generatePlayerId, generateSaveId, generateTeamId } from "./generateId";
+import { generatePlayerId, generateSaveId, generateSeed, generateTeamId } from "./generateId";
 
 describe("generateTeamId", () => {
   it("starts with ct_ prefix", () => {
@@ -48,6 +48,29 @@ describe("generateSaveId", () => {
   it("stays within RxDB schema maxLength of 128", () => {
     for (let i = 0; i < 20; i++) {
       expect(generateSaveId().length).toBeLessThanOrEqual(128);
+    }
+  });
+});
+
+describe("generateSeed", () => {
+  it("returns a non-empty string", () => {
+    const seed = generateSeed();
+    expect(typeof seed).toBe("string");
+    expect(seed.length).toBeGreaterThan(0);
+  });
+
+  it("is 16 characters long", () => {
+    expect(generateSeed().length).toBe(16);
+  });
+
+  it("is unique across calls", () => {
+    const seeds = new Set(Array.from({ length: 100 }, () => generateSeed()));
+    expect(seeds.size).toBe(100);
+  });
+
+  it("contains only URL-safe characters", () => {
+    for (let i = 0; i < 20; i++) {
+      expect(generateSeed()).toMatch(/^[A-Za-z0-9_-]+$/);
     }
   });
 });

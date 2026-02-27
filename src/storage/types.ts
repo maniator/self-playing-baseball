@@ -127,6 +127,13 @@ export interface TeamPlayer {
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
   /**
+   * Random seed generated once at player creation. Stored permanently so the
+   * fingerprint can be re-verified. Travels in export bundles so re-imported
+   * players retain their identity. Absent on documents created before schema v3
+   * (backfilled by the v2→v3 migration).
+   */
+  playerSeed?: string;
+  /**
    * Persistent FNV-1a content fingerprint stored in the DB.
    * Covers the player's immutable identity fields: `name`, `role`, `batting`, and `pitching`.
    * Used for global duplicate detection across all teams in the local install.
@@ -193,6 +200,12 @@ export interface CustomTeamDoc {
   statsProfile?: string;
   /** FNV-1a fingerprint of name+abbreviation (case-insensitive) — used for duplicate detection on import. Roster changes do not affect the fingerprint so re-importing the same team after roster edits still deduplicates correctly. */
   fingerprint?: string;
+  /**
+   * Random seed generated once at team creation. Stored permanently so the
+   * fingerprint can be re-verified. Travels in export bundles.
+   * Absent on documents created before schema v3 (backfilled by the v2→v3 migration).
+   */
+  teamSeed?: string;
 }
 
 /** Input shape for creating a new custom team. */

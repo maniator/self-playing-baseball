@@ -188,9 +188,9 @@ describe("schema version and reset flag", () => {
     await testDb.close();
   });
 
-  it("customTeams collection has schema version 2", async () => {
+  it("customTeams collection has schema version 3", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.customTeams.schema.version).toBe(2);
+    expect(testDb.customTeams.schema.version).toBe(3);
     await testDb.close();
   });
 
@@ -465,7 +465,9 @@ describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)",
     // Optional fields not present on the legacy doc are absent — use toBeFalsy so
     // the assertion passes regardless of whether RxDB returns undefined or null.
     expect(doc?.abbreviation).toBeFalsy();
-    expect(doc?.fingerprint).toBeFalsy();
+    // After the v2→v3 migration, teamSeed is backfilled and the team fingerprint
+    // is (re)computed from the seed. So fingerprint IS now truthy post-migration.
+    expect(doc?.fingerprint).toMatch(/^[0-9a-f]{8}$/);
     expect(doc?.roster).toMatchObject({ lineup: [expect.objectContaining({ name: "Alice" })] });
 
     await v1Db.close();
@@ -509,7 +511,8 @@ describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)",
     expect(doc, "migrated doc should exist").not.toBeNull();
     expect(doc?.name).toBe("Rockets");
     expect(doc?.abbreviation).toBe("ROC");
-    expect(doc?.fingerprint).toBeFalsy();
+    // After the v2→v3 migration, teamSeed is backfilled and fingerprint is recomputed.
+    expect(doc?.fingerprint).toMatch(/^[0-9a-f]{8}$/);
 
     await v1Db.close();
   });
@@ -639,7 +642,7 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
     await v2Db.close();
   });
 
-  it("migration is idempotent — players already fingerprinted are not changed", async () => {
+  it("migration is idempotent — players already fingerprinted get seed-based fingerprint in v3", async () => {
     const dbName = `ct_v1idem_${Math.random().toString(36).slice(2, 10)}`;
 
     const v1Db = await createRxDatabase({
@@ -683,10 +686,17 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
     const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
     const doc = await v2Db.customTeams.findOne("ct_idem").exec();
     const roster = doc?.roster as {
-      lineup: { fingerprint?: string }[];
+      lineup: { fingerprint?: string; playerSeed?: string }[];
     };
-    // Existing fingerprint must be preserved (not overwritten).
-    expect(roster.lineup[0].fingerprint).toBe(existingFp);
+    // Migration v2 would preserve existing fingerprints, but migration v3 always
+    // recomputes fingerprints using the new seed-based formula. So the old content-only
+    // fingerprint is replaced with a seed-based one.
+    expect(roster.lineup[0].fingerprint).toMatch(/^[0-9a-f]{8}$/);
+    // The old content-only fingerprint must NOT survive unchanged since migration 3
+    // recomputes with a seed prefix.
+    expect(roster.lineup[0].fingerprint).not.toBe(existingFp);
+    // Every player must have a playerSeed after migration 3.
+    expect(roster.lineup[0].playerSeed).toBeTruthy();
     await v2Db.close();
   });
 
@@ -734,6 +744,207 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
     const doc = await v2Db.customTeams.findOne("ct_sparse").exec();
     expect(doc).not.toBeNull();
     await v2Db.close();
+  });
+});
+
+/**
+ * Upgrade-path test for `customTeams` schema v2 → v3.
+ *
+ * Version 3 backfills `teamSeed` on the team doc and `playerSeed` on every
+ * roster player, then recomputes all fingerprints using the new seed-based formula.
+ */
+describe("schema migration: customTeams v2 → v3 (seed-based fingerprints)", () => {
+  /** The v2 schema (matches what was shipped at v2). */
+  const v2CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 2,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 128 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      createdAt: { type: "string", maxLength: 32 },
+      updatedAt: { type: "string", maxLength: 32 },
+      name: { type: "string", maxLength: 256 },
+      abbreviation: { type: "string", maxLength: 8 },
+      nickname: { type: "string", maxLength: 256 },
+      city: { type: "string", maxLength: 256 },
+      slug: { type: "string", maxLength: 256 },
+      source: { type: "string", enum: ["custom", "generated"], maxLength: 16 },
+      roster: { type: "object", additionalProperties: true },
+      metadata: { type: "object", additionalProperties: true },
+      statsProfile: { type: "string", maxLength: 64 },
+      fingerprint: { type: "string", maxLength: 8 },
+    },
+    required: [
+      "id",
+      "schemaVersion",
+      "createdAt",
+      "updatedAt",
+      "name",
+      "source",
+      "roster",
+      "metadata",
+    ],
+    indexes: ["updatedAt", "source"],
+  };
+
+  it("backfills teamSeed and playerSeed on migration from v2 to v3", async () => {
+    const dbName = `ct_v2v3_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── Step 1: Create a v2 DB with a doc lacking teamSeed / playerSeed ────────
+    const v2Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v2Db.addCollections({
+      customTeams: {
+        schema: v2CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc },
+      },
+    });
+    await v2Db.customTeams.insert({
+      id: "ct_v2team",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "V2 Team",
+      abbreviation: "V2T",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Alice",
+            role: "batter",
+            batting: { contact: 70, power: 60, speed: 50 },
+            fingerprint: "oldfp001",
+          },
+        ],
+        bench: [
+          {
+            id: "p2",
+            name: "Bob",
+            role: "batter",
+            batting: { contact: 55, power: 65, speed: 60 },
+            fingerprint: "oldfp002",
+          },
+        ],
+        pitchers: [
+          {
+            id: "p3",
+            name: "Carol",
+            role: "pitcher",
+            batting: { contact: 20, power: 10, speed: 15 },
+            pitching: { velocity: 80, control: 70, movement: 65 },
+            fingerprint: "oldfp003",
+          },
+        ],
+      },
+      metadata: { archived: false },
+    });
+    await v2Db.close();
+
+    // ── Step 2: Reopen with v3 schema (triggers v2→v3 migration) ───────────────
+    const v3Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    // ── Step 3: Verify migrated doc ─────────────────────────────────────────────
+    const doc = await v3Db.customTeams.findOne("ct_v2team").exec();
+    expect(doc, "migrated doc must exist").not.toBeNull();
+    expect(doc?.name).toBe("V2 Team");
+
+    // Team must have a non-empty teamSeed after migration.
+    const rawDoc = doc?.toJSON() as unknown as Record<string, unknown>;
+    expect(typeof rawDoc["teamSeed"]).toBe("string");
+    expect((rawDoc["teamSeed"] as string).length).toBeGreaterThan(0);
+
+    // Team fingerprint must be non-empty and 8 hex chars.
+    expect(typeof rawDoc["fingerprint"]).toBe("string");
+    expect(rawDoc["fingerprint"]).toMatch(/^[0-9a-f]{8}$/);
+
+    const roster = rawDoc["roster"] as {
+      lineup: { id: string; name: string; playerSeed?: string; fingerprint?: string }[];
+      bench: { id: string; name: string; playerSeed?: string; fingerprint?: string }[];
+      pitchers: { id: string; name: string; playerSeed?: string; fingerprint?: string }[];
+    };
+
+    // Every player must have a non-empty playerSeed after migration.
+    expect(typeof roster.lineup[0].playerSeed).toBe("string");
+    expect(roster.lineup[0].playerSeed!.length).toBeGreaterThan(0);
+    expect(typeof roster.bench[0].playerSeed).toBe("string");
+    expect(roster.bench[0].playerSeed!.length).toBeGreaterThan(0);
+    expect(typeof roster.pitchers[0].playerSeed).toBe("string");
+    expect(roster.pitchers[0].playerSeed!.length).toBeGreaterThan(0);
+
+    // Every player must have a non-empty fingerprint after migration.
+    expect(roster.lineup[0].fingerprint).toMatch(/^[0-9a-f]{8}$/);
+    expect(roster.bench[0].fingerprint).toMatch(/^[0-9a-f]{8}$/);
+    expect(roster.pitchers[0].fingerprint).toMatch(/^[0-9a-f]{8}$/);
+
+    // Player names and IDs must survive intact.
+    expect(roster.lineup[0].name).toBe("Alice");
+    expect(roster.lineup[0].id).toBe("p1");
+    expect(roster.bench[0].name).toBe("Bob");
+    expect(roster.pitchers[0].name).toBe("Carol");
+
+    await v3Db.close();
+  });
+
+  it("preserves existing teamSeed and playerSeed if already present (idempotent)", async () => {
+    const dbName = `ct_v2v3idem_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v2Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v2Db.addCollections({
+      customTeams: {
+        schema: v2CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc },
+      },
+    });
+    await v2Db.customTeams.insert({
+      id: "ct_v2idem",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Idem Team",
+      abbreviation: "IDM",
+      source: "custom",
+      teamSeed: "existingteamseed",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Dave",
+            role: "batter",
+            batting: { contact: 60, power: 60, speed: 60 },
+            playerSeed: "existingplayerseed",
+            fingerprint: "oldfp",
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v2Db.close();
+
+    const v3Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v3Db.customTeams.findOne("ct_v2idem").exec();
+    const rawDoc = doc?.toJSON() as unknown as Record<string, unknown>;
+
+    // Existing seeds must be preserved — not overwritten.
+    expect(rawDoc["teamSeed"]).toBe("existingteamseed");
+    const roster = rawDoc["roster"] as {
+      lineup: { playerSeed?: string }[];
+    };
+    expect(roster.lineup[0].playerSeed).toBe("existingplayerseed");
+
+    await v3Db.close();
   });
 });
 

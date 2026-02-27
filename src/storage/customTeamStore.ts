@@ -8,7 +8,7 @@ import {
   type ImportCustomTeamsResult,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
-import { generateTeamId } from "./generateId";
+import { generateSeed, generateTeamId } from "./generateId";
 import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
@@ -79,11 +79,14 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
       },
     }),
   };
+  // Preserve the existing playerSeed or generate a new one at creation time.
+  // The seed is stored permanently so the fingerprint can be re-verified.
+  const playerSeed = player.playerSeed ?? generateSeed();
   // Always persist a content fingerprint so global duplicate detection works
   // without re-reading all teams. The fingerprint covers the immutable identity
-  // fields (name, role, batting, pitching) — editable fields are excluded.
-  sanitized.fingerprint = buildPlayerSig(sanitized);
-  return sanitized;
+  // fields (name, role, batting, pitching) plus the per-player seed.
+  const fingerprint = buildPlayerSig({ ...sanitized, playerSeed });
+  return { ...sanitized, playerSeed, fingerprint };
 }
 
 function buildRoster(input: CreateCustomTeamInput["roster"]): TeamRoster {
@@ -140,15 +143,16 @@ function buildStore(getDbFn: GetDb) {
       const roster = buildRoster(input.roster);
       const now = new Date().toISOString();
       const id = meta?.id ?? generateTeamId();
+      const teamSeed = generateSeed();
+      const sanitizedAbbrev =
+        input.abbreviation !== undefined ? sanitizeAbbreviation(input.abbreviation) : undefined;
       const doc: CustomTeamDoc = {
         id,
         schemaVersion: SCHEMA_VERSION,
         createdAt: now,
         updatedAt: now,
         name,
-        ...(input.abbreviation !== undefined && {
-          abbreviation: sanitizeAbbreviation(input.abbreviation),
-        }),
+        ...(sanitizedAbbrev !== undefined && { abbreviation: sanitizedAbbrev }),
         ...(input.nickname !== undefined && { nickname: input.nickname }),
         ...(input.city !== undefined && { city: input.city }),
         ...(input.slug !== undefined && { slug: input.slug }),
@@ -160,6 +164,7 @@ function buildStore(getDbFn: GetDb) {
           archived: input.metadata?.archived ?? false,
         },
         ...(input.statsProfile !== undefined && { statsProfile: input.statsProfile }),
+        teamSeed,
       };
       doc.fingerprint = buildTeamFingerprint(doc);
       const db = await getDbFn();
