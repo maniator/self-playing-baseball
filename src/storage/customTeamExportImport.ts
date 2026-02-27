@@ -218,6 +218,9 @@ function remapPlayerIds(
       existingPlayerIds.add(newId);
       return { ...p, id: newId };
     }
+    // Mark as in-use so later slots in the same team cannot reuse this ID,
+    // preventing intra-team cross-slot duplicate player IDs after import.
+    existingPlayerIds.add(p.id);
     return p;
   });
   return { players: remapped, hadCollision };

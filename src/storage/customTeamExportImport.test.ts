@@ -430,6 +430,54 @@ describe("importCustomTeams", () => {
   it("throws on malformed JSON", () => {
     expect(() => importCustomTeams("bad", [])).toThrow("Invalid JSON");
   });
+
+  it("remaps cross-slot intra-team duplicate player IDs (no duplicate IDs in output roster)", () => {
+    // Both lineup and bench share the same player ID; bench player must be remapped.
+    const sharedId = "p_dupe";
+    const incoming = makeTeam({
+      id: "ct_intra",
+      name: "Intra Dupe Team",
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer({ id: sharedId, name: "Player A" })],
+        bench: [makePlayer({ id: sharedId, name: "Player B", role: "batter" })],
+        pitchers: [],
+      },
+    });
+    let n = 0;
+    const result = importCustomTeams(exportCustomTeams([incoming]), [], {
+      makePlayerId: () => `p_gen_${n++}`,
+    });
+    const t = result.teams[0];
+    const allIds = [
+      ...t.roster.lineup.map((p) => p.id),
+      ...t.roster.bench.map((p) => p.id),
+      ...t.roster.pitchers.map((p) => p.id),
+    ];
+    // All IDs within the roster must be unique
+    expect(new Set(allIds).size).toBe(allIds.length);
+    // The bench player (second occurrence of the shared ID) must have been remapped
+    expect(t.roster.bench[0].id).not.toBe(sharedId);
+    // The lineup player (first occurrence) keeps the original ID
+    expect(t.roster.lineup[0].id).toBe(sharedId);
+  });
+
+  it("player sig is used only for duplicate detection — not as primary identity key", () => {
+    // After import, the primary identity is player.id, not the sig.
+    // The sig must be stripped from the output (not stored in DB).
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer({ id: "p_identity", name: "Identity Check" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const result = importCustomTeams(exportCustomTeams([team]), []);
+    const player = result.teams[0].roster.lineup[0];
+    expect(player.id).toBe("p_identity");
+    expect("sig" in player).toBe(false);
+  });
 });
 
 // ── Import validation: roster constraints and required fields ─────────────────
