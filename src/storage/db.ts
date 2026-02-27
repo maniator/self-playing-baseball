@@ -13,6 +13,7 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 
 import { appLog } from "@utils/logger";
 
+import { fnv1a } from "./hash";
 import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
 
 type DbCollections = {
@@ -144,7 +145,12 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   // property) and `fingerprint` (new in the import/export stage — computed via FNV-1a
   // over name+abbreviation (case-insensitive), used for duplicate detection on import).
   // Both fields are optional so the identity migration is safe for all existing docs.
-  version: 1,
+  //
+  // Version 2: adds `fingerprint` to every player embedded in the roster.
+  // Each player's fingerprint is a FNV-1a hash of {name, role, batting, pitching},
+  // enabling O(1) global duplicate detection without re-reading all teams on every
+  // check. Migration backfills fingerprints for all players in existing documents.
+  version: 2,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -223,6 +229,46 @@ async function initDb(
         // Existing docs without them remain valid; `fingerprint` will be computed
         // and stored on the next write (team update or import). No data loss.
         1: (oldDoc) => oldDoc,
+        // Backfill player fingerprints: each player gets a persistent FNV-1a hash
+        // covering {name, role, batting, pitching} so global duplicate detection
+        // works without re-reading all teams on every query.
+        // The FNV-1a function is inlined here so the migration has no module
+        // dependency beyond `./hash` (already imported in db.ts).
+        2: (oldDoc: Record<string, unknown>) => {
+          try {
+            const roster = oldDoc["roster"] as Record<string, unknown> | undefined;
+            if (!roster || typeof roster !== "object") return oldDoc;
+
+            const addFp = (player: unknown): unknown => {
+              if (!player || typeof player !== "object") return player;
+              const p = player as Record<string, unknown>;
+              // Already fingerprinted — skip.
+              if (p["fingerprint"]) return p;
+              const fp = fnv1a(
+                JSON.stringify({
+                  name: p["name"],
+                  role: p["role"],
+                  batting: p["batting"],
+                  pitching: p["pitching"],
+                }),
+              );
+              return { ...p, fingerprint: fp };
+            };
+
+            return {
+              ...oldDoc,
+              roster: {
+                ...roster,
+                lineup: (Array.isArray(roster["lineup"]) ? roster["lineup"] : []).map(addFp),
+                bench: (Array.isArray(roster["bench"]) ? roster["bench"] : []).map(addFp),
+                pitchers: (Array.isArray(roster["pitchers"]) ? roster["pitchers"] : []).map(addFp),
+              },
+            };
+          } catch {
+            // Migration must never throw — return unchanged doc as a safe fallback.
+            return oldDoc;
+          }
+        },
       },
     },
   });

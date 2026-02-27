@@ -188,9 +188,9 @@ describe("schema version and reset flag", () => {
     await testDb.close();
   });
 
-  it("customTeams collection has schema version 1", async () => {
+  it("customTeams collection has schema version 2", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.customTeams.schema.version).toBe(1);
+    expect(testDb.customTeams.schema.version).toBe(2);
     await testDb.close();
   });
 
@@ -512,6 +512,213 @@ describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)",
     expect(doc?.fingerprint).toBeFalsy();
 
     await v1Db.close();
+  });
+});
+
+/**
+ * Upgrade-path test for `customTeams` schema v1 → v2.
+ *
+ * Version 2 backfills a persistent `fingerprint` field on every roster player.
+ * The fingerprint is a FNV-1a hash of {name, role, batting, pitching} and enables
+ * O(1) global duplicate detection without re-reading all teams.
+ */
+describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => {
+  /** The v1 schema (abbreviated to match what was shipped). */
+  const v1CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 1,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 128 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      createdAt: { type: "string", maxLength: 32 },
+      updatedAt: { type: "string", maxLength: 32 },
+      name: { type: "string", maxLength: 256 },
+      abbreviation: { type: "string", maxLength: 8 },
+      nickname: { type: "string", maxLength: 256 },
+      city: { type: "string", maxLength: 256 },
+      slug: { type: "string", maxLength: 256 },
+      source: { type: "string", enum: ["custom", "generated"], maxLength: 16 },
+      roster: { type: "object", additionalProperties: true },
+      metadata: { type: "object", additionalProperties: true },
+      statsProfile: { type: "string", maxLength: 64 },
+      fingerprint: { type: "string", maxLength: 8 },
+    },
+    required: [
+      "id",
+      "schemaVersion",
+      "createdAt",
+      "updatedAt",
+      "name",
+      "source",
+      "roster",
+      "metadata",
+    ],
+    indexes: ["updatedAt", "source"],
+  };
+
+  it("backfills player fingerprints on migration from v1 to v2", async () => {
+    const dbName = `ct_v1v2_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Create a v1 DB with players that have no fingerprint.
+    const v1Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v1Db.addCollections({
+      customTeams: {
+        schema: v1CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc },
+      },
+    });
+    await v1Db.customTeams.insert({
+      id: "ct_v1team",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "V1 Team",
+      abbreviation: "V1T",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          { id: "p1", name: "Alice", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+        ],
+        bench: [
+          { id: "p2", name: "Carol", role: "batter", batting: { contact: 55, power: 65, speed: 60 } },
+        ],
+        pitchers: [
+          {
+            id: "p3",
+            name: "Dave",
+            role: "pitcher",
+            batting: { contact: 20, power: 10, speed: 15 },
+            pitching: { velocity: 80, control: 70, movement: 65 },
+          },
+        ],
+      },
+      metadata: { archived: false },
+    });
+    await v1Db.close();
+
+    // Reopen with v2 schema — triggers v1→v2 migration.
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    const doc = await v2Db.customTeams.findOne("ct_v1team").exec();
+    expect(doc, "migrated doc must exist").not.toBeNull();
+    expect(doc?.name).toBe("V1 Team");
+
+    const roster = doc?.roster as {
+      lineup: { id: string; name: string; fingerprint?: string }[];
+      bench: { id: string; name: string; fingerprint?: string }[];
+      pitchers: { id: string; name: string; fingerprint?: string }[];
+    };
+
+    // Every player must now have a non-empty fingerprint after migration.
+    expect(roster.lineup[0].fingerprint).toBeTruthy();
+    expect(roster.bench[0].fingerprint).toBeTruthy();
+    expect(roster.pitchers[0].fingerprint).toBeTruthy();
+
+    // Player names and IDs must survive intact.
+    expect(roster.lineup[0].name).toBe("Alice");
+    expect(roster.lineup[0].id).toBe("p1");
+    expect(roster.bench[0].name).toBe("Carol");
+    expect(roster.pitchers[0].name).toBe("Dave");
+
+    await v2Db.close();
+  });
+
+  it("migration is idempotent — players already fingerprinted are not changed", async () => {
+    const dbName = `ct_v1idem_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v1Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v1Db.addCollections({
+      customTeams: {
+        schema: v1CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc },
+      },
+    });
+    const existingFp = "aabbccdd";
+    await v1Db.customTeams.insert({
+      id: "ct_idem",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Idem Team",
+      abbreviation: "IDM",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Bob",
+            role: "batter",
+            batting: { contact: 60, power: 60, speed: 60 },
+            fingerprint: existingFp,
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v1Db.close();
+
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v2Db.customTeams.findOne("ct_idem").exec();
+    const roster = doc?.roster as {
+      lineup: { fingerprint?: string }[];
+    };
+    // Existing fingerprint must be preserved (not overwritten).
+    expect(roster.lineup[0].fingerprint).toBe(existingFp);
+    await v2Db.close();
+  });
+
+  it("migration handles teams with empty roster slots gracefully", async () => {
+    const dbName = `ct_empty_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v1Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v1Db.addCollections({
+      customTeams: {
+        schema: v1CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc },
+      },
+    });
+    await v1Db.customTeams.insert({
+      id: "ct_sparse",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Sparse Team",
+      abbreviation: "SPR",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          { id: "p1", name: "Alice", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v1Db.close();
+
+    // Should not throw
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v2Db.customTeams.findOne("ct_sparse").exec();
+    expect(doc).not.toBeNull();
+    await v2Db.close();
   });
 });
 

@@ -1,4 +1,5 @@
 import {
+  buildPlayerSig,
   buildTeamFingerprint,
   exportCustomTeams as exportCustomTeamsJson,
   importCustomTeams as importCustomTeamsParser,
@@ -54,7 +55,7 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
   if (!player.batting || typeof player.batting !== "object") {
     throw new Error(`roster player[${index}].batting is required`);
   }
-  return {
+  const sanitized: TeamPlayer = {
     ...player,
     name,
     batting: {
@@ -76,6 +77,11 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
       },
     }),
   };
+  // Always persist a content fingerprint so global duplicate detection works
+  // without re-reading all teams. The fingerprint covers the immutable identity
+  // fields (name, role, batting, pitching) — editable fields are excluded.
+  sanitized.fingerprint = buildPlayerSig(sanitized);
+  return sanitized;
 }
 
 function buildRoster(input: CreateCustomTeamInput["roster"]): TeamRoster {

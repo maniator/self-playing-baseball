@@ -127,6 +127,15 @@ export interface TeamPlayer {
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
   /**
+   * Persistent FNV-1a content fingerprint stored in the DB.
+   * Covers the player's immutable identity fields: `name`, `role`, `batting`, and `pitching`.
+   * Used for global duplicate detection across all teams in the local install.
+   * Computed by `buildPlayerSig` in `customTeamExportImport.ts` and stored by
+   * `sanitizePlayer` in `customTeamStore.ts`. Absent on documents created before
+   * schema v2 — backfilled by the v1→v2 migration strategy in `db.ts`.
+   */
+  fingerprint?: string;
+  /**
    * FNV-1a integrity signature covering the player's immutable identity fields:
    * `name`, `role`, `batting`, and `pitching`. Editable fields (`position`,
    * `handedness`, `jerseyNumber`, `pitchingRole`) and local IDs are intentionally
@@ -134,6 +143,19 @@ export interface TeamPlayer {
    * Present only in export bundles; stripped before DB storage.
    */
   sig?: string;
+}
+
+/** Keyed JSON export format for a single player. */
+export interface ExportedCustomPlayer {
+  type: "customPlayer";
+  formatVersion: 1;
+  exportedAt: string;
+  payload: {
+    /** Player data with `sig` field embedded for integrity validation on import. */
+    player: TeamPlayer & { sig: string };
+  };
+  /** FNV-1a 32-bit signature of PLAYER_EXPORT_KEY + JSON.stringify(payload) */
+  sig: string;
 }
 
 /** Roster embedded in a custom team document. */
