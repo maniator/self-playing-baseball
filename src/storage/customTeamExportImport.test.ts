@@ -1,24 +1,26 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  TEAMS_EXPORT_KEY,
+  buildPlayerSig,
   buildTeamFingerprint,
   exportCustomTeams,
   importCustomTeams,
   parseExportedCustomTeams,
+  stripTeamPlayerSigs,
+  TEAMS_EXPORT_KEY,
 } from "./customTeamExportImport";
 import { fnv1a } from "./hash";
-import type { CustomTeamDoc } from "./types";
+import type { CustomTeamDoc, TeamPlayer } from "./types";
 
-/** Build a correctly-signed raw bundle object for testing edge cases. */
-function makeSignedBundle(
-  overrides: Record<string, unknown>,
-  payloadOverride?: Record<string, unknown>,
-) {
-  const payload = payloadOverride ?? { teams: [] };
-  const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-  return JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig, ...overrides });
-}
+// ── Fixtures ────────────────────────────────────────────────────────────────
+
+const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
+  id: `p_${Math.random().toString(36).slice(2, 8)}`,
+  name: "Alice",
+  role: "batter",
+  batting: { contact: 70, power: 60, speed: 50 },
+  ...overrides,
+});
 
 const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   id: `ct_test_${Math.random().toString(36).slice(2, 8)}`,
@@ -29,14 +31,7 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   source: "custom",
   roster: {
     schemaVersion: 1,
-    lineup: [
-      {
-        id: `p_${Math.random().toString(36).slice(2, 8)}`,
-        name: "Alice",
-        role: "batter",
-        batting: { contact: 70, power: 60, speed: 50 },
-      },
-    ],
+    lineup: [makePlayer({ name: "Alice" })],
     bench: [],
     pitchers: [],
   },
@@ -44,11 +39,21 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   ...overrides,
 });
 
+/** Build a valid signed bundle from scratch (for edge-case tests). */
+function makeSignedBundle(
+  overrides: Record<string, unknown> = {},
+  payloadOverride?: Record<string, unknown>,
+) {
+  const payload = payloadOverride ?? { teams: [] };
+  const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+  return JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig, ...overrides });
+}
+
+// ── buildTeamFingerprint ─────────────────────────────────────────────────────
+
 describe("buildTeamFingerprint", () => {
-  it("returns a hex string", () => {
-    const team = makeTeam();
-    const fp = buildTeamFingerprint(team);
-    expect(fp).toMatch(/^[0-9a-f]{8}$/);
+  it("returns an 8-char hex string", () => {
+    expect(buildTeamFingerprint(makeTeam())).toMatch(/^[0-9a-f]{8}$/);
   });
 
   it("is stable across calls", () => {
@@ -63,57 +68,150 @@ describe("buildTeamFingerprint", () => {
   });
 
   it("differs when name changes", () => {
-    const base = makeTeam({ name: "Alpha" });
-    const changed = { ...base, name: "Beta" };
-    expect(buildTeamFingerprint(base)).not.toBe(buildTeamFingerprint(changed));
+    const a = makeTeam({ name: "A" });
+    const b = makeTeam({ name: "B" });
+    expect(buildTeamFingerprint(a)).not.toBe(buildTeamFingerprint(b));
   });
 
   it("differs when abbreviation changes", () => {
-    const base = makeTeam({ abbreviation: "AA" });
-    const changed = { ...base, abbreviation: "BB" };
-    expect(buildTeamFingerprint(base)).not.toBe(buildTeamFingerprint(changed));
+    const a = makeTeam({ abbreviation: "AA" });
+    const b = makeTeam({ abbreviation: "BB" });
+    expect(buildTeamFingerprint(a)).not.toBe(buildTeamFingerprint(b));
   });
 
   it("is case-insensitive for name and abbreviation", () => {
-    const lower = makeTeam({ name: "team", abbreviation: "tm" });
-    const upper = { ...lower, name: "TEAM", abbreviation: "TM" };
-    expect(buildTeamFingerprint(lower)).toBe(buildTeamFingerprint(upper));
+    const a = makeTeam({ name: "Rockets", abbreviation: "ROC" });
+    const b = makeTeam({ name: "rockets", abbreviation: "roc" });
+    expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
   });
 });
 
-describe("exportCustomTeams", () => {
-  it("produces a parseable JSON string", () => {
+// ── buildPlayerSig ───────────────────────────────────────────────────────────
+
+describe("buildPlayerSig", () => {
+  it("returns an 8-char hex string", () => {
     const team = makeTeam();
-    const json = exportCustomTeams([team]);
-    expect(() => JSON.parse(json)).not.toThrow();
+    const fp = buildTeamFingerprint(team);
+    expect(buildPlayerSig(fp, team.roster.lineup[0])).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it("includes the expected top-level fields including sig", () => {
-    const json = exportCustomTeams([makeTeam()]);
-    const parsed = JSON.parse(json);
+  it("is stable for the same inputs", () => {
+    const team = makeTeam();
+    const fp = buildTeamFingerprint(team);
+    const p = team.roster.lineup[0];
+    expect(buildPlayerSig(fp, p)).toBe(buildPlayerSig(fp, p));
+  });
+
+  it("differs when the player id changes", () => {
+    const team = makeTeam();
+    const fp = buildTeamFingerprint(team);
+    const p = team.roster.lineup[0];
+    expect(buildPlayerSig(fp, { ...p, id: "p_other" })).not.toBe(buildPlayerSig(fp, p));
+  });
+
+  it("differs when batting stats change", () => {
+    const team = makeTeam();
+    const fp = buildTeamFingerprint(team);
+    const p = team.roster.lineup[0];
+    const pAltered = { ...p, batting: { ...p.batting, contact: 99 } };
+    expect(buildPlayerSig(fp, pAltered)).not.toBe(buildPlayerSig(fp, p));
+  });
+
+  it("differs when the team fingerprint changes", () => {
+    const teamA = makeTeam({ name: "Alpha" });
+    const teamB = makeTeam({ name: "Beta" });
+    const p = teamA.roster.lineup[0];
+    expect(buildPlayerSig(buildTeamFingerprint(teamA), p)).not.toBe(
+      buildPlayerSig(buildTeamFingerprint(teamB), p),
+    );
+  });
+
+  it("does NOT depend on player name (name tracked by team fingerprint)", () => {
+    const team = makeTeam();
+    const fp = buildTeamFingerprint(team);
+    const p = team.roster.lineup[0];
+    // Changing the name alone should not change the player sig
+    expect(buildPlayerSig(fp, { ...p, name: "Bob" })).toBe(buildPlayerSig(fp, p));
+  });
+});
+
+// ── stripTeamPlayerSigs ──────────────────────────────────────────────────────
+
+describe("stripTeamPlayerSigs", () => {
+  it("removes sig from all roster slots", () => {
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [{ ...makePlayer(), sig: "aabbccdd" }],
+        bench: [{ ...makePlayer(), sig: "11223344" }],
+        pitchers: [{ ...makePlayer(), sig: "deadbeef" }],
+      },
+    });
+    const cleaned = stripTeamPlayerSigs(team);
+    expect("sig" in cleaned.roster.lineup[0]).toBe(false);
+    expect("sig" in cleaned.roster.bench[0]).toBe(false);
+    expect("sig" in cleaned.roster.pitchers[0]).toBe(false);
+  });
+
+  it("is a no-op when players have no sig", () => {
+    const team = makeTeam();
+    const cleaned = stripTeamPlayerSigs(team);
+    expect("sig" in cleaned.roster.lineup[0]).toBe(false);
+  });
+});
+
+// ── exportCustomTeams ────────────────────────────────────────────────────────
+
+describe("exportCustomTeams", () => {
+  it("produces valid parseable JSON", () => {
+    expect(() => JSON.parse(exportCustomTeams([makeTeam()]))).not.toThrow();
+  });
+
+  it("includes top-level type, formatVersion, exportedAt, sig", () => {
+    const parsed = JSON.parse(exportCustomTeams([makeTeam()]));
     expect(parsed.type).toBe("customTeams");
     expect(parsed.formatVersion).toBe(1);
     expect(typeof parsed.exportedAt).toBe("string");
     expect(typeof parsed.sig).toBe("string");
     expect(parsed.sig).toMatch(/^[0-9a-f]{8}$/);
-    expect(Array.isArray(parsed.payload.teams)).toBe(true);
+  });
+
+  it("always embeds fingerprint on each team", () => {
+    const team = makeTeam({ name: "Rocketeers", fingerprint: undefined });
+    const parsed = JSON.parse(exportCustomTeams([team]));
+    expect(typeof parsed.payload.teams[0].fingerprint).toBe("string");
+    expect(parsed.payload.teams[0].fingerprint.length).toBe(8);
+  });
+
+  it("embeds sig on every player in every roster slot", () => {
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer({ name: "Batter" })],
+        bench: [makePlayer({ name: "BenchGuy", role: "batter" })],
+        pitchers: [makePlayer({ name: "Pitcher", role: "pitcher" })],
+      },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team]));
+    const t = parsed.payload.teams[0];
+    expect(typeof t.roster.lineup[0].sig).toBe("string");
+    expect(typeof t.roster.bench[0].sig).toBe("string");
+    expect(typeof t.roster.pitchers[0].sig).toBe("string");
   });
 
   it("serialises all provided teams", () => {
-    const t1 = makeTeam({ name: "T1" });
-    const t2 = makeTeam({ name: "T2" });
-    const json = exportCustomTeams([t1, t2]);
-    const parsed = JSON.parse(json);
-    expect(parsed.payload.teams).toHaveLength(2);
+    const json = exportCustomTeams([makeTeam({ name: "T1" }), makeTeam({ name: "T2" })]);
+    expect(JSON.parse(json).payload.teams).toHaveLength(2);
   });
 
-  it("produces a round-trippable bundle", () => {
+  it("round-trips through parseExportedCustomTeams", () => {
     const team = makeTeam({ name: "Round Trip" });
-    const json = exportCustomTeams([team]);
-    const result = parseExportedCustomTeams(json);
+    const result = parseExportedCustomTeams(exportCustomTeams([team]));
     expect(result.payload.teams[0].name).toBe("Round Trip");
   });
 });
+
+// ── parseExportedCustomTeams ─────────────────────────────────────────────────
 
 describe("parseExportedCustomTeams", () => {
   it("throws on invalid JSON", () => {
@@ -143,7 +241,9 @@ describe("parseExportedCustomTeams", () => {
   });
 
   it("throws when a team is missing required id", () => {
-    const team = { name: "No ID", source: "custom", roster: { lineup: [{ id: "p1" }] } };
+    const fp = buildTeamFingerprint(makeTeam());
+    const player = { ...makePlayer(), sig: buildPlayerSig(fp, makePlayer()) };
+    const team = { name: "No ID", source: "custom", fingerprint: fp, roster: { lineup: [player] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -151,14 +251,30 @@ describe("parseExportedCustomTeams", () => {
   });
 
   it("throws when a team has an empty lineup", () => {
-    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [] } };
+    const fp = "aabbccdd";
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      fingerprint: fp,
+      roster: { lineup: [] },
+    };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
     expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
   });
 
-  it("throws when sig is missing", () => {
+  it("throws when a team is missing fingerprint", () => {
+    const p = makePlayer();
+    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [p] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("missing fingerprint");
+  });
+
+  it("throws when bundle sig is missing", () => {
     const bad = JSON.stringify({
       type: "customTeams",
       formatVersion: 1,
@@ -167,13 +283,23 @@ describe("parseExportedCustomTeams", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("signature mismatch");
   });
 
-  it("throws when sig is wrong (tampered payload)", () => {
+  it("throws when bundle sig is wrong (tampered payload)", () => {
     const team = makeTeam({ name: "Legit" });
-    const json = exportCustomTeams([team]);
-    const obj = JSON.parse(json);
-    // Tamper: change the team name after signing
+    const obj = JSON.parse(exportCustomTeams([team]));
     obj.payload.teams[0].name = "Tampered";
     expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow("signature mismatch");
+  });
+
+  it("throws when a player sig is wrong (tampered player stats)", () => {
+    const team = makeTeam({ name: "Good Team" });
+    const exported = exportCustomTeams([team]);
+    const obj = JSON.parse(exported);
+    // Tamper the player stats inside the payload, then re-sign the bundle so only the player sig fails
+    obj.payload.teams[0].roster.lineup[0].batting.contact = 99;
+    obj.sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(obj.payload));
+    expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow(
+      "player signature mismatch",
+    );
   });
 
   it("parses a valid bundle successfully", () => {
@@ -183,6 +309,8 @@ describe("parseExportedCustomTeams", () => {
     expect(result.payload.teams[0].name).toBe("Valid");
   });
 });
+
+// ── importCustomTeams ────────────────────────────────────────────────────────
 
 describe("importCustomTeams", () => {
   it("imports teams with no collisions", () => {
@@ -194,11 +322,20 @@ describe("importCustomTeams", () => {
     expect(result.remapped).toBe(0);
   });
 
+  it("strips player sigs from output (not stored in DB)", () => {
+    const team = makeTeam();
+    const result = importCustomTeams(exportCustomTeams([team]), []);
+    for (const player of result.teams[0].roster.lineup) {
+      expect("sig" in player).toBe(false);
+    }
+  });
+
   it("remaps team id on collision", () => {
     const existing = makeTeam({ id: "ct_clash" });
     const incoming = makeTeam({ id: "ct_clash", name: "Incoming" });
-    const json = exportCustomTeams([incoming]);
-    const result = importCustomTeams(json, [existing], { makeTeamId: () => "ct_new_id" });
+    const result = importCustomTeams(exportCustomTeams([incoming]), [existing], {
+      makeTeamId: () => "ct_new_id",
+    });
     expect(result.remapped).toBe(1);
     expect(result.created).toBe(0);
     expect(result.teams[0].id).toBe("ct_new_id");
@@ -210,14 +347,7 @@ describe("importCustomTeams", () => {
       id: "ct_existing",
       roster: {
         schemaVersion: 1,
-        lineup: [
-          {
-            id: sharedPlayerId,
-            name: "Existing Player",
-            role: "batter",
-            batting: { contact: 70, power: 60, speed: 50 },
-          },
-        ],
+        lineup: [makePlayer({ id: sharedPlayerId, name: "Existing Player" })],
         bench: [],
         pitchers: [],
       },
@@ -227,21 +357,13 @@ describe("importCustomTeams", () => {
       name: "Incoming",
       roster: {
         schemaVersion: 1,
-        lineup: [
-          {
-            id: sharedPlayerId,
-            name: "Incoming Player",
-            role: "batter",
-            batting: { contact: 80, power: 70, speed: 60 },
-          },
-        ],
+        lineup: [makePlayer({ id: sharedPlayerId, name: "Incoming Player" })],
         bench: [],
         pitchers: [],
       },
     });
-    const json = exportCustomTeams([incoming]);
     let counter = 0;
-    const result = importCustomTeams(json, [existing], {
+    const result = importCustomTeams(exportCustomTeams([incoming]), [existing], {
       makePlayerId: () => `p_remapped_${counter++}`,
     });
     expect(result.remapped).toBe(1);
@@ -249,27 +371,46 @@ describe("importCustomTeams", () => {
   });
 
   it("counts team as created when no IDs collide", () => {
-    const t1 = makeTeam({ id: "ct_a", name: "A" });
-    const t2 = makeTeam({ id: "ct_b", name: "B" });
-    const json = exportCustomTeams([t1, t2]);
+    const json = exportCustomTeams([makeTeam({ id: "ct_a" }), makeTeam({ id: "ct_b" })]);
     const result = importCustomTeams(json, []);
     expect(result.created).toBe(2);
     expect(result.remapped).toBe(0);
   });
 
-  it("emits duplicate warning for matching fingerprint", () => {
+  it("emits duplicateWarnings for matching team fingerprint", () => {
     const team = makeTeam({ id: "ct_orig", name: "Dupes" });
     const existing = { ...team, id: "ct_existing", fingerprint: buildTeamFingerprint(team) };
-    const json = exportCustomTeams([team]);
-    const result = importCustomTeams(json, [existing], { makeTeamId: () => "ct_new" });
+    const result = importCustomTeams(exportCustomTeams([team]), [existing], {
+      makeTeamId: () => "ct_new",
+    });
     expect(result.duplicateWarnings.length).toBeGreaterThan(0);
     expect(result.duplicateWarnings[0]).toMatch(/Dupes/);
   });
 
+  it("emits duplicatePlayerWarnings when player sig matches existing player", () => {
+    const player = makePlayer({ id: "p_alice", name: "Alice" });
+    const existing = makeTeam({
+      id: "ct_existing",
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
+    });
+    // Re-import the same player under a slightly different team (different team id, same name/abbr/lineup names → same fingerprint)
+    const incoming = makeTeam({ id: "ct_fresh_id", name: existing.name, roster: existing.roster });
+    const result = importCustomTeams(exportCustomTeams([incoming]), [existing], {
+      makeTeamId: () => "ct_remapped",
+    });
+    expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
+    expect(result.duplicatePlayerWarnings[0]).toMatch(/Alice/);
+  });
+
+  it("has empty duplicatePlayerWarnings when no player matches", () => {
+    const fresh = makeTeam({ id: "ct_fresh", name: "New Squad" });
+    const result = importCustomTeams(exportCustomTeams([fresh]), []);
+    expect(result.duplicatePlayerWarnings).toHaveLength(0);
+  });
+
   it("attaches fingerprint to each output team", () => {
     const team = makeTeam();
-    const json = exportCustomTeams([team]);
-    const result = importCustomTeams(json, []);
+    const result = importCustomTeams(exportCustomTeams([team]), []);
     expect(typeof result.teams[0].fingerprint).toBe("string");
     expect(result.teams[0].fingerprint).toMatch(/^[0-9a-f]{8}$/);
   });
@@ -278,9 +419,10 @@ describe("importCustomTeams", () => {
     const fresh = makeTeam({ id: "ct_fresh", name: "Fresh" });
     const collision = makeTeam({ id: "ct_col", name: "Collision" });
     const existing = makeTeam({ id: "ct_col" });
-    const json = exportCustomTeams([fresh, collision]);
     let n = 0;
-    const result = importCustomTeams(json, [existing], { makeTeamId: () => `ct_gen_${n++}` });
+    const result = importCustomTeams(exportCustomTeams([fresh, collision]), [existing], {
+      makeTeamId: () => `ct_gen_${n++}`,
+    });
     expect(result.created).toBe(1);
     expect(result.remapped).toBe(1);
   });

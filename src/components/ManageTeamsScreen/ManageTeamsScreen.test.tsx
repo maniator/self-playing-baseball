@@ -32,7 +32,13 @@ vi.mock("@storage/customTeamStore", () => ({
       ),
     ),
     importCustomTeams: vi.fn(() =>
-      Promise.resolve({ teams: [], created: 1, remapped: 0, duplicateWarnings: [] }),
+      Promise.resolve({
+        teams: [],
+        created: 1,
+        remapped: 0,
+        duplicateWarnings: [],
+        duplicatePlayerWarnings: [],
+      }),
     ),
   },
 }));
@@ -296,7 +302,13 @@ describe("ManageTeamsScreen — Import/Export section", () => {
     expect(capturedOnSuccess).toBeDefined();
     const { act } = await import("react");
     act(() => {
-      capturedOnSuccess!({ teams: [sampleTeam], created: 1, remapped: 0, duplicateWarnings: [] });
+      capturedOnSuccess!({
+        teams: [sampleTeam],
+        created: 1,
+        remapped: 0,
+        duplicateWarnings: [],
+        duplicatePlayerWarnings: [],
+      });
     });
     expect(screen.getByTestId("import-teams-success")).toBeInTheDocument();
   });

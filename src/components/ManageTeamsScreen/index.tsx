@@ -47,7 +47,11 @@ const formatImportSuccessMessage = (result: ImportCustomTeamsResult): string => 
   const remapNote = result.remapped > 0 ? ` (${result.remapped} ID(s) remapped)` : "";
   const dupNote =
     result.duplicateWarnings.length > 0 ? ` Note: ${result.duplicateWarnings[0]}` : "";
-  return `Imported ${count} team(s).${remapNote}${dupNote}`;
+  const playerDupNote =
+    result.duplicatePlayerWarnings.length > 0
+      ? ` Player duplicate: ${result.duplicatePlayerWarnings[0]}`
+      : "";
+  return `Imported ${count} team(s).${remapNote}${dupNote}${playerDupNote}`;
 };
 
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {

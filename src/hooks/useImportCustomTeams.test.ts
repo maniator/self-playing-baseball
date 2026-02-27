@@ -19,6 +19,7 @@ const makeResult = (): ImportCustomTeamsResult => ({
   created: 1,
   remapped: 0,
   duplicateWarnings: [],
+  duplicatePlayerWarnings: [],
 });
 
 describe("useImportCustomTeams", () => {
