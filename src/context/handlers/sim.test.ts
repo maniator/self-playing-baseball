@@ -196,6 +196,82 @@ describe("handleSimAction — wait", () => {
     expect(next?.balls).toBe(2);
     expect(next?.strikeoutLog).toHaveLength(0);
   });
+
+  it("walkoff walk (4th ball) in bottom of 9th ends game immediately", () => {
+    // mockRandom(0.9) → getRandomInt(1000)=900 → 900 >= strikeThreshold(500) → "ball"
+    mockRandom(0.9);
+    const { log, logs } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      atBat: 1,
+      inning: 9,
+      score: [2, 2],
+      baseLayout: [1, 1, 1], // bases loaded — walk forces run from 3rd
+    });
+    const next = handleSimAction(
+      state,
+      { type: "wait", payload: { strategy: "balanced" } },
+      { log },
+    );
+    expect(next?.score[1]).toBe(3);
+    expect(next?.gameOver).toBe(true);
+    expect(logs.some((l) => /walk-off/i.test(l))).toBe(true);
+  });
+
+  it("walkoff walk (4th ball) in bottom of 10th extra inning ends game immediately", () => {
+    mockRandom(0.9);
+    const { log } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      atBat: 1,
+      inning: 10,
+      score: [3, 3],
+      baseLayout: [1, 1, 1],
+    });
+    const next = handleSimAction(
+      state,
+      { type: "wait", payload: { strategy: "balanced" } },
+      { log },
+    );
+    expect(next?.score[1]).toBe(4);
+    expect(next?.gameOver).toBe(true);
+  });
+
+  it("walk in bottom of 9th that does not score the lead run does NOT end game", () => {
+    mockRandom(0.9); // force "ball" outcome
+    const { log } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      atBat: 1,
+      inning: 9,
+      score: [2, 2],
+      baseLayout: [0, 0, 0], // empty bases — walk just puts batter on 1st, no run scores
+    });
+    const next = handleSimAction(
+      state,
+      { type: "wait", payload: { strategy: "balanced" } },
+      { log },
+    );
+    expect(next?.gameOver).toBe(false);
+  });
+
+  it("walk in top of 9th does NOT trigger walkoff (away team bats)", () => {
+    mockRandom(0.9);
+    const { log } = makeLogs();
+    const state = makeState({
+      balls: 3,
+      atBat: 0, // away team at bat (top half)
+      inning: 9,
+      score: [2, 2],
+      baseLayout: [1, 1, 1],
+    });
+    const next = handleSimAction(
+      state,
+      { type: "wait", payload: { strategy: "balanced" } },
+      { log },
+    );
+    expect(next?.gameOver).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
