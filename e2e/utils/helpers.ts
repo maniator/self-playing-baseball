@@ -401,7 +401,7 @@ export async function computeSaveSignature(
  * implementation in customTeamExportImport.ts.
  *
  * NOTE: The FNV-1a algorithm is intentionally inlined here rather than imported from
- * production code. `page.evaluate` serialises the function and runs it in the browser
+ * production code. `page.evaluate` serializes the function and runs it in the browser
  * process, which cannot access Node.js modules. Any change to the production `fnv1a`
  * implementation must be mirrored in both `computeSaveSignature` and this helper.
  */

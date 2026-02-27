@@ -199,7 +199,7 @@ describe("exportCustomTeams", () => {
     expect(typeof t.roster.pitchers[0].sig).toBe("string");
   });
 
-  it("serialises all provided teams", () => {
+  it("serializes all provided teams", () => {
     const json = exportCustomTeams([makeTeam({ name: "T1" }), makeTeam({ name: "T2" })]);
     expect(JSON.parse(json).payload.teams).toHaveLength(2);
   });

@@ -95,7 +95,7 @@ function signPlayers(players: TeamPlayer[], teamFingerprint: string): TeamPlayer
 }
 
 /**
- * Serialises teams into a portable signed JSON string.
+ * Serializes teams into a portable signed JSON string.
  *
  * Signing order (important — bundle sig must cover player sigs):
  *   1. Compute each team's fingerprint.
