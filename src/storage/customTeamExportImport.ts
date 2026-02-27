@@ -183,8 +183,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
       throw new Error(`Team[${i}] missing required field: name`);
     if (typeof team["source"] !== "string")
       throw new Error(`Team[${i}] missing required field: source`);
-    if (typeof team["fingerprint"] !== "string" || !team["fingerprint"])
-      throw new Error(`Team[${i}] missing fingerprint — file may be from an incompatible version`);
+    // fingerprint is optional for legacy files (pre-v2 exports without fingerprints)
     if (!team["roster"] || typeof team["roster"] !== "object")
       throw new Error(`Team[${i}] missing required field: roster`);
     const roster = team["roster"] as Record<string, unknown>;
@@ -208,6 +207,8 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
         throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
       }
       (slotValue as TeamPlayerWithSig[]).forEach((player, pi) => {
+        // Skip sig validation for legacy files that pre-date per-player signatures.
+        if (player.sig === undefined) return;
         const expectedPlayerSig = buildPlayerSig(player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(

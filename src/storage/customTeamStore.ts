@@ -185,7 +185,19 @@ function buildStore(getDbFn: GetDb) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (updates.name !== undefined) patch.name = requireNonEmpty(updates.name, "name");
+      if (updates.name !== undefined) {
+        const newName = requireNonEmpty(updates.name, "name");
+        // Enforce unique team names (case-insensitive), excluding the current team.
+        const existing = await db.customTeams.find().exec();
+        const nameLower = newName.toLowerCase();
+        const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
+        if (duplicate) {
+          throw new Error(
+            `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+          );
+        }
+        patch.name = newName;
+      }
       if (updates.abbreviation !== undefined)
         patch.abbreviation = sanitizeAbbreviation(updates.abbreviation);
       if (updates.nickname !== undefined) patch.nickname = updates.nickname;

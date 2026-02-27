@@ -114,16 +114,17 @@
     │   │                              #   parseExportedCustomPlayer (validates sig),
     │   │                              #   TEAMS_EXPORT_KEY, PLAYER_EXPORT_KEY
     │   ├── hash.ts                 # fnv1a(str): string — FNV-1a 32-bit hash, 8 hex chars
-    │   ├── generateId.ts           # nanoid-based ID generators: generateTeamId(), generatePlayerId(), generateSaveId()
+    │   ├── generateId.ts           # nanoid-based ID generators: generateTeamId(), generatePlayerId(), generateSaveId(), generateSeed()
     │   ├── saveIO.ts               # formatSaveDate, downloadJson, readFileAsText, saveFilename,
     │   │                           #   teamsFilename, playerFilename, slugify (internal)
     │   ├── saveInspector.ts        # Read-only helpers for inspecting save bundles
     │   └── types.ts                # SaveDoc, EventDoc, TeamDoc, GameSaveSetup, ScoreSnapshot,
     │                               #   InningSnapshot, StateSnapshot, GameSetup, GameEvent,
     │                               #   ProgressSummary, RxdbExportedSave,
-    │                               #   TeamPlayer (with fingerprint?: string), TeamPlayerBatting,
-    │                               #   TeamPlayerPitching, CustomTeamDoc, TeamRoster,
-    │                               #   CreateCustomTeamInput, UpdateCustomTeamInput,
+    │                               #   TeamPlayer (with playerSeed?: string, fingerprint?: string),
+    │                               #   TeamPlayerBatting, TeamPlayerPitching,
+    │                               #   CustomTeamDoc (with teamSeed?: string, fingerprint?: string),
+    │                               #   TeamRoster, CreateCustomTeamInput, UpdateCustomTeamInput,
     │                               #   ExportedCustomTeams, ExportedCustomPlayer
     ├── context/                    # All game state, reducer, and types
     │   ├── index.tsx               # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
@@ -351,7 +352,7 @@ vi.mock("@hooks/useSaveStore", () => ({
 | `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.** |
 | `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. |
 | `teams` | MLB team cache (`TeamDoc`). Each team individually upserted/deleted by numeric MLB ID. |
-| `customTeams` | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 2** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill). |
+| `customTeams` | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 3** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill; v2→v3: `teamSeed`/`playerSeed` backfill with seed-based fingerprint recomputation). |
 
 ### SaveStore API
 
@@ -386,13 +387,11 @@ When `requiresDuplicateConfirmation` is `true`, the import was blocked because i
 
 ### Player Fingerprints (`fingerprint` on `TeamPlayer`)
 
-Every player carries a persistent `fingerprint?: string` stored in the DB. Currently a FNV-1a 32-bit hash (8 hex chars) over `{name, role, batting, pitching}`, computed by `buildPlayerSig()` in `customTeamExportImport.ts` and written by `sanitizePlayer()` in `customTeamStore.ts`. The v1→v2 migration backfills fingerprints for all pre-existing players.
-
-**⚠ Fingerprint scheme is scheduled for an upgrade** — the hash will incorporate a per-player random seed (generated once at creation, stored permanently) to give each player instance a unique identity even if two players have identical stats and names. See `generateId.ts` for the existing `generatePlayerId()` primitive.
+Every player carries a persistent `fingerprint?: string` and `playerSeed?: string` stored in the DB. The fingerprint is `fnv1a(playerSeed + JSON.stringify({name, role, batting, pitching}))`, computed by `buildPlayerSig()` in `customTeamExportImport.ts` and written by `sanitizePlayer()` in `customTeamStore.ts`. The `playerSeed` is generated once at creation via `generateSeed()` and never changes. The v1→v2 migration backfills fingerprints; the v2→v3 migration backfills `playerSeed` values and recomputes fingerprints with the seed. The `playerSeed ?? ""` fallback in `buildPlayerSig` ensures legacy bundles without a seed still parse cleanly.
 
 ### Team Fingerprints (`fingerprint` on `CustomTeamDoc`)
 
-Teams carry a `fingerprint?: string` covering `name|abbreviation` (both lowercased). Used for team-level duplicate detection on import — the same team re-imported after roster edits still deduplicates correctly (roster changes don't affect the fingerprint). Computed by `buildTeamFingerprint()` in `customTeamExportImport.ts`.
+Teams carry a `fingerprint?: string` and `teamSeed?: string`. The fingerprint is `fnv1a(teamSeed + name|abbreviation)` (both lowercased). Used for team-level duplicate detection on import — the same team re-imported after roster edits still deduplicates correctly (roster changes don't affect the fingerprint). Computed by `buildTeamFingerprint()` in `customTeamExportImport.ts`. The `teamSeed` is generated once at creation and never regenerated (not even on `updateCustomTeam`). The `teamSeed ?? ""` fallback ensures legacy bundles still parse cleanly.
 
 ### Export/Import Bundles
 
@@ -600,7 +599,7 @@ Validate changes by:
 |---|---|
 | `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename`, `teamsFilename`, `playerFilename` |
 | `@storage/hash` | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed |
-| `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()` — nanoid-based |
+| `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
 | `@storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
 | `@components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` (used by SavesPage, HelpPage, ManageTeamsScreen) |
 | `@components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |

@@ -161,7 +161,11 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           };
 
           // Check if this player's fingerprint already exists in any team.
-          const incomingFp = buildPlayerSig(importedPlayer);
+          // Use the role that will actually be stored for the destination section
+          // so the sig matches what will be written to the DB.
+          const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
+          const playerForSig = { ...importedPlayer, role: sectionRole };
+          const incomingFp = buildPlayerSig(playerForSig);
           const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,

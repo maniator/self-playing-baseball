@@ -270,10 +270,17 @@ describe("updateCustomTeam", () => {
     );
   });
 
-  it("throws when team not found", async () => {
-    await expect(store.updateCustomTeam("ghost", { name: "x" })).rejects.toThrow(
-      "Custom team not found: ghost",
+  it("throws when renaming to a name already used by another team (case-insensitive)", async () => {
+    await store.createCustomTeam(makeInput({ name: "Alpha" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Beta" }));
+    await expect(store.updateCustomTeam(id2, { name: "alpha" })).rejects.toThrow(
+      'A team named "Alpha" already exists',
     );
+  });
+
+  it("allows renaming a team to its own current name (no false duplicate error)", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Gamma" }));
+    await expect(store.updateCustomTeam(id, { name: "Gamma" })).resolves.toBeUndefined();
   });
 
   it("updates optional fields", async () => {

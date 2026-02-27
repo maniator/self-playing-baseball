@@ -132,6 +132,11 @@ describe("CustomTeamEditor — create mode", () => {
       fireEvent.click(screen.getByTestId("custom-team-regenerate-defaults-button"));
     });
 
+    // Wait for the name field to have a non-empty value before saving,
+    // ensuring the APPLY_DRAFT state update is fully committed.
+    const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
+    await vi.waitFor(() => expect(nameInput.value.length).toBeGreaterThan(0));
+
     await act(async () => {
       fireEvent.click(screen.getByTestId("custom-team-save-button"));
     });

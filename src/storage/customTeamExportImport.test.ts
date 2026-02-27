@@ -312,13 +312,14 @@ describe("parseExportedCustomTeams", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
   });
 
-  it("throws when a team is missing fingerprint", () => {
+  it("accepts a team without fingerprint (legacy file — fingerprint is optional)", () => {
     const p = makePlayer();
     const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [p] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("missing fingerprint");
+    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    // Should NOT throw — fingerprint is optional for legacy bundles
+    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when bundle sig is missing", () => {
@@ -335,6 +336,21 @@ describe("parseExportedCustomTeams", () => {
     const obj = JSON.parse(exportCustomTeams([team]));
     obj.payload.teams[0].name = "Tampered";
     expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow("signature mismatch");
+  });
+
+  it("accepts players without sig (legacy file — per-player sig is optional)", () => {
+    const legacyPlayer = {
+      id: "p1",
+      name: "Legacy Player",
+      role: "batter",
+      batting: { contact: 50, power: 50, speed: 50 },
+    };
+    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [legacyPlayer] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    // Should NOT throw — missing player sig is treated as a legacy file
+    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when a player sig is wrong (tampered player stats)", () => {

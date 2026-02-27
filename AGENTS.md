@@ -71,10 +71,13 @@ All cross-directory imports use aliases (`@components/*`, `@context/*`, `@hooks/
 
 ### Custom team fingerprinting
 Both teams and players carry a random **seed** (stored in the DB) alongside their **fingerprint**:
-- `teamSeed: string` on `CustomTeamDoc` — generated once at creation; `fingerprint = fnv1a(teamSeed + name|abbreviation)`
+- `teamSeed: string` on `CustomTeamDoc` — generated once at creation; `fingerprint = fnv1a(teamSeed + name|abbreviation)`. **Never regenerated** by `updateCustomTeam`.
 - `playerSeed: string` on `TeamPlayer` — generated once at creation; `fingerprint = fnv1a(playerSeed + JSON.stringify({name, role, batting, pitching}))`
 
 Seeds travel in export bundles so the same entity can be re-identified on re-import. Always use `buildPlayerSig(player)` and `buildTeamFingerprint(team)` from `@storage/customTeamExportImport` — never recompute fingerprints manually. Seeds are generated via `generateSeed()` from `@storage/generateId`. The `customTeams` RxDB schema is currently at **version 3** (v2→v3 backfills seeds for all existing docs).
+
+### Team name uniqueness
+`createCustomTeam` **and** `updateCustomTeam` (when `updates.name` is provided) both enforce case-insensitive team name uniqueness across the local install. `updateCustomTeam` excludes the current team from the check so renaming a team to its existing name does not throw.
 
 ### RxDB schema changes
 Any change to a collection schema **must** bump `version` and add a migration strategy. See the Schema versioning section in `copilot-instructions.md` for the full checklist.
