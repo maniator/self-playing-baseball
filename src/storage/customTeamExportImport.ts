@@ -30,18 +30,13 @@ export interface ImportCustomTeamsResult {
 
 /**
  * Builds a stable content fingerprint for a team (excludes id so it survives re-import).
- * Used for team-level duplicate detection.
+ * Covers only team-identity fields (name + abbreviation, case-insensitive).
+ * Roster changes do NOT affect the fingerprint — the same team remains the same
+ * fingerprint after trades, roster edits, or any player moves.
+ * Used for team-level duplicate detection on import.
  */
 export function buildTeamFingerprint(team: CustomTeamDoc): string {
-  const key =
-    team.name.toLowerCase() +
-    "|" +
-    (team.abbreviation ?? "").toLowerCase() +
-    "|" +
-    team.roster.lineup
-      .map((p) => p.name.toLowerCase())
-      .sort()
-      .join(",");
+  const key = team.name.toLowerCase() + "|" + (team.abbreviation ?? "").toLowerCase();
   return fnv1a(key);
 }
 

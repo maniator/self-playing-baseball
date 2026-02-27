@@ -127,9 +127,11 @@ export interface TeamPlayer {
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
   /**
-   * FNV-1a integrity signature anchored to the parent team's fingerprint and the player's
-   * non-editable identity fields (id, role, batting, pitching, position, handedness,
-   * jerseyNumber, pitchingRole). Present only in export bundles; stripped before DB storage.
+   * FNV-1a integrity signature covering the player's immutable identity fields:
+   * `name`, `role`, `batting`, and `pitching`. Editable fields (`position`,
+   * `handedness`, `jerseyNumber`, `pitchingRole`) and local IDs are intentionally
+   * excluded so the sig remains valid after position edits, team moves, or ID remapping.
+   * Present only in export bundles; stripped before DB storage.
    */
   sig?: string;
 }
@@ -167,7 +169,7 @@ export interface CustomTeamDoc {
   metadata: CustomTeamMetadata;
   /** Optional future hint for stat generation (e.g. "balanced", "power"). */
   statsProfile?: string;
-  /** FNV-1a fingerprint of name+abbreviation+sorted lineup names — used for duplicate detection on import. */
+  /** FNV-1a fingerprint of name+abbreviation (case-insensitive) — used for duplicate detection on import. Roster changes do not affect the fingerprint so re-importing the same team after roster edits still deduplicates correctly. */
   fingerprint?: string;
 }
 

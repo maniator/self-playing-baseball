@@ -84,6 +84,18 @@ describe("buildTeamFingerprint", () => {
     const b = makeTeam({ name: "rockets", abbreviation: "roc" });
     expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
   });
+
+  it("does not depend on roster composition", () => {
+    const base = makeTeam({ name: "Rockets", abbreviation: "ROC" });
+    const differentRoster = {
+      ...base,
+      roster: {
+        ...base.roster,
+        lineup: [makePlayer({ name: "Someone Else" }), makePlayer({ name: "Another Player" })],
+      },
+    };
+    expect(buildTeamFingerprint(base)).toBe(buildTeamFingerprint(differentRoster));
+  });
 });
 
 // ── buildPlayerSig ───────────────────────────────────────────────────────────
