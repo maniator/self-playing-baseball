@@ -5,6 +5,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import { _createTestDb, type BallgameDb } from "./db";
+import { fnv1a } from "./hash";
 import { makeSaveStore } from "./saveStore";
 import type { GameSetup } from "./types";
 
@@ -536,5 +537,76 @@ describe("SaveStore — updatedAt advances on updateProgress", () => {
     } finally {
       nowSpy.mockRestore();
     }
+  });
+});
+
+describe("importRxdbSave — missing custom team rejection", () => {
+  const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
+
+  const makeCustomSave = (homeTeamId: string, awayTeamId = "147"): { json: string } => {
+    const header = {
+      id: `save_${Date.now()}_test`,
+      name: "Test Save",
+      seed: "abc",
+      matchupMode: "custom",
+      homeTeamId,
+      awayTeamId,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      progressIdx: -1,
+      setup: {
+        strategy: "balanced",
+        managedTeam: null,
+        managerMode: false,
+        homeTeam: "Custom Home",
+        awayTeam: "Away Team",
+        playerOverrides: [{}, {}],
+        lineupOrder: [[], []],
+      },
+      schemaVersion: 1,
+    };
+    const events: never[] = [];
+    const sig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
+    return { json: JSON.stringify({ version: 1, header, events, sig }) };
+  };
+
+  it("throws when homeTeamId references a missing custom team", async () => {
+    const { json } = makeCustomSave("ct_missing_abc");
+    await expect(store.importRxdbSave(json)).rejects.toThrow(
+      "Cannot import save: missing custom team(s)",
+    );
+  });
+
+  it("error message includes the team label and id", async () => {
+    const { json } = makeCustomSave("ct_missing_xyz");
+    await expect(store.importRxdbSave(json)).rejects.toThrow(/"Custom Home"/);
+  });
+
+  it("succeeds when the custom team exists in the DB", async () => {
+    const teamId = "ct_existing_team";
+    await db.customTeams.insert({
+      id: teamId,
+      schemaVersion: 1,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      name: "My Team",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          { id: "p1", name: "P", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    const { json } = makeCustomSave(teamId);
+    await expect(store.importRxdbSave(json)).resolves.not.toThrow();
+  });
+
+  it("does not throw for non-custom team IDs (e.g. MLB numeric IDs)", async () => {
+    const { json } = makeCustomSave("147", "121");
+    await expect(store.importRxdbSave(json)).resolves.not.toThrow();
   });
 });

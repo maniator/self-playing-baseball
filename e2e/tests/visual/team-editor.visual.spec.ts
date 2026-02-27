@@ -7,6 +7,9 @@ import {
   waitForLogLines,
 } from "../../utils/helpers";
 
+/** Shared snapshot diff tolerance for all visual snapshots in this file. */
+const TEAM_EDITOR_SNAPSHOT_OPTIONS = { maxDiffPixelRatio: 0.05 } as const;
+
 // ─── Stage 2B: Custom Team UI visual snapshots ────────────────────────────────
 //
 // These snapshots cover new Stage 2B surfaces:
@@ -68,7 +71,7 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-empty.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -88,7 +91,7 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-with-team.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -128,7 +131,7 @@ test.describe("Visual — Stage 2B: Create Team editor, mobile portrait", () => 
     // regardless of what is behind the semi-transparent overlay.
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-editor-mobile-portrait.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -180,7 +183,7 @@ test.describe("Visual — Stage 2B: Create Team editor, narrow landscape", () =>
 
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-editor-narrow-landscape.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -221,7 +224,7 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
 
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "edit-team-editor-mobile-portrait.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -264,7 +267,7 @@ test.describe("Visual — Create Team editor, desktop", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-desktop-empty.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -304,7 +307,7 @@ test.describe("Visual — Create Team editor, desktop", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "create-team-desktop-filled.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });
@@ -482,7 +485,7 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "teams-new-route-editor.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 
@@ -515,7 +518,7 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("manage-teams-editor-shell").evaluate((el) => el.scrollTo(0, 0));
     await expect(page.getByTestId("manage-teams-editor-shell")).toHaveScreenshot(
       "teams-id-edit-route-editor.png",
-      { maxDiffPixelRatio: 0.05 },
+      TEAM_EDITOR_SNAPSHOT_OPTIONS,
     );
   });
 });

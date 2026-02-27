@@ -126,6 +126,14 @@ export interface TeamPlayer {
    * Absent on older saves — backfill as "SP" for index 0, "RP" for others when needed.
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
+  /**
+   * FNV-1a integrity signature covering the player's immutable identity fields:
+   * `name`, `role`, `batting`, and `pitching`. Editable fields (`position`,
+   * `handedness`, `jerseyNumber`, `pitchingRole`) and local IDs are intentionally
+   * excluded so the sig remains valid after position edits, team moves, or ID remapping.
+   * Present only in export bundles; stripped before DB storage.
+   */
+  sig?: string;
 }
 
 /** Roster embedded in a custom team document. */
@@ -161,6 +169,8 @@ export interface CustomTeamDoc {
   metadata: CustomTeamMetadata;
   /** Optional future hint for stat generation (e.g. "balanced", "power"). */
   statsProfile?: string;
+  /** FNV-1a fingerprint of name+abbreviation (case-insensitive) — used for duplicate detection on import. Roster changes do not affect the fingerprint so re-importing the same team after roster edits still deduplicates correctly. */
+  fingerprint?: string;
 }
 
 /** Input shape for creating a new custom team. */
@@ -222,5 +232,18 @@ export interface RxdbExportedSave {
   header: SaveDoc;
   events: EventDoc[];
   /** FNV-1a 32-bit signature of RXDB_EXPORT_KEY + JSON.stringify({header, events}) */
+  sig: string;
+}
+
+/** Keyed JSON export format for custom teams. */
+export interface ExportedCustomTeams {
+  type: "customTeams";
+  formatVersion: 1;
+  exportedAt: string;
+  appVersion?: string;
+  payload: {
+    teams: CustomTeamDoc[];
+  };
+  /** FNV-1a 32-bit signature of TEAMS_EXPORT_KEY + JSON.stringify(payload) */
   sig: string;
 }

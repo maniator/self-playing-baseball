@@ -1,4 +1,6 @@
 import { type BallgameDb, getDb } from "./db";
+import { generateSaveId } from "./generateId";
+import { fnv1a } from "./hash";
 import type {
   EventDoc,
   GameEvent,
@@ -12,17 +14,6 @@ const SCHEMA_VERSION = 1;
 const MAX_SAVES = 3;
 const RXDB_EXPORT_VERSION = 1 as const;
 const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
-
-// FNV-1a 32-bit checksum — fast and deterministic, used here for integrity
-// verification only (tamper/corruption detection, not cryptographic security).
-const fnv1a = (str: string): string => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-};
 
 type GetDb = () => Promise<BallgameDb>;
 
@@ -46,7 +37,7 @@ function buildStore(getDbFn: GetDb) {
     async createSave(setup: GameSetup, meta?: { name?: string }): Promise<string> {
       const db = await getDbFn();
       const now = Date.now();
-      const id = `save_${now}_${Math.random().toString(36).slice(2, 8)}`;
+      const id = generateSaveId();
 
       // Enforce max-saves rule: evict the oldest save before inserting a new one.
       const allSaves = await db.saves.find({ sort: [{ updatedAt: "asc" }] }).exec();
@@ -219,7 +210,33 @@ function buildStore(getDbFn: GetDb) {
       const expectedSig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
+
+      // Reject saves that reference custom teams that don't exist locally.
+      const customTeamRefs: Array<{ id: string; label: string }> = [];
+      const teamEntries: Array<{ field: string; label: string }> = [
+        { field: header.homeTeamId, label: header.setup?.homeTeam ?? header.homeTeamId },
+        { field: header.awayTeamId, label: header.setup?.awayTeam ?? header.awayTeamId },
+      ];
+      for (const { field, label } of teamEntries) {
+        if (field.startsWith("ct_") || field.startsWith("custom:")) {
+          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
+          customTeamRefs.push({ id, label });
+        }
+      }
       const db = await getDbFn();
+      if (customTeamRefs.length > 0) {
+        const missing: Array<{ id: string; label: string }> = [];
+        for (const ref of customTeamRefs) {
+          const found = await db.customTeams.findOne(ref.id).exec();
+          if (!found) missing.push(ref);
+        }
+        if (missing.length > 0) {
+          const descriptions = missing.map((m) => `"${m.label}" (${m.id})`).join(", ");
+          throw new Error(
+            `Cannot import save: missing custom team(s): ${descriptions}. Import the missing team(s) first via Teams import, then retry the save import.`,
+          );
+        }
+      }
       await db.saves.upsert(header);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);

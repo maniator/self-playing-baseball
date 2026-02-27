@@ -307,6 +307,29 @@ export async function loadFixture(page: Page, fixtureName: string): Promise<void
 }
 
 /**
+ * Imports a custom teams export fixture via the Manage Teams screen.
+ *
+ * Navigates to Home → Manage Teams (`/teams`), uploads the fixture through
+ * the `import-teams-file-input` file input, and waits for the success message.
+ * Call this **before** `loadFixture` whenever the save fixture references custom
+ * team IDs that must be present in the DB prior to save import (the strict
+ * custom-team validation in `importRxdbSave` rejects saves whose team IDs are
+ * missing from the local DB).
+ *
+ * The helper always starts from `/` so callers do not need to call
+ * `resetAppState` beforehand.
+ */
+export async function importTeamsFixture(page: Page, fixtureName: string): Promise<void> {
+  const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("home-manage-teams-button").click();
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
+  await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 15_000 });
+}
+
+/**
  * Asserts that the field view, log panel, and scoreboard are all visible and
  * have non-zero dimensions. Used as a responsive smoke check.
  */
@@ -368,4 +391,52 @@ export async function expectNoRawIdsVisible(page: Page): Promise<void> {
     const hitLogText = await hitLogEl.textContent();
     expect(hitLogText ?? "").not.toMatch(RAW_ID_PATTERN);
   }
+}
+
+/**
+ * Computes the FNV-1a 32-bit signature for a save export bundle.
+ * Uses page.evaluate so it runs the same algorithm in the browser context,
+ * matching the implementation in saveStore.ts.
+ */
+export async function computeSaveSignature(
+  page: Page,
+  header: unknown,
+  events: unknown[],
+): Promise<string> {
+  return page.evaluate(
+    ([h, ev]) => {
+      const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
+      let hash = 0x811c9dc5;
+      const str = RXDB_EXPORT_KEY + JSON.stringify({ header: h, events: ev });
+      for (let i = 0; i < str.length; i++) {
+        hash ^= str.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193) >>> 0;
+      }
+      return hash.toString(16).padStart(8, "0");
+    },
+    [header, events] as const,
+  );
+}
+
+/**
+ * Computes the FNV-1a 32-bit bundle signature for a custom teams export payload.
+ * Uses page.evaluate so the algorithm runs in the browser context, matching the
+ * implementation in customTeamExportImport.ts.
+ *
+ * NOTE: The FNV-1a algorithm is intentionally inlined here rather than imported from
+ * production code. `page.evaluate` serializes the function and runs it in the browser
+ * process, which cannot access Node.js modules. Any change to the production `fnv1a`
+ * implementation must be mirrored in both `computeSaveSignature` and this helper.
+ */
+export async function computeTeamsSignature(page: Page, payload: unknown): Promise<string> {
+  return page.evaluate((p) => {
+    const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
+    let hash = 0x811c9dc5;
+    const str = TEAMS_EXPORT_KEY + JSON.stringify(p);
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(16).padStart(8, "0");
+  }, payload);
 }

@@ -4,6 +4,10 @@ import { useLocation, useNavigate, useParams } from "react-router";
 
 import CustomTeamEditor from "@components/CustomTeamEditor";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
+import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
+import { CustomTeamStore } from "@storage/customTeamStore";
+import { downloadJson, teamsFilename } from "@storage/saveIO";
 
 import {
   BackBtn,
@@ -12,11 +16,20 @@ import {
   EditorShell,
   EditorShellHeader,
   EmptyState,
+  ErrorMessage,
+  FileInput,
+  ImportExportBtn,
+  ImportExportRow,
+  ImportExportSection,
+  ImportExportTitle,
   InfoBanner,
   NotFoundMsg,
+  PasteActions,
+  PasteTextarea,
   ScreenContainer,
   ScreenHeader,
   ScreenTitle,
+  SuccessMessage,
   TeamList,
   TeamListLink,
 } from "./styles";
@@ -28,11 +41,67 @@ type Props = {
   hasActiveGame?: boolean;
 };
 
+const formatImportSuccessMessage = (result: ImportCustomTeamsResult): string => {
+  const count = result.created + result.remapped;
+  if (count === 0) {
+    if (result.skipped > 0) {
+      return `${result.skipped} team(s) already exist — nothing new was imported.`;
+    }
+    return "No teams imported.";
+  }
+  const remapNote = result.remapped > 0 ? ` (${result.remapped} ID(s) remapped)` : "";
+  const skippedNote = result.skipped > 0 ? ` (${result.skipped} already existed, skipped)` : "";
+  const playerDupNote =
+    result.duplicatePlayerWarnings.length > 0
+      ? ` Player duplicate: ${result.duplicatePlayerWarnings[0]}`
+      : "";
+  return `Imported ${count} team(s).${remapNote}${skippedNote}${playerDupNote}`;
+};
+
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {
   const { teams, loading, deleteTeam, refresh } = useCustomTeams();
   const navigate = useNavigate();
   const { teamId } = useParams<{ teamId: string }>();
   const location = useLocation();
+  const importFileRef = React.useRef<HTMLInputElement>(null);
+  const [importSuccess, setImportSuccess] = React.useState<string | null>(null);
+  const [exportError, setExportError] = React.useState<string | null>(null);
+
+  const {
+    pasteJson,
+    setPasteJson,
+    importError,
+    importing,
+    handleFileImport,
+    handlePasteImport,
+    handlePasteFromClipboard,
+  } = useImportCustomTeams({
+    importFn: (json) => CustomTeamStore.importCustomTeams(json),
+    onSuccess: (result) => {
+      refresh();
+      setImportSuccess(formatImportSuccessMessage(result));
+    },
+  });
+
+  const handleExportTeam = async (id: string) => {
+    try {
+      setExportError(null);
+      const json = await CustomTeamStore.exportCustomTeams([id]);
+      downloadJson(json, teamsFilename());
+    } catch {
+      setExportError("Failed to export team. Please try again.");
+    }
+  };
+
+  const handleExportAll = async () => {
+    try {
+      setExportError(null);
+      const json = await CustomTeamStore.exportCustomTeams();
+      downloadJson(json, teamsFilename());
+    } catch {
+      setExportError("Failed to export teams. Please try again.");
+    }
+  };
 
   const isCreating = location.pathname === "/teams/new";
   const isEditing = Boolean(teamId);
@@ -136,10 +205,79 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
               team={team}
               onEdit={(id) => navigate(`/teams/${id}/edit`)}
               onDelete={deleteTeam}
+              onExport={handleExportTeam}
             />
           ))}
         </TeamList>
       )}
+
+      <ImportExportSection data-testid="teams-import-export-section">
+        <ImportExportTitle>Import / Export Teams</ImportExportTitle>
+        <ImportExportRow>
+          {teams.length > 0 && (
+            <ImportExportBtn
+              type="button"
+              onClick={handleExportAll}
+              data-testid="export-all-teams-button"
+            >
+              ↓ Export All Teams
+            </ImportExportBtn>
+          )}
+          <ImportExportBtn
+            type="button"
+            onClick={() => {
+              setImportSuccess(null);
+              importFileRef.current?.click();
+            }}
+            disabled={importing}
+            data-testid="import-teams-button"
+          >
+            {importing ? "Importing…" : "↑ Import from File"}
+          </ImportExportBtn>
+          <FileInput
+            ref={importFileRef}
+            type="file"
+            accept=".json,application/json"
+            onChange={handleFileImport}
+            data-testid="import-teams-file-input"
+            aria-label="Import teams file"
+          />
+        </ImportExportRow>
+        <PasteTextarea
+          value={pasteJson}
+          onChange={(e) => setPasteJson(e.target.value)}
+          placeholder='{"type":"customTeams","formatVersion":1,"payload":{"teams":[…]}}'
+          data-testid="import-teams-paste-textarea"
+          aria-label="Paste teams JSON"
+        />
+        <PasteActions>
+          <ImportExportBtn
+            type="button"
+            onClick={() => {
+              setImportSuccess(null);
+              handlePasteImport();
+            }}
+            disabled={importing}
+            data-testid="import-teams-paste-button"
+          >
+            {importing ? "Importing…" : "↑ Import from Text"}
+          </ImportExportBtn>
+          {typeof navigator !== "undefined" && navigator.clipboard && (
+            <ImportExportBtn
+              type="button"
+              onClick={handlePasteFromClipboard}
+              data-testid="import-teams-clipboard-button"
+            >
+              Paste from Clipboard
+            </ImportExportBtn>
+          )}
+        </PasteActions>
+        {exportError && <ErrorMessage data-testid="export-teams-error">{exportError}</ErrorMessage>}
+        {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
+        {importSuccess && !importError && (
+          <SuccessMessage data-testid="import-teams-success">{importSuccess}</SuccessMessage>
+        )}
+      </ImportExportSection>
     </ScreenContainer>
   );
 };

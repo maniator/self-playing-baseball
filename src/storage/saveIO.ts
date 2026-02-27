@@ -68,3 +68,9 @@ export const saveFilename = (saveName: string): string => {
       .toLowerCase() || "save";
   return `ballgame-${slug}-${compactTimestamp(new Date())}.json`;
 };
+
+/**
+ * Returns a timestamped filename for a custom-teams export.
+ * Format: `ballgame-teams-YYYYMMDDTHHmmss.json`
+ */
+export const teamsFilename = (): string => `ballgame-teams-${compactTimestamp(new Date())}.json`;

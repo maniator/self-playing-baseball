@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
@@ -24,7 +24,44 @@ vi.mock("@components/CustomTeamEditor", () => ({
   ),
 }));
 
+vi.mock("@storage/customTeamStore", () => ({
+  CustomTeamStore: {
+    exportCustomTeams: vi.fn(() =>
+      Promise.resolve(
+        '{"type":"customTeams","formatVersion":1,"exportedAt":"2024-01-01T00:00:00.000Z","payload":{"teams":[]}}',
+      ),
+    ),
+    importCustomTeams: vi.fn(() =>
+      Promise.resolve({
+        teams: [],
+        created: 1,
+        remapped: 0,
+        skipped: 0,
+        duplicateWarnings: [],
+        duplicatePlayerWarnings: [],
+      }),
+    ),
+  },
+}));
+
+vi.mock("@storage/saveIO", () => ({
+  downloadJson: vi.fn(),
+  teamsFilename: vi.fn(() => "ballgame-teams-test.json"),
+}));
+
+vi.mock("@hooks/useImportCustomTeams", () => ({
+  useImportCustomTeams: vi.fn(({ onSuccess }: { onSuccess: (r: unknown) => void }) => ({
+    importError: null,
+    importing: false,
+    handleFileImport: vi.fn(),
+    _triggerSuccess: onSuccess,
+  })),
+}));
+
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
+import { CustomTeamStore } from "@storage/customTeamStore";
+import { downloadJson } from "@storage/saveIO";
 
 import ManageTeamsScreen from "./index";
 
@@ -174,5 +211,118 @@ describe("ManageTeamsScreen", () => {
     fireEvent.click(screen.getByTestId("manage-teams-create-button"));
     fireEvent.click(screen.getByTestId("manage-teams-editor-back-button"));
     expect(screen.getByTestId("manage-teams-screen")).toBeInTheDocument();
+  });
+});
+
+describe("ManageTeamsScreen — Import/Export section", () => {
+  const sampleTeam = {
+    id: "ct_sample",
+    name: "Sample Team",
+    abbreviation: "SAM",
+    roster: {
+      schemaVersion: 1,
+      lineup: [
+        {
+          id: "p1",
+          name: "Player",
+          role: "batter",
+          batting: { contact: 70, power: 60, speed: 50 },
+        },
+      ],
+      bench: [],
+      pitchers: [],
+    },
+    metadata: { archived: false },
+    schemaVersion: 1,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    source: "custom" as const,
+  };
+
+  it("shows import and export all buttons", () => {
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [sampleTeam],
+      loading: false,
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+    });
+    renderAt("/teams");
+    expect(screen.getByTestId("import-teams-button")).toBeInTheDocument();
+    expect(screen.getByTestId("export-all-teams-button")).toBeInTheDocument();
+  });
+
+  it("does not show export-all when no teams exist", () => {
+    renderAt("/teams");
+    expect(screen.queryByTestId("export-all-teams-button")).not.toBeInTheDocument();
+    expect(screen.getByTestId("import-teams-button")).toBeInTheDocument();
+  });
+
+  it("calls exportCustomTeams and downloadJson when export-all is clicked", async () => {
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [sampleTeam],
+      loading: false,
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+    });
+    renderAt("/teams");
+    fireEvent.click(screen.getByTestId("export-all-teams-button"));
+    await waitFor(() => {
+      expect(vi.mocked(CustomTeamStore.exportCustomTeams)).toHaveBeenCalled();
+      expect(vi.mocked(downloadJson)).toHaveBeenCalled();
+    });
+  });
+
+  it("calls exportCustomTeams with team id when per-team export button is clicked", async () => {
+    vi.mocked(useCustomTeams).mockReturnValueOnce({
+      teams: [sampleTeam],
+      loading: false,
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+    });
+    renderAt("/teams");
+    fireEvent.click(screen.getByTestId("export-team-button"));
+    await waitFor(() => {
+      expect(vi.mocked(CustomTeamStore.exportCustomTeams)).toHaveBeenCalledWith(["ct_sample"]);
+    });
+  });
+
+  it("shows success message after successful import", async () => {
+    const mockUseImport = vi.mocked(useImportCustomTeams);
+    let capturedOnSuccess: ((r: unknown) => void) | undefined;
+    mockUseImport.mockImplementation(({ onSuccess }) => {
+      capturedOnSuccess = onSuccess;
+      return { importError: null, importing: false, handleFileImport: vi.fn() };
+    });
+    renderAt("/teams");
+    expect(capturedOnSuccess).toBeDefined();
+    const { act } = await import("react");
+    act(() => {
+      capturedOnSuccess!({
+        teams: [sampleTeam],
+        created: 1,
+        remapped: 0,
+        skipped: 0,
+        duplicateWarnings: [],
+        duplicatePlayerWarnings: [],
+      });
+    });
+    expect(screen.getByTestId("import-teams-success")).toBeInTheDocument();
+  });
+
+  it("shows error message when import fails", () => {
+    vi.mocked(useImportCustomTeams).mockReturnValueOnce({
+      importError: "Invalid JSON",
+      importing: false,
+      handleFileImport: vi.fn(),
+    });
+    renderAt("/teams");
+    expect(screen.getByTestId("import-teams-error")).toBeInTheDocument();
+    expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
   });
 });

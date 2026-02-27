@@ -377,3 +377,114 @@ describe("deleteCustomTeam", () => {
     expect(teams.map((t) => t.id)).not.toContain(id2);
   });
 });
+
+describe("createCustomTeam — fingerprint", () => {
+  it("sets a fingerprint on create", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "FP Team" }));
+    const team = await store.getCustomTeam(id);
+    expect(team?.fingerprint).toMatch(/^[0-9a-f]{8}$/);
+  });
+});
+
+describe("updateCustomTeam — fingerprint", () => {
+  it("recomputes fingerprint when name changes", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Before" }));
+    const before = await store.getCustomTeam(id);
+    await store.updateCustomTeam(id, { name: "After" });
+    const after = await store.getCustomTeam(id);
+    expect(after?.fingerprint).not.toBe(before?.fingerprint);
+  });
+
+  it("does not change fingerprint when only metadata changes", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Meta Only" }));
+    const before = await store.getCustomTeam(id);
+    await store.updateCustomTeam(id, { metadata: { notes: "new note" } });
+    const after = await store.getCustomTeam(id);
+    expect(after?.fingerprint).toBe(before?.fingerprint);
+  });
+});
+
+describe("exportCustomTeams", () => {
+  it("exports all teams when no ids given", async () => {
+    await store.createCustomTeam(makeInput({ name: "Export A" }));
+    await store.createCustomTeam(makeInput({ name: "Export B" }));
+    const json = await store.exportCustomTeams();
+    const parsed = JSON.parse(json);
+    expect(parsed.type).toBe("customTeams");
+    expect(parsed.payload.teams).toHaveLength(2);
+  });
+
+  it("exports only specified ids", async () => {
+    const id1 = await store.createCustomTeam(makeInput({ name: "One" }));
+    await store.createCustomTeam(makeInput({ name: "Two" }));
+    const json = await store.exportCustomTeams([id1]);
+    const parsed = JSON.parse(json);
+    expect(parsed.payload.teams).toHaveLength(1);
+    expect(parsed.payload.teams[0].name).toBe("One");
+  });
+});
+
+describe("importCustomTeams", () => {
+  it("upserts incoming teams into the DB", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const teamA = {
+      id: "ct_import_a",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Import A",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_ia",
+            name: "Player",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([teamA]);
+    const result = await store.importCustomTeams(json);
+    expect(result.created + result.remapped).toBe(1);
+    const found = await store.getCustomTeam("ct_import_a");
+    expect(found?.name).toBe("Import A");
+  });
+
+  it("returns ImportCustomTeamsResult", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const teamB = {
+      id: "ct_import_b",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Import B",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_ib",
+            name: "Player",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([teamB]);
+    const result = await store.importCustomTeams(json);
+    expect(typeof result.created).toBe("number");
+    expect(typeof result.remapped).toBe("number");
+    expect(typeof result.skipped).toBe("number");
+    expect(Array.isArray(result.duplicateWarnings)).toBe(true);
+  });
+});

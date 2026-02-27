@@ -1,43 +1,22 @@
 import * as React from "react";
 
+import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
 import { readFileAsText } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
 
-const SIGNATURE_RE = /signature|invalid|corrupt/i;
-/** Errors that are already descriptive and should be shown as-is. */
-const PASS_THROUGH_RE = /^Cannot import save:/i;
-
-/** Default user-friendly error formatter used by SavesPage. */
-export const friendlyImportError = (raw: string): string => {
-  if (PASS_THROUGH_RE.test(raw)) return raw;
-  return SIGNATURE_RE.test(raw)
-    ? "The file you selected is not a valid Ballgame save file."
-    : "Import failed. Please check the file and try again.";
-};
-
-interface UseImportSaveOptions {
+interface UseImportCustomTeamsOptions {
   /** Called to perform the actual import; receives raw JSON string. */
-  importFn: (json: string) => Promise<SaveDoc>;
-  /** Called with the imported SaveDoc on success. */
-  onSuccess: (save: SaveDoc) => void;
-  /**
-   * Optional error message formatter.
-   * Defaults to {@link friendlyImportError} (user-facing friendly messages).
-   * Pass `(raw) => raw` to preserve the original error message (e.g. in SavesModal).
-   */
-  formatError?: (raw: string) => string;
+  importFn: (json: string) => Promise<ImportCustomTeamsResult>;
+  /** Called with the import result on success. */
+  onSuccess: (result: ImportCustomTeamsResult) => void;
 }
 
-export interface UseImportSaveReturn {
+export interface UseImportCustomTeamsReturn {
   /** Current value of the paste-JSON textarea. */
   pasteJson: string;
   setPasteJson: (v: string) => void;
   /** Non-null when the last import attempt failed. */
   importError: string | null;
-  /**
-   * True while an import is in-flight.
-   * Use to disable import buttons and prevent accidental duplicate submissions.
-   */
+  /** True while an import is in-flight. */
   importing: boolean;
   /** Handle a file-input change event — reads the selected file and imports it. */
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -48,17 +27,13 @@ export interface UseImportSaveReturn {
 }
 
 /**
- * Shared import logic used by both SavesPage (full-page) and SavesModal (in-game dialog).
- *
- * Handles paste-JSON input, file upload, clipboard paste, in-flight loading state,
- * and error formatting. The caller supplies the actual import function and a success
- * callback so each consumer can react appropriately (navigate vs close dialog).
+ * Shared import logic for the custom teams import flow.
+ * Handles file upload, paste JSON, clipboard paste, in-flight state, and errors.
  */
-export const useImportSave = ({
+export const useImportCustomTeams = ({
   importFn,
   onSuccess,
-  formatError = friendlyImportError,
-}: UseImportSaveOptions): UseImportSaveReturn => {
+}: UseImportCustomTeamsOptions): UseImportCustomTeamsReturn => {
   const [pasteJson, setPasteJson] = React.useState("");
   const [importError, setImportError] = React.useState<string | null>(null);
   const [importing, setImporting] = React.useState(false);
@@ -67,15 +42,15 @@ export const useImportSave = ({
     setImportError(null);
     setImporting(true);
     importFn(json)
-      .then((importedSave) => {
+      .then((result) => {
         setPasteJson("");
         setImporting(false);
-        onSuccess(importedSave);
+        onSuccess(result);
       })
       .catch((err: unknown) => {
         setImporting(false);
         const raw = err instanceof Error ? err.message : String(err);
-        setImportError(formatError(raw));
+        setImportError(raw);
       });
   };
 
@@ -91,7 +66,7 @@ export const useImportSave = ({
   const handlePasteImport = () => {
     const trimmed = pasteJson.trim();
     if (!trimmed) {
-      setImportError("Please paste save JSON before importing.");
+      setImportError("Please paste team JSON before importing.");
       return;
     }
     applyImport(trimmed);
