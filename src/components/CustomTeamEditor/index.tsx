@@ -453,41 +453,40 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           // Use the role that will actually be stored for the destination section
           // so the sig matches what will be written to the DB.
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
-          const playerForSig = { ...importedPlayer, role: sectionRole };
-          const incomingFp = buildPlayerSig(playerForSig);
+          const incomingFp = buildPlayerSig({ ...importedPlayer, role: sectionRole });
 
-          // Check saved teams first, then current editor state.
+          // Helper: derive role and sig from an EditorPlayer (mirrors editorToTeamPlayer logic).
+          const editorPlayerFp = (p: EditorPlayer): string =>
+            buildPlayerSig({
+              name: p.name,
+              role: p.velocity !== undefined ? "pitcher" : "batter",
+              batting: { contact: p.contact, power: p.power, speed: p.speed },
+              pitching:
+                p.velocity !== undefined
+                  ? { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 }
+                  : undefined,
+              playerSeed: p.playerSeed,
+            });
+
+          // Check saved teams first (early-exit avoids constructing the editor spread).
           const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
             ),
           );
-          const editorHasDuplicate =
-            !existingTeamWithPlayer &&
-            [...state.lineup, ...state.bench, ...state.pitchers].some(
-              (p) =>
-                buildPlayerSig({
-                  name: p.name,
-                  role: p.velocity !== undefined ? "pitcher" : "batter",
-                  batting: { contact: p.contact, power: p.power, speed: p.speed },
-                  pitching:
-                    p.velocity !== undefined
-                      ? {
-                          velocity: p.velocity,
-                          control: p.control ?? 60,
-                          movement: p.movement ?? 60,
-                        }
-                      : undefined,
-                  playerSeed: p.playerSeed,
-                }) === incomingFp,
-            );
+          const duplicateTeamName =
+            existingTeamWithPlayer?.name ??
+            ([...state.lineup, ...state.bench, ...state.pitchers].some(
+              (p) => editorPlayerFp(p) === incomingFp,
+            )
+              ? "this team"
+              : null);
 
-          if (existingTeamWithPlayer || editorHasDuplicate) {
-            const teamName = existingTeamWithPlayer?.name ?? "this team";
+          if (duplicateTeamName !== null) {
             setPendingPlayerImport({
               player: editorPlayer,
               section,
-              warning: `"${importedPlayer.name}" may already exist on team "${teamName}". Import anyway?`,
+              warning: `"${importedPlayer.name}" may already exist on team "${duplicateTeamName}". Import anyway?`,
             });
           } else {
             dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
