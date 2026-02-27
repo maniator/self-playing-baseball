@@ -27,15 +27,23 @@ export function useCustomTeams(): CustomTeamsHook {
   const [teams, setTeams] = React.useState<CustomTeamDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [tick, setTick] = React.useState(0);
+  // Only show the loading spinner on the very first fetch.  Subsequent
+  // refreshes (after create/update/delete) update teams in-place without
+  // hiding the list, so the page stays stable and tests don't time-out
+  // waiting for the list to reappear.
+  const hasLoaded = React.useRef(false);
 
   React.useEffect(() => {
     let cancelled = false;
-    setLoading(true);
+    if (!hasLoaded.current) {
+      setLoading(true);
+    }
     CustomTeamStore.listCustomTeams()
       .then((list) => {
         if (!cancelled) {
           setTeams(list);
           setLoading(false);
+          hasLoaded.current = true;
         }
       })
       .catch(() => {
@@ -43,6 +51,7 @@ export function useCustomTeams(): CustomTeamsHook {
           appLog.warn("Failed to load custom teams");
           setTeams([]);
           setLoading(false);
+          hasLoaded.current = true;
         }
       });
     return () => {
