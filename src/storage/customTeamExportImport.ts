@@ -1,14 +1,5 @@
+import { fnv1a } from "./hash";
 import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "./types";
-
-// FNV-1a 32-bit hash — same algorithm as saveStore (integrity only, not crypto).
-const fnv1a = (str: string): string => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-};
 
 export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 
@@ -103,6 +94,13 @@ function remapPlayerIds(
   return { players: remapped, hadCollision };
 }
 
+export interface ImportIdFactories {
+  /** Factory for new team IDs on collision. */
+  makeTeamId?: () => string;
+  /** Factory for new player IDs on collision. */
+  makePlayerId?: () => string;
+}
+
 /**
  * Merges incoming teams into the local collection, remapping IDs on collision
  * and flagging potential duplicates via fingerprint matching.
@@ -113,10 +111,13 @@ function remapPlayerIds(
 export function importCustomTeams(
   json: string,
   existingTeams: CustomTeamDoc[],
-  idFactory?: () => string,
+  factories?: ImportIdFactories,
 ): ImportCustomTeamsResult {
   const parsed = parseExportedCustomTeams(json);
-  const makeId = idFactory ?? (() => `ct_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  const makeTeamId =
+    factories?.makeTeamId ?? (() => `ct_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  const makePlayerId =
+    factories?.makePlayerId ?? (() => `p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
 
   const existingTeamIds = new Set(existingTeams.map((t) => t.id));
   const existingPlayerIds = new Set(
@@ -139,16 +140,20 @@ export function importCustomTeams(
     let anyIdCollision = false;
 
     if (existingTeamIds.has(finalTeam.id)) {
-      finalTeam = { ...finalTeam, id: makeId() };
+      finalTeam = { ...finalTeam, id: makeTeamId() };
       anyIdCollision = true;
     }
 
-    const lineupResult = remapPlayerIds(finalTeam.roster.lineup, existingPlayerIds, makeId);
-    const benchResult = remapPlayerIds(finalTeam.roster.bench ?? [], existingPlayerIds, makeId);
+    const lineupResult = remapPlayerIds(finalTeam.roster.lineup, existingPlayerIds, makePlayerId);
+    const benchResult = remapPlayerIds(
+      finalTeam.roster.bench ?? [],
+      existingPlayerIds,
+      makePlayerId,
+    );
     const pitchersResult = remapPlayerIds(
       finalTeam.roster.pitchers ?? [],
       existingPlayerIds,
-      makeId,
+      makePlayerId,
     );
 
     if (lineupResult.hadCollision || benchResult.hadCollision || pitchersResult.hadCollision) {

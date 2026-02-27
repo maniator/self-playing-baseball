@@ -5,6 +5,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import { _createTestDb, type BallgameDb } from "./db";
+import { fnv1a } from "./hash";
 import { makeSaveStore } from "./saveStore";
 import type { GameSetup } from "./types";
 
@@ -541,14 +542,6 @@ describe("SaveStore — updatedAt advances on updateProgress", () => {
 
 describe("importRxdbSave — missing custom team rejection", () => {
   const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
-  const fnv1a = (str: string): string => {
-    let h = 0x811c9dc5;
-    for (let i = 0; i < str.length; i++) {
-      h ^= str.charCodeAt(i);
-      h = Math.imul(h, 0x01000193) >>> 0;
-    }
-    return h.toString(16).padStart(8, "0");
-  };
 
   const makeCustomSave = (homeTeamId: string, awayTeamId = "147"): { json: string } => {
     const header = {

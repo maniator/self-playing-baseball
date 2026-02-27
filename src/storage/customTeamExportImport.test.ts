@@ -172,7 +172,7 @@ describe("importCustomTeams", () => {
     const existing = makeTeam({ id: "ct_clash" });
     const incoming = makeTeam({ id: "ct_clash", name: "Incoming" });
     const json = exportCustomTeams([incoming]);
-    const result = importCustomTeams(json, [existing], () => "ct_new_id");
+    const result = importCustomTeams(json, [existing], { makeTeamId: () => "ct_new_id" });
     expect(result.remapped).toBe(1);
     expect(result.created).toBe(0);
     expect(result.teams[0].id).toBe("ct_new_id");
@@ -215,7 +215,9 @@ describe("importCustomTeams", () => {
     });
     const json = exportCustomTeams([incoming]);
     let counter = 0;
-    const result = importCustomTeams(json, [existing], () => `ct_remapped_${counter++}`);
+    const result = importCustomTeams(json, [existing], {
+      makePlayerId: () => `p_remapped_${counter++}`,
+    });
     expect(result.remapped).toBe(1);
     expect(result.teams[0].roster.lineup[0].id).not.toBe(sharedPlayerId);
   });
@@ -233,7 +235,7 @@ describe("importCustomTeams", () => {
     const team = makeTeam({ id: "ct_orig", name: "Dupes" });
     const existing = { ...team, id: "ct_existing", fingerprint: buildTeamFingerprint(team) };
     const json = exportCustomTeams([team]);
-    const result = importCustomTeams(json, [existing], () => "ct_new");
+    const result = importCustomTeams(json, [existing], { makeTeamId: () => "ct_new" });
     expect(result.duplicateWarnings.length).toBeGreaterThan(0);
     expect(result.duplicateWarnings[0]).toMatch(/Dupes/);
   });
@@ -252,7 +254,7 @@ describe("importCustomTeams", () => {
     const existing = makeTeam({ id: "ct_col" });
     const json = exportCustomTeams([fresh, collision]);
     let n = 0;
-    const result = importCustomTeams(json, [existing], () => `ct_gen_${n++}`);
+    const result = importCustomTeams(json, [existing], { makeTeamId: () => `ct_gen_${n++}` });
     expect(result.created).toBe(1);
     expect(result.remapped).toBe(1);
   });

@@ -1,4 +1,5 @@
 import { type BallgameDb, getDb } from "./db";
+import { fnv1a } from "./hash";
 import type {
   EventDoc,
   GameEvent,
@@ -12,17 +13,6 @@ const SCHEMA_VERSION = 1;
 const MAX_SAVES = 3;
 const RXDB_EXPORT_VERSION = 1 as const;
 const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
-
-// FNV-1a 32-bit checksum — fast and deterministic, used here for integrity
-// verification only (tamper/corruption detection, not cryptographic security).
-const fnv1a = (str: string): string => {
-  let h = 0x811c9dc5;
-  for (let i = 0; i < str.length; i++) {
-    h ^= str.charCodeAt(i);
-    h = Math.imul(h, 0x01000193) >>> 0;
-  }
-  return h.toString(16).padStart(8, "0");
-};
 
 type GetDb = () => Promise<BallgameDb>;
 
