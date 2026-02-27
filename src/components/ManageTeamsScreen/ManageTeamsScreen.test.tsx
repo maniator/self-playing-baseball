@@ -36,6 +36,7 @@ vi.mock("@storage/customTeamStore", () => ({
         teams: [],
         created: 1,
         remapped: 0,
+        skipped: 0,
         duplicateWarnings: [],
         duplicatePlayerWarnings: [],
       }),
@@ -306,6 +307,7 @@ describe("ManageTeamsScreen — Import/Export section", () => {
         teams: [sampleTeam],
         created: 1,
         remapped: 0,
+        skipped: 0,
         duplicateWarnings: [],
         duplicatePlayerWarnings: [],
       });

@@ -13,6 +13,11 @@ export interface ImportCustomTeamsResult {
   teams: CustomTeamDoc[];
   created: number;
   remapped: number;
+  /**
+   * Number of incoming teams that were exact fingerprint duplicates of an existing team
+   * and were silently skipped (not imported) to prevent creating duplicate entries.
+   */
+  skipped: number;
   /** Team-level duplicate warnings (same team fingerprint already in DB). */
   duplicateWarnings: string[];
   /**
@@ -273,15 +278,29 @@ export function importCustomTeams(
 
   let created = 0;
   let remapped = 0;
+  let skipped = 0;
   const duplicateWarnings: string[] = [];
   const duplicatePlayerWarnings: string[] = [];
 
-  const resultTeams = parsed.payload.teams.map((team) => {
+  const resultTeams: CustomTeamDoc[] = [];
+
+  for (const team of parsed.payload.teams) {
+    // ── Early exact-duplicate check ────────────────────────────────────────────
+    // If the incoming team's content fingerprint already exists locally, skip it
+    // entirely to prevent creating a duplicate entry. The fingerprint is content-
+    // based (name + abbreviation + sorted lineup names) so it is stable across
+    // re-exports regardless of stored team ID.
+    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
+    if (existingFingerprints.has(incomingFp)) {
+      skipped++;
+      continue;
+    }
+
     let finalTeam = { ...team };
     let anyIdCollision = false;
 
     // ── Duplicate player detection (before ID remapping, using sigs from export) ──
-    const teamFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
+    const teamFp = incomingFp;
     const allSlotPlayers: { player: TeamPlayer; slot: string }[] = [
       ...team.roster.lineup.map((p) => ({ player: p, slot: "lineup" })),
       ...(team.roster.bench ?? []).map((p) => ({ player: p, slot: "bench" })),
@@ -338,13 +357,16 @@ export function importCustomTeams(
 
     finalTeam = { ...finalTeam, fingerprint: buildTeamFingerprint(finalTeam) };
 
-    if (existingFingerprints.has(finalTeam.fingerprint)) {
-      duplicateWarnings.push(`A team named "${finalTeam.name}" may already exist locally.`);
-    }
-
     // Strip player sigs — export-only integrity metadata, not stored in DB.
-    return stripTeamPlayerSigs(finalTeam);
-  });
+    resultTeams.push(stripTeamPlayerSigs(finalTeam));
+  }
 
-  return { teams: resultTeams, created, remapped, duplicateWarnings, duplicatePlayerWarnings };
+  return {
+    teams: resultTeams,
+    created,
+    remapped,
+    skipped,
+    duplicateWarnings,
+    duplicatePlayerWarnings,
+  };
 }

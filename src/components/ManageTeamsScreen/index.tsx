@@ -42,16 +42,20 @@ type Props = {
 };
 
 const formatImportSuccessMessage = (result: ImportCustomTeamsResult): string => {
-  if (result.teams.length === 0) return "No teams imported.";
   const count = result.created + result.remapped;
+  if (count === 0) {
+    if (result.skipped > 0) {
+      return `${result.skipped} team(s) already exist — nothing new was imported.`;
+    }
+    return "No teams imported.";
+  }
   const remapNote = result.remapped > 0 ? ` (${result.remapped} ID(s) remapped)` : "";
-  const dupNote =
-    result.duplicateWarnings.length > 0 ? ` Note: ${result.duplicateWarnings[0]}` : "";
+  const skippedNote = result.skipped > 0 ? ` (${result.skipped} already existed, skipped)` : "";
   const playerDupNote =
     result.duplicatePlayerWarnings.length > 0
       ? ` Player duplicate: ${result.duplicatePlayerWarnings[0]}`
       : "";
-  return `Imported ${count} team(s).${remapNote}${dupNote}${playerDupNote}`;
+  return `Imported ${count} team(s).${remapNote}${skippedNote}${playerDupNote}`;
 };
 
 const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGame }) => {

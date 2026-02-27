@@ -484,6 +484,7 @@ describe("importCustomTeams", () => {
     const result = await store.importCustomTeams(json);
     expect(typeof result.created).toBe("number");
     expect(typeof result.remapped).toBe("number");
+    expect(typeof result.skipped).toBe("number");
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
 });
