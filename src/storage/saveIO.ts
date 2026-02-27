@@ -74,3 +74,17 @@ export const saveFilename = (saveName: string): string => {
  * Format: `ballgame-teams-YYYYMMDDTHHmmss.json`
  */
 export const teamsFilename = (): string => `ballgame-teams-${compactTimestamp(new Date())}.json`;
+
+/**
+ * Returns a timestamped filename for a single-player export.
+ * Slugifies the player name and appends a compact timestamp.
+ * Format: `ballgame-player-{slug}-YYYYMMDDTHHmmss.json`
+ */
+export const playerFilename = (playerName: string): string => {
+  const slug =
+    playerName
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase() || "player";
+  return `ballgame-player-${slug}-${compactTimestamp(new Date())}.json`;
+};

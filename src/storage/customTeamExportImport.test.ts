@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildPlayerSig,
   buildTeamFingerprint,
+  exportCustomPlayer,
   exportCustomTeams,
   importCustomTeams,
+  parseExportedCustomPlayer,
   parseExportedCustomTeams,
+  PLAYER_EXPORT_KEY,
   stripTeamPlayerSigs,
   TEAMS_EXPORT_KEY,
 } from "./customTeamExportImport";
@@ -597,5 +600,111 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     const result = importCustomTeams(exportCustomTeams([team]), []);
     const player = result.teams[0].roster.lineup[0];
     expect("sig" in player).toBe(false);
+  });
+});
+
+// ── exportCustomPlayer ────────────────────────────────────────────────────────
+
+describe("exportCustomPlayer", () => {
+  it("produces valid parseable JSON", () => {
+    const p = makePlayer();
+    expect(() => JSON.parse(exportCustomPlayer(p))).not.toThrow();
+  });
+
+  it("includes type 'customPlayer', formatVersion 1, exportedAt, sig", () => {
+    const parsed = JSON.parse(exportCustomPlayer(makePlayer()));
+    expect(parsed.type).toBe("customPlayer");
+    expect(parsed.formatVersion).toBe(1);
+    expect(typeof parsed.exportedAt).toBe("string");
+    expect(parsed.sig).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("embeds the player sig in the payload", () => {
+    const p = makePlayer({ name: "Export Test" });
+    const parsed = JSON.parse(exportCustomPlayer(p));
+    expect(typeof parsed.payload.player.sig).toBe("string");
+    expect(parsed.payload.player.sig).toBe(buildPlayerSig(p));
+  });
+
+  it("round-trips through parseExportedCustomPlayer", () => {
+    const p = makePlayer({ name: "Round Trip Player" });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.name).toBe("Round Trip Player");
+    expect(result.id).toBe(p.id);
+  });
+});
+
+// ── parseExportedCustomPlayer ─────────────────────────────────────────────────
+
+describe("parseExportedCustomPlayer", () => {
+  it("throws on invalid JSON", () => {
+    expect(() => parseExportedCustomPlayer("not json")).toThrow("Invalid JSON");
+  });
+
+  it("throws when type is wrong", () => {
+    const payload = { player: { ...makePlayer(), sig: buildPlayerSig(makePlayer()) } };
+    const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomPlayer(bad)).toThrow('expected type "customPlayer"');
+  });
+
+  it("throws on unsupported formatVersion", () => {
+    const payload = { player: { ...makePlayer(), sig: buildPlayerSig(makePlayer()) } };
+    const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customPlayer", formatVersion: 99, payload, sig });
+    expect(() => parseExportedCustomPlayer(bad)).toThrow("Unsupported player format version");
+  });
+
+  it("throws when bundle sig is wrong", () => {
+    const p = makePlayer({ name: "Tampered" });
+    const json = exportCustomPlayer(p);
+    const obj = JSON.parse(json) as Record<string, unknown>;
+    (obj["payload"] as Record<string, unknown>)["extra"] = "tamper";
+    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow("signature mismatch");
+  });
+
+  it("throws when player sig is wrong (tampered stats)", () => {
+    const p = makePlayer({ name: "Tampered Stats" });
+    const json = exportCustomPlayer(p);
+    const obj = JSON.parse(json) as Record<string, unknown>;
+    const payload = obj["payload"] as Record<string, unknown>;
+    const player = payload["player"] as Record<string, unknown>;
+    // Tamper the stats then re-sign the bundle sig only (player sig stays stale)
+    (player["batting"] as Record<string, unknown>)["contact"] = 99;
+    obj["sig"] = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow("content signature mismatch");
+  });
+
+  it("strips the sig field from the returned player", () => {
+    const p = makePlayer();
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect("sig" in result).toBe(false);
+  });
+
+  it("preserves batting stats, role, position, handedness", () => {
+    const p = makePlayer({
+      name: "Full Player",
+      role: "batter",
+      batting: { contact: 78, power: 65, speed: 55 },
+      position: "SS",
+      handedness: "L",
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.batting.contact).toBe(78);
+    expect(result.batting.power).toBe(65);
+    expect(result.position).toBe("SS");
+    expect(result.handedness).toBe("L");
+  });
+
+  it("preserves pitcher pitching stats", () => {
+    const p = makePlayer({
+      name: "Ace Pitcher",
+      role: "pitcher",
+      pitching: { velocity: 92, control: 80, movement: 75 },
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.pitching?.velocity).toBe(92);
+    expect(result.pitching?.control).toBe(80);
+    expect(result.pitching?.movement).toBe(75);
   });
 });

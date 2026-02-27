@@ -1,6 +1,7 @@
 import {
   buildPlayerSig,
   buildTeamFingerprint,
+  exportCustomPlayer as exportCustomPlayerJson,
   exportCustomTeams as exportCustomTeamsJson,
   importCustomTeams as importCustomTeamsParser,
   type ImportCustomTeamsResult,
@@ -223,6 +224,25 @@ function buildStore(getDbFn: GetDb) {
       const all = await this.listCustomTeams(ids ? { includeArchived: true } : undefined);
       const toExport = ids ? all.filter((t) => ids.includes(t.id)) : all;
       return exportCustomTeamsJson(toExport);
+    },
+
+    /**
+     * Exports a single player from a team as a portable signed JSON string.
+     * @param teamId  The team the player belongs to.
+     * @param playerId  The player's id within that team.
+     * @throws If the team or player is not found.
+     */
+    async exportPlayer(teamId: string, playerId: string): Promise<string> {
+      const team = await this.getCustomTeam(teamId);
+      if (!team) throw new Error(`Team not found: ${teamId}`);
+      const allPlayers = [
+        ...team.roster.lineup,
+        ...team.roster.bench,
+        ...team.roster.pitchers,
+      ];
+      const player = allPlayers.find((p) => p.id === playerId);
+      if (!player) throw new Error(`Player not found: ${playerId} in team ${teamId}`);
+      return exportCustomPlayerJson(player);
     },
 
     /**

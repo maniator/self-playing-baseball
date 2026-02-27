@@ -488,3 +488,66 @@ describe("importCustomTeams", () => {
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
 });
+
+describe("exportPlayer", () => {
+  it("returns a valid signed player JSON string", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Export Test Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_export", name: "Jane Doe" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json = await store.exportPlayer(id, "p_export");
+    const parsed = JSON.parse(json) as { type: string; payload: { player: { name: string } } };
+    expect(parsed.type).toBe("customPlayer");
+    expect(parsed.payload.player.name).toBe("Jane Doe");
+  });
+
+  it("throws when team not found", async () => {
+    await expect(store.exportPlayer("ct_nonexistent", "p_any")).rejects.toThrow("Team not found");
+  });
+
+  it("throws when player not found within the team", async () => {
+    const id = await store.createCustomTeam(makeInput());
+    await expect(store.exportPlayer(id, "p_missing")).rejects.toThrow("Player not found");
+  });
+});
+
+describe("sanitizePlayer — fingerprint storage", () => {
+  it("stores a fingerprint on each player when a team is created", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        roster: {
+          lineup: [makePlayer({ id: "p_fp1", name: "Fingerprint Batter" })],
+          bench: [],
+          pitchers: [
+            makePlayer({
+              id: "p_fp2",
+              name: "Fingerprint Pitcher",
+              role: "pitcher",
+              pitching: { velocity: 85, control: 70, movement: 65 },
+            }),
+          ],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(id);
+    expect(team?.roster.lineup[0].fingerprint).toBeTruthy();
+    expect(team?.roster.pitchers[0].fingerprint).toBeTruthy();
+  });
+
+  it("fingerprint matches buildPlayerSig result", async () => {
+    const { buildPlayerSig } = await import("./customTeamExportImport");
+    const player = makePlayer({ id: "p_sig", name: "Sig Check" });
+    const id = await store.createCustomTeam(
+      makeInput({ roster: { lineup: [player], bench: [], pitchers: [] } }),
+    );
+    const team = await store.getCustomTeam(id);
+    const stored = team?.roster.lineup[0];
+    expect(stored?.fingerprint).toBe(buildPlayerSig(stored!));
+  });
+});

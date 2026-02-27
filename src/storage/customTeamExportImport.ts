@@ -6,6 +6,10 @@ export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 /** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */
 export const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
 
+export const PLAYER_EXPORT_FORMAT_VERSION = 1 as const;
+/** Signing key for individual-player exports. */
+export const PLAYER_EXPORT_KEY = "ballgame:player:v1";
+
 /** `TeamPlayer` carrying the export-only `sig` field before it is stripped for DB storage. */
 type TeamPlayerWithSig = TeamPlayer & { sig?: string };
 
@@ -358,4 +362,85 @@ export function importCustomTeams(
     duplicateWarnings,
     duplicatePlayerWarnings,
   };
+}
+
+// ── Individual player export / import ─────────────────────────────────────────
+
+/**
+ * Serializes a single player into a portable signed JSON string.
+ * The player gets a `sig` field covering its immutable identity fields, and
+ * the bundle gets its own FNV-1a signature so tampering is detectable on import.
+ */
+export function exportCustomPlayer(player: TeamPlayer): string {
+  const playerWithSig: TeamPlayer & { sig: string } = {
+    ...stripPlayerSig(player),
+    sig: buildPlayerSig(player),
+  };
+  const payload = { player: playerWithSig };
+  const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+  const bundle = {
+    type: "customPlayer" as const,
+    formatVersion: PLAYER_EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    payload,
+    sig,
+  };
+  return JSON.stringify(bundle, null, 2);
+}
+
+/**
+ * Parses and validates a single-player export JSON string.
+ * Verifies both the bundle-level FNV-1a signature and the per-player content
+ * signature. Throws a descriptive error on any validation failure.
+ * Returns the player with `sig` stripped (not stored in DB).
+ */
+export function parseExportedCustomPlayer(json: string): TeamPlayer {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error("Invalid JSON: could not parse player file");
+  }
+  if (!parsed || typeof parsed !== "object")
+    throw new Error("Invalid player file: not an object");
+  const obj = parsed as Record<string, unknown>;
+
+  if (obj["type"] !== "customPlayer")
+    throw new Error(
+      `Invalid player file: expected type "customPlayer", got "${obj["type"] as string}"`,
+    );
+  if (obj["formatVersion"] !== 1)
+    throw new Error(`Unsupported player format version: ${obj["formatVersion"] as number}`);
+  if (!obj["payload"] || typeof obj["payload"] !== "object")
+    throw new Error("Invalid player file: missing payload");
+
+  const payload = obj["payload"] as Record<string, unknown>;
+  if (!payload["player"] || typeof payload["player"] !== "object")
+    throw new Error("Invalid player file: missing payload.player");
+
+  const playerObj = payload["player"] as Record<string, unknown>;
+  if (typeof playerObj["id"] !== "string" || !playerObj["id"])
+    throw new Error("Invalid player file: missing required field: id");
+  if (typeof playerObj["name"] !== "string" || !playerObj["name"])
+    throw new Error("Invalid player file: missing required field: name");
+  if (typeof playerObj["role"] !== "string")
+    throw new Error("Invalid player file: missing required field: role");
+  if (!playerObj["batting"] || typeof playerObj["batting"] !== "object")
+    throw new Error("Invalid player file: missing required field: batting");
+
+  // ── Bundle signature ───────────────────────────────────────────────────────
+  const expectedBundleSig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(obj["payload"]));
+  if (typeof obj["sig"] !== "string" || obj["sig"] !== expectedBundleSig)
+    throw new Error(
+      "Player signature mismatch — file may be corrupted or not a valid Ballgame player export",
+    );
+
+  // ── Per-player content signature ───────────────────────────────────────────
+  const player = payload["player"] as TeamPlayer & { sig?: string };
+  const expectedPlayerSig = buildPlayerSig(player);
+  if (player.sig !== expectedPlayerSig)
+    throw new Error("Player content signature mismatch — player data may have been tampered with");
+
+  // Return the player with `sig` stripped — export-only metadata, not stored in DB.
+  return stripPlayerSig(player);
 }
