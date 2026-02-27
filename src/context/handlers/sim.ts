@@ -56,7 +56,10 @@ export const handleSimAction = (
         state.onePitchModifier,
         wp?.pitchType,
       );
-      return withStrikeoutLog(state, result);
+      // checkWalkoff is required here: a 4th ball (walk) can score the game-winning run
+      // in the bottom of the 9th or later (e.g. bases-loaded walk in extra innings).
+      // Without it, tie games would continue past the walkoff pitch instead of ending immediately.
+      return checkWalkoff(withStrikeoutLog(state, result), log);
     }
     case "steal_attempt": {
       const { successPct, base } = action.payload as { successPct: number; base: 0 | 1 };
