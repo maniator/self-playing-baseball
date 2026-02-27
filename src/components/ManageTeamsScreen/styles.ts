@@ -269,3 +269,36 @@ export const ErrorMessage = styled.p`
   font-size: 13px;
   margin-top: 8px;
 `;
+
+export const PasteTextarea = styled.textarea`
+  width: 100%;
+  min-height: 72px;
+  background: #0a1525;
+  border: 1px solid #4a6090;
+  border-radius: 6px;
+  color: #cce0ff;
+  font-family: monospace;
+  font-size: 11px;
+  padding: 8px 10px;
+  resize: vertical;
+  box-sizing: border-box;
+  margin-top: 10px;
+
+  &::placeholder {
+    color: #3a5070;
+  }
+
+  &:focus {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+    border-color: transparent;
+  }
+`;
+
+export const PasteActions = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 6px;
+`;

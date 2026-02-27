@@ -24,6 +24,8 @@ import {
   ImportExportTitle,
   InfoBanner,
   NotFoundMsg,
+  PasteActions,
+  PasteTextarea,
   ScreenContainer,
   ScreenHeader,
   ScreenTitle,
@@ -56,7 +58,15 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const importFileRef = React.useRef<HTMLInputElement>(null);
   const [importSuccess, setImportSuccess] = React.useState<string | null>(null);
 
-  const { importError, importing, handleFileImport } = useImportCustomTeams({
+  const {
+    pasteJson,
+    setPasteJson,
+    importError,
+    importing,
+    handleFileImport,
+    handlePasteImport,
+    handlePasteFromClipboard,
+  } = useImportCustomTeams({
     importFn: (json) => CustomTeamStore.importCustomTeams(json),
     onSuccess: (result) => {
       refresh();
@@ -203,7 +213,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             disabled={importing}
             data-testid="import-teams-button"
           >
-            {importing ? "Importing…" : "↑ Import Teams"}
+            {importing ? "Importing…" : "↑ Import from File"}
           </ImportExportBtn>
           <FileInput
             ref={importFileRef}
@@ -214,6 +224,35 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             aria-label="Import teams file"
           />
         </ImportExportRow>
+        <PasteTextarea
+          value={pasteJson}
+          onChange={(e) => setPasteJson(e.target.value)}
+          placeholder='{"type":"customTeams","formatVersion":1,"payload":{"teams":[…]}}'
+          data-testid="import-teams-paste-textarea"
+          aria-label="Paste teams JSON"
+        />
+        <PasteActions>
+          <ImportExportBtn
+            type="button"
+            onClick={() => {
+              setImportSuccess(null);
+              handlePasteImport();
+            }}
+            disabled={importing}
+            data-testid="import-teams-paste-button"
+          >
+            {importing ? "Importing…" : "↑ Import from Text"}
+          </ImportExportBtn>
+          {typeof navigator !== "undefined" && navigator.clipboard && (
+            <ImportExportBtn
+              type="button"
+              onClick={handlePasteFromClipboard}
+              data-testid="import-teams-clipboard-button"
+            >
+              Paste from Clipboard
+            </ImportExportBtn>
+          )}
+        </PasteActions>
         {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
         {importSuccess && !importError && (
           <SuccessMessage data-testid="import-teams-success">{importSuccess}</SuccessMessage>
