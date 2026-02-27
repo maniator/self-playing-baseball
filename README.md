@@ -49,6 +49,13 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Upload a roster CSV to give each batter a real name.
   - Drag-and-drop batting order reordering.
   - Per-player stat overrides for Contact, Power, and Speed.
+- **Custom team builder** — create, edit, and save your own teams with full roster management:
+  - Lineup (9 players), bench (substitutes), and pitchers — all sections support **drag-and-drop reordering**.
+  - Drag a lineup player onto the bench (or vice versa) to swap them between sections without copy-paste.
+  - Per-player contact/power/speed/velocity/control/movement stats with cap enforcement.
+  - Export any team or individual player to a portable signed JSON file; import files back on any device.
+  - Duplicate player detection on import — shows a confirmation prompt before overwriting.
+  - FNV-1a content fingerprints on every player and team for identity tracking across imports.
 - **Seeded randomness** — every game is fully deterministic from its seed, so results are perfectly repeatable.
 - **Share replay** — copies a URL containing the seed so anyone can watch the exact same game unfold.
 - **Manager Mode** — pick a team and a strategy (Balanced / Aggressive / Patient / Contact / Power) and make real decisions at key moments:
@@ -123,8 +130,12 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 | `save-load.spec.ts` | Save game, load game, autoplay resumes after load |
 | `import.spec.ts` | Import fixture JSON, save appears in list with Load button |
 | `responsive-smoke.spec.ts` | Scoreboard + field + log visible & non-zero sized on all viewports |
-| `visual.spec.ts` | Pixel-diff snapshots: New Game dialog, in-game scoreboard, saves modal |
+| `visual/*.visual.spec.ts` | Pixel-diff snapshots: New Game dialog, in-game scoreboard, saves modal, team editor, decision panel |
 | `manager-mode.spec.ts` | Manager Mode toggle + strategy selector visible after game starts |
+| `custom-team-editor.spec.ts` | Team editor interactions, drag handles present, no up/down buttons |
+| `manage-teams-and-custom-game-flow.spec.ts` | Full Create/Edit/Delete team + start custom game |
+| `import-export-teams.spec.ts` | Export/import round-trip, legacy file import, tamper detection, dedup skip |
+| `substitution.spec.ts` | Pinch hitter substitution flow |
 
 **Key implementation notes:**
 - `data-testid` attributes on all critical elements enable stable locators.
