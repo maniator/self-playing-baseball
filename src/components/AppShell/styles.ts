@@ -6,11 +6,12 @@ export const AppVolumeBar = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 20;
   display: flex;
   justify-content: center;
   gap: 16px;
   flex-wrap: wrap;
-  padding: 10px 16px;
+  padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
   background: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);

@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import type * as React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import * as announceModule from "@utils/announce";

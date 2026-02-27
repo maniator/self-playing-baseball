@@ -553,8 +553,7 @@ describe("setAlertVolume — master gain integration", () => {
     const ctx = AudioCtxMock();
     const masterGainNode = ctx.createGain();
     startHomeScreenMusic();
-    // Changing alert volume should update gain via setAlertVolume
     setAlertVolume(0.5);
-    expect(masterGainNode.gain.value).toBeDefined();
+    expect(masterGainNode.gain.value).toBe(0.5);
   });
 });

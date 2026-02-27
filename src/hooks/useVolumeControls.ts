@@ -31,6 +31,11 @@ export const useVolumeControls = () => {
   const prevAnnouncementVolumeRef = React.useRef(safeAnnouncementVolume);
   const prevAlertVolumeRef = React.useRef(safeAlertVolume);
 
+  // Always keep prev refs up-to-date so unmuting restores the right level even if
+  // volume was changed via another surface (e.g. the in-game controls).
+  if (safeAnnouncementVolume > 0) prevAnnouncementVolumeRef.current = safeAnnouncementVolume;
+  if (safeAlertVolume > 0) prevAlertVolumeRef.current = safeAlertVolume;
+
   const handleAnnouncementVolumeChange = React.useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const f = parseFloat(e.target.value);
