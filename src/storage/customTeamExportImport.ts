@@ -56,6 +56,9 @@ export function buildTeamFingerprint(team: CustomTeamDoc): string {
  *     different DB IDs are the same person.
  *   - `position`, `handedness`, `jerseyNumber`, `pitchingRole` are intentionally excluded:
  *     these are editable after creation and must not invalidate a previously issued sig.
+ *   - For pure hitters `pitching` is `undefined`. `JSON.stringify` omits `undefined` values
+ *     consistently on both the export side and the re-import side, so the sig is
+ *     deterministic across round-trips with no special normalisation needed.
  *
  * The sig serves two purposes:
  *   1. Tamper detection: any post-export mutation of name or stats is detectable on import.

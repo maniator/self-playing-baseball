@@ -48,6 +48,7 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({
   const total = isPitcher ? pitcherTotal : hitterTotal;
   const rem = isPitcher ? pitcherRem : hitterRem;
   const cap = isPitcher ? PITCHER_STAT_CAP : HITTER_STAT_CAP;
+  const shouldShowOverCapWarning = !isExistingPlayer && overCap;
 
   const stat = (label: string, key: keyof EditorPlayer, htmlFor: string) => {
     const val = (player[key] as number | undefined) ?? 0;
@@ -62,6 +63,8 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({
           value={val}
           disabled={isExistingPlayer}
           onChange={(e) => {
+            // Guard in addition to `disabled` — jsdom fires change events on disabled
+            // elements via fireEvent, so the explicit check keeps tests meaningful.
             if (!isExistingPlayer) onChange({ [key]: Number(e.target.value) });
           }}
         />
@@ -87,8 +90,8 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({
           </>
         )}
       </StatsGrid>
-      <StatBudgetRow $overCap={!isExistingPlayer && overCap}>
-        {overCap && !isExistingPlayer
+      <StatBudgetRow $overCap={shouldShowOverCapWarning}>
+        {shouldShowOverCapWarning
           ? `⚠ ${total} / ${cap} — ${Math.abs(rem)} over cap`
           : `Total: ${total} / ${cap}`}
       </StatBudgetRow>

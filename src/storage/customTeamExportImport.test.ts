@@ -234,7 +234,12 @@ describe("parseExportedCustomTeams", () => {
 
   it("throws when a team is missing required id", () => {
     const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
-    const team = { name: "No ID", source: "custom", fingerprint: "aabbccdd", roster: { lineup: [player] } };
+    const team = {
+      name: "No ID",
+      source: "custom",
+      fingerprint: "aabbccdd",
+      roster: { lineup: [player] },
+    };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -392,21 +397,33 @@ describe("importCustomTeams", () => {
     expect(result.created).toBe(1);
   });
 
-  it("emits duplicatePlayerWarnings when player sig matches existing player (different team)", () => {
-    // Player warnings are only possible when the team fingerprint does NOT match
-    // (otherwise the team is skipped before player detection runs). Since player sigs
-    // incorporate the team fingerprint, the only way to get a player warning today is if
-    // the incoming team has the same lineup player names but different player stats/IDs
-    // that somehow produce the same player sig — practically, player warnings fire when
-    // the exact team + player combination already exists in the DB. This tests the
-    // code path directly via a pre-signed export that contains a matching sig.
-    const player = makePlayer({ id: "p_alice", name: "Alice" });
-    const fresh = makeTeam({ id: "ct_fresh_id", name: "New Squad" });
-    // Import a fresh team with no existing matches — no player warnings expected
-    const result = importCustomTeams(exportCustomTeams([fresh]), []);
-    expect(result.duplicatePlayerWarnings).toHaveLength(0);
-    // Suppress unused-var warning — variable used only to satisfy TS (player not used in fresh)
-    void player;
+  it("emits duplicatePlayerWarnings when same player (by content) appears in a different imported team", () => {
+    // Player warnings fire when a non-duplicate team (different fingerprint) shares a player
+    // whose {name, role, batting, pitching} matches one already in the local DB.
+    // Construct: existing "Team A" has Alice; import "Team B" (different name → different
+    // fingerprint, so it is not skipped) that also contains Alice with identical stats.
+    const alice = makePlayer({ id: "p_alice", name: "Alice" });
+    const existingTeam = makeTeam({
+      id: "ct_a",
+      name: "Team A",
+      roster: { schemaVersion: 1, lineup: [alice], bench: [], pitchers: [] },
+    });
+    // Team B has a different name/fingerprint but carries Alice with the same content
+    const teamB = makeTeam({
+      id: "ct_b",
+      name: "Team B",
+      roster: {
+        schemaVersion: 1,
+        lineup: [{ ...alice, id: "p_alice_b" }],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const result = importCustomTeams(exportCustomTeams([teamB]), [existingTeam]);
+    expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
+    expect(result.duplicatePlayerWarnings[0]).toMatch(/Alice/);
+    // The team itself is still imported (different fingerprint → not skipped)
+    expect(result.teams).toHaveLength(1);
   });
 
   it("attaches fingerprint to each output team", () => {
@@ -489,7 +506,12 @@ describe("importCustomTeams", () => {
 describe("parseExportedCustomTeams — roster constraint validation", () => {
   it("throws when a team is missing required name", () => {
     const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
-    const team = { id: "ct1", source: "custom", fingerprint: "aabbccdd", roster: { lineup: [player] } };
+    const team = {
+      id: "ct1",
+      source: "custom",
+      fingerprint: "aabbccdd",
+      roster: { lineup: [player] },
+    };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });

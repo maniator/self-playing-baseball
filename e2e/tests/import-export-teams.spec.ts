@@ -135,7 +135,7 @@ test.describe("Custom Teams — Import/Export", () => {
 
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
-    await page.getByTestId("custom-team-name-input").fill("Skip Dup Team");
+    await page.getByTestId("custom-team-name-input").fill("Exact Copy Team");
     await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
