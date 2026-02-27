@@ -19,6 +19,7 @@ import {
   ReadOnlyInput,
   RemoveBtn,
   SelectInput,
+  SmallIconBtn,
   TextInput,
 } from "./styles";
 
@@ -28,6 +29,8 @@ type Props = {
   isExistingPlayer?: boolean;
   onChange: (patch: Partial<EditorPlayer>) => void;
   onRemove: () => void;
+  /** Called when the user clicks the export button. Undefined = no export button shown. */
+  onExport?: () => void;
 };
 
 const SortablePlayerRow: React.FunctionComponent<Props> = ({
@@ -36,6 +39,7 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
   isExistingPlayer = false,
   onChange,
   onRemove,
+  onExport,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: player.id,
@@ -85,6 +89,17 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
             aria-invalid={!player.name.trim() ? "true" : undefined}
             style={{ flex: 1 }}
           />
+        )}
+        {onExport && (
+          <SmallIconBtn
+            type="button"
+            onClick={onExport}
+            aria-label="Export player"
+            title="Export player"
+            data-testid="export-player-button"
+          >
+            ↓ Export
+          </SmallIconBtn>
         )}
         <RemoveBtn type="button" onClick={onRemove} aria-label="Remove player">
           ✕

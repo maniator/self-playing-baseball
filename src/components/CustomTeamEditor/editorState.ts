@@ -258,3 +258,11 @@ const editorToTeamPlayer =
       }),
     ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
   });
+
+/**
+ * Converts a single `EditorPlayer` to a `TeamPlayer` with the given role.
+ * Exported for use in the player-export flow (where we need the role to
+ * correctly populate the pitching fields and compute the player sig).
+ */
+export const editorPlayerToTeamPlayer = (p: EditorPlayer, role: "batter" | "pitcher"): TeamPlayer =>
+  editorToTeamPlayer(role)(p);

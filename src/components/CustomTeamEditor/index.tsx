@@ -18,10 +18,17 @@ import {
 import { generateDefaultCustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import type { CustomTeamDoc } from "@storage/types";
+import {
+  buildPlayerSig,
+  exportCustomPlayer,
+  parseExportedCustomPlayer,
+} from "@storage/customTeamExportImport";
+import { downloadJson, playerFilename } from "@storage/saveIO";
+import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import {
   type EditorPlayer,
+  editorPlayerToTeamPlayer,
   editorReducer,
   editorStateToCreateInput,
   initEditorState,
@@ -42,9 +49,13 @@ import {
   FormSection,
   GenerateBtn,
   IdentityLockHint,
+  ImportPlayerBtn,
+  PlayerDuplicateActions,
+  PlayerDuplicateBanner,
   ReadOnlyInput,
   SaveBtn,
   SectionHeading,
+  SmallIconBtn,
   TeamInfoGrid,
   TeamInfoSecondRow,
   TextInput,
@@ -90,7 +101,7 @@ const makeBlankPitcher = (): EditorPlayer => ({
 
 const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCancel }) => {
   const [state, dispatch] = React.useReducer(editorReducer, team, initEditorState);
-  const { createTeam, updateTeam } = useCustomTeams();
+  const { createTeam, updateTeam, teams: allTeams } = useCustomTeams();
   const errorRef = React.useRef<HTMLParagraphElement>(null);
 
   const isEditMode = !!team;
@@ -102,6 +113,81 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
         ...(team?.roster.pitchers.map((p) => p.id) ?? []),
       ]),
     [team],
+  );
+
+  // ── File input refs for player import ─────────────────────────────────────
+  const lineupFileRef = React.useRef<HTMLInputElement>(null);
+  const benchFileRef = React.useRef<HTMLInputElement>(null);
+  const pitchersFileRef = React.useRef<HTMLInputElement>(null);
+  // Tracks an import that is blocked pending user confirmation of a duplicate player.
+  const [pendingPlayerImport, setPendingPlayerImport] = React.useState<{
+    player: EditorPlayer;
+    section: "lineup" | "bench" | "pitchers";
+    warning: string;
+  } | null>(null);
+
+  // ── Player export ──────────────────────────────────────────────────────────
+  const handleExportPlayer = React.useCallback((p: EditorPlayer, role: "batter" | "pitcher") => {
+    const teamPlayer = editorPlayerToTeamPlayer(p, role);
+    const json = exportCustomPlayer(teamPlayer);
+    downloadJson(json, playerFilename(teamPlayer.name || "player"));
+  }, []);
+
+  // ── Player import ──────────────────────────────────────────────────────────
+  const handleImportPlayerFile = React.useCallback(
+    (section: "lineup" | "bench" | "pitchers") => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = "";
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          const importedPlayer = parseExportedCustomPlayer(reader.result as string);
+          // Remap the ID to avoid collisions with existing players.
+          const editorPlayer: EditorPlayer = {
+            id: makePlayerId(),
+            name: importedPlayer.name,
+            position: importedPlayer.position ?? "",
+            handedness: importedPlayer.handedness ?? "R",
+            contact: importedPlayer.batting.contact,
+            power: importedPlayer.batting.power,
+            speed: importedPlayer.batting.speed,
+            ...(importedPlayer.pitching && {
+              velocity: importedPlayer.pitching.velocity,
+              control: importedPlayer.pitching.control,
+              movement: importedPlayer.pitching.movement,
+            }),
+            ...(importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
+          };
+
+          // Check if this player's fingerprint already exists in any team.
+          const incomingFp = buildPlayerSig(importedPlayer);
+          const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
+            [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
+              (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
+            ),
+          );
+
+          if (existingTeamWithPlayer) {
+            setPendingPlayerImport({
+              player: editorPlayer,
+              section,
+              warning: `"${importedPlayer.name}" may already exist on team "${existingTeamWithPlayer.name}". Import anyway?`,
+            });
+          } else {
+            dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
+          }
+        } catch (err) {
+          dispatch({
+            type: "SET_ERROR",
+            error: `Failed to import player: ${err instanceof Error ? err.message : String(err)}`,
+          });
+        }
+      };
+      reader.readAsText(file);
+    },
+    [allTeams],
   );
 
   const sensors = useSensors(
@@ -158,6 +244,30 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   const lineupSection = () => (
     <FormSection data-testid="custom-team-lineup-section">
       <SectionHeading>Lineup (drag to reorder)</SectionHeading>
+      {pendingPlayerImport?.section === "lineup" && (
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+          ⚠ {pendingPlayerImport.warning}
+          <PlayerDuplicateActions>
+            <SmallIconBtn
+              type="button"
+              data-testid="player-import-confirm-button"
+              onClick={() => {
+                dispatch({
+                  type: "ADD_PLAYER",
+                  section: "lineup",
+                  player: pendingPlayerImport.player,
+                });
+                setPendingPlayerImport(null);
+              }}
+            >
+              Import Anyway
+            </SmallIconBtn>
+            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
+              Cancel
+            </SmallIconBtn>
+          </PlayerDuplicateActions>
+        </PlayerDuplicateBanner>
+      )}
       <DndContext
         sensors={sensors}
         collisionDetection={closestCenter}
@@ -176,6 +286,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
                 dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
               }
               onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
+              onExport={() => handleExportPlayer(p, "batter")}
             />
           ))}
         </SortableContext>
@@ -189,6 +300,18 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       >
         + Add Player
       </AddPlayerBtn>
+      <input
+        ref={lineupFileRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={handleImportPlayerFile("lineup")}
+        data-testid="import-lineup-player-input"
+        aria-label="Import lineup player from file"
+      />
+      <ImportPlayerBtn type="button" onClick={() => lineupFileRef.current?.click()}>
+        ↑ Import Player
+      </ImportPlayerBtn>
     </FormSection>
   );
 
@@ -202,6 +325,26 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
   ) => (
     <FormSection data-testid={testId}>
       <SectionHeading>{label}</SectionHeading>
+      {pendingPlayerImport?.section === key && (
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-duplicate-banner">
+          ⚠ {pendingPlayerImport.warning}
+          <PlayerDuplicateActions>
+            <SmallIconBtn
+              type="button"
+              data-testid="player-import-confirm-button"
+              onClick={() => {
+                dispatch({ type: "ADD_PLAYER", section: key, player: pendingPlayerImport.player });
+                setPendingPlayerImport(null);
+              }}
+            >
+              Import Anyway
+            </SmallIconBtn>
+            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
+              Cancel
+            </SmallIconBtn>
+          </PlayerDuplicateActions>
+        </PlayerDuplicateBanner>
+      )}
       {state[key].map((p, i) => (
         <PlayerRow
           key={p.id}
@@ -216,6 +359,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: key, index: i })}
           onMoveUp={() => dispatch({ type: "MOVE_UP", section: key, index: i })}
           onMoveDown={() => dispatch({ type: "MOVE_DOWN", section: key, index: i })}
+          onExport={() => handleExportPlayer(p, isPitcher ? "pitcher" : "batter")}
         />
       ))}
       <AddPlayerBtn
@@ -231,6 +375,21 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       >
         + Add {isPitcher ? "Pitcher" : "Player"}
       </AddPlayerBtn>
+      <input
+        ref={key === "bench" ? benchFileRef : pitchersFileRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={handleImportPlayerFile(key)}
+        data-testid={`import-${key}-player-input`}
+        aria-label={`Import ${isPitcher ? "pitcher" : "player"} from file`}
+      />
+      <ImportPlayerBtn
+        type="button"
+        onClick={() => (key === "bench" ? benchFileRef : pitchersFileRef).current?.click()}
+      >
+        ↑ Import {isPitcher ? "Pitcher" : "Player"}
+      </ImportPlayerBtn>
     </FormSection>
   );
 
