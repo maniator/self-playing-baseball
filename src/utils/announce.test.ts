@@ -18,6 +18,8 @@ import {
   setAlertVolume,
   setAnnouncementVolume,
   setSpeechRate,
+  startHomeScreenMusic,
+  stopHomeScreenMusic,
 } from "./announce";
 
 const synth = window.speechSynthesis;
@@ -403,5 +405,83 @@ describe("pickVoice — voice selection", () => {
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
     // No English voices at all → _bestVoice = null → voice stays null from the mock
     expect(utterance.voice).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// startHomeScreenMusic() / stopHomeScreenMusic()
+// ---------------------------------------------------------------------------
+describe("startHomeScreenMusic", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    (window.AudioContext as ReturnType<typeof vi.fn>).mockClear();
+    stopHomeScreenMusic();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    stopHomeScreenMusic();
+    vi.useRealTimers();
+  });
+
+  it("does not throw when alert volume > 0", () => {
+    expect(() => startHomeScreenMusic()).not.toThrow();
+  });
+
+  it("creates an AudioContext when alert volume > 0", () => {
+    startHomeScreenMusic();
+    expect(window.AudioContext).toHaveBeenCalledOnce();
+  });
+
+  it("does not create AudioContext when alert volume is 0", () => {
+    setAlertVolume(0);
+    startHomeScreenMusic();
+    expect(window.AudioContext).not.toHaveBeenCalled();
+  });
+
+  it("schedules oscillator notes for melody, harmony and bass", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    const ctx = AudioCtxMock();
+    (ctx.createOscillator as ReturnType<typeof vi.fn>).mockClear();
+    startHomeScreenMusic();
+    // Melody (17 notes) + harmony (8) + bass (4) = 29 oscillators per pass
+    expect(ctx.createOscillator).toHaveBeenCalled();
+  });
+
+  it("schedules a re-loop timeout after starting", () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+    startHomeScreenMusic();
+    expect(setTimeoutSpy).toHaveBeenCalled();
+  });
+});
+
+describe("stopHomeScreenMusic", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not throw when no music is playing", () => {
+    expect(() => stopHomeScreenMusic()).not.toThrow();
+  });
+
+  it("calls AudioContext.close() when music is playing", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    const ctx = AudioCtxMock();
+    (ctx.close as ReturnType<typeof vi.fn>).mockClear();
+    startHomeScreenMusic();
+    stopHomeScreenMusic();
+    expect(ctx.close).toHaveBeenCalled();
+  });
+
+  it("cancels the loop timeout when music is stopped", () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+    startHomeScreenMusic();
+    stopHomeScreenMusic();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
   });
 });

@@ -62,6 +62,7 @@ const mockAudioCtx = {
   createGain: vi.fn().mockReturnValue(mockGainNode),
   destination: {},
   currentTime: 0,
+  close: vi.fn().mockResolvedValue(undefined),
 };
 
 (global as typeof globalThis & { AudioContext: unknown }).AudioContext = vi
