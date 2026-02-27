@@ -1,0 +1,28 @@
+{
+  // TypeScript configuration for the Playwright E2E test suite.
+  //
+  // Why this file exists:
+  //   The root tsconfig.json only covers `src/` — E2E files were completely
+  //   excluded from type-checking, which allowed bugs like destructuring
+  //   `testInfo` from the first fixture argument instead of taking it as the
+  //   second callback argument.  Playwright surfaces this as a runtime error
+  //   ("Test has unknown parameter 'testInfo'") only when the test suite
+  //   actually runs.  With this tsconfig, `yarn typecheck:e2e` (and the CI
+  //   "Typecheck E2E tests" step) catch the same mistake at type-check time.
+  //
+  // What it provides:
+  //   - @playwright/test types  → correct signatures for `test(...)` callbacks
+  //   - node types              → `fs`, `path`, `__dirname`, `Buffer`, etc.
+  //   - allowSyntheticDefaultImports → matches how `import path from 'path'`
+  //     is already used throughout the E2E helpers
+  //   - paths: {}               → clears the src/ path aliases; E2E files use
+  //     relative imports only
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "types": ["@playwright/test", "node"],
+    "noEmit": true,
+    "allowSyntheticDefaultImports": true,
+    "paths": {}
+  },
+  "include": ["**/*.ts", "../playwright.config.ts"]
+}

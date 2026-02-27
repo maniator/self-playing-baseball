@@ -18,6 +18,7 @@
     "test:e2e:update-snapshots": "playwright test --update-snapshots",
     "lint": "eslint src e2e playwright.config.ts",
     "lint:fix": "eslint src e2e playwright.config.ts --fix",
+    "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\""
   },

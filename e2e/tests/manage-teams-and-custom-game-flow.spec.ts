@@ -397,8 +397,7 @@ test.describe("Custom Team Import — start game → save → load flow", () => 
 
   test("import a team via file, start an exhibition game, save it, then reload it", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     // Step 1: Create a team and export it.
