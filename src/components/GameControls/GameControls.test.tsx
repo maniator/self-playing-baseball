@@ -67,7 +67,7 @@ describe("GameControls", () => {
   it("shows volume sliders", () => {
     renderWithContext(<GameControls />);
     expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeInTheDocument();
-    expect(screen.getByRole("slider", { name: /alert volume/i })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /music volume/i })).toBeInTheDocument();
   });
 
   it("shows speed selector", () => {
@@ -99,9 +99,9 @@ describe("GameControls", () => {
     expect((slider as HTMLInputElement).value).toBe("0.5");
   });
 
-  it("changing alert volume slider fires handler", () => {
+  it("changing music volume slider fires handler", () => {
     renderWithContext(<GameControls />);
-    const slider = screen.getByRole("slider", { name: /alert volume/i });
+    const slider = screen.getByRole("slider", { name: /music volume/i });
     fireEvent.change(slider, { target: { value: "0.3" } });
     expect((slider as HTMLInputElement).value).toBe("0.3");
   });

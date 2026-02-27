@@ -2,6 +2,10 @@ export let _alertVolume = 1.0;
 
 export const setAlertVolume = (v: number): void => {
   _alertVolume = Math.max(0, Math.min(1, v));
+  // Keep the home-screen music master gain in sync so volume changes apply immediately.
+  if (_homeMasterGain) {
+    _homeMasterGain.gain.value = _alertVolume;
+  }
 };
 
 export const getAlertVolume = (): number => _alertVolume;
@@ -138,9 +142,12 @@ const HOME_BASS_NOTES: ReadonlyArray<readonly [number, number, number]> = [
 export const HOME_LOOP_DURATION = 16 * HOME_BEAT;
 
 let _homeCtx: AudioContext | null = null;
+let _homeMasterGain: GainNode | null = null;
 let _homeLoopId: ReturnType<typeof setTimeout> | null = null;
+/** Removes document interaction listeners added for autoplay-policy recovery. */
+let _homeCleanup: (() => void) | null = null;
 
-const scheduleHomePass = (ctx: AudioContext, loopStart: number, vol: number): void => {
+const scheduleHomePass = (ctx: AudioContext, masterGain: GainNode, loopStart: number): void => {
   const makeNote = (
     type: OscillatorType,
     freq: number,
@@ -151,7 +158,7 @@ const scheduleHomePass = (ctx: AudioContext, loopStart: number, vol: number): vo
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.connect(g);
-    g.connect(ctx.destination);
+    g.connect(masterGain);
     osc.type = type;
     osc.frequency.value = freq;
     g.gain.setValueAtTime(0, t);
@@ -162,17 +169,17 @@ const scheduleHomePass = (ctx: AudioContext, loopStart: number, vol: number): vo
   };
 
   for (const [freq, beat, dur] of HOME_MELODY_NOTES) {
-    makeNote("triangle", freq, loopStart + beat * HOME_BEAT, dur, 0.18 * vol);
+    makeNote("triangle", freq, loopStart + beat * HOME_BEAT, dur, 0.18);
   }
   for (const [freq, beat, dur] of HOME_HARMONY_NOTES) {
-    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.08 * vol);
+    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.08);
   }
   for (const [freq, beat, dur] of HOME_BASS_NOTES) {
-    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.12 * vol);
+    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.12);
   }
 };
 
-/** Start looping home-screen music. Respects alert volume; skips when muted. */
+/** Start looping home-screen music. Volume is controlled by alert volume via master gain. */
 export const startHomeScreenMusic = (): void => {
   if (_alertVolume === 0) return;
   stopHomeScreenMusic();
@@ -182,11 +189,13 @@ export const startHomeScreenMusic = (): void => {
       (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctx) return;
     _homeCtx = new Ctx();
-    const vol = _alertVolume;
+    _homeMasterGain = _homeCtx.createGain();
+    _homeMasterGain.gain.value = _alertVolume;
+    _homeMasterGain.connect(_homeCtx.destination);
 
     const loopFrom = (loopStart: number): void => {
-      if (!_homeCtx) return;
-      scheduleHomePass(_homeCtx, loopStart, vol);
+      if (!_homeCtx || !_homeMasterGain) return;
+      scheduleHomePass(_homeCtx, _homeMasterGain, loopStart);
       const loopEnd = loopStart + HOME_LOOP_DURATION;
       const msUntilPreschedule = (loopEnd - _homeCtx.currentTime - 0.15) * 1000;
       _homeLoopId = setTimeout(
@@ -197,7 +206,37 @@ export const startHomeScreenMusic = (): void => {
       );
     };
 
-    loopFrom(_homeCtx.currentTime);
+    // Attempt to start immediately. Browsers may keep the AudioContext suspended
+    // until the first user gesture (autoplay policy). If so, we install one-shot
+    // listeners so the loop begins on the very next interaction.
+    const tryBegin = () => {
+      if (!_homeCtx || _homeLoopId !== null) return;
+      _homeCtx
+        .resume()
+        .then(() => {
+          if (_homeCtx && _homeLoopId === null) loopFrom(_homeCtx.currentTime);
+        })
+        .catch(() => {});
+    };
+
+    tryBegin();
+
+    if (_homeCtx.state !== "running") {
+      const onInteraction = () => {
+        _homeCleanup?.();
+        _homeCleanup = null;
+        tryBegin();
+      };
+      const cleanup = () => {
+        document.removeEventListener("click", onInteraction);
+        document.removeEventListener("keydown", onInteraction);
+        document.removeEventListener("touchstart", onInteraction);
+      };
+      _homeCleanup = cleanup;
+      document.addEventListener("click", onInteraction);
+      document.addEventListener("keydown", onInteraction);
+      document.addEventListener("touchstart", onInteraction);
+    }
   } catch {
     // AudioContext unavailable — silently ignore
   }
@@ -205,6 +244,8 @@ export const startHomeScreenMusic = (): void => {
 
 /** Stop and tear down the home-screen music immediately. */
 export const stopHomeScreenMusic = (): void => {
+  _homeCleanup?.();
+  _homeCleanup = null;
   if (_homeLoopId !== null) {
     clearTimeout(_homeLoopId);
     _homeLoopId = null;
@@ -213,6 +254,7 @@ export const stopHomeScreenMusic = (): void => {
     _homeCtx.close().catch(() => {});
     _homeCtx = null;
   }
+  _homeMasterGain = null;
 };
 
 /** Plays the opening bars of "Take Me Out to the Ball Game" for the 7th-inning stretch.

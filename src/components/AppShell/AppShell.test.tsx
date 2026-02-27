@@ -81,6 +81,7 @@ function renderAppShell(initialPath = "/") {
 describe("AppShell", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it("renders the Home screen by default", () => {
@@ -179,5 +180,32 @@ describe("AppShell", () => {
     renderAppShell("/");
     await user.click(screen.getByTestId("help-mock"));
     expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+  });
+
+  // Volume bar tests
+  it("renders the volume bar on the home route", () => {
+    renderAppShell("/");
+    expect(screen.getByTestId("app-volume-bar")).toBeInTheDocument();
+  });
+
+  it("renders the volume bar on the /saves route", () => {
+    renderAppShell("/saves");
+    expect(screen.getByTestId("app-volume-bar")).toBeInTheDocument();
+  });
+
+  it("renders the volume bar on the /help route", () => {
+    renderAppShell("/help");
+    expect(screen.getByTestId("app-volume-bar")).toBeInTheDocument();
+  });
+
+  it("does NOT render the volume bar on the /game route", () => {
+    renderAppShell("/game");
+    expect(screen.queryByTestId("app-volume-bar")).not.toBeInTheDocument();
+  });
+
+  it("volume bar contains announcement and music volume sliders", () => {
+    renderAppShell("/");
+    expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /music volume/i })).toBeInTheDocument();
   });
 });

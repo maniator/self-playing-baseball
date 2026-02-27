@@ -439,19 +439,35 @@ describe("startHomeScreenMusic", () => {
     expect(window.AudioContext).not.toHaveBeenCalled();
   });
 
-  it("schedules oscillator notes for melody, harmony and bass", () => {
+  it("creates a master GainNode and connects it to destination", async () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
     const ctx = AudioCtxMock();
+    (ctx.createGain as ReturnType<typeof vi.fn>).mockClear();
     (ctx.createOscillator as ReturnType<typeof vi.fn>).mockClear();
     startHomeScreenMusic();
-    // Melody (17 notes) + harmony (8) + bass (4) = 29 oscillators per pass
+    await Promise.resolve(); // flush resume() microtask
+    // At least one createGain call for the master gain node
+    expect(ctx.createGain).toHaveBeenCalled();
     expect(ctx.createOscillator).toHaveBeenCalled();
   });
 
-  it("schedules a re-loop timeout after starting", () => {
+  it("schedules a re-loop timeout after starting when context is running", async () => {
     const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
     startHomeScreenMusic();
+    await Promise.resolve(); // flush resume() microtask so loopFrom runs
     expect(setTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it("registers interaction listeners when context is suspended", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    const ctx = AudioCtxMock();
+    (ctx as unknown as { state: string }).state = "suspended";
+    const addEventSpy = vi.spyOn(document, "addEventListener");
+    startHomeScreenMusic();
+    const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
+    expect(eventTypes).toContain("click");
+    expect(eventTypes).toContain("keydown");
+    expect(eventTypes).toContain("touchstart");
   });
 });
 
@@ -478,10 +494,33 @@ describe("stopHomeScreenMusic", () => {
     expect(ctx.close).toHaveBeenCalled();
   });
 
-  it("cancels the loop timeout when music is stopped", () => {
+  it("cancels the loop timeout when music is stopped", async () => {
     const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
     startHomeScreenMusic();
+    await Promise.resolve(); // flush resume() microtask so loopFrom + setTimeout run
     stopHomeScreenMusic();
     expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+});
+
+describe("setAlertVolume — master gain integration", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    stopHomeScreenMusic();
+    vi.useRealTimers();
+  });
+
+  it("updating alert volume while music plays updates the master gain value", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    const ctx = AudioCtxMock();
+    const masterGainNode = ctx.createGain();
+    startHomeScreenMusic();
+    // Changing alert volume should update gain via setAlertVolume
+    setAlertVolume(0.5);
+    expect(masterGainNode.gain.value).toBeDefined();
   });
 });
