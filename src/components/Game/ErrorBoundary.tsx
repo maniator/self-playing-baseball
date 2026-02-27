@@ -23,18 +23,45 @@ const clearGameStorage = () => {
   }
 };
 
+/** Returns true when the error is a dynamic-import / chunk-load failure. */
+export function isChunkLoadError(err: unknown): boolean {
+  if (err == null) return false;
+  const msg = err instanceof Error ? err.message : String(err);
+  const name = err instanceof Error ? (err.name ?? "") : "";
+  return (
+    name === "ChunkLoadError" ||
+    /ChunkLoadError/.test(msg) ||
+    /Loading chunk \d+ failed/.test(msg) ||
+    /Failed to fetch dynamically imported module/.test(msg) ||
+    /error loading dynamically imported module/i.test(msg) ||
+    /Unable to preload CSS/.test(msg)
+  );
+}
+
 interface State {
   hasError: boolean;
   message: string;
+  isChunkLoad: boolean;
 }
 
+const BTN_STYLE: React.CSSProperties = {
+  border: "none",
+  padding: "12px 24px",
+  borderRadius: 8,
+  cursor: "pointer",
+  fontSize: 15,
+  fontFamily: "inherit",
+  fontWeight: "bold",
+};
+
 export class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
-  state: State = { hasError: false, message: "" };
+  state: State = { hasError: false, message: "", isChunkLoad: false };
 
   static getDerivedStateFromError(err: unknown): State {
     return {
       hasError: true,
       message: err instanceof Error ? err.message : String(err),
+      isChunkLoad: isChunkLoadError(err),
     };
   }
 
@@ -43,8 +70,34 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
     window.location.reload();
   };
 
+  handleReload = () => {
+    window.location.reload();
+  };
+
+  handleHardReload = async () => {
+    try {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((r) => r.unregister()));
+      }
+    } catch {
+      // ignore SW errors
+    }
+    try {
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch {
+      // ignore cache errors
+    }
+    window.location.reload();
+  };
+
   render() {
     if (!this.state.hasError) return this.props.children;
+
+    const { message, isChunkLoad } = this.state;
 
     return (
       <div
@@ -57,27 +110,41 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
         }}
       >
         <h1 style={{ color: "aquamarine" }}>⚾ Something went wrong</h1>
-        <p style={{ color: "#ff8080", fontSize: 13 }}>{this.state.message}</p>
-        <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
-          Your saved data may be corrupted. Resetting will clear local app data (including saves)
-          and reload the page.
-        </p>
-        <button
-          onClick={this.handleReset}
-          style={{
-            background: "#22c55e",
-            color: "#000",
-            border: "none",
-            padding: "12px 24px",
-            borderRadius: 8,
-            cursor: "pointer",
-            fontSize: 15,
-            fontFamily: "inherit",
-            fontWeight: "bold",
-          }}
-        >
-          🔄 Reset &amp; Reload
-        </button>
+        <p style={{ color: "#ff8080", fontSize: 13 }}>{message}</p>
+        {isChunkLoad ? (
+          <>
+            <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
+              This usually happens after an update. Reloading should fix it.
+            </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button
+                onClick={this.handleReload}
+                style={{ ...BTN_STYLE, background: "#22c55e", color: "#000" }}
+              >
+                🔄 Reload app
+              </button>
+              <button
+                onClick={this.handleHardReload}
+                style={{ ...BTN_STYLE, background: "#facc15", color: "#000" }}
+              >
+                ⚡ Hard reload (clear cache)
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
+              Your saved data may be corrupted. Resetting will clear local app data (including
+              saves) and reload the page.
+            </p>
+            <button
+              onClick={this.handleReset}
+              style={{ ...BTN_STYLE, background: "#22c55e", color: "#000" }}
+            >
+              🔄 Reset &amp; Reload
+            </button>
+          </>
+        )}
       </div>
     );
   }
