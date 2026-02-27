@@ -51,12 +51,13 @@ test.describe("Import Save — missing custom team rejection", () => {
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
 
-    await page.getByTestId("import-save-textarea").fill(saveJson);
-    await page.getByTestId("import-save-button").click();
+    await page.getByTestId("paste-save-textarea").fill(saveJson);
+    await page.getByTestId("paste-save-button").click();
 
-    // Expect an error message mentioning the missing team
+    // Expect an error message mentioning the missing team label and guidance
     await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 10_000 });
     const errorText = await page.getByTestId("import-error").textContent();
     expect(errorText).toMatch(/missing custom team/i);
+    expect(errorText).toMatch(/My Missing Team/i);
   });
 });

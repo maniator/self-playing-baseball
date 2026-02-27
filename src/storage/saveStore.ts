@@ -222,13 +222,14 @@ function buildStore(getDbFn: GetDb) {
 
       // Reject saves that reference custom teams that don't exist locally.
       const customTeamRefs: Array<{ id: string; label: string }> = [];
-      for (const [field, labelField] of [
-        [header.homeTeamId, header.setup?.homeTeam ?? header.homeTeamId],
-        [header.awayTeamId, header.setup?.awayTeam ?? header.awayTeamId],
-      ] as Array<[string, string]>) {
+      const teamEntries: Array<{ field: string; label: string }> = [
+        { field: header.homeTeamId, label: header.setup?.homeTeam ?? header.homeTeamId },
+        { field: header.awayTeamId, label: header.setup?.awayTeam ?? header.awayTeamId },
+      ];
+      for (const { field, label } of teamEntries) {
         if (field.startsWith("ct_") || field.startsWith("custom:")) {
           const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
-          customTeamRefs.push({ id, label: labelField });
+          customTeamRefs.push({ id, label });
         }
       }
       if (customTeamRefs.length > 0) {

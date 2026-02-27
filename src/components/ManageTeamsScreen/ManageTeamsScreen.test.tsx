@@ -39,6 +39,7 @@ vi.mock("@storage/customTeamStore", () => ({
 
 vi.mock("@storage/saveIO", () => ({
   downloadJson: vi.fn(),
+  teamsFilename: vi.fn(() => "ballgame-teams-test.json"),
 }));
 
 vi.mock("@hooks/useImportCustomTeams", () => ({

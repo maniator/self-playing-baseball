@@ -7,7 +7,7 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
 import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
 import { CustomTeamStore } from "@storage/customTeamStore";
-import { downloadJson } from "@storage/saveIO";
+import { downloadJson, teamsFilename } from "@storage/saveIO";
 
 import {
   BackBtn,
@@ -39,12 +39,6 @@ type Props = {
   hasActiveGame?: boolean;
 };
 
-const compactTimestamp = () =>
-  new Date()
-    .toISOString()
-    .replace(/[-:]/g, "")
-    .replace(/\.\d+Z$/, "");
-
 const formatImportSuccessMessage = (result: ImportCustomTeamsResult): string => {
   if (result.teams.length === 0) return "No teams imported.";
   const count = result.created + result.remapped;
@@ -72,12 +66,12 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
 
   const handleExportTeam = async (id: string) => {
     const json = await CustomTeamStore.exportCustomTeams([id]);
-    downloadJson(json, `ballgame-teams-${compactTimestamp()}.json`);
+    downloadJson(json, teamsFilename());
   };
 
   const handleExportAll = async () => {
     const json = await CustomTeamStore.exportCustomTeams();
-    downloadJson(json, `ballgame-teams-${compactTimestamp()}.json`);
+    downloadJson(json, teamsFilename());
   };
 
   const isCreating = location.pathname === "/teams/new";
