@@ -1,3 +1,4 @@
+import { generatePlayerId, generateTeamId } from "./generateId";
 import { fnv1a } from "./hash";
 import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "./types";
 
@@ -239,10 +240,8 @@ export function importCustomTeams(
   factories?: ImportIdFactories,
 ): ImportCustomTeamsResult {
   const parsed = parseExportedCustomTeams(json);
-  const makeTeamId =
-    factories?.makeTeamId ?? (() => `ct_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
-  const makePlayerId =
-    factories?.makePlayerId ?? (() => `p_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`);
+  const makeTeamId = factories?.makeTeamId ?? generateTeamId;
+  const makePlayerId = factories?.makePlayerId ?? generatePlayerId;
 
   const existingTeamIds = new Set(existingTeams.map((t) => t.id));
   const existingPlayerIds = new Set(

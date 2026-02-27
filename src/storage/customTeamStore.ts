@@ -5,6 +5,7 @@ import {
   type ImportCustomTeamsResult,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
+import { generateTeamId } from "./generateId";
 import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
@@ -118,7 +119,7 @@ function buildStore(getDbFn: GetDb) {
       const name = requireNonEmpty(input.name, "name");
       const roster = buildRoster(input.roster);
       const now = new Date().toISOString();
-      const id = meta?.id ?? `ct_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const id = meta?.id ?? generateTeamId();
       const doc: CustomTeamDoc = {
         id,
         schemaVersion: SCHEMA_VERSION,

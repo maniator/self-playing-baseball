@@ -1,4 +1,5 @@
 import { type BallgameDb, getDb } from "./db";
+import { generateSaveId } from "./generateId";
 import { fnv1a } from "./hash";
 import type {
   EventDoc,
@@ -36,7 +37,7 @@ function buildStore(getDbFn: GetDb) {
     async createSave(setup: GameSetup, meta?: { name?: string }): Promise<string> {
       const db = await getDbFn();
       const now = Date.now();
-      const id = `save_${now}_${Math.random().toString(36).slice(2, 8)}`;
+      const id = generateSaveId();
 
       // Enforce max-saves rule: evict the oldest save before inserting a new one.
       const allSaves = await db.saves.find({ sort: [{ updatedAt: "asc" }] }).exec();
