@@ -142,7 +142,7 @@ const teamsSchema: RxJsonSchema<TeamDoc> = {
 const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   // Version 1: formally declares `abbreviation` (was already stored as an additional
   // property) and `fingerprint` (new in the import/export stage — computed via FNV-1a
-  // over name+abbreviation+sorted lineup names, used for duplicate detection on import).
+  // over name+abbreviation (case-insensitive), used for duplicate detection on import).
   // Both fields are optional so the identity migration is safe for all existing docs.
   version: 1,
   primaryKey: "id",
