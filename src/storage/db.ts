@@ -140,7 +140,11 @@ const teamsSchema: RxJsonSchema<TeamDoc> = {
 };
 
 const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
-  version: 0,
+  // Version 1: formally declares `abbreviation` (was already stored as an additional
+  // property) and `fingerprint` (new in the import/export stage — computed via FNV-1a
+  // over name+abbreviation+sorted lineup names, used for duplicate detection on import).
+  // Both fields are optional so the identity migration is safe for all existing docs.
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -150,6 +154,8 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
     createdAt: { type: "string", maxLength: 32 },
     updatedAt: { type: "string", maxLength: 32 },
     name: { type: "string", maxLength: 256 },
+    /** 2–3 char compact label used by line score / scoreboard contexts (max 8 chars). */
+    abbreviation: { type: "string", maxLength: 8 },
     nickname: { type: "string", maxLength: 256 },
     city: { type: "string", maxLength: 256 },
     slug: { type: "string", maxLength: 256 },
@@ -157,6 +163,12 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
     roster: { type: "object", additionalProperties: true },
     metadata: { type: "object", additionalProperties: true },
     statsProfile: { type: "string", maxLength: 64 },
+    /**
+     * FNV-1a content fingerprint (8 hex chars) — used only for duplicate detection
+     * on import.  NOT the primary identity key; `id` remains the primary key.
+     * Computed by `buildTeamFingerprint` from `customTeamExportImport.ts`.
+     */
+    fingerprint: { type: "string", maxLength: 8 },
   },
   required: [
     "id",
@@ -204,7 +216,15 @@ async function initDb(
     },
     events: { schema: eventsSchema },
     teams: { schema: teamsSchema },
-    customTeams: { schema: customTeamsSchema },
+    customTeams: {
+      schema: customTeamsSchema,
+      migrationStrategies: {
+        // Identity migration: `abbreviation` and `fingerprint` are optional fields.
+        // Existing docs without them remain valid; `fingerprint` will be computed
+        // and stored on the next write (team update or import). No data loss.
+        1: (oldDoc) => oldDoc,
+      },
+    },
   });
   return db;
 }

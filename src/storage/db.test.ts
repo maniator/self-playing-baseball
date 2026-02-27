@@ -188,6 +188,12 @@ describe("schema version and reset flag", () => {
     await testDb.close();
   });
 
+  it("customTeams collection has schema version 1", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    expect(testDb.customTeams.schema.version).toBe(1);
+    await testDb.close();
+  });
+
   it("wasDbReset() returns false initially", () => {
     expect(wasDbReset()).toBe(false);
   });
@@ -368,6 +374,142 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     expect(doc?.scoreSnapshot).toMatchObject({ home: 3, away: 1 });
     expect(doc?.inningSnapshot).toMatchObject({ inning: 7, half: "bottom" });
     expect(doc?.stateSnapshot).toMatchObject({ rngState: 999 });
+
+    await v1Db.close();
+  });
+});
+
+/**
+ * Upgrade-path test for `customTeams` schema v0 → v1.
+ *
+ * This branch added `fingerprint` (FNV-1a content hash, used for duplicate
+ * detection on import) and formally declared `abbreviation` in the JSON schema.
+ * Both fields are optional, so the identity migration is safe for all existing
+ * docs — no backfill is needed at migration time.
+ */
+describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)", () => {
+  /** The v0 schema that shipped before this branch. */
+  const v0CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 0,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 128 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      createdAt: { type: "string", maxLength: 32 },
+      updatedAt: { type: "string", maxLength: 32 },
+      name: { type: "string", maxLength: 256 },
+      nickname: { type: "string", maxLength: 256 },
+      city: { type: "string", maxLength: 256 },
+      slug: { type: "string", maxLength: 256 },
+      source: { type: "string", enum: ["custom", "generated"], maxLength: 16 },
+      roster: { type: "object", additionalProperties: true },
+      metadata: { type: "object", additionalProperties: true },
+      statsProfile: { type: "string", maxLength: 64 },
+    },
+    required: [
+      "id",
+      "schemaVersion",
+      "createdAt",
+      "updatedAt",
+      "name",
+      "source",
+      "roster",
+      "metadata",
+    ],
+    indexes: ["updatedAt", "source"],
+  };
+
+  it("migrates a v0 customTeam without fingerprint/abbreviation to v1 without data loss", async () => {
+    const dbName = `ct_migration_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── Step 1: create a v0 DB and insert a legacy doc ─────────────────────
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ customTeams: { schema: v0CustomTeamsSchema } });
+    await v0Db.customTeams.insert({
+      id: "ct_legacy",
+      schemaVersion: 0,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Legacy Team",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Alice",
+            role: "batter",
+            batting: { contact: 70, power: 60, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v0Db.close();
+
+    // ── Step 2: reopen with v1 schema (triggers identity migration) ─────────
+    const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    // ── Step 3: all original fields survive; new optional fields are absent ─
+    const doc = await v1Db.customTeams.findOne("ct_legacy").exec();
+    expect(doc, "migrated doc should exist").not.toBeNull();
+    expect(doc?.name).toBe("Legacy Team");
+    expect(doc?.source).toBe("custom");
+    // Optional fields not present on the legacy doc are absent — use toBeFalsy so
+    // the assertion passes regardless of whether RxDB returns undefined or null.
+    expect(doc?.abbreviation).toBeFalsy();
+    expect(doc?.fingerprint).toBeFalsy();
+    expect(doc?.roster).toMatchObject({ lineup: [expect.objectContaining({ name: "Alice" })] });
+
+    await v1Db.close();
+  });
+
+  it("migrates a v0 customTeam that already stored abbreviation as an additional property", async () => {
+    const dbName = `ct_abbrev_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Pre-migration docs could store `abbreviation` as an undeclared additional
+    // property (JSON Schema allows it by default). After migration the field is
+    // formally declared but the value must survive intact.
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ customTeams: { schema: v0CustomTeamsSchema } });
+    await v0Db.customTeams.insert({
+      id: "ct_abbrev",
+      schemaVersion: 0,
+      createdAt: "2024-06-01T00:00:00.000Z",
+      updatedAt: "2024-06-01T00:00:00.000Z",
+      name: "Rockets",
+      abbreviation: "ROC",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          { id: "p2", name: "Bob", role: "batter", batting: { contact: 65, power: 55, speed: 45 } },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v0Db.close();
+
+    const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
+
+    const doc = await v1Db.customTeams.findOne("ct_abbrev").exec();
+    expect(doc, "migrated doc should exist").not.toBeNull();
+    expect(doc?.name).toBe("Rockets");
+    expect(doc?.abbreviation).toBe("ROC");
+    expect(doc?.fingerprint).toBeFalsy();
 
     await v1Db.close();
   });
