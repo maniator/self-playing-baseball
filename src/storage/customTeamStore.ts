@@ -4,6 +4,7 @@ import {
   exportCustomPlayer as exportCustomPlayerJson,
   exportCustomTeams as exportCustomTeamsJson,
   importCustomTeams as importCustomTeamsParser,
+  type ImportCustomTeamsOptions,
   type ImportCustomTeamsResult,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
@@ -247,11 +248,7 @@ function buildStore(getDbFn: GetDb) {
     async exportPlayer(teamId: string, playerId: string): Promise<string> {
       const team = await this.getCustomTeam(teamId);
       if (!team) throw new Error(`Team not found: ${teamId}`);
-      const allPlayers = [
-        ...team.roster.lineup,
-        ...team.roster.bench,
-        ...team.roster.pitchers,
-      ];
+      const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
       const player = allPlayers.find((p) => p.id === playerId);
       if (!player) throw new Error(`Player not found: ${playerId} in team ${teamId}`);
       return exportCustomPlayerJson(player);
@@ -260,14 +257,22 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Imports teams from a JSON string produced by `exportCustomTeams`.
      * Remaps IDs on collision and upserts all resulting teams into the DB.
+     * When duplicate players are detected and `options.allowDuplicatePlayers` is
+     * not true, returns `requiresDuplicateConfirmation: true` without importing
+     * anything — the caller should prompt the user and retry with the flag set.
      * @returns A summary of created/remapped counts and duplicate warnings.
      */
-    async importCustomTeams(json: string): Promise<ImportCustomTeamsResult> {
+    async importCustomTeams(
+      json: string,
+      options?: ImportCustomTeamsOptions,
+    ): Promise<ImportCustomTeamsResult> {
       const existing = await this.listCustomTeams({ includeArchived: true });
-      const result = importCustomTeamsParser(json, existing);
-      const db = await getDbFn();
-      for (const team of result.teams) {
-        await db.customTeams.upsert(team);
+      const result = importCustomTeamsParser(json, existing, undefined, options);
+      if (!result.requiresDuplicateConfirmation) {
+        const db = await getDbFn();
+        for (const team of result.teams) {
+          await db.customTeams.upsert(team);
+        }
       }
       return result;
     },

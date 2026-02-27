@@ -302,3 +302,33 @@ export const PasteActions = styled.div`
   align-items: center;
   margin-top: 6px;
 `;
+
+/** Banner shown when a team import is blocked due to duplicate players. */
+export const DuplicateConfirmBanner = styled.div`
+  background: #1a1a00;
+  border: 1px solid #886600;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  font-size: 13px;
+  color: #ffdd88;
+`;
+
+export const DuplicateConfirmTitle = styled.p`
+  margin: 0 0 8px;
+  font-weight: 600;
+  color: #ffcc44;
+`;
+
+export const DuplicateConfirmList = styled.ul`
+  margin: 0 0 10px;
+  padding-left: 18px;
+  color: #ffdd88;
+`;
+
+export const DuplicateConfirmActions = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+`;

@@ -180,9 +180,7 @@ export function validateEditorState(state: EditorState): string {
     seenNames.add(n);
   }
   if (dupNames.size > 0) {
-    const display = [...dupNames]
-      .map((n) => `"${n}"`)
-      .join(", ");
+    const display = [...dupNames].map((n) => `"${n}"`).join(", ");
     return `Duplicate player name(s) within this team: ${display}. Each player must have a unique name.`;
   }
 

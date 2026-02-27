@@ -583,10 +583,20 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
       roster: {
         schemaVersion: 1,
         lineup: [
-          { id: "p1", name: "Alice", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+          {
+            id: "p1",
+            name: "Alice",
+            role: "batter",
+            batting: { contact: 70, power: 60, speed: 50 },
+          },
         ],
         bench: [
-          { id: "p2", name: "Carol", role: "batter", batting: { contact: 55, power: 65, speed: 60 } },
+          {
+            id: "p2",
+            name: "Carol",
+            role: "batter",
+            batting: { contact: 55, power: 65, speed: 60 },
+          },
         ],
         pitchers: [
           {
@@ -705,7 +715,12 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
       roster: {
         schemaVersion: 1,
         lineup: [
-          { id: "p1", name: "Alice", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+          {
+            id: "p1",
+            name: "Alice",
+            role: "batter",
+            batting: { contact: 70, power: 60, speed: 50 },
+          },
         ],
         bench: [],
         pitchers: [],

@@ -30,6 +30,13 @@ export interface ImportCustomTeamsResult {
    * exist. The UI should surface these so the user can review before accepting the import.
    */
   duplicatePlayerWarnings: string[];
+  /**
+   * When true the import was blocked because one or more players in the incoming
+   * bundle already exist in the local DB (by content fingerprint).
+   * The caller should prompt the user to confirm before re-trying with
+   * `options.allowDuplicatePlayers = true` to proceed despite the duplicates.
+   */
+  requiresDuplicateConfirmation: boolean;
 }
 
 /**
@@ -233,6 +240,15 @@ export interface ImportIdFactories {
   makePlayerId?: () => string;
 }
 
+export interface ImportCustomTeamsOptions {
+  /**
+   * When true, imports teams even if some players already exist in the local DB.
+   * When false (the default), the import is blocked and `requiresDuplicateConfirmation`
+   * is set to true so the caller can prompt the user for confirmation.
+   */
+  allowDuplicatePlayers?: boolean;
+}
+
 /**
  * Merges incoming teams into the local collection.
  *
@@ -240,11 +256,15 @@ export interface ImportIdFactories {
  * - Team fingerprint matches: reported in `duplicateWarnings`.
  * - Player sig matches: reported in `duplicatePlayerWarnings` so the UI can prompt the user.
  * - Player `sig` fields are stripped from the output so they are not stored in the DB.
+ * - When `options.allowDuplicatePlayers` is false (the default) and duplicate players are
+ *   found, the import is blocked: `teams` is empty and `requiresDuplicateConfirmation` is
+ *   true. Re-call with `{ allowDuplicatePlayers: true }` after the user confirms.
  */
 export function importCustomTeams(
   json: string,
   existingTeams: CustomTeamDoc[],
   factories?: ImportIdFactories,
+  options?: ImportCustomTeamsOptions,
 ): ImportCustomTeamsResult {
   const parsed = parseExportedCustomTeams(json);
   const makeTeamId = factories?.makeTeamId ?? generateTeamId;
@@ -268,6 +288,46 @@ export function importCustomTeams(
     for (const p of [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers]) {
       existingPlayerSigs.add(buildPlayerSig(p));
     }
+  }
+
+  // ── Pre-scan: detect duplicate players in non-fingerprint-skipped teams ────
+  // If any are found and the caller hasn't opted in to allowing duplicates,
+  // block the import and require an explicit confirmation from the user.
+  const allowDuplicates = options?.allowDuplicatePlayers ?? false;
+  const preScanWarnings: string[] = [];
+  let preScanSkipped = 0;
+
+  for (const team of parsed.payload.teams) {
+    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
+    if (existingFingerprints.has(incomingFp)) {
+      preScanSkipped++;
+      continue;
+    }
+    const allPlayers = [
+      ...team.roster.lineup.map((p) => ({ player: p })),
+      ...(team.roster.bench ?? []).map((p) => ({ player: p })),
+      ...(team.roster.pitchers ?? []).map((p) => ({ player: p })),
+    ];
+    for (const { player } of allPlayers) {
+      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
+      if (existingPlayerSigs.has(pSig)) {
+        preScanWarnings.push(
+          `Player "${player.name}" in "${team.name}" may already exist in your teams.`,
+        );
+      }
+    }
+  }
+
+  if (preScanWarnings.length > 0 && !allowDuplicates) {
+    return {
+      teams: [],
+      created: 0,
+      remapped: 0,
+      skipped: preScanSkipped,
+      duplicateWarnings: [],
+      duplicatePlayerWarnings: preScanWarnings,
+      requiresDuplicateConfirmation: true,
+    };
   }
 
   let created = 0;
@@ -361,10 +421,9 @@ export function importCustomTeams(
     skipped,
     duplicateWarnings,
     duplicatePlayerWarnings,
+    requiresDuplicateConfirmation: false,
   };
 }
-
-// ── Individual player export / import ─────────────────────────────────────────
 
 /**
  * Serializes a single player into a portable signed JSON string.
@@ -401,8 +460,7 @@ export function parseExportedCustomPlayer(json: string): TeamPlayer {
   } catch {
     throw new Error("Invalid JSON: could not parse player file");
   }
-  if (!parsed || typeof parsed !== "object")
-    throw new Error("Invalid player file: not an object");
+  if (!parsed || typeof parsed !== "object") throw new Error("Invalid player file: not an object");
   const obj = parsed as Record<string, unknown>;
 
   if (obj["type"] !== "customPlayer")

@@ -344,9 +344,12 @@ describe("importCustomTeams", () => {
   it("remaps team id on collision", () => {
     const existing = makeTeam({ id: "ct_clash" });
     const incoming = makeTeam({ id: "ct_clash", name: "Incoming" });
-    const result = importCustomTeams(exportCustomTeams([incoming]), [existing], {
-      makeTeamId: () => "ct_new_id",
-    });
+    const result = importCustomTeams(
+      exportCustomTeams([incoming]),
+      [existing],
+      { makeTeamId: () => "ct_new_id" },
+      { allowDuplicatePlayers: true },
+    );
     expect(result.remapped).toBe(1);
     expect(result.created).toBe(0);
     expect(result.teams[0].id).toBe("ct_new_id");
@@ -405,25 +408,27 @@ describe("importCustomTeams", () => {
     const dup = makeTeam({ id: "ct_dup", name: "Existing" });
     const fresh = makeTeam({ id: "ct_fresh", name: "Brand New" });
     const existing = { ...dup, fingerprint: buildTeamFingerprint(dup) };
-    const result = importCustomTeams(exportCustomTeams([dup, fresh]), [existing]);
+    // Both teams use the default Alice player; pass allowDuplicatePlayers so the
+    // test focuses on fingerprint-skip logic rather than player duplicate detection.
+    const result = importCustomTeams(exportCustomTeams([dup, fresh]), [existing], undefined, {
+      allowDuplicatePlayers: true,
+    });
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].name).toBe("Brand New");
     expect(result.skipped).toBe(1);
     expect(result.created).toBe(1);
   });
 
-  it("emits duplicatePlayerWarnings when same player (by content) appears in a different imported team", () => {
+  it("blocks import and requires confirmation when duplicate players found (default behavior)", () => {
     // Player warnings fire when a non-duplicate team (different fingerprint) shares a player
     // whose {name, role, batting, pitching} matches one already in the local DB.
-    // Construct: existing "Team A" has Alice; import "Team B" (different name → different
-    // fingerprint, so it is not skipped) that also contains Alice with identical stats.
+    // Without allowDuplicatePlayers=true the import is BLOCKED.
     const alice = makePlayer({ id: "p_alice", name: "Alice" });
     const existingTeam = makeTeam({
       id: "ct_a",
       name: "Team A",
       roster: { schemaVersion: 1, lineup: [alice], bench: [], pitchers: [] },
     });
-    // Team B has a different name/fingerprint but carries Alice with the same content
     const teamB = makeTeam({
       id: "ct_b",
       name: "Team B",
@@ -435,10 +440,37 @@ describe("importCustomTeams", () => {
       },
     });
     const result = importCustomTeams(exportCustomTeams([teamB]), [existingTeam]);
+    expect(result.requiresDuplicateConfirmation).toBe(true);
     expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
     expect(result.duplicatePlayerWarnings[0]).toMatch(/Alice/);
-    // The team itself is still imported (different fingerprint → not skipped)
+    // Import is blocked — no teams in the result
+    expect(result.teams).toHaveLength(0);
+  });
+
+  it("imports teams with duplicate players when allowDuplicatePlayers is true", () => {
+    const alice = makePlayer({ id: "p_alice", name: "Alice" });
+    const existingTeam = makeTeam({
+      id: "ct_a",
+      name: "Team A",
+      roster: { schemaVersion: 1, lineup: [alice], bench: [], pitchers: [] },
+    });
+    const teamB = makeTeam({
+      id: "ct_b",
+      name: "Team B",
+      roster: {
+        schemaVersion: 1,
+        lineup: [{ ...alice, id: "p_alice_b" }],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const result = importCustomTeams(exportCustomTeams([teamB]), [existingTeam], undefined, {
+      allowDuplicatePlayers: true,
+    });
+    expect(result.requiresDuplicateConfirmation).toBe(false);
+    // Team is imported despite the duplicate player
     expect(result.teams).toHaveLength(1);
+    expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
   });
 
   it("attaches fingerprint to each output team", () => {
@@ -453,9 +485,14 @@ describe("importCustomTeams", () => {
     const collision = makeTeam({ id: "ct_col", name: "Collision" });
     const existing = makeTeam({ id: "ct_col" });
     let n = 0;
-    const result = importCustomTeams(exportCustomTeams([fresh, collision]), [existing], {
-      makeTeamId: () => `ct_gen_${n++}`,
-    });
+    // Both incoming teams use the default Alice player; pass allowDuplicatePlayers so
+    // this test focuses on ID-remapping logic rather than player duplicate detection.
+    const result = importCustomTeams(
+      exportCustomTeams([fresh, collision]),
+      [existing],
+      { makeTeamId: () => `ct_gen_${n++}` },
+      { allowDuplicatePlayers: true },
+    );
     expect(result.created).toBe(1);
     expect(result.remapped).toBe(1);
   });
@@ -672,7 +709,9 @@ describe("parseExportedCustomPlayer", () => {
     // Tamper the stats then re-sign the bundle sig only (player sig stays stale)
     (player["batting"] as Record<string, unknown>)["contact"] = 99;
     obj["sig"] = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
-    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow("content signature mismatch");
+    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow(
+      "content signature mismatch",
+    );
   });
 
   it("strips the sig field from the returned player", () => {
