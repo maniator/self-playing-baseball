@@ -35,9 +35,11 @@ test.describe("Visual — Teams Import/Export UI states", () => {
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
     // Upload a file with wrong type to trigger an error
-    const { writeFileSync } = await import("fs");
-    const { join } = await import("path");
+    const { writeFileSync, mkdirSync } = await import("fs");
+    const { join, dirname } = await import("path");
     const tmpFile = join(testInfo.outputDir, "bad-import.json");
+    // Playwright creates outputDir lazily; mkdirSync ensures it exists before writeFileSync.
+    mkdirSync(dirname(tmpFile), { recursive: true });
     writeFileSync(tmpFile, '{"type":"saves","formatVersion":1,"payload":{}}');
 
     await page.getByTestId("import-teams-file-input").setInputFiles(tmpFile);

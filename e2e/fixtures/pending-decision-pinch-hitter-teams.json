@@ -1,0 +1,391 @@
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2026-02-27T00:00:00.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_vis_visitors",
+        "schemaVersion": 1,
+        "createdAt": "2026-02-27T00:00:00.000Z",
+        "updatedAt": "2026-02-27T00:00:00.000Z",
+        "name": "Visitors",
+        "abbreviation": "VIS",
+        "source": "custom",
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "vis_b0",
+              "name": "A. Torres",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "CF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "60733929"
+            },
+            {
+              "id": "vis_b1",
+              "name": "B. Smith",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "RF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "414feb53"
+            },
+            {
+              "id": "vis_b2",
+              "name": "C. Park",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "SS",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "20736506"
+            },
+            {
+              "id": "vis_b3",
+              "name": "D. Rivera",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "1B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "bc18e3b0"
+            },
+            {
+              "id": "vis_b4",
+              "name": "E. Nguyen",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "2B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "ade33c92"
+            },
+            {
+              "id": "vis_b5",
+              "name": "F. Castro",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "3B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "22ad25a4"
+            },
+            {
+              "id": "vis_b6",
+              "name": "G. Brooks",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "LF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "e08f930e"
+            },
+            {
+              "id": "vis_b7",
+              "name": "H. Ford",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "C",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "280f23e2"
+            },
+            {
+              "id": "vis_b8",
+              "name": "I. Diaz",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "DH",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "60f7ae0a"
+            }
+          ],
+          "bench": [
+            {
+              "id": "vis_ph1",
+              "name": "J. Lee",
+              "role": "batter",
+              "batting": {
+                "contact": 60,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "LF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "e8dd7dae"
+            },
+            {
+              "id": "vis_ph2",
+              "name": "K. Patel",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 60,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "DH",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "5e3c694d"
+            }
+          ],
+          "pitchers": [
+            {
+              "id": "vis_p0",
+              "name": "L. Ace",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 10,
+                "eye": 20,
+                "speed": 30
+              },
+              "pitching": {
+                "control": 60,
+                "velocity": 60,
+                "stamina": 60
+              },
+              "position": "SP",
+              "handedness": "R",
+              "isPitcherEligible": true,
+              "pitchingRole": "SP",
+              "sig": "06381846"
+            }
+          ]
+        },
+        "metadata": {},
+        "fingerprint": "3b1cbb2d"
+      },
+      {
+        "id": "ct_vis_locals",
+        "schemaVersion": 1,
+        "createdAt": "2026-02-27T00:00:00.000Z",
+        "updatedAt": "2026-02-27T00:00:00.000Z",
+        "name": "Locals",
+        "abbreviation": "LOC",
+        "source": "custom",
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "loc_b0",
+              "name": "H0.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "C",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "47c1f730"
+            },
+            {
+              "id": "loc_b1",
+              "name": "H1.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "1B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "71642b67"
+            },
+            {
+              "id": "loc_b2",
+              "name": "H2.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "2B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "6b234c8d"
+            },
+            {
+              "id": "loc_b3",
+              "name": "H3.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "3B",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "99375523"
+            },
+            {
+              "id": "loc_b4",
+              "name": "H4.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "SS",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "6b306009"
+            },
+            {
+              "id": "loc_b5",
+              "name": "H5.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "LF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "5219fab4"
+            },
+            {
+              "id": "loc_b6",
+              "name": "H6.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "CF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "dd8f25a6"
+            },
+            {
+              "id": "loc_b7",
+              "name": "H7.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "RF",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "c61c7404"
+            },
+            {
+              "id": "loc_b8",
+              "name": "H8.Player",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "eye": 50,
+                "speed": 50
+              },
+              "position": "DH",
+              "handedness": "R",
+              "isBenchEligible": true,
+              "sig": "6c63881f"
+            }
+          ],
+          "bench": [],
+          "pitchers": [
+            {
+              "id": "loc_p0",
+              "name": "M. Closer",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 10,
+                "eye": 20,
+                "speed": 30
+              },
+              "pitching": {
+                "control": 60,
+                "velocity": 60,
+                "stamina": 60
+              },
+              "position": "SP",
+              "handedness": "R",
+              "isPitcherEligible": true,
+              "pitchingRole": "SP",
+              "sig": "f5972f67"
+            }
+          ]
+        },
+        "metadata": {},
+        "fingerprint": "f2f5bcec"
+      }
+    ]
+  },
+  "sig": "ccc47b92"
+}

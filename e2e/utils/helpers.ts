@@ -307,6 +307,29 @@ export async function loadFixture(page: Page, fixtureName: string): Promise<void
 }
 
 /**
+ * Imports a custom teams export fixture via the Manage Teams screen.
+ *
+ * Navigates to Home → Manage Teams (`/teams`), uploads the fixture through
+ * the `import-teams-file-input` file input, and waits for the success message.
+ * Call this **before** `loadFixture` whenever the save fixture references custom
+ * team IDs that must be present in the DB prior to save import (the strict
+ * custom-team validation in `importRxdbSave` rejects saves whose team IDs are
+ * missing from the local DB).
+ *
+ * The helper always starts from `/` so callers do not need to call
+ * `resetAppState` beforehand.
+ */
+export async function importTeamsFixture(page: Page, fixtureName: string): Promise<void> {
+  const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("home-manage-teams-button").click();
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
+  await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
+  await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 15_000 });
+}
+
+/**
  * Asserts that the field view, log panel, and scoreboard are all visible and
  * have non-zero dimensions. Used as a responsive smoke check.
  */
