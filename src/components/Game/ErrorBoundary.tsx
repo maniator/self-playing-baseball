@@ -143,15 +143,23 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
         ) : (
           <>
             <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
-              Your saved data may be corrupted. Resetting will clear local app data (including
-              saves) and reload the page.
+              Your saved data may be corrupted. Try a hard reload first — if the problem persists,
+              resetting will clear local app data (including saves) and reload the page.
             </p>
-            <button
-              onClick={this.handleReset}
-              style={{ ...BTN_STYLE, background: "#22c55e", color: "#000" }}
-            >
-              🔄 Reset &amp; Reload
-            </button>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <button
+                onClick={this.handleHardReload}
+                style={{ ...BTN_STYLE, background: "#facc15", color: "#000" }}
+              >
+                ⚡ Hard reload (clear cache)
+              </button>
+              <button
+                onClick={this.handleReset}
+                style={{ ...BTN_STYLE, background: "#374151", color: "#fff" }}
+              >
+                🔄 Reset &amp; Reload
+              </button>
+            </div>
           </>
         )}
       </div>

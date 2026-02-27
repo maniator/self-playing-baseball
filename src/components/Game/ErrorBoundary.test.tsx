@@ -97,14 +97,14 @@ describe("ErrorBoundary", () => {
       expect(screen.getByRole("button", { name: /reset/i })).toBeTruthy();
     });
 
-    it("does NOT show Reload app or Hard reload buttons", () => {
+    it("shows Hard reload button but NOT Reload app button", () => {
       render(
         <ErrorBoundary>
           <Thrower message="RxError DB6: schema hash mismatch" />
         </ErrorBoundary>,
       );
       expect(screen.queryByRole("button", { name: /reload app/i })).toBeNull();
-      expect(screen.queryByRole("button", { name: /hard reload/i })).toBeNull();
+      expect(screen.getByRole("button", { name: /hard reload/i })).toBeTruthy();
     });
 
     it("calls window.location.reload when Reset is clicked", () => {
