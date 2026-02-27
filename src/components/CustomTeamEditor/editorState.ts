@@ -99,7 +99,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
       if (!player) return state;
       const fromList = state[action.fromSection].filter((p) => p.id !== action.playerId);
       const toList = [...state[action.toSection]];
-      const clampedIndex = Math.min(action.toIndex, toList.length);
+      const clampedIndex = Math.max(0, Math.min(action.toIndex, toList.length));
       toList.splice(clampedIndex, 0, player);
       return { ...state, [action.fromSection]: fromList, [action.toSection]: toList };
     }

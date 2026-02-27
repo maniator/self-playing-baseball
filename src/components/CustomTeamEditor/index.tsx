@@ -198,7 +198,12 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const activeInLineup = state.lineup.some((p) => p.id === active.id);
+    const activeInBench = state.bench.some((p) => p.id === active.id);
     const overInLineup = state.lineup.some((p) => p.id === over.id);
+    const overInBench = state.bench.some((p) => p.id === over.id);
+    // Guard: both IDs must belong to lineup or bench (not pitchers or unknown).
+    if (!activeInLineup && !activeInBench) return;
+    if (!overInLineup && !overInBench) return;
     const activeSection: "lineup" | "bench" = activeInLineup ? "lineup" : "bench";
     const overSection: "lineup" | "bench" = overInLineup ? "lineup" : "bench";
     if (activeSection === overSection) {
@@ -209,6 +214,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
     } else {
       const toIndex = state[overSection].findIndex((p) => p.id === over.id);
+      // toIndex must be valid since we confirmed over.id is in overSection above.
       dispatch({
         type: "TRANSFER_PLAYER",
         fromSection: activeSection,
