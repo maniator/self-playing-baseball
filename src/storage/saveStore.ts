@@ -223,8 +223,8 @@ function buildStore(getDbFn: GetDb) {
           customTeamRefs.push({ id, label });
         }
       }
+      const db = await getDbFn();
       if (customTeamRefs.length > 0) {
-        const db = await getDbFn();
         const missing: Array<{ id: string; label: string }> = [];
         for (const ref of customTeamRefs) {
           const found = await db.customTeams.findOne(ref.id).exec();
@@ -237,8 +237,6 @@ function buildStore(getDbFn: GetDb) {
           );
         }
       }
-
-      const db = await getDbFn();
       await db.saves.upsert(header);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);

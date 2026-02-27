@@ -214,7 +214,7 @@ function buildStore(getDbFn: GetDb) {
      * If `ids` is omitted, all non-archived teams are exported.
      */
     async exportCustomTeams(ids?: string[]): Promise<string> {
-      const all = await this.listCustomTeams({ includeArchived: true });
+      const all = await this.listCustomTeams(ids ? { includeArchived: true } : undefined);
       const toExport = ids ? all.filter((t) => ids.includes(t.id)) : all;
       return exportCustomTeamsJson(toExport);
     },

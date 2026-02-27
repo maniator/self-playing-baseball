@@ -61,6 +61,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const location = useLocation();
   const importFileRef = React.useRef<HTMLInputElement>(null);
   const [importSuccess, setImportSuccess] = React.useState<string | null>(null);
+  const [exportError, setExportError] = React.useState<string | null>(null);
 
   const {
     pasteJson,
@@ -79,13 +80,23 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   });
 
   const handleExportTeam = async (id: string) => {
-    const json = await CustomTeamStore.exportCustomTeams([id]);
-    downloadJson(json, teamsFilename());
+    try {
+      setExportError(null);
+      const json = await CustomTeamStore.exportCustomTeams([id]);
+      downloadJson(json, teamsFilename());
+    } catch {
+      setExportError("Failed to export team. Please try again.");
+    }
   };
 
   const handleExportAll = async () => {
-    const json = await CustomTeamStore.exportCustomTeams();
-    downloadJson(json, teamsFilename());
+    try {
+      setExportError(null);
+      const json = await CustomTeamStore.exportCustomTeams();
+      downloadJson(json, teamsFilename());
+    } catch {
+      setExportError("Failed to export teams. Please try again.");
+    }
   };
 
   const isCreating = location.pathname === "/teams/new";
@@ -257,6 +268,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             </ImportExportBtn>
           )}
         </PasteActions>
+        {exportError && <ErrorMessage data-testid="export-teams-error">{exportError}</ErrorMessage>}
         {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
         {importSuccess && !importError && (
           <SuccessMessage data-testid="import-teams-success">{importSuccess}</SuccessMessage>

@@ -186,7 +186,11 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
     const fingerprint = team["fingerprint"] as string;
     const roster = team["roster"] as Record<string, unknown>;
     (["lineup", "bench", "pitchers"] as const).forEach((slot) => {
-      ((roster[slot] ?? []) as TeamPlayerWithSig[]).forEach((player, pi) => {
+      const slotValue = roster[slot] ?? [];
+      if (!Array.isArray(slotValue)) {
+        throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
+      }
+      (slotValue as TeamPlayerWithSig[]).forEach((player, pi) => {
         const expectedPlayerSig = buildPlayerSig(fingerprint, player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(
