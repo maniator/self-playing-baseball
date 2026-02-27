@@ -204,4 +204,68 @@ test.describe("Custom Teams — Import/Export", () => {
     const errText = await page.getByTestId("import-teams-error").textContent();
     expect(errText).toMatch(/signature mismatch/i);
   });
+
+  test("import legacy teams file (no player fingerprints) — team imported and players visible", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    const fixturePath = path.join(__dirname, "../fixtures/legacy-teams-no-fingerprints.json");
+
+    // Import the legacy file — should succeed even without player fingerprints
+    await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+
+    // The legacy team should appear in the list
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Legacy Lions")).toBeVisible();
+
+    // Navigate into the editor to verify players are intact
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 5_000 });
+
+    // All 9 legacy players should be visible
+    const playerNames = [
+      "Alex Rivera",
+      "Mike Chen",
+      "Sam Torres",
+      "Jordan Lee",
+      "Casey Kim",
+      "Dana Patel",
+      "Morgan Webb",
+      "Riley Quinn",
+      "Taylor Brooks",
+    ];
+    for (const name of playerNames) {
+      await expect(page.getByDisplayValue(name)).toBeVisible();
+    }
+  });
+
+  test("import legacy teams file — re-importing same team is silently skipped (idempotent)", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    const fixturePath = path.join(__dirname, "../fixtures/legacy-teams-no-fingerprints.json");
+
+    // First import
+    await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(1);
+
+    // Second import of the exact same file — should skip, not duplicate
+    await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+    const successText = await page.getByTestId("import-teams-success").textContent();
+    expect(successText).toMatch(/already exist/i);
+
+    // Still only 1 team
+    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(1);
+  });
 });

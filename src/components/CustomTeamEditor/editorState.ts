@@ -170,17 +170,21 @@ export function validateEditorState(state: EditorState): string {
   }
 
   // Enforce unique player names within the team (case-insensitive across all slots).
-  const allNames = [...state.lineup, ...state.bench, ...state.pitchers]
-    .map((p) => p.name.trim().toLowerCase())
-    .filter(Boolean);
-  const seenNames = new Set<string>();
-  const dupNames = new Set<string>();
-  for (const n of allNames) {
-    if (seenNames.has(n)) dupNames.add(n);
-    seenNames.add(n);
+  const allPlayersForDup = [...state.lineup, ...state.bench, ...state.pitchers].filter((p) =>
+    p.name.trim(),
+  );
+  const seenNamesMap = new Map<string, string>(); // lowercase → first-seen original-cased name
+  const dupOriginals = new Set<string>();
+  for (const p of allPlayersForDup) {
+    const lower = p.name.trim().toLowerCase();
+    if (seenNamesMap.has(lower)) {
+      dupOriginals.add(seenNamesMap.get(lower)!);
+    } else {
+      seenNamesMap.set(lower, p.name.trim());
+    }
   }
-  if (dupNames.size > 0) {
-    const display = [...dupNames].map((n) => `"${n}"`).join(", ");
+  if (dupOriginals.size > 0) {
+    const display = [...dupOriginals].map((n) => `"${n}"`).join(", ");
     return `Duplicate player name(s) within this team: ${display}. Each player must have a unique name.`;
   }
 

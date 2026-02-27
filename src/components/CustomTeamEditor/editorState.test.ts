@@ -714,7 +714,7 @@ describe("validateEditorState — player name uniqueness", () => {
     };
     const err = validateEditorState(state);
     expect(err).toContain("Duplicate player name");
-    expect(err).toContain('"p1"');
+    expect(err).toContain('"P1"');
   });
 
   it("rejects a player name that matches a bench player (cross-slot)", () => {

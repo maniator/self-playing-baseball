@@ -259,9 +259,17 @@ async function initDb(
               ...oldDoc,
               roster: {
                 ...roster,
-                lineup: (Array.isArray(roster["lineup"]) ? roster["lineup"] : []).map(addFp),
-                bench: (Array.isArray(roster["bench"]) ? roster["bench"] : []).map(addFp),
-                pitchers: (Array.isArray(roster["pitchers"]) ? roster["pitchers"] : []).map(addFp),
+                // Only fingerprint when the slot is an array; preserve any
+                // existing non-array value to avoid accidental data loss.
+                lineup: Array.isArray(roster["lineup"])
+                  ? roster["lineup"].map(addFp)
+                  : roster["lineup"],
+                bench: Array.isArray(roster["bench"])
+                  ? roster["bench"].map(addFp)
+                  : roster["bench"],
+                pitchers: Array.isArray(roster["pitchers"])
+                  ? roster["pitchers"].map(addFp)
+                  : roster["pitchers"],
               },
             };
           } catch {
