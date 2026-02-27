@@ -38,6 +38,11 @@ describe("friendlyImportError", () => {
   it("returns generic message for other errors", () => {
     expect(friendlyImportError("Network timeout")).toMatch(/Import failed/i);
   });
+  it("passes through 'Cannot import save:' errors as-is", () => {
+    const raw =
+      'Cannot import save: missing custom team(s): "My Team" (ct_abc). Import the missing team(s) first.';
+    expect(friendlyImportError(raw)).toBe(raw);
+  });
 });
 
 describe("useImportSave", () => {

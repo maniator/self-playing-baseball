@@ -161,6 +161,7 @@ test.describe("Custom Teams — Import/Export", () => {
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
     const badPath = path.join(testInfo.outputDir, "bad-teams.json");
+    fs.mkdirSync(path.dirname(badPath), { recursive: true });
     fs.writeFileSync(badPath, '{"type":"saves","formatVersion":1,"payload":{}}');
 
     await page.getByTestId("import-teams-file-input").setInputFiles(badPath);

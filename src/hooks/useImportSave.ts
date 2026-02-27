@@ -4,12 +4,16 @@ import { readFileAsText } from "@storage/saveIO";
 import type { SaveDoc } from "@storage/types";
 
 const SIGNATURE_RE = /signature|invalid|corrupt/i;
+/** Errors that are already descriptive and should be shown as-is. */
+const PASS_THROUGH_RE = /^Cannot import save:/i;
 
 /** Default user-friendly error formatter used by SavesPage. */
-export const friendlyImportError = (raw: string): string =>
-  SIGNATURE_RE.test(raw)
+export const friendlyImportError = (raw: string): string => {
+  if (PASS_THROUGH_RE.test(raw)) return raw;
+  return SIGNATURE_RE.test(raw)
     ? "The file you selected is not a valid Ballgame save file."
     : "Import failed. Please check the file and try again.";
+};
 
 interface UseImportSaveOptions {
   /** Called to perform the actual import; receives raw JSON string. */
