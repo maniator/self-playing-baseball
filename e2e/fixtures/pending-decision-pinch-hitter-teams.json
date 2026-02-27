@@ -28,7 +28,7 @@
               "position": "CF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "60733929"
+              "sig": "022e7fc9"
             },
             {
               "id": "vis_b1",
@@ -43,7 +43,7 @@
               "position": "RF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "414feb53"
+              "sig": "3f25b20f"
             },
             {
               "id": "vis_b2",
@@ -58,7 +58,7 @@
               "position": "SS",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "20736506"
+              "sig": "6dd3dcce"
             },
             {
               "id": "vis_b3",
@@ -73,7 +73,7 @@
               "position": "1B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "bc18e3b0"
+              "sig": "3330db94"
             },
             {
               "id": "vis_b4",
@@ -88,7 +88,7 @@
               "position": "2B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "ade33c92"
+              "sig": "818897fa"
             },
             {
               "id": "vis_b5",
@@ -103,7 +103,7 @@
               "position": "3B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "22ad25a4"
+              "sig": "69714160"
             },
             {
               "id": "vis_b6",
@@ -118,7 +118,7 @@
               "position": "LF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "e08f930e"
+              "sig": "ce546956"
             },
             {
               "id": "vis_b7",
@@ -133,7 +133,7 @@
               "position": "C",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "280f23e2"
+              "sig": "cea5cf98"
             },
             {
               "id": "vis_b8",
@@ -148,7 +148,7 @@
               "position": "DH",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "60f7ae0a"
+              "sig": "578ff65e"
             }
           ],
           "bench": [
@@ -165,7 +165,7 @@
               "position": "LF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "e8dd7dae"
+              "sig": "a8473d76"
             },
             {
               "id": "vis_ph2",
@@ -180,7 +180,7 @@
               "position": "DH",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "5e3c694d"
+              "sig": "79e59bf5"
             }
           ],
           "pitchers": [
@@ -203,7 +203,7 @@
               "handedness": "R",
               "isPitcherEligible": true,
               "pitchingRole": "SP",
-              "sig": "06381846"
+              "sig": "709198b0"
             }
           ]
         },
@@ -234,7 +234,7 @@
               "position": "C",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "47c1f730"
+              "sig": "6c46ff5e"
             },
             {
               "id": "loc_b1",
@@ -249,7 +249,7 @@
               "position": "1B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "71642b67"
+              "sig": "c96b56d7"
             },
             {
               "id": "loc_b2",
@@ -264,7 +264,7 @@
               "position": "2B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "6b234c8d"
+              "sig": "2d7c3121"
             },
             {
               "id": "loc_b3",
@@ -279,7 +279,7 @@
               "position": "3B",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "99375523"
+              "sig": "9f23ed4b"
             },
             {
               "id": "loc_b4",
@@ -294,7 +294,7 @@
               "position": "SS",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "6b306009"
+              "sig": "bc210595"
             },
             {
               "id": "loc_b5",
@@ -309,7 +309,7 @@
               "position": "LF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "5219fab4"
+              "sig": "757d68bc"
             },
             {
               "id": "loc_b6",
@@ -324,7 +324,7 @@
               "position": "CF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "dd8f25a6"
+              "sig": "356a06a2"
             },
             {
               "id": "loc_b7",
@@ -339,7 +339,7 @@
               "position": "RF",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "c61c7404"
+              "sig": "bfd3998c"
             },
             {
               "id": "loc_b8",
@@ -354,7 +354,7 @@
               "position": "DH",
               "handedness": "R",
               "isBenchEligible": true,
-              "sig": "6c63881f"
+              "sig": "24b1ceff"
             }
           ],
           "bench": [],
@@ -378,7 +378,7 @@
               "handedness": "R",
               "isPitcherEligible": true,
               "pitchingRole": "SP",
-              "sig": "f5972f67"
+              "sig": "033a7ba9"
             }
           ]
         },
@@ -387,5 +387,5 @@
       }
     ]
   },
-  "sig": "ccc47b92"
+  "sig": "01251ae0"
 }
