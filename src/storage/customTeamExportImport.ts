@@ -2,6 +2,8 @@ import { fnv1a } from "./hash";
 import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "./types";
 
 export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
+/** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */
+export const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
 
 export interface ImportCustomTeamsResult {
   teams: CustomTeamDoc[];
@@ -27,18 +29,103 @@ export function buildTeamFingerprint(team: CustomTeamDoc): string {
   return fnv1a(key);
 }
 
-/** Serialises an array of CustomTeamDoc objects into a portable JSON string. */
+/**
+ * Computes an integrity signature for a single player, anchored to the parent team's
+ * fingerprint. Covers the player's non-editable identity fields (id, role, stats,
+ * position, handedness, jerseyNumber, pitchingRole) so any post-export mutation is
+ * detectable. The player's `name` is intentionally excluded — it is a display label
+ * and the team fingerprint already captures lineup names for duplicate detection.
+ */
+export function buildPlayerSig(teamFingerprint: string, player: TeamPlayer): string {
+  const { id, role, batting, pitching, position, handedness, jerseyNumber, pitchingRole } = player;
+  return fnv1a(
+    teamFingerprint +
+      JSON.stringify({ id, role, batting, pitching, position, handedness, jerseyNumber, pitchingRole }),
+  );
+}
+
+/** Returns a copy of `player` with its `sig` field stripped (for clean DB storage). */
+function stripPlayerSig(player: TeamPlayer): TeamPlayer {
+  if (!("sig" in player)) return player;
+  const { sig: _sig, ...rest } = player;
+  return rest as TeamPlayer;
+}
+
+/** Returns a team with all player `sig` fields removed from every roster slot. */
+export function stripTeamPlayerSigs(team: CustomTeamDoc): CustomTeamDoc {
+  return {
+    ...team,
+    roster: {
+      ...team.roster,
+      lineup: team.roster.lineup.map(stripPlayerSig),
+      bench: team.roster.bench.map(stripPlayerSig),
+      pitchers: team.roster.pitchers.map(stripPlayerSig),
+    },
+  };
+}
+
+/** Attaches a `sig` to every player in a roster slot array using the team fingerprint. */
+function signPlayers(players: TeamPlayer[], teamFingerprint: string): TeamPlayer[] {
+  return players.map((p) => ({ ...p, sig: buildPlayerSig(teamFingerprint, p) }));
+}
+
+/**
+ * Serialises an array of CustomTeamDoc objects into a portable signed JSON string.
+ * Each player receives an individual sig anchored to its team fingerprint, then the
+ * whole payload is signed with a bundle-level FNV-1a sig (same pattern as save export).
+ */
 export function exportCustomTeams(teams: CustomTeamDoc[]): string {
+  // Attach per-player sigs before computing the bundle sig so the bundle sig covers them.
+  const signedTeams = teams.map((team) => {
+    const fingerprint = team.fingerprint ?? buildTeamFingerprint(team);
+    return {
+      ...team,
+      roster: {
+        ...team.roster,
+        lineup: signPlayers(team.roster.lineup, fingerprint),
+        bench: signPlayers(team.roster.bench, fingerprint),
+        pitchers: signPlayers(team.roster.pitchers, fingerprint),
+      },
+    };
+  });
+  const payload = { teams: signedTeams };
+  const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
   const bundle: ExportedCustomTeams = {
     type: "customTeams",
     formatVersion: CUSTOM_TEAM_EXPORT_FORMAT_VERSION,
     exportedAt: new Date().toISOString(),
-    payload: { teams },
+    payload,
+    sig,
   };
   return JSON.stringify(bundle, null, 2);
 }
 
-/** Parses and validates a custom-teams export JSON string. Throws on malformed input. */
+/**
+ * Verifies the per-player sig for a single player given its team fingerprint.
+ * Throws a descriptive error on mismatch.
+ */
+function verifyPlayerSig(
+  teamFingerprint: string,
+  player: Record<string, unknown>,
+  teamIdx: number,
+  playerIdx: number,
+  slot: string,
+): void {
+  const { id, role, batting, pitching, position, handedness, jerseyNumber, pitchingRole, sig } =
+    player as TeamPlayer & { sig?: string };
+  const expected = fnv1a(
+    teamFingerprint +
+      JSON.stringify({ id, role, batting, pitching, position, handedness, jerseyNumber, pitchingRole }),
+  );
+  if (sig !== expected) {
+    throw new Error(
+      `Team[${teamIdx}] ${slot}[${playerIdx}] player signature mismatch — ` +
+        `player data may have been tampered with after export`,
+    );
+  }
+}
+
+/** Parses and validates a custom-teams export JSON string. Verifies bundle and per-player FNV-1a signatures. Throws on malformed input. */
 export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   let parsed: unknown;
   try {
@@ -58,6 +145,8 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   const payload = obj["payload"] as Record<string, unknown>;
   if (!Array.isArray(payload["teams"]))
     throw new Error("Invalid custom teams file: payload.teams must be an array");
+
+  // Structural validation before signature checks.
   (payload["teams"] as unknown[]).forEach((t, i) => {
     if (!t || typeof t !== "object") throw new Error(`Team[${i}] is not an object`);
     const team = t as Record<string, unknown>;
@@ -73,6 +162,25 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
     if (!Array.isArray(roster["lineup"]) || (roster["lineup"] as unknown[]).length === 0)
       throw new Error(`Team[${i}] roster.lineup must be a non-empty array`);
   });
+
+  // 1) Verify bundle-level signature (covers player sigs too, since they're in the payload).
+  const expectedBundleSig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(obj["payload"]));
+  if (typeof obj["sig"] !== "string" || obj["sig"] !== expectedBundleSig)
+    throw new Error(
+      "Teams signature mismatch — file may be corrupted or not a valid Ballgame teams export",
+    );
+
+  // 2) Verify per-player signatures — more granular tamper detection.
+  (payload["teams"] as Record<string, unknown>[]).forEach((team, ti) => {
+    const fingerprint = (team["fingerprint"] as string | undefined) ?? "";
+    const roster = team["roster"] as Record<string, unknown>;
+    (["lineup", "bench", "pitchers"] as const).forEach((slot) => {
+      ((roster[slot] ?? []) as Record<string, unknown>[]).forEach((player, pi) => {
+        verifyPlayerSig(fingerprint, player, ti, pi, slot);
+      });
+    });
+  });
+
   return parsed as ExportedCustomTeams;
 }
 
@@ -104,6 +212,7 @@ export interface ImportIdFactories {
 /**
  * Merges incoming teams into the local collection, remapping IDs on collision
  * and flagging potential duplicates via fingerprint matching.
+ * Player `sig` fields are stripped from the output so they are not stored in the DB.
  *
  * - created: teams where neither team-id nor any player-id collided
  * - remapped: teams where at least one ID (team or player) was regenerated
@@ -182,8 +291,10 @@ export function importCustomTeams(
       duplicateWarnings.push(`A team named "${finalTeam.name}" may already exist locally.`);
     }
 
-    return finalTeam;
+    // Strip player sigs before returning — they are export-only integrity metadata.
+    return stripTeamPlayerSigs(finalTeam);
   });
 
   return { teams: resultTeams, created, remapped, duplicateWarnings };
 }
+

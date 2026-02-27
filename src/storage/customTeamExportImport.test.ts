@@ -1,12 +1,24 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  TEAMS_EXPORT_KEY,
   buildTeamFingerprint,
   exportCustomTeams,
   importCustomTeams,
   parseExportedCustomTeams,
 } from "./customTeamExportImport";
+import { fnv1a } from "./hash";
 import type { CustomTeamDoc } from "./types";
+
+/** Build a correctly-signed raw bundle object for testing edge cases. */
+function makeSignedBundle(
+  overrides: Record<string, unknown>,
+  payloadOverride?: Record<string, unknown>,
+) {
+  const payload = payloadOverride ?? { teams: [] };
+  const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+  return JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig, ...overrides });
+}
 
 const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   id: `ct_test_${Math.random().toString(36).slice(2, 8)}`,
@@ -76,12 +88,14 @@ describe("exportCustomTeams", () => {
     expect(() => JSON.parse(json)).not.toThrow();
   });
 
-  it("includes the expected top-level fields", () => {
+  it("includes the expected top-level fields including sig", () => {
     const json = exportCustomTeams([makeTeam()]);
     const parsed = JSON.parse(json);
     expect(parsed.type).toBe("customTeams");
     expect(parsed.formatVersion).toBe(1);
     expect(typeof parsed.exportedAt).toBe("string");
+    expect(typeof parsed.sig).toBe("string");
+    expect(parsed.sig).toMatch(/^[0-9a-f]{8}$/);
     expect(Array.isArray(parsed.payload.teams)).toBe(true);
   });
 
@@ -107,47 +121,59 @@ describe("parseExportedCustomTeams", () => {
   });
 
   it("throws when type is wrong", () => {
-    const bad = JSON.stringify({ type: "saves", formatVersion: 1, payload: { teams: [] } });
+    const bad = makeSignedBundle({ type: "saves" });
     expect(() => parseExportedCustomTeams(bad)).toThrow('expected type "customTeams"');
   });
 
   it("throws on unsupported formatVersion", () => {
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 99, payload: { teams: [] } });
+    const bad = makeSignedBundle({ formatVersion: 99 });
     expect(() => parseExportedCustomTeams(bad)).toThrow("Unsupported custom teams format version");
   });
 
   it("throws when payload is missing", () => {
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1 });
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, sig: "00000000" });
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing payload");
   });
 
   it("throws when teams is not an array", () => {
-    const bad = JSON.stringify({
-      type: "customTeams",
-      formatVersion: 1,
-      payload: { teams: "oops" },
-    });
+    const payload = { teams: "oops" };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
     expect(() => parseExportedCustomTeams(bad)).toThrow("must be an array");
   });
 
   it("throws when a team is missing required id", () => {
     const team = { name: "No ID", source: "custom", roster: { lineup: [{ id: "p1" }] } };
-    const bad = JSON.stringify({
-      type: "customTeams",
-      formatVersion: 1,
-      payload: { teams: [team] },
-    });
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: id");
   });
 
   it("throws when a team has an empty lineup", () => {
     const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
+  });
+
+  it("throws when sig is missing", () => {
     const bad = JSON.stringify({
       type: "customTeams",
       formatVersion: 1,
-      payload: { teams: [team] },
+      payload: { teams: [] },
     });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
+    expect(() => parseExportedCustomTeams(bad)).toThrow("signature mismatch");
+  });
+
+  it("throws when sig is wrong (tampered payload)", () => {
+    const team = makeTeam({ name: "Legit" });
+    const json = exportCustomTeams([team]);
+    const obj = JSON.parse(json);
+    // Tamper: change the team name after signing
+    obj.payload.teams[0].name = "Tampered";
+    expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow("signature mismatch");
   });
 
   it("parses a valid bundle successfully", () => {

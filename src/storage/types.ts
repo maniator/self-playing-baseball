@@ -126,6 +126,12 @@ export interface TeamPlayer {
    * Absent on older saves — backfill as "SP" for index 0, "RP" for others when needed.
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
+  /**
+   * FNV-1a integrity signature anchored to the parent team's fingerprint and the player's
+   * non-editable identity fields (id, role, batting, pitching, position, handedness,
+   * jerseyNumber, pitchingRole). Present only in export bundles; stripped before DB storage.
+   */
+  sig?: string;
 }
 
 /** Roster embedded in a custom team document. */
@@ -236,4 +242,6 @@ export interface ExportedCustomTeams {
   payload: {
     teams: CustomTeamDoc[];
   };
+  /** FNV-1a 32-bit signature of TEAMS_EXPORT_KEY + JSON.stringify(payload) */
+  sig: string;
 }
