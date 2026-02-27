@@ -51,9 +51,11 @@ const mockOscillator = {
 const mockGainNode = {
   connect: vi.fn(),
   gain: {
+    value: 1,
     setValueAtTime: vi.fn(),
     linearRampToValueAtTime: vi.fn(),
     exponentialRampToValueAtTime: vi.fn(),
+    cancelAndHoldAtTime: vi.fn(),
   },
 };
 

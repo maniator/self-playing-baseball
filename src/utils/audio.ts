@@ -140,6 +140,12 @@ const HOME_BASS_NOTES: ReadonlyArray<readonly [number, number, number]> = [
 
 /** Total loop length in seconds (16 beats × 0.5 s/beat = 8 s). */
 export const HOME_LOOP_DURATION = 16 * HOME_BEAT;
+/** Seconds to ramp the master gain from 0 → target on start. */
+export const HOME_FADE_IN_SEC = 1.5;
+/** Seconds to ramp the master gain from current → 0 on stop. */
+export const HOME_FADE_OUT_SEC = 0.8;
+/** Extra ms to wait after the fade-out ramp ends before closing the AudioContext. */
+const FADE_OUT_BUFFER_MS = 50;
 
 let _homeCtx: AudioContext | null = null;
 let _homeMasterGain: GainNode | null = null;
@@ -190,7 +196,8 @@ export const startHomeScreenMusic = (): void => {
     if (!Ctx) return;
     _homeCtx = new Ctx();
     _homeMasterGain = _homeCtx.createGain();
-    _homeMasterGain.gain.value = _alertVolume;
+    // Start silent; fade-in applied once the context is running (inside tryBegin).
+    _homeMasterGain.gain.value = 0;
     _homeMasterGain.connect(_homeCtx.destination);
 
     const loopFrom = (loopStart: number): void => {
@@ -210,11 +217,16 @@ export const startHomeScreenMusic = (): void => {
     // until the first user gesture (autoplay policy). If so, we install one-shot
     // listeners so the loop begins on the very next interaction.
     const tryBegin = () => {
-      if (!_homeCtx || _homeLoopId !== null) return;
+      if (!_homeCtx || !_homeMasterGain || _homeLoopId !== null) return;
       _homeCtx
         .resume()
         .then(() => {
-          if (_homeCtx && _homeLoopId === null) loopFrom(_homeCtx.currentTime);
+          if (!_homeCtx || !_homeMasterGain || _homeLoopId !== null) return;
+          // Fade in from silence to the target alert volume.
+          const now = _homeCtx.currentTime;
+          _homeMasterGain.gain.setValueAtTime(0, now);
+          _homeMasterGain.gain.linearRampToValueAtTime(_alertVolume, now + HOME_FADE_IN_SEC);
+          loopFrom(now);
         })
         .catch(() => {});
     };
@@ -242,7 +254,7 @@ export const startHomeScreenMusic = (): void => {
   }
 };
 
-/** Stop and tear down the home-screen music immediately. */
+/** Stop and tear down the home-screen music with a short fade-out. */
 export const stopHomeScreenMusic = (): void => {
   _homeCleanup?.();
   _homeCleanup = null;
@@ -250,11 +262,25 @@ export const stopHomeScreenMusic = (): void => {
     clearTimeout(_homeLoopId);
     _homeLoopId = null;
   }
-  if (_homeCtx) {
-    _homeCtx.close().catch(() => {});
+  if (_homeCtx && _homeMasterGain) {
+    // Capture in local variables so the setTimeout closure uses them after nulling the module refs.
+    const ctx = _homeCtx;
+    const gain = _homeMasterGain;
     _homeCtx = null;
+    _homeMasterGain = null;
+    // cancelAndHoldAtTime freezes the gain at the actual computed value at `now` (correctly
+    // handles mid-fade-in ramps) then we ramp from that value down to silence.
+    const now = ctx.currentTime;
+    gain.gain.cancelAndHoldAtTime(now);
+    gain.gain.linearRampToValueAtTime(0, now + HOME_FADE_OUT_SEC);
+    setTimeout(() => ctx.close().catch(() => {}), HOME_FADE_OUT_SEC * 1000 + FADE_OUT_BUFFER_MS);
+  } else {
+    if (_homeCtx) {
+      _homeCtx.close().catch(() => {});
+    }
+    _homeCtx = null;
+    _homeMasterGain = null;
   }
-  _homeMasterGain = null;
 };
 
 /** Plays the opening bars of "Take Me Out to the Ball Game" for the 7th-inning stretch.
