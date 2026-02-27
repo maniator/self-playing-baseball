@@ -15,8 +15,7 @@ test.describe("Custom Teams — Import/Export", () => {
 
   test("export-all button downloads a signed teams JSON file with player sigs", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
@@ -68,8 +67,7 @@ test.describe("Custom Teams — Import/Export", () => {
 
   test("per-team export button downloads a JSON file for that team only", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
@@ -97,8 +95,7 @@ test.describe("Custom Teams — Import/Export", () => {
 
   test("import teams from exported file — success message and new team visible in list", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
@@ -130,8 +127,7 @@ test.describe("Custom Teams — Import/Export", () => {
 
   test("re-importing the same team surfaces a duplicate player warning", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
@@ -158,7 +154,7 @@ test.describe("Custom Teams — Import/Export", () => {
     expect(successText).toMatch(/Dup Player Team/i);
   });
 
-  test("import shows error for a file with wrong type", async ({ page, testInfo }) => {
+  test("import shows error for a file with wrong type", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
@@ -171,7 +167,7 @@ test.describe("Custom Teams — Import/Export", () => {
     await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("import rejects a file with a tampered bundle signature", async ({ page, testInfo }) => {
+  test("import rejects a file with a tampered bundle signature", async ({ page }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();

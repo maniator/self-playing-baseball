@@ -14,8 +14,7 @@ test.describe("Import Save — missing custom team rejection", () => {
 
   test("importing a save referencing a missing custom team shows an error", async ({
     page,
-    testInfo,
-  }) => {
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     // Build a valid signed save JSON with a custom homeTeamId
