@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import * as fs from "fs";
+import * as path from "path";
 
 import {
   expectNoRawIdsVisible,
@@ -384,5 +386,80 @@ test.describe("Label resolution — no raw IDs in any user-facing surface", () =
     await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
     const savesPageName = await page.getByTestId("saves-list-item").first().textContent();
     expect(savesPageName ?? "").not.toMatch(/custom:|ct_[a-z0-9]/i);
+  });
+});
+
+// ── Issue §4: import teams → start game → save → load ──────────────────────
+
+test.describe("Custom Team Import — start game → save → load flow", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("import a team via file, start an exhibition game, save it, then reload it", async ({
+    page,
+    testInfo,
+  }) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    // Step 1: Create a team and export it.
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Import Flow Home");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Import Flow Away");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-all-teams-button").click();
+    const download = await downloadPromise;
+    const tmpPath = path.join(testInfo.outputDir, "import-flow-teams.json");
+    await download.saveAs(tmpPath);
+
+    // Step 2: Delete both teams and re-import from file.
+    for (let i = 0; i < 2; i++) {
+      page.once("dialog", (d) => d.accept());
+      await page.getByTestId("custom-team-delete-button").first().click();
+      await page.waitForTimeout(300);
+    }
+    await expect(page.getByText(/no custom teams yet/i)).toBeVisible({ timeout: 5_000 });
+
+    await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+
+    // Step 3: Start an exhibition game using the imported teams.
+    await page.getByTestId("manage-teams-back-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5_000 });
+    await startGameViaPlayBall(page);
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await waitForLogLines(page, 3, 30_000);
+
+    // Step 4: Save the game.
+    await saveCurrentGame(page);
+    await page.getByTestId("saves-modal-close-button").click();
+
+    // Step 5: Go back to home, navigate to saves, and load the save.
+    await page.getByTestId("back-to-home-button").click();
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5_000 });
+    await page.getByTestId("home-load-saves-button").click();
+    await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+
+    const loadBtn = page.getByTestId("load-save-button").first();
+    await expect(loadBtn).toBeVisible({ timeout: 5_000 });
+    await loadBtn.click();
+
+    // Game should be restored and playable.
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expectNoRawIdsVisible(page);
   });
 });

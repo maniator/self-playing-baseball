@@ -394,3 +394,21 @@ export async function computeSaveSignature(
     [header, events] as const,
   );
 }
+
+/**
+ * Computes the FNV-1a 32-bit bundle signature for a custom teams export payload.
+ * Uses page.evaluate so the algorithm runs in the browser context, matching the
+ * implementation in customTeamExportImport.ts.
+ */
+export async function computeTeamsSignature(page: Page, payload: unknown): Promise<string> {
+  return page.evaluate((p) => {
+    const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
+    let hash = 0x811c9dc5;
+    const str = TEAMS_EXPORT_KEY + JSON.stringify(p);
+    for (let i = 0; i < str.length; i++) {
+      hash ^= str.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193) >>> 0;
+    }
+    return hash.toString(16).padStart(8, "0");
+  }, payload);
+}

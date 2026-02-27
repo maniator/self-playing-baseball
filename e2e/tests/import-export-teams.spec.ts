@@ -6,47 +6,64 @@ import { expect, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
-import { resetAppState } from "../utils/helpers";
+import { computeTeamsSignature, resetAppState } from "../utils/helpers";
 
 test.describe("Custom Teams — Import/Export", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
   });
 
-  test("export-all button downloads a valid teams JSON file", async ({ page, testInfo }) => {
+  test("export-all button downloads a signed teams JSON file with player sigs", async ({
+    page,
+    testInfo,
+  }) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
-    // Navigate to Manage Teams
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
-    // Create a team via the editor
+    // Create a team
     await page.getByTestId("manage-teams-create-button").click();
-    await page.getByTestId("custom-team-name-input").fill("Export Test Team");
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Export Test Team");
     await page.getByTestId("custom-team-save-button").click();
-
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("custom-team-list")).toBeVisible();
 
-    // Start waiting for download before clicking
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("export-all-teams-button").click();
     const download = await downloadPromise;
 
     expect(download.suggestedFilename()).toMatch(/^ballgame-teams-.*\.json$/);
 
-    // Save and validate the file content
     const tmpPath = path.join(testInfo.outputDir, "exported-teams.json");
     await download.saveAs(tmpPath);
-    const content = fs.readFileSync(tmpPath, "utf-8");
-    const parsed = JSON.parse(content);
+    const parsed = JSON.parse(fs.readFileSync(tmpPath, "utf-8"));
+
+    // Top-level shape
     expect(parsed.type).toBe("customTeams");
     expect(parsed.formatVersion).toBe(1);
+    expect(typeof parsed.exportedAt).toBe("string");
     expect(Array.isArray(parsed.payload.teams)).toBe(true);
     expect(parsed.payload.teams.length).toBeGreaterThan(0);
     expect(parsed.payload.teams[0].name).toBe("Export Test Team");
+
+    // Bundle-level signature is present and correct
+    expect(typeof parsed.sig).toBe("string");
+    expect(parsed.sig).toMatch(/^[0-9a-f]{8}$/);
+    const expectedSig = await computeTeamsSignature(page, parsed.payload);
+    expect(parsed.sig).toBe(expectedSig);
+
+    // Team fingerprint is embedded
+    expect(typeof parsed.payload.teams[0].fingerprint).toBe("string");
+
+    // Every lineup player has a sig
+    const lineup = parsed.payload.teams[0].roster.lineup as { sig?: string }[];
+    expect(lineup.length).toBeGreaterThan(0);
+    for (const player of lineup) {
+      expect(typeof player.sig).toBe("string");
+      expect(player.sig).toMatch(/^[0-9a-f]{8}$/);
+    }
   });
 
   test("per-team export button downloads a JSON file for that team only", async ({
@@ -58,7 +75,6 @@ test.describe("Custom Teams — Import/Export", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
-    // Create two teams
     for (const name of ["Alpha Team", "Beta Team"]) {
       await page.getByTestId("manage-teams-create-button").click();
       await page.getByTestId("custom-team-regenerate-defaults-button").click();
@@ -67,7 +83,6 @@ test.describe("Custom Teams — Import/Export", () => {
       await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
     }
 
-    // Export only the first team via its per-item export button
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("export-team-button").first().click();
     const download = await downloadPromise;
@@ -76,6 +91,8 @@ test.describe("Custom Teams — Import/Export", () => {
     await download.saveAs(tmpPath);
     const parsed = JSON.parse(fs.readFileSync(tmpPath, "utf-8"));
     expect(parsed.payload.teams).toHaveLength(1);
+    // Bundle signature must be present
+    expect(typeof parsed.sig).toBe("string");
   });
 
   test("import teams from exported file — success message and new team visible in list", async ({
@@ -87,7 +104,6 @@ test.describe("Custom Teams — Import/Export", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
-    // Create and export a team
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Import Round Trip");
@@ -100,31 +116,87 @@ test.describe("Custom Teams — Import/Export", () => {
     const tmpPath = path.join(testInfo.outputDir, "round-trip.json");
     await download.saveAs(tmpPath);
 
-    // Delete the team so we can import it back
+    // Delete the team so we can import it back cleanly
     page.once("dialog", (dialog) => dialog.accept());
     await page.getByTestId("custom-team-delete-button").click();
     await expect(page.getByText(/no custom teams yet/i)).toBeVisible({ timeout: 5_000 });
 
-    // Import via file input
     await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
     await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
 
-    // Team should appear in the list
     await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText("Import Round Trip")).toBeVisible();
   });
 
-  test("import shows error message for invalid file", async ({ page, testInfo }) => {
+  test("re-importing the same team surfaces a duplicate player warning", async ({
+    page,
+    testInfo,
+  }) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
-    // Write an invalid JSON file
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Dup Player Team");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    // Export the team
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-all-teams-button").click();
+    const download = await downloadPromise;
+    const tmpPath = path.join(testInfo.outputDir, "dup-team.json");
+    await download.saveAs(tmpPath);
+
+    // Re-import without deleting — should warn about duplicate players
+    await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
+    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
+    const successText = await page.getByTestId("import-teams-success").textContent();
+    expect(successText).toMatch(/player duplicate/i);
+  });
+
+  test("import shows error for a file with wrong type", async ({ page, testInfo }) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
     const badPath = path.join(testInfo.outputDir, "bad-teams.json");
     fs.writeFileSync(badPath, '{"type":"saves","formatVersion":1,"payload":{}}');
 
     await page.getByTestId("import-teams-file-input").setInputFiles(badPath);
     await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
+  });
+
+  test("import rejects a file with a tampered bundle signature", async ({ page, testInfo }) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Tamper Target");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-all-teams-button").click();
+    const download = await downloadPromise;
+    const tmpPath = path.join(testInfo.outputDir, "export.json");
+    await download.saveAs(tmpPath);
+
+    // Tamper: flip the bundle sig
+    const obj = JSON.parse(fs.readFileSync(tmpPath, "utf-8"));
+    obj.sig = "00000000";
+    const tamperedPath = path.join(testInfo.outputDir, "tampered-teams.json");
+    fs.writeFileSync(tamperedPath, JSON.stringify(obj));
+
+    await page.getByTestId("import-teams-file-input").setInputFiles(tamperedPath);
+    await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
+    const errText = await page.getByTestId("import-teams-error").textContent();
+    expect(errText).toMatch(/signature mismatch/i);
   });
 });
