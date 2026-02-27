@@ -21,6 +21,12 @@ export interface EditorPlayer {
   movement?: number;
   /** Pitcher role eligibility. Only meaningful for pitchers. */
   pitchingRole?: "SP" | "RP" | "SP/RP";
+  /**
+   * Preserved from the DB / export bundle so that `sanitizePlayer` reuses the
+   * same seed and produces the same fingerprint after a round-trip through the
+   * editor.  Absent for brand-new players (sanitizePlayer generates a fresh one).
+   */
+  playerSeed?: string;
 }
 
 export interface EditorState {
@@ -162,6 +168,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+  ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
 });
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
@@ -278,6 +285,7 @@ const editorToTeamPlayer =
         pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
       }),
     ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+    ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
   });
 
 /**

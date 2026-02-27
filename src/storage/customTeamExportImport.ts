@@ -270,6 +270,13 @@ export interface ImportCustomTeamsOptions {
  * - When `options.allowDuplicatePlayers` is false (the default) and duplicate players are
  *   found, the import is blocked: `teams` is empty and `requiresDuplicateConfirmation` is
  *   true. Re-call with `{ allowDuplicatePlayers: true }` after the user confirms.
+ *
+ * **Legacy bundle limitation:** Players in legacy export bundles (pre-v2, no per-player `sig`
+ * or `playerSeed`) fall back to `buildPlayerSig(player)` with an empty-string seed, which
+ * produces a different hash than the same player already stored in the DB (which has a
+ * non-empty `playerSeed`).  As a result, duplicate detection silently misses duplicates for
+ * legacy imports.  This is intentional — legacy files lack the seed needed to reproduce the
+ * stored fingerprint — and is documented here so callers are aware of the limitation.
  */
 export function importCustomTeams(
   json: string,
