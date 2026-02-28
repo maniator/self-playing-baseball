@@ -130,6 +130,42 @@ test.describe("Visual — Help page", () => {
       maxDiffPixelRatio: 0.05,
     });
   });
+
+  /**
+   * Mobile regression snapshot — all accordion sections expanded on iphone-15.
+   *
+   * This captures the state that previously caused all sections to be squished
+   * into a fixed 100dvh container with no scrolling.  The snapshot confirms
+   * the container height in the image reflects the scrollable content height,
+   * not the viewport height.  The screenshot is taken of the full scrollable
+   * area (fullPage: true equivalent via container scroll height) to show all
+   * sections.
+   *
+   * Visual diff failures here most likely indicate a CSS regression in
+   * PageContainer mobile styles (flex-shrink / overflow-y).
+   */
+  test("help page all sections expanded screenshot (iphone-15)", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "iphone-15",
+      "Help page expanded sections snapshot is iphone-15 only",
+    );
+
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+
+    // Expand every closed section.
+    const closedSummaries = page.locator('[data-testid="help-page"] details:not([open]) > summary');
+    while ((await closedSummaries.count()) > 0) {
+      await closedSummaries.first().click();
+    }
+    await expect(page.locator('[data-testid="help-page"] details[open]')).toHaveCount(8);
+
+    // Snapshot at the initial scroll position (top of page).
+    await expect(page.getByTestId("help-page")).toHaveScreenshot(
+      "help-page-mobile-all-sections.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
 });
 
 // ─── Saves page (/saves) ──────────────────────────────────────────────────

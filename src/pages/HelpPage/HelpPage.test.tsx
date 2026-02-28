@@ -65,8 +65,8 @@ describe("HelpPage", () => {
     const details = document.querySelectorAll("details");
     expect(details).toHaveLength(8);
     // Spot-check section titles via <summary> text
-    const summaries = Array.from(document.querySelectorAll("summary")).map(
-      (s) => s.textContent?.trim(),
+    const summaries = Array.from(document.querySelectorAll("summary")).map((s) =>
+      s.textContent?.trim(),
     );
     expect(summaries).toContain("Basics");
     expect(summaries).toContain("Game Flow");
