@@ -11,9 +11,17 @@ export const setHomeMasterGain = (g: GainNode | null): void => {
 
 export const setAlertVolume = (v: number): void => {
   _alertVolume = Math.max(0, Math.min(1, v));
-  // Keep the home-screen music master gain in sync so volume changes apply immediately.
+  // Keep the home-screen music master gain in sync so volume changes apply immediately,
+  // canceling any in-progress automation (e.g. fade-in ramp) so the new value takes effect.
   if (_homeMasterGain) {
-    _homeMasterGain.gain.value = _alertVolume;
+    const gainParam = _homeMasterGain.gain;
+    const now = _homeMasterGain.context?.currentTime ?? 0;
+    if (typeof gainParam.cancelAndHoldAtTime === "function") {
+      gainParam.cancelAndHoldAtTime(now);
+    } else {
+      gainParam.cancelScheduledValues(now);
+    }
+    gainParam.setValueAtTime(_alertVolume, now);
   }
 };
 

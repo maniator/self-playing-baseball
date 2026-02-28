@@ -1,9 +1,9 @@
 /**
  * Audio system E2E tests.
  *
- * These tests verify that the home-screen music system initialises correctly in
+ * These tests verify that the home-screen music system initializes correctly in
  * a real browser context — something that cannot be fully covered by unit tests
- * because the Web Audio API autoplay-policy behaviour is browser-specific.
+ * because the Web Audio API autoplay-policy behavior is browser-specific.
  *
  * Notes on scope:
  *  - Playwright headless Chromium does not enforce the autoplay policy, so
@@ -11,8 +11,8 @@
  *    reproduce the "suspended until gesture" path here, but we CAN verify that:
  *      a) AudioContext is constructed and resume() is called on mount, and
  *      b) the volume-bar UI is present/absent on the correct routes.
- *  - Audio-initialisation tests are scoped to the desktop project — audio
- *    behaviour is viewport-independent and running on all 7 projects would
+ *  - Audio-initialization tests are scoped to the desktop project — audio
+ *    behavior is viewport-independent and running on all 7 projects would
  *    add unnecessary CI time.
  */
 import { expect, test } from "@playwright/test";
@@ -30,12 +30,12 @@ test.describe("Volume bar visibility", () => {
   });
 
   test("volume bar is hidden during gameplay", async ({ page }) => {
-    await startGameViaPlayBall(page, { seed: "audio-game1" });
+    await startGameViaPlayBall(page, { seed: "audiogame1" });
     await expect(page.getByTestId("app-volume-bar")).not.toBeVisible();
   });
 
   test("volume bar reappears after navigating back to home from game", async ({ page }) => {
-    await startGameViaPlayBall(page, { seed: "audio-home1" });
+    await startGameViaPlayBall(page, { seed: "audiohome1" });
     await expect(page.getByTestId("app-volume-bar")).not.toBeVisible();
 
     await page.getByTestId("back-to-home-button").click();
@@ -45,10 +45,10 @@ test.describe("Volume bar visibility", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Audio system initialisation (desktop only — viewport-independent)
+// Audio system initialization (desktop only — viewport-independent)
 // ---------------------------------------------------------------------------
 
-test.describe("Audio initialisation", () => {
+test.describe("Audio initialization", () => {
   test("AudioContext is constructed and resume() called on home screen load", async ({
     page,
   }, testInfo) => {

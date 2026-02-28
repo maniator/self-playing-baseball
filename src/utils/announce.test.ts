@@ -441,12 +441,14 @@ describe("startHomeScreenMusic", () => {
 
   it("creates a master GainNode and connects it to destination", async () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    (ctx.createGain as ReturnType<typeof vi.fn>).mockClear();
-    (ctx.createOscillator as ReturnType<typeof vi.fn>).mockClear();
+    AudioCtxMock.mockClear();
     startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as {
+      createGain: ReturnType<typeof vi.fn>;
+      createOscillator: ReturnType<typeof vi.fn>;
+    };
     await Promise.resolve(); // flush resume() microtask
-    // At least one createGain call for the master gain node
+    expect(ctx).toBeDefined();
     expect(ctx.createGain).toHaveBeenCalled();
     expect(ctx.createOscillator).toHaveBeenCalled();
   });
@@ -460,18 +462,22 @@ describe("startHomeScreenMusic", () => {
 
   it("schedules a fade-in gain ramp from 0 to alertVolume after resume", async () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    const gainNode = ctx.createGain();
-    (gainNode.gain.setValueAtTime as ReturnType<typeof vi.fn>).mockClear();
-    (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mockClear();
+    AudioCtxMock.mockClear();
     startHomeScreenMusic();
+    // The first createGain() call inside startHomeScreenMusic creates the master gain node.
+    const ctx = AudioCtxMock.mock.results[0]?.value as { createGain: ReturnType<typeof vi.fn> };
+    const gainNode = ctx.createGain.mock.results[0]?.value as {
+      gain: {
+        setValueAtTime: ReturnType<typeof vi.fn>;
+        linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
     await Promise.resolve(); // flush resume()
     // Should set gain to 0 at start of fade-in
-    const setCalls = (gainNode.gain.setValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
+    const setCalls = gainNode.gain.setValueAtTime.mock.calls;
     expect(setCalls.some(([v]: [number]) => v === 0)).toBe(true);
     // Should ramp up to alertVolume (1.0 by default)
-    const rampCalls = (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock
-      .calls;
+    const rampCalls = gainNode.gain.linearRampToValueAtTime.mock.calls;
     expect(rampCalls.some(([v]: [number]) => v === 1)).toBe(true);
   });
 
@@ -600,8 +606,16 @@ describe("setAlertVolume — master gain integration", () => {
     expect(ctxInstance).toBeDefined();
     // The first createGain() call creates the master gain node.
     const masterGainNode = (ctxInstance.createGain as ReturnType<typeof vi.fn>).mock.results[0]
-      ?.value as { gain: { value: number } };
+      ?.value as {
+      gain: {
+        setValueAtTime: ReturnType<typeof vi.fn>;
+        cancelAndHoldAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
+    // Clear so we can assert on the call from setAlertVolume specifically.
+    (masterGainNode.gain.setValueAtTime as ReturnType<typeof vi.fn>).mockClear();
     setAlertVolume(0.5);
-    expect(masterGainNode.gain.value).toBe(0.5);
+    // setAlertVolume cancels any automation and schedules the new volume via setValueAtTime.
+    expect(masterGainNode.gain.setValueAtTime).toHaveBeenCalledWith(0.5, expect.any(Number));
   });
 });
