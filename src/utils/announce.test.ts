@@ -486,6 +486,25 @@ describe("startHomeScreenMusic", () => {
     expect(eventTypes).toContain("keydown");
     expect(eventTypes).toContain("touchstart");
   });
+
+  it("keeps interaction listeners after resume() resolves when context stays suspended", async () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    const ctx = AudioCtxMock();
+    (ctx as unknown as { state: string }).state = "suspended";
+    try {
+      const removeEventSpy = vi.spyOn(document, "removeEventListener");
+      startHomeScreenMusic();
+      // Flush the resume() microtask — listeners must NOT be removed yet.
+      await Promise.resolve();
+      const removedTypes = removeEventSpy.mock.calls.map(([type]) => type);
+      expect(removedTypes).not.toContain("click");
+      expect(removedTypes).not.toContain("keydown");
+      expect(removedTypes).not.toContain("touchstart");
+    } finally {
+      // Restore shared mock state so subsequent tests see a running context.
+      (ctx as unknown as { state: string }).state = "running";
+    }
+  });
 });
 
 describe("stopHomeScreenMusic", () => {

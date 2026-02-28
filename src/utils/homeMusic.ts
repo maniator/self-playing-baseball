@@ -136,11 +136,13 @@ export const startHomeScreenMusic = (): void => {
       _homeCtx
         .resume()
         .then(() => {
-          // Always clean up interaction listeners on a successful resume, whether they
-          // were installed below or not, to prevent them outliving the music start.
+          // If the context is still suspended (browser blocked autoplay even though the
+          // promise resolved), leave the interaction listeners alive so the next user
+          // gesture retries — do NOT start the loop on a silent suspended context.
+          if (!_homeCtx || _homeCtx.state !== "running") return;
           _homeCleanup?.();
           _homeCleanup = null;
-          if (!_homeCtx || !_localMasterGain || _homeLoopId !== null) return;
+          if (!_localMasterGain || _homeLoopId !== null) return;
           // Fade in from silence to the target alert volume.
           const now = _homeCtx.currentTime;
           _localMasterGain.gain.setValueAtTime(0, now);
