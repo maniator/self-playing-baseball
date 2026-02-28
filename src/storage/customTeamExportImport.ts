@@ -346,6 +346,10 @@ export function importCustomTeams(
   }
 
   if (preScanWarnings.length > 0 && !allowDuplicates) {
+    // Note: `skipped` here only counts fingerprint-matched teams from the pre-scan loop.
+    // It does NOT equal the `skipped` count that the main loop would produce (the import
+    // is blocked before reaching the main loop). Callers should treat this partial count
+    // as informational and re-run to get the final `skipped` count after user confirmation.
     return {
       teams: [],
       created: 0,

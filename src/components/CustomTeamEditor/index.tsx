@@ -439,12 +439,17 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             contact: importedPlayer.batting.contact,
             power: importedPlayer.batting.power,
             speed: importedPlayer.batting.speed,
-            ...(importedPlayer.pitching && {
-              velocity: importedPlayer.pitching.velocity,
-              control: importedPlayer.pitching.control,
-              movement: importedPlayer.pitching.movement,
-            }),
-            ...(importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
+            // Only carry pitching stats when importing into the pitchers section.
+            // Importing a pitcher file into a lineup/bench slot would otherwise set
+            // pitcher-role semantics on a player without pitcher UI controls.
+            ...(section === "pitchers" &&
+              importedPlayer.pitching && {
+                velocity: importedPlayer.pitching.velocity,
+                control: importedPlayer.pitching.control,
+                movement: importedPlayer.pitching.movement,
+              }),
+            ...(section === "pitchers" &&
+              importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
             ...(importedPlayer.playerSeed && { playerSeed: importedPlayer.playerSeed }),
           };
 
@@ -507,18 +512,20 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     [allTeams, state.lineup, state.bench, state.pitchers],
   );
 
-  // Pre-bind per-section import handlers so JSX receives stable references
-  // instead of creating a new function on every render.
-  const handleImportLineupFile = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("lineup")(e),
+  // Pre-bind per-section import handlers. `handleImportPlayerFile` is a curried
+  // higher-order function, so `useMemo` (not `useCallback`) is the right hook here:
+  // it caches the function *returned* by `handleImportPlayerFile("section")` directly,
+  // rather than wrapping it in an outer closure that re-invokes the factory every call.
+  const handleImportLineupFile = React.useMemo(
+    () => handleImportPlayerFile("lineup"),
     [handleImportPlayerFile],
   );
-  const handleImportBenchFile = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("bench")(e),
+  const handleImportBenchFile = React.useMemo(
+    () => handleImportPlayerFile("bench"),
     [handleImportPlayerFile],
   );
-  const handleImportPitchersFile = React.useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("pitchers")(e),
+  const handleImportPitchersFile = React.useMemo(
+    () => handleImportPlayerFile("pitchers"),
     [handleImportPlayerFile],
   );
 

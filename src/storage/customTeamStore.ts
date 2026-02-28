@@ -219,8 +219,9 @@ function buildStore(getDbFn: GetDb) {
         patch.metadata = { ...currentMeta, ...updates.metadata } as CustomTeamMetadata;
       }
 
-      // Recompute fingerprint only when identity fields (name/abbreviation/teamSeed) change.
-      // roster changes do not affect the fingerprint.
+      // Recompute fingerprint only when identity fields (name or abbreviation) change.
+      // roster changes do not affect the fingerprint. teamSeed is never part of
+      // UpdateCustomTeamInput and therefore never triggers a recomputation here.
       if (updates.name !== undefined || updates.abbreviation !== undefined) {
         const currentDoc = doc.toJSON() as unknown as CustomTeamDoc;
         // Merge currentDoc with all effective changes so fingerprint uses final values.
