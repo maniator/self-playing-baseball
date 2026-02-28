@@ -505,16 +505,16 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
 
   // Pre-bind per-section import handlers so JSX receives stable references
   // instead of creating a new function on every render.
-  const handleImportLineupFile = React.useMemo(
-    () => handleImportPlayerFile("lineup"),
+  const handleImportLineupFile = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("lineup")(e),
     [handleImportPlayerFile],
   );
-  const handleImportBenchFile = React.useMemo(
-    () => handleImportPlayerFile("bench"),
+  const handleImportBenchFile = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("bench")(e),
     [handleImportPlayerFile],
   );
-  const handleImportPitchersFile = React.useMemo(
-    () => handleImportPlayerFile("pitchers"),
+  const handleImportPitchersFile = React.useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => handleImportPlayerFile("pitchers")(e),
     [handleImportPlayerFile],
   );
 
