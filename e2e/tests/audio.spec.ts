@@ -89,13 +89,15 @@ test.describe("Audio initialization", () => {
       "Mute/unmute test is viewport-independent — desktop project only",
     );
 
-    await resetAppState(page);
-
-    // Collect any JS console errors during the mute/unmute cycle.
+    // Collect console errors AND uncaught page exceptions before navigating.
     const consoleErrors: string[] = [];
+    const pageErrors: Error[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") consoleErrors.push(msg.text());
     });
+    page.on("pageerror", (err) => pageErrors.push(err));
+
+    await resetAppState(page);
 
     // Mute music
     const muteBtn = page.getByRole("button", { name: "Mute music" });
@@ -106,7 +108,8 @@ test.describe("Audio initialization", () => {
     await page.getByRole("button", { name: "Unmute music" }).click();
     await expect(page.getByRole("button", { name: "Mute music" })).toBeVisible();
 
-    // No JS errors should have been logged during the cycle.
+    // Neither console errors nor uncaught exceptions should occur during the cycle.
     expect(consoleErrors).toHaveLength(0);
+    expect(pageErrors).toHaveLength(0);
   });
 });
