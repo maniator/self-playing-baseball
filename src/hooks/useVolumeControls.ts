@@ -20,6 +20,18 @@ export const useVolumeControls = () => {
   const safeAlertVolume =
     typeof alertVolume === "number" && alertVolume >= 0 && alertVolume <= 1 ? alertVolume : 1;
 
+  // Self-heal: if localStorage contained an invalid value, write the safe default back so
+  // the corrected value persists across page loads (mirrors useGameControls behaviour).
+  React.useEffect(() => {
+    if (announcementVolume !== safeAnnouncementVolume)
+      setAnnouncementVolumeState(safeAnnouncementVolume);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  React.useEffect(() => {
+    if (alertVolume !== safeAlertVolume) setAlertVolumeState(safeAlertVolume);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   React.useEffect(() => {
     setAnnouncementVolume(safeAnnouncementVolume);
   }, [safeAnnouncementVolume]);

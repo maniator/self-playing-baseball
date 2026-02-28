@@ -159,11 +159,12 @@ export const startHomeScreenMusic = (): void => {
       // Context already running (autoplay allowed) — start the loop right now.
       onContextRunning();
     } else {
-      // Context is suspended (autoplay blocked). Install one-shot listeners so the very
-      // next user gesture calls resume(), which transitions state and fires onstatechange.
+      // Context is suspended (autoplay blocked). Install listeners so the very next user
+      // gesture calls resume(), which transitions state and fires onstatechange → onContextRunning.
+      // Listeners are intentionally NOT removed here — cleanup happens inside onContextRunning
+      // once the context is confirmed "running", ensuring a retry is possible if the first
+      // gesture triggers resume() but the context remains suspended.
       const onInteraction = () => {
-        _homeCleanup?.();
-        _homeCleanup = null;
         _homeCtx?.resume().catch(() => {});
       };
       const cleanup = () => {

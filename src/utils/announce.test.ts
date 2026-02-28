@@ -479,12 +479,17 @@ describe("startHomeScreenMusic", () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
     const ctx = AudioCtxMock();
     (ctx as unknown as { state: string }).state = "suspended";
-    const addEventSpy = vi.spyOn(document, "addEventListener");
-    startHomeScreenMusic();
-    const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
-    expect(eventTypes).toContain("click");
-    expect(eventTypes).toContain("keydown");
-    expect(eventTypes).toContain("touchstart");
+    try {
+      const addEventSpy = vi.spyOn(document, "addEventListener");
+      startHomeScreenMusic();
+      const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
+      expect(eventTypes).toContain("click");
+      expect(eventTypes).toContain("keydown");
+      expect(eventTypes).toContain("touchstart");
+    } finally {
+      // Restore shared mock state so subsequent tests see a running context.
+      (ctx as unknown as { state: string }).state = "running";
+    }
   });
 
   it("keeps interaction listeners alive while context remains suspended", async () => {
