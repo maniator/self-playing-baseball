@@ -458,7 +458,19 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           // Use the role that will actually be stored for the destination section
           // so the sig matches what will be written to the DB.
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
-          const incomingFp = buildPlayerSig({ ...importedPlayer, role: sectionRole });
+          // Build the fingerprint using only the fields that will be stored for this section.
+          // Spreading importedPlayer directly would retain pitching stats even for batter sections,
+          // producing a hash that diverges from what sanitizePlayer will store in the DB.
+          const incomingFp = buildPlayerSig({
+            name: importedPlayer.name,
+            role: sectionRole,
+            batting: importedPlayer.batting,
+            pitching:
+              sectionRole === "pitcher" && importedPlayer.pitching
+                ? importedPlayer.pitching
+                : undefined,
+            playerSeed: importedPlayer.playerSeed,
+          });
 
           // Helper: derive role and sig from an EditorPlayer (mirrors editorToTeamPlayer logic).
           const editorPlayerFp = (p: EditorPlayer): string =>
