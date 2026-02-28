@@ -19,12 +19,10 @@ export const setAlertVolume = (v: number): void => {
       const now = _homeMasterGain.context?.currentTime ?? 0;
       if (typeof gainParam.cancelAndHoldAtTime === "function") {
         gainParam.cancelAndHoldAtTime(now);
-      } else if (typeof gainParam.cancelScheduledValues === "function") {
+      } else {
         gainParam.cancelScheduledValues(now);
       }
-      if (typeof gainParam.setValueAtTime === "function") {
-        gainParam.setValueAtTime(_alertVolume, now);
-      }
+      gainParam.setValueAtTime(_alertVolume, now);
     } catch {
       // AudioParam may throw if the AudioContext is closed or partially implemented — ignore.
     }
