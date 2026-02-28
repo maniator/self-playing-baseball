@@ -51,3 +51,40 @@ export const HOME_BASS_NOTES: ReadonlyArray<readonly [number, number, number]> =
   [110.0, 8.0, 3.8], // A2
   [98.0, 12.0, 3.8], // G2
 ];
+
+/** Schedule a single loop pass of home-screen music starting at `loopStart` seconds. */
+export const scheduleHomePass = (
+  ctx: AudioContext,
+  masterGain: GainNode,
+  loopStart: number,
+): void => {
+  const makeNote = (
+    type: OscillatorType,
+    freq: number,
+    t: number,
+    dur: number,
+    gain: number,
+  ): void => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.connect(g);
+    g.connect(masterGain);
+    osc.type = type;
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(gain, t + 0.02);
+    g.gain.linearRampToValueAtTime(0, t + dur * HOME_BEAT);
+    osc.start(t);
+    osc.stop(t + dur * HOME_BEAT + 0.02);
+  };
+
+  for (const [freq, beat, dur] of HOME_MELODY_NOTES) {
+    makeNote("triangle", freq, loopStart + beat * HOME_BEAT, dur, 0.18);
+  }
+  for (const [freq, beat, dur] of HOME_HARMONY_NOTES) {
+    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.08);
+  }
+  for (const [freq, beat, dur] of HOME_BASS_NOTES) {
+    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.12);
+  }
+};

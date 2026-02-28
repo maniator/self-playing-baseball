@@ -1,10 +1,5 @@
 import { _alertVolume, _setHomeMasterGain } from "./audio";
-import {
-  HOME_BASS_NOTES,
-  HOME_BEAT,
-  HOME_HARMONY_NOTES,
-  HOME_MELODY_NOTES,
-} from "./homeMusicNotes";
+import { HOME_BEAT, scheduleHomePass } from "./homeMusicNotes";
 
 // ---------------------------------------------------------------------------
 // Home screen looping background music
@@ -24,38 +19,6 @@ let _localMasterGain: GainNode | null = null;
 let _homeLoopId: ReturnType<typeof setTimeout> | null = null;
 /** Removes document interaction listeners added for autoplay-policy recovery. */
 let _homeCleanup: (() => void) | null = null;
-
-const scheduleHomePass = (ctx: AudioContext, masterGain: GainNode, loopStart: number): void => {
-  const makeNote = (
-    type: OscillatorType,
-    freq: number,
-    t: number,
-    dur: number,
-    gain: number,
-  ): void => {
-    const osc = ctx.createOscillator();
-    const g = ctx.createGain();
-    osc.connect(g);
-    g.connect(masterGain);
-    osc.type = type;
-    osc.frequency.value = freq;
-    g.gain.setValueAtTime(0, t);
-    g.gain.linearRampToValueAtTime(gain, t + 0.02);
-    g.gain.linearRampToValueAtTime(0, t + dur * HOME_BEAT);
-    osc.start(t);
-    osc.stop(t + dur * HOME_BEAT + 0.02);
-  };
-
-  for (const [freq, beat, dur] of HOME_MELODY_NOTES) {
-    makeNote("triangle", freq, loopStart + beat * HOME_BEAT, dur, 0.18);
-  }
-  for (const [freq, beat, dur] of HOME_HARMONY_NOTES) {
-    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.08);
-  }
-  for (const [freq, beat, dur] of HOME_BASS_NOTES) {
-    makeNote("sine", freq, loopStart + beat * HOME_BEAT, dur, 0.12);
-  }
-};
 
 /** Start looping home-screen music. Volume is controlled by alert volume via master gain. */
 export const startHomeScreenMusic = (): void => {
