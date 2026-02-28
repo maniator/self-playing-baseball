@@ -101,8 +101,8 @@ const scheduleHomePass = (ctx: AudioContext, masterGain: GainNode, loopStart: nu
 
 /** Start looping home-screen music. Volume is controlled by alert volume via master gain. */
 export const startHomeScreenMusic = (): void => {
-  if (_alertVolume === 0) return;
   stopHomeScreenMusic();
+  if (_alertVolume === 0) return;
   try {
     const Ctx: typeof AudioContext =
       window.AudioContext ??
@@ -110,7 +110,7 @@ export const startHomeScreenMusic = (): void => {
     if (!Ctx) return;
     _homeCtx = new Ctx();
     _localMasterGain = _homeCtx.createGain();
-    // Start silent; fade-in applied once the context is running (inside tryBegin).
+    // Start silent; fade-in applied once the context is running.
     _localMasterGain.gain.value = 0;
     _localMasterGain.connect(_homeCtx.destination);
     setHomeMasterGain(_localMasterGain);
@@ -128,37 +128,41 @@ export const startHomeScreenMusic = (): void => {
       );
     };
 
-    // Attempt to start immediately. Browsers may keep the AudioContext suspended
-    // until the first user gesture (autoplay policy). If so, we install one-shot
-    // listeners so the loop begins on the very next interaction.
-    const tryBegin = () => {
-      if (!_homeCtx || !_localMasterGain || _homeLoopId !== null) return;
-      _homeCtx
-        .resume()
-        .then(() => {
-          // If the context is still suspended (browser blocked autoplay even though the
-          // promise resolved), leave the interaction listeners alive so the next user
-          // gesture retries — do NOT start the loop on a silent suspended context.
-          if (!_homeCtx || _homeCtx.state !== "running") return;
-          _homeCleanup?.();
-          _homeCleanup = null;
-          if (!_localMasterGain || _homeLoopId !== null) return;
-          // Fade in from silence to the target alert volume.
-          const now = _homeCtx.currentTime;
-          _localMasterGain.gain.setValueAtTime(0, now);
-          _localMasterGain.gain.linearRampToValueAtTime(_alertVolume, now + HOME_FADE_IN_SEC);
-          loopFrom(now);
-        })
-        .catch(() => {});
+    // Single entry point for starting the loop — called when the context reaches "running".
+    // Guards against duplicate starts via _homeLoopId.
+    const onContextRunning = (): void => {
+      if (!_homeCtx || _homeCtx.state !== "running" || _homeLoopId !== null || !_localMasterGain) {
+        return;
+      }
+      _homeCleanup?.();
+      _homeCleanup = null;
+      const now = _homeCtx.currentTime;
+      _localMasterGain.gain.setValueAtTime(0, now);
+      _localMasterGain.gain.linearRampToValueAtTime(_alertVolume, now + HOME_FADE_IN_SEC);
+      loopFrom(now);
     };
 
-    tryBegin();
+    // onstatechange fires on every state transition (suspended → running, running → closed, …).
+    // This is more reliable than relying solely on the resume() promise — Chrome can resolve
+    // resume() while the context is still suspended if there is no user gesture yet.
+    _homeCtx.onstatechange = onContextRunning;
 
-    if (_homeCtx.state !== "running") {
+    // Kick off a resume attempt. In autoplay-allowed environments the context is already
+    // running and onContextRunning() will fire immediately via onstatechange (or the explicit
+    // call below). In autoplay-blocked browsers this is a no-op until a user gesture unlocks
+    // it; the interaction listeners below then call resume() again to trigger the transition.
+    _homeCtx.resume().catch(() => {});
+
+    if (_homeCtx.state === "running") {
+      // Context already running (autoplay allowed) — start the loop right now.
+      onContextRunning();
+    } else {
+      // Context is suspended (autoplay blocked). Install one-shot listeners so the very
+      // next user gesture calls resume(), which transitions state and fires onstatechange.
       const onInteraction = () => {
         _homeCleanup?.();
         _homeCleanup = null;
-        tryBegin();
+        _homeCtx?.resume().catch(() => {});
       };
       const cleanup = () => {
         document.removeEventListener("click", onInteraction);
@@ -188,16 +192,39 @@ export const stopHomeScreenMusic = (): void => {
     // Capture in local variables so the setTimeout closure uses them after nulling the module refs.
     const ctx = _homeCtx;
     const gain = _localMasterGain;
+    // Clear onstatechange so it doesn't fire on the subsequent close() transition.
+    ctx.onstatechange = null;
     _homeCtx = null;
     _localMasterGain = null;
-    // cancelAndHoldAtTime freezes the gain at the actual computed value at `now` (correctly
-    // handles mid-fade-in ramps) then we ramp from that value down to silence.
+    // Freeze the gain at its current value (handles mid-fade-in ramps), then ramp to silence.
+    // cancelAndHoldAtTime is not universally supported; fall back to cancelScheduledValues +
+    // setValueAtTime so stopHomeScreenMusic never throws on partial Web Audio implementations.
     const now = ctx.currentTime;
-    gain.gain.cancelAndHoldAtTime(now);
-    gain.gain.linearRampToValueAtTime(0, now + HOME_FADE_OUT_SEC);
-    setTimeout(() => ctx.close().catch(() => {}), HOME_FADE_OUT_SEC * 1000 + FADE_OUT_BUFFER_MS);
+    const param = gain.gain;
+    try {
+      if (typeof (param as AudioParam).cancelAndHoldAtTime === "function") {
+        param.cancelAndHoldAtTime(now);
+      } else {
+        param.cancelScheduledValues(now);
+        param.setValueAtTime(param.value, now);
+      }
+      param.linearRampToValueAtTime(0, now + HOME_FADE_OUT_SEC);
+    } catch {
+      // Swallow any Web Audio errors — stopping home-screen music must never crash the app.
+    }
+    setTimeout(
+      () => {
+        try {
+          ctx.close().catch(() => {});
+        } catch {
+          // Ignore close() failures during route transitions.
+        }
+      },
+      HOME_FADE_OUT_SEC * 1000 + FADE_OUT_BUFFER_MS,
+    );
   } else {
     if (_homeCtx) {
+      _homeCtx.onstatechange = null;
       _homeCtx.close().catch(() => {});
     }
     _homeCtx = null;
