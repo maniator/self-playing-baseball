@@ -130,6 +130,41 @@ test.describe("Visual — Help page", () => {
       maxDiffPixelRatio: 0.05,
     });
   });
+
+  /**
+   * Mobile regression snapshot — all accordion sections expanded on iphone-15.
+   *
+   * This captures the state that previously caused all sections to be squished
+   * into a fixed 100dvh container with no scrolling.  After expanding all
+   * sections, the test snapshots the help page at the initial scroll position
+   * (top of the page) to validate that content can expand and that the layout
+   * remains readable on a narrow viewport.
+   *
+   * Visual diff failures here most likely indicate a CSS regression in
+   * PageContainer mobile styles (flex-shrink / overflow-y).
+   */
+  test("help page all sections expanded screenshot (iphone-15)", async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "iphone-15",
+      "Help page expanded sections snapshot is iphone-15 only",
+    );
+
+    await page.getByTestId("home-help-button").click();
+    await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
+
+    // Expand every closed section.
+    const closedSummaries = page.locator('[data-testid="help-page"] details:not([open]) > summary');
+    while ((await closedSummaries.count()) > 0) {
+      await closedSummaries.first().click();
+    }
+    await expect(page.locator('[data-testid="help-page"] details[open]')).toHaveCount(8);
+
+    // Snapshot at the initial scroll position (top of page).
+    await expect(page.getByTestId("help-page")).toHaveScreenshot(
+      "help-page-mobile-all-sections.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
 });
 
 // ─── Saves page (/saves) ──────────────────────────────────────────────────

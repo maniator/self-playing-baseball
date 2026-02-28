@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
@@ -57,5 +57,39 @@ describe("HelpPage", () => {
     // Manager Mode appears as a section header and in body text — use getAllBy
     expect(screen.getAllByText(/manager mode/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/saves.*sharing/i)).toBeInTheDocument();
+  });
+
+  it("renders all 8 accordion sections", () => {
+    renderHelpPage();
+    const helpPage = screen.getByTestId("help-page");
+    // <details> elements have implicit ARIA role "group" — scope to the container.
+    const details = within(helpPage).getAllByRole("group");
+    expect(details).toHaveLength(8);
+    // Spot-check section titles via <summary> scoped to the container.
+    const rawSummaries = Array.from(helpPage.querySelectorAll("summary")).map((s) =>
+      s.textContent?.trim(),
+    );
+    expect(rawSummaries).toContain("Basics");
+    expect(rawSummaries).toContain("Game Flow");
+    expect(rawSummaries).toContain("Manager Mode");
+    expect(rawSummaries).toContain("Hit types");
+    expect(rawSummaries).toContain("Saves & Sharing");
+  });
+
+  it("each section has a summary (accordion toggle) and non-empty body content", () => {
+    renderHelpPage();
+    const helpPage = screen.getByTestId("help-page");
+    const details = Array.from(helpPage.querySelectorAll("details"));
+    for (const d of details) {
+      const summary = d.querySelector("summary");
+      expect(summary).toBeTruthy();
+      // Body text (everything after the summary) must be non-empty.
+      const bodyText = Array.from(d.childNodes)
+        .filter((node) => node !== summary)
+        .map((node) => node.textContent ?? "")
+        .join("")
+        .trim();
+      expect(bodyText.length).toBeGreaterThan(0);
+    }
   });
 });
