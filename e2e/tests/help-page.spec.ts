@@ -9,12 +9,16 @@
  * and the PageContainer must act as the scroll container.
  */
 
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import { disableAnimations, resetAppState } from "../utils/helpers";
 
+/** Mobile project names — viewports ≤ 768 px where PageContainer scrolls. */
+const MOBILE_PROJECTS = ["iphone-15-pro-max", "iphone-15", "pixel-7", "pixel-5"];
+
 /** Open every closed <details> in the help page and wait until all 8 are open. */
-async function expandAllSections(page: import("@playwright/test").Page): Promise<void> {
+async function expandAllSections(page: Page): Promise<void> {
   const closedSummaries = page.locator('[data-testid="help-page"] details:not([open]) > summary');
   while ((await closedSummaries.count()) > 0) {
     await closedSummaries.first().click();
@@ -46,7 +50,12 @@ test.describe("Help page — all sections present", () => {
 });
 
 test.describe("Help page — mobile scrollability regression", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    // Skip navigation setup entirely on non-mobile projects — saves CI time.
+    test.skip(
+      !MOBILE_PROJECTS.includes(testInfo.project.name),
+      "Mobile-only (≤ 768 px): desktop/tablet use normal document-level scroll",
+    );
     await resetAppState(page);
     await disableAnimations(page);
     await page.getByTestId("home-help-button").click();
@@ -61,16 +70,7 @@ test.describe("Help page — mobile scrollability regression", () => {
    * Before the fix, flex-shrink:1 caused children to compress to fit 100dvh,
    * so scrollHeight == clientHeight and scrolling was impossible.
    */
-  test("PageContainer is scrollable when all sections are expanded (mobile only)", async ({
-    page,
-  }) => {
-    const viewportWidth = await page.evaluate(() => window.innerWidth);
-    if (viewportWidth > 768) {
-      // On desktop/tablet the page uses normal document flow — body scrolls.
-      test.skip();
-      return;
-    }
-
+  test("PageContainer is scrollable when all sections are expanded", async ({ page }) => {
     await expandAllSections(page);
 
     const helpPage = page.getByTestId("help-page");
@@ -88,15 +88,7 @@ test.describe("Help page — mobile scrollability regression", () => {
    * sections are expanded — scrollTop advances from 0, proving the container
    * is the scroll host.
    */
-  test("can scroll PageContainer to the bottom with all sections open (mobile only)", async ({
-    page,
-  }) => {
-    const viewportWidth = await page.evaluate(() => window.innerWidth);
-    if (viewportWidth > 768) {
-      test.skip();
-      return;
-    }
-
+  test("can scroll PageContainer to the bottom with all sections open", async ({ page }) => {
     await expandAllSections(page);
 
     const helpPage = page.getByTestId("help-page");
@@ -111,15 +103,7 @@ test.describe("Help page — mobile scrollability regression", () => {
    * body { overflow: hidden } is applied at ≤768 px, so body.scrollHeight
    * must stay at or near window.innerHeight.
    */
-  test("body does not grow beyond viewport on mobile when all sections are open", async ({
-    page,
-  }) => {
-    const viewportWidth = await page.evaluate(() => window.innerWidth);
-    if (viewportWidth > 768) {
-      test.skip();
-      return;
-    }
-
+  test("body does not grow beyond viewport when all sections are open", async ({ page }) => {
     await expandAllSections(page);
 
     const { bodyScrollHeight, viewportHeight } = await page.evaluate(() => ({

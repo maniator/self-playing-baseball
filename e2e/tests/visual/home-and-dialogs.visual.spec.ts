@@ -135,11 +135,10 @@ test.describe("Visual — Help page", () => {
    * Mobile regression snapshot — all accordion sections expanded on iphone-15.
    *
    * This captures the state that previously caused all sections to be squished
-   * into a fixed 100dvh container with no scrolling.  The snapshot confirms
-   * the container height in the image reflects the scrollable content height,
-   * not the viewport height.  The screenshot is taken of the full scrollable
-   * area (fullPage: true equivalent via container scroll height) to show all
-   * sections.
+   * into a fixed 100dvh container with no scrolling.  After expanding all
+   * sections, the test snapshots the help page at the initial scroll position
+   * (top of the page) to validate that content can expand and that the layout
+   * remains readable on a narrow viewport.
    *
    * Visual diff failures here most likely indicate a CSS regression in
    * PageContainer mobile styles (flex-shrink / overflow-y).

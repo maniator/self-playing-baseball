@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it } from "vitest";
@@ -61,27 +61,35 @@ describe("HelpPage", () => {
 
   it("renders all 8 accordion sections", () => {
     renderHelpPage();
-    // Count <details> elements — one per section
-    const details = document.querySelectorAll("details");
+    const helpPage = screen.getByTestId("help-page");
+    // <details> elements have implicit ARIA role "group" — scope to the container.
+    const details = within(helpPage).getAllByRole("group");
     expect(details).toHaveLength(8);
-    // Spot-check section titles via <summary> text
-    const summaries = Array.from(document.querySelectorAll("summary")).map((s) =>
+    // Spot-check section titles via <summary> scoped to the container.
+    const rawSummaries = Array.from(helpPage.querySelectorAll("summary")).map((s) =>
       s.textContent?.trim(),
     );
-    expect(summaries).toContain("Basics");
-    expect(summaries).toContain("Game Flow");
-    expect(summaries).toContain("Manager Mode");
-    expect(summaries).toContain("Hit types");
-    expect(summaries).toContain("Saves & Sharing");
+    expect(rawSummaries).toContain("Basics");
+    expect(rawSummaries).toContain("Game Flow");
+    expect(rawSummaries).toContain("Manager Mode");
+    expect(rawSummaries).toContain("Hit types");
+    expect(rawSummaries).toContain("Saves & Sharing");
   });
 
-  it("each section has a summary (accordion toggle) and a body", () => {
+  it("each section has a summary (accordion toggle) and non-empty body content", () => {
     renderHelpPage();
-    const details = document.querySelectorAll("details");
-    for (const d of Array.from(details)) {
-      expect(d.querySelector("summary")).toBeTruthy();
-      // Each section should have content inside a div after the summary
-      expect(d.querySelector("div")).toBeTruthy();
+    const helpPage = screen.getByTestId("help-page");
+    const details = Array.from(helpPage.querySelectorAll("details"));
+    for (const d of details) {
+      const summary = d.querySelector("summary");
+      expect(summary).toBeTruthy();
+      // Body text (everything after the summary) must be non-empty.
+      const bodyText = Array.from(d.childNodes)
+        .filter((node) => node !== summary)
+        .map((node) => node.textContent ?? "")
+        .join("")
+        .trim();
+      expect(bodyText.length).toBeGreaterThan(0);
     }
   });
 });
