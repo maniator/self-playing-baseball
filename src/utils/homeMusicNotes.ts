@@ -74,6 +74,10 @@ export const scheduleHomePass = (
     g.gain.setValueAtTime(0, t);
     g.gain.linearRampToValueAtTime(gain, t + 0.02);
     g.gain.linearRampToValueAtTime(0, t + dur * HOME_BEAT);
+    osc.onended = () => {
+      osc.disconnect();
+      g.disconnect();
+    };
     osc.start(t);
     osc.stop(t + dur * HOME_BEAT + 0.02);
   };

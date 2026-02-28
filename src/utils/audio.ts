@@ -14,14 +14,20 @@ export const setAlertVolume = (v: number): void => {
   // Keep the home-screen music master gain in sync so volume changes apply immediately,
   // canceling any in-progress automation (e.g. fade-in ramp) so the new value takes effect.
   if (_homeMasterGain) {
-    const gainParam = _homeMasterGain.gain;
-    const now = _homeMasterGain.context?.currentTime ?? 0;
-    if (typeof gainParam.cancelAndHoldAtTime === "function") {
-      gainParam.cancelAndHoldAtTime(now);
-    } else {
-      gainParam.cancelScheduledValues(now);
+    try {
+      const gainParam = _homeMasterGain.gain;
+      const now = _homeMasterGain.context?.currentTime ?? 0;
+      if (typeof gainParam.cancelAndHoldAtTime === "function") {
+        gainParam.cancelAndHoldAtTime(now);
+      } else if (typeof gainParam.cancelScheduledValues === "function") {
+        gainParam.cancelScheduledValues(now);
+      }
+      if (typeof gainParam.setValueAtTime === "function") {
+        gainParam.setValueAtTime(_alertVolume, now);
+      }
+    } catch {
+      // AudioParam may throw if the AudioContext is closed or partially implemented — ignore.
     }
-    gainParam.setValueAtTime(_alertVolume, now);
   }
 };
 
