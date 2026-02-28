@@ -469,6 +469,10 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             });
 
           // Check saved teams first (early-exit avoids constructing the editor spread).
+          // Note: for DB players without a stored `fingerprint` the fallback `buildPlayerSig(p)`
+          // uses `p.playerSeed` — but pre-v3-migration players have no seed, so the fallback
+          // computes a seed-free hash that will never equal the seed-based `incomingFp`.
+          // This is an inherent limitation: legacy players (no seed) are false-negatives here.
           const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,

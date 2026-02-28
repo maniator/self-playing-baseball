@@ -249,6 +249,14 @@ test.describe("Custom Teams — Import/Export", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
 
+    // This test covers the no-migration path: in a fresh E2E DB the legacy bundle is
+    // imported directly (no teamSeed), so the stored fingerprint is also seed-free.
+    // On re-import, the seed-free incoming fingerprint matches the seed-free stored
+    // fingerprint, so the skip is detected correctly.
+    // Note: after a v3 DB migration on a real install the stored fingerprint would
+    // be seed-based and re-import would NOT be detected as a duplicate — this is a
+    // known limitation documented in the importCustomTeams JSDoc.
+
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 

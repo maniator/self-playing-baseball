@@ -282,7 +282,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
         {exportError && <ErrorMessage data-testid="export-teams-error">{exportError}</ErrorMessage>}
         {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
         {pendingDuplicateImport && (
-          <DuplicateConfirmBanner data-testid="import-duplicate-confirm-banner" role="alert">
+          <DuplicateConfirmBanner data-testid="teams-duplicate-banner" role="alert">
             <DuplicateConfirmTitle>⚠ Duplicate players detected</DuplicateConfirmTitle>
             <DuplicateConfirmList>
               {pendingDuplicateImport.warnings.map((w, i) => (
@@ -297,14 +297,14 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
               <ImportExportBtn
                 type="button"
                 onClick={confirmDuplicateImport}
-                data-testid="import-duplicate-confirm-button"
+                data-testid="teams-duplicate-confirm-button"
               >
                 Import Anyway
               </ImportExportBtn>
               <ImportExportBtn
                 type="button"
                 onClick={cancelDuplicateImport}
-                data-testid="import-duplicate-cancel-button"
+                data-testid="teams-duplicate-cancel-button"
               >
                 Cancel
               </ImportExportBtn>
