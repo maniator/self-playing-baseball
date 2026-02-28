@@ -58,4 +58,30 @@ describe("HelpPage", () => {
     expect(screen.getAllByText(/manager mode/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/saves.*sharing/i)).toBeInTheDocument();
   });
+
+  it("renders all 8 accordion sections", () => {
+    renderHelpPage();
+    // Count <details> elements — one per section
+    const details = document.querySelectorAll("details");
+    expect(details).toHaveLength(8);
+    // Spot-check section titles via <summary> text
+    const summaries = Array.from(document.querySelectorAll("summary")).map(
+      (s) => s.textContent?.trim(),
+    );
+    expect(summaries).toContain("Basics");
+    expect(summaries).toContain("Game Flow");
+    expect(summaries).toContain("Manager Mode");
+    expect(summaries).toContain("Hit types");
+    expect(summaries).toContain("Saves & Sharing");
+  });
+
+  it("each section has a summary (accordion toggle) and a body", () => {
+    renderHelpPage();
+    const details = document.querySelectorAll("details");
+    for (const d of Array.from(details)) {
+      expect(d.querySelector("summary")).toBeTruthy();
+      // Each section should have content inside a div after the summary
+      expect(d.querySelector("div")).toBeTruthy();
+    }
+  });
 });
