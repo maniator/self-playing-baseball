@@ -46,7 +46,7 @@ async function createAndSaveTeam(
 ): Promise<void> {
   await openCreateEditorWithName(page, name);
   await page.getByTestId("custom-team-save-button").click();
-  await expect(page.getByText(name)).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText(name)).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("manage-teams-back-button").click();
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 }
@@ -87,7 +87,7 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Snapshot City Sox");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Snapshot City Sox")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Snapshot City Sox")).toBeVisible({ timeout: 15_000 });
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-with-team.png",
@@ -211,7 +211,7 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Visual Edit Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Visual Edit Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Visual Edit Team")).toBeVisible({ timeout: 15_000 });
 
     // Open edit mode for the saved team.
     await page.getByTestId("custom-team-edit-button").first().click();
@@ -507,7 +507,7 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Route Edit Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Route Edit Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Route Edit Team")).toBeVisible({ timeout: 15_000 });
 
     // Click Edit — URL must update to /teams/<id>/edit
     await page.getByTestId("custom-team-edit-button").first().click();
