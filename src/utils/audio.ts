@@ -1,11 +1,11 @@
 export let _alertVolume = 1.0;
 
 /**
- * GainNode for the home-screen music master gain.
- * Set/cleared by homeMusic.ts so setAlertVolume can update it live without a circular dep.
+ * INTERNAL: set/cleared only by homeMusic.ts so setAlertVolume can update it live without a
+ * circular dependency. Do not use from other modules.
  */
 let _homeMasterGain: GainNode | null = null;
-export const setHomeMasterGain = (g: GainNode | null): void => {
+export const _setHomeMasterGain = (g: GainNode | null): void => {
   _homeMasterGain = g;
 };
 

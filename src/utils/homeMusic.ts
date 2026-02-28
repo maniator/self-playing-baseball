@@ -1,4 +1,4 @@
-import { _alertVolume, setHomeMasterGain } from "./audio";
+import { _alertVolume, _setHomeMasterGain } from "./audio";
 import {
   HOME_BASS_NOTES,
   HOME_BEAT,
@@ -71,7 +71,7 @@ export const startHomeScreenMusic = (): void => {
     // Start silent; fade-in applied once the context is running.
     _localMasterGain.gain.value = 0;
     _localMasterGain.connect(_homeCtx.destination);
-    setHomeMasterGain(_localMasterGain);
+    _setHomeMasterGain(_localMasterGain);
 
     const loopFrom = (loopStart: number): void => {
       if (!_homeCtx || !_localMasterGain) return;
@@ -83,7 +83,9 @@ export const startHomeScreenMusic = (): void => {
         // Ignore scheduling errors (e.g. context closed mid-loop or browser rejection).
         return;
       }
-      const loopEnd = loopStart + HOME_LOOP_DURATION;
+      // Use effectiveStart as the loop boundary so the next pass is scheduled relative to the
+      // actual scheduled audio start, not the (possibly stale) original loopStart value.
+      const loopEnd = effectiveStart + HOME_LOOP_DURATION;
       const msUntilPreschedule = (loopEnd - _homeCtx.currentTime - 0.15) * 1000;
       _homeLoopId = setTimeout(
         () => {
@@ -151,7 +153,7 @@ export const startHomeScreenMusic = (): void => {
 export const stopHomeScreenMusic = (): void => {
   _homeCleanup?.();
   _homeCleanup = null;
-  setHomeMasterGain(null);
+  _setHomeMasterGain(null);
   if (_homeLoopId !== null) {
     clearTimeout(_homeLoopId);
     _homeLoopId = null;
@@ -192,10 +194,17 @@ export const stopHomeScreenMusic = (): void => {
     );
   } else {
     if (_homeCtx) {
-      _homeCtx.onstatechange = null;
-      _homeCtx.close().catch(() => {});
+      const ctx = _homeCtx;
+      _homeCtx = null;
+      _localMasterGain = null;
+      ctx.onstatechange = null;
+      if (typeof ctx.close === "function") {
+        try {
+          ctx.close().catch(() => {});
+        } catch {
+          // Ignore close() failures during route transitions.
+        }
+      }
     }
-    _homeCtx = null;
-    _localMasterGain = null;
   }
 };

@@ -411,6 +411,17 @@ describe("pickVoice — voice selection", () => {
 // ---------------------------------------------------------------------------
 // startHomeScreenMusic() / stopHomeScreenMusic()
 // ---------------------------------------------------------------------------
+
+/** Queue a single AudioContext construction that returns a copy with state "suspended". */
+const mockSuspendedAudioContext = (): void => {
+  const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+  const originalImpl = AudioCtxMock.getMockImplementation();
+  AudioCtxMock.mockImplementationOnce(() => ({
+    ...(originalImpl ? originalImpl() : {}),
+    state: "suspended" as AudioContextState,
+  }));
+};
+
 describe("startHomeScreenMusic", () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -482,39 +493,25 @@ describe("startHomeScreenMusic", () => {
   });
 
   it("registers interaction listeners when context is suspended", () => {
-    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    (ctx as unknown as { state: string }).state = "suspended";
-    try {
-      const addEventSpy = vi.spyOn(document, "addEventListener");
-      startHomeScreenMusic();
-      const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
-      expect(eventTypes).toContain("click");
-      expect(eventTypes).toContain("keydown");
-      expect(eventTypes).toContain("touchstart");
-    } finally {
-      // Restore shared mock state so subsequent tests see a running context.
-      (ctx as unknown as { state: string }).state = "running";
-    }
+    mockSuspendedAudioContext();
+    const addEventSpy = vi.spyOn(document, "addEventListener");
+    startHomeScreenMusic();
+    const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
+    expect(eventTypes).toContain("click");
+    expect(eventTypes).toContain("keydown");
+    expect(eventTypes).toContain("touchstart");
   });
 
   it("keeps interaction listeners alive while context remains suspended", async () => {
-    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    (ctx as unknown as { state: string }).state = "suspended";
-    try {
-      const removeEventSpy = vi.spyOn(document, "removeEventListener");
-      startHomeScreenMusic();
-      // Flush the resume() .catch() microtask — listeners must NOT be removed yet.
-      await Promise.resolve();
-      const removedTypes = removeEventSpy.mock.calls.map(([type]) => type);
-      expect(removedTypes).not.toContain("click");
-      expect(removedTypes).not.toContain("keydown");
-      expect(removedTypes).not.toContain("touchstart");
-    } finally {
-      // Restore shared mock state so subsequent tests see a running context.
-      (ctx as unknown as { state: string }).state = "running";
-    }
+    mockSuspendedAudioContext();
+    const removeEventSpy = vi.spyOn(document, "removeEventListener");
+    startHomeScreenMusic();
+    // Flush the resume() .catch() microtask — listeners must NOT be removed yet.
+    await Promise.resolve();
+    const removedTypes = removeEventSpy.mock.calls.map(([type]) => type);
+    expect(removedTypes).not.toContain("click");
+    expect(removedTypes).not.toContain("keydown");
+    expect(removedTypes).not.toContain("touchstart");
   });
 
   it("sets onstatechange on the AudioContext to start music when context becomes running", () => {
@@ -542,9 +539,10 @@ describe("stopHomeScreenMusic", () => {
 
   it("calls AudioContext.close() after the fade-out delay when music is playing", async () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    (ctx.close as ReturnType<typeof vi.fn>).mockClear();
+    AudioCtxMock.mockClear();
     startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as { close: ReturnType<typeof vi.fn> };
+    (ctx.close as ReturnType<typeof vi.fn>).mockClear();
     stopHomeScreenMusic();
     // close() is deferred by the fade-out setTimeout — advance past it
     await vi.runAllTimersAsync();
@@ -553,10 +551,16 @@ describe("stopHomeScreenMusic", () => {
 
   it("schedules a gain ramp to 0 (fade-out) on stop", async () => {
     const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
-    const ctx = AudioCtxMock();
-    const gainNode = ctx.createGain();
+    AudioCtxMock.mockClear();
     startHomeScreenMusic();
     await Promise.resolve(); // flush resume() so fade-in is scheduled
+    const ctx = AudioCtxMock.mock.results[0]?.value as { createGain: ReturnType<typeof vi.fn> };
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as {
+      gain: {
+        linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+        cancelAndHoldAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
     (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mockClear();
     (gainNode.gain.cancelAndHoldAtTime as ReturnType<typeof vi.fn>).mockClear();
     stopHomeScreenMusic();
