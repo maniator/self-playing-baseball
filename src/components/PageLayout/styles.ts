@@ -21,6 +21,10 @@ export const PageContainer = styled.div`
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    /* Flex children must not shrink so overflow-y: auto can scroll long pages. */
+    > * {
+      flex-shrink: 0;
+    }
   }
 `;
 
