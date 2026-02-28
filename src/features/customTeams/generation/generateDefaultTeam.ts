@@ -173,13 +173,29 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     return "S";
   };
 
+  /** Pick a full name that hasn't been used yet; retries on collision. */
+  const usedNames = new Set<string>();
+  const pickUniqueName = (): string => {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const name = `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`;
+      if (!usedNames.has(name.toLowerCase())) {
+        usedNames.add(name.toLowerCase());
+        return name;
+      }
+    }
+    // Fallback: suffix with slot index — practically unreachable with 676 combos and ≤18 players.
+    const name = `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)} ${usedNames.size + 1}`;
+    usedNames.add(name.toLowerCase());
+    return name;
+  };
+
   // Shuffle batting positions so the batting order varies per seed.
   // All 9 required positions (including DH) are still present, just in a random order.
   const shuffledPositions = shuffle(rng, [...BATTING_POSITIONS]);
 
   const lineup: GeneratedPlayer[] = Array.from({ length: 9 }, (_, i) => ({
     id: `p_${seed}_L${i}`,
-    name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
+    name: pickUniqueName(),
     role: "batter" as const,
     position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
@@ -195,7 +211,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
   const benchPositionPool = shuffle(rng, [...BATTING_POSITIONS]);
   const bench: GeneratedPlayer[] = Array.from({ length: 4 }, (_, i) => ({
     id: `p_${seed}_B${i}`,
-    name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
+    name: pickUniqueName(),
     role: "batter" as const,
     position: benchPositionPool[i % benchPositionPool.length],
     handedness: pickHandedness(),
@@ -213,7 +229,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     const pitchingRole: "SP" | "RP" | "SP/RP" = i === 0 ? "SP" : bullpenRoles[i - 1];
     return {
       id: `p_${seed}_P${i}`,
-      name: `${pickFrom(rng, FIRST_NAMES)} ${pickFrom(rng, LAST_NAMES)}`,
+      name: pickUniqueName(),
       role: "pitcher" as const,
       position: i === 0 ? "SP" : "RP",
       pitchingRole,

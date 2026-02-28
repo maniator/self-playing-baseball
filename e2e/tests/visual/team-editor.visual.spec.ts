@@ -10,6 +10,13 @@ import {
 /** Shared snapshot diff tolerance for all visual snapshots in this file. */
 const TEAM_EDITOR_SNAPSHOT_OPTIONS = { maxDiffPixelRatio: 0.05 } as const;
 
+/**
+ * Timeout for the team-name-visible assertion after clicking Save.
+ * Save navigates to /teams, which remounts ManageTeamsScreen and triggers a
+ * fresh useCustomTeams DB fetch. CI containers can be slow, so 15s is used.
+ */
+const TEAM_SAVE_NAVIGATION_TIMEOUT = 15_000;
+
 // ─── Stage 2B: Custom Team UI visual snapshots ────────────────────────────────
 //
 // These snapshots cover new Stage 2B surfaces:
@@ -46,7 +53,7 @@ async function createAndSaveTeam(
 ): Promise<void> {
   await openCreateEditorWithName(page, name);
   await page.getByTestId("custom-team-save-button").click();
-  await expect(page.getByText(name)).toBeVisible({ timeout: 15_000 });
+  await expect(page.getByText(name)).toBeVisible({ timeout: TEAM_SAVE_NAVIGATION_TIMEOUT });
   await page.getByTestId("manage-teams-back-button").click();
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 }
@@ -87,7 +94,9 @@ test.describe("Visual — Stage 2B: Manage Teams screen", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Snapshot City Sox");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Snapshot City Sox")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Snapshot City Sox")).toBeVisible({
+      timeout: TEAM_SAVE_NAVIGATION_TIMEOUT,
+    });
 
     await expect(page.getByTestId("manage-teams-screen")).toHaveScreenshot(
       "manage-teams-screen-with-team.png",
@@ -211,7 +220,9 @@ test.describe("Visual — Stage 2B: Edit Team editor, mobile portrait", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Visual Edit Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Visual Edit Team")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Visual Edit Team")).toBeVisible({
+      timeout: TEAM_SAVE_NAVIGATION_TIMEOUT,
+    });
 
     // Open edit mode for the saved team.
     await page.getByTestId("custom-team-edit-button").first().click();
@@ -507,7 +518,9 @@ test.describe("Visual — /teams/new URL route", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Route Edit Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Route Edit Team")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("Route Edit Team")).toBeVisible({
+      timeout: TEAM_SAVE_NAVIGATION_TIMEOUT,
+    });
 
     // Click Edit — URL must update to /teams/<id>/edit
     await page.getByTestId("custom-team-edit-button").first().click();
