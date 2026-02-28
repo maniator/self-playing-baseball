@@ -143,9 +143,11 @@ export const startHomeScreenMusic = (): void => {
     };
 
     // onstatechange fires on every state transition (suspended → running, running → closed, …).
+    // We explicitly filter for "running" inside onContextRunning, so non-running transitions
+    // (e.g. running → closed triggered by stopHomeScreenMusic) are harmlessly ignored.
     // This is more reliable than relying solely on the resume() promise — Chrome can resolve
     // resume() while the context is still suspended if there is no user gesture yet.
-    _homeCtx.onstatechange = onContextRunning;
+    _homeCtx.onstatechange = () => onContextRunning();
 
     // Kick off a resume attempt. In autoplay-allowed environments the context is already
     // running and onContextRunning() will fire immediately via onstatechange (or the explicit
@@ -202,7 +204,7 @@ export const stopHomeScreenMusic = (): void => {
     const now = ctx.currentTime;
     const param = gain.gain;
     try {
-      if (typeof (param as AudioParam).cancelAndHoldAtTime === "function") {
+      if (typeof param.cancelAndHoldAtTime === "function") {
         param.cancelAndHoldAtTime(now);
       } else {
         param.cancelScheduledValues(now);

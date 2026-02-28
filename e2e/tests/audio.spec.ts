@@ -90,14 +90,23 @@ test.describe("Audio initialisation", () => {
     );
 
     await resetAppState(page);
+
+    // Collect any JS console errors during the mute/unmute cycle.
+    const consoleErrors: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(msg.text());
+    });
+
     // Mute music
     const muteBtn = page.getByRole("button", { name: "Mute music" });
     await expect(muteBtn).toBeVisible();
     await muteBtn.click();
-    // Unmute
     await expect(page.getByRole("button", { name: "Unmute music" })).toBeVisible();
+    // Unmute — this re-creates the AudioContext; should not throw
     await page.getByRole("button", { name: "Unmute music" }).click();
-    // Back to muted-able state — no exception should have been thrown
     await expect(page.getByRole("button", { name: "Mute music" })).toBeVisible();
+
+    // No JS errors should have been logged during the cycle.
+    expect(consoleErrors).toHaveLength(0);
   });
 });
