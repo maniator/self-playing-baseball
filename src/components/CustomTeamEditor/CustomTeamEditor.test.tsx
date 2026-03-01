@@ -147,7 +147,7 @@ describe("CustomTeamEditor — create mode", () => {
       createTeam: mockCreate,
       updateTeam: vi.fn(),
       deleteTeam: vi.fn(),
-    } as ReturnType<typeof useCustomTeams>);
+    } as unknown as ReturnType<typeof useCustomTeams>);
 
     const onSave = vi.fn();
     renderEditor({ onSave });
@@ -305,7 +305,7 @@ describe("CustomTeamEditor — edit mode", () => {
       createTeam: vi.fn(),
       updateTeam: mockUpdate,
       deleteTeam: vi.fn(),
-    } as ReturnType<typeof useCustomTeams>);
+    } as unknown as ReturnType<typeof useCustomTeams>);
 
     const onSave = vi.fn();
     renderEditor({ team: existingTeam, onSave });

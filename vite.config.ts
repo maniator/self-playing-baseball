@@ -1,5 +1,6 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
+import type { PluginOption } from "vite";
 import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
 
@@ -64,7 +65,7 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         rollupFormat: "es",
       },
-    }),
+    }) as PluginOption,
   ],
   test: {
     environment: "jsdom",

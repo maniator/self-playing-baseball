@@ -125,7 +125,7 @@ type LineupFormSectionProps = {
   pendingPlayerImport: PendingPlayerImport | null;
   dispatch: EditorDispatch;
   setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  lineupFileRef: React.RefObject<HTMLInputElement>;
+  lineupFileRef: React.RefObject<HTMLInputElement | null>;
   onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
 };
@@ -216,7 +216,7 @@ type BenchFormSectionProps = {
   pendingPlayerImport: PendingPlayerImport | null;
   dispatch: EditorDispatch;
   setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  benchFileRef: React.RefObject<HTMLInputElement>;
+  benchFileRef: React.RefObject<HTMLInputElement | null>;
   onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
 };
@@ -307,7 +307,7 @@ type PitchersSectionProps = {
   pendingPlayerImport: PendingPlayerImport | null;
   dispatch: EditorDispatch;
   setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  pitchersFileRef: React.RefObject<HTMLInputElement>;
+  pitchersFileRef: React.RefObject<HTMLInputElement | null>;
   onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
   sensors: ReturnType<typeof useSensors>;
@@ -685,7 +685,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
               <TextInput
                 id="ct-name"
                 value={state.name}
-                onChange={(e) =>
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
                 }
                 placeholder="e.g. Eagles"
@@ -709,7 +709,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
                 <TextInput
                   id="ct-abbrev"
                   value={state.abbreviation}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     dispatch({
                       type: "SET_FIELD",
                       field: "abbreviation",
@@ -744,7 +744,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
                 <TextInput
                   id="ct-city"
                   value={state.city}
-                  onChange={(e) =>
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                     dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
                   }
                   placeholder="e.g. Austin"

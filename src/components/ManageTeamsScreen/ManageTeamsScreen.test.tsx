@@ -59,9 +59,12 @@ vi.mock("@hooks/useImportCustomTeams", () => ({
 }));
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import type { UseImportCustomTeamsReturn } from "@hooks/useImportCustomTeams";
 import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
+import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
 import { CustomTeamStore } from "@storage/customTeamStore";
 import { downloadJson } from "@storage/saveIO";
+import type { CustomTeamDoc } from "@storage/types";
 
 import ManageTeamsScreen from "./index";
 
@@ -144,10 +147,10 @@ describe("ManageTeamsScreen", () => {
         {
           id: "some-team-id",
           name: "Test Team",
-          roster: { lineup: [], pitchers: [], bench: [] },
+          roster: { schemaVersion: 1, lineup: [], pitchers: [], bench: [] },
           abbreviation: "TST",
           city: "Testville",
-        },
+        } as unknown as CustomTeamDoc,
       ],
       loading: false,
       deleteTeam: vi.fn(),
@@ -225,19 +228,19 @@ describe("ManageTeamsScreen — Import/Export section", () => {
         {
           id: "p1",
           name: "Player",
-          role: "batter",
+          role: "batter" as const,
           batting: { contact: 70, power: 60, speed: 50 },
         },
       ],
-      bench: [],
-      pitchers: [],
+      bench: [] as never[],
+      pitchers: [] as never[],
     },
     metadata: { archived: false },
     schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
     source: "custom" as const,
-  };
+  } as unknown as CustomTeamDoc;
 
   it("shows import and export all buttons", () => {
     vi.mocked(useCustomTeams).mockReturnValueOnce({
@@ -294,10 +297,14 @@ describe("ManageTeamsScreen — Import/Export section", () => {
 
   it("shows success message after successful import", async () => {
     const mockUseImport = vi.mocked(useImportCustomTeams);
-    let capturedOnSuccess: ((r: unknown) => void) | undefined;
+    let capturedOnSuccess: ((result: ImportCustomTeamsResult) => void) | undefined;
     mockUseImport.mockImplementation(({ onSuccess }) => {
       capturedOnSuccess = onSuccess;
-      return { importError: null, importing: false, handleFileImport: vi.fn() };
+      return {
+        importError: null,
+        importing: false,
+        handleFileImport: vi.fn(),
+      } as unknown as UseImportCustomTeamsReturn;
     });
     renderAt("/teams");
     expect(capturedOnSuccess).toBeDefined();
@@ -310,6 +317,7 @@ describe("ManageTeamsScreen — Import/Export section", () => {
         skipped: 0,
         duplicateWarnings: [],
         duplicatePlayerWarnings: [],
+        requiresDuplicateConfirmation: false,
       });
     });
     expect(screen.getByTestId("import-teams-success")).toBeInTheDocument();
@@ -320,7 +328,7 @@ describe("ManageTeamsScreen — Import/Export section", () => {
       importError: "Invalid JSON",
       importing: false,
       handleFileImport: vi.fn(),
-    });
+    } as unknown as UseImportCustomTeamsReturn);
     renderAt("/teams");
     expect(screen.getByTestId("import-teams-error")).toBeInTheDocument();
     expect(screen.getByText("Invalid JSON")).toBeInTheDocument();

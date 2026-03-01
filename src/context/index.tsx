@@ -194,14 +194,17 @@ function logReducer(
     }
     case "reset":
       return { announcements: [] };
-    default:
-      throw new Error(`No such reducer type as ${action.type}`);
+    default: {
+      const _exhaustive: never = action;
+      throw new Error(`No such reducer type as ${(_exhaustive as { type: string }).type}`);
+    }
   }
 }
 
 const initialState: State = createFreshGameState(["A", "B"]);
 
 export const GameProviderWrapper: React.FunctionComponent<{
+  children?: React.ReactNode;
   onDispatch?: (action: GameAction) => void;
   announcePreprocessor?: (text: string) => string;
 }> = ({ children, onDispatch, announcePreprocessor }) => {

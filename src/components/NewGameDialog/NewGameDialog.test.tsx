@@ -342,7 +342,7 @@ describe("NewGameDialog — custom team self-matchup validation", () => {
       createTeam: vi.fn(),
       updateTeam: vi.fn(),
       deleteTeam: vi.fn(),
-    } as ReturnType<typeof useCustomTeams>);
+    } as unknown as ReturnType<typeof useCustomTeams>);
   });
 
   const switchToCustomTab = async () => {
@@ -427,22 +427,22 @@ describe("getSpEligiblePitchers", () => {
   });
 
   it("includes SP-role pitchers", () => {
-    const pitchers = [{ id: "p1", name: "Starter", pitchingRole: "SP" }];
+    const pitchers = [{ id: "p1", name: "Starter", pitchingRole: "SP" as const }];
     const result = getSpEligiblePitchers(pitchers);
     expect(result).toHaveLength(1);
     expect(result[0].idx).toBe(0);
   });
 
   it("includes SP/RP-role pitchers", () => {
-    const pitchers = [{ id: "p1", name: "Two-way", pitchingRole: "SP/RP" }];
+    const pitchers = [{ id: "p1", name: "Two-way", pitchingRole: "SP/RP" as const }];
     const result = getSpEligiblePitchers(pitchers);
     expect(result).toHaveLength(1);
   });
 
   it("excludes RP-only pitchers", () => {
     const pitchers = [
-      { id: "p1", name: "Reliever A", pitchingRole: "RP" },
-      { id: "p2", name: "Reliever B", pitchingRole: "RP" },
+      { id: "p1", name: "Reliever A", pitchingRole: "RP" as const },
+      { id: "p2", name: "Reliever B", pitchingRole: "RP" as const },
     ];
     const result = getSpEligiblePitchers(pitchers);
     expect(result).toHaveLength(0);
@@ -450,8 +450,8 @@ describe("getSpEligiblePitchers", () => {
 
   it("when RP is at roster idx 0 and SP is at idx 1, returns only SP with its original idx", () => {
     const pitchers = [
-      { id: "p1", name: "Reliever", pitchingRole: "RP" },
-      { id: "p2", name: "Starter", pitchingRole: "SP" },
+      { id: "p1", name: "Reliever", pitchingRole: "RP" as const },
+      { id: "p2", name: "Starter", pitchingRole: "SP" as const },
     ];
     const result = getSpEligiblePitchers(pitchers);
     // RP at index 0 is filtered out — SP at index 1 remains
@@ -463,10 +463,10 @@ describe("getSpEligiblePitchers", () => {
 
   it("preserves original roster indices when filtering mixed roles", () => {
     const pitchers = [
-      { id: "rp1", name: "Closer", pitchingRole: "RP" }, // idx 0 — excluded
-      { id: "sp1", name: "Ace", pitchingRole: "SP" }, // idx 1 — included
-      { id: "rp2", name: "Setup Man", pitchingRole: "RP" }, // idx 2 — excluded
-      { id: "sw1", name: "Swingman", pitchingRole: "SP/RP" }, // idx 3 — included
+      { id: "rp1", name: "Closer", pitchingRole: "RP" as const }, // idx 0 — excluded
+      { id: "sp1", name: "Ace", pitchingRole: "SP" as const }, // idx 1 — included
+      { id: "rp2", name: "Setup Man", pitchingRole: "RP" as const }, // idx 2 — excluded
+      { id: "sw1", name: "Swingman", pitchingRole: "SP/RP" as const }, // idx 3 — included
     ];
     const result = getSpEligiblePitchers(pitchers);
     expect(result).toHaveLength(2);
@@ -555,7 +555,7 @@ describe("NewGameDialog — managed custom team SP-eligibility validation", () =
       createTeam: vi.fn(),
       updateTeam: vi.fn(),
       deleteTeam: vi.fn(),
-    } as ReturnType<typeof useCustomTeams>);
+    } as unknown as ReturnType<typeof useCustomTeams>);
   });
 
   it("blocks game start and shows validation error when managed team has only RP pitchers", async () => {

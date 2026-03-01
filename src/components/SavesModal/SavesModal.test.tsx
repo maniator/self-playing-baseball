@@ -402,7 +402,7 @@ describe("SavesModal", () => {
       onload: null as ((e: ProgressEvent) => void) | null,
       onerror: null as (() => void) | null,
       readAsText: vi.fn().mockImplementation(function (this: typeof mockReader) {
-        this.onload?.({ target: { result: '{"valid":"json"}' } } as ProgressEvent);
+        this.onload?.({ target: { result: '{"valid":"json"}' } } as unknown as ProgressEvent);
       }),
     };
     vi.spyOn(global, "FileReader").mockImplementation(() => mockReader as unknown as FileReader);

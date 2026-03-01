@@ -54,9 +54,9 @@ async function activate() {
     }),
   );
   const count = deleted.filter(Boolean).length;
-  log.log(`activate — removed ${count} stale cache(s), calling clients.claim()`);
-  await (clients as Clients).claim();
-  log.log("clients.claim() resolved — SW is now controlling all clients");
+  log.log(`activate — removed ${count} stale cache(s), calling self.clients.claim()`);
+  await self.clients.claim();
+  log.log("self.clients.claim() resolved — SW is now controlling all clients");
 }
 
 self.addEventListener("install", (e) => (e as ExtendableEvent).waitUntil(install()));
@@ -108,7 +108,7 @@ self.addEventListener("notificationclick", (event) => {
   ne.notification.close();
 
   ne.waitUntil(
-    (clients as Clients)
+    self.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         const windowClients = clientList as WindowClient[];

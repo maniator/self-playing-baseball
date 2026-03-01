@@ -101,7 +101,7 @@ const MlbTeamsSection: React.FunctionComponent<Props> = ({
         id="esp-home"
         data-testid="home-team-select"
         value={home}
-        onChange={(e) => setHome(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setHome(e.target.value)}
       >
         {homeList.map((t) => (
           <option key={t.id} value={t.name}>
@@ -117,7 +117,7 @@ const MlbTeamsSection: React.FunctionComponent<Props> = ({
         id="esp-away"
         data-testid="away-team-select"
         value={away}
-        onChange={(e) => setAway(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAway(e.target.value)}
       >
         {awayList.map((t) => (
           <option key={t.id} value={t.name}>

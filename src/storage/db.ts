@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import {
   addRxPlugin,
   createRxDatabase,
@@ -14,13 +15,14 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { appLog } from "@utils/logger";
 
 import { fnv1a } from "./hash";
-import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
+import type { CustomTeamDoc, EventDoc, PlayerDoc, SaveDoc, TeamDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
   events: RxCollection<EventDoc>;
   teams: RxCollection<TeamDoc>;
   customTeams: RxCollection<CustomTeamDoc>;
+  players: RxCollection<PlayerDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
@@ -198,6 +200,43 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   indexes: ["updatedAt", "source"],
 };
 
+const playersSchema: RxJsonSchema<PlayerDoc> = {
+  // Version 2: scopes the primary key to `${teamId}:${player.id}` to prevent cross-team
+  // collisions when two teams contain a player with the same original ID (e.g. from
+  // manually-crafted import JSON). A new `playerId` field stores the original player ID
+  // so roster assembly can reconstruct the correct `TeamPlayer.id`.
+  // Migration v1→v2 computes the composite ID from the existing `teamId` field.
+  version: 2,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 256 },
+    /** Original player ID (TeamPlayer.id). The primary key `id` is `${teamId}:${playerId}`. */
+    playerId: { type: "string", maxLength: 128 },
+    teamId: { type: ["string", "null"] },
+    section: { type: "string", enum: ["lineup", "bench", "pitchers"], maxLength: 16 },
+    orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+    name: { type: "string" },
+    role: { type: "string" },
+    batting: { type: "object", additionalProperties: true },
+    pitching: { type: "object", additionalProperties: true },
+    position: { type: "string" },
+    handedness: { type: "string" },
+    isBenchEligible: { type: "boolean" },
+    isPitcherEligible: { type: "boolean" },
+    jerseyNumber: { type: ["number", "null"] },
+    pitchingRole: { type: "string" },
+    playerSeed: { type: "string", maxLength: 32 },
+    fingerprint: { type: "string", maxLength: 8 },
+    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+  },
+  required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+  // No index on teamId: RxDB 17 beta cannot compute index strings for nullable union types
+  // (`type: ["string", "null"]`). Full collection scans are acceptable for the small
+  // roster sizes (≤25 players per team) typical of this app.
+  indexes: [],
+};
+
 // Promise-based guard: set synchronously before the first await so concurrent
 // initDb calls share the same load (JS is single-threaded; ??= is atomic here).
 let devModePluginPromise: Promise<void> | null = null;
@@ -355,6 +394,37 @@ async function initDb(
         },
       },
     },
+    players: {
+      schema: playersSchema,
+      migrationStrategies: {
+        // v0→v1: teamId is now optional (nullable). Existing docs already have a
+        // valid non-null teamId string so this is a safe identity migration.
+        1: (oldDoc) => oldDoc,
+        // v1→v2: scope the primary key as `${teamId}:${playerId}` to prevent
+        // cross-team collisions when two teams share a player ID (e.g. from
+        // manually-crafted import JSON). A new `playerId` field records the
+        // original player ID for roster reconstruction.
+        // For free-agent docs (teamId = null), the composite form would be
+        // meaningless, so their `id` is left unchanged. `playerId` is still
+        // set so assembleRoster can reconstruct the correct TeamPlayer.id.
+        2: (oldDoc: Record<string, unknown>) => {
+          try {
+            const teamId = oldDoc["teamId"] as string | null | undefined;
+            const originalId = oldDoc["id"] as string;
+            const newId = teamId ? `${teamId}:${originalId}` : originalId;
+            return { ...oldDoc, id: newId, playerId: originalId };
+          } catch (err) {
+            // Migration must never throw — log the error and return the document unchanged
+            // so the app can still start and user data is preserved as-is.
+            appLog.warn(
+              "[players v1→v2 migration] failed to compute composite key; returning doc unchanged:",
+              err,
+            );
+            return oldDoc;
+          }
+        },
+      },
+    },
   });
   return db;
 }
@@ -409,6 +479,9 @@ export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (aw
 
 export const customTeamsCollection = async (): Promise<RxCollection<CustomTeamDoc>> =>
   (await getDb()).customTeams;
+
+export const playersCollection = async (): Promise<RxCollection<PlayerDoc>> =>
+  (await getDb()).players;
 
 /**
  * Creates a fresh database with the given storage — intended for tests only.

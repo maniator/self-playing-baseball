@@ -486,10 +486,10 @@ describe("startHomeScreenMusic", () => {
     await Promise.resolve(); // flush resume()
     // Should set gain to 0 at start of fade-in
     const setCalls = gainNode.gain.setValueAtTime.mock.calls;
-    expect(setCalls.some(([v]: [number]) => v === 0)).toBe(true);
+    expect(setCalls.some(([v]: unknown[]) => v === 0)).toBe(true);
     // Should ramp up to alertVolume (1.0 by default)
     const rampCalls = gainNode.gain.linearRampToValueAtTime.mock.calls;
-    expect(rampCalls.some(([v]: [number]) => v === 1)).toBe(true);
+    expect(rampCalls.some(([v]: unknown[]) => v === 1)).toBe(true);
   });
 
   it("registers interaction listeners when context is suspended", () => {
@@ -567,7 +567,7 @@ describe("stopHomeScreenMusic", () => {
     // cancelAndHoldAtTime freezes the gain at the current value before ramping to 0
     expect(gainNode.gain.cancelAndHoldAtTime).toHaveBeenCalled();
     const calls = (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
-    expect(calls.some(([v]: [number]) => v === 0)).toBe(true);
+    expect(calls.some(([v]: unknown[]) => v === 0)).toBe(true);
   });
 
   it("cancels the loop timeout when music is stopped", async () => {
