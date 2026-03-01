@@ -474,6 +474,18 @@ describe("CustomTeamEditor — export, import-button, and DnD handlers", () => {
     expect(vi.mocked(downloadJson)).toHaveBeenCalledOnce();
   });
 
+  it("clicking Export on a bench batter row calls downloadJson once", async () => {
+    renderEditor();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("custom-team-add-bench-player-button"));
+    });
+    const exportBtn = screen.getByTestId("export-player-button");
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
+    expect(vi.mocked(downloadJson)).toHaveBeenCalledOnce();
+  });
+
   it("clicking Export on a lineup batter row calls downloadJson once", async () => {
     renderEditor();
     await act(async () => {
