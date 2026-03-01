@@ -141,10 +141,13 @@ describe("schema version and reset flag", () => {
  * Upgrade-path test: simulates a user who had IndexedDB data created with the
  * pre-Stage-3B v0 schema (simple nested objects, no explicit sub-properties).
  *
- * The fix bumped savesSchema.version from 0 to 1 and added an identity
- * migrationStrategies[1] handler.  This test verifies that:
- *   1. A v0 database with existing saves can be reopened with the v1 code.
- *   2. The migration runs without throwing.
+ * Subsequent schema bumps:
+ *   v0 → v1: added explicit sub-property definitions (identity migration)
+ *   v1 → v2: removed matchupMode (MLB-only field)
+ *
+ * This test verifies that:
+ *   1. A v0 database with existing saves can be reopened with the v2 code.
+ *   2. All migrations (v0→v1 and v1→v2) run without throwing.
  *   3. All save documents remain accessible and intact after migration.
  */
 describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
