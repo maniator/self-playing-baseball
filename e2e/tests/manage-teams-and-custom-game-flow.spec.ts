@@ -242,7 +242,7 @@ test.describe("New Game dialog — custom team picker", () => {
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Switch to custom tab and start game
+    // Wait for custom team selects and start game
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
       timeout: 15_000,
     });

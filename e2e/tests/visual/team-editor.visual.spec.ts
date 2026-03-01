@@ -335,7 +335,7 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
    *
    * Flow:
    *   1. Create two custom teams via Manage Teams.
-   *   2. Start a New Game using those custom teams (Custom Teams tab).
+   *   2. Start a New Game using those custom teams.
    *   3. Wait for a few log lines, then save the game.
    *   4. Open the saves modal and snapshot it.
    *
