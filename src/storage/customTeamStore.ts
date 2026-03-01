@@ -292,7 +292,17 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       await db.customTeams.insert(doc);
       // Write player docs into the dedicated players collection.
-      await writePlayerDocs(db, id, roster);
+      // On failure, roll back the team doc so the state remains consistent.
+      try {
+        await writePlayerDocs(db, id, roster);
+      } catch (err) {
+        await db.customTeams
+          .findOne(id)
+          .exec()
+          .then((d) => d?.remove())
+          .catch(() => undefined);
+        throw err;
+      }
       return id;
     },
 
@@ -465,9 +475,16 @@ function buildStore(getDbFn: GetDb) {
             roster: { schemaVersion: ROSTER_SCHEMA_VERSION, lineup: [], bench: [], pitchers: [] },
           };
           await db.customTeams.upsert(teamDoc);
-          // Replace player docs for this team.
-          await removePlayerDocs(db, team.id);
+          // Upsert new player docs first (safe), then remove any stale docs whose
+          // IDs no longer appear in the imported roster — mirrors the safe pattern
+          // used in updateCustomTeam to avoid losing players on partial failure.
+          const newPlayerIds = new Set([
+            ...team.roster.lineup.map((p) => p.id),
+            ...team.roster.bench.map((p) => p.id),
+            ...team.roster.pitchers.map((p) => p.id),
+          ]);
           await writePlayerDocs(db, team.id, team.roster);
+          await removePlayerDocs(db, team.id, newPlayerIds);
         }
       }
       return result;
