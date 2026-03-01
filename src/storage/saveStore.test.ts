@@ -340,6 +340,33 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     expect(restoredSave.id).toBe(saveId);
     await db2.close();
   });
+
+  it("importRxdbSave strips legacy matchupMode from old save bundles", async () => {
+    // Simulate a save bundle exported before the v2 schema change that still
+    // carries matchupMode in the header. The signature must cover the original
+    // header (including matchupMode) — importRxdbSave verifies sig THEN strips.
+    const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
+    const saveId = await store.createSave(makeSetup({ seed: "legacy" }));
+    const json = await store.exportRxdbSave(saveId);
+    const envelope = JSON.parse(json) as {
+      version: number;
+      header: Record<string, unknown>;
+      events: unknown[];
+      sig: string;
+    };
+    // Inject matchupMode as a legacy field and recompute the sig.
+    envelope.header.matchupMode = "mlb";
+    envelope.sig = fnv1a(
+      RXDB_EXPORT_KEY + JSON.stringify({ header: envelope.header, events: envelope.events }),
+    );
+
+    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const restored = await store2.importRxdbSave(JSON.stringify(envelope));
+    expect(restored.id).toBe(saveId);
+    expect((restored as Record<string, unknown>).matchupMode).toBeUndefined();
+    await db2.close();
+  });
 });
 
 describe("SaveStore.appendEvents — counter initialisation from existing events", () => {

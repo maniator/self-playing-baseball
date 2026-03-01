@@ -236,15 +236,18 @@ function buildStore(getDbFn: GetDb) {
           );
         }
       }
-      await db.saves.upsert(header);
+      // Strip legacy fields that were removed from the schema (e.g. matchupMode
+      // dropped in v2). Without this, old save bundles persist obsolete fields.
+      const { matchupMode: _drop, ...cleanHeader } = header as Record<string, unknown>;
+      await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
       }
       // Force counter re-initialization on next append so it reads the imported
       // event count rather than using a stale in-memory value.
-      nextIdxMap.delete(header.id);
-      appendQueues.delete(header.id);
-      return header;
+      nextIdxMap.delete(cleanHeader.id as string);
+      appendQueues.delete(cleanHeader.id as string);
+      return cleanHeader as SaveDoc;
     },
   };
 }

@@ -125,9 +125,17 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
   const count = await existingTeams.count();
   if (count >= 2) return; // Both teams already exist — skip
 
-  // Create whichever teams are missing. If count === 0, create both; if count === 1
-  // (assume "Away Team" already exists), create only "Home Team".
-  const namesToCreate = count === 0 ? ["Away Team", "Home Team"] : ["Home Team"];
+  // Read existing team names (textContent includes buttons, but team name comes first
+  // so a case-insensitive substring check is reliable for "Away Team" / "Home Team").
+  const existingNames: string[] = [];
+  for (let i = 0; i < count; i++) {
+    existingNames.push(((await existingTeams.nth(i).textContent()) ?? "").toLowerCase());
+  }
+
+  // Create whichever of the two default names are absent.
+  const namesToCreate = ["Away Team", "Home Team"].filter(
+    (name) => !existingNames.some((existing) => existing.includes(name.toLowerCase())),
+  );
   for (const name of namesToCreate) {
     await page.getByTestId("manage-teams-create-button").click();
     await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
