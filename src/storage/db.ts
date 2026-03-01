@@ -15,7 +15,7 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { appLog } from "@utils/logger";
 
 import { fnv1a } from "./hash";
-import type { CustomTeamDoc, EventDoc, SaveDoc } from "./types";
+import type { CustomTeamDoc, EventDoc, PlayerDoc, SaveDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
