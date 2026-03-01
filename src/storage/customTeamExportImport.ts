@@ -536,3 +536,5 @@ export function parseExportedCustomPlayer(json: string): TeamPlayer {
   // Return the player with `sig` stripped — export-only metadata, not stored in DB.
   return stripPlayerSig(player);
 }
+
+// end of file
