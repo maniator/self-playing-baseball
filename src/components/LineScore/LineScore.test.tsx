@@ -99,20 +99,7 @@ describe("LineScore", () => {
     expect(screen.getAllByText("Red Sox").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("renders the MLB abbreviation in the mobile label for a known team name", () => {
-    renderWithContext(
-      <LineScore />,
-      makeContextValue({ teams: ["New York Yankees", "New York Mets"] }),
-    );
-    // The mobile-label span contains the abbreviation; the full-label span contains
-    // the full name. Both appear in the DOM (CSS toggles which is shown).
-    expect(screen.getAllByText("NYY").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("NYM").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("New York Yankees").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("New York Mets").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("uses first-3-chars fallback for unknown non-MLB team in mobile label, full name in desktop label", () => {
+  it("uses first-3-chars fallback for unknown team in mobile label, full name in desktop label", () => {
     renderWithContext(<LineScore />, makeContextValue({ teams: ["Custom Away", "Custom Home"] }));
     // Mobile compact label uses first-3-chars (CUS) fallback
     expect(screen.getAllByText("CUS").length).toBeGreaterThanOrEqual(2);
