@@ -741,6 +741,15 @@ describe("players collection integration", () => {
     const newDocs = await db.players.find({ selector: { teamId: id } }).exec();
     expect(newDocs).toHaveLength(1);
     expect(newDocs[0].name).toBe("New Player");
+
+    // Embedded roster arrays in customTeams doc must remain empty after update
+    const rawDoc = await db.customTeams.findOne(id).exec();
+    const raw = rawDoc?.toJSON() as unknown as {
+      roster: { lineup: unknown[]; bench: unknown[]; pitchers: unknown[] };
+    };
+    expect(raw.roster.lineup).toHaveLength(0);
+    expect(raw.roster.bench).toHaveLength(0);
+    expect(raw.roster.pitchers).toHaveLength(0);
   });
 
   it("deleteCustomTeam removes all player docs for the team", async () => {
@@ -892,6 +901,8 @@ describe("players collection integration", () => {
     expect("teamId" in returned).toBe(false);
     expect("section" in returned).toBe(false);
     expect("orderIndex" in returned).toBe(false);
+    // schemaVersion is a PlayerDoc-only field and must also be stripped
+    expect("schemaVersion" in returned).toBe(false);
     expect(returned["name"]).toBe("Field Checker");
     expect(returned["role"]).toBe("pitcher");
   });

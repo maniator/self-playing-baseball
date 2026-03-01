@@ -157,19 +157,17 @@ function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): Te
 }
 
 /**
- * Writes all players from a roster into the `players` collection.
+ * Writes all players from a roster into the `players` collection using bulkInsert.
  * Assumes any existing player docs for this team have already been removed.
  */
 async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoster): Promise<void> {
-  const allSections = [
-    { players: roster.lineup, section: "lineup" as const },
-    { players: roster.bench, section: "bench" as const },
-    { players: roster.pitchers, section: "pitchers" as const },
+  const allDocs = [
+    ...roster.lineup.map((p, i) => toPlayerDoc(p, teamId, "lineup", i)),
+    ...roster.bench.map((p, i) => toPlayerDoc(p, teamId, "bench", i)),
+    ...roster.pitchers.map((p, i) => toPlayerDoc(p, teamId, "pitchers", i)),
   ];
-  for (const { players: sectionPlayers, section } of allSections) {
-    for (let i = 0; i < sectionPlayers.length; i++) {
-      await db.players.insert(toPlayerDoc(sectionPlayers[i], teamId, section, i));
-    }
+  if (allDocs.length > 0) {
+    await db.players.bulkInsert(allDocs);
   }
 }
 
