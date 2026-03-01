@@ -896,7 +896,7 @@ describe("players collection integration", () => {
       }),
     );
     const team = await store.getCustomTeam(id);
-    const returned = team?.roster.lineup[0] as Record<string, unknown>;
+    const returned = team?.roster.lineup[0] as unknown as Record<string, unknown>;
     expect(returned).toBeDefined();
     expect("teamId" in returned).toBe(false);
     expect("section" in returned).toBe(false);

@@ -226,7 +226,11 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       : home;
 
   return (
-    <Dialog ref={ref} onCancel={(e: React.SyntheticEvent) => e.preventDefault()} data-testid="new-game-dialog">
+    <Dialog
+      ref={ref}
+      onCancel={(e: React.SyntheticEvent) => e.preventDefault()}
+      data-testid="new-game-dialog"
+    >
       {onBackToHome && (
         <BackHomeButton
           type="button"
@@ -398,7 +402,9 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
                       id="ng-starter"
                       data-testid="starting-pitcher-select"
                       value={starterIdx}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStarterIdx(Number(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                        setStarterIdx(Number(e.target.value))
+                      }
                     >
                       {spPitchers.map((p) => (
                         <option key={p.id} value={p.idx}>

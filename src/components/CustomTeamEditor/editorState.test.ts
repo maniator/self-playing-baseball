@@ -569,7 +569,7 @@ describe("editorStateToCreateInput", () => {
       pitchers: [pitcher],
     };
     const input = editorStateToCreateInput(state);
-    const p = input.roster.pitchers[0];
+    const p = input.roster.pitchers![0];
     expect(p.role).toBe("pitcher");
     expect(p.pitching?.velocity).toBe(88);
     expect(p.pitching?.control).toBe(70);
@@ -586,7 +586,7 @@ describe("editorStateToCreateInput", () => {
       pitchers: [benchPitcher],
     };
     const input = editorStateToCreateInput(state);
-    expect(input.roster.pitchers[0].pitching).toBeUndefined();
+    expect(input.roster.pitchers![0].pitching).toBeUndefined();
   });
 });
 

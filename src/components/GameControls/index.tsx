@@ -111,7 +111,12 @@ const GameControls: React.FunctionComponent<Props> = ({
         <AutoPlayGroup>
           <ToggleLabel>
             Speed
-            <Select value={speed} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSpeed(parseInt(e.target.value, 10))}>
+            <Select
+              value={speed}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                setSpeed(parseInt(e.target.value, 10))
+              }
+            >
               <option value={SPEED_SLOW}>Slow</option>
               <option value={SPEED_NORMAL}>Normal</option>
               <option value={SPEED_FAST}>Fast</option>

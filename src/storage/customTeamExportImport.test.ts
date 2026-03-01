@@ -145,7 +145,12 @@ describe("buildPlayerSig", () => {
 
   it("does NOT depend on player id (id is remapped on import and must not affect dup detection)", () => {
     const p = makePlayer();
-    expect(buildPlayerSig({ ...p, id: "p_other" })).toBe(buildPlayerSig(p));
+    expect(
+      buildPlayerSig({ ...p, id: "p_other" } as unknown as Pick<
+        typeof p,
+        "name" | "role" | "batting" | "pitching" | "playerSeed"
+      >),
+    ).toBe(buildPlayerSig(p));
   });
 
   it("does NOT depend on team (sig is team-independent so players can move between teams)", () => {
@@ -156,7 +161,12 @@ describe("buildPlayerSig", () => {
 
   it("does NOT depend on position (position is editable after creation)", () => {
     const p = makePlayer();
-    expect(buildPlayerSig({ ...p, position: "DH" })).toBe(buildPlayerSig(p));
+    expect(
+      buildPlayerSig({ ...p, position: "DH" } as unknown as Pick<
+        typeof p,
+        "name" | "role" | "batting" | "pitching" | "playerSeed"
+      >),
+    ).toBe(buildPlayerSig(p));
   });
 
   it("differs when playerSeed changes (same content)", () => {

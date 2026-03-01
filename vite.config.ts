@@ -64,8 +64,9 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         rollupFormat: "es",
       },
-    }) as unknown,
-  ],
+    }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ] as any[],
   test: {
     environment: "jsdom",
     globals: true,

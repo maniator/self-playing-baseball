@@ -27,7 +27,13 @@ describe("useSaveStore", () => {
 
   const makeWrapper = (database: BallgameDb) => {
     const Wrapper = ({ children }: { children: React.ReactNode }) =>
-      React.createElement(RxDatabaseProvider, { database }, children);
+      React.createElement(
+        RxDatabaseProvider,
+        {
+          database: database as unknown as Parameters<typeof RxDatabaseProvider>[0]["database"],
+        },
+        children,
+      );
     Wrapper.displayName = "TestDbWrapper";
     return Wrapper;
   };

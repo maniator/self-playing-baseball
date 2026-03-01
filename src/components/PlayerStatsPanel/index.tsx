@@ -307,7 +307,9 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
                     key={num}
                     $selected={selectedSlot === num}
                     onClick={() => handleRowSelect(num)}
-                    onKeyDown={(e: React.KeyboardEvent<HTMLTableRowElement>) => handleRowKeyDown(e, num)}
+                    onKeyDown={(e: React.KeyboardEvent<HTMLTableRowElement>) =>
+                      handleRowKeyDown(e, num)
+                    }
                     tabIndex={0}
                     role="row"
                     aria-selected={selectedSlot === num}

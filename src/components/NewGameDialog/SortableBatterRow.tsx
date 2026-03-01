@@ -54,7 +54,9 @@ const SortableBatterRow: React.FunctionComponent<Props> = ({
         placeholder="Nickname"
         maxLength={20}
         value={nick}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onFieldChange(player.id, "nickname", e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          onFieldChange(player.id, "nickname", e.target.value)
+        }
         aria-label={`${player.position} nickname`}
       />
       {BATTER_MOD_FIELDS.map((field, i) => {
@@ -69,7 +71,9 @@ const SortableBatterRow: React.FunctionComponent<Props> = ({
             <BaseStat $modified={modValue !== 0}>{effective}</BaseStat>
             <ModSelect
               value={getMod(field)}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onFieldChange(player.id, field, e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                onFieldChange(player.id, field, e.target.value)
+              }
               aria-label={`${player.position} ${BATTER_STAT_LABELS[i]}`}
             >
               {MOD_OPTIONS.map((opt) => (

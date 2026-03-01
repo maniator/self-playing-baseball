@@ -81,7 +81,12 @@ export const addInningRuns = (state: State, runs: number): State => {
   return { ...state, inningRuns: newInningRuns };
 };
 
-export const hitBall = (type: Hit, state: State, log: (msg: string) => void, strategy: Strategy = "balanced"): State => {
+export const hitBall = (
+  type: Hit,
+  state: State,
+  log: (msg: string) => void,
+  strategy: Strategy = "balanced",
+): State => {
   const pitchKey = (state.pitchKey ?? 0) + 1;
   const base = {
     ...state,

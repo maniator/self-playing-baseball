@@ -17,6 +17,7 @@ import {
   savesCollection,
   wasDbReset,
 } from "./db";
+import type { GameSaveSetup } from "./types";
 
 let db: BallgameDb;
 
@@ -48,7 +49,7 @@ describe("db collections", () => {
       createdAt: 1000,
       updatedAt: 1000,
       progressIdx: 0,
-      setup: {},
+      setup: {} as GameSaveSetup,
       schemaVersion: 1,
     });
     const doc = await db.saves.findOne("s1").exec();

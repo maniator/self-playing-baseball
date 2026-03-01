@@ -29,11 +29,9 @@ const makeResult = (overrides: Partial<ImportCustomTeamsResult> = {}): ImportCus
 });
 
 describe("useImportCustomTeams", () => {
-  const mockImportFn = vi.fn<
-    [string, ImportCustomTeamsOptions | undefined],
-    Promise<ImportCustomTeamsResult>
-  >();
-  const mockOnSuccess = vi.fn<[ImportCustomTeamsResult], void>();
+  const mockImportFn =
+    vi.fn<(json: string, options?: ImportCustomTeamsOptions) => Promise<ImportCustomTeamsResult>>();
+  const mockOnSuccess = vi.fn<(result: ImportCustomTeamsResult) => void>();
 
   const renderHookUnderTest = () =>
     renderHook(() => useImportCustomTeams({ importFn: mockImportFn, onSuccess: mockOnSuccess }));

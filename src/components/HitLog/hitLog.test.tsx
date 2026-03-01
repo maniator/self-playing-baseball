@@ -10,32 +10,34 @@ import { Hit } from "@constants/hitTypes";
 import type { ContextValue } from "@context/index";
 import type { PlayLogEntry } from "@context/index";
 import { GameContext } from "@context/index";
+import { makeContextValue } from "@test/testHelpers";
 
 import HitLog from ".";
 
-const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
-  inning: 1,
-  score: [0, 0],
-  teams: ["Away", "Home"],
-  baseLayout: [0, 0, 0],
-  outs: 0,
-  strikes: 0,
-  balls: 0,
-  atBat: 0,
-  gameOver: false,
-  pendingDecision: null,
-  onePitchModifier: null,
-  pitchKey: 0,
-  decisionLog: [],
-  hitType: undefined,
-  log: [],
-  batterIndex: [0, 0],
-  inningRuns: [[], []],
-  playLog: [],
-  dispatch: vi.fn(),
-  dispatchLog: vi.fn(),
-  ...overrides,
-});
+const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue =>
+  makeContextValue({
+    inning: 1,
+    score: [0, 0],
+    teams: ["Away", "Home"],
+    baseLayout: [0, 0, 0],
+    outs: 0,
+    strikes: 0,
+    balls: 0,
+    atBat: 0,
+    gameOver: false,
+    pendingDecision: null,
+    onePitchModifier: null,
+    pitchKey: 0,
+    decisionLog: [],
+    hitType: undefined,
+    log: [],
+    batterIndex: [0, 0],
+    inningRuns: [[], []],
+    playLog: [],
+    dispatch: vi.fn(),
+    dispatchLog: vi.fn(),
+    ...overrides,
+  });
 
 const renderHitLog = (ctx: ContextValue = makeCtx(), activeTeam: 0 | 1 = 0) =>
   render(
