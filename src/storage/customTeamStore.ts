@@ -275,6 +275,11 @@ function buildStore(getDbFn: GetDb) {
      * not true, returns `requiresDuplicateConfirmation: true` without importing
      * anything — the caller should prompt the user and retry with the flag set.
      * @returns A summary of created/remapped counts and duplicate warnings.
+     * @note Name-uniqueness is NOT enforced on import. A team imported with the
+     * same name as an existing team (but a different `teamSeed`) will be upserted
+     * as a separate team. This is a known limitation of the fingerprint-based
+     * deduplication strategy: fingerprints are seed-scoped, so only the exact
+     * same team (same seed) is detected as a duplicate.
      */
     async importCustomTeams(
       json: string,

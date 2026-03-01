@@ -263,6 +263,12 @@ describe("updateCustomTeam", () => {
     expect(team?.name).toBe("Tigers");
   });
 
+  it("throws when team not found", async () => {
+    await expect(store.updateCustomTeam("ghost", { name: "x" })).rejects.toThrow(
+      "Custom team not found: ghost",
+    );
+  });
+
   it("throws on empty updated name", async () => {
     const id = await store.createCustomTeam(makeInput());
     await expect(store.updateCustomTeam(id, { name: "" })).rejects.toThrow(

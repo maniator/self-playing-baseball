@@ -6,6 +6,7 @@ import {
   DndContext,
   KeyboardSensor,
   PointerSensor,
+  useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
@@ -112,6 +113,10 @@ type PendingPlayerImport = {
 
 type EditorDispatch = React.Dispatch<EditorAction>;
 
+/** Sentinel droppable IDs for empty lineup/bench sections. */
+const LINEUP_DROPPABLE_ID = "lineup-droppable";
+const BENCH_DROPPABLE_ID = "bench-droppable";
+
 // ── LineupFormSection ──────────────────────────────────────────────────────────
 
 type LineupFormSectionProps = {
@@ -135,68 +140,73 @@ const LineupFormSection: React.FunctionComponent<LineupFormSectionProps> = ({
   lineupFileRef,
   onImportFile,
   handleExportPlayer,
-}) => (
-  <FormSection data-testid="custom-team-lineup-section">
-    <SectionHeading>Lineup (drag to reorder; drag to/from Bench)</SectionHeading>
-    {pendingPlayerImport?.section === "lineup" && (
-      <PlayerDuplicateBanner role="alert" data-testid="player-import-lineup-duplicate-banner">
-        ⚠ {pendingPlayerImport.warning}
-        <PlayerDuplicateActions>
-          <SmallIconBtn
-            type="button"
-            data-testid="player-import-lineup-confirm-button"
-            onClick={() => {
-              dispatch({
-                type: "ADD_PLAYER",
-                section: "lineup",
-                player: pendingPlayerImport.player,
-              });
-              setPendingPlayerImport(null);
-            }}
-          >
-            Import Anyway
-          </SmallIconBtn>
-          <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
-            Cancel
-          </SmallIconBtn>
-        </PlayerDuplicateActions>
-      </PlayerDuplicateBanner>
-    )}
-    <SortableContext items={lineup.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-      {lineup.map((p, i) => (
-        <SortablePlayerRow
-          key={p.id}
-          player={p}
-          isExistingPlayer={existingPlayerIds.has(p.id)}
-          onChange={(patch) =>
-            dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
-          }
-          onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
-          onExport={() => handleExportPlayer(p, "batter")}
-        />
-      ))}
-    </SortableContext>
-    <AddPlayerBtn
-      type="button"
-      data-testid="custom-team-add-lineup-player-button"
-      onClick={() => dispatch({ type: "ADD_PLAYER", section: "lineup", player: makeBlankBatter() })}
-    >
-      + Add Player
-    </AddPlayerBtn>
-    <input
-      ref={lineupFileRef}
-      type="file"
-      accept=".json"
-      style={{ display: "none" }}
-      onChange={onImportFile}
-      data-testid="import-lineup-player-input"
-      aria-label="Import lineup player from file"
-    />
-    <ImportPlayerBtn type="button" onClick={() => lineupFileRef.current?.click()}>
-      ↑ Import Player
-    </ImportPlayerBtn>
-  </FormSection>
-);
+}) => {
+  const { setNodeRef } = useDroppable({ id: LINEUP_DROPPABLE_ID });
+  return (
+    <FormSection ref={setNodeRef} data-testid="custom-team-lineup-section">
+      <SectionHeading>Lineup (drag to reorder; drag to/from Bench)</SectionHeading>
+      {pendingPlayerImport?.section === "lineup" && (
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-lineup-duplicate-banner">
+          ⚠ {pendingPlayerImport.warning}
+          <PlayerDuplicateActions>
+            <SmallIconBtn
+              type="button"
+              data-testid="player-import-lineup-confirm-button"
+              onClick={() => {
+                dispatch({
+                  type: "ADD_PLAYER",
+                  section: "lineup",
+                  player: pendingPlayerImport.player,
+                });
+                setPendingPlayerImport(null);
+              }}
+            >
+              Import Anyway
+            </SmallIconBtn>
+            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
+              Cancel
+            </SmallIconBtn>
+          </PlayerDuplicateActions>
+        </PlayerDuplicateBanner>
+      )}
+      <SortableContext items={lineup.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        {lineup.map((p, i) => (
+          <SortablePlayerRow
+            key={p.id}
+            player={p}
+            isExistingPlayer={existingPlayerIds.has(p.id)}
+            onChange={(patch) =>
+              dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
+            }
+            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
+            onExport={() => handleExportPlayer(p, "batter")}
+          />
+        ))}
+      </SortableContext>
+      <AddPlayerBtn
+        type="button"
+        data-testid="custom-team-add-lineup-player-button"
+        onClick={() =>
+          dispatch({ type: "ADD_PLAYER", section: "lineup", player: makeBlankBatter() })
+        }
+      >
+        + Add Player
+      </AddPlayerBtn>
+      <input
+        ref={lineupFileRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={onImportFile}
+        data-testid="import-lineup-player-input"
+        aria-label="Import lineup player from file"
+      />
+      <ImportPlayerBtn type="button" onClick={() => lineupFileRef.current?.click()}>
+        ↑ Import Player
+      </ImportPlayerBtn>
+    </FormSection>
+  );
+};
 
 // ── BenchFormSection ───────────────────────────────────────────────────────────
 
@@ -221,68 +231,73 @@ const BenchFormSection: React.FunctionComponent<BenchFormSectionProps> = ({
   benchFileRef,
   onImportFile,
   handleExportPlayer,
-}) => (
-  <FormSection data-testid="custom-team-bench-section">
-    <SectionHeading>Bench (drag to reorder; drag to/from Lineup)</SectionHeading>
-    {pendingPlayerImport?.section === "bench" && (
-      <PlayerDuplicateBanner role="alert" data-testid="player-import-bench-duplicate-banner">
-        ⚠ {pendingPlayerImport.warning}
-        <PlayerDuplicateActions>
-          <SmallIconBtn
-            type="button"
-            data-testid="player-import-bench-confirm-button"
-            onClick={() => {
-              dispatch({
-                type: "ADD_PLAYER",
-                section: "bench",
-                player: pendingPlayerImport.player,
-              });
-              setPendingPlayerImport(null);
-            }}
-          >
-            Import Anyway
-          </SmallIconBtn>
-          <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
-            Cancel
-          </SmallIconBtn>
-        </PlayerDuplicateActions>
-      </PlayerDuplicateBanner>
-    )}
-    <SortableContext items={bench.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-      {bench.map((p, i) => (
-        <SortablePlayerRow
-          key={p.id}
-          player={p}
-          isExistingPlayer={existingPlayerIds.has(p.id)}
-          onChange={(patch) =>
-            dispatch({ type: "UPDATE_PLAYER", section: "bench", index: i, player: patch })
-          }
-          onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "bench", index: i })}
-          onExport={() => handleExportPlayer(p, "batter")}
-        />
-      ))}
-    </SortableContext>
-    <AddPlayerBtn
-      type="button"
-      data-testid="custom-team-add-bench-player-button"
-      onClick={() => dispatch({ type: "ADD_PLAYER", section: "bench", player: makeBlankBatter() })}
-    >
-      + Add Player
-    </AddPlayerBtn>
-    <input
-      ref={benchFileRef}
-      type="file"
-      accept=".json"
-      style={{ display: "none" }}
-      onChange={onImportFile}
-      data-testid="import-bench-player-input"
-      aria-label="Import player from file"
-    />
-    <ImportPlayerBtn type="button" onClick={() => benchFileRef.current?.click()}>
-      ↑ Import Player
-    </ImportPlayerBtn>
-  </FormSection>
-);
+}) => {
+  const { setNodeRef } = useDroppable({ id: BENCH_DROPPABLE_ID });
+  return (
+    <FormSection ref={setNodeRef} data-testid="custom-team-bench-section">
+      <SectionHeading>Bench (drag to reorder; drag to/from Lineup)</SectionHeading>
+      {pendingPlayerImport?.section === "bench" && (
+        <PlayerDuplicateBanner role="alert" data-testid="player-import-bench-duplicate-banner">
+          ⚠ {pendingPlayerImport.warning}
+          <PlayerDuplicateActions>
+            <SmallIconBtn
+              type="button"
+              data-testid="player-import-bench-confirm-button"
+              onClick={() => {
+                dispatch({
+                  type: "ADD_PLAYER",
+                  section: "bench",
+                  player: pendingPlayerImport.player,
+                });
+                setPendingPlayerImport(null);
+              }}
+            >
+              Import Anyway
+            </SmallIconBtn>
+            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
+              Cancel
+            </SmallIconBtn>
+          </PlayerDuplicateActions>
+        </PlayerDuplicateBanner>
+      )}
+      <SortableContext items={bench.map((p) => p.id)} strategy={verticalListSortingStrategy}>
+        {bench.map((p, i) => (
+          <SortablePlayerRow
+            key={p.id}
+            player={p}
+            isExistingPlayer={existingPlayerIds.has(p.id)}
+            onChange={(patch) =>
+              dispatch({ type: "UPDATE_PLAYER", section: "bench", index: i, player: patch })
+            }
+            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "bench", index: i })}
+            onExport={() => handleExportPlayer(p, "batter")}
+          />
+        ))}
+      </SortableContext>
+      <AddPlayerBtn
+        type="button"
+        data-testid="custom-team-add-bench-player-button"
+        onClick={() =>
+          dispatch({ type: "ADD_PLAYER", section: "bench", player: makeBlankBatter() })
+        }
+      >
+        + Add Player
+      </AddPlayerBtn>
+      <input
+        ref={benchFileRef}
+        type="file"
+        accept=".json"
+        style={{ display: "none" }}
+        onChange={onImportFile}
+        data-testid="import-bench-player-input"
+        aria-label="Import player from file"
+      />
+      <ImportPlayerBtn type="button" onClick={() => benchFileRef.current?.click()}>
+        ↑ Import Player
+      </ImportPlayerBtn>
+    </FormSection>
+  );
+};
 
 // ── PitchersSection ────────────────────────────────────────────────────────────
 
@@ -551,22 +566,33 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     if (!over || active.id === over.id) return;
     const activeInLineup = state.lineup.some((p) => p.id === active.id);
     const activeInBench = state.bench.some((p) => p.id === active.id);
+    // Guard: dragged item must belong to lineup or bench (not pitchers or unknown).
+    if (!activeInLineup && !activeInBench) return;
+    const activeSection: "lineup" | "bench" = activeInLineup ? "lineup" : "bench";
+    // Check if over.id is a player or a section droppable sentinel.
     const overInLineup = state.lineup.some((p) => p.id === over.id);
     const overInBench = state.bench.some((p) => p.id === over.id);
-    // Guard: both IDs must belong to lineup or bench (not pitchers or unknown).
-    if (!activeInLineup && !activeInBench) return;
-    if (!overInLineup && !overInBench) return;
-    const activeSection: "lineup" | "bench" = activeInLineup ? "lineup" : "bench";
-    const overSection: "lineup" | "bench" = overInLineup ? "lineup" : "bench";
-    if (activeSection === overSection) {
+    const overSectionId =
+      over.id === LINEUP_DROPPABLE_ID ? "lineup" : over.id === BENCH_DROPPABLE_ID ? "bench" : null;
+    if (!overInLineup && !overInBench && !overSectionId) return;
+    const overSection: "lineup" | "bench" = overInLineup
+      ? "lineup"
+      : overInBench
+        ? "bench"
+        : (overSectionId as "lineup" | "bench");
+    if (activeSection === overSection && (overInLineup || overInBench)) {
+      // Same-section reorder — only when over.id is a player (not the sentinel).
       const oldIndex = state[activeSection].findIndex((p) => p.id === active.id);
       const newIndex = state[activeSection].findIndex((p) => p.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return;
       const reordered = arrayMove(state[activeSection], oldIndex, newIndex);
       dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
-    } else {
-      const toIndex = state[overSection].findIndex((p) => p.id === over.id);
-      // toIndex must be valid since we confirmed over.id is in overSection above.
+    } else if (activeSection !== overSection) {
+      // Cross-section transfer — drop onto a player or onto the empty section droppable.
+      const toIndex =
+        overInBench || overInLineup
+          ? state[overSection].findIndex((p) => p.id === over.id)
+          : state[overSection].length; // sentinel: append to end of empty section
       dispatch({
         type: "TRANSFER_PLAYER",
         fromSection: activeSection,
