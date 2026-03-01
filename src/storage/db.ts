@@ -25,7 +25,8 @@ type DbCollections = {
 export type BallgameDb = RxDatabase<DbCollections>;
 
 const savesSchema: RxJsonSchema<SaveDoc> = {
-  // Version 1: initial schema with matchupMode field.
+  // Version 0: original schema with plain additionalProperties objects.
+  // Version 1: explicit nested properties definitions for setup/snapshots.
   // Version 2: removed matchupMode (MLB-only field, never used for game restore).
   //   Migration drops the field; all other fields remain unchanged.
   version: 2,

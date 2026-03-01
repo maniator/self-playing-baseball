@@ -111,21 +111,24 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 }
 
 /**
- * Creates two minimal custom teams ("Away Team" and "Home Team") via the UI
+ * Creates two custom teams ("Away Team" and "Home Team") via the UI
  * for tests that need to start a custom exhibition game.
  * Uses the "Regenerate Defaults" button to fill in all required players automatically.
- * Safe to call multiple times — skips creation if both teams already exist.
+ * Always navigates to `/teams` to check existing team count; skips creation if
+ * there are already two or more teams.
  */
 export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
-  // Navigate to teams page to check how many teams already exist
   await page.goto("/teams");
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
   const existingTeams = page.getByTestId("custom-team-list-item");
   const count = await existingTeams.count();
-  if (count >= 2) return; // Teams already exist — skip
+  if (count >= 2) return; // Both teams already exist — skip
 
-  for (const name of count === 0 ? ["Away Team", "Home Team"] : ["Home Team"]) {
+  // Create whichever teams are missing. If count === 0, create both; if count === 1
+  // (assume "Away Team" already exists), create only "Home Team".
+  const namesToCreate = count === 0 ? ["Away Team", "Home Team"] : ["Home Team"];
+  for (const name of namesToCreate) {
     await page.getByTestId("manage-teams-create-button").click();
     await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("custom-team-name-input").fill(name);
