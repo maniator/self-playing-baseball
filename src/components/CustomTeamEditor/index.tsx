@@ -589,6 +589,9 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
     } else if (activeSection !== overSection) {
       // Cross-section transfer — drop onto a player or onto the empty section droppable.
+      // When dropping onto an existing player, `toIndex` is the target player's current
+      // position (insert-at-index / before the target), which matches dnd-kit's standard
+      // visual feedback for vertical sortable lists.
       const toIndex =
         overInBench || overInLineup
           ? state[overSection].findIndex((p) => p.id === over.id)

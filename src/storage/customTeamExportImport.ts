@@ -525,6 +525,9 @@ export function parseExportedCustomPlayer(json: string): TeamPlayer {
     );
 
   // ── Per-player content signature ───────────────────────────────────────────
+  // Note: unlike the teams import path (which skips sig validation when player.sig is
+  // undefined for legacy pre-v2 bundles), single-player bundles always require a sig
+  // because exportCustomPlayer is new in this codebase — no legacy single-player files exist.
   const player = payload["player"] as TeamPlayer & { sig?: string };
   const expectedPlayerSig = buildPlayerSig(player);
   if (player.sig !== expectedPlayerSig)
