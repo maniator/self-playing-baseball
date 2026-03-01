@@ -5,7 +5,6 @@ export interface SaveDoc {
   id: string;
   name: string;
   seed: string;
-  matchupMode: string;
   homeTeamId: string;
   awayTeamId: string;
   createdAt: number;
@@ -71,7 +70,6 @@ export interface StateSnapshot {
 
 /** Input shape for creating a new save. */
 export interface GameSetup {
-  matchupMode: string;
   homeTeamId: string;
   awayTeamId: string;
   seed: string;
@@ -245,20 +243,6 @@ export interface UpdateCustomTeamInput {
   };
   metadata?: Partial<CustomTeamMetadata>;
   statsProfile?: string;
-}
-
-/** Cached MLB team document (one per team, keyed by `String(mlbNumericId)`). */
-export interface TeamDoc {
-  /** String PK: `String(mlbNumericId)` e.g. `"147"` for the Yankees. */
-  id: string;
-  /** The original MLB Stats API numeric team ID. */
-  numericId: number;
-  name: string;
-  abbreviation: string;
-  league: "al" | "nl";
-  /** Epoch ms when this record was last refreshed from the API. */
-  cachedAt: number;
-  schemaVersion: number;
 }
 
 /** Portable export format: save header + full event log, signed for integrity. */

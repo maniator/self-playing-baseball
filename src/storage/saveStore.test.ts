@@ -10,7 +10,6 @@ import { makeSaveStore } from "./saveStore";
 import type { GameSetup } from "./types";
 
 const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
-  matchupMode: "default",
   homeTeamId: "Yankees",
   awayTeamId: "Mets",
   seed: "abc123",
@@ -67,11 +66,10 @@ describe("SaveStore.createSave", () => {
     expect(doc?.name).toContain("Giants");
   });
 
-  it("stores seed and matchupMode", async () => {
-    const id = await store.createSave(makeSetup({ seed: "xyz", matchupMode: "custom" }));
+  it("stores seed", async () => {
+    const id = await store.createSave(makeSetup({ seed: "xyz" }));
     const doc = await db.saves.findOne(id).exec();
     expect(doc?.seed).toBe("xyz");
-    expect(doc?.matchupMode).toBe("custom");
   });
 
   it("enforces max-3-saves rule by evicting the oldest save", async () => {
@@ -548,7 +546,6 @@ describe("importRxdbSave — missing custom team rejection", () => {
       id: `save_${Date.now()}_test`,
       name: "Test Save",
       seed: "abc",
-      matchupMode: "custom",
       homeTeamId,
       awayTeamId,
       createdAt: Date.now(),

@@ -6,7 +6,6 @@ const makeSaveDoc = (id: string, name = "Test Save") => ({
   id,
   name,
   seed: "abc",
-  matchupMode: "manual" as const,
   homeTeamId: "Yankees",
   awayTeamId: "Mets",
   progressIdx: 0,

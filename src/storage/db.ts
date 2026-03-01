@@ -14,32 +14,27 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { appLog } from "@utils/logger";
 
 import { fnv1a } from "./hash";
-import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
+import type { CustomTeamDoc, EventDoc, SaveDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
   events: RxCollection<EventDoc>;
-  teams: RxCollection<TeamDoc>;
   customTeams: RxCollection<CustomTeamDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
 
 const savesSchema: RxJsonSchema<SaveDoc> = {
-  // A schema update added explicit `properties` sub-definitions to the nested
-  // `setup`, `scoreSnapshot`, `inningSnapshot`, and `stateSnapshot` fields
-  // without bumping the version, causing a DB6 schema-hash mismatch for
-  // users with existing data. Version bumped to 1; identity migration is
-  // sufficient because all required fields were already present and
-  // additionalProperties: true is retained on all changed sub-objects.
-  version: 1,
+  // Version 1: initial schema with matchupMode field.
+  // Version 2: removed matchupMode (MLB-only field, never used for game restore).
+  //   Migration drops the field; all other fields remain unchanged.
+  version: 2,
   primaryKey: "id",
   type: "object",
   properties: {
     id: { type: "string", maxLength: 128 },
     name: { type: "string" },
     seed: { type: "string" },
-    matchupMode: { type: "string" },
     homeTeamId: { type: "string" },
     awayTeamId: { type: "string" },
     createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
@@ -93,7 +88,6 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
     "id",
     "name",
     "seed",
-    "matchupMode",
     "homeTeamId",
     "awayTeamId",
     "createdAt",
@@ -121,23 +115,6 @@ const eventsSchema: RxJsonSchema<EventDoc> = {
   },
   required: ["id", "saveId", "idx", "at", "type", "payload", "ts", "schemaVersion"],
   indexes: ["saveId", ["saveId", "idx"]],
-};
-
-const teamsSchema: RxJsonSchema<TeamDoc> = {
-  version: 0,
-  primaryKey: "id",
-  type: "object",
-  properties: {
-    id: { type: "string", maxLength: 32 },
-    numericId: { type: "number", minimum: 0, maximum: 999_999, multipleOf: 1 },
-    name: { type: "string" },
-    abbreviation: { type: "string" },
-    league: { type: "string", enum: ["al", "nl"], maxLength: 2 },
-    cachedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
-    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
-  },
-  required: ["id", "numericId", "name", "abbreviation", "league", "cachedAt", "schemaVersion"],
-  indexes: ["league", "cachedAt"],
 };
 
 const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
@@ -227,10 +204,14 @@ async function initDb(
         // Identity migration: all new schema fields were optional; existing
         // docs are already valid against the new schema.
         1: (oldDoc) => oldDoc,
+        // Drop matchupMode (MLB-only field removed in v2). All other fields unchanged.
+        2: (oldDoc: Record<string, unknown>) => {
+          const { matchupMode: _drop, ...rest } = oldDoc;
+          return rest;
+        },
       },
     },
     events: { schema: eventsSchema },
-    teams: { schema: teamsSchema },
     customTeams: {
       schema: customTeamsSchema,
       migrationStrategies: {

@@ -53,7 +53,6 @@ function buildStore(getDbFn: GetDb) {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
         seed: setup.seed,
-        matchupMode: setup.matchupMode,
         homeTeamId: setup.homeTeamId,
         awayTeamId: setup.awayTeamId,
         createdAt: now,

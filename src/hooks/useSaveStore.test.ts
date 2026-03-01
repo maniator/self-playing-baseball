@@ -43,7 +43,7 @@ describe("useSaveStore", () => {
     await waitFor(() => expect(result.current.saves).toBeDefined());
 
     await testStore.createSave(
-      { matchupMode: "default", homeTeamId: "A", awayTeamId: "B", seed: "abc", setup: {} as never },
+      { homeTeamId: "A", awayTeamId: "B", seed: "abc", setup: {} as never },
       { name: "Test Save" },
     );
 
@@ -53,7 +53,7 @@ describe("useSaveStore", () => {
 
   it("reactively removes saves when deleted", async () => {
     const saveId = await testStore.createSave(
-      { matchupMode: "default", homeTeamId: "A", awayTeamId: "B", seed: "abc", setup: {} as never },
+      { homeTeamId: "A", awayTeamId: "B", seed: "abc", setup: {} as never },
       { name: "To Delete" },
     );
     const { result } = renderHook(() => useSaveStore(), { wrapper: makeWrapper(db) });
