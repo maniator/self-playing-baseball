@@ -18,6 +18,8 @@ import {
   setAlertVolume,
   setAnnouncementVolume,
   setSpeechRate,
+  startHomeScreenMusic,
+  stopHomeScreenMusic,
 } from "./announce";
 
 const synth = window.speechSynthesis;
@@ -403,5 +405,221 @@ describe("pickVoice — voice selection", () => {
     const utterance = (synth.speak as ReturnType<typeof vi.fn>).mock.calls[0][0];
     // No English voices at all → _bestVoice = null → voice stays null from the mock
     expect(utterance.voice).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// startHomeScreenMusic() / stopHomeScreenMusic()
+// ---------------------------------------------------------------------------
+
+/** Queue a single AudioContext construction that returns a copy with state "suspended". */
+const mockSuspendedAudioContext = (): void => {
+  const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+  const originalImpl = AudioCtxMock.getMockImplementation();
+  AudioCtxMock.mockImplementationOnce(() => ({
+    ...(originalImpl ? originalImpl() : {}),
+    state: "suspended" as AudioContextState,
+  }));
+};
+
+describe("startHomeScreenMusic", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    (window.AudioContext as ReturnType<typeof vi.fn>).mockClear();
+    stopHomeScreenMusic();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    stopHomeScreenMusic();
+    vi.useRealTimers();
+  });
+
+  it("does not throw when alert volume > 0", () => {
+    expect(() => startHomeScreenMusic()).not.toThrow();
+  });
+
+  it("creates an AudioContext when alert volume > 0", () => {
+    startHomeScreenMusic();
+    expect(window.AudioContext).toHaveBeenCalledOnce();
+  });
+
+  it("does not create AudioContext when alert volume is 0", () => {
+    setAlertVolume(0);
+    startHomeScreenMusic();
+    expect(window.AudioContext).not.toHaveBeenCalled();
+  });
+
+  it("creates a master GainNode and connects it to destination", async () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as {
+      createGain: ReturnType<typeof vi.fn>;
+      createOscillator: ReturnType<typeof vi.fn>;
+    };
+    await Promise.resolve(); // flush resume() microtask
+    expect(ctx).toBeDefined();
+    expect(ctx.createGain).toHaveBeenCalled();
+    expect(ctx.createOscillator).toHaveBeenCalled();
+  });
+
+  it("schedules a re-loop timeout after starting when context is running", async () => {
+    const setTimeoutSpy = vi.spyOn(globalThis, "setTimeout");
+    startHomeScreenMusic();
+    await Promise.resolve(); // flush resume() microtask so loopFrom runs
+    expect(setTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it("schedules a fade-in gain ramp from 0 to alertVolume after resume", async () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    // The first createGain() call inside startHomeScreenMusic creates the master gain node.
+    const ctx = AudioCtxMock.mock.results[0]?.value as { createGain: ReturnType<typeof vi.fn> };
+    const gainNode = ctx.createGain.mock.results[0]?.value as {
+      gain: {
+        setValueAtTime: ReturnType<typeof vi.fn>;
+        linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
+    await Promise.resolve(); // flush resume()
+    // Should set gain to 0 at start of fade-in
+    const setCalls = gainNode.gain.setValueAtTime.mock.calls;
+    expect(setCalls.some(([v]: [number]) => v === 0)).toBe(true);
+    // Should ramp up to alertVolume (1.0 by default)
+    const rampCalls = gainNode.gain.linearRampToValueAtTime.mock.calls;
+    expect(rampCalls.some(([v]: [number]) => v === 1)).toBe(true);
+  });
+
+  it("registers interaction listeners when context is suspended", () => {
+    mockSuspendedAudioContext();
+    const addEventSpy = vi.spyOn(document, "addEventListener");
+    startHomeScreenMusic();
+    const eventTypes = addEventSpy.mock.calls.map(([type]) => type);
+    expect(eventTypes).toContain("click");
+    expect(eventTypes).toContain("keydown");
+    expect(eventTypes).toContain("touchstart");
+  });
+
+  it("keeps interaction listeners alive while context remains suspended", async () => {
+    mockSuspendedAudioContext();
+    const removeEventSpy = vi.spyOn(document, "removeEventListener");
+    startHomeScreenMusic();
+    // Flush the resume() .catch() microtask — listeners must NOT be removed yet.
+    await Promise.resolve();
+    const removedTypes = removeEventSpy.mock.calls.map(([type]) => type);
+    expect(removedTypes).not.toContain("click");
+    expect(removedTypes).not.toContain("keydown");
+    expect(removedTypes).not.toContain("touchstart");
+  });
+
+  it("sets onstatechange on the AudioContext to start music when context becomes running", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as { onstatechange: unknown };
+    expect(typeof ctx.onstatechange).toBe("function");
+  });
+});
+
+describe("stopHomeScreenMusic", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("does not throw when no music is playing", () => {
+    expect(() => stopHomeScreenMusic()).not.toThrow();
+  });
+
+  it("calls AudioContext.close() after the fade-out delay when music is playing", async () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as { close: ReturnType<typeof vi.fn> };
+    (ctx.close as ReturnType<typeof vi.fn>).mockClear();
+    stopHomeScreenMusic();
+    // close() is deferred by the fade-out setTimeout — advance past it
+    await vi.runAllTimersAsync();
+    expect(ctx.close).toHaveBeenCalled();
+  });
+
+  it("schedules a gain ramp to 0 (fade-out) on stop", async () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    await Promise.resolve(); // flush resume() so fade-in is scheduled
+    const ctx = AudioCtxMock.mock.results[0]?.value as { createGain: ReturnType<typeof vi.fn> };
+    const gainNode = (ctx.createGain as ReturnType<typeof vi.fn>).mock.results[0]?.value as {
+      gain: {
+        linearRampToValueAtTime: ReturnType<typeof vi.fn>;
+        cancelAndHoldAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
+    (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mockClear();
+    (gainNode.gain.cancelAndHoldAtTime as ReturnType<typeof vi.fn>).mockClear();
+    stopHomeScreenMusic();
+    // cancelAndHoldAtTime freezes the gain at the current value before ramping to 0
+    expect(gainNode.gain.cancelAndHoldAtTime).toHaveBeenCalled();
+    const calls = (gainNode.gain.linearRampToValueAtTime as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.some(([v]: [number]) => v === 0)).toBe(true);
+  });
+
+  it("cancels the loop timeout when music is stopped", async () => {
+    const clearTimeoutSpy = vi.spyOn(globalThis, "clearTimeout");
+    startHomeScreenMusic();
+    await Promise.resolve(); // flush resume() microtask so loopFrom + setTimeout run
+    stopHomeScreenMusic();
+    expect(clearTimeoutSpy).toHaveBeenCalled();
+  });
+
+  it("clears onstatechange on stop so the handler cannot fire after teardown", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    const ctx = AudioCtxMock.mock.results[0]?.value as { onstatechange: unknown };
+    stopHomeScreenMusic();
+    expect(ctx.onstatechange).toBeNull();
+  });
+});
+
+describe("setAlertVolume — master gain integration", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    setAlertVolume(1);
+  });
+
+  afterEach(() => {
+    stopHomeScreenMusic();
+    vi.useRealTimers();
+  });
+
+  it("updating alert volume while music plays updates the master gain value", () => {
+    const AudioCtxMock = window.AudioContext as ReturnType<typeof vi.fn>;
+    // Clear so mock.results[0] is the context created by startHomeScreenMusic.
+    AudioCtxMock.mockClear();
+    startHomeScreenMusic();
+    const ctxInstance = AudioCtxMock.mock.results[0]?.value as {
+      createGain: ReturnType<typeof vi.fn>;
+    };
+    expect(ctxInstance).toBeDefined();
+    // The first createGain() call creates the master gain node.
+    const masterGainNode = (ctxInstance.createGain as ReturnType<typeof vi.fn>).mock.results[0]
+      ?.value as {
+      gain: {
+        setValueAtTime: ReturnType<typeof vi.fn>;
+        cancelAndHoldAtTime: ReturnType<typeof vi.fn>;
+      };
+    };
+    // Clear so we can assert on the call from setAlertVolume specifically.
+    (masterGainNode.gain.setValueAtTime as ReturnType<typeof vi.fn>).mockClear();
+    setAlertVolume(0.5);
+    // setAlertVolume cancels any automation and schedules the new volume via setValueAtTime.
+    expect(masterGainNode.gain.setValueAtTime).toHaveBeenCalledWith(0.5, expect.any(Number));
   });
 });

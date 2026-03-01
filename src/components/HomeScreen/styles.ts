@@ -8,7 +8,7 @@ export const HomeContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  padding: 32px 24px;
+  padding: 32px 24px calc(32px + 80px);
   gap: 16px;
 `;
 

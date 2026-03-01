@@ -18,10 +18,10 @@ describe("VolumeControls", () => {
     onToggleAlertMute: noop,
   };
 
-  it("renders announcement and alert volume sliders", () => {
+  it("renders announcement and music volume sliders", () => {
     render(<VolumeControls {...defaultProps} />);
     expect(screen.getByRole("slider", { name: /announcement volume/i })).toBeTruthy();
-    expect(screen.getByRole("slider", { name: /alert volume/i })).toBeTruthy();
+    expect(screen.getByRole("slider", { name: /music volume/i })).toBeTruthy();
   });
 
   it("shows 🔊 icon when announcement volume > 0", () => {
@@ -34,14 +34,14 @@ describe("VolumeControls", () => {
     expect(screen.getByRole("button", { name: /unmute announcements/i })).toBeTruthy();
   });
 
-  it("shows 🔔 icon when alert volume > 0", () => {
+  it("shows 🎵 icon when alert volume > 0", () => {
     render(<VolumeControls {...defaultProps} alertVolume={0.5} />);
-    expect(screen.getByRole("button", { name: /mute alerts/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /mute music/i })).toBeTruthy();
   });
 
-  it("shows 🔕 icon when alert volume is 0", () => {
+  it("shows 🔇 icon when alert volume is 0", () => {
     render(<VolumeControls {...defaultProps} alertVolume={0} />);
-    expect(screen.getByRole("button", { name: /unmute alerts/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /unmute music/i })).toBeTruthy();
   });
 
   it("calls onToggleAnnouncementMute when 🔊 clicked", async () => {
@@ -51,10 +51,10 @@ describe("VolumeControls", () => {
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
-  it("calls onToggleAlertMute when 🔔 clicked", async () => {
+  it("calls onToggleAlertMute when 🎵 clicked", async () => {
     const onToggle = vi.fn();
     render(<VolumeControls {...defaultProps} onToggleAlertMute={onToggle} />);
-    await userEvent.click(screen.getByRole("button", { name: /mute alerts/i }));
+    await userEvent.click(screen.getByRole("button", { name: /mute music/i }));
     expect(onToggle).toHaveBeenCalledOnce();
   });
 
@@ -66,7 +66,7 @@ describe("VolumeControls", () => {
 
   it("renders alert slider with correct value", () => {
     render(<VolumeControls {...defaultProps} alertVolume={0.3} />);
-    const slider = screen.getByRole("slider", { name: /alert volume/i }) as HTMLInputElement;
+    const slider = screen.getByRole("slider", { name: /music volume/i }) as HTMLInputElement;
     expect(slider.value).toBe("0.3");
   });
 });
