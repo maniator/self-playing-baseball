@@ -162,7 +162,7 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
                 placeholder="Nickname"
                 maxLength={20}
                 value={getNick(pitcher.id)}
-                onChange={(e) => updateField(pitcher.id, "nickname", e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => updateField(pitcher.id, "nickname", e.target.value)}
                 aria-label={`${pitcher.position} nickname`}
               />
               {PITCHER_MOD_FIELDS.map((field, i) => {
@@ -177,7 +177,7 @@ const PlayerCustomizationPanel: React.FunctionComponent<Props> = ({
                     <BaseStat $modified={modValue !== 0}>{effective}</BaseStat>
                     <ModSelect
                       value={getMod(pitcher.id, field)}
-                      onChange={(e) => updateField(pitcher.id, field, e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => updateField(pitcher.id, field, e.target.value)}
                       aria-label={`${pitcher.position} ${PITCHER_STAT_LABELS[i]}`}
                     >
                       {MOD_OPTIONS.map((opt) => (

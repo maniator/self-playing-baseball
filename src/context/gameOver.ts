@@ -1,6 +1,6 @@
 import type { DecisionType, OnePitchModifier, State, Strategy } from "./index";
 
-export const checkGameOver = (state: State, log): State => {
+export const checkGameOver = (state: State, log: (msg: string) => void): State => {
   if (state.inning >= 9) {
     const [away, home] = state.score;
     if (away !== home) {
@@ -12,7 +12,7 @@ export const checkGameOver = (state: State, log): State => {
   return state;
 };
 
-export const nextHalfInning = (state: State, log): State => {
+export const nextHalfInning = (state: State, log: (msg: string) => void): State => {
   const newState = {
     ...state,
     baseLayout: [0, 0, 0] as [number, number, number],
@@ -73,7 +73,7 @@ export const nextHalfInning = (state: State, log): State => {
   return nextWithBase;
 };
 
-export const checkWalkoff = (state: State, log): State => {
+export const checkWalkoff = (state: State, log: (msg: string) => void): State => {
   if (state.inning >= 9 && state.atBat === 1) {
     const [away, home] = state.score;
     if (home > away) {

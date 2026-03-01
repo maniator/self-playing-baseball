@@ -1,3 +1,4 @@
+/// <reference types="vite/client" />
 import { handleDecisionsAction } from "./handlers/decisions";
 import { handleLifecycleAction } from "./handlers/lifecycle";
 import { handleSetupAction } from "./handlers/setup";

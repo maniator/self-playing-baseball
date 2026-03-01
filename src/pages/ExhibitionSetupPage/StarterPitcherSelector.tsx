@@ -39,7 +39,7 @@ const StarterPitcherSelector: React.FunctionComponent<Props> = ({
         id="esp-starter"
         data-testid="starting-pitcher-select"
         value={startIdx}
-        onChange={(e) => onSelect(Number(e.target.value))}
+        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onSelect(Number(e.target.value))}
       >
         {pitchers.map((p) => (
           <option key={p.id} value={p.idx}>

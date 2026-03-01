@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
-import { RxDatabaseProvider } from "rxdb/plugins/react";
+import { type RxDatabase, RxDatabaseProvider } from "rxdb/plugins/react";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";
 import type { GameAction } from "@context/index";
@@ -72,7 +72,7 @@ const Game: React.FunctionComponent<Props> = ({
   if (!db) return <LoadingScreen>Loading game…</LoadingScreen>;
 
   return (
-    <RxDatabaseProvider database={db}>
+    <RxDatabaseProvider database={db as unknown as RxDatabase}>
       <GameProviderWrapper onDispatch={onDispatch} announcePreprocessor={announcePreprocessor}>
         {dbResetNotice && (
           <DbResetNotice data-testid="db-reset-notice">

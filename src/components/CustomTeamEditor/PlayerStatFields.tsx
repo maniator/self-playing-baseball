@@ -62,7 +62,7 @@ const PlayerStatFields: React.FunctionComponent<Props> = ({
           max={100}
           value={val}
           disabled={isExistingPlayer}
-          onChange={(e) => {
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             // Guard in addition to `disabled` — jsdom fires change events on disabled
             // elements via fireEvent, so the explicit check keeps tests meaningful.
             if (!isExistingPlayer) onChange({ [key]: Number(e.target.value) });

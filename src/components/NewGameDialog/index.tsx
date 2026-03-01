@@ -226,7 +226,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
       : home;
 
   return (
-    <Dialog ref={ref} onCancel={(e) => e.preventDefault()} data-testid="new-game-dialog">
+    <Dialog ref={ref} onCancel={(e: React.SyntheticEvent) => e.preventDefault()} data-testid="new-game-dialog">
       {onBackToHome && (
         <BackHomeButton
           type="button"
@@ -320,7 +320,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
                 id="ng-home"
                 data-testid="home-team-select"
                 value={home}
-                onChange={(e) => setHome(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setHome(e.target.value)}
               >
                 {homeList.map((t) => (
                   <option key={t.id} value={t.name}>
@@ -335,7 +335,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
                 id="ng-away"
                 data-testid="away-team-select"
                 value={away}
-                onChange={(e) => setAway(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAway(e.target.value)}
               >
                 {awayList.map((t) => (
                   <option key={t.id} value={t.name}>
@@ -398,7 +398,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
                       id="ng-starter"
                       data-testid="starting-pitcher-select"
                       value={starterIdx}
-                      onChange={(e) => setStarterIdx(Number(e.target.value))}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStarterIdx(Number(e.target.value))}
                     >
                       {spPitchers.map((p) => (
                         <option key={p.id} value={p.idx}>
@@ -433,7 +433,7 @@ const NewGameDialog: React.FunctionComponent<Props> = ({
             type="text"
             data-testid="seed-input"
             value={seedInput}
-            onChange={(e) => setSeedInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSeedInput(e.target.value)}
             placeholder="random"
             autoComplete="off"
             spellCheck={false}

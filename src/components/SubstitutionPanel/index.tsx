@@ -158,7 +158,7 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
           <Row>
             <SelectField
               value={selectedLineupIdx}
-              onChange={(e) => setSelectedLineupIdx(Number(e.target.value))}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedLineupIdx(Number(e.target.value))}
               aria-label="Player to replace"
             >
               {lineupOrder.map((id, i) => (
@@ -169,7 +169,7 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
             </SelectField>
             <SelectField
               value={selectedBenchId}
-              onChange={(e) => setSelectedBenchId(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedBenchId(e.target.value)}
               aria-label="Bench player to bring in"
             >
               {eligibleBench.map((id) => (
@@ -206,7 +206,7 @@ const SubstitutionPanel: React.FunctionComponent<Props> = ({
               <Row>
                 <SelectField
                   value={selectedPitcherIdx}
-                  onChange={(e) => setSelectedPitcherIdx(Number(e.target.value))}
+                  onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedPitcherIdx(Number(e.target.value))}
                   aria-label="Replacement pitcher"
                 >
                   {availablePitcherOptions.map(({ id, idx }) => (

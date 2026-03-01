@@ -22,7 +22,7 @@ const HIT_CALLOUTS: Record<Hit, string> = {
  *   2. Fielder's choice — runner on 1st with <2 outs, DP not turned: lead runner out, batter safe.
  *   3. Simple ground out — no force play: batter thrown out at 1st.
  */
-const handleGrounder = (state: State, log, pitchKey: number): State => {
+const handleGrounder = (state: State, log: (msg: string) => void, pitchKey: number): State => {
   const { baseLayout, outs } = state;
   const groundedState = { ...state, pitchKey, hitType: undefined as Hit | undefined };
 
@@ -81,7 +81,7 @@ export const addInningRuns = (state: State, runs: number): State => {
   return { ...state, inningRuns: newInningRuns };
 };
 
-export const hitBall = (type: Hit, state: State, log, strategy: Strategy = "balanced"): State => {
+export const hitBall = (type: Hit, state: State, log: (msg: string) => void, strategy: Strategy = "balanced"): State => {
   const pitchKey = (state.pitchKey ?? 0) + 1;
   const base = {
     ...state,

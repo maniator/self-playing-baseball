@@ -27,7 +27,7 @@ export const incrementPitcherFatigue = (state: State): State => {
  * batterCompleted: false → a *runner* was put out (caught stealing).
  *                          The same batter remains at the plate; order does NOT rotate.
  */
-export const playerOut = (state: State, log, batterCompleted = false): State => {
+export const playerOut = (state: State, log: (msg: string) => void, batterCompleted = false): State => {
   // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts).
   const battingTeam = state.atBat as 0 | 1;
   const slotIdx = state.batterIndex[battingTeam];
