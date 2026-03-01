@@ -1,13 +1,12 @@
 import { type Browser, expect, test } from "@playwright/test";
 
-import { captureGameSignature, configureNewGame } from "../utils/helpers";
+import {
+  captureGameSignature,
+  configureNewGame,
+  createDefaultCustomTeamsForTest,
+} from "../utils/helpers";
 
 const FIXED_SEED = "deadbeef";
-const GAME_CONFIG = {
-  seed: FIXED_SEED,
-  homeTeam: "New York Yankees",
-  awayTeam: "New York Mets",
-};
 
 /**
  * Runs a full game-start sequence in a fresh isolated browser context and
@@ -25,7 +24,6 @@ const GAME_CONFIG = {
 async function runGameInFreshContext(
   browser: Browser,
   seed: string,
-  config: { homeTeam?: string; awayTeam?: string } = {},
   baseURL = "http://localhost:5173",
 ): Promise<string> {
   const context = await browser.newContext({ baseURL });
@@ -33,7 +31,11 @@ async function runGameInFreshContext(
   try {
     await page.goto("/");
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    await configureNewGame(page, { ...config, seed });
+    // Create two default custom teams before starting (required since MLB tab removed).
+    await createDefaultCustomTeamsForTest(page);
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+    await configureNewGame(page, { seed });
     await page.getByTestId("play-ball-button").click();
     await expect(
       page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
@@ -54,26 +56,16 @@ test.describe("Determinism", () => {
   test.setTimeout(200_000);
 
   test("same seed produces same play-by-play sequence", async ({ browser, baseURL }) => {
-    const sig1 = await runGameInFreshContext(
-      browser,
-      FIXED_SEED,
-      GAME_CONFIG,
-      baseURL ?? undefined,
-    );
-    const sig2 = await runGameInFreshContext(
-      browser,
-      FIXED_SEED,
-      GAME_CONFIG,
-      baseURL ?? undefined,
-    );
+    const sig1 = await runGameInFreshContext(browser, FIXED_SEED, baseURL ?? undefined);
+    const sig2 = await runGameInFreshContext(browser, FIXED_SEED, baseURL ?? undefined);
 
     expect(sig1).toBeTruthy();
     expect(sig1).toEqual(sig2);
   });
 
   test("different seeds produce different sequences", async ({ browser, baseURL }) => {
-    const sig1 = await runGameInFreshContext(browser, "seed1", GAME_CONFIG, baseURL ?? undefined);
-    const sig2 = await runGameInFreshContext(browser, "seed2", GAME_CONFIG, baseURL ?? undefined);
+    const sig1 = await runGameInFreshContext(browser, "seed1", baseURL ?? undefined);
+    const sig2 = await runGameInFreshContext(browser, "seed2", baseURL ?? undefined);
 
     expect(sig1).not.toEqual(sig2);
   });

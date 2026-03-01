@@ -4,7 +4,6 @@
     "id": "save_pending_decision_fixture",
     "name": "Pending Decision (defensive shift)",
     "seed": "pd-fixture-01",
-    "matchupMode": "default",
     "homeTeamId": "New York Yankees",
     "awayTeamId": "New York Mets",
     "createdAt": 1700001000000,
@@ -123,5 +122,5 @@
     }
   },
   "events": [],
-  "sig": "53581c29"
+  "sig": "981d3725"
 }

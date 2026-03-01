@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 import {
-  configureNewGame,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
@@ -34,9 +33,7 @@ test.describe("Modals", () => {
     });
 
     test("submitting the form (Play Ball!) navigates to the game", async ({ page }) => {
-      await configureNewGame(page);
-      await page.getByTestId("play-ball-button").click();
-      await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 10_000 });
+      await startGameViaPlayBall(page, { seed: "modal0" });
       await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
     });
   });

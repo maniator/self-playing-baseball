@@ -79,20 +79,12 @@ export interface GameConfig {
    * that `reinitSeed` fires with the correct value when Play Ball is clicked.
    */
   seed?: string;
-  homeTeam?: string;
-  awayTeam?: string;
   /**
    * Select a managed team radio in the New Game dialog ("0" = away, "1" = home).
    * When set, the dialog calls `setManagerMode(true)` so manager mode is active
    * from the very first pitch — no localStorage pre-seeding required.
    */
   managedTeam?: "0" | "1";
-  /**
-   * Which tab to activate on /exhibition/new before filling form fields.
-   * Defaults to "mlb" for backward compatibility with tests that use MLB team
-   * selects. Pass "custom" to stay on the Custom Teams tab.
-   */
-  tab?: "mlb" | "custom";
 }
 
 /**
@@ -107,27 +99,10 @@ export interface GameConfig {
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);
 
-  // The exhibition setup page defaults to Custom Teams. Switch to the MLB tab
-  // unless the caller explicitly requests the Custom Teams tab. Most tests rely
-  // on MLB team selection (homeTeam/awayTeam selects), so "mlb" is the default.
-  const targetTab = options.tab ?? "mlb";
-  if (targetTab === "mlb" && (await page.getByTestId("exhibition-setup-page").isVisible())) {
-    const mlbTab = page.getByTestId("new-game-mlb-teams-tab");
-    if (await mlbTab.isVisible()) {
-      await mlbTab.click();
-    }
-  }
-
   if (options.seed !== undefined) {
     const seedField = page.getByTestId("seed-input");
     await seedField.clear();
     await seedField.fill(options.seed);
-  }
-  if (options.homeTeam) {
-    await page.getByTestId("home-team-select").selectOption({ label: options.homeTeam });
-  }
-  if (options.awayTeam) {
-    await page.getByTestId("away-team-select").selectOption({ label: options.awayTeam });
   }
   if (options.managedTeam !== undefined) {
     // Click the radio button for the chosen managed team.
@@ -136,18 +111,50 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 }
 
 /**
+ * Creates two minimal custom teams ("Away Team" and "Home Team") via the UI
+ * for tests that need to start a custom exhibition game.
+ * Uses the "Regenerate Defaults" button to fill in all required players automatically.
+ * Safe to call multiple times — skips creation if both teams already exist.
+ */
+export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
+  // Navigate to teams page to check how many teams already exist
+  await page.goto("/teams");
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+  const existingTeams = page.getByTestId("custom-team-list-item");
+  const count = await existingTeams.count();
+  if (count >= 2) return; // Teams already exist — skip
+
+  for (const name of count === 0 ? ["Away Team", "Home Team"] : ["Home Team"]) {
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("custom-team-name-input").fill(name);
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  }
+
+  // Return to home
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+}
+
+/**
  * Starts the game:
  * - Resets app state (navigates to `/`).
+ * - Ensures at least two custom teams exist (creating defaults if needed).
  * - If a seed is given, types it into the seed-input field in the dialog
  *   (calls `reinitSeed` on submit — no page reload needed).
- * - Configures optional home/away team selection.
  * - Clicks "Play Ball!" and waits until the game is active.
  */
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
   await resetAppState(page);
+  await createDefaultCustomTeamsForTest(page);
+  await page.goto("/exhibition/new");
+  await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
-  // The setup UI (either the exhibition page or the in-game dialog) should disappear.
+  // The setup UI should disappear after starting.
   await expect(
     page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
   ).not.toBeVisible({ timeout: 10_000 });

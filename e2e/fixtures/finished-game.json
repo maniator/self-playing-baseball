@@ -4,7 +4,6 @@
     "id": "save_finished_game_fixture",
     "name": "Mets vs Yankees (Final)",
     "seed": "fngame",
-    "matchupMode": "default",
     "homeTeamId": "New York Yankees",
     "awayTeamId": "New York Mets",
     "createdAt": 1700000000000,
@@ -107,5 +106,5 @@
     }
   },
   "events": [],
-  "sig": "62b5a964"
+  "sig": "662d6224"
 }

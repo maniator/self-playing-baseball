@@ -37,16 +37,9 @@ test.describe("Routing — exhibition setup page", () => {
   }) => {
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    // Custom Teams tab must be active (aria-selected=true)
-    await expect(page.getByTestId("new-game-custom-teams-tab")).toHaveAttribute(
-      "aria-selected",
-      "true",
-    );
-    // MLB Teams tab must NOT be active
-    await expect(page.getByTestId("new-game-mlb-teams-tab")).toHaveAttribute(
-      "aria-selected",
-      "false",
-    );
+    // Custom Teams tab is the only tab — no MLB tab
+    await expect(page.getByTestId("new-game-mlb-teams-tab")).not.toBeVisible();
+    await expect(page.getByTestId("play-ball-button")).toBeVisible();
   });
 
   test("Exhibition Setup back button returns to Home (/)", async ({ page }) => {

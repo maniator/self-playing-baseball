@@ -4,7 +4,6 @@
     "id": "save_1700000000000_fixture",
     "name": "Mets vs Yankees",
     "seed": "testse",
-    "matchupMode": "default",
     "homeTeamId": "New York Yankees",
     "awayTeamId": "New York Mets",
     "createdAt": 1700000000000,
@@ -89,5 +88,5 @@
     }
   },
   "events": [],
-  "sig": "1404bff2"
+  "sig": "f973fbca"
 }

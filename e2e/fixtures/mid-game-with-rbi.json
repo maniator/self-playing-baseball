@@ -4,7 +4,6 @@
     "id": "save_mid_game_rbi_fixture",
     "name": "Mid-Game with RBI",
     "seed": "rbi-fixture-01",
-    "matchupMode": "default",
     "homeTeamId": "New York Yankees",
     "awayTeamId": "New York Mets",
     "createdAt": 1700003000000,
@@ -168,5 +167,5 @@
     }
   },
   "events": [],
-  "sig": "05a3e423"
+  "sig": "d9e33a8b"
 }
