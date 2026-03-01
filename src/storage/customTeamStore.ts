@@ -188,7 +188,7 @@ function buildStore(getDbFn: GetDb) {
       if (updates.name !== undefined) {
         const newName = requireNonEmpty(updates.name, "name");
         // Enforce unique team names (case-insensitive), excluding the current team.
-        const existing = await db.customTeams.find().exec();
+        const existing = await this.listCustomTeams({ includeArchived: true });
         const nameLower = newName.toLowerCase();
         const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
         if (duplicate) {

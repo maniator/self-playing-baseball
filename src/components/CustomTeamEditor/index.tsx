@@ -534,6 +534,12 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           });
         }
       };
+      reader.onerror = () => {
+        dispatch({
+          type: "SET_ERROR",
+          error: "Failed to read player file. Please try again with a valid JSON export.",
+        });
+      };
       reader.readAsText(file);
     },
     [allTeams, state.lineup, state.bench, state.pitchers],
@@ -586,6 +592,13 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       const newIndex = state[activeSection].findIndex((p) => p.id === over.id);
       if (oldIndex === -1 || newIndex === -1) return;
       const reordered = arrayMove(state[activeSection], oldIndex, newIndex);
+      dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
+    } else if (activeSection === overSection && overSectionId !== null) {
+      // Same section, dropped onto the section's own sentinel (the droppable area below the
+      // players). Treat as "move to end" — avoids silently swallowing the drag event.
+      const oldIndex = state[activeSection].findIndex((p) => p.id === active.id);
+      if (oldIndex === -1 || oldIndex === state[activeSection].length - 1) return;
+      const reordered = arrayMove(state[activeSection], oldIndex, state[activeSection].length - 1);
       dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
     } else if (activeSection !== overSection) {
       // Cross-section transfer — drop onto a player or onto the empty section droppable.

@@ -241,8 +241,8 @@ async function initDb(
         // Backfill player fingerprints: each player gets a persistent FNV-1a hash
         // covering {name, role, batting, pitching} so global duplicate detection
         // works without re-reading all teams on every query.
-        // The FNV-1a function is inlined here so the migration has no module
-        // dependency beyond `./hash` (already imported in db.ts).
+        // `fnv1a` is imported from `./hash` (already a db.ts dependency) so
+        // the migration has no additional module dependencies.
         2: (oldDoc: Record<string, unknown>) => {
           try {
             const roster = oldDoc["roster"] as Record<string, unknown> | undefined;

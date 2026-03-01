@@ -310,10 +310,12 @@ export function importCustomTeams(
   );
 
   // Pre-compute player sigs for all existing players so we can detect duplicates.
+  // Use the stored `fingerprint` when available (canonical, avoids recomputation);
+  // fall back to `buildPlayerSig(p)` for pre-v2 players that lack a stored fingerprint.
   const existingPlayerSigs = new Set<string>();
   for (const t of existingTeams) {
     for (const p of [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers]) {
-      existingPlayerSigs.add(buildPlayerSig(p));
+      existingPlayerSigs.add(p.fingerprint ?? buildPlayerSig(p));
     }
   }
 
