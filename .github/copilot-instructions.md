@@ -4,7 +4,7 @@
 
 **Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
-**Repository size:** ~96 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
+**Repository size:** ~130 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
 ---
 
@@ -40,7 +40,10 @@
 │   │   ├── sample-save.json        # FNV-1a signed save fixture for import tests
 │   │   ├── pending-decision.json   # Inning 4 bottom, defensive_shift pending, managerMode on
 │   │   ├── pending-decision-pinch-hitter.json  # Inning 7 top, pinch_hitter pending
-│   │   └── mid-game-with-rbi.json  # Inning 5 top, 3-2 score, playLog has RBI entries
+│   │   ├── pending-decision-pinch-hitter-teams.json  # Same as above but with custom teams + player sigs
+│   │   ├── mid-game-with-rbi.json  # Inning 5 top, 3-2 score, playLog has RBI entries
+│   │   ├── finished-game.json      # Completed game with FINAL banner
+│   │   └── legacy-teams-no-fingerprints.json  # Pre-v2 teams export bundle (no player fingerprints)
 │   ├── tests/
 │   │   ├── smoke.spec.ts           # App loads, Play Ball starts game, autoplay progresses
 │   │   ├── determinism.spec.ts     # Same seed → same play-by-play (desktop-only project, two fresh IndexedDB contexts)
@@ -52,8 +55,10 @@
 │   │   ├── responsive-smoke.spec.ts # Scoreboard/field/log visible & non-zero on all viewports
 │   │   ├── layout.spec.ts          # Layout pixel-diff snapshots
 │   │   ├── manage-teams-and-custom-game-flow.spec.ts  # Full Create/Edit/Delete team + start custom game
-│   │   ├── custom-team-editor.spec.ts  # Team editor form interactions (desktop)
+│   │   ├── custom-team-editor.spec.ts  # Team editor form interactions (desktop), DnD drag handles
 │   │   ├── custom-team-editor-mobile-and-regressions.spec.ts  # Mobile team editor regressions
+│   │   ├── import-export-teams.spec.ts  # Custom teams export/import round-trips, legacy file import, tamper detection
+│   │   ├── import-save-missing-teams.spec.ts  # Save import with missing team data
 │   │   ├── stats.spec.ts           # Live batting stats + hit log correctness
 │   │   ├── batting-stats.spec.ts   # Stat-budget regression
 │   │   ├── stat-budget.spec.ts     # Stat-budget smoke
@@ -68,7 +73,8 @@
 │                                   # captureGameSignature(page, minLines?, logTimeout?), openSavesModal,
 │                                   # saveCurrentGame, loadFirstSave, importSaveFromFixture,
 │                                   # assertFieldAndLogVisible, disableAnimations, loadFixture,
-│                                   # configureNewGame(page, options?)
+│                                   # configureNewGame(page, options?), computeTeamsSignature(page, payload),
+│                                   # importTeamsFixture(page, fixtureName), expectNoRawIdsVisible(page)
 └── src/
     ├── index.html                  # HTML entry point for Vite (script has type="module", image hrefs are absolute /…)
     ├── index.scss                  # Global styles + mobile media queries
@@ -89,14 +95,37 @@
     │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
     │   └── saves.ts                # currentSeedStr() — returns current seed as base-36 string
     ├── storage/                    # RxDB local-only persistence (IndexedDB, no sync)
-    │   ├── db.ts                   # Lazy-singleton BallgameDb; collections: saves, events, teams; exports getDb(), savesCollection(), eventsCollection(), _createTestDb()
+    │   ├── db.ts                   # Lazy-singleton BallgameDb; collections: saves, events, teams, customTeams;
+    │   │                           #   exports getDb(), savesCollection(), eventsCollection(), _createTestDb()
+    │   │                           #   customTeams schema: v0→v1 (abbreviation + team fingerprint fields),
+    │   │                           #   v1→v2 (player fingerprint backfill migration — strictly additive)
     │   ├── saveStore.ts            # SaveStore singleton + makeSaveStore() factory:
     │   │                           #   createSave, appendEvents (serialized queue + in-memory idx counter),
     │   │                           #   updateProgress (with stateSnapshot), listSaves, deleteSave,
     │   │                           #   exportRxdbSave, importRxdbSave (FNV-1a integrity bundle)
+    │   ├── customTeamStore.ts      # CustomTeamStore singleton + makeCustomTeamStore() factory:
+    │   │                           #   createCustomTeam (throws on duplicate name), updateCustomTeam,
+    │   │                           #   deleteCustomTeam, listCustomTeams, exportPlayer,
+    │   │                           #   importCustomTeams (with allowDuplicatePlayers option)
+    │   ├── customTeamExportImport.ts  # Pure encode/decode helpers (no DB access):
+    │   │                              #   buildTeamFingerprint, buildPlayerSig,
+    │   │                              #   exportCustomTeams, exportCustomPlayer,
+    │   │                              #   importCustomTeams (parses + validates bundle),
+    │   │                              #   parseExportedCustomPlayer (validates sig),
+    │   │                              #   TEAMS_EXPORT_KEY, PLAYER_EXPORT_KEY
+    │   ├── hash.ts                 # fnv1a(str): string — FNV-1a 32-bit hash, 8 hex chars
+    │   ├── generateId.ts           # nanoid-based ID generators: generateTeamId(), generatePlayerId(), generateSaveId(), generateSeed()
+    │   ├── saveIO.ts               # formatSaveDate, downloadJson, readFileAsText, saveFilename,
+    │   │                           #   teamsFilename, playerFilename, slugify (internal)
+    │   ├── saveInspector.ts        # Read-only helpers for inspecting save bundles
     │   └── types.ts                # SaveDoc, EventDoc, TeamDoc, GameSaveSetup, ScoreSnapshot,
     │                               #   InningSnapshot, StateSnapshot, GameSetup, GameEvent,
-    │                               #   ProgressSummary, RxdbExportedSave
+    │                               #   ProgressSummary, RxdbExportedSave,
+    │                               #   TeamPlayer (with playerSeed?: string, fingerprint?: string),
+    │                               #   TeamPlayerBatting, TeamPlayerPitching,
+    │                               #   CustomTeamDoc (with teamSeed?: string, fingerprint?: string),
+    │                               #   TeamRoster, CreateCustomTeamInput, UpdateCustomTeamInput,
+    │                               #   ExportedCustomTeams, ExportedCustomPlayer
     ├── context/                    # All game state, reducer, and types
     │   ├── index.tsx               # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
     │   │                           #   Exports: LogAction, GameAction, Strategy, DecisionType, OnePitchModifier
@@ -120,7 +149,12 @@
     │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
     │   │                           #   calls updateProgress (with full stateSnapshot) on half-inning / game-over
     │   ├── useSaveStore.ts         # useLiveRxQuery wrapper for reactive saves list + stable write callbacks
+    │   ├── useSaveSlotActions.ts   # Stable callbacks: handleLoad, handleExport, handleDelete for save slots
     │   ├── useCustomTeams.ts       # useLiveRxQuery wrapper for the customTeams RxDB collection
+    │   ├── useImportCustomTeams.ts # Shared import logic: file upload, paste JSON, clipboard paste,
+    │   │                           #   in-flight state, errors, duplicate-player confirmation flow
+    │   │                           #   Exposes: pendingDuplicateImport, confirmDuplicateImport(), cancelDuplicateImport()
+    │   ├── useImportSave.ts        # Save import from file or paste (used by SavesModal + SavesPage)
     │   └── useShareReplay.ts       # Clipboard copy of replay URL
     ├── components/                 # All UI components
     │   ├── AppShell/
@@ -131,7 +165,9 @@
     │   │   └── styles.ts           # Styled components for home screen
     │   ├── ManageTeamsScreen/
     │   │   ├── index.tsx           # Route-aware screen: list view at /teams, editor at /teams/:id/edit and /teams/new
-    │   │   ├── TeamListItem.tsx    # Single team row (edit/delete buttons)
+    │   │   │                       #   Import/export UI: per-team export button, export-all button, file input for import,
+    │   │   │                       #   success/error banners, duplicate-player confirmation banner
+    │   │   ├── TeamListItem.tsx    # Single team row (edit/delete/export buttons)
     │   │   └── styles.ts           # Styled components for manage teams screen
     │   ├── Announcements/index.tsx # Play-by-play log with heading + empty-state placeholder
     │   ├── Ball/
@@ -173,17 +209,40 @@
     │   │   ├── index.tsx           # Modal dialog for starting a new game: team name inputs + managed-team radio selection
     │   │   └── styles.ts           # Styled components for the new game dialog
     │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table
+    │   ├── CustomTeamEditor/
+    │   │   ├── index.tsx           # Full team editor: all sections use drag-and-drop (SortablePlayerRow)
+    │   │   │                       #   Lineup + bench share one DndContext → cross-section drag transfers players
+    │   │   │                       #   Pitchers have their own DndContext (isolated — no cross-section)
+    │   │   │                       #   Per-player ↓ Export button; ↑ Import Player/Pitcher button per section
+    │   │   │                       #   Inline duplicate-player confirmation banner (PlayerDuplicateBanner)
+    │   │   ├── SortablePlayerRow.tsx   # Drag-and-drop player row using useSortable — used by all sections
+    │   │   ├── PlayerRow.tsx           # Legacy up/down row component (preserved but no longer used in index.tsx)
+    │   │   ├── PlayerStatFields.tsx    # Shared stat sliders (contact/power/speed + pitcher stats)
+    │   │   ├── editorState.ts      # EditorState, EditorAction, editorReducer, validateEditorState
+    │   │   │                       #   Actions: SET_FIELD, UPDATE_PLAYER, ADD_PLAYER, REMOVE_PLAYER,
+    │   │   │                       #   REORDER, TRANSFER_PLAYER (cross-section lineup↔bench), MOVE_UP,
+    │   │   │                       #   MOVE_DOWN, APPLY_DRAFT, SET_ERROR
+    │   │   │                       #   TRANSFER_PLAYER: { fromSection, toSection, playerId, toIndex }
+    │   │   │                       #   Exported: editorPlayerToTeamPlayer (for player export flow)
+    │   │   ├── playerConstants.ts  # DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS,
+    │   │   │                       #   BATTER_POSITION_OPTIONS, PITCHER_POSITION_OPTIONS, HANDEDNESS_OPTIONS
+    │   │   ├── statBudget.ts       # HITTER_STAT_CAP (150), PITCHER_STAT_CAP (160),
+    │   │   │                       #   hitterStatTotal, pitcherStatTotal, hitterRemaining, pitcherRemaining
+    │   │   └── styles.ts           # Styled components; includes ImportPlayerBtn, PlayerDuplicateBanner,
+    │   │                           #   PlayerDuplicateActions for the import-player flow
     │   └── SavesModal/
     │       ├── index.tsx           # Save management overlay: list, create, load, delete, export, import
     │       ├── styles.ts           # Styled components for saves modal
     │       └── useSavesModal.ts    # Hook: calls useSaveStore for all save CRUD operations
     ├── features/
     │   └── customTeams/
-    │       └── adapters/
-    │           └── customTeamAdapter.ts  # customTeamToDisplayName, customTeamToGameId,
-    │                                     #   customTeamToPlayerOverrides, customTeamToLineupOrder,
-    │                                     #   customTeamToPitcherRoster, customTeamToBenchRoster,
-    │                                     #   resolveTeamLabel (resolves `custom:<id>` or raw team name)
+    │       ├── adapters/
+    │       │   └── customTeamAdapter.ts  # customTeamToDisplayName, customTeamToGameId,
+    │       │                             #   customTeamToPlayerOverrides, customTeamToLineupOrder,
+    │       │                             #   customTeamToPitcherRoster, customTeamToBenchRoster,
+    │       │                             #   resolveTeamLabel (resolves `custom:<id>` or raw team name)
+    │       └── generation/
+    │           └── generateDefaultTeam.ts  # generateDefaultCustomTeamDraft(seed) — deterministic random team
     └── pages/
         ├── ExhibitionSetupPage/
         │   ├── index.tsx           # Full-page Exhibition Setup — primary New Game entry point (/exhibition/new)
@@ -293,6 +352,7 @@ vi.mock("@hooks/useSaveStore", () => ({
 | `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.** |
 | `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. |
 | `teams` | MLB team cache (`TeamDoc`). Each team individually upserted/deleted by numeric MLB ID. |
+| `customTeams` | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 3** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill; v2→v3: `teamSeed`/`playerSeed` backfill with seed-based fingerprint recomputation). |
 
 ### SaveStore API
 
@@ -306,6 +366,48 @@ SaveStore.importRxdbSave(json: string): Promise<string>     // verifies signatur
 ```
 
 Use `makeSaveStore(getDbFn)` to create an isolated instance for tests.
+
+### CustomTeamStore API
+
+```ts
+CustomTeamStore.createCustomTeam(input: CreateCustomTeamInput): Promise<string>
+  // Throws if a team with the same name (case-insensitive) already exists.
+CustomTeamStore.updateCustomTeam(id: string, patch: UpdateCustomTeamInput): Promise<void>
+CustomTeamStore.deleteCustomTeam(id: string): Promise<void>
+CustomTeamStore.listCustomTeams(): Promise<CustomTeamDoc[]>
+CustomTeamStore.exportPlayer(teamId: string, playerId: string): Promise<string>
+  // Returns signed portable JSON bundle (type: "customPlayer", formatVersion: 1)
+CustomTeamStore.importCustomTeams(json: string, options?: ImportCustomTeamsOptions): Promise<ImportCustomTeamsResult>
+  // options.allowDuplicatePlayers = true → proceed despite duplicate players
+```
+
+`ImportCustomTeamsResult` carries `{ created, remapped, skipped, duplicateWarnings, duplicatePlayerWarnings, requiresDuplicateConfirmation }`.
+
+When `requiresDuplicateConfirmation` is `true`, the import was blocked because incoming players match existing player fingerprints. Surface `duplicatePlayerWarnings` to the user, then retry with `{ allowDuplicatePlayers: true }`.
+
+### Player Fingerprints (`fingerprint` on `TeamPlayer`)
+
+Every player carries a persistent `fingerprint?: string` and `playerSeed?: string` stored in the DB. The fingerprint is `fnv1a(playerSeed + JSON.stringify({name, role, batting, pitching}))`, computed by `buildPlayerSig()` in `customTeamExportImport.ts` and written by `sanitizePlayer()` in `customTeamStore.ts`. The `playerSeed` is generated once at creation via `generateSeed()` and never changes. The v1→v2 migration backfills fingerprints; the v2→v3 migration backfills `playerSeed` values and recomputes fingerprints with the seed. The `playerSeed ?? ""` fallback in `buildPlayerSig` ensures legacy bundles without a seed still parse cleanly.
+
+### Team Fingerprints (`fingerprint` on `CustomTeamDoc`)
+
+Teams carry a `fingerprint?: string` and `teamSeed?: string`. The fingerprint is `fnv1a(teamSeed + name|abbreviation)` (both lowercased). Used for team-level duplicate detection on import — the same team re-imported after roster edits still deduplicates correctly (roster changes don't affect the fingerprint). Computed by `buildTeamFingerprint()` in `customTeamExportImport.ts`. The `teamSeed` is generated once at creation and never regenerated (not even on `updateCustomTeam`). The `teamSeed ?? ""` fallback ensures legacy bundles still parse cleanly.
+
+### Export/Import Bundles
+
+**Teams bundle** (`type: "customTeams"`, `formatVersion: 1`):
+- Every player row carries an export-only `sig` (FNV-1a over `{name, role, batting, pitching}`) for tamper detection — stripped before DB storage.
+- Bundle-level `sig` = `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))`.
+
+**Player bundle** (`type: "customPlayer"`, `formatVersion: 1`):
+- Signed with `PLAYER_EXPORT_KEY`.
+- Decoded by `parseExportedCustomPlayer(json)` — throws if tampered.
+
+Import flow in `useImportCustomTeams` hook:
+1. File upload or paste JSON triggers `importFn(json)`
+2. If `result.requiresDuplicateConfirmation` → surface `duplicatePlayerWarnings`, await user choice
+3. User confirms → `importFn(json, { allowDuplicatePlayers: true })`
+4. User cancels → clear pending state
 
 ### Game Loop Integration
 
@@ -460,9 +562,10 @@ Validate changes by:
 1. `yarn lint` — zero errors/warnings required. Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
 3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
-4. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, visual baselines may need updating — the **`update-visual-snapshots`** workflow fires **automatically** on every push to any non-master branch. You can also trigger it manually: Actions → "Update Visual Snapshots" → Run workflow. Never run `yarn test:e2e:update-snapshots` locally and commit the result — local rendering differs from the CI container.
+4. `yarn typecheck:e2e` — **always run when adding or changing E2E test files** (`e2e/**/*.ts`). This type-checks the Playwright suite against `e2e/tsconfig.json`. Playwright's `Page` API differs from Testing Library — for example `page.getByDisplayValue` does not exist; use `page.locator('input[value="…"]')` instead.
+5. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, visual baselines may need updating — the **`update-visual-snapshots`** workflow fires **automatically** on every push to any non-master branch. You can also trigger it manually: Actions → "Update Visual Snapshots" → Run workflow. Never run `yarn test:e2e:update-snapshots` locally and commit the result — local rendering differs from the CI container.
 
-**Do not call `report_progress` until all four steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
+**Do not call `report_progress` until all five steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
 ---
 
@@ -495,7 +598,10 @@ Validate changes by:
 
 | Module | What it provides |
 |---|---|
-| `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename` |
+| `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename`, `teamsFilename`, `playerFilename` |
+| `@storage/hash` | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed |
+| `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
+| `@storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
 | `@components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` (used by SavesPage, HelpPage, ManageTeamsScreen) |
 | `@components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |
 | `@components/SaveSlotList` | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage) |
@@ -554,6 +660,8 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 | `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path (requires active game) |
 | `assertFieldAndLogVisible(page)` | Assert field-view + scoreboard visible with non-zero bounding boxes |
 | `disableAnimations(page)` | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
+| `computeTeamsSignature(page, payload)` | Evaluate `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))` in the browser page context |
+| `importTeamsFixture(page, fixtureName)` | Navigate to `/teams`, set `import-teams-file-input` to fixture path, wait for `import-teams-success` |
 
 ### `data-testid` reference
 
@@ -567,7 +675,9 @@ All stable test selectors added to the app:
 
 **Help page (`/help`):** `help-page`, `help-page-back-button`
 
-**Manage Teams (`/teams`, `/teams/new`, `/teams/:id/edit`):** `manage-teams-screen`, `manage-teams-back-button`, `manage-teams-create-button`, `custom-team-list`, `custom-team-list-item`, `custom-team-edit-button`, `custom-team-delete-button`, `manage-teams-editor-shell`, `manage-teams-editor-back-button`
+**Manage Teams (`/teams`, `/teams/new`, `/teams/:id/edit`):** `manage-teams-screen`, `manage-teams-back-button`, `manage-teams-create-button`, `custom-team-list`, `custom-team-list-item`, `custom-team-edit-button`, `custom-team-delete-button`, `manage-teams-editor-shell`, `manage-teams-editor-back-button`, `export-all-teams-button`, `export-team-button`, `import-teams-file-input`, `import-teams-success`, `import-teams-error`, `teams-duplicate-banner`, `teams-duplicate-confirm-button`, `teams-duplicate-cancel-button`
+
+**Custom Team Editor (inside `/teams/new` and `/teams/:id/edit`):** `custom-team-lineup-section`, `custom-team-bench-section`, `custom-team-pitchers-section`, `custom-team-name-input`, `custom-team-abbreviation-input`, `custom-team-city-input`, `custom-team-regenerate-defaults-button`, `custom-team-save-button`, `custom-team-cancel-button`, `custom-team-add-lineup-player-button`, `custom-team-add-bench-player-button`, `custom-team-add-pitcher-button`, `custom-team-player-position-select`, `custom-team-player-handedness-select`, `custom-team-editor-error-summary`, `custom-team-save-error-hint`, `export-player-button`, `import-lineup-player-input`, `import-bench-player-input`, `import-pitchers-player-input`, `player-import-lineup-duplicate-banner`, `player-import-lineup-confirm-button`, `player-import-bench-duplicate-banner`, `player-import-bench-confirm-button`, `player-import-pitchers-duplicate-banner`, `player-import-pitchers-confirm-button`, `lineup-bench-dnd-container`
 
 **In-game controls (GameControls / SavesModal):** `saves-button`, `saves-modal`, `saves-modal-close-button`, `save-game-button`, `import-save-textarea`, `import-save-button`, `back-to-home-button`
 
@@ -643,8 +753,11 @@ await loadFixture(page, "pending-decision.json");
 |---|---|---|
 | `sample-save.json` | Inning 2, Mets vs Yankees, no pending decision | Import smoke tests |
 | `pending-decision.json` | Inning 4 bottom, defensive_shift pending, managerMode on | Manager decision panel UI, notification smoke |
-| `pending-decision-pinch-hitter.json` | Inning 7 top, pinch_hitter pending + 2 candidates, custom teams | Pinch-hitter dropdown visual snapshot |
+| `pending-decision-pinch-hitter.json` | Inning 7 top, pinch_hitter pending + 2 candidates, default teams | Pinch-hitter dropdown visual snapshot |
+| `pending-decision-pinch-hitter-teams.json` | Same as above but with custom teams + player sigs in the bundle | Signed custom-team fixture with player fingerprints |
 | `mid-game-with-rbi.json` | Inning 5 top, 3-2 score, playLog has RBI entries | RBI stats display + save/reload persistence |
+| `finished-game.json` | Completed game, FINAL banner shown | Game-over state regression tests |
+| `legacy-teams-no-fingerprints.json` | Pre-v2 teams bundle (no player or team fingerprints) | Legacy import migration regression |
 
 ### Authoring a new fixture
 
@@ -734,6 +847,10 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
 - **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX. For non-trivial conditional rendering blocks, extract them into a named sub-component (e.g. `StarterPitcherSelector` in `ExhibitionSetupPage/`) to keep them independently testable.
 - **`SavesModal` no longer has `autoOpen`/`openSavesRequestCount`/`onRequestClose`/`closeLabel` props** — these were removed when "Load Saved Game" became a dedicated `/saves` route. The modal now always closes with a simple `close()`. Do not re-add these props.
+- **`CustomTeamEditor` uses drag-and-drop for all sections** — lineup, bench, and pitchers all use `SortablePlayerRow` with `@dnd-kit/sortable`. There are **no up/down arrow buttons** in the editor. Lineup and bench share one `DndContext` (inside `<div data-testid="lineup-bench-dnd-container">`) so players can be dragged between sections. Pitchers have their own isolated `DndContext`. The `TRANSFER_PLAYER` action (`{ fromSection, toSection, playerId, toIndex }`) in `editorReducer` handles cross-section moves. `PlayerRow` (the old up/down component) is preserved in the file system but is not used in `index.tsx` — do not resurrect it.
+- **`useImportCustomTeams` is the shared hook for all custom-team import flows** — always use it rather than calling `importCustomTeams` directly in components. It handles file upload, paste JSON, clipboard paste, in-flight state, errors, and the two-step duplicate-player confirmation flow. The hook exposes `pendingDuplicateImport`, `confirmDuplicateImport()`, and `cancelDuplicateImport()`.
+- **FNV-1a hash is in `@storage/hash`** — import `fnv1a` from there. Never reimplement it in components or store modules.
+- **`generateId.ts` is the only source of new DB IDs** — always call `generateTeamId()`, `generatePlayerId()`, `generateSaveId()` from `@storage/generateId`. Never use `Date.now()` or `Math.random()` directly for IDs.
 - **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
 - **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.
 - **NewGameDialog mobile compaction** — `NewGameDialog/styles.ts` uses `${mq.mobile}` blocks on every styled component (Dialog, Title, FieldGroup, FieldLabel, Input, Select, SectionLabel, RadioLabel, ResumeButton, Divider, PlayBallButton, SeedHint) to reduce padding/margins so the modal fits without scrolling on phone viewports. `PlayerCustomizationPanel.styles.ts` does the same for `PanelSection`. The Dialog's `max-height` uses `min(96dvh, 820px)` on mobile (vs `90dvh` on desktop) to reclaim browser-chrome space. Never revert these to desktop-only values.

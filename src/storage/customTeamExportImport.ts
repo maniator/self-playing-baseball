@@ -6,6 +6,10 @@ export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 /** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */
 export const TEAMS_EXPORT_KEY = "ballgame:teams:v1";
 
+export const PLAYER_EXPORT_FORMAT_VERSION = 1 as const;
+/** Signing key for individual-player exports. */
+export const PLAYER_EXPORT_KEY = "ballgame:player:v1";
+
 /** `TeamPlayer` carrying the export-only `sig` field before it is stripped for DB storage. */
 type TeamPlayerWithSig = TeamPlayer & { sig?: string };
 
@@ -26,24 +30,37 @@ export interface ImportCustomTeamsResult {
    * exist. The UI should surface these so the user can review before accepting the import.
    */
   duplicatePlayerWarnings: string[];
+  /**
+   * When true the import was blocked because one or more players in the incoming
+   * bundle already exist in the local DB (by content fingerprint).
+   * The caller should prompt the user to confirm before re-trying with
+   * `options.allowDuplicatePlayers = true` to proceed despite the duplicates.
+   */
+  requiresDuplicateConfirmation: boolean;
 }
 
 /**
- * Builds a stable content fingerprint for a team (excludes id so it survives re-import).
- * Covers only team-identity fields (name + abbreviation, case-insensitive).
+ * Builds a stable seed-based fingerprint for a team (excludes id so it survives re-import).
+ * Covers only team-identity fields (name + abbreviation, case-insensitive) plus the
+ * per-team random seed generated at creation time.
  * Roster changes do NOT affect the fingerprint — the same team remains the same
  * fingerprint after trades, roster edits, or any player moves.
  * Used for team-level duplicate detection on import.
+ * The `teamSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  */
-export function buildTeamFingerprint(team: CustomTeamDoc): string {
+export function buildTeamFingerprint(
+  team: Pick<CustomTeamDoc, "name" | "abbreviation" | "teamSeed">,
+): string {
+  const seed = team.teamSeed ?? "";
   const key = team.name.toLowerCase() + "|" + (team.abbreviation ?? "").toLowerCase();
-  return fnv1a(key);
+  return fnv1a(seed + key);
 }
 
 /**
- * Computes a content-based integrity signature for a single player.
+ * Computes a seed-based integrity signature for a single player.
  * Covers only the player's immutable identity fields: name, role, and stats
- * (batting for hitters; pitching for pitchers).
+ * (batting for hitters; pitching for pitchers), plus the per-player random seed
+ * generated at creation time.
  *
  * Design notes:
  *   - `id` is intentionally excluded: IDs are remapped on import collision and must
@@ -54,15 +71,19 @@ export function buildTeamFingerprint(team: CustomTeamDoc): string {
  *   - For pure hitters `pitching` is `undefined`. `JSON.stringify` omits `undefined` values
  *     consistently on both the export side and the re-import side, so the sig is
  *     deterministic across round-trips with no special normalisation needed.
+ *   - `playerSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  *
  * The sig serves two purposes:
  *   1. Tamper detection: any post-export mutation of name or stats is detectable on import.
  *   2. Duplicate detection: a player whose sig matches one already in the DB is a likely
  *      duplicate even if imported to a different team or with a remapped ID.
  */
-export function buildPlayerSig(player: TeamPlayer): string {
+export function buildPlayerSig(
+  player: Pick<TeamPlayer, "name" | "role" | "batting" | "pitching" | "playerSeed">,
+): string {
+  const seed = player.playerSeed ?? "";
   const { name, role, batting, pitching } = player;
-  return fnv1a(JSON.stringify({ name, role, batting, pitching }));
+  return fnv1a(seed + JSON.stringify({ name, role, batting, pitching }));
 }
 
 /** Returns a copy of `player` with its `sig` field stripped (export-only metadata). */
@@ -162,8 +183,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
       throw new Error(`Team[${i}] missing required field: name`);
     if (typeof team["source"] !== "string")
       throw new Error(`Team[${i}] missing required field: source`);
-    if (typeof team["fingerprint"] !== "string" || !team["fingerprint"])
-      throw new Error(`Team[${i}] missing fingerprint — file may be from an incompatible version`);
+    // fingerprint is optional for legacy files (pre-v2 exports without fingerprints)
     if (!team["roster"] || typeof team["roster"] !== "object")
       throw new Error(`Team[${i}] missing required field: roster`);
     const roster = team["roster"] as Record<string, unknown>;
@@ -187,6 +207,8 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
         throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
       }
       (slotValue as TeamPlayerWithSig[]).forEach((player, pi) => {
+        // Skip sig validation for legacy files that pre-date per-player signatures.
+        if (player.sig === undefined) return;
         const expectedPlayerSig = buildPlayerSig(player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(
@@ -229,6 +251,15 @@ export interface ImportIdFactories {
   makePlayerId?: () => string;
 }
 
+export interface ImportCustomTeamsOptions {
+  /**
+   * When true, imports teams even if some players already exist in the local DB.
+   * When false (the default), the import is blocked and `requiresDuplicateConfirmation`
+   * is set to true so the caller can prompt the user for confirmation.
+   */
+  allowDuplicatePlayers?: boolean;
+}
+
 /**
  * Merges incoming teams into the local collection.
  *
@@ -236,11 +267,31 @@ export interface ImportIdFactories {
  * - Team fingerprint matches: reported in `duplicateWarnings`.
  * - Player sig matches: reported in `duplicatePlayerWarnings` so the UI can prompt the user.
  * - Player `sig` fields are stripped from the output so they are not stored in the DB.
+ * - When `options.allowDuplicatePlayers` is false (the default) and duplicate players are
+ *   found, the import is blocked: `teams` is empty and `requiresDuplicateConfirmation` is
+ *   true. Re-call with `{ allowDuplicatePlayers: true }` after the user confirms.
+ *
+ * **Legacy bundle limitation:** Players in legacy export bundles (pre-v2, no per-player `sig`
+ * or `playerSeed`) fall back to `buildPlayerSig(player)` with an empty-string seed, which
+ * produces a different hash than the same player already stored in the DB (which has a
+ * non-empty `playerSeed`).  As a result, duplicate detection silently misses duplicates for
+ * legacy imports.  This is intentional — legacy files lack the seed needed to reproduce the
+ * stored fingerprint — and is documented here so callers are aware of the limitation.
+ *
+ * **Legacy team fingerprint limitation:** Teams in legacy bundles lack a `team.fingerprint`
+ * field, so the pre-scan falls back to `buildTeamFingerprint(team)` with an empty `teamSeed`.
+ * However, a previously-imported legacy team will have been migrated to v3 and now has a
+ * non-empty `teamSeed` in the DB, producing a seed-based fingerprint that will never match
+ * the seed-free fallback.  As a result, re-importing a legacy teams bundle after the DB has
+ * been migrated to v3 will not be blocked by the pre-scan's team-fingerprint check, and the
+ * teams may be duplicated.  The same inherent limitation applies as for legacy player sigs:
+ * without the original seed in the bundle, there is no way to reproduce the stored fingerprint.
  */
 export function importCustomTeams(
   json: string,
   existingTeams: CustomTeamDoc[],
   factories?: ImportIdFactories,
+  options?: ImportCustomTeamsOptions,
 ): ImportCustomTeamsResult {
   const parsed = parseExportedCustomTeams(json);
   const makeTeamId = factories?.makeTeamId ?? generateTeamId;
@@ -259,11 +310,57 @@ export function importCustomTeams(
   );
 
   // Pre-compute player sigs for all existing players so we can detect duplicates.
+  // Use the stored `fingerprint` when available (canonical, avoids recomputation);
+  // fall back to `buildPlayerSig(p)` for pre-v2 players that lack a stored fingerprint.
   const existingPlayerSigs = new Set<string>();
   for (const t of existingTeams) {
     for (const p of [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers]) {
-      existingPlayerSigs.add(buildPlayerSig(p));
+      existingPlayerSigs.add(p.fingerprint ?? buildPlayerSig(p));
     }
+  }
+
+  // ── Pre-scan: detect duplicate players in non-fingerprint-skipped teams ────
+  // If any are found and the caller hasn't opted in to allowing duplicates,
+  // block the import and require an explicit confirmation from the user.
+  const allowDuplicates = options?.allowDuplicatePlayers ?? false;
+  const preScanWarnings: string[] = [];
+  let preScanSkipped = 0;
+
+  for (const team of parsed.payload.teams) {
+    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
+    if (existingFingerprints.has(incomingFp)) {
+      preScanSkipped++;
+      continue;
+    }
+    const allPlayers = [
+      ...team.roster.lineup.map((p) => ({ player: p })),
+      ...(team.roster.bench ?? []).map((p) => ({ player: p })),
+      ...(team.roster.pitchers ?? []).map((p) => ({ player: p })),
+    ];
+    for (const { player } of allPlayers) {
+      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
+      if (existingPlayerSigs.has(pSig)) {
+        preScanWarnings.push(
+          `Player "${player.name}" in "${team.name}" may already exist in your teams.`,
+        );
+      }
+    }
+  }
+
+  if (preScanWarnings.length > 0 && !allowDuplicates) {
+    // Note: `skipped` here only counts fingerprint-matched teams from the pre-scan loop.
+    // It does NOT equal the `skipped` count that the main loop would produce (the import
+    // is blocked before reaching the main loop). Callers should treat this partial count
+    // as informational and re-run to get the final `skipped` count after user confirmation.
+    return {
+      teams: [],
+      created: 0,
+      remapped: 0,
+      skipped: preScanSkipped,
+      duplicateWarnings: [],
+      duplicatePlayerWarnings: preScanWarnings,
+      requiresDuplicateConfirmation: true,
+    };
   }
 
   let created = 0;
@@ -357,5 +454,89 @@ export function importCustomTeams(
     skipped,
     duplicateWarnings,
     duplicatePlayerWarnings,
+    requiresDuplicateConfirmation: false,
   };
 }
+
+/**
+ * Serializes a single player into a portable signed JSON string.
+ * The player gets a `sig` field covering its immutable identity fields, and
+ * the bundle gets its own FNV-1a signature so tampering is detectable on import.
+ */
+export function exportCustomPlayer(player: TeamPlayer): string {
+  const playerWithSig: TeamPlayer & { sig: string } = {
+    ...stripPlayerSig(player),
+    sig: buildPlayerSig(player),
+  };
+  const payload = { player: playerWithSig };
+  const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+  const bundle = {
+    type: "customPlayer" as const,
+    formatVersion: PLAYER_EXPORT_FORMAT_VERSION,
+    exportedAt: new Date().toISOString(),
+    payload,
+    sig,
+  };
+  return JSON.stringify(bundle, null, 2);
+}
+
+/**
+ * Parses and validates a single-player export JSON string.
+ * Verifies both the bundle-level FNV-1a signature and the per-player content
+ * signature. Throws a descriptive error on any validation failure.
+ * Returns the player with `sig` stripped (not stored in DB).
+ */
+export function parseExportedCustomPlayer(json: string): TeamPlayer {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(json);
+  } catch {
+    throw new Error("Invalid JSON: could not parse player file");
+  }
+  if (!parsed || typeof parsed !== "object") throw new Error("Invalid player file: not an object");
+  const obj = parsed as Record<string, unknown>;
+
+  if (obj["type"] !== "customPlayer")
+    throw new Error(
+      `Invalid player file: expected type "customPlayer", got "${obj["type"] as string}"`,
+    );
+  if (obj["formatVersion"] !== 1)
+    throw new Error(`Unsupported player format version: ${obj["formatVersion"] as number}`);
+  if (!obj["payload"] || typeof obj["payload"] !== "object")
+    throw new Error("Invalid player file: missing payload");
+
+  const payload = obj["payload"] as Record<string, unknown>;
+  if (!payload["player"] || typeof payload["player"] !== "object")
+    throw new Error("Invalid player file: missing payload.player");
+
+  const playerObj = payload["player"] as Record<string, unknown>;
+  if (typeof playerObj["id"] !== "string" || !playerObj["id"])
+    throw new Error("Invalid player file: missing required field: id");
+  if (typeof playerObj["name"] !== "string" || !playerObj["name"])
+    throw new Error("Invalid player file: missing required field: name");
+  if (typeof playerObj["role"] !== "string")
+    throw new Error("Invalid player file: missing required field: role");
+  if (!playerObj["batting"] || typeof playerObj["batting"] !== "object")
+    throw new Error("Invalid player file: missing required field: batting");
+
+  // ── Bundle signature ───────────────────────────────────────────────────────
+  const expectedBundleSig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(obj["payload"]));
+  if (typeof obj["sig"] !== "string" || obj["sig"] !== expectedBundleSig)
+    throw new Error(
+      "Player signature mismatch — file may be corrupted or not a valid Ballgame player export",
+    );
+
+  // ── Per-player content signature ───────────────────────────────────────────
+  // Note: unlike the teams import path (which skips sig validation when player.sig is
+  // undefined for legacy pre-v2 bundles), single-player bundles always require a sig
+  // because exportCustomPlayer is new in this codebase — no legacy single-player files exist.
+  const player = payload["player"] as TeamPlayer & { sig?: string };
+  const expectedPlayerSig = buildPlayerSig(player);
+  if (player.sig !== expectedPlayerSig)
+    throw new Error("Player content signature mismatch — player data may have been tampered with");
+
+  // Return the player with `sig` stripped — export-only metadata, not stored in DB.
+  return stripPlayerSig(player);
+}
+
+// end of file

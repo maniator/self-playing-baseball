@@ -55,22 +55,31 @@ const compactTimestamp = (date: Date): string => {
   return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}T${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 };
 
+/** Converts a string to a URL/filename-safe slug (lowercase, hyphens, no leading/trailing hyphens). */
+const slugify = (s: string, fallback: string): string =>
+  s
+    .replace(/[^a-z0-9]+/gi, "-")
+    .replace(/^-|-$/g, "")
+    .toLowerCase() || fallback;
+
 /**
  * Derives a safe download filename from a save's name field.
  * Appends a compact timestamp (YYYYMMDDTHHmmss) so repeated exports of the
  * same save don't overwrite each other on disk.
  */
-export const saveFilename = (saveName: string): string => {
-  const slug =
-    saveName
-      .replace(/[^a-z0-9]+/gi, "-")
-      .replace(/^-|-$/g, "")
-      .toLowerCase() || "save";
-  return `ballgame-${slug}-${compactTimestamp(new Date())}.json`;
-};
+export const saveFilename = (saveName: string): string =>
+  `ballgame-${slugify(saveName, "save")}-${compactTimestamp(new Date())}.json`;
 
 /**
  * Returns a timestamped filename for a custom-teams export.
  * Format: `ballgame-teams-YYYYMMDDTHHmmss.json`
  */
 export const teamsFilename = (): string => `ballgame-teams-${compactTimestamp(new Date())}.json`;
+
+/**
+ * Returns a timestamped filename for a single-player export.
+ * Slugifies the player name and appends a compact timestamp.
+ * Format: `ballgame-player-{slug}-YYYYMMDDTHHmmss.json`
+ */
+export const playerFilename = (playerName: string): string =>
+  `ballgame-player-${slugify(playerName, "player")}-${compactTimestamp(new Date())}.json`;

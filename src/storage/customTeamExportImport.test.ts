@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   buildPlayerSig,
   buildTeamFingerprint,
+  exportCustomPlayer,
   exportCustomTeams,
   importCustomTeams,
+  parseExportedCustomPlayer,
   parseExportedCustomTeams,
+  PLAYER_EXPORT_KEY,
   stripTeamPlayerSigs,
   TEAMS_EXPORT_KEY,
 } from "./customTeamExportImport";
@@ -96,6 +99,24 @@ describe("buildTeamFingerprint", () => {
     };
     expect(buildTeamFingerprint(base)).toBe(buildTeamFingerprint(differentRoster));
   });
+
+  it("differs when teamSeed changes (same name and abbreviation)", () => {
+    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-aaa" });
+    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-bbb" });
+    expect(buildTeamFingerprint(a)).not.toBe(buildTeamFingerprint(b));
+  });
+
+  it("is stable for the same teamSeed, name, and abbreviation", () => {
+    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
+    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
+    expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
+  });
+
+  it("falls back gracefully when teamSeed is absent (legacy bundles)", () => {
+    const team = makeTeam({ name: "Legacy", abbreviation: "LGC" });
+    // No teamSeed — must not throw and must return an 8-char hex string
+    expect(buildTeamFingerprint(team)).toMatch(/^[0-9a-f]{8}$/);
+  });
 });
 
 // ── buildPlayerSig ───────────────────────────────────────────────────────────
@@ -136,6 +157,24 @@ describe("buildPlayerSig", () => {
   it("does NOT depend on position (position is editable after creation)", () => {
     const p = makePlayer();
     expect(buildPlayerSig({ ...p, position: "DH" })).toBe(buildPlayerSig(p));
+  });
+
+  it("differs when playerSeed changes (same content)", () => {
+    const p = makePlayer();
+    expect(buildPlayerSig({ ...p, playerSeed: "seed-aaa" })).not.toBe(
+      buildPlayerSig({ ...p, playerSeed: "seed-bbb" }),
+    );
+  });
+
+  it("is stable for the same playerSeed and content", () => {
+    const p = makePlayer({ playerSeed: "stableABC123" });
+    expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));
+  });
+
+  it("falls back gracefully when playerSeed is absent (legacy bundles)", () => {
+    const p = makePlayer();
+    // No playerSeed — must not throw and must return 8-char hex
+    expect(buildPlayerSig(p)).toMatch(/^[0-9a-f]{8}$/);
   });
 });
 
@@ -273,13 +312,14 @@ describe("parseExportedCustomTeams", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
   });
 
-  it("throws when a team is missing fingerprint", () => {
+  it("accepts a team without fingerprint (legacy file — fingerprint is optional)", () => {
     const p = makePlayer();
     const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [p] } };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("missing fingerprint");
+    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    // Should NOT throw — fingerprint is optional for legacy bundles
+    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when bundle sig is missing", () => {
@@ -296,6 +336,21 @@ describe("parseExportedCustomTeams", () => {
     const obj = JSON.parse(exportCustomTeams([team]));
     obj.payload.teams[0].name = "Tampered";
     expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow("signature mismatch");
+  });
+
+  it("accepts players without sig (legacy file — per-player sig is optional)", () => {
+    const legacyPlayer = {
+      id: "p1",
+      name: "Legacy Player",
+      role: "batter",
+      batting: { contact: 50, power: 50, speed: 50 },
+    };
+    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [legacyPlayer] } };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    // Should NOT throw — missing player sig is treated as a legacy file
+    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when a player sig is wrong (tampered player stats)", () => {
@@ -341,9 +396,12 @@ describe("importCustomTeams", () => {
   it("remaps team id on collision", () => {
     const existing = makeTeam({ id: "ct_clash" });
     const incoming = makeTeam({ id: "ct_clash", name: "Incoming" });
-    const result = importCustomTeams(exportCustomTeams([incoming]), [existing], {
-      makeTeamId: () => "ct_new_id",
-    });
+    const result = importCustomTeams(
+      exportCustomTeams([incoming]),
+      [existing],
+      { makeTeamId: () => "ct_new_id" },
+      { allowDuplicatePlayers: true },
+    );
     expect(result.remapped).toBe(1);
     expect(result.created).toBe(0);
     expect(result.teams[0].id).toBe("ct_new_id");
@@ -402,25 +460,27 @@ describe("importCustomTeams", () => {
     const dup = makeTeam({ id: "ct_dup", name: "Existing" });
     const fresh = makeTeam({ id: "ct_fresh", name: "Brand New" });
     const existing = { ...dup, fingerprint: buildTeamFingerprint(dup) };
-    const result = importCustomTeams(exportCustomTeams([dup, fresh]), [existing]);
+    // Both teams use the default Alice player; pass allowDuplicatePlayers so the
+    // test focuses on fingerprint-skip logic rather than player duplicate detection.
+    const result = importCustomTeams(exportCustomTeams([dup, fresh]), [existing], undefined, {
+      allowDuplicatePlayers: true,
+    });
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].name).toBe("Brand New");
     expect(result.skipped).toBe(1);
     expect(result.created).toBe(1);
   });
 
-  it("emits duplicatePlayerWarnings when same player (by content) appears in a different imported team", () => {
+  it("blocks import and requires confirmation when duplicate players found (default behavior)", () => {
     // Player warnings fire when a non-duplicate team (different fingerprint) shares a player
     // whose {name, role, batting, pitching} matches one already in the local DB.
-    // Construct: existing "Team A" has Alice; import "Team B" (different name → different
-    // fingerprint, so it is not skipped) that also contains Alice with identical stats.
+    // Without allowDuplicatePlayers=true the import is BLOCKED.
     const alice = makePlayer({ id: "p_alice", name: "Alice" });
     const existingTeam = makeTeam({
       id: "ct_a",
       name: "Team A",
       roster: { schemaVersion: 1, lineup: [alice], bench: [], pitchers: [] },
     });
-    // Team B has a different name/fingerprint but carries Alice with the same content
     const teamB = makeTeam({
       id: "ct_b",
       name: "Team B",
@@ -432,10 +492,37 @@ describe("importCustomTeams", () => {
       },
     });
     const result = importCustomTeams(exportCustomTeams([teamB]), [existingTeam]);
+    expect(result.requiresDuplicateConfirmation).toBe(true);
     expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
     expect(result.duplicatePlayerWarnings[0]).toMatch(/Alice/);
-    // The team itself is still imported (different fingerprint → not skipped)
+    // Import is blocked — no teams in the result
+    expect(result.teams).toHaveLength(0);
+  });
+
+  it("imports teams with duplicate players when allowDuplicatePlayers is true", () => {
+    const alice = makePlayer({ id: "p_alice", name: "Alice" });
+    const existingTeam = makeTeam({
+      id: "ct_a",
+      name: "Team A",
+      roster: { schemaVersion: 1, lineup: [alice], bench: [], pitchers: [] },
+    });
+    const teamB = makeTeam({
+      id: "ct_b",
+      name: "Team B",
+      roster: {
+        schemaVersion: 1,
+        lineup: [{ ...alice, id: "p_alice_b" }],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const result = importCustomTeams(exportCustomTeams([teamB]), [existingTeam], undefined, {
+      allowDuplicatePlayers: true,
+    });
+    expect(result.requiresDuplicateConfirmation).toBe(false);
+    // Team is imported despite the duplicate player
     expect(result.teams).toHaveLength(1);
+    expect(result.duplicatePlayerWarnings.length).toBeGreaterThan(0);
   });
 
   it("attaches fingerprint to each output team", () => {
@@ -450,9 +537,14 @@ describe("importCustomTeams", () => {
     const collision = makeTeam({ id: "ct_col", name: "Collision" });
     const existing = makeTeam({ id: "ct_col" });
     let n = 0;
-    const result = importCustomTeams(exportCustomTeams([fresh, collision]), [existing], {
-      makeTeamId: () => `ct_gen_${n++}`,
-    });
+    // Both incoming teams use the default Alice player; pass allowDuplicatePlayers so
+    // this test focuses on ID-remapping logic rather than player duplicate detection.
+    const result = importCustomTeams(
+      exportCustomTeams([fresh, collision]),
+      [existing],
+      { makeTeamId: () => `ct_gen_${n++}` },
+      { allowDuplicatePlayers: true },
+    );
     expect(result.created).toBe(1);
     expect(result.remapped).toBe(1);
   });
@@ -597,5 +689,113 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     const result = importCustomTeams(exportCustomTeams([team]), []);
     const player = result.teams[0].roster.lineup[0];
     expect("sig" in player).toBe(false);
+  });
+});
+
+// ── exportCustomPlayer ────────────────────────────────────────────────────────
+
+describe("exportCustomPlayer", () => {
+  it("produces valid parseable JSON", () => {
+    const p = makePlayer();
+    expect(() => JSON.parse(exportCustomPlayer(p))).not.toThrow();
+  });
+
+  it("includes type 'customPlayer', formatVersion 1, exportedAt, sig", () => {
+    const parsed = JSON.parse(exportCustomPlayer(makePlayer()));
+    expect(parsed.type).toBe("customPlayer");
+    expect(parsed.formatVersion).toBe(1);
+    expect(typeof parsed.exportedAt).toBe("string");
+    expect(parsed.sig).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("embeds the player sig in the payload", () => {
+    const p = makePlayer({ name: "Export Test" });
+    const parsed = JSON.parse(exportCustomPlayer(p));
+    expect(typeof parsed.payload.player.sig).toBe("string");
+    expect(parsed.payload.player.sig).toBe(buildPlayerSig(p));
+  });
+
+  it("round-trips through parseExportedCustomPlayer", () => {
+    const p = makePlayer({ name: "Round Trip Player" });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.name).toBe("Round Trip Player");
+    expect(result.id).toBe(p.id);
+  });
+});
+
+// ── parseExportedCustomPlayer ─────────────────────────────────────────────────
+
+describe("parseExportedCustomPlayer", () => {
+  it("throws on invalid JSON", () => {
+    expect(() => parseExportedCustomPlayer("not json")).toThrow("Invalid JSON");
+  });
+
+  it("throws when type is wrong", () => {
+    const payload = { player: { ...makePlayer(), sig: buildPlayerSig(makePlayer()) } };
+    const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomPlayer(bad)).toThrow('expected type "customPlayer"');
+  });
+
+  it("throws on unsupported formatVersion", () => {
+    const payload = { player: { ...makePlayer(), sig: buildPlayerSig(makePlayer()) } };
+    const sig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customPlayer", formatVersion: 99, payload, sig });
+    expect(() => parseExportedCustomPlayer(bad)).toThrow("Unsupported player format version");
+  });
+
+  it("throws when bundle sig is wrong", () => {
+    const p = makePlayer({ name: "Tampered" });
+    const json = exportCustomPlayer(p);
+    const obj = JSON.parse(json) as Record<string, unknown>;
+    (obj["payload"] as Record<string, unknown>)["extra"] = "tamper";
+    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow("signature mismatch");
+  });
+
+  it("throws when player sig is wrong (tampered stats)", () => {
+    const p = makePlayer({ name: "Tampered Stats" });
+    const json = exportCustomPlayer(p);
+    const obj = JSON.parse(json) as Record<string, unknown>;
+    const payload = obj["payload"] as Record<string, unknown>;
+    const player = payload["player"] as Record<string, unknown>;
+    // Tamper the stats then re-sign the bundle sig only (player sig stays stale)
+    (player["batting"] as Record<string, unknown>)["contact"] = 99;
+    obj["sig"] = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(payload));
+    expect(() => parseExportedCustomPlayer(JSON.stringify(obj))).toThrow(
+      "content signature mismatch",
+    );
+  });
+
+  it("strips the sig field from the returned player", () => {
+    const p = makePlayer();
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect("sig" in result).toBe(false);
+  });
+
+  it("preserves batting stats, role, position, handedness", () => {
+    const p = makePlayer({
+      name: "Full Player",
+      role: "batter",
+      batting: { contact: 78, power: 65, speed: 55 },
+      position: "SS",
+      handedness: "L",
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.batting.contact).toBe(78);
+    expect(result.batting.power).toBe(65);
+    expect(result.position).toBe("SS");
+    expect(result.handedness).toBe("L");
+  });
+
+  it("preserves pitcher pitching stats", () => {
+    const p = makePlayer({
+      name: "Ace Pitcher",
+      role: "pitcher",
+      pitching: { velocity: 92, control: 80, movement: 75 },
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.pitching?.velocity).toBe(92);
+    expect(result.pitching?.control).toBe(80);
+    expect(result.pitching?.movement).toBe(75);
   });
 });

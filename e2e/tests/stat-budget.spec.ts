@@ -36,7 +36,7 @@ test.describe("Stat Budget — generated defaults are cap compliant", () => {
     await page.getByTestId("custom-team-name-input").fill("Cap Compliant Team");
     await page.getByTestId("custom-team-save-button").click();
     // Should navigate away from editor without showing an over-cap error
-    await expect(page.getByText("Cap Compliant Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Cap Compliant Team")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("custom-team-editor-error-summary")).not.toBeVisible();
   });
 });

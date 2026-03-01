@@ -19,6 +19,7 @@ import {
   ReadOnlyInput,
   RemoveBtn,
   SelectInput,
+  SmallIconBtn,
   TextInput,
 } from "./styles";
 
@@ -28,6 +29,8 @@ type Props = {
   isExistingPlayer?: boolean;
   onChange: (patch: Partial<EditorPlayer>) => void;
   onRemove: () => void;
+  /** Called when the user clicks the export button. Undefined = no export button shown. */
+  onExport?: () => void;
 };
 
 const SortablePlayerRow: React.FunctionComponent<Props> = ({
@@ -36,6 +39,7 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
   isExistingPlayer = false,
   onChange,
   onRemove,
+  onExport,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: player.id,
@@ -86,6 +90,17 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
             style={{ flex: 1 }}
           />
         )}
+        {onExport && (
+          <SmallIconBtn
+            type="button"
+            onClick={onExport}
+            aria-label="Export player"
+            title="Export player"
+            data-testid="export-player-button"
+          >
+            ↓ Export
+          </SmallIconBtn>
+        )}
         <RemoveBtn type="button" onClick={onRemove} aria-label="Remove player">
           ✕
         </RemoveBtn>
@@ -109,12 +124,12 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
           </SelectInput>
         </MetaGroup>
         <MetaGroup>
-          <FieldLabel htmlFor={`hand-${player.id}`}>Bats</FieldLabel>
+          <FieldLabel htmlFor={`hand-${player.id}`}>{isPitcher ? "Throws" : "Bats"}</FieldLabel>
           <SelectInput
             id={`hand-${player.id}`}
             value={player.handedness}
             onChange={(e) => onChange({ handedness: e.target.value as "R" | "L" | "S" })}
-            aria-label="Batting handedness"
+            aria-label={isPitcher ? "Throwing handedness" : "Batting handedness"}
             data-testid="custom-team-player-handedness-select"
           >
             {HANDEDNESS_OPTIONS.map((opt) => (

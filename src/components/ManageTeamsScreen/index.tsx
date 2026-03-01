@@ -12,6 +12,10 @@ import { downloadJson, teamsFilename } from "@storage/saveIO";
 import {
   BackBtn,
   CreateBtn,
+  DuplicateConfirmActions,
+  DuplicateConfirmBanner,
+  DuplicateConfirmList,
+  DuplicateConfirmTitle,
   EditorLoading,
   EditorShell,
   EditorShellHeader,
@@ -72,11 +76,14 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
     setPasteJson,
     importError,
     importing,
+    pendingDuplicateImport,
+    confirmDuplicateImport,
+    cancelDuplicateImport,
     handleFileImport,
     handlePasteImport,
     handlePasteFromClipboard,
   } = useImportCustomTeams({
-    importFn: (json) => CustomTeamStore.importCustomTeams(json),
+    importFn: (json, options) => CustomTeamStore.importCustomTeams(json, options),
     onSuccess: (result) => {
       refresh();
       setImportSuccess(formatImportSuccessMessage(result));
@@ -274,7 +281,37 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
         </PasteActions>
         {exportError && <ErrorMessage data-testid="export-teams-error">{exportError}</ErrorMessage>}
         {importError && <ErrorMessage data-testid="import-teams-error">{importError}</ErrorMessage>}
-        {importSuccess && !importError && (
+        {pendingDuplicateImport && (
+          <DuplicateConfirmBanner data-testid="teams-duplicate-banner" role="alert">
+            <DuplicateConfirmTitle>⚠ Duplicate players detected</DuplicateConfirmTitle>
+            <DuplicateConfirmList>
+              {pendingDuplicateImport.warnings.map((w, i) => (
+                <li key={i}>{w}</li>
+              ))}
+            </DuplicateConfirmList>
+            <p style={{ margin: "0 0 8px", fontSize: "12px", color: "#ccaa66" }}>
+              These players may already be in your collection and will be duplicated if you
+              continue.
+            </p>
+            <DuplicateConfirmActions>
+              <ImportExportBtn
+                type="button"
+                onClick={confirmDuplicateImport}
+                data-testid="teams-duplicate-confirm-button"
+              >
+                Import Anyway
+              </ImportExportBtn>
+              <ImportExportBtn
+                type="button"
+                onClick={cancelDuplicateImport}
+                data-testid="teams-duplicate-cancel-button"
+              >
+                Cancel
+              </ImportExportBtn>
+            </DuplicateConfirmActions>
+          </DuplicateConfirmBanner>
+        )}
+        {importSuccess && !importError && !pendingDuplicateImport && (
           <SuccessMessage data-testid="import-teams-success">{importSuccess}</SuccessMessage>
         )}
       </ImportExportSection>

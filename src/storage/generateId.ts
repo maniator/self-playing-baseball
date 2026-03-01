@@ -25,3 +25,6 @@ export const generatePlayerId = (): string => `p_${nanoid(12)}`;
 
 /** Generates a unique ID for a save document. e.g. `save_V1StGXR8_Z5j` */
 export const generateSaveId = (): string => `save_${nanoid(12)}`;
+
+/** Generates a random 16-char alphanumeric seed for fingerprint computation. */
+export const generateSeed = (): string => nanoid(16);

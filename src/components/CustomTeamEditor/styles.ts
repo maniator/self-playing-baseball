@@ -356,3 +356,33 @@ export const IdentityLockHint = styled.p`
   margin: 2px 0 8px;
   font-style: italic;
 `;
+
+/** Import-player button — ghost blue style, mirrors AddPlayerBtn. */
+export const ImportPlayerBtn = styled(AddPlayerBtn)`
+  color: #88bbee;
+  border-color: #4a6090;
+  margin-top: 4px;
+
+  &:hover {
+    border-color: #88bbee;
+    color: #aaccff;
+  }
+`;
+
+/** Warning banner shown when an imported player matches an existing one. */
+export const PlayerDuplicateBanner = styled.div`
+  background: #1a1a00;
+  border: 1px solid #886600;
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #ffdd88;
+`;
+
+export const PlayerDuplicateActions = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+`;

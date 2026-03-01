@@ -9,21 +9,30 @@ vi.mock("@storage/saveIO", () => ({
   formatSaveDate: vi.fn(() => "Jan 1, 2025"),
 }));
 
-import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
+import type {
+  ImportCustomTeamsOptions,
+  ImportCustomTeamsResult,
+} from "@storage/customTeamExportImport";
 import { readFileAsText } from "@storage/saveIO";
 
 import { useImportCustomTeams } from "./useImportCustomTeams";
 
-const makeResult = (): ImportCustomTeamsResult => ({
+const makeResult = (overrides: Partial<ImportCustomTeamsResult> = {}): ImportCustomTeamsResult => ({
   teams: [],
   created: 1,
   remapped: 0,
+  skipped: 0,
   duplicateWarnings: [],
   duplicatePlayerWarnings: [],
+  requiresDuplicateConfirmation: false,
+  ...overrides,
 });
 
 describe("useImportCustomTeams", () => {
-  const mockImportFn = vi.fn<[string], Promise<ImportCustomTeamsResult>>();
+  const mockImportFn = vi.fn<
+    [string, ImportCustomTeamsOptions | undefined],
+    Promise<ImportCustomTeamsResult>
+  >();
   const mockOnSuccess = vi.fn<[ImportCustomTeamsResult], void>();
 
   const renderHookUnderTest = () =>
@@ -59,7 +68,9 @@ describe("useImportCustomTeams", () => {
       const { result } = renderHookUnderTest();
       act(() => result.current.setPasteJson('  {"type":"customTeams"}  '));
       act(() => result.current.handlePasteImport());
-      await waitFor(() => expect(mockImportFn).toHaveBeenCalledWith('{"type":"customTeams"}'));
+      await waitFor(() =>
+        expect(mockImportFn).toHaveBeenCalledWith('{"type":"customTeams"}', undefined),
+      );
     });
 
     it("sets importing=true while in-flight", async () => {
@@ -146,6 +157,62 @@ describe("useImportCustomTeams", () => {
       const { result } = renderHookUnderTest();
       await act(async () => result.current.handlePasteFromClipboard());
       expect(result.current.importError).toMatch(/could not read clipboard/i);
+    });
+  });
+
+  describe("duplicate player confirmation flow", () => {
+    it("sets pendingDuplicateImport when importFn returns requiresDuplicateConfirmation", async () => {
+      const blockedResult = makeResult({
+        created: 0,
+        teams: [],
+        duplicatePlayerWarnings: ['Player "Alice" in "Team B" may already exist.'],
+        requiresDuplicateConfirmation: true,
+      });
+      mockImportFn.mockResolvedValue(blockedResult);
+      const { result } = renderHookUnderTest();
+      act(() => result.current.setPasteJson('{"v":1}'));
+      act(() => result.current.handlePasteImport());
+      await waitFor(() => expect(result.current.pendingDuplicateImport).not.toBeNull());
+      expect(result.current.pendingDuplicateImport?.warnings).toHaveLength(1);
+      expect(mockOnSuccess).not.toHaveBeenCalled();
+    });
+
+    it("confirmDuplicateImport re-calls importFn with allowDuplicatePlayers:true", async () => {
+      const blockedResult = makeResult({
+        created: 0,
+        teams: [],
+        duplicatePlayerWarnings: ["Player dup"],
+        requiresDuplicateConfirmation: true,
+      });
+      const successResult = makeResult();
+      mockImportFn.mockResolvedValueOnce(blockedResult).mockResolvedValueOnce(successResult);
+
+      const { result } = renderHookUnderTest();
+      act(() => result.current.setPasteJson('{"v":1}'));
+      act(() => result.current.handlePasteImport());
+      await waitFor(() => expect(result.current.pendingDuplicateImport).not.toBeNull());
+
+      act(() => result.current.confirmDuplicateImport());
+      await waitFor(() => expect(mockOnSuccess).toHaveBeenCalledWith(successResult));
+      expect(mockImportFn).toHaveBeenCalledWith('{"v":1}', { allowDuplicatePlayers: true });
+      expect(result.current.pendingDuplicateImport).toBeNull();
+    });
+
+    it("cancelDuplicateImport clears the pending state without importing", async () => {
+      const blockedResult = makeResult({
+        created: 0,
+        teams: [],
+        duplicatePlayerWarnings: ["dup"],
+        requiresDuplicateConfirmation: true,
+      });
+      mockImportFn.mockResolvedValue(blockedResult);
+      const { result } = renderHookUnderTest();
+      act(() => result.current.setPasteJson('{"v":1}'));
+      act(() => result.current.handlePasteImport());
+      await waitFor(() => expect(result.current.pendingDuplicateImport).not.toBeNull());
+      act(() => result.current.cancelDuplicateImport());
+      expect(result.current.pendingDuplicateImport).toBeNull();
+      expect(mockOnSuccess).not.toHaveBeenCalled();
     });
   });
 });

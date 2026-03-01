@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   downloadJson,
   formatSaveDate,
+  playerFilename,
   readFileAsText,
   saveFilename,
   teamsFilename,
@@ -107,5 +108,22 @@ describe("readFileAsText", () => {
     globalThis.FileReader = MockFileReader as unknown as typeof FileReader;
     await expect(readFileAsText(file)).rejects.toThrow("Failed to read file");
     globalThis.FileReader = origFileReader;
+  });
+});
+
+describe("playerFilename", () => {
+  it("formats a named player filename correctly", () => {
+    const name = playerFilename("John Smith");
+    expect(name).toMatch(/^ballgame-player-john-smith-\d{8}T\d{6}\.json$/);
+  });
+
+  it("falls back to 'player' slug when name is empty", () => {
+    const name = playerFilename("");
+    expect(name).toMatch(/^ballgame-player-player-\d{8}T\d{6}\.json$/);
+  });
+
+  it("slugifies names with special characters", () => {
+    const name = playerFilename("O'Brien Jr.");
+    expect(name).toMatch(/^ballgame-player-o-brien-jr-\d{8}T\d{6}\.json$/);
   });
 });

@@ -263,6 +263,12 @@ describe("updateCustomTeam", () => {
     expect(team?.name).toBe("Tigers");
   });
 
+  it("throws when team not found", async () => {
+    await expect(store.updateCustomTeam("ghost", { name: "x" })).rejects.toThrow(
+      "Custom team not found: ghost",
+    );
+  });
+
   it("throws on empty updated name", async () => {
     const id = await store.createCustomTeam(makeInput());
     await expect(store.updateCustomTeam(id, { name: "" })).rejects.toThrow(
@@ -270,10 +276,17 @@ describe("updateCustomTeam", () => {
     );
   });
 
-  it("throws when team not found", async () => {
-    await expect(store.updateCustomTeam("ghost", { name: "x" })).rejects.toThrow(
-      "Custom team not found: ghost",
+  it("throws when renaming to a name already used by another team (case-insensitive)", async () => {
+    await store.createCustomTeam(makeInput({ name: "Alpha" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Beta" }));
+    await expect(store.updateCustomTeam(id2, { name: "alpha" })).rejects.toThrow(
+      'A team named "Alpha" already exists',
     );
+  });
+
+  it("allows renaming a team to its own current name (no false duplicate error)", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Gamma" }));
+    await expect(store.updateCustomTeam(id, { name: "Gamma" })).resolves.toBeUndefined();
   });
 
   it("updates optional fields", async () => {
@@ -486,5 +499,162 @@ describe("importCustomTeams", () => {
     expect(typeof result.remapped).toBe("number");
     expect(typeof result.skipped).toBe("number");
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
+  });
+});
+
+describe("exportPlayer", () => {
+  it("returns a valid signed player JSON string", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Export Test Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_export", name: "Jane Doe" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json = await store.exportPlayer(id, "p_export");
+    const parsed = JSON.parse(json) as { type: string; payload: { player: { name: string } } };
+    expect(parsed.type).toBe("customPlayer");
+    expect(parsed.payload.player.name).toBe("Jane Doe");
+  });
+
+  it("throws when team not found", async () => {
+    await expect(store.exportPlayer("ct_nonexistent", "p_any")).rejects.toThrow("Team not found");
+  });
+
+  it("throws when player not found within the team", async () => {
+    const id = await store.createCustomTeam(makeInput());
+    await expect(store.exportPlayer(id, "p_missing")).rejects.toThrow("Player not found");
+  });
+});
+
+describe("sanitizePlayer — fingerprint storage", () => {
+  it("stores a fingerprint on each player when a team is created", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        roster: {
+          lineup: [makePlayer({ id: "p_fp1", name: "Fingerprint Batter" })],
+          bench: [],
+          pitchers: [
+            makePlayer({
+              id: "p_fp2",
+              name: "Fingerprint Pitcher",
+              role: "pitcher",
+              pitching: { velocity: 85, control: 70, movement: 65 },
+            }),
+          ],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(id);
+    expect(team?.roster.lineup[0].fingerprint).toBeTruthy();
+    expect(team?.roster.pitchers[0].fingerprint).toBeTruthy();
+  });
+
+  it("fingerprint matches buildPlayerSig result", async () => {
+    const { buildPlayerSig } = await import("./customTeamExportImport");
+    const player = makePlayer({ id: "p_sig", name: "Sig Check" });
+    const id = await store.createCustomTeam(
+      makeInput({ roster: { lineup: [player], bench: [], pitchers: [] } }),
+    );
+    const team = await store.getCustomTeam(id);
+    const stored = team?.roster.lineup[0];
+    expect(stored?.fingerprint).toBe(buildPlayerSig(stored!));
+  });
+});
+
+describe("createCustomTeam — name uniqueness", () => {
+  it("throws when creating a team with the same name as an existing team", async () => {
+    await store.createCustomTeam(makeInput({ name: "Duplicate Team" }));
+    await expect(store.createCustomTeam(makeInput({ name: "Duplicate Team" }))).rejects.toThrow(
+      "already exists",
+    );
+  });
+
+  it("is case-insensitive for duplicate name check", async () => {
+    await store.createCustomTeam(makeInput({ name: "Eagles" }));
+    await expect(store.createCustomTeam(makeInput({ name: "eagles" }))).rejects.toThrow(
+      "already exists",
+    );
+    await expect(store.createCustomTeam(makeInput({ name: "EAGLES" }))).rejects.toThrow(
+      "already exists",
+    );
+  });
+
+  it("allows two teams with different names", async () => {
+    const id1 = await store.createCustomTeam(makeInput({ name: "Hawks" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Falcons" }));
+    expect(id1).not.toBe(id2);
+  });
+});
+
+describe("createCustomTeam — teamSeed", () => {
+  it("sets a non-empty teamSeed on create", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Seeded Team" }));
+    const team = await store.getCustomTeam(id);
+    expect(typeof team?.teamSeed).toBe("string");
+    expect(team!.teamSeed!.length).toBeGreaterThan(0);
+  });
+
+  it("generates a unique teamSeed for each team", async () => {
+    const id1 = await store.createCustomTeam(makeInput({ name: "Seed Team 1" }));
+    const id2 = await store.createCustomTeam(makeInput({ name: "Seed Team 2" }));
+    const t1 = await store.getCustomTeam(id1);
+    const t2 = await store.getCustomTeam(id2);
+    expect(t1?.teamSeed).not.toBe(t2?.teamSeed);
+  });
+});
+
+describe("createCustomTeam — playerSeed", () => {
+  it("sets a non-empty playerSeed on each player when team is created", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Player Seed Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_s1", name: "Seeded Batter" })],
+          bench: [],
+          pitchers: [
+            makePlayer({
+              id: "p_s2",
+              name: "Seeded Pitcher",
+              role: "pitcher",
+              pitching: { velocity: 80, control: 70, movement: 65 },
+            }),
+          ],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(id);
+    const batter = team?.roster.lineup[0];
+    const pitcher = team?.roster.pitchers[0];
+    expect(typeof batter?.playerSeed).toBe("string");
+    expect(batter!.playerSeed!.length).toBeGreaterThan(0);
+    expect(typeof pitcher?.playerSeed).toBe("string");
+    expect(pitcher!.playerSeed!.length).toBeGreaterThan(0);
+  });
+});
+
+describe("updateCustomTeam — teamSeed preservation", () => {
+  it("preserves the original teamSeed after name update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Preserve Seed" }));
+    const before = await store.getCustomTeam(id);
+    const originalSeed = before?.teamSeed;
+    expect(originalSeed).toBeTruthy();
+
+    await store.updateCustomTeam(id, { name: "Preserve Seed Renamed" });
+    const after = await store.getCustomTeam(id);
+    expect(after?.teamSeed).toBe(originalSeed);
+  });
+
+  it("preserves the original teamSeed after metadata-only update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Meta Seed Team" }));
+    const before = await store.getCustomTeam(id);
+    const originalSeed = before?.teamSeed;
+
+    await store.updateCustomTeam(id, { metadata: { notes: "updated notes" } });
+    const after = await store.getCustomTeam(id);
+    expect(after?.teamSeed).toBe(originalSeed);
   });
 });

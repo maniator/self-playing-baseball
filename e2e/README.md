@@ -107,10 +107,22 @@ inside `e2e/tests/visual/` or a new subdirectory.
 | `manager-mode.spec.ts` | Manager Mode toggle, strategy selector, decision panel action |
 | `notifications.spec.ts` | Notification permission + decision panel trigger (Chromium only) |
 | `responsive-smoke.spec.ts` | Layout visible and non-zero on all 6 viewport projects |
+| `custom-team-editor.spec.ts` | Team editor form interactions, drag-and-drop handles (desktop) |
+| `custom-team-editor-mobile-and-regressions.spec.ts` | Mobile team editor regressions |
+| `manage-teams-and-custom-game-flow.spec.ts` | Full Create/Edit/Delete team + start custom game |
+| `import-export-teams.spec.ts` | Export all teams / per-team, import round-trip, legacy-file import, tamper detection, duplicate skip |
+| `import-save-missing-teams.spec.ts` | Save import where the referenced custom teams are absent |
+| `stats.spec.ts` | Live batting stats + hit log correctness |
+| `batting-stats.spec.ts` | Stat-budget regression |
+| `stat-budget.spec.ts` | Stat-budget smoke |
+| `starting-pitcher-selection.spec.ts` | Custom-game starting pitcher selector |
+| `substitution.spec.ts` | Pinch hitter substitution flow |
+| `qa-regression.spec.ts` | Miscellaneous QA regression tests |
 | `visual/home-and-dialogs.visual.spec.ts` | Home screen, New Game dialog, How to Play modal |
 | `visual/game-ui.visual.spec.ts` | Scoreboard, team tab bar, player stats panel, saves modal |
 | `visual/team-editor.visual.spec.ts` | Manage Teams, Create/Edit Team editors, pitcher selector |
 | `visual/manager-decision.visual.spec.ts` | Manager decision panel, pinch hitter dropdown |
+| `visual/teams-import-export.visual.spec.ts` | Teams import/export UI snapshots |
 
 ### Fixtures (`e2e/fixtures/`)
 
@@ -120,8 +132,11 @@ Pre-crafted save files for tests that need a specific game state immediately:
 |---|---|
 | `sample-save.json` | Inning 2, no pending decision |
 | `pending-decision.json` | Inning 4, defensive_shift pending |
-| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending with candidates |
+| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending with candidates (default teams) |
+| `pending-decision-pinch-hitter-teams.json` | Inning 7, pinch_hitter pending with custom teams + player sigs |
 | `mid-game-with-rbi.json` | Inning 5, 3–2 score with RBI entries |
+| `finished-game.json` | Completed game, FINAL banner |
+| `legacy-teams-no-fingerprints.json` | Pre-v2 teams export bundle (no player fingerprints) — used for migration regression |
 
 Use `loadFixture(page, "filename.json")` to load a fixture in a test.  The helper
 navigates to `/`, opens the Saves modal, imports the file, and waits for the game state
@@ -153,17 +168,28 @@ to restore — all in one call, typically under 15 s.
 | `importSaveFromFixture(page, name)` | Set fixture file on the file input |
 | `assertFieldAndLogVisible(page)` | Assert field-view and scoreboard are visible with non-zero bounding boxes |
 | `disableAnimations(page)` | Inject CSS to zero all animation/transition durations |
+| `computeTeamsSignature(page, payload)` | Evaluate `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))` in-browser |
+| `importTeamsFixture(page, fixtureName)` | Navigate to `/teams`, import file, wait for `import-teams-success` |
 
 ### `data-testid` reference
 
 All stable test selectors used across the suite:
 
-`new-game-dialog`, `play-ball-button`, `matchup-mode-select`, `home-team-select`,
-`away-team-select`, `seed-input`, `scoreboard`, `field-view`, `play-by-play-log`,
-`log-panel`, `hit-log`, `saves-button`, `saves-modal`, `save-game-button`,
-`load-save-button`, `export-save-button`, `import-save-file-input`,
-`import-save-textarea`, `import-save-button`, `import-error`,
-`manager-mode-toggle`, `manager-decision-panel`, `notif-permission-badge`, `slot-date`
+**Home screen:** `home-screen`, `home-new-game-button`, `home-resume-current-game-button`, `home-load-saves-button`, `home-manage-teams-button`, `home-help-button`
+
+**Exhibition Setup page (`/exhibition/new`):** `exhibition-setup-page`, `new-game-back-home-button`, `new-game-mlb-teams-tab`, `new-game-custom-teams-tab`, `matchup-mode-select`, `home-team-select`, `away-team-select`, `seed-input`, `play-ball-button`, `team-validation-error`, `starting-pitcher-select`
+
+**Saves page (`/saves`):** `saves-page`, `saves-page-back-button`, `saves-list`, `saves-list-item`, `saves-page-empty`, `load-save-button`, `export-save-button`, `delete-save-button`, `import-save-file-input`, `import-error`, `slot-date`
+
+**Help page (`/help`):** `help-page`, `help-page-back-button`
+
+**Manage Teams (`/teams`, `/teams/new`, `/teams/:id/edit`):** `manage-teams-screen`, `manage-teams-back-button`, `manage-teams-create-button`, `custom-team-list`, `custom-team-list-item`, `custom-team-edit-button`, `custom-team-delete-button`, `manage-teams-editor-shell`, `manage-teams-editor-back-button`, `export-all-teams-button`, `export-team-button`, `import-teams-file-input`, `import-teams-success`, `import-teams-error`, `teams-duplicate-banner`, `teams-duplicate-confirm-button`, `teams-duplicate-cancel-button`
+
+**Custom Team Editor:** `custom-team-lineup-section`, `custom-team-bench-section`, `custom-team-pitchers-section`, `custom-team-name-input`, `custom-team-abbreviation-input`, `custom-team-city-input`, `custom-team-regenerate-defaults-button`, `custom-team-save-button`, `custom-team-cancel-button`, `custom-team-add-lineup-player-button`, `custom-team-add-bench-player-button`, `custom-team-add-pitcher-button`, `custom-team-player-position-select`, `custom-team-player-handedness-select`, `custom-team-editor-error-summary`, `custom-team-save-error-hint`, `export-player-button`, `import-lineup-player-input`, `import-bench-player-input`, `import-pitchers-player-input`, `player-import-lineup-duplicate-banner`, `player-import-lineup-confirm-button`, `player-import-bench-duplicate-banner`, `player-import-bench-confirm-button`, `player-import-pitchers-duplicate-banner`, `player-import-pitchers-confirm-button`, `lineup-bench-dnd-container`
+
+**In-game controls:** `saves-button`, `saves-modal`, `saves-modal-close-button`, `save-game-button`, `import-save-textarea`, `import-save-button`, `back-to-home-button`
+
+**Game view:** `new-game-dialog`, `scoreboard`, `field-view`, `play-by-play-log`, `log-panel`, `hit-log`, `manager-mode-toggle`, `manager-decision-panel`, `db-reset-notice`
 
 ## Common causes of flake and how the helpers avoid them
 

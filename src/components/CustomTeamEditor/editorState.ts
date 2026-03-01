@@ -1,5 +1,6 @@
 import type { CustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
 
+import { generateSeed } from "@storage/generateId";
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import { DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS } from "./playerConstants";
@@ -21,6 +22,12 @@ export interface EditorPlayer {
   movement?: number;
   /** Pitcher role eligibility. Only meaningful for pitchers. */
   pitchingRole?: "SP" | "RP" | "SP/RP";
+  /**
+   * Preserved from the DB / export bundle so that `sanitizePlayer` reuses the
+   * same seed and produces the same fingerprint after a round-trip through the
+   * editor.  Absent for brand-new players (sanitizePlayer generates a fresh one).
+   */
+  playerSeed?: string;
 }
 
 export interface EditorState {
@@ -49,6 +56,14 @@ export type EditorAction =
   | { type: "MOVE_DOWN"; section: "lineup" | "bench" | "pitchers"; index: number }
   /** Reorder section by new ordered list of player IDs (used by DnD drag-end). */
   | { type: "REORDER"; section: "lineup" | "bench" | "pitchers"; orderedIds: string[] }
+  /** Move a player from one section (lineup/bench) to the other at a given index. */
+  | {
+      type: "TRANSFER_PLAYER";
+      fromSection: "lineup" | "bench";
+      toSection: "lineup" | "bench";
+      playerId: string;
+      toIndex: number;
+    }
   | { type: "APPLY_DRAFT"; draft: CustomTeamDraft }
   | { type: "SET_ERROR"; error: string };
 
@@ -85,6 +100,15 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         return p ? [p] : [];
       });
       return { ...state, [action.section]: reordered };
+    }
+    case "TRANSFER_PLAYER": {
+      const player = state[action.fromSection].find((p) => p.id === action.playerId);
+      if (!player) return state;
+      const fromList = state[action.fromSection].filter((p) => p.id !== action.playerId);
+      const toList = [...state[action.toSection]];
+      const clampedIndex = Math.max(0, Math.min(action.toIndex, toList.length));
+      toList.splice(clampedIndex, 0, player);
+      return { ...state, [action.fromSection]: fromList, [action.toSection]: toList };
     }
     case "MOVE_UP":
       return {
@@ -129,6 +153,9 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+  // Draft players have no persistent seed yet — assign one now so exports
+  // are stable even before the team is first saved to the DB.
+  playerSeed: generateSeed(),
 });
 
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
@@ -145,6 +172,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+  ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
 });
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
@@ -167,6 +195,25 @@ export function validateEditorState(state: EditorState): string {
   if (state.lineup.length === 0) return "At least 1 lineup player is required.";
   for (const p of [...state.lineup, ...state.bench, ...state.pitchers]) {
     if (!p.name.trim()) return "All players must have a name.";
+  }
+
+  // Enforce unique player names within the team (case-insensitive across all slots).
+  const allPlayersForDup = [...state.lineup, ...state.bench, ...state.pitchers].filter((p) =>
+    p.name.trim(),
+  );
+  const seenNamesMap = new Map<string, string>(); // lowercase → first-seen original-cased name
+  const dupOriginals = new Set<string>();
+  for (const p of allPlayersForDup) {
+    const lower = p.name.trim().toLowerCase();
+    if (seenNamesMap.has(lower)) {
+      dupOriginals.add(seenNamesMap.get(lower)!);
+    } else {
+      seenNamesMap.set(lower, p.name.trim());
+    }
+  }
+  if (dupOriginals.size > 0) {
+    const display = [...dupOriginals].map((n) => `"${n}"`).join(", ");
+    return `Duplicate player name(s) within this team: ${display}. Each player must have a unique name.`;
   }
 
   // Check starting lineup for duplicate or missing required positions.
@@ -242,4 +289,13 @@ const editorToTeamPlayer =
         pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
       }),
     ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
+    ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
   });
+
+/**
+ * Converts a single `EditorPlayer` to a `TeamPlayer` with the given role.
+ * Exported for use in the player-export flow (where we need the role to
+ * correctly populate the pitching fields and compute the player sig).
+ */
+export const editorPlayerToTeamPlayer = (p: EditorPlayer, role: "batter" | "pitcher"): TeamPlayer =>
+  editorToTeamPlayer(role)(p);

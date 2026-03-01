@@ -1,0 +1,185 @@
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2024-01-15T10:05:00.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_legacy_001",
+        "schemaVersion": 1,
+        "createdAt": "2024-01-15T10:00:00.000Z",
+        "updatedAt": "2024-01-15T10:00:00.000Z",
+        "name": "Legacy Lions",
+        "abbreviation": "LGL",
+        "source": "custom",
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "p1",
+              "name": "Alex Rivera",
+              "role": "batter",
+              "position": "C",
+              "handedness": "R",
+              "batting": {
+                "contact": 72,
+                "power": 65,
+                "speed": 55
+              }
+            },
+            {
+              "id": "p2",
+              "name": "Mike Chen",
+              "role": "batter",
+              "position": "1B",
+              "handedness": "R",
+              "batting": {
+                "contact": 68,
+                "power": 78,
+                "speed": 45
+              }
+            },
+            {
+              "id": "p3",
+              "name": "Sam Torres",
+              "role": "batter",
+              "position": "2B",
+              "handedness": "L",
+              "batting": {
+                "contact": 75,
+                "power": 58,
+                "speed": 70
+              }
+            },
+            {
+              "id": "p4",
+              "name": "Jordan Lee",
+              "role": "batter",
+              "position": "3B",
+              "handedness": "R",
+              "batting": {
+                "contact": 70,
+                "power": 72,
+                "speed": 60
+              }
+            },
+            {
+              "id": "p5",
+              "name": "Casey Kim",
+              "role": "batter",
+              "position": "SS",
+              "handedness": "S",
+              "batting": {
+                "contact": 74,
+                "power": 55,
+                "speed": 72
+              }
+            },
+            {
+              "id": "p6",
+              "name": "Dana Patel",
+              "role": "batter",
+              "position": "LF",
+              "handedness": "L",
+              "batting": {
+                "contact": 65,
+                "power": 80,
+                "speed": 58
+              }
+            },
+            {
+              "id": "p7",
+              "name": "Morgan Webb",
+              "role": "batter",
+              "position": "CF",
+              "handedness": "R",
+              "batting": {
+                "contact": 71,
+                "power": 60,
+                "speed": 75
+              }
+            },
+            {
+              "id": "p8",
+              "name": "Riley Quinn",
+              "role": "batter",
+              "position": "RF",
+              "handedness": "R",
+              "batting": {
+                "contact": 69,
+                "power": 74,
+                "speed": 62
+              }
+            },
+            {
+              "id": "p9",
+              "name": "Taylor Brooks",
+              "role": "batter",
+              "position": "DH",
+              "handedness": "L",
+              "batting": {
+                "contact": 66,
+                "power": 82,
+                "speed": 48
+              }
+            }
+          ],
+          "bench": [
+            {
+              "id": "p10",
+              "name": "Drew Sanchez",
+              "role": "batter",
+              "position": "1B",
+              "handedness": "R",
+              "batting": {
+                "contact": 60,
+                "power": 65,
+                "speed": 55
+              }
+            }
+          ],
+          "pitchers": [
+            {
+              "id": "p11",
+              "name": "Ace Nguyen",
+              "role": "pitcher",
+              "handedness": "R",
+              "batting": {
+                "contact": 25,
+                "power": 15,
+                "speed": 30
+              },
+              "pitching": {
+                "velocity": 88,
+                "control": 75,
+                "movement": 70
+              },
+              "pitchingRole": "SP"
+            },
+            {
+              "id": "p12",
+              "name": "Bo Yamamoto",
+              "role": "pitcher",
+              "handedness": "L",
+              "batting": {
+                "contact": 20,
+                "power": 12,
+                "speed": 28
+              },
+              "pitching": {
+                "velocity": 82,
+                "control": 80,
+                "movement": 76
+              },
+              "pitchingRole": "RP"
+            }
+          ]
+        },
+        "metadata": {
+          "archived": false
+        }
+      }
+    ]
+  },
+  "sig": "d453a38d"
+}

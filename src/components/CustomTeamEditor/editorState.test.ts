@@ -688,3 +688,102 @@ describe("editorReducer — additional cases", () => {
     expect(next).toBe(state);
   });
 });
+
+describe("TRANSFER_PLAYER action", () => {
+  it("moves a player from lineup to bench at the given index", () => {
+    const p1 = makePlayer("Alice");
+    const p2 = makePlayer("Bob");
+    const p3 = makePlayer("Charlie");
+    const state = { ...initEditorState(), lineup: [p1, p2], bench: [p3] };
+    const next = editorReducer(state, {
+      type: "TRANSFER_PLAYER",
+      fromSection: "lineup",
+      toSection: "bench",
+      playerId: p1.id,
+      toIndex: 0,
+    });
+    expect(next.lineup.map((p) => p.name)).toEqual(["Bob"]);
+    expect(next.bench.map((p) => p.name)).toEqual(["Alice", "Charlie"]);
+  });
+
+  it("moves a player from bench to lineup at index 0", () => {
+    const p1 = makePlayer("Alice");
+    const p2 = makePlayer("Bob");
+    const state = { ...initEditorState(), lineup: [p1], bench: [p2] };
+    const next = editorReducer(state, {
+      type: "TRANSFER_PLAYER",
+      fromSection: "bench",
+      toSection: "lineup",
+      playerId: p2.id,
+      toIndex: 0,
+    });
+    expect(next.bench).toHaveLength(0);
+    expect(next.lineup.map((p) => p.name)).toEqual(["Bob", "Alice"]);
+  });
+});
+
+describe("validateEditorState — player name uniqueness", () => {
+  const validLineup = [
+    makePlayer("P1", "C"),
+    makePlayer("P2", "1B"),
+    makePlayer("P3", "2B"),
+    makePlayer("P4", "3B"),
+    makePlayer("P5", "SS"),
+    makePlayer("P6", "LF"),
+    makePlayer("P7", "CF"),
+    makePlayer("P8", "RF"),
+    makePlayer("P9", "DH"),
+  ];
+
+  it("rejects duplicate player names within the lineup", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        ...validLineup.slice(0, 8),
+        { ...makePlayer("P1", "DH") }, // duplicate of first player
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("Duplicate player name");
+    expect(err).toContain('"P1"');
+  });
+
+  it("rejects a player name that matches a bench player (cross-slot)", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: validLineup,
+      bench: [{ ...makePlayer("P1", "1B") }], // "P1" is already in lineup
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("Duplicate player name");
+  });
+
+  it("is case-insensitive for player name uniqueness", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: [
+        ...validLineup.slice(0, 8),
+        { ...makePlayer("p1", "DH") }, // lowercase duplicate
+      ],
+    };
+    const err = validateEditorState(state);
+    expect(err).toContain("Duplicate player name");
+  });
+
+  it("accepts a fully unique roster across all slots", () => {
+    const state = {
+      ...initEditorState(),
+      name: "Eagles",
+      abbreviation: "EAG",
+      lineup: validLineup,
+      bench: [makePlayer("Bench Player", "1B")],
+    };
+    expect(validateEditorState(state)).toBe("");
+  });
+});

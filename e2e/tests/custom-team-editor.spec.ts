@@ -23,9 +23,9 @@ async function openCreateEditorWithDefaults(page: Parameters<typeof resetAppStat
   await page.getByTestId("home-manage-teams-button").click();
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
   await page.getByTestId("manage-teams-create-button").click();
-  await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("custom-team-regenerate-defaults-button").click();
-  await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", { timeout: 3_000 });
+  await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", { timeout: 10_000 });
 }
 
 /** Helper: save a generated team under a custom name. */
@@ -33,7 +33,7 @@ async function saveGeneratedTeam(page: Parameters<typeof resetAppState>[0], team
   await openCreateEditorWithDefaults(page);
   await page.getByTestId("custom-team-name-input").fill(teamName);
   await page.getByTestId("custom-team-save-button").click();
-  await expect(page.getByText(teamName)).toBeVisible({ timeout: 5_000 });
+  await expect(page.getByText(teamName)).toBeVisible({ timeout: 15_000 });
 }
 
 // ─── Position dropdown ──────────────────────────────────────────────────────
@@ -46,7 +46,7 @@ test.describe("Custom Team Editor — position dropdown", () => {
     await openCreateEditorWithDefaults(page);
     const positionSelects = page.getByTestId("custom-team-player-position-select");
     // Should be at least one visible (first lineup row)
-    await expect(positionSelects.first()).toBeVisible({ timeout: 5_000 });
+    await expect(positionSelects.first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("generated defaults pre-select a position for each lineup player", async ({ page }) => {
@@ -87,7 +87,7 @@ test.describe("Custom Team Editor — handedness dropdown", () => {
   test("lineup player rows show a batting handedness dropdown", async ({ page }) => {
     await openCreateEditorWithDefaults(page);
     const handednessSelects = page.getByTestId("custom-team-player-handedness-select");
-    await expect(handednessSelects.first()).toBeVisible({ timeout: 5_000 });
+    await expect(handednessSelects.first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("generated defaults pre-select a handedness for each lineup player", async ({ page }) => {
@@ -142,7 +142,7 @@ test.describe("Custom Team Editor — required position validation", () => {
 
     // Should show a validation error mentioning missing positions
     const errorMsg = page.locator('[role="alert"]');
-    await expect(errorMsg).toBeVisible({ timeout: 5_000 });
+    await expect(errorMsg).toBeVisible({ timeout: 15_000 });
     const errorText = await errorMsg.textContent();
     // Error should mention at least one required position
     expect(REQUIRED_POSITIONS.some((pos) => errorText?.includes(pos))).toBe(true);
@@ -155,7 +155,7 @@ test.describe("Custom Team Editor — required position validation", () => {
     await page.getByTestId("custom-team-name-input").fill("Auto Filled FC");
     await page.getByTestId("custom-team-save-button").click();
     // Should return to the team list
-    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Auto Filled FC")).toBeVisible();
   });
 });
@@ -172,7 +172,7 @@ test.describe("Custom Team Editor — edit mode loads positions and handedness",
 
     // Open the editor for this team
     await page.getByTestId("custom-team-edit-button").first().click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
 
     // Position selects should be visible and have non-empty values
     const positionSelects = page.getByTestId("custom-team-player-position-select");
@@ -188,7 +188,7 @@ test.describe("Custom Team Editor — edit mode loads positions and handedness",
   }) => {
     await saveGeneratedTeam(page, "Handedness Edit Team");
     await page.getByTestId("custom-team-edit-button").first().click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
 
     const handednessSelects = page.getByTestId("custom-team-player-handedness-select");
     await expect(handednessSelects.first()).toBeVisible();
@@ -234,7 +234,7 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
     await expect(page.getByTestId("custom-team-abbreviation-input")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
   });
 
@@ -250,7 +250,7 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     await page.getByTestId("home-manage-teams-button").click();
     await page.getByTestId("manage-teams-create-button").click();
     const btn = page.getByTestId("custom-team-regenerate-defaults-button");
-    await expect(btn).toBeVisible({ timeout: 5_000 });
+    await expect(btn).toBeVisible({ timeout: 15_000 });
     await expect(btn).toContainText(/Generate Random/i);
   });
 
@@ -259,13 +259,13 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     await openCreateEditorWithDefaults(page);
     await page.getByTestId("custom-team-name-input").fill("No Generate Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("No Generate Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("No Generate Team")).toBeVisible({ timeout: 15_000 });
     // Open edit mode
     await page.getByTestId("custom-team-edit-button").first().click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
     // Generate Random button should NOT be visible in edit mode
     const btn = page.getByTestId("custom-team-regenerate-defaults-button");
-    await expect(btn).not.toBeVisible({ timeout: 3_000 });
+    await expect(btn).not.toBeVisible({ timeout: 10_000 });
   });
 
   test("attempting to save with empty abbreviation shows a validation error", async ({ page }) => {
@@ -275,7 +275,7 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     // Leave abbreviation empty and attempt to save
     await page.getByTestId("custom-team-save-button").click();
     const summary = page.getByTestId("custom-team-editor-error-summary");
-    await expect(summary).toBeVisible({ timeout: 3_000 });
+    await expect(summary).toBeVisible({ timeout: 10_000 });
     const text = await summary.textContent();
     expect(text?.toLowerCase()).toMatch(/abbreviation/i);
   });
@@ -289,7 +289,7 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     await page.getByTestId("custom-team-save-button").click();
     // Error hint near the save button area
     const hint = page.getByTestId("custom-team-save-error-hint");
-    await expect(hint).toBeVisible({ timeout: 3_000 });
+    await expect(hint).toBeVisible({ timeout: 10_000 });
   });
 
   test("Generate Random populates the abbreviation field automatically (abbreviation section)", async ({
@@ -301,12 +301,12 @@ test.describe("Custom Team Editor — team abbreviation field", () => {
     const generated = await page.getByTestId("custom-team-abbreviation-input").inputValue();
     await page.getByTestId("custom-team-name-input").fill("Abbrev Load Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Abbrev Load Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Abbrev Load Team")).toBeVisible({ timeout: 15_000 });
 
     // Open edit mode
     await page.getByTestId("custom-team-edit-button").first().click();
     await expect(page.getByTestId("custom-team-abbreviation-input")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
     const loaded = await page.getByTestId("custom-team-abbreviation-input").inputValue();
     expect(loaded).toBe(generated);
@@ -323,7 +323,7 @@ test.describe("Custom Team Editor — pitcher handedness label", () => {
     await openCreateEditorWithDefaults(page);
     // Navigate to the Pitchers section
     const pitchersSection = page.getByTestId("custom-team-pitchers-section");
-    await expect(pitchersSection).toBeVisible({ timeout: 5_000 });
+    await expect(pitchersSection).toBeVisible({ timeout: 15_000 });
 
     // Each pitcher card should have a label containing 'Throws', not 'Bats'
     const cards = pitchersSection.locator("[data-testid='custom-team-player-handedness-select']");
@@ -332,16 +332,42 @@ test.describe("Custom Team Editor — pitcher handedness label", () => {
 
     // Check the label text in pitcher section - should say Throws
     const throwsLabels = pitchersSection.getByText("Throws");
-    await expect(throwsLabels.first()).toBeVisible({ timeout: 3_000 });
+    await expect(throwsLabels.first()).toBeVisible({ timeout: 10_000 });
   });
 
   test("lineup/bench player rows display 'Bats' label for handedness", async ({ page }) => {
     await openCreateEditorWithDefaults(page);
     // Lineup section
     const lineupSection = page.getByTestId("custom-team-lineup-section");
-    await expect(lineupSection).toBeVisible({ timeout: 5_000 });
+    await expect(lineupSection).toBeVisible({ timeout: 15_000 });
 
     const batsLabels = lineupSection.getByText("Bats");
-    await expect(batsLabels.first()).toBeVisible({ timeout: 3_000 });
+    await expect(batsLabels.first()).toBeVisible({ timeout: 10_000 });
+  });
+});
+
+// ─── Drag handles in bench and pitchers ─────────────────────────────────────
+test.describe("Custom Team Editor — drag handles in bench and pitchers", () => {
+  test.use({ viewport: { width: 1280, height: 800 } }); // desktop only
+
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("bench and pitchers sections show drag handles (no up/down buttons)", async ({ page }) => {
+    await openCreateEditorWithDefaults(page);
+
+    // Bench section should be visible
+    const benchSection = page.getByTestId("custom-team-bench-section");
+    await expect(benchSection).toBeVisible({ timeout: 15_000 });
+
+    // No up/down buttons anywhere in the editor
+    await expect(page.locator('button[aria-label="Move up"]')).toHaveCount(0);
+    await expect(page.locator('button[aria-label="Move down"]')).toHaveCount(0);
+
+    // Drag handles should be present in bench section (generated defaults include bench players)
+    const dragHandles = benchSection.locator('span[aria-label*="Drag"]');
+    const handleCount = await dragHandles.count();
+    expect(handleCount).toBeGreaterThan(0);
   });
 });

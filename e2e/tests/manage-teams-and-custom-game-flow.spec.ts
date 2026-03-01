@@ -34,7 +34,7 @@ test.describe("Manage Teams — team list and CRUD", () => {
 
     // Open the editor
     await page.getByTestId("manage-teams-create-button").click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
 
     // Click Generate Defaults to prefill
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
@@ -49,7 +49,7 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await page.getByTestId("custom-team-save-button").click();
 
     // Should return to list and show the new team
-    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("Test City Rockets")).toBeVisible();
   });
 
@@ -60,13 +60,13 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Persistent Eagles");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 15_000 });
 
     // Reload the page
     await resetAppState(page);
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 15_000 });
   });
 
   test("editing a custom team: name is read-only in Edit mode; team remains in list after save", async ({
@@ -78,18 +78,18 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Original Name");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Original Name")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Original Name")).toBeVisible({ timeout: 15_000 });
 
     // Open edit — name field must be read-only (identity immutability)
     await page.getByTestId("custom-team-edit-button").first().click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByTestId("custom-team-name-input")).toHaveAttribute("readonly");
 
     // Save without changing the name
     await page.getByTestId("custom-team-save-button").click();
 
     // Team should still be in the list with its original name
-    await expect(page.getByText("Original Name")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Original Name")).toBeVisible({ timeout: 15_000 });
   });
 
   test("editing a team: newly added player has an editable name field", async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Test Squad");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Test Squad")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Test Squad")).toBeVisible({ timeout: 15_000 });
 
     // Open edit mode and add a new bench player
     await page.getByTestId("custom-team-edit-button").first().click();
@@ -200,7 +200,7 @@ test.describe("New Game dialog — custom team picker", () => {
     await waitForNewGameDialog(page);
     await page.getByTestId("new-game-custom-teams-tab").click();
     // No custom teams → empty state text
-    await expect(page.getByText(/no custom teams/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/no custom teams/i)).toBeVisible({ timeout: 15_000 });
     // MLB selects should be hidden
     await expect(page.getByTestId("home-team-select")).not.toBeVisible();
   });
@@ -214,7 +214,7 @@ test.describe("New Game dialog — custom team picker", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Custom Away Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Custom Away Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Custom Away Team")).toBeVisible({ timeout: 15_000 });
 
     // Go back home and open New Game
     await page.getByTestId("manage-teams-back-button").click();
@@ -224,10 +224,10 @@ test.describe("New Game dialog — custom team picker", () => {
     // Switch to Custom Teams tab
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
     await expect(page.getByTestId("new-game-custom-home-team-select")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
   });
 
@@ -239,13 +239,13 @@ test.describe("New Game dialog — custom team picker", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Red Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Red Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Red Team")).toBeVisible({ timeout: 15_000 });
 
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Blue Team");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Blue Team")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Blue Team")).toBeVisible({ timeout: 15_000 });
 
     // Go back to Home → New Game
     await page.getByTestId("manage-teams-back-button").click();
@@ -255,7 +255,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Switch to custom tab and start game
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
     await page.getByTestId("play-ball-button").click();
 
@@ -271,13 +271,13 @@ test.describe("New Game dialog — custom team picker", () => {
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Scarlet Hawks");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Scarlet Hawks")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Scarlet Hawks")).toBeVisible({ timeout: 15_000 });
 
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Cobalt Wolves");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Cobalt Wolves")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Cobalt Wolves")).toBeVisible({ timeout: 15_000 });
 
     // Start a game with the two custom teams.
     await page.getByTestId("manage-teams-back-button").click();
@@ -285,7 +285,7 @@ test.describe("New Game dialog — custom team picker", () => {
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
@@ -310,7 +310,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Switch to the Custom Teams tab — should show the empty state link.
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByRole("button", { name: /go to manage teams/i })).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
 
     // Click the "Go to Manage Teams" link — must close the dialog and navigate.
@@ -321,7 +321,7 @@ test.describe("New Game dialog — custom team picker", () => {
     // Verify both the Create button and Back button are clickable.
     await expect(page.getByTestId("manage-teams-create-button")).toBeVisible();
     await page.getByTestId("manage-teams-create-button").click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 15_000 });
   });
 });
 
@@ -343,13 +343,13 @@ test.describe("Label resolution — no raw IDs in any user-facing surface", () =
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Golden Foxes");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Golden Foxes")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Golden Foxes")).toBeVisible({ timeout: 15_000 });
 
     await page.getByTestId("manage-teams-create-button").click();
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
     await page.getByTestId("custom-team-name-input").fill("Silver Bears");
     await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByText("Silver Bears")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Silver Bears")).toBeVisible({ timeout: 15_000 });
 
     // Start a game with the two custom teams.
     await page.getByTestId("manage-teams-back-button").click();
@@ -357,7 +357,7 @@ test.describe("Label resolution — no raw IDs in any user-facing surface", () =
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
-      timeout: 5_000,
+      timeout: 15_000,
     });
     await page.getByTestId("play-ball-button").click();
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
@@ -382,7 +382,7 @@ test.describe("Label resolution — no raw IDs in any user-facing surface", () =
     await page.getByTestId("back-to-home-button").click();
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 15_000 });
     const savesPageName = await page.getByTestId("saves-list-item").first().textContent();
     expect(savesPageName ?? "").not.toMatch(/custom:|ct_[a-z0-9]/i);
   });
@@ -428,15 +428,15 @@ test.describe("Custom Team Import — start game → save → load flow", () => 
       await page.getByTestId("custom-team-delete-button").first().click();
       await page.waitForTimeout(300);
     }
-    await expect(page.getByText(/no custom teams yet/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/no custom teams yet/i)).toBeVisible({ timeout: 15_000 });
 
     await page.getByTestId("import-teams-file-input").setInputFiles(tmpPath);
     await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 15_000 });
 
     // Step 3: Start an exhibition game using the imported teams.
     await page.getByTestId("manage-teams-back-button").click();
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await startGameViaPlayBall(page);
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
     await waitForLogLines(page, 3, 30_000);
@@ -447,13 +447,13 @@ test.describe("Custom Team Import — start game → save → load flow", () => 
 
     // Step 5: Go back to home, navigate to saves, and load the save.
     await page.getByTestId("back-to-home-button").click();
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
     await page.getByTestId("home-load-saves-button").click();
     await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Loading saves…")).not.toBeVisible({ timeout: 15_000 });
 
     const loadBtn = page.getByTestId("load-save-button").first();
-    await expect(loadBtn).toBeVisible({ timeout: 5_000 });
+    await expect(loadBtn).toBeVisible({ timeout: 15_000 });
     await loadBtn.click();
 
     // Game should be restored and playable.

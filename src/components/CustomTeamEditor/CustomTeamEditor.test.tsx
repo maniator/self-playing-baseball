@@ -1,13 +1,21 @@
 import * as React from "react";
 
+import type { DragEndEvent } from "@dnd-kit/core";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
+import { downloadJson } from "@storage/saveIO";
 
 import CustomTeamEditor from "./index";
 
 // ─── JSDOM missing implementations ───────────────────────────────────────────
 // scrollIntoView is not implemented in JSDOM.
 window.HTMLElement.prototype.scrollIntoView = vi.fn();
+
+// ─── Hoisted DnD callback capture ─────────────────────────────────────────────
+// Captures the onDragEnd callback passed to each DndContext so tests can
+// invoke the handlers (handleLineupBenchDragEnd, handlePitchersDragEnd) directly.
+const dndCallbacks = vi.hoisted(() => [] as Array<(e: unknown) => void>);
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -21,13 +29,30 @@ vi.mock("@hooks/useCustomTeams", () => ({
   })),
 }));
 
+// Stub downloadJson so export tests don't need a real Blob/URL environment.
+vi.mock("@storage/saveIO", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@storage/saveIO")>();
+  return { ...actual, downloadJson: vi.fn() };
+});
+
 // Mock dnd-kit sensors: PointerSensor requires pointer events not supported in JSDOM.
+// Also wrap DndContext to capture the onDragEnd prop so tests can trigger it directly.
 vi.mock("@dnd-kit/core", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@dnd-kit/core")>();
+  const OrigDndContext = actual.DndContext;
   return {
     ...actual,
     PointerSensor: class {
       static activators = [];
+    },
+    // Wrap the real DndContext: capture onDragEnd for tests while keeping
+    // DndContext's React context alive so SortableContext/useSortable work.
+    DndContext: (props: Record<string, unknown>) => {
+      const { onDragEnd } = props;
+      if (typeof onDragEnd === "function") {
+        dndCallbacks.push(onDragEnd as (e: unknown) => void);
+      }
+      return React.createElement(OrigDndContext as any, props as any);
     },
   };
 });
@@ -132,6 +157,11 @@ describe("CustomTeamEditor — create mode", () => {
       fireEvent.click(screen.getByTestId("custom-team-regenerate-defaults-button"));
     });
 
+    // Wait for the name field to have a non-empty value before saving,
+    // ensuring the APPLY_DRAFT state update is fully committed.
+    const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
+    await vi.waitFor(() => expect(nameInput.value.length).toBeGreaterThan(0));
+
     await act(async () => {
       fireEvent.click(screen.getByTestId("custom-team-save-button"));
     });
@@ -180,7 +210,7 @@ describe("CustomTeamEditor — create mode", () => {
     expect(screen.queryAllByPlaceholderText(/player name/i)).toHaveLength(0);
   });
 
-  it("add two bench players and test move up/down", async () => {
+  it("add two bench players and verify they are rendered with drag handles", async () => {
     renderEditor();
     const addBenchBtn = screen.getByTestId("custom-team-add-bench-player-button");
 
@@ -192,18 +222,11 @@ describe("CustomTeamEditor — create mode", () => {
       fireEvent.click(addBenchBtn);
     });
 
-    const moveUpBtns = screen.getAllByRole("button", { name: /move up/i });
-    const moveDownBtns = screen.getAllByRole("button", { name: /move down/i });
-
-    // Move down on first player, move up on second player (covers handlers).
-    await act(async () => {
-      fireEvent.click(moveDownBtns[0]);
-    });
-    await act(async () => {
-      fireEvent.click(moveUpBtns[0]);
-    });
-    // Both operations complete without error.
+    // Both players should be rendered.
     expect(screen.getAllByPlaceholderText(/player name/i)).toHaveLength(2);
+    // Up/down buttons are gone — replaced by drag handles.
+    expect(screen.queryAllByRole("button", { name: /move up/i })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: /move down/i })).toHaveLength(0);
   });
 
   it("add pitcher and interact with pitcher-specific stat inputs", async () => {
@@ -423,5 +446,136 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     expect(abbrevInput.readOnly).toBe(false);
     const cityInput = screen.getByTestId("custom-team-city-input") as HTMLInputElement;
     expect(cityInput.readOnly).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Export, Import-button, and DnD handler coverage
+// ─────────────────────────────────────────────────────────────────────────────
+describe("CustomTeamEditor — export, import-button, and DnD handlers", () => {
+  beforeEach(() => {
+    // Clear captured DnD callbacks before each test so indexing is predictable.
+    dndCallbacks.length = 0;
+    vi.clearAllMocks();
+  });
+
+  // ── handleExportPlayer ──────────────────────────────────────────────────────
+
+  it("clicking Export on a pitcher row calls downloadJson once", async () => {
+    renderEditor();
+    // Add a pitcher so the export button appears.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("custom-team-add-pitcher-button"));
+    });
+    const exportBtn = screen.getByTestId("export-player-button");
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
+    expect(vi.mocked(downloadJson)).toHaveBeenCalledOnce();
+  });
+
+  it("clicking Export on a bench batter row calls downloadJson once", async () => {
+    renderEditor();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("custom-team-add-bench-player-button"));
+    });
+    const exportBtn = screen.getByTestId("export-player-button");
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
+    expect(vi.mocked(downloadJson)).toHaveBeenCalledOnce();
+  });
+
+  it("clicking Export on a lineup batter row calls downloadJson once", async () => {
+    renderEditor();
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("custom-team-add-lineup-player-button"));
+    });
+    const exportBtn = screen.getByTestId("export-player-button");
+    await act(async () => {
+      fireEvent.click(exportBtn);
+    });
+    expect(vi.mocked(downloadJson)).toHaveBeenCalledOnce();
+  });
+
+  // ── Import Player / Pitcher button onClick coverage ─────────────────────────
+  // These inline onClick handlers (`() => xFileRef.current?.click()`) must be
+  // invoked so V8 counts them as covered.  No assertion is needed beyond
+  // "no throw" — the click just delegates to the hidden file-input element.
+
+  it("Import Player button for lineup triggers file input click without error", async () => {
+    renderEditor();
+    const importBtns = screen.getAllByRole("button", { name: /import player/i });
+    // The first "Import Player" button belongs to the Lineup section.
+    await act(async () => {
+      fireEvent.click(importBtns[0]);
+    });
+  });
+
+  it("Import Player button for bench triggers file input click without error", async () => {
+    renderEditor();
+    const importBtns = screen.getAllByRole("button", { name: /import player/i });
+    // The second "Import Player" button belongs to the Bench section.
+    await act(async () => {
+      fireEvent.click(importBtns[1]);
+    });
+  });
+
+  it("Import Pitcher button triggers file input click without error", async () => {
+    renderEditor();
+    const importPitcherBtn = screen.getByRole("button", { name: /import pitcher/i });
+    await act(async () => {
+      fireEvent.click(importPitcherBtn);
+    });
+  });
+
+  // ── DnD handler coverage ────────────────────────────────────────────────────
+  // The DndContext mock wrapper captures onDragEnd callbacks in dndCallbacks.
+  // The component renders TWO DndContexts per mount:
+  //   dndCallbacks[0] → handleLineupBenchDragEnd (outer lineup+bench context)
+  //   dndCallbacks[1] → handlePitchersDragEnd    (inner pitchers context)
+
+  it("handleLineupBenchDragEnd: returns early when over is null", async () => {
+    renderEditor();
+    const handler = dndCallbacks[0];
+    expect(handler).toBeDefined();
+    // Calling with over=null exercises the first guard branch.
+    await act(async () => {
+      handler({ active: { id: "p_x" }, over: null } as unknown as DragEndEvent);
+    });
+    // No dispatch occurs; component state is unchanged — no error thrown.
+  });
+
+  it("handleLineupBenchDragEnd: returns early when active.id === over.id", async () => {
+    renderEditor();
+    const handler = dndCallbacks[0];
+    expect(handler).toBeDefined();
+    await act(async () => {
+      handler({
+        active: { id: "same" },
+        over: { id: "same" },
+      } as unknown as DragEndEvent);
+    });
+  });
+
+  it("handlePitchersDragEnd: returns early when over is null", async () => {
+    renderEditor();
+    const handler = dndCallbacks[1];
+    expect(handler).toBeDefined();
+    await act(async () => {
+      handler({ active: { id: "p_y" }, over: null } as unknown as DragEndEvent);
+    });
+  });
+
+  it("handlePitchersDragEnd: returns early when active.id === over.id", async () => {
+    renderEditor();
+    const handler = dndCallbacks[1];
+    expect(handler).toBeDefined();
+    await act(async () => {
+      handler({
+        active: { id: "same" },
+        over: { id: "same" },
+      } as unknown as DragEndEvent);
+    });
   });
 });

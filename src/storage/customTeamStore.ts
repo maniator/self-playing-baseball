@@ -1,11 +1,14 @@
 import {
+  buildPlayerSig,
   buildTeamFingerprint,
+  exportCustomPlayer as exportCustomPlayerJson,
   exportCustomTeams as exportCustomTeamsJson,
   importCustomTeams as importCustomTeamsParser,
+  type ImportCustomTeamsOptions,
   type ImportCustomTeamsResult,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
-import { generateTeamId } from "./generateId";
+import { generateSeed, generateTeamId } from "./generateId";
 import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
@@ -54,7 +57,7 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
   if (!player.batting || typeof player.batting !== "object") {
     throw new Error(`roster player[${index}].batting is required`);
   }
-  return {
+  const sanitized: TeamPlayer = {
     ...player,
     name,
     batting: {
@@ -76,6 +79,14 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
       },
     }),
   };
+  // Preserve the existing playerSeed or generate a new one at creation time.
+  // The seed is stored permanently so the fingerprint can be re-verified.
+  const playerSeed = player.playerSeed ?? generateSeed();
+  // Always persist a content fingerprint so global duplicate detection works
+  // without re-reading all teams. The fingerprint covers the immutable identity
+  // fields (name, role, batting, pitching) plus the per-player seed.
+  const fingerprint = buildPlayerSig({ ...sanitized, playerSeed });
+  return { ...sanitized, playerSeed, fingerprint };
 }
 
 function buildRoster(input: CreateCustomTeamInput["roster"]): TeamRoster {
@@ -113,22 +124,35 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Creates a new custom team.
+     * Throws if a team with the same name (case-insensitive) already exists
+     * to ensure team names remain unique within the local install.
      * @returns The generated team id.
      */
     async createCustomTeam(input: CreateCustomTeamInput, meta?: { id?: string }): Promise<string> {
       const name = requireNonEmpty(input.name, "name");
+
+      // Enforce unique team names (case-insensitive) across the local install.
+      const existing = await this.listCustomTeams({ includeArchived: true });
+      const nameLower = name.toLowerCase();
+      const duplicate = existing.find((t) => t.name.toLowerCase() === nameLower);
+      if (duplicate) {
+        throw new Error(
+          `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+        );
+      }
       const roster = buildRoster(input.roster);
       const now = new Date().toISOString();
       const id = meta?.id ?? generateTeamId();
+      const teamSeed = generateSeed();
+      const sanitizedAbbrev =
+        input.abbreviation !== undefined ? sanitizeAbbreviation(input.abbreviation) : undefined;
       const doc: CustomTeamDoc = {
         id,
         schemaVersion: SCHEMA_VERSION,
         createdAt: now,
         updatedAt: now,
         name,
-        ...(input.abbreviation !== undefined && {
-          abbreviation: sanitizeAbbreviation(input.abbreviation),
-        }),
+        ...(sanitizedAbbrev !== undefined && { abbreviation: sanitizedAbbrev }),
         ...(input.nickname !== undefined && { nickname: input.nickname }),
         ...(input.city !== undefined && { city: input.city }),
         ...(input.slug !== undefined && { slug: input.slug }),
@@ -140,6 +164,7 @@ function buildStore(getDbFn: GetDb) {
           archived: input.metadata?.archived ?? false,
         },
         ...(input.statsProfile !== undefined && { statsProfile: input.statsProfile }),
+        teamSeed,
       };
       doc.fingerprint = buildTeamFingerprint(doc);
       const db = await getDbFn();
@@ -160,7 +185,19 @@ function buildStore(getDbFn: GetDb) {
         updatedAt: new Date().toISOString(),
       };
 
-      if (updates.name !== undefined) patch.name = requireNonEmpty(updates.name, "name");
+      if (updates.name !== undefined) {
+        const newName = requireNonEmpty(updates.name, "name");
+        // Enforce unique team names (case-insensitive), excluding the current team.
+        const existing = await this.listCustomTeams({ includeArchived: true });
+        const nameLower = newName.toLowerCase();
+        const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
+        if (duplicate) {
+          throw new Error(
+            `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+          );
+        }
+        patch.name = newName;
+      }
       if (updates.abbreviation !== undefined)
         patch.abbreviation = sanitizeAbbreviation(updates.abbreviation);
       if (updates.nickname !== undefined) patch.nickname = updates.nickname;
@@ -182,19 +219,16 @@ function buildStore(getDbFn: GetDb) {
         patch.metadata = { ...currentMeta, ...updates.metadata } as CustomTeamMetadata;
       }
 
-      // Recompute fingerprint if any identity field changed.
-      if (
-        updates.name !== undefined ||
-        updates.abbreviation !== undefined ||
-        updates.roster !== undefined
-      ) {
+      // Recompute fingerprint only when identity fields (name or abbreviation) change.
+      // roster changes do not affect the fingerprint. teamSeed is never part of
+      // UpdateCustomTeamInput and therefore never triggers a recomputation here.
+      if (updates.name !== undefined || updates.abbreviation !== undefined) {
         const currentDoc = doc.toJSON() as unknown as CustomTeamDoc;
         // Merge currentDoc with all effective changes so fingerprint uses final values.
         const merged: CustomTeamDoc = {
           ...currentDoc,
           ...(patch.name !== undefined && { name: patch.name }),
           ...(patch.abbreviation !== undefined && { abbreviation: patch.abbreviation }),
-          ...(patch.roster !== undefined && { roster: patch.roster }),
         };
         patch.fingerprint = buildTeamFingerprint(merged);
       }
@@ -220,16 +254,44 @@ function buildStore(getDbFn: GetDb) {
     },
 
     /**
+     * Exports a single player from a team as a portable signed JSON string.
+     * @param teamId  The team the player belongs to.
+     * @param playerId  The player's id within that team.
+     * @throws If the team or player is not found.
+     */
+    async exportPlayer(teamId: string, playerId: string): Promise<string> {
+      const team = await this.getCustomTeam(teamId);
+      if (!team) throw new Error(`Team not found: ${teamId}`);
+      const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
+      const player = allPlayers.find((p) => p.id === playerId);
+      if (!player) throw new Error(`Player not found: ${playerId} in team ${teamId}`);
+      return exportCustomPlayerJson(player);
+    },
+
+    /**
      * Imports teams from a JSON string produced by `exportCustomTeams`.
      * Remaps IDs on collision and upserts all resulting teams into the DB.
+     * When duplicate players are detected and `options.allowDuplicatePlayers` is
+     * not true, returns `requiresDuplicateConfirmation: true` without importing
+     * anything — the caller should prompt the user and retry with the flag set.
      * @returns A summary of created/remapped counts and duplicate warnings.
+     * @note Name-uniqueness is NOT enforced on import. A team imported with the
+     * same name as an existing team (but a different `teamSeed`) will be upserted
+     * as a separate team. This is a known limitation of the fingerprint-based
+     * deduplication strategy: fingerprints are seed-scoped, so only the exact
+     * same team (same seed) is detected as a duplicate.
      */
-    async importCustomTeams(json: string): Promise<ImportCustomTeamsResult> {
+    async importCustomTeams(
+      json: string,
+      options?: ImportCustomTeamsOptions,
+    ): Promise<ImportCustomTeamsResult> {
       const existing = await this.listCustomTeams({ includeArchived: true });
-      const result = importCustomTeamsParser(json, existing);
-      const db = await getDbFn();
-      for (const team of result.teams) {
-        await db.customTeams.upsert(team);
+      const result = importCustomTeamsParser(json, existing, undefined, options);
+      if (!result.requiresDuplicateConfirmation) {
+        const db = await getDbFn();
+        for (const team of result.teams) {
+          await db.customTeams.upsert(team);
+        }
       }
       return result;
     },
