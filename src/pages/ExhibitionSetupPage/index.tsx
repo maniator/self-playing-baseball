@@ -12,35 +12,27 @@ import {
   RadioLabel,
   SectionLabel,
   SeedHint,
-  Tab,
-  TabRow,
   TeamValidationError,
 } from "@components/NewGameDialog/styles";
 
-import MlbTeamsSection from "./MlbTeamsSection";
 import StarterPitcherSelector from "./StarterPitcherSelector";
 import { BackBtn, PageContainer, PageHeader, PageTitle } from "./styles";
 import { useExhibitionSetup } from "./useExhibitionSetup";
 
 /**
  * Full-page Exhibition Setup — the primary "New Game" entry point.
- * Replaces the New Game dialog for the Home → New Game path.
- * Defaults to Custom Teams tab; MLB tab remains as a secondary option.
+ * Custom-teams-only exhibition game setup.
  */
 const ExhibitionSetupPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { onStartGame } = useOutletContext<AppShellOutletContext>();
 
   const {
-    gameType,
-    setGameType,
     managed,
     setManaged,
     seedInput,
     setSeedInput,
     teamValidationError,
-    teamSelection,
-    playerCustomization,
     customTeams,
     customAwayId,
     setCustomAwayId,
@@ -60,11 +52,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
   // Derive starting-pitcher selector values once (avoids IIFE in JSX).
   const isAwayManaged = managed === "0";
   const managedSpPitchers =
-    gameType === "custom" && managed !== "none"
-      ? isAwayManaged
-        ? awaySpPitchers
-        : homeSpPitchers
-      : [];
+    managed !== "none" ? (isAwayManaged ? awaySpPitchers : homeSpPitchers) : [];
   const managedStarterIdx = isAwayManaged ? awayStarterIdx : homeStarterIdx;
   const managedSetStarterIdx = isAwayManaged ? setAwayStarterIdx : setHomeStarterIdx;
   const managedTeamLabel = isAwayManaged ? awayLabel : homeLabel;
@@ -83,52 +71,18 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
       </PageHeader>
       <PageTitle>⚾ New Exhibition Game</PageTitle>
       <form onSubmit={handleSubmit}>
-        <TabRow role="tablist" aria-label="Team type">
-          <Tab
-            type="button"
-            role="tab"
-            aria-selected={gameType === "mlb"}
-            $active={gameType === "mlb"}
-            onClick={() => setGameType("mlb")}
-            data-testid="new-game-mlb-teams-tab"
-          >
-            MLB Teams
-          </Tab>
-          <Tab
-            type="button"
-            role="tab"
-            aria-selected={gameType === "custom"}
-            $active={gameType === "custom"}
-            onClick={() => setGameType("custom")}
-            data-testid="new-game-custom-teams-tab"
-          >
-            Custom Teams
-          </Tab>
-        </TabRow>
-
-        {gameType === "mlb" ? (
-          <MlbTeamsSection
-            {...teamSelection}
-            {...playerCustomization}
-            setHome={teamSelection.setHome}
-            setAway={teamSelection.setAway}
-          />
-        ) : (
-          <>
-            <CustomTeamMatchup
-              teams={customTeams}
-              awayTeamId={customAwayId}
-              homeTeamId={customHomeId}
-              onAwayChange={setCustomAwayId}
-              onHomeChange={setCustomHomeId}
-              onManageTeams={() => navigate("/teams")}
-            />
-            {teamValidationError && (
-              <TeamValidationError role="alert" data-testid="team-validation-error">
-                ⚠ {teamValidationError}
-              </TeamValidationError>
-            )}
-          </>
+        <CustomTeamMatchup
+          teams={customTeams}
+          awayTeamId={customAwayId}
+          homeTeamId={customHomeId}
+          onAwayChange={setCustomAwayId}
+          onHomeChange={setCustomHomeId}
+          onManageTeams={() => navigate("/teams")}
+        />
+        {teamValidationError && (
+          <TeamValidationError role="alert" data-testid="team-validation-error">
+            ⚠ {teamValidationError}
+          </TeamValidationError>
         )}
 
         <FieldGroup>
@@ -151,7 +105,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
           ))}
         </FieldGroup>
 
-        {gameType === "custom" && managed !== "none" && managedSpPitchers.length > 0 && (
+        {managed !== "none" && managedSpPitchers.length > 0 && (
           <StarterPitcherSelector
             teamLabel={managedTeamLabel}
             startIdx={managedStarterIdx}
