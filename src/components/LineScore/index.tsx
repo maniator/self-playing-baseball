@@ -8,7 +8,6 @@ import {
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { getTeamAbbreviation } from "@utils/mlbTeams";
 
 import {
   BsoGroup,
@@ -49,10 +48,9 @@ const LineScore: React.FunctionComponent = () => {
     useGameContext();
   const { teams: customTeams } = useCustomTeams();
 
-  /** Returns the compact label for a team, preferring custom abbreviation over MLB lookup. */
+  /** Returns the compact label for a team, preferring custom abbreviation. */
   const compactLabel = (teamStr: string): string =>
     customTeamToAbbreviation(teamStr, customTeams) ??
-    getTeamAbbreviation(teamStr) ??
     teamStr
       .replace(/^custom:/, "")
       .slice(0, 3)

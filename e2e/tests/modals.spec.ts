@@ -3,7 +3,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import {
-  configureNewGame,
+  importTeamsFixture,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
@@ -34,9 +34,7 @@ test.describe("Modals", () => {
     });
 
     test("submitting the form (Play Ball!) navigates to the game", async ({ page }) => {
-      await configureNewGame(page);
-      await page.getByTestId("play-ball-button").click();
-      await expect(page.getByTestId("exhibition-setup-page")).not.toBeVisible({ timeout: 10_000 });
+      await startGameViaPlayBall(page, { seed: "modal0" });
       await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
     });
   });
@@ -62,6 +60,8 @@ test.describe("Modals", () => {
     });
 
     test("import textarea clears after a successful import", async ({ page }) => {
+      // Fixture teams must exist in the DB before the save can be imported.
+      await importTeamsFixture(page, "fixture-teams.json");
       await startGameViaPlayBall(page, { seed: "modal3" });
       await openSavesModal(page);
 

@@ -93,7 +93,7 @@ export type DecisionType =
   | { kind: "ibb_or_steal"; base: 0 | 1; successPct: number }
   | {
       kind: "pinch_hitter";
-      /** Available bench players for selection (empty = MLB / no custom bench). */
+      /** Available bench players for selection (empty when no bench roster is set). */
       candidates: PinchHitterCandidate[];
       /** Team index that is batting (the team making the substitution). */
       teamIdx: 0 | 1;

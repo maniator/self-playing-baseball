@@ -28,10 +28,9 @@ afterEach(async () => {
 });
 
 describe("db collections", () => {
-  it("creates saves, events, teams, and customTeams collections", () => {
+  it("creates saves, events, and customTeams collections", () => {
     expect(db.saves).toBeDefined();
     expect(db.events).toBeDefined();
-    expect(db.teams).toBeDefined();
     expect(db.customTeams).toBeDefined();
   });
 
@@ -40,7 +39,6 @@ describe("db collections", () => {
       id: "s1",
       name: "Test Game",
       seed: "abc",
-      matchupMode: "default",
       homeTeamId: "Yankees",
       awayTeamId: "Mets",
       createdAt: 1000,
@@ -121,70 +119,10 @@ describe("savesCollection / eventsCollection helpers (singleton)", () => {
   });
 });
 
-describe("teams collection", () => {
-  it("inserts and retrieves a teams document", async () => {
-    const db = await _createTestDb(getRxStorageMemory());
-    const now = Date.now();
-    await db.teams.insert({
-      id: "147",
-      numericId: 147,
-      name: "New York Yankees",
-      abbreviation: "NYY",
-      league: "al",
-      cachedAt: now,
-      schemaVersion: 1,
-    });
-    const doc = await db.teams.findOne("147").exec();
-    expect(doc?.name).toBe("New York Yankees");
-    expect(doc?.league).toBe("al");
-    expect(doc?.numericId).toBe(147);
-    await db.close();
-  });
-
-  it("indexes teams by league", async () => {
-    const db = await _createTestDb(getRxStorageMemory());
-    const now = Date.now();
-    await db.teams.bulkInsert([
-      {
-        id: "147",
-        numericId: 147,
-        name: "Yankees",
-        abbreviation: "NYY",
-        league: "al",
-        cachedAt: now,
-        schemaVersion: 1,
-      },
-      {
-        id: "110",
-        numericId: 110,
-        name: "Orioles",
-        abbreviation: "BAL",
-        league: "al",
-        cachedAt: now,
-        schemaVersion: 1,
-      },
-      {
-        id: "121",
-        numericId: 121,
-        name: "Mets",
-        abbreviation: "NYM",
-        league: "nl",
-        cachedAt: now,
-        schemaVersion: 1,
-      },
-    ]);
-    const alTeams = await db.teams.find({ selector: { league: "al" } }).exec();
-    expect(alTeams).toHaveLength(2);
-    const nlTeams = await db.teams.find({ selector: { league: "nl" } }).exec();
-    expect(nlTeams).toHaveLength(1);
-    await db.close();
-  });
-});
-
 describe("schema version and reset flag", () => {
-  it("saves collection has schema version 1", async () => {
+  it("saves collection has schema version 2", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.saves.schema.version).toBe(1);
+    expect(testDb.saves.schema.version).toBe(2);
     await testDb.close();
   });
 
@@ -203,14 +141,17 @@ describe("schema version and reset flag", () => {
  * Upgrade-path test: simulates a user who had IndexedDB data created with the
  * pre-Stage-3B v0 schema (simple nested objects, no explicit sub-properties).
  *
- * The fix bumped savesSchema.version from 0 to 1 and added an identity
- * migrationStrategies[1] handler.  This test verifies that:
- *   1. A v0 database with existing saves can be reopened with the v1 code.
- *   2. The migration runs without throwing.
+ * Subsequent schema bumps:
+ *   v0 → v1: added explicit sub-property definitions (identity migration)
+ *   v1 → v2: removed matchupMode (MLB-only field)
+ *
+ * This test verifies that:
+ *   1. A v0 database with existing saves can be reopened with the v2 code.
+ *   2. All migrations (v0→v1 and v1→v2) run without throwing.
  *   3. All save documents remain accessible and intact after migration.
  */
-describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
-  it("migrates saves created with the pre-Stage-3B v0 schema to v1 without data loss", async () => {
+describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
+  it("migrates saves created with the pre-Stage-3B v0 schema to v2 without data loss", async () => {
     // The pre-Stage-3B schema had plain `{ type: "object", additionalProperties: true }`
     // for setup / scoreSnapshot / inningSnapshot / stateSnapshot.
     const v0SavesSchema: RxJsonSchema<Record<string, unknown>> = {
@@ -278,9 +219,8 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     });
     await v0Db.close();
 
-    // ── Step 2: Open same DB with v1 schema (schema migration to v1) ─
-    // _createTestDb uses the current initDb which registers RxDBMigrationSchemaPlugin
-    // and opens savesSchema at version 1 with migrationStrategies[1] = identity.
+    // ── Step 2: Open same DB with v2 schema (migrations v0→v1→v2 run automatically) ─
+    // _createTestDb uses the current initDb which registers RxDBMigrationSchemaPlugin.
     const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
 
     // ── Step 3: Verify save document survived migration intact ─────────────────
@@ -376,6 +316,85 @@ describe("schema migration: v0 → v1 (upgrade-path QA)", () => {
     expect(doc?.stateSnapshot).toMatchObject({ rngState: 999 });
 
     await v1Db.close();
+  });
+
+  it("schema migration: saves v1 → v2 drops matchupMode field", async () => {
+    // Verifies that saves created at schema v1 (with matchupMode) have
+    // matchupMode stripped when migrated to v2.
+    const v1SavesSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 1,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        name: { type: "string" },
+        seed: { type: "string" },
+        matchupMode: { type: "string" },
+        homeTeamId: { type: "string" },
+        awayTeamId: { type: "string" },
+        createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        updatedAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+        progressIdx: { type: "number", minimum: -1, maximum: 9_999_999, multipleOf: 1 },
+        setup: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "name",
+        "seed",
+        "matchupMode",
+        "homeTeamId",
+        "awayTeamId",
+        "createdAt",
+        "updatedAt",
+        "progressIdx",
+        "setup",
+        "schemaVersion",
+      ],
+      indexes: ["updatedAt"],
+    };
+
+    const dbName = `migration_v1v2_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Create v1 DB with a save that has matchupMode.
+    const v1RawDb = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v1RawDb.addCollections({
+      saves: {
+        schema: v1SavesSchema,
+        migrationStrategies: { 1: (oldDoc) => oldDoc },
+      },
+    });
+    await v1RawDb.saves.insert({
+      id: "v1_save",
+      name: "V1 Save",
+      seed: "seed1",
+      matchupMode: "default",
+      homeTeamId: "Home Team",
+      awayTeamId: "Away Team",
+      createdAt: 1000,
+      updatedAt: 2000,
+      progressIdx: 5,
+      setup: { strategy: "balanced" },
+      schemaVersion: 1,
+    });
+    await v1RawDb.close();
+
+    // Open with v2 schema — should drop matchupMode.
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v2Db.saves.findOne("v1_save").exec();
+    expect(doc, "migrated v1 document should exist").not.toBeNull();
+    expect(doc?.name).toBe("V1 Save");
+    expect(doc?.homeTeamId).toBe("Home Team");
+    expect(doc?.seed).toBe("seed1");
+    // matchupMode must have been stripped by the v2 migration.
+    const raw = doc?.toJSON() as Record<string, unknown>;
+    expect(raw["matchupMode"]).toBeUndefined();
+
+    await v2Db.close();
   });
 });
 

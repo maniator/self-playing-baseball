@@ -53,7 +53,6 @@ function buildStore(getDbFn: GetDb) {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
         seed: setup.seed,
-        matchupMode: setup.matchupMode,
         homeTeamId: setup.homeTeamId,
         awayTeamId: setup.awayTeamId,
         createdAt: now,
@@ -211,41 +210,47 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
-      // Reject saves that reference custom teams that don't exist locally.
-      const customTeamRefs: Array<{ id: string; label: string }> = [];
-      const teamEntries: Array<{ field: string; label: string }> = [
-        { field: header.homeTeamId, label: header.setup?.homeTeam ?? header.homeTeamId },
-        { field: header.awayTeamId, label: header.setup?.awayTeam ?? header.awayTeamId },
-      ];
-      for (const { field, label } of teamEntries) {
-        if (field.startsWith("ct_") || field.startsWith("custom:")) {
-          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
-          customTeamRefs.push({ id, label });
-        }
-      }
-      const db = await getDbFn();
-      if (customTeamRefs.length > 0) {
-        const missing: Array<{ id: string; label: string }> = [];
-        for (const ref of customTeamRefs) {
-          const found = await db.customTeams.findOne(ref.id).exec();
-          if (!found) missing.push(ref);
-        }
-        if (missing.length > 0) {
-          const descriptions = missing.map((m) => `"${m.label}" (${m.id})`).join(", ");
+      // Reject saves created with the old MLB team format (neither ct_ nor custom: prefix).
+      for (const field of [header.homeTeamId, header.awayTeamId]) {
+        if (!field.startsWith("ct_") && !field.startsWith("custom:")) {
           throw new Error(
-            `Cannot import save: missing custom team(s): ${descriptions}. Import the missing team(s) first via Teams import, then retry the save import.`,
+            "Cannot import save: this save was created with the old MLB team format, which is no longer supported. Start a new game using your custom teams.",
           );
         }
       }
-      await db.saves.upsert(header);
+
+      // Reject saves that reference custom teams that don't exist locally.
+      const customTeamIds: string[] = [];
+      for (const field of [header.homeTeamId, header.awayTeamId]) {
+        if (field.startsWith("ct_") || field.startsWith("custom:")) {
+          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
+          customTeamIds.push(id);
+        }
+      }
+      const db = await getDbFn();
+      if (customTeamIds.length > 0) {
+        const missingCount = (
+          await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()))
+        ).filter((doc) => doc === null).length;
+        if (missingCount > 0) {
+          const teamWord = missingCount === 1 ? "team" : "teams";
+          throw new Error(
+            `Cannot import save: ${missingCount} custom ${teamWord} used by this save ${missingCount === 1 ? "is" : "are"} not installed on this device. Import the missing ${teamWord} first via the Teams page, then retry the save import.`,
+          );
+        }
+      }
+      // Strip legacy fields that were removed from the schema (e.g. matchupMode
+      // dropped in v2). Without this, old save bundles persist obsolete fields.
+      const { matchupMode: _drop, ...cleanHeader } = header as Record<string, unknown>;
+      await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
       }
       // Force counter re-initialization on next append so it reads the imported
       // event count rather than using a stale in-memory value.
-      nextIdxMap.delete(header.id);
-      appendQueues.delete(header.id);
-      return header;
+      nextIdxMap.delete(cleanHeader.id as string);
+      appendQueues.delete(cleanHeader.id as string);
+      return cleanHeader as SaveDoc;
     },
   };
 }

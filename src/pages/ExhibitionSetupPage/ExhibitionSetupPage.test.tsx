@@ -5,14 +5,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@utils/mlbTeams", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
-  return {
-    ...mod,
-    fetchMlbTeams: vi.fn().mockResolvedValue({ al: mod.AL_FALLBACK, nl: mod.NL_FALLBACK }),
-  };
-});
-
 vi.mock("@utils/rng", () => ({
   getSeed: vi.fn(() => 0xdeadbeef),
   reinitSeed: vi.fn(),
@@ -75,23 +67,9 @@ describe("ExhibitionSetupPage", () => {
     expect(screen.getByTestId("exhibition-setup-page")).toBeInTheDocument();
   });
 
-  it("defaults to Custom Teams tab (aria-selected=true)", () => {
+  it("does not render an MLB Teams tab", () => {
     renderPage();
-    const customTab = screen.getByTestId("new-game-custom-teams-tab");
-    expect(customTab).toHaveAttribute("aria-selected", "true");
-  });
-
-  it("MLB Teams tab is not selected by default", () => {
-    renderPage();
-    const mlbTab = screen.getByTestId("new-game-mlb-teams-tab");
-    expect(mlbTab).toHaveAttribute("aria-selected", "false");
-  });
-
-  it("switching to MLB tab shows home-team-select", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    expect(screen.getByTestId("home-team-select")).toBeInTheDocument();
+    expect(screen.queryByTestId("new-game-mlb-teams-tab")).not.toBeInTheDocument();
   });
 
   it("renders the Play Ball button", () => {
@@ -117,29 +95,9 @@ describe("ExhibitionSetupPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
-  it("submitting the form in MLB mode calls onStartGame with team names", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    // Switch to MLB tab
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Submit
-    await act(async () => {
-      await user.click(screen.getByTestId("play-ball-button"));
-    });
-    expect(rngModule.reinitSeed).toHaveBeenCalled();
-    expect(mockOnStartGame).toHaveBeenCalledWith(
-      expect.objectContaining({
-        homeTeam: expect.any(String),
-        awayTeam: expect.any(String),
-        managedTeam: null,
-      }),
-    );
-  });
-
   it("shows validation error message when no custom teams are available on submit", async () => {
     const user = userEvent.setup();
     renderPage();
-    // Stay on Custom Teams tab (default) — no teams available
     await act(async () => {
       await user.click(screen.getByTestId("play-ball-button"));
     });
@@ -200,7 +158,6 @@ describe("ExhibitionSetupPage", () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Custom Teams tab is default — just submit
     await act(async () => {
       await user.click(screen.getByTestId("play-ball-button"));
     });
@@ -216,6 +173,7 @@ describe("ExhibitionSetupPage", () => {
         }),
       }),
     );
+    expect(rngModule.reinitSeed).toHaveBeenCalled();
   });
 
   it("clicking Go to Manage Teams navigates to /teams", async () => {
@@ -264,46 +222,10 @@ describe("ExhibitionSetupPage", () => {
 
     const user = userEvent.setup();
     renderPage();
-    // Click "Away" managed radio to make IIFE render the starter pitcher selector
+    // Click "Away" managed radio to show the starter pitcher selector
     const awayRadio = screen.getByRole("radio", { name: /away/i });
     await user.click(awayRadio);
     expect(screen.getByTestId("starting-pitcher-select")).toBeInTheDocument();
-  });
-
-  it("MLB mode: changing mode radio calls handleModeChange; changing team selects fires setHome/setAway", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Click the NL radio to fire handleModeChange
-    const nlRadio = screen.getByRole("radio", { name: "NL vs NL" });
-    await user.click(nlRadio);
-    // Change home team select
-    const homeSelect = screen.getByTestId("home-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(
-      homeSelect,
-      homeSelect.options[1]?.value ?? homeSelect.options[0].value,
-    );
-    // Change away team select
-    const awaySelect = screen.getByTestId("away-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(
-      awaySelect,
-      awaySelect.options[1]?.value ?? awaySelect.options[0].value,
-    );
-    // No assertion needed beyond exercising the handlers without throwing
-    expect(homeSelect).toBeInTheDocument();
-  });
-
-  it("MLB interleague mode: homeLeague radio fires handleHomeLeagueChange", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Switch to Interleague to show the homeLeague radios
-    const interleagueRadio = screen.getByRole("radio", { name: "Interleague" });
-    await user.click(interleagueRadio);
-    // Click NL homeLeague radio
-    const nlHomeLeague = screen.getByRole("radio", { name: "NL" });
-    await user.click(nlHomeLeague);
-    expect(nlHomeLeague).toBeChecked();
   });
 
   it("shows 'create more teams' error when exactly one custom team exists", async () => {

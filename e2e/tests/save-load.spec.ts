@@ -21,13 +21,10 @@ test.describe("Save / Load", () => {
     await startGameViaPlayBall(page, { seed: "saveme1" });
     await waitForLogLines(page, 5);
     await saveCurrentGame(page);
-    // Default teams are "New York Mets" (away) vs "New York Yankees" (home)
-    await expect(
-      page
-        .getByTestId("saves-modal")
-        .getByText("New York Mets vs New York Yankees", { exact: true })
-        .first(),
-    ).toBeVisible({ timeout: 10_000 });
+    // Verify a save item is visible in the modal (team names are auto-generated)
+    await expect(page.getByTestId("saves-modal").getByTestId("saves-list-item")).toHaveCount(1, {
+      timeout: 10_000,
+    });
   });
 
   test("loading a save restores the scoreboard", async ({ page }) => {

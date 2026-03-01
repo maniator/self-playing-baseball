@@ -35,7 +35,6 @@ const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({
   createdAt: 1000,
   updatedAt: 2000,
   seed: "abc",
-  matchupMode: "manual",
   homeTeamId: "Home",
   awayTeamId: "Away",
   progressIdx: 5,

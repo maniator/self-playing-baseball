@@ -13,10 +13,46 @@ import { GameContext } from "@context/index";
 
 import HitLog from ".";
 
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn().mockReturnValue({
+    teams: [
+      {
+        id: "ct_hitlog_away",
+        name: "Away",
+        city: "",
+        abbreviation: "AWY",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+      {
+        id: "ct_hitlog_home",
+        name: "Home",
+        city: "",
+        abbreviation: "HME",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+    ],
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
+
 const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
   inning: 1,
   score: [0, 0],
-  teams: ["Away", "Home"],
+  teams: ["custom:ct_hitlog_away", "custom:ct_hitlog_home"],
   baseLayout: [0, 0, 0],
   outs: 0,
   strikes: 0,
