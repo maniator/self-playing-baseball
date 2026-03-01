@@ -51,7 +51,6 @@ const makeSave = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
     id: "save_1",
     name: "Team A vs Team B",
     seed: "abc123",
-
     homeTeamId: "TeamB",
     awayTeamId: "TeamA",
     createdAt: 1000000,

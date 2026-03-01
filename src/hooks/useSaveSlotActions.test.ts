@@ -4,20 +4,18 @@ import type { SaveDoc } from "@storage/types";
 
 import { useSaveSlotActions } from "./useSaveSlotActions";
 
-const makeSaveDoc = (id: string, name = "Test Save"): SaveDoc =>
-  ({
-    id,
-    name,
-    seed: "abc",
-    matchupMode: "manual" as const,
-    homeTeamId: "Yankees",
-    awayTeamId: "Mets",
-    progressIdx: 0,
-    schemaVersion: 1,
-    updatedAt: Date.now(),
-    createdAt: Date.now(),
-    setup: { strategy: "normal" as const, managedTeam: 0 as const, managerMode: false },
-  }) as unknown as SaveDoc;
+const makeSaveDoc = (id: string, name = "Test Save") => ({
+  id,
+  name,
+  seed: "abc",
+  homeTeamId: "Yankees",
+  awayTeamId: "Mets",
+  progressIdx: 0,
+  schemaVersion: 1,
+  updatedAt: Date.now(),
+  createdAt: Date.now(),
+  setup: { strategy: "normal" as const, managedTeam: 0 as const, managerMode: false },
+});
 
 describe("useSaveSlotActions", () => {
   it("handleDelete: calls deleteSave with the id", async () => {

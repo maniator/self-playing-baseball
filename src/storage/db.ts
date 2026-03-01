@@ -27,12 +27,10 @@ type DbCollections = {
 export type BallgameDb = RxDatabase<DbCollections>;
 
 const savesSchema: RxJsonSchema<SaveDoc> = {
-  // Version 1: added explicit `properties` sub-definitions to the nested
-  // `setup`, `scoreSnapshot`, `inningSnapshot`, and `stateSnapshot` fields.
-  //
-  // Version 2: dropped `matchupMode` field (MLB teams removed). Identity
-  // migration is safe — existing docs may carry `matchupMode` as an extra
-  // property which RxDB ignores under additionalProperties: true.
+  // Version 0: original schema with plain additionalProperties objects.
+  // Version 1: explicit nested properties definitions for setup/snapshots.
+  // Version 2: removed matchupMode (MLB-only field, never used for game restore).
+  //   Migration drops the field; all other fields remain unchanged.
   version: 2,
   primaryKey: "id",
   type: "object",

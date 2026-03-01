@@ -4,7 +4,7 @@ import { BATTING_POSITIONS } from "@utils/roster";
 
 /**
  * Returns a stable game-session ID for a custom team.
- * Uses the `custom:` prefix as a stable namespace.
+ * Uses the `custom:` prefix to distinguish it from other string team identifiers.
  */
 export function customTeamToGameId(team: CustomTeamDoc): string {
   return `custom:${team.id}`;
@@ -30,7 +30,7 @@ export function customTeamToLineupOrder(team: CustomTeamDoc): string[] {
  * Returns the abbreviation for a custom team, or a safe short fallback.
  * Used by compact UI surfaces like the line score.
  *
- * @param gameId - The game-session team string (e.g. `"custom:ct_123"` or an MLB name).
+ * @param gameId - The game-session team string (e.g. `"custom:ct_123"`).
  * @param teams  - List of known custom team docs for lookup.
  */
 export function customTeamToAbbreviation(
@@ -47,10 +47,14 @@ export function customTeamToAbbreviation(
 }
 
 /**
- * Returns the full display label for a custom team string (`custom:<id>`).
+ * Returns the full display label for any team string (`custom:<id>`).
  * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
  *
- * @param gameId  - The game-session team string.
+ * All team IDs must now use the `custom:` prefix. Any ID that does not start
+ * with `custom:` is treated as an unknown/legacy identifier and returns a
+ * safe placeholder rather than echoing the raw ID into the UI.
+ *
+ * @param gameId  - The game-session team string (e.g. `"custom:ct_123"`).
  * @param teams   - Known custom team docs for lookup.
  */
 export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {

@@ -135,7 +135,6 @@ const makeAutoSaveSlot = () => ({
   createdAt: 1000,
   updatedAt: 2000,
   seed: SEED_STR,
-  matchupMode: "default" as const,
   homeTeamId: "Yankees",
   awayTeamId: "Mets",
   progressIdx: 25,
