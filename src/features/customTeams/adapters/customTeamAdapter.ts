@@ -50,11 +50,15 @@ export function customTeamToAbbreviation(
  * Returns the full display label for any team string (`custom:<id>`).
  * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
  *
- * @param gameId  - The game-session team string.
+ * All team IDs must now use the `custom:` prefix. Any ID that does not start
+ * with `custom:` is treated as an unknown/legacy identifier and returns a
+ * safe placeholder rather than echoing the raw ID into the UI.
+ *
+ * @param gameId  - The game-session team string (e.g. `"custom:ct_123"`).
  * @param teams   - Known custom team docs for lookup.
  */
 export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {
-  if (!gameId.startsWith("custom:")) return gameId;
+  if (!gameId.startsWith("custom:")) return "Unknown Team";
   const id = gameId.slice("custom:".length);
   const doc = teams.find((t) => t.id === id);
   // Safe short fallback: strip the `custom:` prefix and show the first 8 chars of the

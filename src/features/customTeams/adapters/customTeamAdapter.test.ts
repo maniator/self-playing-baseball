@@ -195,8 +195,8 @@ describe("customTeamToAbbreviation", () => {
 });
 
 describe("resolveTeamLabel", () => {
-  it("returns MLB team name unchanged for non-custom team strings", () => {
-    expect(resolveTeamLabel("New York Yankees", [])).toBe("New York Yankees");
+  it("returns 'Unknown Team' for non-custom (legacy MLB) team strings", () => {
+    expect(resolveTeamLabel("New York Yankees", [])).toBe("Unknown Team");
   });
 
   it("returns full display name (City + Name) for a known custom team", () => {

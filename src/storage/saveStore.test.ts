@@ -25,6 +25,49 @@ const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
   ...overrides,
 });
 
+/** Custom-format setup used by round-trip tests that call importRxdbSave. */
+const makeCustomFormatSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
+  homeTeamId: "ct_rt_home",
+  awayTeamId: "ct_rt_away",
+  seed: "abc123",
+  setup: {
+    strategy: "balanced",
+    managedTeam: null,
+    managerMode: false,
+    homeTeam: "ct_rt_home",
+    awayTeam: "ct_rt_away",
+    playerOverrides: [{}, {}],
+    lineupOrder: [[], []],
+  },
+  ...overrides,
+});
+
+/** Inserts a minimal CustomTeamDoc into the given DB instance. */
+async function insertMinimalTeam(targetDb: BallgameDb, id: string): Promise<void> {
+  await targetDb.customTeams.insert({
+    id,
+    schemaVersion: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    name: "Test Team",
+    source: "custom",
+    roster: {
+      schemaVersion: 1,
+      lineup: [
+        {
+          id: `${id}_p1`,
+          name: "Player",
+          role: "batter",
+          batting: { contact: 70, power: 60, speed: 50 },
+        },
+      ],
+      bench: [],
+      pitchers: [],
+    },
+    metadata: { archived: false },
+  });
+}
+
 let db: BallgameDb;
 let store: ReturnType<typeof makeSaveStore>;
 
@@ -291,11 +334,14 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
   });
 
   it("importRxdbSave round-trips export/import correctly", async () => {
-    const saveId = await store.createSave(makeSetup({ seed: "roundtrip" }));
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "roundtrip" }));
     await store.appendEvents(saveId, [{ type: "hit", at: 0, payload: {} }]);
     const json = await store.exportRxdbSave(saveId);
     // Import into a fresh db
     const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    // Insert the teams so importRxdbSave does not reject them as missing.
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
     const restoredSave = await store2.importRxdbSave(json);
     expect(restoredSave.id).toBe(saveId);
@@ -332,9 +378,11 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
   });
 
   it("importRxdbSave handles saves with no events", async () => {
-    const saveId = await store.createSave(makeSetup());
+    const saveId = await store.createSave(makeCustomFormatSetup());
     const json = await store.exportRxdbSave(saveId);
     const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
     const restoredSave = await store2.importRxdbSave(json);
     expect(restoredSave.id).toBe(saveId);
@@ -346,7 +394,7 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     // carries matchupMode in the header. The signature must cover the original
     // header (including matchupMode) — importRxdbSave verifies sig THEN strips.
     const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
-    const saveId = await store.createSave(makeSetup({ seed: "legacy" }));
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "legacy" }));
     const json = await store.exportRxdbSave(saveId);
     const envelope = JSON.parse(json) as {
       version: number;
@@ -361,6 +409,8 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     );
 
     const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
     const restored = await store2.importRxdbSave(JSON.stringify(envelope));
     expect(restored.id).toBe(saveId);
@@ -407,7 +457,7 @@ describe("SaveStore.appendEvents — counter initialisation from existing events
 
 describe("SaveStore — RBI in stateSnapshot export/import compatibility", () => {
   it("round-trips a stateSnapshot containing playLog entries with rbi", async () => {
-    const saveId = await store.createSave(makeSetup({ seed: "rbisave" }));
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "rbisave" }));
     const stateWithRbi = makeState({
       playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1, rbi: 1 }],
     });
@@ -417,6 +467,8 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     const json = await store.exportRxdbSave(saveId);
 
     const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
     await store2.importRxdbSave(json);
     const saves = await store2.listSaves();
@@ -427,7 +479,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
   });
 
   it("round-trips a stateSnapshot containing playLog entries without rbi (older save)", async () => {
-    const saveId = await store.createSave(makeSetup({ seed: "oldsave" }));
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "oldsave" }));
     const oldState = makeState({
       playLog: [
         // Simulate old data: no rbi field
@@ -440,6 +492,8 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     const json = await store.exportRxdbSave(saveId);
 
     const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
     await store2.importRxdbSave(json);
     const saves = await store2.listSaves();
@@ -568,7 +622,7 @@ describe("SaveStore — updatedAt advances on updateProgress", () => {
 describe("importRxdbSave — missing custom team rejection", () => {
   const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
 
-  const makeCustomSave = (homeTeamId: string, awayTeamId = "147"): { json: string } => {
+  const makeCustomSave = (homeTeamId: string, awayTeamId = "ct_default_away"): { json: string } => {
     const header = {
       id: `save_${Date.now()}_test`,
       name: "Test Save",
@@ -595,6 +649,8 @@ describe("importRxdbSave — missing custom team rejection", () => {
   };
 
   it("throws when homeTeamId references a missing custom team", async () => {
+    // Insert the away team so only the home team is missing (1 team error, not 2).
+    await insertMinimalTeam(db, "ct_default_away");
     const { json } = makeCustomSave("ct_missing_abc");
     await expect(store.importRxdbSave(json)).rejects.toThrow(
       "Cannot import save: 1 custom team used by this save is not installed on this device. Import the missing team first via the Teams page, then retry the save import.",
@@ -609,30 +665,42 @@ describe("importRxdbSave — missing custom team rejection", () => {
   });
 
   it("succeeds when the custom team exists in the DB", async () => {
-    const teamId = "ct_existing_team";
-    await db.customTeams.insert({
-      id: teamId,
-      schemaVersion: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      name: "My Team",
-      source: "custom",
-      roster: {
+    const homeTeamId = "ct_existing_team";
+    const awayTeamId = "ct_existing_away";
+    for (const teamId of [homeTeamId, awayTeamId]) {
+      await db.customTeams.insert({
+        id: teamId,
         schemaVersion: 1,
-        lineup: [
-          { id: "p1", name: "P", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
-        ],
-        bench: [],
-        pitchers: [],
-      },
-      metadata: { archived: false },
-    });
-    const { json } = makeCustomSave(teamId);
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        name: "My Team",
+        source: "custom",
+        roster: {
+          schemaVersion: 1,
+          lineup: [
+            { id: "p1", name: "P", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
+          ],
+          bench: [],
+          pitchers: [],
+        },
+        metadata: { archived: false },
+      });
+    }
+    const { json } = makeCustomSave(homeTeamId, awayTeamId);
     await expect(store.importRxdbSave(json)).resolves.not.toThrow();
   });
 
-  it("does not throw for non-custom team IDs (e.g. MLB numeric IDs)", async () => {
+  it("throws when team IDs use the legacy MLB format (non-custom: prefix)", async () => {
+    const { json } = makeCustomSave("New York Yankees", "New York Mets");
+    await expect(store.importRxdbSave(json)).rejects.toThrow(
+      "Cannot import save: this save was created with the old MLB team format",
+    );
+  });
+
+  it("throws when team IDs use legacy numeric MLB team IDs", async () => {
     const { json } = makeCustomSave("147", "121");
-    await expect(store.importRxdbSave(json)).resolves.not.toThrow();
+    await expect(store.importRxdbSave(json)).rejects.toThrow(
+      "Cannot import save: this save was created with the old MLB team format",
+    );
   });
 });

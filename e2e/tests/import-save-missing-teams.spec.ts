@@ -23,7 +23,7 @@ test.describe("Import Save — missing custom team rejection", () => {
       name: "E2E Missing Team Test",
       seed: "abc123",
       homeTeamId: "ct_missing123",
-      awayTeamId: "147",
+      awayTeamId: "ct_missing_away456",
       createdAt: Date.now(),
       updatedAt: Date.now(),
       progressIdx: -1,

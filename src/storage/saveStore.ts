@@ -210,6 +210,15 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
+      // Reject saves created with the old MLB team format (neither ct_ nor custom: prefix).
+      for (const field of [header.homeTeamId, header.awayTeamId]) {
+        if (!field.startsWith("ct_") && !field.startsWith("custom:")) {
+          throw new Error(
+            "Cannot import save: this save was created with the old MLB team format, which is no longer supported. Start a new game using your custom teams.",
+          );
+        }
+      }
+
       // Reject saves that reference custom teams that don't exist locally.
       const customTeamIds: string[] = [];
       for (const field of [header.homeTeamId, header.awayTeamId]) {

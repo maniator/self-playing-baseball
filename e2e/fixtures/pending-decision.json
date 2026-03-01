@@ -2,10 +2,10 @@
   "version": 1,
   "header": {
     "id": "save_pending_decision_fixture",
-    "name": "Pending Decision (defensive shift)",
+    "name": "Visitors vs Locals",
     "seed": "pd-fixture-01",
-    "homeTeamId": "New York Yankees",
-    "awayTeamId": "New York Mets",
+    "homeTeamId": "custom:ct_fixture_home_00",
+    "awayTeamId": "custom:ct_fixture_away_00",
     "createdAt": 1700001000000,
     "updatedAt": 1700001000000,
     "progressIdx": 28,
@@ -14,8 +14,8 @@
       "strategy": "balanced",
       "managedTeam": 0,
       "managerMode": true,
-      "homeTeam": "New York Yankees",
-      "awayTeam": "New York Mets",
+      "homeTeam": "custom:ct_fixture_home_00",
+      "awayTeam": "custom:ct_fixture_away_00",
       "playerOverrides": [
         {},
         {}
@@ -76,8 +76,8 @@
           1
         ],
         "teams": [
-          "Mets",
-          "Yankees"
+          "custom:ct_fixture_away_00",
+          "custom:ct_fixture_home_00"
         ],
         "baseLayout": [
           0,
@@ -122,5 +122,5 @@
     }
   },
   "events": [],
-  "sig": "981d3725"
+  "sig": "296b63aa"
 }

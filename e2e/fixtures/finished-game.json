@@ -2,10 +2,10 @@
   "version": 1,
   "header": {
     "id": "save_finished_game_fixture",
-    "name": "Mets vs Yankees (Final)",
+    "name": "Visitors vs Locals",
     "seed": "fngame",
-    "homeTeamId": "New York Yankees",
-    "awayTeamId": "New York Mets",
+    "homeTeamId": "custom:ct_fixture_home_00",
+    "awayTeamId": "custom:ct_fixture_away_00",
     "createdAt": 1700000000000,
     "updatedAt": 1700000000000,
     "progressIdx": 60,
@@ -13,8 +13,8 @@
       "strategy": "balanced",
       "managedTeam": null,
       "managerMode": false,
-      "homeTeam": "New York Yankees",
-      "awayTeam": "New York Mets",
+      "homeTeam": "custom:ct_fixture_home_00",
+      "awayTeam": "custom:ct_fixture_away_00",
       "playerOverrides": [
         {},
         {}
@@ -33,8 +33,8 @@
           5
         ],
         "teams": [
-          "Mets",
-          "Yankees"
+          "custom:ct_fixture_away_00",
+          "custom:ct_fixture_home_00"
         ],
         "baseLayout": [
           0,
@@ -106,5 +106,5 @@
     }
   },
   "events": [],
-  "sig": "662d6224"
+  "sig": "1859734d"
 }

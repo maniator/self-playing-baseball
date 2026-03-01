@@ -302,6 +302,8 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
  */
 export async function loadFixture(page: Page, fixtureName: string): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Import fixture teams first so the save's custom team IDs pass validation.
+  await importTeamsFixture(page, "fixture-teams.json");
   // Always start from the Home screen so this helper is self-contained.
   // Callers do not need to call resetAppState beforehand.
   await page.goto("/");

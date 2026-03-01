@@ -1,0 +1,306 @@
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2025-01-01T00:00:00.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_fixture_away_00",
+        "schemaVersion": 1,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z",
+        "name": "Visitors",
+        "abbreviation": "VIS",
+        "city": "",
+        "source": "custom",
+        "teamSeed": "seed_fixture_away",
+        "fingerprint": "39133938",
+        "metadata": {
+          "archived": false
+        },
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "p_fix_away_1",
+              "name": "Away Player 1",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "C",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_1",
+              "sig": "e02fe073"
+            },
+            {
+              "id": "p_fix_away_2",
+              "name": "Away Player 2",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "1B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_2",
+              "sig": "a01ebc5f"
+            },
+            {
+              "id": "p_fix_away_3",
+              "name": "Away Player 3",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "2B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_3",
+              "sig": "c48fc0d3"
+            },
+            {
+              "id": "p_fix_away_4",
+              "name": "Away Player 4",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "3B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_4",
+              "sig": "6312e18f"
+            },
+            {
+              "id": "p_fix_away_5",
+              "name": "Away Player 5",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "SS",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_5",
+              "sig": "75c5ecb3"
+            },
+            {
+              "id": "p_fix_away_6",
+              "name": "Away Player 6",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "LF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_6",
+              "sig": "33406ea7"
+            },
+            {
+              "id": "p_fix_away_7",
+              "name": "Away Player 7",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "CF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_7",
+              "sig": "178c2963"
+            },
+            {
+              "id": "p_fix_away_8",
+              "name": "Away Player 8",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "RF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_8",
+              "sig": "48d3e6a7"
+            },
+            {
+              "id": "p_fix_away_9",
+              "name": "Away Player 9",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "DH",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_away_9",
+              "sig": "291b9463"
+            }
+          ],
+          "bench": [],
+          "pitchers": []
+        }
+      },
+      {
+        "id": "ct_fixture_home_00",
+        "schemaVersion": 1,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z",
+        "name": "Locals",
+        "abbreviation": "LCL",
+        "city": "",
+        "source": "custom",
+        "teamSeed": "seed_fixture_home",
+        "fingerprint": "5ba3d4af",
+        "metadata": {
+          "archived": false
+        },
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "p_fix_home_1",
+              "name": "Home Player 1",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "C",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_1",
+              "sig": "92f166c9"
+            },
+            {
+              "id": "p_fix_home_2",
+              "name": "Home Player 2",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "1B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_2",
+              "sig": "88413435"
+            },
+            {
+              "id": "p_fix_home_3",
+              "name": "Home Player 3",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "2B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_3",
+              "sig": "066a40a9"
+            },
+            {
+              "id": "p_fix_home_4",
+              "name": "Home Player 4",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "3B",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_4",
+              "sig": "95d0861d"
+            },
+            {
+              "id": "p_fix_home_5",
+              "name": "Home Player 5",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "SS",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_5",
+              "sig": "d1db12f9"
+            },
+            {
+              "id": "p_fix_home_6",
+              "name": "Home Player 6",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "LF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_6",
+              "sig": "e19edd7d"
+            },
+            {
+              "id": "p_fix_home_7",
+              "name": "Home Player 7",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "CF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_7",
+              "sig": "e22e70d9"
+            },
+            {
+              "id": "p_fix_home_8",
+              "name": "Home Player 8",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "RF",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_8",
+              "sig": "a5c90dc5"
+            },
+            {
+              "id": "p_fix_home_9",
+              "name": "Home Player 9",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "DH",
+              "handedness": "R",
+              "playerSeed": "seed_p_fix_home_9",
+              "sig": "29c0e7e9"
+            }
+          ],
+          "bench": [],
+          "pitchers": []
+        }
+      }
+    ]
+  },
+  "sig": "a73c0942"
+}
