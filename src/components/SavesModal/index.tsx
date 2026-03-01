@@ -87,7 +87,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
       <Dialog
         ref={ref}
         onClick={handleClick}
-        onCancel={(e) => {
+        onCancel={(e: React.SyntheticEvent) => {
           e.preventDefault();
           handleClose();
         }}
@@ -129,7 +129,7 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
           rows={4}
           placeholder="…or paste exported JSON here"
           value={importText}
-          onChange={(e) => setImportText(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setImportText(e.target.value)}
           aria-label="Import save JSON"
           data-testid="import-save-textarea"
         />

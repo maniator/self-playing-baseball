@@ -14,12 +14,15 @@ interface SectionProps {
   children: React.ReactNode;
 }
 
-const Section: React.FunctionComponent<SectionProps> = ({ title, defaultOpen, children }) => (
-  <SectionDetails defaultOpen={defaultOpen}>
-    <SectionSummary>{title}</SectionSummary>
-    <SectionBody>{children}</SectionBody>
-  </SectionDetails>
-);
+const Section: React.FunctionComponent<SectionProps> = ({ title, defaultOpen, children }) => {
+  const [isOpen, setIsOpen] = React.useState(defaultOpen ?? false);
+  return (
+    <SectionDetails open={isOpen} onToggle={(e) => setIsOpen(e.currentTarget.open)}>
+      <SectionSummary>{title}</SectionSummary>
+      <SectionBody>{children}</SectionBody>
+    </SectionDetails>
+  );
+};
 
 const HelpContent: React.FunctionComponent = () => (
   <>

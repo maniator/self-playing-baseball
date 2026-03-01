@@ -13,9 +13,11 @@ import {
   customTeamsCollection,
   eventsCollection,
   getDb,
+  playersCollection,
   savesCollection,
   wasDbReset,
 } from "./db";
+import type { GameSaveSetup } from "./types";
 
 let db: BallgameDb;
 
@@ -32,6 +34,7 @@ describe("db collections", () => {
     expect(db.saves).toBeDefined();
     expect(db.events).toBeDefined();
     expect(db.customTeams).toBeDefined();
+    expect(db.players).toBeDefined();
   });
 
   it("inserts and retrieves a saves document", async () => {
@@ -44,7 +47,7 @@ describe("db collections", () => {
       createdAt: 1000,
       updatedAt: 1000,
       progressIdx: 0,
-      setup: {},
+      setup: {} as GameSaveSetup,
       schemaVersion: 1,
     });
     const doc = await db.saves.findOne("s1").exec();
@@ -117,6 +120,12 @@ describe("savesCollection / eventsCollection helpers (singleton)", () => {
     const col = await customTeamsCollection();
     expect(col).toBe(singletonDb.customTeams);
   });
+
+  it("playersCollection() resolves to the RxDB players collection", async () => {
+    const singletonDb = await getDb();
+    const col = await playersCollection();
+    expect(col).toBe(singletonDb.players);
+  });
 });
 
 describe("schema version and reset flag", () => {
@@ -129,6 +138,12 @@ describe("schema version and reset flag", () => {
   it("customTeams collection has schema version 3", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
     expect(testDb.customTeams.schema.version).toBe(3);
+    await testDb.close();
+  });
+
+  it("players collection has schema version 2", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    expect(testDb.players.schema.version).toBe(2);
     await testDb.close();
   });
 
@@ -1009,5 +1024,140 @@ describe("getDb() recovery path", () => {
   it("_resetDbForTest clears the cached promise so getDb() runs fresh", () => {
     _resetDbForTest();
     expect(wasDbReset()).toBe(false);
+  });
+});
+
+describe("schema migration: players v0 → v1 (teamId now nullable)", () => {
+  it("migrates a v0 player document (required teamId) to v1 (optional teamId) without data loss", async () => {
+    const v0PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 0,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        teamId: { type: "string", maxLength: 128 },
+        section: { type: "string", maxLength: 16 },
+        orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+        name: { type: "string" },
+        role: { type: "string" },
+        batting: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "teamId",
+        "section",
+        "orderIndex",
+        "name",
+        "role",
+        "batting",
+        "schemaVersion",
+      ],
+      indexes: ["teamId", ["teamId", "section"]],
+    };
+
+    const dbName = `migration_test_players_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ players: { schema: v0PlayersSchema } });
+    await v0Db.players.insert({
+      id: "p1",
+      teamId: "ct_test",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Legacy Player",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 50 },
+      schemaVersion: 0,
+    });
+    await v0Db.close();
+
+    // _createTestDb now opens at schema v2, so BOTH the v0→v1 (identity) migration
+    // AND the v1→v2 (composite key) migration run in sequence.
+    // After v1→v2 the player's `id` becomes `"${teamId}:${original_id}"`.
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v2Db.players.findOne("ct_test:p1").exec();
+    expect(doc, "player doc must survive v0→v1→v2 migration").not.toBeNull();
+    expect(doc?.name).toBe("Legacy Player");
+    expect(doc?.teamId).toBe("ct_test");
+    expect(doc?.role).toBe("batter");
+    // v1→v2 migration adds `playerId` with the original player ID.
+    expect((doc?.toJSON() as Record<string, unknown>)["playerId"]).toBe("p1");
+    await v2Db.close();
+  });
+});
+
+describe("schema migration: players v1 → v2 (team-scoped composite primary key)", () => {
+  it("migrates a player document to a composite primary key and adds playerId (v0→v1→v2 chain)", async () => {
+    // The v1→v2 migration transforms `id: "${playerId}"` to `id: "${teamId}:${playerId}"`
+    // and adds the `playerId` field. This test verifies that migration by running the full
+    // v0→v1→v2 chain (v0→v1 is an identity migration; v1→v2 does the composite-key work).
+    const v0PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 0,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        teamId: { type: "string", maxLength: 128 },
+        section: { type: "string", maxLength: 16 },
+        orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+        name: { type: "string" },
+        role: { type: "string" },
+        batting: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "teamId",
+        "section",
+        "orderIndex",
+        "name",
+        "role",
+        "batting",
+        "schemaVersion",
+      ],
+      indexes: ["teamId", ["teamId", "section"]],
+    };
+
+    const dbName = `migration_test_v2_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Create a v0 DB and insert a player.
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ players: { schema: v0PlayersSchema } });
+    await v0Db.players.insert({
+      id: "p_v2test",
+      teamId: "ct_myteam",
+      section: "lineup",
+      orderIndex: 0,
+      name: "V2 Migration Player",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 50 },
+      schemaVersion: 0,
+    });
+    await v0Db.close();
+
+    // Open with the current (v2) schema — runs v0→v1 (identity) then v1→v2 (composite key).
+    const v2Db = await _createTestDb(getRxStorageDexie(), dbName);
+    // After v1→v2 the composite key is `"${teamId}:${original_id}"`.
+    const migratedDoc = await v2Db.players.findOne("ct_myteam:p_v2test").exec();
+    expect(
+      migratedDoc,
+      "player doc must be found by composite key after v1→v2 migration",
+    ).not.toBeNull();
+    expect(migratedDoc?.name).toBe("V2 Migration Player");
+    expect(migratedDoc?.teamId).toBe("ct_myteam");
+    expect((migratedDoc?.toJSON() as Record<string, unknown>)["playerId"]).toBe("p_v2test");
+    // The old doc under the original key must be gone.
+    const oldDoc = await v2Db.players.findOne("p_v2test").exec();
+    expect(oldDoc, "old doc under original key must be gone after migration").toBeNull();
+    await v2Db.close();
   });
 });

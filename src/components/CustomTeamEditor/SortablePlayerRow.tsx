@@ -83,7 +83,9 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
         ) : (
           <TextInput
             value={player.name}
-            onChange={(e) => onChange({ name: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange({ name: e.target.value })
+            }
             placeholder="Player name"
             aria-label="Player name"
             aria-invalid={!player.name.trim() ? "true" : undefined}
@@ -111,7 +113,9 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
           <SelectInput
             id={`pos-${player.id}`}
             value={player.position}
-            onChange={(e) => onChange({ position: e.target.value })}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              onChange({ position: e.target.value })
+            }
             aria-label="Position"
             data-testid="custom-team-player-position-select"
           >
@@ -128,7 +132,9 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
           <SelectInput
             id={`hand-${player.id}`}
             value={player.handedness}
-            onChange={(e) => onChange({ handedness: e.target.value as "R" | "L" | "S" })}
+            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+              onChange({ handedness: e.target.value as "R" | "L" | "S" })
+            }
             aria-label={isPitcher ? "Throwing handedness" : "Batting handedness"}
             data-testid="custom-team-player-handedness-select"
           >

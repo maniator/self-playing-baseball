@@ -113,7 +113,7 @@ describe("handleLifecycleAction — restore_game", () => {
     const restored = { ...makeState(), strikeoutLog: undefined, outLog: undefined };
     const next = handleLifecycleAction(makeState(), {
       type: "restore_game",
-      payload: restored as ReturnType<typeof makeState>,
+      payload: restored as unknown as ReturnType<typeof makeState>,
     });
     expect(Array.isArray(next?.strikeoutLog)).toBe(true);
     expect(Array.isArray(next?.outLog)).toBe(true);

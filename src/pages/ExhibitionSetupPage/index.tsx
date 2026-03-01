@@ -121,7 +121,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
             type="text"
             data-testid="seed-input"
             value={seedInput}
-            onChange={(e) => setSeedInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSeedInput(e.target.value)}
             placeholder="random"
             autoComplete="off"
             spellCheck={false}

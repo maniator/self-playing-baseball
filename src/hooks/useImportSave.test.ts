@@ -45,8 +45,8 @@ describe("friendlyImportError", () => {
 });
 
 describe("useImportSave", () => {
-  const mockImportFn = vi.fn<[string], Promise<SaveDoc>>();
-  const mockOnSuccess = vi.fn<[SaveDoc], void>();
+  const mockImportFn = vi.fn<(json: string) => Promise<SaveDoc>>();
+  const mockOnSuccess = vi.fn<(save: SaveDoc) => void>();
 
   const renderImportHook = (overrides: Partial<Parameters<typeof useImportSave>[0]> = {}) =>
     renderHook(() =>

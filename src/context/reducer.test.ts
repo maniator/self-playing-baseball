@@ -8,7 +8,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
-import type { DecisionType, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
+import type { DecisionType, LogAction, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
 import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
 
@@ -16,7 +16,7 @@ afterEach(() => vi.restoreAllMocks());
 
 const makeReducer = () => {
   const logs: string[] = [];
-  const dispatchLogger = (action: { type: string; payload: any }) => {
+  const dispatchLogger = (action: LogAction) => {
     if (action.type === "log") logs.push(action.payload);
   };
   const reducer = reducerFactory(dispatchLogger);

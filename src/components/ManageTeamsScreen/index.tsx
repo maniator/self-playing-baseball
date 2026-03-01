@@ -252,7 +252,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
         </ImportExportRow>
         <PasteTextarea
           value={pasteJson}
-          onChange={(e) => setPasteJson(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPasteJson(e.target.value)}
           placeholder='{"type":"customTeams","formatVersion":1,"payload":{"teams":[…]}}'
           data-testid="import-teams-paste-textarea"
           aria-label="Paste teams JSON"

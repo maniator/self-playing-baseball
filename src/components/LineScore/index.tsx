@@ -86,7 +86,7 @@ const LineScore: React.FunctionComponent = () => {
                 <TeamFullLabel>{resolveTeamLabel(teams[team], customTeams)}</TeamFullLabel>
               </TeamTd>
               {inningCols.map((n) => {
-                const val = getCellValue(team, n, inning, atBat, gameOver, inningRuns);
+                const val = getCellValue(team, n, inning, atBat as 0 | 1, gameOver, inningRuns);
                 return (
                   <Td key={n} $active={n === inning && atBat === team} $dim={val === "-"}>
                     {val}

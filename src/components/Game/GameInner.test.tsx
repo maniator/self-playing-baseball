@@ -520,7 +520,7 @@ describe("Game — DbResetNotice", () => {
   });
 
   it("shows the reset notice when wasDbReset returns true", async () => {
-    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    vi.spyOn(await import("@storage/db"), "wasDbReset").mockReturnValue(true);
     await act(async () => {
       render(<Game />);
     });
@@ -528,7 +528,7 @@ describe("Game — DbResetNotice", () => {
   });
 
   it("hides the notice after clicking the dismiss button", async () => {
-    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    vi.spyOn(await import("@storage/db"), "wasDbReset").mockReturnValue(true);
     await act(async () => {
       render(<Game />);
     });
@@ -539,7 +539,7 @@ describe("Game — DbResetNotice", () => {
   });
 
   it("does not show the notice when wasDbReset returns false", async () => {
-    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(false);
+    vi.spyOn(await import("@storage/db"), "wasDbReset").mockReturnValue(false);
     await act(async () => {
       render(<Game />);
     });
@@ -548,7 +548,7 @@ describe("Game — DbResetNotice", () => {
 
   it("does not show the notice if already dismissed this session (sessionStorage guard)", async () => {
     sessionStorage.setItem("db-reset-dismissed", "1");
-    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    vi.spyOn(await import("@storage/db"), "wasDbReset").mockReturnValue(true);
     await act(async () => {
       render(<Game />);
     });
@@ -556,7 +556,7 @@ describe("Game — DbResetNotice", () => {
   });
 
   it("dismiss sets sessionStorage so notice stays gone on remount", async () => {
-    vi.mocked(await import("@storage/db")).wasDbReset = vi.fn().mockReturnValue(true);
+    vi.spyOn(await import("@storage/db"), "wasDbReset").mockReturnValue(true);
     await act(async () => {
       render(<Game />);
     });

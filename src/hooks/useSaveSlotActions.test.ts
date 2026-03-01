@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 
+import type { SaveDoc } from "@storage/types";
+
 import { useSaveSlotActions } from "./useSaveSlotActions";
 
 const makeSaveDoc = (id: string, name = "Test Save") => ({

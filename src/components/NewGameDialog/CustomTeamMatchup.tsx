@@ -61,7 +61,7 @@ const CustomTeamMatchup: React.FunctionComponent<Props> = ({
           id="ng-custom-away"
           data-testid="new-game-custom-away-team-select"
           value={awayTeamId}
-          onChange={(e) => onAwayChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onAwayChange(e.target.value)}
         >
           {teams.map((t) => (
             <option key={t.id} value={t.id}>
@@ -76,7 +76,7 @@ const CustomTeamMatchup: React.FunctionComponent<Props> = ({
           id="ng-custom-home"
           data-testid="new-game-custom-home-team-select"
           value={homeTeamId}
-          onChange={(e) => onHomeChange(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) => onHomeChange(e.target.value)}
         >
           {teams.map((t) => (
             <option key={t.id} value={t.id}>

@@ -1,6 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { DecisionType } from "@context/index";
 import * as rngModule from "@utils/rng";
 
 import { useReplayDecisions } from "./useReplayDecisions";
@@ -121,7 +122,12 @@ describe("useReplayDecisions", () => {
     vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:pinch"]);
     const dispatch = vi.fn();
     renderHook(() =>
-      useReplayDecisions(dispatch, { kind: "pinch_hitter" as const }, 5, "balanced"),
+      useReplayDecisions(
+        dispatch,
+        { kind: "pinch_hitter", candidates: [], teamIdx: 0 as const, lineupIdx: 0 } as DecisionType,
+        5,
+        "balanced",
+      ),
     );
     expect(dispatch).not.toHaveBeenCalled();
   });
@@ -130,7 +136,12 @@ describe("useReplayDecisions", () => {
     vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:pinch:invalid"]);
     const dispatch = vi.fn();
     renderHook(() =>
-      useReplayDecisions(dispatch, { kind: "pinch_hitter" as const }, 5, "balanced"),
+      useReplayDecisions(
+        dispatch,
+        { kind: "pinch_hitter", candidates: [], teamIdx: 0 as const, lineupIdx: 0 } as DecisionType,
+        5,
+        "balanced",
+      ),
     );
     expect(dispatch).not.toHaveBeenCalled();
   });
@@ -157,7 +168,12 @@ describe("useReplayDecisions", () => {
     vi.spyOn(rngModule, "getDecisionsFromUrl").mockReturnValue(["5:pinch:power"]);
     const dispatch = vi.fn();
     renderHook(() =>
-      useReplayDecisions(dispatch, { kind: "pinch_hitter" as const }, 5, "balanced"),
+      useReplayDecisions(
+        dispatch,
+        { kind: "pinch_hitter", candidates: [], teamIdx: 0 as const, lineupIdx: 0 } as DecisionType,
+        5,
+        "balanced",
+      ),
     );
     expect(dispatch).toHaveBeenCalledWith({ type: "set_pinch_hitter_strategy", payload: "power" });
   });

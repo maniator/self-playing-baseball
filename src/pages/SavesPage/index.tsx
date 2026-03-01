@@ -123,7 +123,7 @@ const SavesPage: React.FunctionComponent = () => {
           <ImportSectionTitle>Paste save JSON</ImportSectionTitle>
           <PasteTextarea
             value={pasteJson}
-            onChange={(e) => setPasteJson(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPasteJson(e.target.value)}
             placeholder='{"version":1,"header":{…},"events":[…],"sig":"…"}'
             data-testid="paste-save-textarea"
             aria-label="Paste save JSON"

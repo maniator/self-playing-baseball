@@ -10,6 +10,7 @@ import { Hit } from "@constants/hitTypes";
 import type { ContextValue } from "@context/index";
 import type { PlayLogEntry } from "@context/index";
 import { GameContext } from "@context/index";
+import { makeContextValue } from "@test/testHelpers";
 
 import HitLog from ".";
 

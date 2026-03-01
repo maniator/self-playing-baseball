@@ -154,7 +154,7 @@ describe("makeAiPitchingDecision", () => {
       substitutedOut: [[], []],
     });
     // Delete the field to simulate an older save
-    delete (state as Record<string, unknown>)["pitcherBattersFaced"];
+    delete (state as unknown as Record<string, unknown>)["pitcherBattersFaced"];
     const decision = makeAiPitchingDecision(state as typeof state, 1);
     expect(decision.kind).toBe("none");
   });

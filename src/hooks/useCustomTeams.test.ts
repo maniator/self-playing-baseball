@@ -20,7 +20,7 @@ import { CustomTeamStore } from "@storage/customTeamStore";
 
 import { useCustomTeams } from "./useCustomTeams";
 
-const mockStore = CustomTeamStore as {
+const mockStore = CustomTeamStore as unknown as {
   listCustomTeams: ReturnType<typeof vi.fn>;
   createCustomTeam: ReturnType<typeof vi.fn>;
   updateCustomTeam: ReturnType<typeof vi.fn>;
