@@ -76,9 +76,7 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
     }
 
     if (customAwayId === customHomeId) {
-      setTeamValidationError(
-        "Away and home teams must be different — choose two different teams.",
-      );
+      setTeamValidationError("Away and home teams must be different — choose two different teams.");
       return;
     }
 

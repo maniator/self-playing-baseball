@@ -246,9 +246,11 @@ async function initDb(
         // Identity migration: all new schema fields were optional; existing
         // docs are already valid against the new schema.
         1: (oldDoc) => oldDoc,
-        // Identity migration: drops matchupMode from schema. Existing docs
-        // may still carry the field but RxDB ignores extra properties.
-        2: (oldDoc) => oldDoc,
+        // Drop matchupMode (MLB-only field removed in v2). All other fields unchanged.
+        2: (oldDoc: Record<string, unknown>) => {
+          const { matchupMode: _drop, ...rest } = oldDoc;
+          return rest;
+        },
       },
     },
     events: { schema: eventsSchema },

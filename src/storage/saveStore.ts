@@ -53,7 +53,8 @@ function buildStore(getDbFn: GetDb) {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
         seed: setup.seed,
-        homeTeamId: setup.homeTeamId,        awayTeamId: setup.awayTeamId,
+        homeTeamId: setup.homeTeamId,
+        awayTeamId: setup.awayTeamId,
         createdAt: now,
         updatedAt: now,
         // -1 is the sentinel for "not started" (no pitches persisted yet).
@@ -209,14 +210,26 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
+      // Validate team ID fields are strings before calling .startsWith.
+      if (typeof header.homeTeamId !== "string" || typeof header.awayTeamId !== "string") {
+        throw new Error("Invalid save data: missing or non-string team identifiers");
+      }
+
+      // Reject saves created with the old MLB team format (neither ct_ nor custom: prefix).
+      for (const field of [header.homeTeamId, header.awayTeamId]) {
+        if (!field.startsWith("ct_") && !field.startsWith("custom:")) {
+          throw new Error(
+            "Cannot import save: this save was created with the old MLB team format, which is no longer supported. Start a new game using your custom teams.",
+          );
+        }
+      }
+
       // Reject saves that reference custom teams that don't exist locally.
       // De-dup so a self-matchup (homeTeamId === awayTeamId) counts as 1 missing team, not 2.
       const customTeamIds: string[] = Array.from(
         new Set(
           [header.homeTeamId, header.awayTeamId]
-            .filter(
-              (f) => typeof f === "string" && (f.startsWith("ct_") || f.startsWith("custom:")),
-            )
+            .filter((f) => f.startsWith("ct_") || f.startsWith("custom:"))
             .map((f) => (f.startsWith("custom:") ? f.slice("custom:".length) : f)),
         ),
       );
@@ -232,7 +245,8 @@ function buildStore(getDbFn: GetDb) {
           );
         }
       }
-      // Strip legacy fields removed from the schema (e.g. matchupMode dropped in v2).
+      // Strip legacy fields that were removed from the schema (e.g. matchupMode
+      // dropped in v2). Without this, old save bundles persist obsolete fields.
       const { matchupMode: _drop, ...cleanHeader } = header as Record<string, unknown>;
       await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {

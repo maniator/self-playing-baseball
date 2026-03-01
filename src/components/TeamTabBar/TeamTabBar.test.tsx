@@ -3,10 +3,58 @@ import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
+import { useCustomTeams } from "@hooks/useCustomTeams";
+
 import TeamTabBar from ".";
 
-const renderTabBar = (activeTeam: 0 | 1 = 0, onSelect = vi.fn()) =>
-  render(<TeamTabBar teams={["Mets", "Yankees"]} activeTeam={activeTeam} onSelect={onSelect} />);
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn(),
+}));
+
+const mockTeams = [
+  {
+    id: "ct_away_team",
+    name: "Mets",
+    city: "",
+    abbreviation: "MET",
+    source: "custom",
+    schemaVersion: 1,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+    metadata: { archived: false },
+  },
+  {
+    id: "ct_home_team",
+    name: "Yankees",
+    city: "",
+    abbreviation: "YNK",
+    source: "custom",
+    schemaVersion: 1,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+    metadata: { archived: false },
+  },
+];
+
+const renderTabBar = (activeTeam: 0 | 1 = 0, onSelect = vi.fn()) => {
+  vi.mocked(useCustomTeams).mockReturnValue({
+    teams: mockTeams as any,
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+    refresh: vi.fn(),
+  });
+  return render(
+    <TeamTabBar
+      teams={["custom:ct_away_team", "custom:ct_home_team"]}
+      activeTeam={activeTeam}
+      onSelect={onSelect}
+    />,
+  );
+};
 
 describe("TeamTabBar", () => {
   it("renders both team tabs", () => {
