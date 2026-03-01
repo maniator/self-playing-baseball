@@ -111,11 +111,10 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 }
 
 /**
- * Creates two custom teams ("Away Team" and "Home Team") via the UI
- * for tests that need to start a custom exhibition game.
- * Uses the "Regenerate Defaults" button to fill in all required players automatically.
- * Always navigates to `/teams` to check existing team count; skips creation if
- * there are already two or more teams.
+ * Ensures at least two custom teams exist for tests that need to start a custom exhibition game.
+ * Uses the "Regenerate Defaults" button to fill in all required fields automatically,
+ * so teams get auto-generated names (e.g. "Springfield Foxes") rather than fixed names.
+ * Skips creation if two or more teams already exist.
  */
 export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
   await page.goto("/teams");
@@ -123,24 +122,17 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
 
   const existingTeams = page.getByTestId("custom-team-list-item");
   const count = await existingTeams.count();
-  if (count >= 2) return; // Both teams already exist — skip
+  if (count >= 2) return; // Already have enough teams — skip
 
-  // Read existing team names (textContent includes buttons, but team name comes first
-  // so a case-insensitive substring check is reliable for "Away Team" / "Home Team").
-  const existingNames: string[] = [];
-  for (let i = 0; i < count; i++) {
-    existingNames.push(((await existingTeams.nth(i).textContent()) ?? "").toLowerCase());
-  }
-
-  // Create whichever of the two default names are absent.
-  const namesToCreate = ["Away Team", "Home Team"].filter(
-    (name) => !existingNames.some((existing) => existing.includes(name.toLowerCase())),
-  );
-  for (const name of namesToCreate) {
+  const teamsToCreate = 2 - count;
+  for (let i = 0; i < teamsToCreate; i++) {
     await page.getByTestId("manage-teams-create-button").click();
     await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
-    await page.getByTestId("custom-team-name-input").fill(name);
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    // Wait until regeneration populates the name field before saving
+    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 5_000,
+    });
     await page.getByTestId("custom-team-save-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
   }

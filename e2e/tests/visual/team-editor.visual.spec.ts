@@ -363,9 +363,6 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
-    // Switch to Custom Teams tab.
-    await page.getByTestId("new-game-custom-teams-tab").click();
-
     // The two custom team selects should now be visible.
     const awaySelect = page.getByTestId("new-game-custom-away-team-select");
     const homeSelect = page.getByTestId("new-game-custom-home-team-select");
@@ -438,9 +435,6 @@ test.describe("Visual — Starting pitcher selector in Exhibition Setup page", (
     // Open the New Game dialog.
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-
-    // Switch to Custom Teams tab.
-    await page.getByTestId("new-game-custom-teams-tab").click();
 
     // Wait for both custom team selects to populate.
     const awaySelect = page.getByTestId("new-game-custom-away-team-select");
