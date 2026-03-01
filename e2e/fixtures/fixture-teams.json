@@ -26,126 +26,135 @@
               "name": "Away Player 1",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "C",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_1",
-              "sig": "e02fe073"
+              "sig": "015ede1a",
+              "fingerprint": "015ede1a"
             },
             {
               "id": "p_fix_away_2",
               "name": "Away Player 2",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "1B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_2",
-              "sig": "a01ebc5f"
+              "sig": "0fa19446",
+              "fingerprint": "0fa19446"
             },
             {
               "id": "p_fix_away_3",
               "name": "Away Player 3",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "2B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_3",
-              "sig": "c48fc0d3"
+              "sig": "a25dd4fa",
+              "fingerprint": "a25dd4fa"
             },
             {
               "id": "p_fix_away_4",
               "name": "Away Player 4",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "3B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_4",
-              "sig": "6312e18f"
+              "sig": "0ae8b5b6",
+              "fingerprint": "0ae8b5b6"
             },
             {
               "id": "p_fix_away_5",
               "name": "Away Player 5",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "SS",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_5",
-              "sig": "75c5ecb3"
+              "sig": "a434335a",
+              "fingerprint": "a434335a"
             },
             {
               "id": "p_fix_away_6",
               "name": "Away Player 6",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "LF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_6",
-              "sig": "33406ea7"
+              "sig": "7dc33b7e",
+              "fingerprint": "7dc33b7e"
             },
             {
               "id": "p_fix_away_7",
               "name": "Away Player 7",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "CF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_7",
-              "sig": "178c2963"
+              "sig": "8b2a1d8a",
+              "fingerprint": "8b2a1d8a"
             },
             {
               "id": "p_fix_away_8",
               "name": "Away Player 8",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "RF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_8",
-              "sig": "48d3e6a7"
+              "sig": "8324b37e",
+              "fingerprint": "8324b37e"
             },
             {
               "id": "p_fix_away_9",
               "name": "Away Player 9",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "DH",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_9",
-              "sig": "291b9463"
+              "sig": "ddea488a",
+              "fingerprint": "ddea488a"
             }
           ],
           "bench": [],
@@ -174,126 +183,135 @@
               "name": "Home Player 1",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "C",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_1",
-              "sig": "92f166c9"
+              "sig": "048d5c40",
+              "fingerprint": "048d5c40"
             },
             {
               "id": "p_fix_home_2",
               "name": "Home Player 2",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "1B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_2",
-              "sig": "88413435"
+              "sig": "11cb6d6c",
+              "fingerprint": "11cb6d6c"
             },
             {
               "id": "p_fix_home_3",
               "name": "Home Player 3",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "2B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_3",
-              "sig": "066a40a9"
+              "sig": "485ae520",
+              "fingerprint": "485ae520"
             },
             {
               "id": "p_fix_home_4",
               "name": "Home Player 4",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "3B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_4",
-              "sig": "95d0861d"
+              "sig": "20850a24",
+              "fingerprint": "20850a24"
             },
             {
               "id": "p_fix_home_5",
               "name": "Home Player 5",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "SS",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_5",
-              "sig": "d1db12f9"
+              "sig": "1dde98b0",
+              "fingerprint": "1dde98b0"
             },
             {
               "id": "p_fix_home_6",
               "name": "Home Player 6",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "LF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_6",
-              "sig": "e19edd7d"
+              "sig": "8a5a1c04",
+              "fingerprint": "8a5a1c04"
             },
             {
               "id": "p_fix_home_7",
               "name": "Home Player 7",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "CF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_7",
-              "sig": "e22e70d9"
+              "sig": "540c3190",
+              "fingerprint": "540c3190"
             },
             {
               "id": "p_fix_home_8",
               "name": "Home Player 8",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "RF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_8",
-              "sig": "a5c90dc5"
+              "sig": "92bde9fc",
+              "fingerprint": "92bde9fc"
             },
             {
               "id": "p_fix_home_9",
               "name": "Home Player 9",
               "role": "batter",
               "batting": {
-                "contact": 70,
-                "power": 70,
-                "speed": 70
+                "contact": 50,
+                "power": 50,
+                "speed": 50
               },
               "position": "DH",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_9",
-              "sig": "29c0e7e9"
+              "sig": "2eafc060",
+              "fingerprint": "2eafc060"
             }
           ],
           "bench": [],
@@ -302,5 +320,5 @@
       }
     ]
   },
-  "sig": "a73c0942"
+  "sig": "c1230d59"
 }
