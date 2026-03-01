@@ -119,6 +119,13 @@ export interface PlayerDoc extends Omit<TeamPlayer, "sig"> {
   /** Zero-based position within the section — used for ordering when assembling the roster. */
   orderIndex: number;
   schemaVersion: number;
+  /**
+   * Original player ID (`TeamPlayer.id`). Stored so the composite primary key
+   * (`${teamId}:${playerId}`) can be unwound back to the original player identity
+   * when assembling a `TeamRoster` from `PlayerDoc`s.
+   * Absent on documents created before schema v2 — `id` is used as the fallback.
+   */
+  playerId?: string;
 }
 
 /** A single player on a custom team roster. */

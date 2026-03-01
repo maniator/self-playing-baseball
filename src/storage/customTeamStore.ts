@@ -1,3 +1,5 @@
+import { appLog } from "@utils/logger";
+
 import {
   buildPlayerSig,
   buildTeamFingerprint,
@@ -112,6 +114,10 @@ function toPlayerDoc(
 ): PlayerDoc {
   return {
     ...player,
+    // Use a team-scoped composite primary key to prevent cross-team collisions
+    // when two different teams contain a player with the same original ID.
+    id: `${teamId}:${player.id}`,
+    playerId: player.id,
     teamId,
     section,
     orderIndex,
@@ -127,27 +133,32 @@ async function fetchPlayerDocs(db: BallgameDb, teamId: string): Promise<PlayerDo
 
 /** Assembles a TeamRoster from a list of PlayerDocs for a team. */
 function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): TeamRoster {
+  const toTeamPlayer = ({
+    teamId: _teamId,
+    section: _section,
+    orderIndex: _orderIndex,
+    schemaVersion: _schemaVersion,
+    playerId,
+    id: compositeId,
+    ...rest
+  }: PlayerDoc): TeamPlayer => ({
+    ...rest,
+    // Reconstruct the original player ID: `playerId` is set on v2 docs;
+    // fall back to `id` for legacy docs that were not migrated yet.
+    id: playerId ?? compositeId,
+  });
   const lineup = playerDocs
     .filter((p) => p.section === "lineup")
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(
-      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
-        player as TeamPlayer,
-    );
+    .map(toTeamPlayer);
   const bench = playerDocs
     .filter((p) => p.section === "bench")
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(
-      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
-        player as TeamPlayer,
-    );
+    .map(toTeamPlayer);
   const pitchers = playerDocs
     .filter((p) => p.section === "pitchers")
     .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(
-      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
-        player as TeamPlayer,
-    );
+    .map(toTeamPlayer);
   return {
     schemaVersion: existingRoster.schemaVersion,
     lineup,
@@ -159,8 +170,13 @@ function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): Te
 /**
  * Writes all players from a roster into the `players` collection using bulkUpsert.
  * Existing docs with matching IDs are updated; new player IDs are inserted.
+ * Returns the Set of composite doc IDs that were written, for use with removePlayerDocs.
  */
-async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoster): Promise<void> {
+async function writePlayerDocs(
+  db: BallgameDb,
+  teamId: string,
+  roster: TeamRoster,
+): Promise<Set<string>> {
   const allDocs = [
     ...roster.lineup.map((p, i) => toPlayerDoc(p, teamId, "lineup", i)),
     ...roster.bench.map((p, i) => toPlayerDoc(p, teamId, "bench", i)),
@@ -169,6 +185,7 @@ async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoste
   if (allDocs.length > 0) {
     await db.players.bulkUpsert(allDocs);
   }
+  return new Set(allDocs.map((d) => d.id));
 }
 
 /**
@@ -225,12 +242,18 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Returns all custom teams ordered by most recently updated.
      * Archived teams are excluded unless `includeArchived` is true.
+     * Pass `withRoster: false` to skip roster hydration (populateRoster) for
+     * callers that only need metadata such as name-uniqueness or fingerprint checks.
      */
-    async listCustomTeams(filter?: { includeArchived?: boolean }): Promise<CustomTeamDoc[]> {
+    async listCustomTeams(filter?: {
+      includeArchived?: boolean;
+      withRoster?: boolean;
+    }): Promise<CustomTeamDoc[]> {
       const db = await getDbFn();
       const docs = await db.customTeams.find({ sort: [{ updatedAt: "desc" }] }).exec();
       const teams = docs.map((d) => d.toJSON() as unknown as CustomTeamDoc);
       const filtered = filter?.includeArchived ? teams : teams.filter((t) => !t.metadata?.archived);
+      if (filter?.withRoster === false) return filtered;
       return Promise.all(filtered.map((t) => populateRoster(db, t)));
     },
 
@@ -253,7 +276,7 @@ function buildStore(getDbFn: GetDb) {
       const name = requireNonEmpty(input.name, "name");
 
       // Enforce unique team names (case-insensitive) across the local install.
-      const existing = await this.listCustomTeams({ includeArchived: true });
+      const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
       const nameLower = name.toLowerCase();
       const duplicate = existing.find((t) => t.name.toLowerCase() === nameLower);
       if (duplicate) {
@@ -322,7 +345,7 @@ function buildStore(getDbFn: GetDb) {
       if (updates.name !== undefined) {
         const newName = requireNonEmpty(updates.name, "name");
         // Enforce unique team names (case-insensitive), excluding the current team.
-        const existing = await this.listCustomTeams({ includeArchived: true });
+        const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
         const nameLower = newName.toLowerCase();
         const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
         if (duplicate) {
@@ -354,14 +377,9 @@ function buildStore(getDbFn: GetDb) {
           pitchers: [],
         };
         // Replace player docs: upsert new docs first (safe), then remove any stale
-        // docs whose IDs no longer appear in the new roster.
-        const newPlayerIds = new Set([
-          ...newRoster.lineup.map((p) => p.id),
-          ...newRoster.bench.map((p) => p.id),
-          ...newRoster.pitchers.map((p) => p.id),
-        ]);
-        await writePlayerDocs(db, id, newRoster);
-        await removePlayerDocs(db, id, newPlayerIds);
+        // docs whose composite IDs no longer appear in the new roster.
+        const newDocIds = await writePlayerDocs(db, id, newRoster);
+        await removePlayerDocs(db, id, newDocIds);
       }
 
       if (updates.metadata !== undefined) {
@@ -464,7 +482,7 @@ function buildStore(getDbFn: GetDb) {
       json: string,
       options?: ImportCustomTeamsOptions,
     ): Promise<ImportCustomTeamsResult> {
-      const existing = await this.listCustomTeams({ includeArchived: true });
+      const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
       const result = importCustomTeamsParser(json, existing, undefined, options);
       if (!result.requiresDuplicateConfirmation) {
         const db = await getDbFn();
@@ -475,16 +493,25 @@ function buildStore(getDbFn: GetDb) {
             roster: { schemaVersion: ROSTER_SCHEMA_VERSION, lineup: [], bench: [], pitchers: [] },
           };
           await db.customTeams.upsert(teamDoc);
-          // Upsert new player docs first (safe), then remove any stale docs whose
-          // IDs no longer appear in the imported roster — mirrors the safe pattern
-          // used in updateCustomTeam to avoid losing players on partial failure.
-          const newPlayerIds = new Set([
-            ...team.roster.lineup.map((p) => p.id),
-            ...team.roster.bench.map((p) => p.id),
-            ...team.roster.pitchers.map((p) => p.id),
-          ]);
-          await writePlayerDocs(db, team.id, team.roster);
-          await removePlayerDocs(db, team.id, newPlayerIds);
+          // Upsert new player docs first (safe), then remove stale docs whose composite
+          // IDs no longer appear in the imported roster. On failure, roll back the team
+          // upsert so no empty-roster team is left behind.
+          try {
+            const newDocIds = await writePlayerDocs(db, team.id, team.roster);
+            await removePlayerDocs(db, team.id, newDocIds);
+          } catch (err) {
+            await db.customTeams
+              .findOne(team.id)
+              .exec()
+              .then((d) => d?.remove())
+              .catch((rollbackErr) => {
+                appLog.warn(
+                  `[importCustomTeams] rollback failed for team ${team.id}:`,
+                  rollbackErr,
+                );
+              });
+            throw err;
+          }
         }
       }
       return result;
