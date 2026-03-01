@@ -14,13 +14,14 @@ import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 import { appLog } from "@utils/logger";
 
 import { fnv1a } from "./hash";
-import type { CustomTeamDoc, EventDoc, SaveDoc, TeamDoc } from "./types";
+import type { CustomTeamDoc, EventDoc, PlayerDoc, SaveDoc, TeamDoc } from "./types";
 
 type DbCollections = {
   saves: RxCollection<SaveDoc>;
   events: RxCollection<EventDoc>;
   teams: RxCollection<TeamDoc>;
   customTeams: RxCollection<CustomTeamDoc>;
+  players: RxCollection<PlayerDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
@@ -198,6 +199,33 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   indexes: ["updatedAt", "source"],
 };
 
+const playersSchema: RxJsonSchema<PlayerDoc> = {
+  version: 0,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 128 },
+    teamId: { type: "string", maxLength: 128 },
+    section: { type: "string", enum: ["lineup", "bench", "pitchers"], maxLength: 16 },
+    orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+    name: { type: "string" },
+    role: { type: "string" },
+    batting: { type: "object", additionalProperties: true },
+    pitching: { type: "object", additionalProperties: true },
+    position: { type: "string" },
+    handedness: { type: "string" },
+    isBenchEligible: { type: "boolean" },
+    isPitcherEligible: { type: "boolean" },
+    jerseyNumber: { type: ["number", "null"] },
+    pitchingRole: { type: "string" },
+    playerSeed: { type: "string", maxLength: 32 },
+    fingerprint: { type: "string", maxLength: 8 },
+    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+  },
+  required: ["id", "teamId", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+  indexes: ["teamId", ["teamId", "section"]],
+};
+
 // Promise-based guard: set synchronously before the first await so concurrent
 // initDb calls share the same load (JS is single-threaded; ??= is atomic here).
 let devModePluginPromise: Promise<void> | null = null;
@@ -355,6 +383,7 @@ async function initDb(
         },
       },
     },
+    players: { schema: playersSchema },
   });
   return db;
 }
@@ -409,6 +438,9 @@ export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (aw
 
 export const customTeamsCollection = async (): Promise<RxCollection<CustomTeamDoc>> =>
   (await getDb()).customTeams;
+
+export const playersCollection = async (): Promise<RxCollection<PlayerDoc>> =>
+  (await getDb()).players;
 
 /**
  * Creates a fresh database with the given storage — intended for tests only.

@@ -13,6 +13,7 @@ import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
   CustomTeamMetadata,
+  PlayerDoc,
   TeamPlayer,
   TeamRoster,
   UpdateCustomTeamInput,
@@ -20,6 +21,7 @@ import type {
 
 const SCHEMA_VERSION = 1;
 const ROSTER_SCHEMA_VERSION = 1;
+const PLAYER_SCHEMA_VERSION = 1;
 
 const STAT_MIN = 0;
 const STAT_MAX = 100;
@@ -101,6 +103,105 @@ function buildRoster(input: CreateCustomTeamInput["roster"]): TeamRoster {
   };
 }
 
+/** Converts a sanitized TeamPlayer into a PlayerDoc for a given team/section/index. */
+function toPlayerDoc(
+  player: TeamPlayer,
+  teamId: string,
+  section: "lineup" | "bench" | "pitchers",
+  orderIndex: number,
+): PlayerDoc {
+  return {
+    ...player,
+    teamId,
+    section,
+    orderIndex,
+    schemaVersion: PLAYER_SCHEMA_VERSION,
+  };
+}
+
+/** Returns all PlayerDocs for a team, sorted by section and orderIndex. */
+async function fetchPlayerDocs(db: BallgameDb, teamId: string): Promise<PlayerDoc[]> {
+  const docs = await db.players.find({ selector: { teamId } }).exec();
+  return docs.map((d) => d.toJSON() as unknown as PlayerDoc);
+}
+
+/** Assembles a TeamRoster from a list of PlayerDocs for a team. */
+function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): TeamRoster {
+  const lineup = playerDocs
+    .filter((p) => p.section === "lineup")
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map(
+      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
+        player as TeamPlayer,
+    );
+  const bench = playerDocs
+    .filter((p) => p.section === "bench")
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map(
+      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
+        player as TeamPlayer,
+    );
+  const pitchers = playerDocs
+    .filter((p) => p.section === "pitchers")
+    .sort((a, b) => a.orderIndex - b.orderIndex)
+    .map(
+      ({ teamId: _t, section: _s, orderIndex: _o, schemaVersion: _v, ...player }) =>
+        player as TeamPlayer,
+    );
+  return {
+    schemaVersion: existingRoster.schemaVersion,
+    lineup,
+    bench,
+    pitchers,
+  };
+}
+
+/**
+ * Writes all players from a roster into the `players` collection.
+ * Assumes any existing player docs for this team have already been removed.
+ */
+async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoster): Promise<void> {
+  const allSections = [
+    { players: roster.lineup, section: "lineup" as const },
+    { players: roster.bench, section: "bench" as const },
+    { players: roster.pitchers, section: "pitchers" as const },
+  ];
+  for (const { players: sectionPlayers, section } of allSections) {
+    for (let i = 0; i < sectionPlayers.length; i++) {
+      await db.players.insert(toPlayerDoc(sectionPlayers[i], teamId, section, i));
+    }
+  }
+}
+
+/**
+ * Removes all player docs for a given team from the `players` collection.
+ */
+async function removePlayerDocs(db: BallgameDb, teamId: string): Promise<void> {
+  const existing = await db.players.find({ selector: { teamId } }).exec();
+  await Promise.all(existing.map((p) => p.remove()));
+}
+
+/**
+ * Populates the roster of a team from the `players` collection.
+ * If no player docs exist yet (legacy team), falls back to the embedded roster
+ * and backfills the `players` collection for future reads.
+ */
+async function populateRoster(db: BallgameDb, team: CustomTeamDoc): Promise<CustomTeamDoc> {
+  const playerDocs = await fetchPlayerDocs(db, team.id);
+  if (playerDocs.length > 0) {
+    return { ...team, roster: assembleRoster(playerDocs, team.roster) };
+  }
+  // Legacy team: no player docs yet — backfill from embedded roster.
+  if (
+    team.roster.lineup.length > 0 ||
+    team.roster.bench.length > 0 ||
+    team.roster.pitchers.length > 0
+  ) {
+    await writePlayerDocs(db, team.id, team.roster);
+  }
+  return team;
+}
+
 function buildStore(getDbFn: GetDb) {
   return {
     /**
@@ -111,15 +212,17 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const docs = await db.customTeams.find({ sort: [{ updatedAt: "desc" }] }).exec();
       const teams = docs.map((d) => d.toJSON() as unknown as CustomTeamDoc);
-      if (filter?.includeArchived) return teams;
-      return teams.filter((t) => !t.metadata?.archived);
+      const filtered = filter?.includeArchived ? teams : teams.filter((t) => !t.metadata?.archived);
+      return Promise.all(filtered.map((t) => populateRoster(db, t)));
     },
 
     /** Returns a single custom team by id, or null if not found. */
     async getCustomTeam(id: string): Promise<CustomTeamDoc | null> {
       const db = await getDbFn();
       const doc = await db.customTeams.findOne(id).exec();
-      return doc ? (doc.toJSON() as unknown as CustomTeamDoc) : null;
+      if (!doc) return null;
+      const team = doc.toJSON() as unknown as CustomTeamDoc;
+      return populateRoster(db, team);
     },
 
     /**
@@ -157,7 +260,8 @@ function buildStore(getDbFn: GetDb) {
         ...(input.city !== undefined && { city: input.city }),
         ...(input.slug !== undefined && { slug: input.slug }),
         source: input.source ?? "custom",
-        roster,
+        // Store empty embedded arrays — players live in the `players` collection.
+        roster: { schemaVersion: ROSTER_SCHEMA_VERSION, lineup: [], bench: [], pitchers: [] },
         metadata: {
           ...(input.metadata?.notes !== undefined && { notes: input.metadata.notes }),
           ...(input.metadata?.tags !== undefined && { tags: input.metadata.tags }),
@@ -169,6 +273,8 @@ function buildStore(getDbFn: GetDb) {
       doc.fingerprint = buildTeamFingerprint(doc);
       const db = await getDbFn();
       await db.customTeams.insert(doc);
+      // Write player docs into the dedicated players collection.
+      await writePlayerDocs(db, id, roster);
       return id;
     },
 
@@ -206,12 +312,22 @@ function buildStore(getDbFn: GetDb) {
       if (updates.statsProfile !== undefined) patch.statsProfile = updates.statsProfile;
 
       if (updates.roster !== undefined) {
-        const current = doc.toJSON() as unknown as CustomTeamDoc;
-        patch.roster = buildRoster({
+        const current = await populateRoster(db, doc.toJSON() as unknown as CustomTeamDoc);
+        const newRoster = buildRoster({
           lineup: updates.roster.lineup ?? current.roster.lineup,
           bench: updates.roster.bench ?? current.roster.bench,
           pitchers: updates.roster.pitchers ?? current.roster.pitchers,
         });
+        // Keep embedded arrays empty — players live in the `players` collection.
+        patch.roster = {
+          schemaVersion: ROSTER_SCHEMA_VERSION,
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        };
+        // Replace player docs: remove old ones, insert new ones.
+        await removePlayerDocs(db, id);
+        await writePlayerDocs(db, id, newRoster);
       }
 
       if (updates.metadata !== undefined) {
@@ -240,7 +356,10 @@ function buildStore(getDbFn: GetDb) {
     async deleteCustomTeam(id: string): Promise<void> {
       const db = await getDbFn();
       const doc = await db.customTeams.findOne(id).exec();
-      if (doc) await doc.remove();
+      if (doc) {
+        await doc.remove();
+        await removePlayerDocs(db, id);
+      }
     },
 
     /**
@@ -290,7 +409,15 @@ function buildStore(getDbFn: GetDb) {
       if (!result.requiresDuplicateConfirmation) {
         const db = await getDbFn();
         for (const team of result.teams) {
-          await db.customTeams.upsert(team);
+          // Store the imported team doc with empty embedded arrays.
+          const teamDoc: CustomTeamDoc = {
+            ...team,
+            roster: { schemaVersion: ROSTER_SCHEMA_VERSION, lineup: [], bench: [], pitchers: [] },
+          };
+          await db.customTeams.upsert(teamDoc);
+          // Replace player docs for this team.
+          await removePlayerDocs(db, team.id);
+          await writePlayerDocs(db, team.id, team.roster);
         }
       }
       return result;

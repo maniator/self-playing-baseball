@@ -107,6 +107,20 @@ export interface TeamPlayerPitching {
   movement?: number;
 }
 
+/** Persisted player document — stores all TeamPlayer fields plus team foreign key and roster metadata.
+ * The `sig` field from `TeamPlayer` is intentionally omitted: it is only used in export bundles
+ * and is stripped before any DB storage.
+ */
+export interface PlayerDoc extends Omit<TeamPlayer, "sig"> {
+  /** Foreign key: the `id` of the parent `CustomTeamDoc`. */
+  teamId: string;
+  /** Which roster section this player belongs to. */
+  section: "lineup" | "bench" | "pitchers";
+  /** Zero-based position within the section — used for ordering when assembling the roster. */
+  orderIndex: number;
+  schemaVersion: number;
+}
+
 /** A single player on a custom team roster. */
 export interface TeamPlayer {
   /** Stable ID within the team. */
