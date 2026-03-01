@@ -53,9 +53,7 @@ function buildStore(getDbFn: GetDb) {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
         seed: setup.seed,
-        matchupMode: setup.matchupMode,
-        homeTeamId: setup.homeTeamId,
-        awayTeamId: setup.awayTeamId,
+        homeTeamId: setup.homeTeamId,        awayTeamId: setup.awayTeamId,
         createdAt: now,
         updatedAt: now,
         // -1 is the sentinel for "not started" (no pitches persisted yet).
@@ -212,40 +210,39 @@ function buildStore(getDbFn: GetDb) {
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
       // Reject saves that reference custom teams that don't exist locally.
-      const customTeamRefs: Array<{ id: string; label: string }> = [];
-      const teamEntries: Array<{ field: string; label: string }> = [
-        { field: header.homeTeamId, label: header.setup?.homeTeam ?? header.homeTeamId },
-        { field: header.awayTeamId, label: header.setup?.awayTeam ?? header.awayTeamId },
-      ];
-      for (const { field, label } of teamEntries) {
-        if (field.startsWith("ct_") || field.startsWith("custom:")) {
-          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
-          customTeamRefs.push({ id, label });
-        }
-      }
+      // De-dup so a self-matchup (homeTeamId === awayTeamId) counts as 1 missing team, not 2.
+      const customTeamIds: string[] = Array.from(
+        new Set(
+          [header.homeTeamId, header.awayTeamId]
+            .filter(
+              (f) => typeof f === "string" && (f.startsWith("ct_") || f.startsWith("custom:")),
+            )
+            .map((f) => (f.startsWith("custom:") ? f.slice("custom:".length) : f)),
+        ),
+      );
       const db = await getDbFn();
-      if (customTeamRefs.length > 0) {
-        const missing: Array<{ id: string; label: string }> = [];
-        for (const ref of customTeamRefs) {
-          const found = await db.customTeams.findOne(ref.id).exec();
-          if (!found) missing.push(ref);
-        }
-        if (missing.length > 0) {
-          const descriptions = missing.map((m) => `"${m.label}" (${m.id})`).join(", ");
+      if (customTeamIds.length > 0) {
+        const missingCount = (
+          await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()))
+        ).filter((doc) => doc === null).length;
+        if (missingCount > 0) {
+          const teamWord = missingCount === 1 ? "team" : "teams";
           throw new Error(
-            `Cannot import save: missing custom team(s): ${descriptions}. Import the missing team(s) first via Teams import, then retry the save import.`,
+            `Cannot import save: ${missingCount} custom ${teamWord} used by this save ${missingCount === 1 ? "is" : "are"} not installed on this device. Import the missing ${teamWord} first via the Teams page, then retry the save import.`,
           );
         }
       }
-      await db.saves.upsert(header);
+      // Strip legacy fields removed from the schema (e.g. matchupMode dropped in v2).
+      const { matchupMode: _drop, ...cleanHeader } = header as Record<string, unknown>;
+      await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
       }
       // Force counter re-initialization on next append so it reads the imported
       // event count rather than using a stale in-memory value.
-      nextIdxMap.delete(header.id);
-      appendQueues.delete(header.id);
-      return header;
+      nextIdxMap.delete(cleanHeader.id as string);
+      appendQueues.delete(cleanHeader.id as string);
+      return cleanHeader as SaveDoc;
     },
   };
 }
