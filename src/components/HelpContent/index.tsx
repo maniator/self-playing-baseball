@@ -17,12 +17,7 @@ interface SectionProps {
 const Section: React.FunctionComponent<SectionProps> = ({ title, defaultOpen, children }) => {
   const [isOpen, setIsOpen] = React.useState(defaultOpen ?? false);
   return (
-    <SectionDetails
-      open={isOpen}
-      onToggle={(e: React.SyntheticEvent) =>
-        setIsOpen((e.currentTarget as HTMLDetailsElement).open)
-      }
-    >
+    <SectionDetails open={isOpen} onToggle={(e) => setIsOpen(e.currentTarget.open)}>
       <SectionSummary>{title}</SectionSummary>
       <SectionBody>{children}</SectionBody>
     </SectionDetails>

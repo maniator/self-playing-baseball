@@ -351,13 +351,37 @@ function buildStore(getDbFn: GetDb) {
     },
 
     /** Permanently removes a custom team. */
-    async deleteCustomTeam(id: string): Promise<void> {
+    /**
+     * Deletes a custom team.
+     * @param id  The team id to delete.
+     * @param options.cascade  When `true` (default), also deletes all player docs belonging to this
+     *   team. When `false`, player docs are detached (their `teamId` is set to `null`) so they
+     *   become free agents and can be re-assigned or listed via `listFreePlayers()`.
+     */
+    async deleteCustomTeam(id: string, options?: { cascade?: boolean }): Promise<void> {
+      const cascade = options?.cascade ?? true;
       const db = await getDbFn();
       const doc = await db.customTeams.findOne(id).exec();
       if (doc) {
         await doc.remove();
-        await removePlayerDocs(db, id);
+        if (cascade) {
+          await removePlayerDocs(db, id);
+        } else {
+          const existing = await db.players.find({ selector: { teamId: id } }).exec();
+          await Promise.all(existing.map((p) => p.patch({ teamId: null })));
+        }
       }
+    },
+
+    /**
+     * Returns all player docs that are not assigned to any team (free agents).
+     * These are players whose `teamId` is `null` — created when a team is deleted
+     * with `{ cascade: false }`.
+     */
+    async listFreePlayers(): Promise<PlayerDoc[]> {
+      const db = await getDbFn();
+      const docs = await db.players.find({ selector: { teamId: null } }).exec();
+      return docs.map((d) => d.toJSON() as unknown as PlayerDoc);
     },
 
     /**

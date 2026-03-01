@@ -73,6 +73,10 @@ const Game: React.FunctionComponent<Props> = ({
 
   return (
     <RxDatabaseProvider
+      // BallgameDb is a typed RxDatabase subtype that is structurally compatible
+      // with RxDatabaseProvider's expected database prop at runtime. The cast is
+      // necessary because RxDB's React types use opaque generics that don't
+      // align with our concrete BallgameDb type without explicit coercion.
       database={db as unknown as Parameters<typeof RxDatabaseProvider>[0]["database"]}
     >
       <GameProviderWrapper onDispatch={onDispatch} announcePreprocessor={announcePreprocessor}>

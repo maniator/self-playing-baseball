@@ -907,3 +907,55 @@ describe("players collection integration", () => {
     expect(returned["role"]).toBe("pitcher");
   });
 });
+
+describe("deleteCustomTeam — cascade: false (free agents)", () => {
+  it("detaches player docs when cascade is false", async () => {
+    const player = makePlayer({ name: "Free Agent Fred" });
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Cascade-Off Team",
+        roster: { lineup: [player], bench: [], pitchers: [] },
+      }),
+    );
+    await store.deleteCustomTeam(id, { cascade: false });
+    const freePlayers = await store.listFreePlayers();
+    expect(freePlayers.some((p) => p.name === "Free Agent Fred")).toBe(true);
+    expect(freePlayers.every((p) => p.teamId == null)).toBe(true);
+  });
+
+  it("removes team doc even when cascade is false", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Cascade-Off Check" }));
+    await store.deleteCustomTeam(id, { cascade: false });
+    const team = await store.getCustomTeam(id);
+    expect(team).toBeNull();
+  });
+
+  it("cascade true (default) deletes player docs", async () => {
+    const player = makePlayer({ name: "Cascade Delete Player" });
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Cascade-On Team",
+        roster: { lineup: [player], bench: [], pitchers: [] },
+      }),
+    );
+    await store.deleteCustomTeam(id);
+    const freePlayers = await store.listFreePlayers();
+    expect(freePlayers.some((p) => p.name === "Cascade Delete Player")).toBe(false);
+  });
+});
+
+describe("listFreePlayers", () => {
+  it("returns empty array when there are no free agents", async () => {
+    const freePlayers = await store.listFreePlayers();
+    expect(freePlayers).toEqual([]);
+  });
+
+  it("does not include players belonging to active teams", async () => {
+    const player = makePlayer({ name: "Active Player" });
+    await store.createCustomTeam(
+      makeInput({ name: "Active Team", roster: { lineup: [player], bench: [], pitchers: [] } }),
+    );
+    const freePlayers = await store.listFreePlayers();
+    expect(freePlayers).toHaveLength(0);
+  });
+});

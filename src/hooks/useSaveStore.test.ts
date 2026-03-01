@@ -29,9 +29,13 @@ describe("useSaveStore", () => {
     const Wrapper = ({ children }: { children: React.ReactNode }) =>
       React.createElement(
         RxDatabaseProvider,
+        // BallgameDb is a typed RxDatabase subtype that is structurally compatible
+        // with RxDatabaseProvider's expected database prop at runtime. The cast is
+        // necessary because RxDB's React types use opaque generics that don't
+        // align with our concrete BallgameDb type without explicit coercion.
         {
           database: database as unknown as Parameters<typeof RxDatabaseProvider>[0]["database"],
-        },
+        } as Parameters<typeof RxDatabaseProvider>[0],
         children,
       );
     Wrapper.displayName = "TestDbWrapper";

@@ -339,9 +339,9 @@ describe("schema version and reset flag", () => {
     await testDb.close();
   });
 
-  it("players collection has schema version 0", async () => {
+  it("players collection has schema version 1", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.players.schema.version).toBe(0);
+    expect(testDb.players.schema.version).toBe(1);
     await testDb.close();
   });
 
@@ -1141,5 +1141,64 @@ describe("getDb() recovery path", () => {
   it("_resetDbForTest clears the cached promise so getDb() runs fresh", () => {
     _resetDbForTest();
     expect(wasDbReset()).toBe(false);
+  });
+});
+
+describe("schema migration: players v0 → v1 (teamId now nullable)", () => {
+  it("migrates a v0 player document (required teamId) to v1 (optional teamId) without data loss", async () => {
+    const v0PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
+      version: 0,
+      primaryKey: "id",
+      type: "object",
+      properties: {
+        id: { type: "string", maxLength: 128 },
+        teamId: { type: "string", maxLength: 128 },
+        section: { type: "string", maxLength: 16 },
+        orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+        name: { type: "string" },
+        role: { type: "string" },
+        batting: { type: "object", additionalProperties: true },
+        schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      },
+      required: [
+        "id",
+        "teamId",
+        "section",
+        "orderIndex",
+        "name",
+        "role",
+        "batting",
+        "schemaVersion",
+      ],
+      indexes: ["teamId", ["teamId", "section"]],
+    };
+
+    const dbName = `migration_test_players_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v0Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v0Db.addCollections({ players: { schema: v0PlayersSchema } });
+    await v0Db.players.insert({
+      id: "p1",
+      teamId: "ct_test",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Legacy Player",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 50 },
+      schemaVersion: 0,
+    });
+    await v0Db.close();
+
+    const v1Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v1Db.players.findOne("p1").exec();
+    expect(doc, "player doc must survive migration").not.toBeNull();
+    expect(doc?.name).toBe("Legacy Player");
+    expect(doc?.teamId).toBe("ct_test");
+    expect(doc?.role).toBe("batter");
+    await v1Db.close();
   });
 });

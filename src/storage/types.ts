@@ -112,8 +112,8 @@ export interface TeamPlayerPitching {
  * and is stripped before any DB storage.
  */
 export interface PlayerDoc extends Omit<TeamPlayer, "sig"> {
-  /** Foreign key: the `id` of the parent `CustomTeamDoc`. */
-  teamId: string;
+  /** Foreign key: the `id` of the parent `CustomTeamDoc`. Null when the player is a free agent (not assigned to any team). */
+  teamId?: string | null;
   /** Which roster section this player belongs to. */
   section: "lineup" | "bench" | "pitchers";
   /** Zero-based position within the section — used for ordering when assembling the roster. */

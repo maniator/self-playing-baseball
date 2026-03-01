@@ -201,12 +201,12 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
 };
 
 const playersSchema: RxJsonSchema<PlayerDoc> = {
-  version: 0,
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
     id: { type: "string", maxLength: 128 },
-    teamId: { type: "string", maxLength: 128 },
+    teamId: { type: ["string", "null"] },
     section: { type: "string", enum: ["lineup", "bench", "pitchers"], maxLength: 16 },
     orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
     name: { type: "string" },
@@ -223,8 +223,11 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
     fingerprint: { type: "string", maxLength: 8 },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
-  required: ["id", "teamId", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
-  indexes: ["teamId", ["teamId", "section"]],
+  required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+  // No index on teamId: RxDB 17 beta cannot compute index strings for nullable union types
+  // (`type: ["string", "null"]`). Full collection scans are acceptable for the small
+  // roster sizes (≤25 players per team) typical of this app.
+  indexes: [],
 };
 
 // Promise-based guard: set synchronously before the first await so concurrent
@@ -384,7 +387,14 @@ async function initDb(
         },
       },
     },
-    players: { schema: playersSchema },
+    players: {
+      schema: playersSchema,
+      migrationStrategies: {
+        // v0→v1: teamId is now optional (nullable). Existing docs already have a
+        // valid non-null teamId string so this is a safe identity migration.
+        1: (oldDoc) => oldDoc,
+      },
+    },
   });
   return db;
 }
