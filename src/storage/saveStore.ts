@@ -210,6 +210,11 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
+      // Validate team ID fields are strings before calling .startsWith.
+      if (typeof header.homeTeamId !== "string" || typeof header.awayTeamId !== "string") {
+        throw new Error("Invalid save data: missing or non-string team identifiers");
+      }
+
       // Reject saves created with the old MLB team format (neither ct_ nor custom: prefix).
       for (const field of [header.homeTeamId, header.awayTeamId]) {
         if (!field.startsWith("ct_") && !field.startsWith("custom:")) {
@@ -220,13 +225,14 @@ function buildStore(getDbFn: GetDb) {
       }
 
       // Reject saves that reference custom teams that don't exist locally.
-      const customTeamIds: string[] = [];
-      for (const field of [header.homeTeamId, header.awayTeamId]) {
-        if (field.startsWith("ct_") || field.startsWith("custom:")) {
-          const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
-          customTeamIds.push(id);
-        }
-      }
+      // De-dup so a self-matchup (homeTeamId === awayTeamId) counts as 1 missing team, not 2.
+      const customTeamIds: string[] = Array.from(
+        new Set(
+          [header.homeTeamId, header.awayTeamId]
+            .filter((f) => f.startsWith("ct_") || f.startsWith("custom:"))
+            .map((f) => (f.startsWith("custom:") ? f.slice("custom:".length) : f)),
+        ),
+      );
       const db = await getDbFn();
       if (customTeamIds.length > 0) {
         const missingCount = (

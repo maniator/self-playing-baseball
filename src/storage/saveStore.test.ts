@@ -703,4 +703,26 @@ describe("importRxdbSave — missing custom team rejection", () => {
       "Cannot import save: this save was created with the old MLB team format",
     );
   });
+
+  it("throws with a controlled error when team ID fields are non-string", async () => {
+    const { json } = makeCustomSave("ct_fixture_away_00", "ct_fixture_home_00");
+    const envelope = JSON.parse(json) as Record<string, unknown> & {
+      header: Record<string, unknown>;
+    };
+    // Overwrite with a non-string value to simulate a crafted/legacy save.
+    envelope.header.homeTeamId = null;
+    envelope.sig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header: envelope.header, events: [] }));
+    await expect(store.importRxdbSave(JSON.stringify(envelope))).rejects.toThrow(
+      "Invalid save data: missing or non-string team identifiers",
+    );
+  });
+
+  it("counts only unique missing teams (self-matchup does not double-count)", async () => {
+    // homeTeamId === awayTeamId: only 1 unique team ID, so error says "1 custom team"
+    const teamId = "ct_self_matchup";
+    const { json } = makeCustomSave(teamId, teamId);
+    await expect(store.importRxdbSave(json)).rejects.toThrow(
+      "Cannot import save: 1 custom team used by this save is not installed on this device.",
+    );
+  });
 });
