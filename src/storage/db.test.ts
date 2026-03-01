@@ -264,6 +264,142 @@ describe("players collection", () => {
   });
 });
 
+describe("players collection", () => {
+  it("inserts and retrieves a player document", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    await testDb.players.insert({
+      id: "team1:lineup:0",
+      teamId: "team1",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Alice",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 50 },
+      schemaVersion: 1,
+    });
+    const doc = await testDb.players.findOne("team1:lineup:0").exec();
+    expect(doc?.name).toBe("Alice");
+    expect(doc?.teamId).toBe("team1");
+    expect(doc?.section).toBe("lineup");
+    expect(doc?.orderIndex).toBe(0);
+    await testDb.close();
+  });
+
+  it("queries players by teamId", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    await testDb.players.bulkInsert([
+      {
+        id: "t1:lineup:0",
+        teamId: "t1",
+        section: "lineup" as const,
+        orderIndex: 0,
+        name: "Alice",
+        role: "batter",
+        batting: { contact: 70, power: 60, speed: 50 },
+        schemaVersion: 1,
+      },
+      {
+        id: "t1:lineup:1",
+        teamId: "t1",
+        section: "lineup" as const,
+        orderIndex: 1,
+        name: "Bob",
+        role: "batter",
+        batting: { contact: 65, power: 55, speed: 45 },
+        schemaVersion: 1,
+      },
+      {
+        id: "t2:lineup:0",
+        teamId: "t2",
+        section: "lineup" as const,
+        orderIndex: 0,
+        name: "Carol",
+        role: "batter",
+        batting: { contact: 80, power: 70, speed: 60 },
+        schemaVersion: 1,
+      },
+    ]);
+    const t1Players = await testDb.players.find({ selector: { teamId: "t1" } }).exec();
+    expect(t1Players).toHaveLength(2);
+    const t2Players = await testDb.players.find({ selector: { teamId: "t2" } }).exec();
+    expect(t2Players).toHaveLength(1);
+    await testDb.close();
+  });
+
+  it("queries players by teamId + section", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    await testDb.players.bulkInsert([
+      {
+        id: "tm:lineup:0",
+        teamId: "tm",
+        section: "lineup" as const,
+        orderIndex: 0,
+        name: "Lineup Player",
+        role: "batter",
+        batting: { contact: 70, power: 60, speed: 50 },
+        schemaVersion: 1,
+      },
+      {
+        id: "tm:bench:0",
+        teamId: "tm",
+        section: "bench" as const,
+        orderIndex: 0,
+        name: "Bench Player",
+        role: "batter",
+        batting: { contact: 65, power: 55, speed: 45 },
+        schemaVersion: 1,
+      },
+      {
+        id: "tm:pitchers:0",
+        teamId: "tm",
+        section: "pitchers" as const,
+        orderIndex: 0,
+        name: "Pitcher",
+        role: "pitcher",
+        batting: { contact: 20, power: 10, speed: 15 },
+        schemaVersion: 1,
+      },
+    ]);
+    const lineupPlayers = await testDb.players
+      .find({ selector: { teamId: "tm", section: "lineup" } })
+      .exec();
+    expect(lineupPlayers).toHaveLength(1);
+    expect(lineupPlayers[0].name).toBe("Lineup Player");
+    await testDb.close();
+  });
+
+  it("players from different teams are isolated", async () => {
+    const testDb = await _createTestDb(getRxStorageMemory());
+    await testDb.players.bulkInsert([
+      {
+        id: "teamA:lineup:0",
+        teamId: "teamA",
+        section: "lineup" as const,
+        orderIndex: 0,
+        name: "A Player",
+        role: "batter",
+        batting: { contact: 70, power: 60, speed: 50 },
+        schemaVersion: 1,
+      },
+      {
+        id: "teamB:lineup:0",
+        teamId: "teamB",
+        section: "lineup" as const,
+        orderIndex: 0,
+        name: "B Player",
+        role: "batter",
+        batting: { contact: 65, power: 55, speed: 45 },
+        schemaVersion: 1,
+      },
+    ]);
+    const teamAPlayers = await testDb.players.find({ selector: { teamId: "teamA" } }).exec();
+    expect(teamAPlayers.map((p) => p.name)).toEqual(["A Player"]);
+    const teamBPlayers = await testDb.players.find({ selector: { teamId: "teamB" } }).exec();
+    expect(teamBPlayers.map((p) => p.name)).toEqual(["B Player"]);
+    await testDb.close();
+  });
+});
+
 describe("schema version and reset flag", () => {
   it("saves collection has schema version 2", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
