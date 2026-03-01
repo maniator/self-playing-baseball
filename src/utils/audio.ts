@@ -1,7 +1,32 @@
 export let _alertVolume = 1.0;
 
+/**
+ * INTERNAL: set/cleared only by homeMusic.ts so setAlertVolume can update it live without a
+ * circular dependency. Do not use from other modules.
+ */
+let _homeMasterGain: GainNode | null = null;
+export const _setHomeMasterGain = (g: GainNode | null): void => {
+  _homeMasterGain = g;
+};
+
 export const setAlertVolume = (v: number): void => {
   _alertVolume = Math.max(0, Math.min(1, v));
+  // Keep the home-screen music master gain in sync so volume changes apply immediately,
+  // canceling any in-progress automation (e.g. fade-in ramp) so the new value takes effect.
+  if (_homeMasterGain) {
+    try {
+      const gainParam = _homeMasterGain.gain;
+      const now = _homeMasterGain.context?.currentTime ?? 0;
+      if (typeof gainParam.cancelAndHoldAtTime === "function") {
+        gainParam.cancelAndHoldAtTime(now);
+      } else {
+        gainParam.cancelScheduledValues(now);
+      }
+      gainParam.setValueAtTime(_alertVolume, now);
+    } catch {
+      // AudioParam may throw if the AudioContext is closed or partially implemented — ignore.
+    }
+  }
 };
 
 export const getAlertVolume = (): number => _alertVolume;

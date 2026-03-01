@@ -51,9 +51,11 @@ const mockOscillator = {
 const mockGainNode = {
   connect: vi.fn(),
   gain: {
+    value: 1,
     setValueAtTime: vi.fn(),
     linearRampToValueAtTime: vi.fn(),
     exponentialRampToValueAtTime: vi.fn(),
+    cancelAndHoldAtTime: vi.fn(),
   },
 };
 
@@ -62,6 +64,9 @@ const mockAudioCtx = {
   createGain: vi.fn().mockReturnValue(mockGainNode),
   destination: {},
   currentTime: 0,
+  state: "running" as AudioContextState,
+  close: vi.fn().mockResolvedValue(undefined),
+  resume: vi.fn().mockResolvedValue(undefined),
 };
 
 (global as typeof globalThis & { AudioContext: unknown }).AudioContext = vi

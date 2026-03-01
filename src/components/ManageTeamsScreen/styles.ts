@@ -9,6 +9,7 @@ export const ScreenContainer = styled.div`
   flex-direction: column;
   min-height: 100dvh;
   padding: 24px;
+  padding-bottom: calc(24px + 80px);
   gap: 0;
   max-width: 680px;
   margin: 0 auto;
@@ -16,6 +17,7 @@ export const ScreenContainer = styled.div`
 
   ${mq.mobile} {
     padding: 16px;
+    padding-bottom: calc(16px + 80px);
     /* On mobile body has overflow:hidden (game styles). Provide own scroll. */
     height: 100dvh;
     overflow-y: auto;
@@ -156,6 +158,7 @@ export const EditorShell = styled.div`
   margin: 0 auto;
   width: 100%;
   min-height: 100dvh;
+  padding-bottom: 80px;
 
   ${mq.mobile} {
     height: 100dvh;

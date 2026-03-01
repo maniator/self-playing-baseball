@@ -12,12 +12,14 @@ export const PageContainer = styled.div`
   flex-direction: column;
   min-height: 100dvh;
   padding: 24px;
+  padding-bottom: calc(24px + 80px);
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
     padding: 16px;
+    padding-bottom: calc(16px + 80px);
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;

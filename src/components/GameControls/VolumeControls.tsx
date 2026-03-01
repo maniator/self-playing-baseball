@@ -73,10 +73,10 @@ const VolumeControls: React.FunctionComponent<Props> = ({
       <VolumeIcon
         type="button"
         onClick={onToggleAlertMute}
-        title={alertVolume === 0 ? "Unmute alerts" : "Mute alerts"}
-        aria-label={alertVolume === 0 ? "Unmute alerts" : "Mute alerts"}
+        title={alertVolume === 0 ? "Unmute music" : "Mute music"}
+        aria-label={alertVolume === 0 ? "Unmute music" : "Mute music"}
       >
-        {alertVolume === 0 ? "🔕" : "🔔"}
+        {alertVolume === 0 ? "🔇" : "🎵"}
       </VolumeIcon>
       <RangeInput
         type="range"
@@ -85,7 +85,7 @@ const VolumeControls: React.FunctionComponent<Props> = ({
         step="0.05"
         value={alertVolume}
         onChange={onAlertVolumeChange}
-        aria-label="Alert volume"
+        aria-label="Music volume"
       />
     </VolumeRow>
   </>
