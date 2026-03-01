@@ -211,7 +211,7 @@ describe("players collection", () => {
     await testDb.close();
   });
 
-  it("indexes players by teamId", async () => {
+  it("queries players by teamId", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
     await testDb.players.bulkInsert([
       {
@@ -252,7 +252,7 @@ describe("players collection", () => {
     await testDb.close();
   });
 
-  it("indexes players by teamId + section", async () => {
+  it("queries players by teamId + section", async () => {
     const testDb = await _createTestDb(getRxStorageMemory());
     await testDb.players.bulkInsert([
       {

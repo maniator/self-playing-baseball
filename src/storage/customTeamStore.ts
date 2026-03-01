@@ -119,7 +119,7 @@ function toPlayerDoc(
   };
 }
 
-/** Returns all PlayerDocs for a team, sorted by section and orderIndex. */
+/** Returns all PlayerDocs for a team. Sorting by section and orderIndex is handled by assembleRoster. */
 async function fetchPlayerDocs(db: BallgameDb, teamId: string): Promise<PlayerDoc[]> {
   const docs = await db.players.find({ selector: { teamId } }).exec();
   return docs.map((d) => d.toJSON() as unknown as PlayerDoc);
@@ -157,8 +157,8 @@ function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): Te
 }
 
 /**
- * Writes all players from a roster into the `players` collection using bulkInsert.
- * Assumes any existing player docs for this team have already been removed.
+ * Writes all players from a roster into the `players` collection using bulkUpsert.
+ * Existing docs with matching IDs are updated; new player IDs are inserted.
  */
 async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoster): Promise<void> {
   const allDocs = [
@@ -167,22 +167,29 @@ async function writePlayerDocs(db: BallgameDb, teamId: string, roster: TeamRoste
     ...roster.pitchers.map((p, i) => toPlayerDoc(p, teamId, "pitchers", i)),
   ];
   if (allDocs.length > 0) {
-    await db.players.bulkInsert(allDocs);
+    await db.players.bulkUpsert(allDocs);
   }
 }
 
 /**
  * Removes all player docs for a given team from the `players` collection.
+ * When `exceptIds` is provided, only docs whose IDs are NOT in that set are removed.
  */
-async function removePlayerDocs(db: BallgameDb, teamId: string): Promise<void> {
+async function removePlayerDocs(
+  db: BallgameDb,
+  teamId: string,
+  exceptIds?: Set<string>,
+): Promise<void> {
   const existing = await db.players.find({ selector: { teamId } }).exec();
-  await Promise.all(existing.map((p) => p.remove()));
+  const toRemove = exceptIds ? existing.filter((p) => !exceptIds.has(p.id)) : existing;
+  await Promise.all(toRemove.map((p) => p.remove()));
 }
 
 /**
  * Populates the roster of a team from the `players` collection.
- * If no player docs exist yet (legacy team), falls back to the embedded roster
- * and backfills the `players` collection for future reads.
+ * If no player docs exist yet (legacy team), falls back to the embedded roster,
+ * backfills the `players` collection, and then clears the embedded arrays so there
+ * is a single source of truth going forward.
  */
 async function populateRoster(db: BallgameDb, team: CustomTeamDoc): Promise<CustomTeamDoc> {
   const playerDocs = await fetchPlayerDocs(db, team.id);
@@ -196,6 +203,19 @@ async function populateRoster(db: BallgameDb, team: CustomTeamDoc): Promise<Cust
     team.roster.pitchers.length > 0
   ) {
     await writePlayerDocs(db, team.id, team.roster);
+    // Clear the embedded arrays now that players live in the `players` collection,
+    // eliminating the two-sources-of-truth issue for future reads.
+    const emptyRoster = {
+      schemaVersion: team.roster.schemaVersion,
+      lineup: [],
+      bench: [],
+      pitchers: [],
+    };
+    const doc = await db.customTeams.findOne(team.id).exec();
+    if (doc) {
+      await doc.patch({ roster: emptyRoster });
+    }
+    return { ...team, roster: assembleRoster(await fetchPlayerDocs(db, team.id), team.roster) };
   }
   return team;
 }
@@ -323,9 +343,15 @@ function buildStore(getDbFn: GetDb) {
           bench: [],
           pitchers: [],
         };
-        // Replace player docs: remove old ones, insert new ones.
-        await removePlayerDocs(db, id);
+        // Replace player docs: upsert new docs first (safe), then remove any stale
+        // docs whose IDs no longer appear in the new roster.
+        const newPlayerIds = new Set([
+          ...newRoster.lineup.map((p) => p.id),
+          ...newRoster.bench.map((p) => p.id),
+          ...newRoster.pitchers.map((p) => p.id),
+        ]);
         await writePlayerDocs(db, id, newRoster);
+        await removePlayerDocs(db, id, newPlayerIds);
       }
 
       if (updates.metadata !== undefined) {
@@ -363,13 +389,15 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const doc = await db.customTeams.findOne(id).exec();
       if (doc) {
-        await doc.remove();
+        // Clean up / detach players first so we never leave orphaned docs pointing
+        // at a now-missing teamId.
         if (cascade) {
           await removePlayerDocs(db, id);
         } else {
           const existing = await db.players.find({ selector: { teamId: id } }).exec();
           await Promise.all(existing.map((p) => p.patch({ teamId: null })));
         }
+        await doc.remove();
       }
     },
 

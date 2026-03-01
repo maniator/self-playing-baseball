@@ -65,7 +65,7 @@ export default defineConfig(({ mode }) => ({
       injectManifest: {
         rollupFormat: "es",
       },
-    }) as unknown as PluginOption,
+    }) as PluginOption,
   ],
   test: {
     environment: "jsdom",
