@@ -211,28 +211,22 @@ function buildStore(getDbFn: GetDb) {
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
       // Reject saves that reference custom teams that don't exist locally.
-      const customTeamRefs: Array<{ id: string; label: string }> = [];
-      const teamEntries: Array<{ field: string; label: string }> = [
-        { field: header.homeTeamId, label: header.setup?.homeTeam ?? header.homeTeamId },
-        { field: header.awayTeamId, label: header.setup?.awayTeam ?? header.awayTeamId },
-      ];
-      for (const { field, label } of teamEntries) {
+      const customTeamIds: string[] = [];
+      for (const field of [header.homeTeamId, header.awayTeamId]) {
         if (field.startsWith("ct_") || field.startsWith("custom:")) {
           const id = field.startsWith("custom:") ? field.slice("custom:".length) : field;
-          customTeamRefs.push({ id, label });
+          customTeamIds.push(id);
         }
       }
       const db = await getDbFn();
-      if (customTeamRefs.length > 0) {
-        const missing: Array<{ id: string; label: string }> = [];
-        for (const ref of customTeamRefs) {
-          const found = await db.customTeams.findOne(ref.id).exec();
-          if (!found) missing.push(ref);
-        }
-        if (missing.length > 0) {
-          const descriptions = missing.map((m) => `"${m.label}" (${m.id})`).join(", ");
+      if (customTeamIds.length > 0) {
+        const missingCount = (
+          await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()))
+        ).filter((doc) => doc === null).length;
+        if (missingCount > 0) {
+          const teamWord = missingCount === 1 ? "team" : "teams";
           throw new Error(
-            `Cannot import save: missing custom team(s): ${descriptions}. Import the missing team(s) first via Teams import, then retry the save import.`,
+            `Cannot import save: ${missingCount} custom ${teamWord} used by this save ${missingCount === 1 ? "is" : "are"} not installed on this device. Import the missing ${teamWord} first via the Teams page, then retry the save import.`,
           );
         }
       }

@@ -52,10 +52,10 @@ test.describe("Import Save — missing custom team rejection", () => {
     await page.getByTestId("paste-save-textarea").fill(saveJson);
     await page.getByTestId("paste-save-button").click();
 
-    // Expect an error message mentioning the missing team label and guidance
+    // Expect a user-friendly error message about the missing team(s) without raw IDs
     await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 10_000 });
     const errorText = await page.getByTestId("import-error").textContent();
-    expect(errorText).toMatch(/missing custom team/i);
-    expect(errorText).toMatch(/My Missing Team/i);
+    expect(errorText).toMatch(/not installed on this device/i);
+    expect(errorText).toMatch(/Teams page/i);
   });
 });

@@ -40,16 +40,12 @@ const HelpContent: React.FunctionComponent = () => (
     <Section title="Pre-game customization">
       <List>
         <Li>
-          Choose a <strong>Matchup</strong> type (MLB: AL vs AL, NL vs NL, or Interleague) or{" "}
-          <strong>Custom</strong> to use your own teams. Select Home and Away teams.
+          Select your <strong>Home</strong> and <strong>Away</strong> custom teams. Create teams
+          first via <strong>Manage Teams</strong> if you haven&apos;t already.
         </Li>
         <Li>
           Under <strong>Manage a team?</strong> pick Home, Away, or None. You can also change this
           after the game starts.
-        </Li>
-        <Li>
-          Expand <strong>▸ Customize Players</strong> to set nicknames, tweak stat presets, and drag
-          ⠿ to reorder the batting lineup — for both teams (MLB games only).
         </Li>
         <Li>
           Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.

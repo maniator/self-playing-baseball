@@ -597,13 +597,15 @@ describe("importRxdbSave — missing custom team rejection", () => {
   it("throws when homeTeamId references a missing custom team", async () => {
     const { json } = makeCustomSave("ct_missing_abc");
     await expect(store.importRxdbSave(json)).rejects.toThrow(
-      "Cannot import save: missing custom team(s)",
+      "Cannot import save: 1 custom team used by this save is not installed on this device. Import the missing team first via the Teams page, then retry the save import.",
     );
   });
 
-  it("error message includes the team label and id", async () => {
-    const { json } = makeCustomSave("ct_missing_xyz");
-    await expect(store.importRxdbSave(json)).rejects.toThrow(/"Custom Home"/);
+  it("error message counts both teams when both are missing", async () => {
+    const { json } = makeCustomSave("ct_missing_xyz", "ct_also_missing");
+    await expect(store.importRxdbSave(json)).rejects.toThrow(
+      "Cannot import save: 2 custom teams used by this save are not installed on this device. Import the missing teams first via the Teams page, then retry the save import.",
+    );
   });
 
   it("succeeds when the custom team exists in the DB", async () => {
