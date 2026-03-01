@@ -4,7 +4,7 @@ import { BATTING_POSITIONS } from "@utils/roster";
 
 /**
  * Returns a stable game-session ID for a custom team.
- * Uses the `custom:` prefix so it is distinguishable from numeric MLB IDs.
+ * Uses the `custom:` prefix as a stable namespace.
  */
 export function customTeamToGameId(team: CustomTeamDoc): string {
   return `custom:${team.id}`;
@@ -47,14 +47,14 @@ export function customTeamToAbbreviation(
 }
 
 /**
- * Returns the full display label for any team string (MLB name or `custom:<id>`).
+ * Returns the full display label for a custom team string (`custom:<id>`).
  * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
  *
  * @param gameId  - The game-session team string.
  * @param teams   - Known custom team docs for lookup.
  */
 export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {
-  if (!gameId.startsWith("custom:")) return gameId;
+  if (!gameId.startsWith("custom:")) return "Unknown Team";
   const id = gameId.slice("custom:".length);
   const doc = teams.find((t) => t.id === id);
   // Safe short fallback: strip the `custom:` prefix and show the first 8 chars of the

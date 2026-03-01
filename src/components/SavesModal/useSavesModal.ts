@@ -114,7 +114,6 @@ export const useSavesModal = ({
       // Create a new explicit snapshot save.
       createSave(
         {
-          matchupMode: "manual",
           homeTeamId: teams[1],
           awayTeamId: teams[0],
           seed: currentSeedStr(),

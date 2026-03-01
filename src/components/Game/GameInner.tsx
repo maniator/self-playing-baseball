@@ -159,7 +159,6 @@ const GameInner: React.FunctionComponent<Props> = ({
     };
     createSave(
       {
-        matchupMode: "default",
         homeTeamId: homeTeam,
         awayTeamId: awayTeam,
         seed: currentSeedStr(),
