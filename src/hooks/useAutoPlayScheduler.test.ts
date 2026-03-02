@@ -214,4 +214,31 @@ describe("useAutoPlayScheduler", () => {
     vi.advanceTimersByTime(200);
     expect(handleClick).toHaveBeenCalled();
   });
+
+  // -------------------------------------------------------------------------
+  // Bug regression: stale gameStateRef.gameOver must NOT permanently kill the
+  // timer chain (same-component restore scenario — modal load or in-place restore).
+  // -------------------------------------------------------------------------
+
+  it("does not permanently stop when gameStateRef.current.gameOver is stale-true during a restore", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+
+    // The ref stays at gameOver=true (simulating a stale value from the previous
+    // finished game) even though the effect deps say gameOver=false (restore fired).
+    const staleGameStateRef = { current: makeSnap({ gameOver: true }) };
+
+    renderScheduler({
+      gameStarted: true,
+      gameOver: false, // effect-level guard says game is in progress
+      mutedRef: { current: true } as any,
+      speedRef: { current: 100 } as any,
+      handleClickRef: { current: handleClick } as any,
+      gameStateRef: staleGameStateRef as any,
+    });
+
+    // The timer chain must survive even though gameStateRef reports gameOver.
+    vi.advanceTimersByTime(300);
+    expect(handleClick).toHaveBeenCalled();
+  });
 });

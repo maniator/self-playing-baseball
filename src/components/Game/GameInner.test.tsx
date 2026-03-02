@@ -773,7 +773,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
       fireEvent.click(loadButtons[0]);
     });
 
-    // pendingModalLoad effect must dispatch restore_game with the correct state payload.
+    // handleModalLoad must dispatch restore_game with the correct state payload.
     await vi.waitFor(() => {
       expect(dispatch).toHaveBeenCalledWith(
         expect.objectContaining({

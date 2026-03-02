@@ -288,66 +288,46 @@ const GameInner: React.FunctionComponent<Props> = ({
   ]);
 
   // ── Modal-triggered save load ─────────────────────────────────────────────
-  // Mirrors the pendingLoadSave prop path exactly so the saves modal and the
-  // /saves page use identical restore logic.  The slot is set with
-  // setGameActive(false) first so that gameActive transitions false→true when
-  // the effect calls setGameActive(true), which reliably re-triggers
-  // useAutoPlayScheduler regardless of whether a game was already in progress.
-  const [pendingModalLoad, setPendingModalLoad] = React.useState<SaveDoc | null>(null);
-  const prevPendingModalLoad = React.useRef<SaveDoc | null>(null);
+  // Directly restores game state when the user loads a save from within the
+  // running game via the SavesModal. The scheduler's effect-level gameOver guard
+  // and the cancelled flag are sufficient to resume/restart auto-play — no
+  // false→true gameActive dance needed now that the scheduler no longer reads
+  // gameStateRef inside the timeout callback (the stale-ref guard was removed).
+  const handleModalLoad = React.useCallback(
+    (slot: SaveDoc) => {
+      const snap = slot.stateSnapshot;
+      if (!snap) return;
 
-  React.useEffect(() => {
-    if (!pendingModalLoad) return;
-    if (pendingModalLoad === prevPendingModalLoad.current) return;
-    prevPendingModalLoad.current = pendingModalLoad;
+      // Prevent the auto-resume effect from re-running while we restore.
+      restoredRef.current = true;
 
-    const snap = pendingModalLoad.stateSnapshot;
-    if (!snap) {
-      setPendingModalLoad(null);
-      return;
-    }
+      if (snap.rngState !== null) restoreRng(snap.rngState);
+      dispatch({
+        type: "restore_game",
+        payload: {
+          ...snap.state,
+          teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+        },
+      });
 
-    if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({
-      type: "restore_game",
-      payload: {
-        ...snap.state,
-        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
-      },
-    });
+      const { setup } = slot;
+      setManagerMode(setup.managerMode);
+      setManagedTeam(setup.managedTeam ?? 0);
+      setStrategy(setup.strategy);
 
-    const { setup } = pendingModalLoad;
-    setManagerMode(setup.managerMode);
-    setManagedTeam(setup.managedTeam ?? 0);
-    setStrategy(setup.strategy);
+      // Sync the URL seed so sharing/reloading lands on the same game.
+      if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("seed", slot.seed);
+        window.history.replaceState(null, "", url.toString());
+      }
 
-    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("seed", pendingModalLoad.seed);
-      window.history.replaceState(null, "", url.toString());
-    }
-
-    rxSaveIdRef.current = pendingModalLoad.id;
-    setGameActive(true); // false→true transition restarts useAutoPlayScheduler
-    onGameSessionStarted?.();
-    setPendingModalLoad(null);
-  }, [
-    pendingModalLoad,
-    dispatch,
-    setManagerMode,
-    setManagedTeam,
-    setStrategy,
-    onGameSessionStarted,
-  ]);
-
-  // Called by GameControls/SavesModal when the user clicks Load on a save.
-  const handleModalLoad = React.useCallback((slot: SaveDoc) => {
-    // restoredRef prevents the auto-resume effect from overwriting this load
-    // if RxDB saves update asynchronously while the restore is in-flight.
-    restoredRef.current = true;
-    setGameActive(false); // deactivate first so the effect's setGameActive(true) fires a real transition
-    setPendingModalLoad(slot);
-  }, []);
+      rxSaveIdRef.current = slot.id;
+      setGameActive(true); // no-op if already active; triggers scheduler if game was over
+      onGameSessionStarted?.();
+    },
+    [dispatch, setManagerMode, setManagedTeam, setStrategy, onGameSessionStarted],
+  );
 
   return (
     <GameDiv>

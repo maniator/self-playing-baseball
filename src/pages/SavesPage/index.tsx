@@ -37,7 +37,8 @@ import {
  */
 const SavesPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
-  const { onLoadSave } = useOutletContext<AppShellOutletContext>();
+  const { onLoadSave, hasActiveSession, onResumeCurrent } =
+    useOutletContext<AppShellOutletContext>();
   const [saves, setSaves] = React.useState<SaveDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [customTeams, setCustomTeams] = React.useState<CustomTeamDoc[]>([]);
@@ -90,6 +91,16 @@ const SavesPage: React.FunctionComponent = () => {
         >
           ← Back to Home
         </BackBtn>
+        {hasActiveSession && (
+          <BackBtn
+            type="button"
+            onClick={onResumeCurrent}
+            data-testid="saves-page-back-to-game-button"
+            aria-label="Back to Game"
+          >
+            ← Back to Game
+          </BackBtn>
+        )}
       </PageHeader>
 
       <PageTitle>💾 Exhibition Saves</PageTitle>
