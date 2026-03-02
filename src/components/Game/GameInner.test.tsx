@@ -680,3 +680,150 @@ describe("GameInner — onNewGame prop (external navigation)", () => {
     expect(onNewGame).toHaveBeenCalled();
   });
 });
+
+// ─── Modal save load (handleModalLoad / onLoadSave callback) ──────────────────
+
+const makeModalSaveSlot = (): SaveDoc => ({
+  id: "modal_save_1",
+  name: "Modal test save",
+  seed: "modalseed",
+  createdAt: 1000,
+  updatedAt: 2000,
+  progressIdx: 10,
+  homeTeamId: "Home",
+  awayTeamId: "Away",
+  schemaVersion: 1,
+  setup: {
+    strategy: "aggressive" as Strategy,
+    managedTeam: null,
+    managerMode: false,
+    homeTeam: "Home",
+    awayTeam: "Away",
+    playerOverrides: [{}, {}] as [Record<string, unknown>, Record<string, unknown>],
+    lineupOrder: [[], []] as [string[], string[]],
+  },
+  stateSnapshot: {
+    state: makeState({ inning: 4, teams: ["Away", "Home"] as [string, string] }),
+    rngState: null,
+  },
+});
+
+describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
+  beforeEach(async () => {
+    // Need the dialog to actually open so we can interact with SavesModal.
+    HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
+      this: HTMLDialogElement,
+    ) {
+      this.setAttribute("open", "");
+    });
+    HTMLDialogElement.prototype.close = vi.fn().mockImplementation(function (
+      this: HTMLDialogElement,
+    ) {
+      this.removeAttribute("open");
+    });
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+  });
+
+  afterEach(() => {
+    // Restore simple no-op mocks after each test so other suites are unaffected.
+    HTMLDialogElement.prototype.showModal = vi.fn();
+    HTMLDialogElement.prototype.close = vi.fn();
+  });
+
+  it("dispatches restore_game and calls onGameSessionStarted after Load is clicked in the modal", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const slot = makeModalSaveSlot();
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [slot],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const dispatch = vi.fn();
+    const onGameSessionStarted = vi.fn();
+    await act(async () => {
+      render(
+        <GameContext.Provider value={makeContextValue({ dispatch })}>
+          <GameInner onGameSessionStarted={onGameSessionStarted} />
+        </GameContext.Provider>,
+      );
+    });
+
+    // Wait for the lazy-loaded SavesModal button to appear.
+    const savesButton = await screen.findByRole("button", { name: /open saves panel/i });
+    await act(async () => {
+      fireEvent.click(savesButton);
+    });
+
+    const loadButtons = await screen.findAllByRole("button", { name: /^load$/i });
+    await act(async () => {
+      fireEvent.click(loadButtons[0]);
+    });
+
+    // pendingModalLoad effect must dispatch restore_game with the correct state payload.
+    await vi.waitFor(() => {
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: "restore_game",
+          payload: expect.objectContaining({
+            inning: slot.stateSnapshot!.state.inning,
+            teams: slot.stateSnapshot!.state.teams,
+          }),
+        }),
+      );
+    });
+    expect(onGameSessionStarted).toHaveBeenCalled();
+  });
+
+  it("updates URL seed and dispatches restore_game when a save is loaded from the modal", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const slot = makeModalSaveSlot(); // seed: "modalseed"
+    vi.mocked(useSaveStore).mockReturnValue({
+      saves: [slot],
+      createSave: vi.fn().mockResolvedValue("save_1"),
+      appendEvents: vi.fn().mockResolvedValue(undefined),
+      updateProgress: vi.fn().mockResolvedValue(undefined),
+      deleteSave: vi.fn().mockResolvedValue(undefined),
+      exportRxdbSave: vi.fn().mockResolvedValue("{}"),
+      importRxdbSave: vi.fn().mockResolvedValue(undefined),
+    });
+
+    const dispatch = vi.fn();
+    const spy = vi.spyOn(window.history, "replaceState");
+    await act(async () => {
+      render(
+        <GameContext.Provider value={makeContextValue({ dispatch })}>
+          <GameInner />
+        </GameContext.Provider>,
+      );
+    });
+
+    const savesButton = await screen.findByRole("button", { name: /open saves panel/i });
+    await act(async () => {
+      fireEvent.click(savesButton);
+    });
+    const loadButtons = await screen.findAllByRole("button", { name: /^load$/i });
+    await act(async () => {
+      fireEvent.click(loadButtons[0]);
+    });
+
+    await vi.waitFor(() => {
+      expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "restore_game" }));
+      expect(spy.mock.calls.some(([, , url]) => String(url).includes("modalseed"))).toBe(true);
+    });
+    spy.mockRestore();
+  });
+});

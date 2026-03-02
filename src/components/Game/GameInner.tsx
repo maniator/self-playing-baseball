@@ -342,7 +342,9 @@ const GameInner: React.FunctionComponent<Props> = ({
 
   // Called by GameControls/SavesModal when the user clicks Load on a save.
   const handleModalLoad = React.useCallback((slot: SaveDoc) => {
-    restoredRef.current = true; // prevent auto-resume from overwriting the load
+    // restoredRef prevents the auto-resume effect from overwriting this load
+    // if RxDB saves update asynchronously while the restore is in-flight.
+    restoredRef.current = true;
     setGameActive(false); // deactivate first so the effect's setGameActive(true) fires a real transition
     setPendingModalLoad(slot);
   }, []);

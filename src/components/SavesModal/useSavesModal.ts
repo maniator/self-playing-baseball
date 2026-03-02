@@ -55,8 +55,7 @@ export const useSavesModal = ({
   onLoadSave,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
-  const { dispatchLog, log: _log, teams, inning, pitchKey, ...gameStateRest } = useGameContext();
-  void _log;
+  const { dispatchLog, teams, inning, pitchKey, ...gameStateRest } = useGameContext();
 
   // Reactive saves list — auto-updates when any save is mutated in RxDB.
   const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
@@ -127,22 +126,19 @@ export const useSavesModal = ({
     // Check snapshot availability for the error case.  The actual restore
     // (dispatch, rng, localStorage) is handled by GameInner via onLoadSave so
     // that the /saves-page and in-game-modal paths share identical logic.
-    const hasSnapshot =
-      slot.stateSnapshot != null ||
-      saves.some((s) => s.seed === slot.seed && s.stateSnapshot != null);
+    const snap =
+      slot.stateSnapshot ??
+      saves
+        .filter((s) => s.seed === slot.seed && s.stateSnapshot != null)
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0]?.stateSnapshot;
 
-    if (!hasSnapshot) {
+    if (!snap) {
       log(`Unable to load save "${slot.name}" — no state snapshot available yet.`);
       return;
     }
 
     // Enrich the slot so GameInner always receives a snapshot (might be a
     // fallback from a same-seed save when the clicked slot has none).
-    const snap =
-      slot.stateSnapshot ??
-      saves
-        .filter((s) => s.seed === slot.seed && s.stateSnapshot != null)
-        .sort((a, b) => b.updatedAt - a.updatedAt)[0]!.stateSnapshot;
     const slotWithSnapshot: SaveDoc = slot.stateSnapshot ? slot : { ...slot, stateSnapshot: snap };
 
     onSaveIdChange(slot.id);
