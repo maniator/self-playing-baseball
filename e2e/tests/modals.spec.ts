@@ -3,6 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 import {
+  importSaveFromFixture,
+  importTeamsFixture,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
@@ -124,6 +126,101 @@ test.describe("Modals", () => {
 
       // An error message should appear inside the modal.
       await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 5_000 });
+    });
+  });
+
+  // ── Regression: load-from-modal autoplay + save ───────────────────────────
+  //
+  // These tests guard the two bugs fixed in this PR:
+  //   1. The autoplay tick-chain died when a save was loaded via the in-game modal
+  //      while the previous game was already finished (stale gameStateRef guard).
+  //   2. Clicking "Save current game" after a modal load threw a DataCloneError
+  //      because `dispatch` leaked into the stored state snapshot.
+
+  test.describe("Modal load regression", () => {
+    test("autoplay continues after loading a save from the in-game modal", async ({ page }) => {
+      // Start a fresh game so the scheduler is running.
+      await startGameViaPlayBall(page, { seed: "regr-autoplay" });
+      await waitForLogLines(page, 5);
+
+      // Snapshot the log entry count before the modal load.
+      const linesBefore = await page
+        .getByTestId("play-by-play-log")
+        .locator("[data-log-index]")
+        .count();
+
+      // Import + auto-load an in-progress fixture via the in-game saves modal.
+      await importSaveFromFixture(page, "sample-save.json");
+
+      // After the modal load the scheduler must resume — new log entries must
+      // appear within a reasonable timeout.
+      await expect(async () => {
+        const linesAfter = await page
+          .getByTestId("play-by-play-log")
+          .locator("[data-log-index]")
+          .count();
+        expect(linesAfter).toBeGreaterThan(linesBefore);
+      }).toPass({ timeout: 20_000 });
+    });
+
+    test("saving after loading from the in-game modal succeeds without DataCloneError", async ({
+      page,
+    }) => {
+      // Start a fresh game, then load a different save via the in-game modal.
+      await startGameViaPlayBall(page, { seed: "regr-dataclone" });
+      await waitForLogLines(page, 5);
+      await importSaveFromFixture(page, "sample-save.json");
+
+      // Open the saves modal and trigger a save of the restored game.
+      // If dispatch leaked into the stored snapshot this would throw DataCloneError
+      // and the log would show "Failed to save game: …" instead of "Game saved!".
+      await openSavesModal(page);
+      await page.getByTestId("save-game-button").click();
+
+      await expect(page.getByTestId("play-by-play-log")).toContainText("Game saved!", {
+        timeout: 10_000,
+      });
+      const logText = await page.getByTestId("play-by-play-log").textContent();
+      expect(logText).not.toContain("Failed to save game");
+    });
+
+    // This test uses the exact save + teams that the user reported in the PR comment
+    // (Boston Pioneers vs Portland Dynamo, Inning 8). Both teams must be imported first
+    // because importRxdbSave validates that referenced custom teams exist locally.
+    test("exact user-reported save loads and autoplay resumes (regression: inning-8 custom teams)", async ({
+      page,
+    }) => {
+      // Import the custom teams referenced by the user's save before starting any game.
+      await resetAppState(page);
+      await importTeamsFixture(page, "pr-regression-teams.json");
+
+      // Start a game with fixture teams so the scheduler is running.
+      await startGameViaPlayBall(page, { seed: "regr-pr-save" });
+      await waitForLogLines(page, 5);
+
+      const linesBefore = await page
+        .getByTestId("play-by-play-log")
+        .locator("[data-log-index]")
+        .count();
+
+      // Load the exact user-reported inning-8 save via the in-game modal.
+      await importSaveFromFixture(page, "pr-regression-inning8-save.json");
+
+      // Autoplay must resume after the modal load.
+      await expect(async () => {
+        const linesAfter = await page
+          .getByTestId("play-by-play-log")
+          .locator("[data-log-index]")
+          .count();
+        expect(linesAfter).toBeGreaterThan(linesBefore);
+      }).toPass({ timeout: 20_000 });
+
+      // Saving must also succeed without DataCloneError.
+      await openSavesModal(page);
+      await page.getByTestId("save-game-button").click();
+      await expect(page.getByTestId("play-by-play-log")).toContainText("Game saved!", {
+        timeout: 10_000,
+      });
     });
   });
 });

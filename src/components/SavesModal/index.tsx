@@ -106,6 +106,10 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         )}
 
         <SectionHeading>Import save</SectionHeading>
+        {/* TODO: This import UI (file-input + paste textarea + error) is duplicated in
+            SavesPage/index.tsx. Both surfaces already share useImportSave for logic;
+            extracting the JSX into a shared <SaveImportForm> component would ensure
+            any future import-handling bug is fixed in one place. */}
         <Row>
           <FileInput
             type="file"
