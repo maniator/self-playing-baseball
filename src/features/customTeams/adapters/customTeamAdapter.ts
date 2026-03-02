@@ -76,6 +76,35 @@ export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): 
   return text.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
 }
 
+/**
+ * Resolves human-readable team labels for a restored save's game state.
+ *
+ * The parameter uses `teamLabels?: [string, string]` (optional) rather than the
+ * full `State` type because legacy saves may not carry this field at all at
+ * runtime, even though `State` declares it as required. The optional shape
+ * accurately reflects the actual runtime data coming from persisted snapshots.
+ *
+ * Legacy saves may lack `teamLabels` or carry raw game IDs as labels (when
+ * `teamLabels` was auto-populated from the `teams` array before display names
+ * were stored separately). In those cases the labels are resolved from the
+ * current custom team docs so reducer log messages use readable names.
+ * New saves that already carry display names are returned unchanged.
+ */
+export function resolveRestoreLabels(
+  state: { teams: [string, string]; teamLabels?: [string, string] },
+  customTeams: CustomTeamDoc[],
+): [string, string] {
+  const existing = state.teamLabels;
+  const needsResolution =
+    !existing ||
+    existing.some(
+      (l, i) => typeof l === "string" && l === state.teams[i] && l.startsWith("custom:"),
+    );
+  return needsResolution
+    ? [resolveTeamLabel(state.teams[0], customTeams), resolveTeamLabel(state.teams[1], customTeams)]
+    : existing;
+}
+
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 /** Rounds a raw offset to the nearest valid ModPreset value. */

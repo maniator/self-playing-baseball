@@ -252,6 +252,11 @@ function buildStore(getDbFn: GetDb) {
       // resolve team labels without special-casing bare ct_* identifiers.
       const { matchupMode: _drop, ...headerRest } = header as Record<string, unknown>;
       const existingSetup = headerRest.setup as Record<string, unknown> | undefined;
+      // Also normalize bare ct_* IDs inside stateSnapshot.state.teams so restored
+      // game state uses canonical custom: prefixes for all resolveTeamLabel lookups.
+      const existingSnapshot = headerRest.stateSnapshot as
+        | { state?: { teams?: string[] } }
+        | undefined;
       const cleanHeader = {
         ...headerRest,
         homeTeamId: canonicalHomeId,
@@ -269,6 +274,16 @@ function buildStore(getDbFn: GetDb) {
                 : existingSetup.awayTeam,
           },
         }),
+        ...(existingSnapshot?.state &&
+          Array.isArray(existingSnapshot.state.teams) && {
+            stateSnapshot: {
+              ...existingSnapshot,
+              state: {
+                ...existingSnapshot.state,
+                teams: existingSnapshot.state.teams.map(toCanonical),
+              },
+            },
+          }),
       };
       await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {

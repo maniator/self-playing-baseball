@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { resolveRestoreLabels } from "@features/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -13,6 +14,7 @@ import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
@@ -68,6 +70,17 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
+  // Custom team docs for resolving display names when restoring legacy saves.
+  // Stored in a ref so restore effects can read the latest value without being
+  // re-triggered every time the reactive list updates.
+  // The useEffect is a cheap ref assignment — extra fires when useLiveRxQuery
+  // returns a new array reference are acceptable.
+  const { teams: customTeams } = useCustomTeams();
+  const customTeamsRef = React.useRef(customTeams);
+  React.useEffect(() => {
+    customTeamsRef.current = customTeams;
+  }, [customTeams]);
+
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
@@ -104,7 +117,13 @@ const GameInner: React.FunctionComponent<Props> = ({
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    dispatch({
+      type: "restore_game",
+      payload: {
+        ...snap.state,
+        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+      },
+    });
     setStrategy(setup.strategy);
     if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
     setManagerMode(setup.managerMode);
@@ -238,7 +257,13 @@ const GameInner: React.FunctionComponent<Props> = ({
     }
 
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    dispatch({
+      type: "restore_game",
+      payload: {
+        ...snap.state,
+        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+      },
+    });
 
     const { setup } = pendingLoadSave;
     setManagerMode(setup.managerMode);

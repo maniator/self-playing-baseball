@@ -2,6 +2,7 @@ import * as React from "react";
 
 import {
   resolveCustomIdsInString,
+  resolveRestoreLabels,
   resolveTeamLabel,
 } from "@features/customTeams/adapters/customTeamAdapter";
 
@@ -152,7 +153,10 @@ export const useSavesModal = ({
       return;
     }
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    dispatch({
+      type: "restore_game",
+      payload: { ...snap.state, teamLabels: resolveRestoreLabels(snap.state, customTeams) },
+    });
     if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
       const url = new URL(window.location.href);
       url.searchParams.set("seed", slot.seed);
