@@ -434,9 +434,8 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
 
   it("importRxdbSave preserves already-canonical custom: team IDs unchanged", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup({ seed: "alreadycanon" }));
-    // Export produces custom:ct_rt_home / custom:ct_rt_away (via createSave with bare ct_ IDs
-    // — but these tests use makeCustomFormatSetup with bare ct_ IDs so the export has bare ids).
-    // Use an already-canonical bundle instead.
+    // Build a bundle with already-canonical custom:ct_* IDs to verify
+    // importRxdbSave does not double-prefix them (e.g. custom:custom:ct_*).
     const RXDB_EXPORT_KEY_LOCAL = "ballgame:rxdb:v1";
     const canonicalHeader: Record<string, unknown> = {
       id: `${saveId}-canon`,

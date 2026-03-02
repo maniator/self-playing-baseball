@@ -377,7 +377,8 @@ describe("ExhibitionSetupPage", () => {
           position: pos,
           batting: { contact: 60, power: 60, speed: 60 },
         })),
-        // RP only — NOT SP-eligible
+        // pitchingRole: "RP" makes this pitcher NOT SP-eligible.
+        // getSpEligiblePitchers only includes pitchers with pitchingRole "SP", "SP/RP", or absent.
         pitchers: [
           {
             id: `${id}-rp`,

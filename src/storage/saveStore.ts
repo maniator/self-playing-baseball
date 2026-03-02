@@ -259,12 +259,14 @@ function buildStore(getDbFn: GetDb) {
         ...(existingSetup && {
           setup: {
             ...existingSetup,
-            homeTeam: toCanonical(
-              typeof existingSetup.homeTeam === "string" ? existingSetup.homeTeam : "",
-            ),
-            awayTeam: toCanonical(
-              typeof existingSetup.awayTeam === "string" ? existingSetup.awayTeam : "",
-            ),
+            homeTeam:
+              typeof existingSetup.homeTeam === "string"
+                ? toCanonical(existingSetup.homeTeam)
+                : existingSetup.homeTeam,
+            awayTeam:
+              typeof existingSetup.awayTeam === "string"
+                ? toCanonical(existingSetup.awayTeam)
+                : existingSetup.awayTeam,
           },
         }),
       };
