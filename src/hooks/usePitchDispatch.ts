@@ -56,6 +56,7 @@ export const usePitchDispatch = (
     ) {
       if (currentState.suppressNextDecision) {
         dispatch({ type: "clear_suppress_decision" });
+        return;
       } else {
         const decision = detectDecision(currentState as State, strategyRef.current, true);
         if (decision) {
@@ -109,7 +110,8 @@ export const usePitchDispatch = (
           payload: shiftDecision.payload,
         });
         dispatchLog?.({ type: "log", payload: `The manager: ${shiftDecision.reasonText}.` });
-        // Do NOT return early — the pitch continues after the shift is set.
+        // Return early to avoid pitching in the same tick as the shift decision.
+        return;
       }
     }
 
@@ -133,10 +135,11 @@ export const usePitchDispatch = (
             type: "log",
             payload: `The manager: ${aiAction.reasonText}.`,
           });
-          // Decisions that replace the pitch (steal_attempt, bunt_attempt) should
-          // return early; count/modifier decisions let the pitch proceed.
-          const replacePitch =
-            aiAction.actionType === "steal_attempt" || aiAction.actionType === "bunt_attempt";
+          // Decisions that replace the pitch (steal_attempt, bunt_attempt, intentional_walk)
+          // should return early; count/modifier decisions let the pitch proceed.
+          const replacePitch = ["steal_attempt", "bunt_attempt", "intentional_walk"].includes(
+            aiAction.actionType,
+          );
           if (replacePitch) return;
         } else {
           // AI decided not to act — skip the decision so it is not re-offered

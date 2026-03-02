@@ -24,7 +24,7 @@ const makeGameSnapshot = (overrides: Record<string, any> = {}) => ({
   suppressNextDecision: false,
   pinchHitterStrategy: null,
   defensiveShift: false,
-  defensiveShiftOffered: false,
+  defensiveShiftOffered: true, // Set to true by default in tests to skip AI shift logic
   ...overrides,
 });
 

@@ -241,4 +241,49 @@ describe("useAutoPlayScheduler", () => {
     vi.advanceTimersByTime(300);
     expect(handleClick).toHaveBeenCalled();
   });
+
+  it("catches exceptions from handleClick, logs them, and continues scheduling", () => {
+    const handleClickError = new Error("Simulated pitch processing error");
+    const handleClick = vi.fn(() => {
+      throw handleClickError;
+    });
+    const errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+
+    renderScheduler({
+      gameStarted: true,
+      mutedRef: { current: true } as any,
+      speedRef: { current: 1000 } as any,
+      handleClickRef: { current: handleClick } as any,
+      gameStateRef: {
+        current: makeSnap({
+          inning: 7,
+          outs: 1,
+          atBat: 0,
+          pitchKey: 42,
+        }),
+      } as any,
+    });
+
+    // Advance to trigger first handleClick (which throws).
+    vi.advanceTimersByTime(1100);
+    const firstCallCount = handleClick.mock.calls.length;
+    expect(firstCallCount).toBeGreaterThan(0);
+
+    // The error should be logged (appLog adds formatting).
+    expect(errorSpy).toHaveBeenCalled();
+    const errorCall = errorSpy.mock.calls[0];
+    expect(String(errorCall[0]) + String(errorCall[1])).toContain(
+      "Autoplay scheduler error at inning 7",
+    );
+
+    // Clear mocks and advance further; the scheduler should have been
+    // rescheduled and called handleClick again despite the exception.
+    handleClick.mockClear();
+    errorSpy.mockClear();
+    vi.advanceTimersByTime(2000);
+    expect(handleClick).toHaveBeenCalled();
+
+    errorSpy.mockRestore();
+  });
 });

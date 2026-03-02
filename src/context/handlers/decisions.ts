@@ -53,7 +53,14 @@ export const handleDecisionsAction = (
       if (shiftOn)
         log(`${fieldingTeam} manager: Defensive shift deployed — outfield repositioned.`);
       else log(`${fieldingTeam} manager: Normal alignment restored.`);
-      const result = { ...state, defensiveShift: shiftOn, pendingDecision: null };
+      const result = {
+        ...state,
+        defensiveShift: shiftOn,
+        // Mark that the shift decision has been offered/applied for this half-inning
+        // so it is not re-evaluated at every subsequent at-bat.
+        defensiveShiftOffered: true,
+        pendingDecision: null,
+      };
       return withDecisionLog(state, result, `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`);
     }
     case "make_substitution": {
