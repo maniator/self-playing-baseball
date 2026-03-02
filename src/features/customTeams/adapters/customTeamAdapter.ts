@@ -69,8 +69,16 @@ export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string
 
 /**
  * Replaces all `custom:<id>` tokens in a string with their resolved display
- * labels.  Used to sanitize log entries, save names, and TTS strings before
- * they reach the UI.
+ * labels.  Used to sanitize free-text fields that may contain raw team IDs —
+ * specifically: save names (displayed in SavesModal / SavesPage) and TTS
+ * announcement strings (Game/index.tsx).  These surfaces receive opaque strings
+ * from legacy saves, so a regex scan is the correct approach here.
+ *
+ * The in-game play-by-play log (Announcements component) does NOT use this
+ * function — it uses the structured `teamLabels` from `State` directly via
+ * `String.replaceAll` on the two known team IDs, which is both faster and
+ * type-safe.  Do not add new callers of this function for structured data;
+ * prefer `teamLabels`-based substitution for those surfaces instead.
  */
 export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): string {
   return text.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));

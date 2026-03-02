@@ -10,7 +10,9 @@ import type {
   SaveDoc,
 } from "./types";
 
-const SCHEMA_VERSION = 1;
+// DOC_SCHEMA_VERSION is the schemaVersion field on SaveDoc/EventDoc rows —
+// it is independent of the RxDB collection schema version (saves collection is v2).
+const DOC_SCHEMA_VERSION = 1;
 const MAX_SAVES = 3;
 const RXDB_EXPORT_VERSION = 1 as const;
 const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
@@ -33,6 +35,8 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Creates a new save header document.
      * @returns The generated saveId.
+     * Callers MUST pass canonical `custom:<teamId>` values for homeTeamId/awayTeamId.
+     * GameInner always sources these from customTeamToGameId() which guarantees the prefix.
      */
     async createSave(setup: GameSetup, meta?: { name?: string }): Promise<string> {
       const db = await getDbFn();
@@ -60,7 +64,7 @@ function buildStore(getDbFn: GetDb) {
         // -1 is the sentinel for "not started" (no pitches persisted yet).
         progressIdx: -1,
         setup: setup.setup,
-        schemaVersion: SCHEMA_VERSION,
+        schemaVersion: DOC_SCHEMA_VERSION,
       };
       await db.saves.insert(doc);
       // New save has no events — seed counter at 0 to skip the DB-query path.
@@ -106,7 +110,7 @@ function buildStore(getDbFn: GetDb) {
           type: ev.type,
           payload: ev.payload,
           ts: now,
-          schemaVersion: SCHEMA_VERSION,
+          schemaVersion: DOC_SCHEMA_VERSION,
         }));
 
         try {

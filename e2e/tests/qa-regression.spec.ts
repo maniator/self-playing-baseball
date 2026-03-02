@@ -11,11 +11,13 @@
 import { expect, test } from "@playwright/test";
 
 import {
+  expectNoRawIdsVisible,
   loadFixture,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
   startGameViaPlayBall,
+  waitForLogLines,
   waitForNewGameDialog,
 } from "../utils/helpers";
 
@@ -318,5 +320,21 @@ test.describe("New game after finished game — no end-of-game state replay", ()
     expect(homeRunsText, "Home team run total should be 0 at the start of a brand-new game").toBe(
       "0",
     );
+  });
+});
+
+// ─── 6. No raw custom: IDs visible in the game UI ────────────────────────────
+
+test.describe("No raw custom: team IDs leak to the game UI", () => {
+  test("scoreboard, play-by-play log and hit log show display names, not raw IDs", async ({
+    page,
+  }) => {
+    await startGameViaPlayBall(page, { seed: "no-raw-ids-guard" });
+
+    // Wait for at least 5 log entries so there is meaningful content to inspect.
+    await waitForLogLines(page, 5);
+
+    // Assert no raw IDs are visible anywhere in the three main UI surfaces.
+    await expectNoRawIdsVisible(page);
   });
 });
