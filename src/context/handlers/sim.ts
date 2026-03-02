@@ -72,7 +72,7 @@ export const handleSimAction = (
       return withDecisionLog(state, result, `${state.pitchKey}:bunt`);
     }
     case "intentional_walk": {
-      const fieldingTeam = state.teams[(1 - (state.atBat as number)) as 0 | 1];
+      const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       log(`${fieldingTeam} manager issues an intentional walk.`);
       const result = checkWalkoff(
         hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log),

@@ -106,6 +106,8 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
     onStartGame({
       homeTeam: customTeamToGameId(homeDoc),
       awayTeam: customTeamToGameId(awayDoc),
+      homeTeamLabel: homeLabel,
+      awayTeamLabel: awayLabel,
       managedTeam: mt,
       playerOverrides: {
         away: customTeamToPlayerOverrides(awayDoc),

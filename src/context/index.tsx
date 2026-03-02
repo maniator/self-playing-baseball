@@ -108,6 +108,8 @@ export interface State {
   inning: number;
   score: [number, number];
   teams: [string, string];
+  /** Human-readable display names for the two teams. Matches the indices of `teams`. */
+  teamLabels: [string, string];
   baseLayout: [number, number, number];
   outs: number;
   strikes: number;

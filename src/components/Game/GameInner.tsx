@@ -116,6 +116,8 @@ const GameInner: React.FunctionComponent<Props> = ({
   const handleStart = (
     homeTeam: string,
     awayTeam: string,
+    homeTeamLabel: string,
+    awayTeamLabel: string,
     managedTeam: 0 | 1 | null,
     playerOverrides: PlayerOverrides,
   ) => {
@@ -129,6 +131,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       type: "setTeams",
       payload: {
         teams: [awayTeam, homeTeam],
+        teamLabels: [awayTeamLabel, homeTeamLabel],
         playerOverrides: [playerOverrides.away, playerOverrides.home],
         lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
         ...(playerOverrides.awayBench !== undefined &&
@@ -164,7 +167,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         seed: currentSeedStr(),
         setup,
       },
-      { name: `${awayTeam} vs ${homeTeam}` },
+      { name: `${awayTeamLabel} vs ${homeTeamLabel}` },
     )
       .then((id) => {
         rxSaveIdRef.current = id;
@@ -212,6 +215,8 @@ const GameInner: React.FunctionComponent<Props> = ({
     handleStartRef.current(
       pendingGameSetup.homeTeam,
       pendingGameSetup.awayTeam,
+      pendingGameSetup.homeTeamLabel,
+      pendingGameSetup.awayTeamLabel,
       pendingGameSetup.managedTeam,
       pendingGameSetup.playerOverrides,
     );
