@@ -259,4 +259,164 @@ describe("ExhibitionSetupPage", () => {
       /create at least two custom teams/i,
     );
   });
+
+  it("self-matchup is blocked — shows validation error when home and away teams are the same", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const makeValidTeam = (id: string, name: string) => ({
+      id,
+      name,
+      city: "",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: [
+          {
+            id: `${id}-p1`,
+            name: "A",
+            position: "C",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p2`,
+            name: "B",
+            position: "1B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p3`,
+            name: "C",
+            position: "2B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p4`,
+            name: "D",
+            position: "3B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p5`,
+            name: "E",
+            position: "SS",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p6`,
+            name: "F",
+            position: "LF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p7`,
+            name: "G",
+            position: "CF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p8`,
+            name: "H",
+            position: "RF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p9`,
+            name: "I",
+            position: "DH",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+        ],
+        pitchers: [
+          {
+            id: `${id}-sp`,
+            name: "Starter",
+            role: "SP" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
+            pitching: { velocity: 60, control: 60, movement: 60 },
+          },
+        ],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeValidTeam("ct_away", "Away Team"), makeValidTeam("ct_home", "Home Team")] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Change the home select to match the away team (ct_away), creating a self-matchup.
+    const homeSelect = screen.getByTestId("new-game-custom-home-team-select");
+    await user.selectOptions(homeSelect, "ct_away");
+
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /away and home teams must be different/i,
+    );
+  });
+
+  it("managed team with no SP-eligible pitchers shows validation error", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
+    const makeTeamRpOnly = (id: string, name: string) => ({
+      id,
+      name,
+      city: "",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: POSITIONS.map((pos, i) => ({
+          id: `${id}-p${i}`,
+          name: `Player${i}`,
+          position: pos,
+          batting: { contact: 60, power: 60, speed: 60 },
+        })),
+        // RP only — NOT SP-eligible
+        pitchers: [
+          {
+            id: `${id}-rp`,
+            name: "Reliever",
+            role: "pitcher" as const,
+            pitchingRole: "RP" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
+            pitching: { velocity: 60, control: 60, movement: 60 },
+          },
+        ],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        makeTeamRpOnly("ct_away", "Away Team"),
+        makeTeamRpOnly("ct_home", "Home Team"),
+      ] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Select "Away" as the managed team.
+    const awayRadio = screen.getByRole("radio", { name: /away/i });
+    await user.click(awayRadio);
+
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /no sp-eligible pitchers/i,
+    );
+  });
 });

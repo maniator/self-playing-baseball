@@ -215,9 +215,16 @@ function buildStore(getDbFn: GetDb) {
         throw new Error("Invalid save data: missing or non-string team identifiers");
       }
 
-      // Reject saves created with the old MLB team format (neither ct_ nor custom: prefix).
-      for (const field of [header.homeTeamId, header.awayTeamId]) {
-        if (!field.startsWith("ct_") && !field.startsWith("custom:")) {
+      // Normalize bare ct_* IDs to the canonical custom: prefix AFTER sig verification.
+      // The sig was verified over the original bytes; normalization must happen before
+      // the missing-team check and before upsert so all stored values use one format.
+      const toCanonical = (id: string): string => (id.startsWith("ct_") ? `custom:${id}` : id);
+      const canonicalHomeId = toCanonical(header.homeTeamId);
+      const canonicalAwayId = toCanonical(header.awayTeamId);
+
+      // Reject saves created with the old MLB team format (no custom: prefix after normalization).
+      for (const field of [canonicalHomeId, canonicalAwayId]) {
+        if (!field.startsWith("custom:")) {
           throw new Error(
             "Cannot import save: this save was created with the old MLB team format, which is no longer supported. Start a new game using your custom teams.",
           );
@@ -225,13 +232,9 @@ function buildStore(getDbFn: GetDb) {
       }
 
       // Reject saves that reference custom teams that don't exist locally.
-      // De-dup so a self-matchup (homeTeamId === awayTeamId) counts as 1 missing team, not 2.
+      // De-dup so a self-matchup counts as 1 missing team, not 2.
       const customTeamIds: string[] = Array.from(
-        new Set(
-          [header.homeTeamId, header.awayTeamId]
-            .filter((f) => f.startsWith("ct_") || f.startsWith("custom:"))
-            .map((f) => (f.startsWith("custom:") ? f.slice("custom:".length) : f)),
-        ),
+        new Set([canonicalHomeId, canonicalAwayId].map((f) => f.slice("custom:".length))),
       );
       const db = await getDbFn();
       if (customTeamIds.length > 0) {
@@ -245,9 +248,26 @@ function buildStore(getDbFn: GetDb) {
           );
         }
       }
-      // Strip legacy fields that were removed from the schema (e.g. matchupMode
-      // dropped in v2). Without this, old save bundles persist obsolete fields.
-      const { matchupMode: _drop, ...cleanHeader } = header as Record<string, unknown>;
+      // Strip legacy fields and store canonical team IDs so the UI can always
+      // resolve team labels without special-casing bare ct_* identifiers.
+      const { matchupMode: _drop, ...headerRest } = header as Record<string, unknown>;
+      const existingSetup = headerRest.setup as Record<string, unknown> | undefined;
+      const cleanHeader = {
+        ...headerRest,
+        homeTeamId: canonicalHomeId,
+        awayTeamId: canonicalAwayId,
+        ...(existingSetup && {
+          setup: {
+            ...existingSetup,
+            homeTeam: toCanonical(
+              typeof existingSetup.homeTeam === "string" ? existingSetup.homeTeam : "",
+            ),
+            awayTeam: toCanonical(
+              typeof existingSetup.awayTeam === "string" ? existingSetup.awayTeam : "",
+            ),
+          },
+        }),
+      };
       await db.saves.upsert(cleanHeader as SaveDoc);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
