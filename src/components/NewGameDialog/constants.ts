@@ -2,9 +2,6 @@ import type { ModPreset } from "@context/index";
 
 export type { ModPreset } from "@context/index";
 
-export const DEFAULT_AL_TEAM = "New York Yankees";
-export const DEFAULT_NL_TEAM = "New York Mets";
-
 export const MOD_OPTIONS: ReadonlyArray<{ readonly label: string; readonly value: ModPreset }> = [
   { label: "Elite", value: 20 },
   { label: "High", value: 10 },

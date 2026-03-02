@@ -71,7 +71,7 @@ test.describe("Batting Stats — seed 30nl0i", () => {
     await startGameViaPlayBall(page, { seed: SEED });
     await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 10_000 });
 
-    // Away-team tab is active by default (▲ New York Mets)
+    // Away-team batting stats tab is active by default
     const table = page.getByTestId("batting-stats-table");
     await expect(table).toBeVisible();
 

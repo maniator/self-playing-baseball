@@ -3,8 +3,8 @@ import * as fs from "fs";
 import * as path from "path";
 
 import {
-  configureNewGame,
   importSaveFromFixture,
+  importTeamsFixture,
   openSavesModal,
   resetAppState,
   startGameViaPlayBall,
@@ -19,8 +19,7 @@ test.describe("Import Save", () => {
   test("importing a save fixture auto-loads the game and save appears in list", async ({
     page,
   }) => {
-    await configureNewGame(page);
-    await page.getByTestId("play-ball-button").click();
+    await startGameViaPlayBall(page, { seed: "importsetup" });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
     // Import auto-loads and closes the modal
@@ -29,7 +28,9 @@ test.describe("Import Save", () => {
 
     // Reopen modal and confirm save is in the list
     await openSavesModal(page);
-    await expect(page.getByTestId("saves-modal").getByText("Mets vs Yankees")).toBeVisible({
+    await expect(
+      page.getByTestId("saves-modal").getByText("Visitors vs Locals").first(),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });
@@ -46,6 +47,9 @@ test.describe("Import Save", () => {
   test("importing a save via paste JSON on /saves page loads the game", async ({ page }) => {
     const fixturePath = path.resolve(__dirname, "../fixtures/sample-save.json");
     const fixtureJson = fs.readFileSync(fixturePath, "utf8");
+
+    // Fixture teams must exist before importing the save.
+    await importTeamsFixture(page, "fixture-teams.json");
 
     // Navigate to /saves via Home → Load Saved Game
     await page.getByTestId("home-load-saves-button").click();

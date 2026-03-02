@@ -77,7 +77,7 @@ const Announcements: React.FunctionComponent = () => {
 
   /** Replaces any `custom:<id>` fragment in a log entry with the team's display name. */
   const resolveEntry = (entry: string): string =>
-    entry.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
+    entry.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, customTeams));
 
   React.useEffect(() => {
     if (!expanded) return;

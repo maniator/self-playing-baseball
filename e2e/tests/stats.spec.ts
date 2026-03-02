@@ -131,7 +131,6 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Import RBI backfill test is desktop-only");
     await resetAppState(page);
-
     await startGameViaPlayBall(page, { seed: "importrbi" });
     await waitForLogLines(page, 3);
 

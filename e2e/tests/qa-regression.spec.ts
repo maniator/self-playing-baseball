@@ -11,7 +11,6 @@
 import { expect, test } from "@playwright/test";
 
 import {
-  configureNewGame,
   loadFixture,
   openSavesModal,
   resetAppState,
@@ -294,20 +293,7 @@ test.describe("New game after finished game — no end-of-game state replay", ()
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 
     // Start a brand-new game from Home.
-    await page.getByTestId("home-new-game-button").click();
-    // Wait for navigation to complete before calling configureNewGame — on slow
-    // mobile viewports (pixel-5) the navigation from home → /exhibition/new can
-    // lag, causing configureNewGame's internal waitForNewGameDialog to see the
-    // home screen still visible and attempt a second click on the button.
-    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
-    // configureNewGame switches to the MLB tab (exhibition setup defaults to Custom Teams;
-    // with no custom teams defined, Play Ball would trigger a validation error instead of
-    // starting the game — causing the scoreboard to never appear).
-    await configureNewGame(page);
-    await page.getByTestId("play-ball-button").click();
-
-    // Wait for the game to be active (scoreboard visible) — then assert fresh state.
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+    await startGameViaPlayBall(page, { seed: "afterfinished" });
 
     // Positive assertion: the game is in progress, not finished.
     // FINAL only renders when gameOver=true; its absence proves the finished-game
