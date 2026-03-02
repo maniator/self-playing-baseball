@@ -109,7 +109,8 @@ export const usePitchDispatch = (
           payload: shiftDecision.payload,
         });
         dispatchLog?.({ type: "log", payload: `The manager: ${shiftDecision.reasonText}.` });
-        // Do NOT return early — the pitch continues after the shift is set.
+        // Return early to avoid pitching in the same tick as the shift decision.
+        return;
       }
     }
 
