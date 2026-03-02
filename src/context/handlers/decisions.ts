@@ -48,9 +48,19 @@ export const handleDecisionsAction = (
       // Suppress re-announcement when the shift state hasn't actually changed.
       // Always set defensiveShiftOffered=true so the AI does not re-evaluate every at-bat.
       if (shiftOn === state.defensiveShift) {
-        // Return the same object if already in the desired state to avoid extra renders.
+        // True no-op: nothing to update at all.
         if (state.pendingDecision === null && state.defensiveShiftOffered) return state;
-        return { ...state, pendingDecision: null, defensiveShiftOffered: true };
+        const result = { ...state, pendingDecision: null, defensiveShiftOffered: true };
+        // If this resolves a real pending decision, record it in decisionLog so
+        // deterministic replay (useReplayDecisions) captures the manager's choice.
+        if (state.pendingDecision !== null) {
+          return withDecisionLog(
+            state,
+            result,
+            `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`,
+          );
+        }
+        return result;
       }
       const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       if (shiftOn)

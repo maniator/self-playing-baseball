@@ -24,7 +24,7 @@ const makeGameSnapshot = (overrides: Record<string, any> = {}) => ({
   suppressNextDecision: false,
   pinchHitterStrategy: null,
   defensiveShift: false,
-  defensiveShiftOffered: true,
+  defensiveShiftOffered: false,
   ...overrides,
 });
 
@@ -72,7 +72,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches strike when swing (random < swingRate)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs();
+    const refs = makeRefs({ snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.001)
@@ -99,7 +99,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit when random >= 920", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs();
+    const refs = makeRefs({ snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -145,7 +145,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with contact strategy — Triple (hitRoll 8–9)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "contact" });
+    const refs = makeRefs({ strategy: "contact", snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
@@ -172,7 +172,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with contact strategy — Double (hitRoll 10–27)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "contact" });
+    const refs = makeRefs({ strategy: "contact", snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -199,7 +199,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Triple (hitRoll 13–14)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "balanced" });
+    const refs = makeRefs({ strategy: "balanced", snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -226,7 +226,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Double (hitRoll 15–34)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "balanced" });
+    const refs = makeRefs({ strategy: "balanced", snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -254,7 +254,7 @@ describe("usePitchDispatch", () => {
 
 describe("usePitchDispatch — power strategy hits", () => {
   const makeHitRefs = (hitRoll: number) => {
-    const refs = makeRefs({ strategy: "power" });
+    const refs = makeRefs({ strategy: "power", snap: { defensiveShiftOffered: true } });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
@@ -342,6 +342,79 @@ describe("usePitchDispatch — suppressNextDecision", () => {
       result.current.current();
     });
     expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
+  });
+
+  it("AI-only mode (managerMode=false): clears suppressNextDecision and still dispatches a pitch", () => {
+    // After an intentional_walk the reducer sets suppressNextDecision=true.
+    // With managerMode=false the human-manager guard never clears it — the AI path must.
+    const dispatch = vi.fn();
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5);
+    const refs = makeRefs({
+      managerMode: false,
+      snap: {
+        suppressNextDecision: true,
+        defensiveShiftOffered: true, // skip shift check; focus on suppress clear
+      },
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
+    // A normal pitch action must also be dispatched in the same tick.
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul|hit|wait)$/) }),
+    );
+  });
+});
+
+describe("usePitchDispatch — AI intentional walk (pitch-replacing)", () => {
+  it("dispatches intentional_walk and does NOT dispatch a normal pitch in the same tick", () => {
+    // IBB condition: 1st base empty, runner on 2nd, 2 outs, inning 7+, score within 2.
+    const dispatch = vi.fn();
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5);
+    const refs = makeRefs({
+      managerMode: false,
+      snap: {
+        baseLayout: [0, 1, 0] as [number, number, number],
+        outs: 2,
+        inning: 7,
+        score: [3, 1] as [number, number], // diff = 2, within threshold
+        balls: 0,
+        strikes: 0,
+        suppressNextDecision: false,
+        defensiveShiftOffered: true, // skip shift check; focus on IBB
+      },
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch(
+        dispatch,
+        refs.gameStateRef,
+        refs.managerModeRef,
+        refs.strategyRef,
+        refs.managedTeamRef,
+        refs.skipDecisionRef,
+        refs.strikesRef,
+      ),
+    );
+    act(() => {
+      result.current.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "intentional_walk" }));
+    // Must NOT also dispatch a normal pitch action in the same tick.
+    expect(dispatch).not.toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul|hit|wait)$/) }),
+    );
   });
 });
 
