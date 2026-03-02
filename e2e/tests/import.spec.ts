@@ -19,8 +19,6 @@ test.describe("Import Save", () => {
   test("importing a save fixture auto-loads the game and save appears in list", async ({
     page,
   }) => {
-    // Fixture teams must exist before importing the save.
-    await importTeamsFixture(page, "fixture-teams.json");
     await startGameViaPlayBall(page, { seed: "importsetup" });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
 
@@ -38,8 +36,6 @@ test.describe("Import Save", () => {
   });
 
   test("importing a save auto-loads and game becomes active", async ({ page }) => {
-    // Fixture teams must exist before importing the save.
-    await importTeamsFixture(page, "fixture-teams.json");
     await startGameViaPlayBall(page, { seed: "importme" });
     await waitForLogLines(page, 3);
 

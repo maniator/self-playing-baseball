@@ -3,7 +3,6 @@ import * as fs from "fs";
 import * as path from "path";
 
 import {
-  importTeamsFixture,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
@@ -60,8 +59,6 @@ test.describe("Modals", () => {
     });
 
     test("import textarea clears after a successful import", async ({ page }) => {
-      // Fixture teams must exist in the DB before the save can be imported.
-      await importTeamsFixture(page, "fixture-teams.json");
       await startGameViaPlayBall(page, { seed: "modal3" });
       await openSavesModal(page);
 
