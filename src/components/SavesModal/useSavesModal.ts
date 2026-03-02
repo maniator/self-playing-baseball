@@ -55,8 +55,17 @@ export const useSavesModal = ({
   onLoadSave,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
-  const { dispatchLog, teams, inning, pitchKey, ...gameStateRest } = useGameContext();
-
+  // Exclude `dispatch` (function) and `log` (announcements array) — only serializable
+  // State fields must reach fullState; functions cannot be stored in IndexedDB (DataCloneError).
+  const {
+    dispatch: _dispatch,
+    log: _log,
+    dispatchLog,
+    teams,
+    inning,
+    pitchKey,
+    ...gameStateRest
+  } = useGameContext();
   // Reactive saves list — auto-updates when any save is mutated in RxDB.
   const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
     useSaveStore();
@@ -79,6 +88,9 @@ export const useSavesModal = ({
       managerMode,
       homeTeam: teams[1],
       awayTeam: teams[0],
+      // NOTE: playerOverrides and lineupOrder here mirror stateSnapshot.state — the
+      // team docs referenced by homeTeamId/awayTeamId hold the canonical roster.
+      // This field is kept for backward compatibility with existing saves.
       playerOverrides: [fullState.playerOverrides[0], fullState.playerOverrides[1]],
       lineupOrder: [fullState.lineupOrder[0], fullState.lineupOrder[1]],
     };

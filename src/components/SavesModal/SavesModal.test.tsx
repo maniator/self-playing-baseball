@@ -439,6 +439,30 @@ describe("SavesModal", () => {
     expect(screen.getByTestId("save-game-button")).toBeInTheDocument();
   });
 
+  it("handleSave stores no function fields in the state snapshot (regression: DataCloneError)", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockUpdateProgress = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ updateProgress: mockUpdateProgress }));
+    renderModal({ currentSaveId: "save_1", gameStarted: true });
+    await openPanel();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /update save/i }));
+      await vi.waitFor(() => expect(mockUpdateProgress).toHaveBeenCalled());
+    });
+    const [, , summary] = mockUpdateProgress.mock.calls[0];
+    const storedState = (summary as { stateSnapshot?: { state?: unknown } }).stateSnapshot?.state;
+    expect(storedState).toBeDefined();
+    // Every value in the stored state must be serializable (no functions).
+    const hasFunction = (obj: unknown): boolean => {
+      if (typeof obj === "function") return true;
+      if (obj !== null && typeof obj === "object") {
+        return Object.values(obj as Record<string, unknown>).some(hasFunction);
+      }
+      return false;
+    };
+    expect(hasFunction(storedState)).toBe(false);
+  });
+
   it("preserves custom team IDs in snapshot state when onLoadSave is called (resolved only at presentation time)", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const snapState = makeState({ teams: ["custom:ct_abc", "Home"] as [string, string] });

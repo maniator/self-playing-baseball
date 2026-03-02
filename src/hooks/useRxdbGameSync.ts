@@ -36,10 +36,6 @@ export const useRxdbGameSync = (
   actionBufferRef: React.MutableRefObject<GameAction[]>,
 ): void => {
   const { dispatch: _d, dispatchLog: _dl, log: _l, ...gameState } = useGameContext();
-  void _d;
-  void _dl;
-  void _l;
-
   const { pitchKey, inning, atBat, gameOver } = gameState;
 
   // Always-current ref of game state — read by effects without re-creating them.
