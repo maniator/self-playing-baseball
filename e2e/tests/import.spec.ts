@@ -30,7 +30,9 @@ test.describe("Import Save", () => {
 
     // Reopen modal and confirm save is in the list
     await openSavesModal(page);
-    await expect(page.getByTestId("saves-modal").getByText("Visitors vs Locals")).toBeVisible({
+    await expect(
+      page.getByTestId("saves-modal").getByText("Visitors vs Locals").first(),
+    ).toBeVisible({
       timeout: 10_000,
     });
   });

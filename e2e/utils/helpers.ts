@@ -356,6 +356,9 @@ export async function importTeamsFixture(page: Page, fixtureName: string): Promi
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
   await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 15_000 });
+  // Always return to the home screen so callers can proceed without an explicit goto("/").
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 }
 
 /**
