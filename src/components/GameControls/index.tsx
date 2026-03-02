@@ -4,6 +4,7 @@ import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapt
 
 import { Strategy } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import type { SaveDoc } from "@storage/types";
 
 import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
@@ -18,7 +19,7 @@ const SavesModal = React.lazy(() => import("@components/SavesModal"));
 type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
-  onLoadActivate?: (saveId: string) => void;
+  onLoadSave?: (slot: SaveDoc) => void;
   /** Routes back to the Home screen. When provided a "← Home" button is shown. */
   onBackToHome?: () => void;
 };
@@ -26,7 +27,7 @@ type Props = {
 const GameControls: React.FunctionComponent<Props> = ({
   onNewGame,
   gameStarted = false,
-  onLoadActivate,
+  onLoadSave,
   onBackToHome,
 }) => {
   const {
@@ -35,7 +36,6 @@ const GameControls: React.FunctionComponent<Props> = ({
     announcementVolume,
     alertVolume,
     managerMode,
-    setManagerMode,
     strategy,
     setStrategy,
     managedTeam,
@@ -87,12 +87,7 @@ const GameControls: React.FunctionComponent<Props> = ({
             managerMode={managerMode}
             currentSaveId={currentSaveId}
             onSaveIdChange={setCurrentSaveId}
-            onSetupRestore={(setup) => {
-              setStrategy(setup.strategy);
-              setManagedTeam(setup.managedTeam ?? 0);
-              setManagerMode(setup.managerMode ?? false);
-            }}
-            onLoadActivate={onLoadActivate}
+            onLoadSave={onLoadSave}
             gameStarted={gameStarted}
           />
         </React.Suspense>

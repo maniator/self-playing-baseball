@@ -2,6 +2,7 @@ import * as React from "react";
 
 import SaveSlotList from "@components/SaveSlotList";
 import type { Strategy } from "@context/index";
+import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,
@@ -24,12 +25,7 @@ interface Props {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: {
-    strategy: Strategy;
-    managedTeam: 0 | 1 | null;
-    managerMode: boolean;
-  }) => void;
-  onLoadActivate?: (saveId: string) => void;
+  onLoadSave?: (slot: SaveDoc) => void;
   /** When true a real game session is active and "Save current game" is shown. */
   gameStarted?: boolean;
 }

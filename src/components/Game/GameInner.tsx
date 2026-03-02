@@ -287,15 +287,65 @@ const GameInner: React.FunctionComponent<Props> = ({
     onConsumePendingLoad,
   ]);
 
-  const handleLoadActivate = React.useCallback(
-    (saveId: string) => {
-      rxSaveIdRef.current = saveId;
-      setGameActive(true);
-      setGameKey((k) => k + 1);
-      onGameSessionStarted?.();
-    },
-    [onGameSessionStarted],
-  );
+  // ── Modal-triggered save load ─────────────────────────────────────────────
+  // Mirrors the pendingLoadSave prop path exactly so the saves modal and the
+  // /saves page use identical restore logic.  The slot is set with
+  // setGameActive(false) first so that gameActive transitions false→true when
+  // the effect calls setGameActive(true), which reliably re-triggers
+  // useAutoPlayScheduler regardless of whether a game was already in progress.
+  const [pendingModalLoad, setPendingModalLoad] = React.useState<SaveDoc | null>(null);
+  const prevPendingModalLoad = React.useRef<SaveDoc | null>(null);
+
+  React.useEffect(() => {
+    if (!pendingModalLoad) return;
+    if (pendingModalLoad === prevPendingModalLoad.current) return;
+    prevPendingModalLoad.current = pendingModalLoad;
+
+    const snap = pendingModalLoad.stateSnapshot;
+    if (!snap) {
+      setPendingModalLoad(null);
+      return;
+    }
+
+    if (snap.rngState !== null) restoreRng(snap.rngState);
+    dispatch({
+      type: "restore_game",
+      payload: {
+        ...snap.state,
+        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+      },
+    });
+
+    const { setup } = pendingModalLoad;
+    setManagerMode(setup.managerMode);
+    setManagedTeam(setup.managedTeam ?? 0);
+    setStrategy(setup.strategy);
+
+    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("seed", pendingModalLoad.seed);
+      window.history.replaceState(null, "", url.toString());
+    }
+
+    rxSaveIdRef.current = pendingModalLoad.id;
+    setGameActive(true); // false→true transition restarts useAutoPlayScheduler
+    onGameSessionStarted?.();
+    setPendingModalLoad(null);
+  }, [
+    pendingModalLoad,
+    dispatch,
+    setManagerMode,
+    setManagedTeam,
+    setStrategy,
+    onGameSessionStarted,
+  ]);
+
+  // Called by GameControls/SavesModal when the user clicks Load on a save.
+  const handleModalLoad = React.useCallback((slot: SaveDoc) => {
+    restoredRef.current = true; // prevent auto-resume from overwriting the load
+    setGameActive(false); // deactivate first so the effect's setGameActive(true) fires a real transition
+    setPendingModalLoad(slot);
+  }, []);
 
   return (
     <GameDiv>
@@ -304,7 +354,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         key={gameKey}
         onNewGame={handleNewGame}
         gameStarted={gameActive}
-        onLoadActivate={handleLoadActivate}
+        onLoadSave={handleModalLoad}
         onBackToHome={onBackToHome}
       />
       <GameBody>

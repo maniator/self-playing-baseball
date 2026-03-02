@@ -2,7 +2,6 @@ import * as React from "react";
 
 import {
   resolveCustomIdsInString,
-  resolveRestoreLabels,
   resolveTeamLabel,
 } from "@features/customTeams/adapters/customTeamAdapter";
 
@@ -13,7 +12,7 @@ import { useImportSave } from "@hooks/useImportSave";
 import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
-import { getRngState, restoreRng } from "@utils/rng";
+import { getRngState } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
 interface Params {
@@ -22,12 +21,8 @@ interface Params {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: {
-    strategy: Strategy;
-    managedTeam: 0 | 1 | null;
-    managerMode: boolean;
-  }) => void;
-  onLoadActivate?: (saveId: string) => void;
+  /** Called when the user loads a save; GameInner owns the actual restore logic. */
+  onLoadSave?: (slot: SaveDoc) => void;
 }
 
 export interface SavesModalState {
@@ -57,19 +52,10 @@ export const useSavesModal = ({
   managerMode,
   currentSaveId,
   onSaveIdChange,
-  onSetupRestore,
-  onLoadActivate,
+  onLoadSave,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
-  const {
-    dispatch,
-    dispatchLog,
-    log: _log,
-    teams,
-    inning,
-    pitchKey,
-    ...gameStateRest
-  } = useGameContext();
+  const { dispatchLog, log: _log, teams, inning, pitchKey, ...gameStateRest } = useGameContext();
   void _log;
 
   // Reactive saves list — auto-updates when any save is mutated in RxDB.
@@ -138,38 +124,29 @@ export const useSavesModal = ({
   };
 
   const handleLoad = (slot: SaveDoc) => {
-    // Use the slot's own snapshot if available; otherwise fall back to the
-    // most recently-updated save that has a snapshot for the same seed.
-    // This lets a manual save (which always snapshots immediately) rescue an
-    // auto-save that hasn't yet crossed a half-inning boundary.
+    // Check snapshot availability for the error case.  The actual restore
+    // (dispatch, rng, localStorage) is handled by GameInner via onLoadSave so
+    // that the /saves-page and in-game-modal paths share identical logic.
+    const hasSnapshot =
+      slot.stateSnapshot != null ||
+      saves.some((s) => s.seed === slot.seed && s.stateSnapshot != null);
+
+    if (!hasSnapshot) {
+      log(`Unable to load save "${slot.name}" — no state snapshot available yet.`);
+      return;
+    }
+
+    // Enrich the slot so GameInner always receives a snapshot (might be a
+    // fallback from a same-seed save when the clicked slot has none).
     const snap =
       slot.stateSnapshot ??
       saves
         .filter((s) => s.seed === slot.seed && s.stateSnapshot != null)
-        .sort((a, b) => b.updatedAt - a.updatedAt)[0]?.stateSnapshot;
+        .sort((a, b) => b.updatedAt - a.updatedAt)[0]!.stateSnapshot;
+    const slotWithSnapshot: SaveDoc = slot.stateSnapshot ? slot : { ...slot, stateSnapshot: snap };
 
-    if (!snap) {
-      log(`Unable to load save "${slot.name}" — no state snapshot available yet.`);
-      return;
-    }
-    if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({
-      type: "restore_game",
-      payload: { ...snap.state, teamLabels: resolveRestoreLabels(snap.state, customTeams) },
-    });
-    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("seed", slot.seed);
-      window.history.replaceState(null, "", url.toString());
-    }
-    const { setup } = slot;
-    onSetupRestore?.({
-      strategy: setup.strategy,
-      managedTeam: setup.managedTeam,
-      managerMode: setup.managerMode,
-    });
     onSaveIdChange(slot.id);
-    onLoadActivate?.(slot.id);
+    onLoadSave?.(slotWithSnapshot);
     log(`Loaded: ${slot.name}`);
     close();
   };
