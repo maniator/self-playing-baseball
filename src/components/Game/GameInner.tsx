@@ -291,6 +291,7 @@ const GameInner: React.FunctionComponent<Props> = ({
     (saveId: string) => {
       rxSaveIdRef.current = saveId;
       setGameActive(true);
+      setGameKey((k) => k + 1);
       onGameSessionStarted?.();
     },
     [onGameSessionStarted],
