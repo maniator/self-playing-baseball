@@ -2,7 +2,6 @@ import { expect, type Locator, type Page, test } from "@playwright/test";
 import path from "path";
 
 import {
-  importTeamsFixture,
   loadFixture,
   resetAppState,
   startGameViaPlayBall,
@@ -132,10 +131,6 @@ test.describe("Player Stats Panel — RBI values (desktop only)", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Import RBI backfill test is desktop-only");
     await resetAppState(page);
-
-    // Ensure fixture teams exist so the sample-save import passes validation.
-    await importTeamsFixture(page, "fixture-teams.json");
-
     await startGameViaPlayBall(page, { seed: "importrbi" });
     await waitForLogLines(page, 3);
 
