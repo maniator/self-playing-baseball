@@ -1,10 +1,6 @@
 import { type Browser, expect, test } from "@playwright/test";
 
-import {
-  captureGameSignature,
-  configureNewGame,
-  createDefaultCustomTeamsForTest,
-} from "../utils/helpers";
+import { captureGameSignature, configureNewGame, importTeamsFixture } from "../utils/helpers";
 
 const FIXED_SEED = "deadbeef";
 
@@ -31,8 +27,8 @@ async function runGameInFreshContext(
   try {
     await page.goto("/");
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    // Create two default custom teams before starting (required since MLB tab removed).
-    await createDefaultCustomTeamsForTest(page);
+    // Import fixture teams before starting (required since MLB tab removed).
+    await importTeamsFixture(page, "fixture-teams.json");
     await page.goto("/exhibition/new");
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await configureNewGame(page, { seed });

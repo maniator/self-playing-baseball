@@ -145,14 +145,16 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
 /**
  * Starts the game:
  * - Resets app state (navigates to `/`).
- * - Ensures at least two custom teams exist (creating defaults if needed).
+ * - Imports fixture teams via {@link importTeamsFixture} (fast and reliable across all viewports).
  * - If a seed is given, types it into the seed-input field in the dialog
  *   (calls `reinitSeed` on submit — no page reload needed).
  * - Clicks "Play Ball!" and waits until the game is active.
  */
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
   await resetAppState(page);
-  await createDefaultCustomTeamsForTest(page);
+  // Import pre-built fixture teams — faster and more reliable than creating through the UI,
+  // especially on mobile WebKit where async save navigation can be slow.
+  await importTeamsFixture(page, "fixture-teams.json");
   await page.goto("/exhibition/new");
   await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   await configureNewGame(page, options);
@@ -299,11 +301,21 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
  * computed by `fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events}))`.
  * See the "Save Fixtures for E2E Testing" section in
  * `.github/copilot-instructions.md` for the full authoring guide.
+ *
+ * @param teamsFixtureName  Teams export file to import before loading the save.
+ *   Defaults to `"fixture-teams.json"`. Pass a different file when the save
+ *   fixture references team IDs that are not in the standard fixture-teams bundle
+ *   (e.g. `"pending-decision-pinch-hitter-teams.json"` for the pinch-hitter fixture).
  */
-export async function loadFixture(page: Page, fixtureName: string): Promise<void> {
+export async function loadFixture(
+  page: Page,
+  fixtureName: string,
+  teamsFixtureName = "fixture-teams.json",
+): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
   // Import fixture teams first so the save's custom team IDs pass validation.
-  await importTeamsFixture(page, "fixture-teams.json");
+  // Callers may pass a custom teams fixture when the save references non-standard team IDs.
+  await importTeamsFixture(page, teamsFixtureName);
   // Always start from the Home screen so this helper is self-contained.
   // Callers do not need to call resetAppState beforehand.
   await page.goto("/");
