@@ -362,4 +362,128 @@ describe("validateCustomTeamForGame", () => {
     expect(err).toContain("3B");
     expect(err).toContain("SS");
   });
+
+  // ── Pitcher checks ─────────────────────────────────────────────────────────
+
+  it("returns error when team has no pitchers", () => {
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, pitchers: [] },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("no pitchers");
+  });
+
+  it("returns error when team has only one pitcher with an empty name", () => {
+    const team = makeValidTeam({
+      roster: {
+        ...makeValidTeam().roster,
+        pitchers: [
+          {
+            id: "sp_bad",
+            name: "",
+            role: "pitcher",
+            batting: { contact: 30, power: 25, speed: 30 },
+            pitching: { velocity: 70, control: 65, movement: 60 },
+          },
+        ],
+      },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("pitcher with no name");
+  });
+
+  it("returns error when one of several pitchers has an empty name", () => {
+    const team = makeValidTeam({
+      roster: {
+        ...makeValidTeam().roster,
+        pitchers: [
+          {
+            id: "sp1",
+            name: "Good Ace",
+            role: "pitcher",
+            batting: { contact: 30, power: 25, speed: 30 },
+            pitching: { velocity: 70, control: 65, movement: 60 },
+          },
+          {
+            id: "sp2",
+            name: "   ",
+            role: "pitcher",
+            batting: { contact: 30, power: 25, speed: 30 },
+            pitching: { velocity: 65, control: 60, movement: 55 },
+          },
+        ],
+      },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("pitcher with no name");
+  });
+
+  it("returns null when team has multiple valid pitchers", () => {
+    const team = makeValidTeam({
+      roster: {
+        ...makeValidTeam().roster,
+        pitchers: [
+          {
+            id: "sp1",
+            name: "Ace Starter",
+            role: "pitcher",
+            batting: { contact: 30, power: 25, speed: 30 },
+            pitching: { velocity: 80, control: 70, movement: 65 },
+          },
+          {
+            id: "rp1",
+            name: "Relief Guy",
+            role: "pitcher",
+            batting: { contact: 25, power: 20, speed: 25 },
+            pitching: { velocity: 75, control: 65, movement: 60 },
+          },
+        ],
+      },
+    });
+    expect(validateCustomTeamForGame(team)).toBeNull();
+  });
+
+  it("returns error when team name is empty", () => {
+    const team = makeValidTeam({ name: "" });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("no name");
+  });
+
+  it("returns error when team name is whitespace-only", () => {
+    const team = makeValidTeam({ name: "   " });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("no name");
+  });
+
+  it("returns error when lineup is empty", () => {
+    const team = makeValidTeam({
+      roster: { ...makeValidTeam().roster, lineup: [] },
+    });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("no lineup players");
+  });
+
+  it("returns error when a lineup player has an empty name", () => {
+    const lineup = makeFullLineup();
+    lineup[3] = { ...lineup[3], name: "" };
+    const team = makeValidTeam({ roster: { ...makeValidTeam().roster, lineup } });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("lineup player with no name");
+  });
+
+  it("returns error when a lineup player name is whitespace-only", () => {
+    const lineup = makeFullLineup();
+    lineup[0] = { ...lineup[0], name: "  " };
+    const team = makeValidTeam({ roster: { ...makeValidTeam().roster, lineup } });
+    const err = validateCustomTeamForGame(team);
+    expect(err).toBeTruthy();
+    expect(err).toContain("lineup player with no name");
+  });
 });

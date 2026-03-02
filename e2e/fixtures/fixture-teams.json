@@ -33,8 +33,8 @@
               "position": "C",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_1",
-              "sig": "015ede1a",
-              "fingerprint": "015ede1a"
+              "sig": "5c6ab4e1",
+              "fingerprint": "5c6ab4e1"
             },
             {
               "id": "p_fix_away_2",
@@ -48,8 +48,8 @@
               "position": "1B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_2",
-              "sig": "0fa19446",
-              "fingerprint": "0fa19446"
+              "sig": "d247478d",
+              "fingerprint": "d247478d"
             },
             {
               "id": "p_fix_away_3",
@@ -63,8 +63,8 @@
               "position": "2B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_3",
-              "sig": "a25dd4fa",
-              "fingerprint": "a25dd4fa"
+              "sig": "071f3d41",
+              "fingerprint": "071f3d41"
             },
             {
               "id": "p_fix_away_4",
@@ -78,8 +78,8 @@
               "position": "3B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_4",
-              "sig": "0ae8b5b6",
-              "fingerprint": "0ae8b5b6"
+              "sig": "3526eb3d",
+              "fingerprint": "3526eb3d"
             },
             {
               "id": "p_fix_away_5",
@@ -93,8 +93,8 @@
               "position": "SS",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_5",
-              "sig": "a434335a",
-              "fingerprint": "a434335a"
+              "sig": "79240e21",
+              "fingerprint": "79240e21"
             },
             {
               "id": "p_fix_away_6",
@@ -108,8 +108,8 @@
               "position": "LF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_6",
-              "sig": "7dc33b7e",
-              "fingerprint": "7dc33b7e"
+              "sig": "5a0c7c35",
+              "fingerprint": "5a0c7c35"
             },
             {
               "id": "p_fix_away_7",
@@ -123,8 +123,8 @@
               "position": "CF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_7",
-              "sig": "8b2a1d8a",
-              "fingerprint": "8b2a1d8a"
+              "sig": "ea5b1391",
+              "fingerprint": "ea5b1391"
             },
             {
               "id": "p_fix_away_8",
@@ -138,8 +138,8 @@
               "position": "RF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_8",
-              "sig": "8324b37e",
-              "fingerprint": "8324b37e"
+              "sig": "6f9ff435",
+              "fingerprint": "6f9ff435"
             },
             {
               "id": "p_fix_away_9",
@@ -153,12 +153,34 @@
               "position": "DH",
               "handedness": "R",
               "playerSeed": "seed_p_fix_away_9",
-              "sig": "ddea488a",
-              "fingerprint": "ddea488a"
+              "sig": "fbea7e91",
+              "fingerprint": "fbea7e91"
             }
           ],
           "bench": [],
-          "pitchers": []
+          "pitchers": [
+            {
+              "id": "p_fix_away_p1",
+              "name": "Away Pitcher 1",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 20,
+                "speed": 20
+              },
+              "pitching": {
+                "velocity": 50,
+                "control": 50,
+                "movement": 50
+              },
+              "position": "SP",
+              "handedness": "R",
+              "pitchingRole": "SP",
+              "playerSeed": "seed_p_fix_away_p1",
+              "sig": "7c63cd4b",
+              "fingerprint": "7c63cd4b"
+            }
+          ]
         }
       },
       {
@@ -190,8 +212,8 @@
               "position": "C",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_1",
-              "sig": "048d5c40",
-              "fingerprint": "048d5c40"
+              "sig": "072917db",
+              "fingerprint": "072917db"
             },
             {
               "id": "p_fix_home_2",
@@ -205,8 +227,8 @@
               "position": "1B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_2",
-              "sig": "11cb6d6c",
-              "fingerprint": "11cb6d6c"
+              "sig": "364d30a7",
+              "fingerprint": "364d30a7"
             },
             {
               "id": "p_fix_home_3",
@@ -220,8 +242,8 @@
               "position": "2B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_3",
-              "sig": "485ae520",
-              "fingerprint": "485ae520"
+              "sig": "aa8a54bb",
+              "fingerprint": "aa8a54bb"
             },
             {
               "id": "p_fix_home_4",
@@ -235,8 +257,8 @@
               "position": "3B",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_4",
-              "sig": "20850a24",
-              "fingerprint": "20850a24"
+              "sig": "c244274f",
+              "fingerprint": "c244274f"
             },
             {
               "id": "p_fix_home_5",
@@ -250,8 +272,8 @@
               "position": "SS",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_5",
-              "sig": "1dde98b0",
-              "fingerprint": "1dde98b0"
+              "sig": "91edc88b",
+              "fingerprint": "91edc88b"
             },
             {
               "id": "p_fix_home_6",
@@ -265,8 +287,8 @@
               "position": "LF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_6",
-              "sig": "8a5a1c04",
-              "fingerprint": "8a5a1c04"
+              "sig": "3121122f",
+              "fingerprint": "3121122f"
             },
             {
               "id": "p_fix_home_7",
@@ -280,8 +302,8 @@
               "position": "CF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_7",
-              "sig": "540c3190",
-              "fingerprint": "540c3190"
+              "sig": "f29748eb",
+              "fingerprint": "f29748eb"
             },
             {
               "id": "p_fix_home_8",
@@ -295,8 +317,8 @@
               "position": "RF",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_8",
-              "sig": "92bde9fc",
-              "fingerprint": "92bde9fc"
+              "sig": "e4be7437",
+              "fingerprint": "e4be7437"
             },
             {
               "id": "p_fix_home_9",
@@ -310,15 +332,37 @@
               "position": "DH",
               "handedness": "R",
               "playerSeed": "seed_p_fix_home_9",
-              "sig": "2eafc060",
-              "fingerprint": "2eafc060"
+              "sig": "8bf48cfb",
+              "fingerprint": "8bf48cfb"
             }
           ],
           "bench": [],
-          "pitchers": []
+          "pitchers": [
+            {
+              "id": "p_fix_home_p1",
+              "name": "Home Pitcher 1",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 20,
+                "speed": 20
+              },
+              "pitching": {
+                "velocity": 50,
+                "control": 50,
+                "movement": 50
+              },
+              "position": "SP",
+              "handedness": "R",
+              "pitchingRole": "SP",
+              "playerSeed": "seed_p_fix_home_p1",
+              "sig": "66c3d577",
+              "fingerprint": "66c3d577"
+            }
+          ]
         }
       }
     ]
   },
-  "sig": "c1230d59"
+  "sig": "c2c1d484"
 }
