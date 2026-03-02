@@ -26,10 +26,12 @@ export const makeState = (overrides: Partial<State> = {}): State => {
     (overrides.playerOverrides
       ? [buildResolvedMods(playerOverrides[0]), buildResolvedMods(playerOverrides[1])]
       : emptyResolvedMods);
+  // Derive teamLabels from teams if not explicitly provided.
+  const teams = (overrides.teams ?? ["Away", "Home"]) as [string, string];
+  const teamLabels: [string, string] = overrides.teamLabels ?? teams;
   return {
     inning: 1,
     score: [0, 0],
-    teams: ["Away", "Home"],
     baseLayout: [0, 0, 0],
     outs: 0,
     strikes: 0,
@@ -59,52 +61,59 @@ export const makeState = (overrides: Partial<State> = {}): State => {
     substitutedOut: [[], []] as [string[], string[]],
     baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
     ...overrides,
-    // resolvedMods must come after overrides spread so the auto-computed value
-    // wins when playerOverrides was provided without an explicit resolvedMods.
+    // Derived fields that must be computed after overrides:
+    teams,
+    teamLabels,
     resolvedMods,
   };
 };
 
 /** Creates a full default ContextValue with optional field overrides. */
-export const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue => ({
-  inning: 1,
-  score: [3, 2],
-  teams: ["Away", "Home"],
-  baseLayout: [0, 0, 0],
-  outs: 1,
-  strikes: 2,
-  balls: 1,
-  atBat: 0,
-  gameOver: false,
-  pendingDecision: null,
-  onePitchModifier: null,
-  pitchKey: 0,
-  decisionLog: [],
-  hitType: undefined,
-  log: [],
-  dispatch: vi.fn(),
-  dispatchLog: vi.fn(),
-  suppressNextDecision: false,
-  pinchHitterStrategy: null,
-  defensiveShift: false,
-  defensiveShiftOffered: false,
-  batterIndex: [0, 0],
-  inningRuns: [[], []],
-  playLog: [],
-  strikeoutLog: [],
-  outLog: [],
-  playerOverrides: emptyOverrides,
-  lineupOrder: [[], []] as [string[], string[]],
-  rosterBench: [[], []] as [string[], string[]],
-  rosterPitchers: [[], []] as [string[], string[]],
-  activePitcherIdx: [0, 0] as [number, number],
-  lineupPositions: [[], []] as [string[], string[]],
-  pitcherBattersFaced: [0, 0] as [number, number],
-  substitutedOut: [[], []] as [string[], string[]],
-  baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
-  resolvedMods: emptyResolvedMods,
-  ...overrides,
-});
+export const makeContextValue = (overrides: Partial<ContextValue> = {}): ContextValue => {
+  const teams = (overrides.teams ?? ["Away", "Home"]) as [string, string];
+  const teamLabels: [string, string] = overrides.teamLabels ?? teams;
+  return {
+    inning: 1,
+    score: [3, 2],
+    baseLayout: [0, 0, 0],
+    outs: 1,
+    strikes: 2,
+    balls: 1,
+    atBat: 0,
+    gameOver: false,
+    pendingDecision: null,
+    onePitchModifier: null,
+    pitchKey: 0,
+    decisionLog: [],
+    hitType: undefined,
+    log: [],
+    dispatch: vi.fn(),
+    dispatchLog: vi.fn(),
+    suppressNextDecision: false,
+    pinchHitterStrategy: null,
+    defensiveShift: false,
+    defensiveShiftOffered: false,
+    batterIndex: [0, 0],
+    inningRuns: [[], []],
+    playLog: [],
+    strikeoutLog: [],
+    outLog: [],
+    playerOverrides: emptyOverrides,
+    lineupOrder: [[], []] as [string[], string[]],
+    rosterBench: [[], []] as [string[], string[]],
+    rosterPitchers: [[], []] as [string[], string[]],
+    activePitcherIdx: [0, 0] as [number, number],
+    lineupPositions: [[], []] as [string[], string[]],
+    pitcherBattersFaced: [0, 0] as [number, number],
+    substitutedOut: [[], []] as [string[], string[]],
+    baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
+    resolvedMods: emptyResolvedMods,
+    ...overrides,
+    // Derived fields that must be computed after overrides:
+    teams,
+    teamLabels,
+  };
+};
 
 /** Creates a log array and a log-function that appends to it. */
 export const makeLogs = () => {

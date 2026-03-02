@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContextValue } from "@context/index";
 import { GameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { makeContextValue } from "@test/testHelpers";
 
 import GameControls from ".";
@@ -36,12 +37,25 @@ vi.mock("@hooks/useSaveStore", () => ({
   })),
 }));
 
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn(),
+}));
+
 const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeContextValue()) =>
   render(<GameContext.Provider value={ctx}>{ui}</GameContext.Provider>);
 
 describe("GameControls", () => {
   beforeEach(() => {
     localStorage.clear();
+    // Default: empty teams list (most tests don't check team-name resolution).
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
   });
 
   it("does NOT show Batter Up button (removed in favor of Play ball dialog)", () => {
@@ -123,9 +137,42 @@ describe("GameControls", () => {
 
   it("renders team and strategy selectors in manager mode", () => {
     localStorage.setItem("managerMode", "true");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_yankees",
+          name: "Yankees",
+          city: "",
+          abbreviation: "YNK",
+          source: "custom",
+          schemaVersion: 1,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+          roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+          metadata: { archived: false },
+        },
+        {
+          id: "ct_redsox",
+          name: "Red Sox",
+          city: "",
+          abbreviation: "RSX",
+          source: "custom",
+          schemaVersion: 1,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+          roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+          metadata: { archived: false },
+        },
+      ] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
     renderWithContext(
       <GameControls gameStarted />,
-      makeContextValue({ teams: ["Yankees", "Red Sox"] }),
+      makeContextValue({ teams: ["custom:ct_yankees", "custom:ct_redsox"] }),
     );
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);

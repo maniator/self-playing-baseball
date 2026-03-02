@@ -22,9 +22,8 @@ test.describe("Import Save — missing custom team rejection", () => {
       id: `save_${Date.now()}_e2etest`,
       name: "E2E Missing Team Test",
       seed: "abc123",
-      matchupMode: "custom",
       homeTeamId: "ct_missing123",
-      awayTeamId: "147",
+      awayTeamId: "ct_missing_away456",
       createdAt: Date.now(),
       updatedAt: Date.now(),
       progressIdx: -1,
@@ -33,7 +32,7 @@ test.describe("Import Save — missing custom team rejection", () => {
         managedTeam: null,
         managerMode: false,
         homeTeam: "My Missing Team",
-        awayTeam: "Yankees",
+        awayTeam: "Custom Away",
         playerOverrides: [{}, {}],
         lineupOrder: [[], []],
       },
@@ -53,10 +52,10 @@ test.describe("Import Save — missing custom team rejection", () => {
     await page.getByTestId("paste-save-textarea").fill(saveJson);
     await page.getByTestId("paste-save-button").click();
 
-    // Expect an error message mentioning the missing team label and guidance
+    // Expect a user-friendly error message about the missing team(s) without raw IDs
     await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 10_000 });
     const errorText = await page.getByTestId("import-error").textContent();
-    expect(errorText).toMatch(/missing custom team/i);
-    expect(errorText).toMatch(/My Missing Team/i);
+    expect(errorText).toMatch(/not installed on this device/i);
+    expect(errorText).toMatch(/Teams page/i);
   });
 });

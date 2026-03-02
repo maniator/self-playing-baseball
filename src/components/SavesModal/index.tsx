@@ -2,6 +2,7 @@ import * as React from "react";
 
 import SaveSlotList from "@components/SaveSlotList";
 import type { Strategy } from "@context/index";
+import type { SaveDoc } from "@storage/types";
 
 import {
   CloseButton,
@@ -24,12 +25,7 @@ interface Props {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: {
-    strategy: Strategy;
-    managedTeam: 0 | 1 | null;
-    managerMode: boolean;
-  }) => void;
-  onLoadActivate?: (saveId: string) => void;
+  onLoadSave?: (slot: SaveDoc) => void;
   /** When true a real game session is active and "Save current game" is shown. */
   gameStarted?: boolean;
 }
@@ -53,15 +49,9 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     resolveSaveName,
   } = useSavesModal(props);
 
-  // When onRequestClose is provided it overrides the built-in close so the
-  // caller can intercept close attempts (e.g. route back to Home).
   const handleClose = close;
 
   const handleClick = (e: React.MouseEvent<HTMLDialogElement>) => {
-    // Guard: if the dialog was already closed (e.g. by a programmatic close()
-    // inside a child button handler), the click event still bubbles here.
-    // getBoundingClientRect() returns all-zeros on a closed dialog, so every
-    // screen coordinate would be "outside" — falsely triggering handleClose.
     if (!ref.current?.open) return;
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
@@ -116,6 +106,10 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
         )}
 
         <SectionHeading>Import save</SectionHeading>
+        {/* TODO: This import UI (file-input + paste textarea + error) is duplicated in
+            SavesPage/index.tsx. Both surfaces already share useImportSave for logic;
+            extracting the JSX into a shared <SaveImportForm> component would ensure
+            any future import-handling bug is fixed in one place. */}
         <Row>
           <FileInput
             type="file"

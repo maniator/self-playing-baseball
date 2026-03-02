@@ -42,7 +42,12 @@ export const useAutoPlayScheduler = (
     const tick = (delay: number) => {
       timerId = setTimeout(() => {
         if (cancelled) return;
-        if (gameStateRef.current.gameOver) return;
+        // NOTE: We intentionally do NOT re-check gameStateRef.current.gameOver here.
+        // The ref can be stale during a same-component save restore, which would
+        // permanently kill the chain. The effect-level `if (gameOver) return` guard
+        // (above) and the `cancelled` flag are sufficient: when the game truly ends,
+        // React cleans up this effect (cancelled=true, clearTimeout) and re-runs it
+        // with gameOver=true so it returns early without starting a new chain.
 
         if (!mutedRef.current && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
           extraWait += SPEECH_POLL_MS;

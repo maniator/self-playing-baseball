@@ -79,20 +79,12 @@ export interface GameConfig {
    * that `reinitSeed` fires with the correct value when Play Ball is clicked.
    */
   seed?: string;
-  homeTeam?: string;
-  awayTeam?: string;
   /**
    * Select a managed team radio in the New Game dialog ("0" = away, "1" = home).
    * When set, the dialog calls `setManagerMode(true)` so manager mode is active
    * from the very first pitch — no localStorage pre-seeding required.
    */
   managedTeam?: "0" | "1";
-  /**
-   * Which tab to activate on /exhibition/new before filling form fields.
-   * Defaults to "mlb" for backward compatibility with tests that use MLB team
-   * selects. Pass "custom" to stay on the Custom Teams tab.
-   */
-  tab?: "mlb" | "custom";
 }
 
 /**
@@ -107,27 +99,10 @@ export interface GameConfig {
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);
 
-  // The exhibition setup page defaults to Custom Teams. Switch to the MLB tab
-  // unless the caller explicitly requests the Custom Teams tab. Most tests rely
-  // on MLB team selection (homeTeam/awayTeam selects), so "mlb" is the default.
-  const targetTab = options.tab ?? "mlb";
-  if (targetTab === "mlb" && (await page.getByTestId("exhibition-setup-page").isVisible())) {
-    const mlbTab = page.getByTestId("new-game-mlb-teams-tab");
-    if (await mlbTab.isVisible()) {
-      await mlbTab.click();
-    }
-  }
-
   if (options.seed !== undefined) {
     const seedField = page.getByTestId("seed-input");
     await seedField.clear();
     await seedField.fill(options.seed);
-  }
-  if (options.homeTeam) {
-    await page.getByTestId("home-team-select").selectOption({ label: options.homeTeam });
-  }
-  if (options.awayTeam) {
-    await page.getByTestId("away-team-select").selectOption({ label: options.awayTeam });
   }
   if (options.managedTeam !== undefined) {
     // Click the radio button for the chosen managed team.
@@ -136,18 +111,60 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 }
 
 /**
+ * Ensures at least two custom teams exist for tests that need to start a custom exhibition game.
+ * Uses the "Regenerate Defaults" button to fill in all required fields automatically,
+ * so teams get auto-generated names (e.g. "Springfield Foxes") rather than fixed names.
+ * Skips creation if two or more teams already exist.
+ */
+export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
+  await page.goto("/teams");
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+  const existingTeams = page.getByTestId("custom-team-list-item");
+  const count = await existingTeams.count();
+  if (count >= 2) {
+    // Already have enough teams — skip creation but still return to home for callers.
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    return;
+  }
+
+  const teamsToCreate = 2 - count;
+  for (let i = 0; i < teamsToCreate; i++) {
+    await page.getByTestId("manage-teams-create-button").click();
+    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    // Wait until regeneration populates the name field before saving
+    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 5_000,
+    });
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+  }
+
+  // Return to home
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+}
+
+/**
  * Starts the game:
  * - Resets app state (navigates to `/`).
+ * - Imports fixture teams via {@link importTeamsFixture} (fast and reliable across all viewports).
  * - If a seed is given, types it into the seed-input field in the dialog
  *   (calls `reinitSeed` on submit — no page reload needed).
- * - Configures optional home/away team selection.
  * - Clicks "Play Ball!" and waits until the game is active.
  */
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
   await resetAppState(page);
+  // Import pre-built fixture teams — faster and more reliable than creating through the UI,
+  // especially on mobile WebKit where async save navigation can be slow.
+  await importTeamsFixture(page, "fixture-teams.json");
+  await page.goto("/exhibition/new");
+  await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
-  // The setup UI (either the exhibition page or the in-game dialog) should disappear.
+  // The setup UI should disappear after starting.
   await expect(
     page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
   ).not.toBeVisible({ timeout: 10_000 });
@@ -289,9 +306,21 @@ export async function importSaveFromFixture(page: Page, fixtureName: string): Pr
  * computed by `fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events}))`.
  * See the "Save Fixtures for E2E Testing" section in
  * `.github/copilot-instructions.md` for the full authoring guide.
+ *
+ * @param teamsFixtureName  Teams export file to import before loading the save.
+ *   Defaults to `"fixture-teams.json"`. Pass a different file when the save
+ *   fixture references team IDs that are not in the standard fixture-teams bundle
+ *   (e.g. `"pending-decision-pinch-hitter-teams.json"` for the pinch-hitter fixture).
  */
-export async function loadFixture(page: Page, fixtureName: string): Promise<void> {
+export async function loadFixture(
+  page: Page,
+  fixtureName: string,
+  teamsFixtureName = "fixture-teams.json",
+): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Import fixture teams first so the save's custom team IDs pass validation.
+  // Callers may pass a custom teams fixture when the save references non-standard team IDs.
+  await importTeamsFixture(page, teamsFixtureName);
   // Always start from the Home screen so this helper is self-contained.
   // Callers do not need to call resetAppState beforehand.
   await page.goto("/");
@@ -327,6 +356,9 @@ export async function importTeamsFixture(page: Page, fixtureName: string): Promi
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
   await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 15_000 });
+  // Always return to the home screen so callers can proceed without an explicit goto("/").
+  await page.goto("/");
+  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
 }
 
 /**

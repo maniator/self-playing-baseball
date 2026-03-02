@@ -1,11 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import {
-  disableAnimations,
-  importTeamsFixture,
-  loadFixture,
-  resetAppState,
-} from "../../utils/helpers";
+import { disableAnimations, loadFixture, resetAppState } from "../../utils/helpers";
 
 /**
  * Visual regression snapshots for the Manager Decision Panel.
@@ -76,8 +71,11 @@ test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () =>
       "Pinch hitter dropdown snapshot is desktop-only",
     );
 
-    await importTeamsFixture(page, "pending-decision-pinch-hitter-teams.json");
-    await loadFixture(page, "pending-decision-pinch-hitter.json");
+    await loadFixture(
+      page,
+      "pending-decision-pinch-hitter.json",
+      "pending-decision-pinch-hitter-teams.json",
+    );
     // The fixture has pendingDecision=pinch_hitter with candidates, so the
     // player-selection dropdown is visible immediately after load.
     await expect(page.getByTestId("pinch-hitter-select")).toBeVisible({ timeout: 10_000 });

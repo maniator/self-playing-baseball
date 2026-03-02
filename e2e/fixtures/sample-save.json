@@ -2,11 +2,10 @@
   "version": 1,
   "header": {
     "id": "save_1700000000000_fixture",
-    "name": "Mets vs Yankees",
+    "name": "Visitors vs Locals",
     "seed": "testse",
-    "matchupMode": "default",
-    "homeTeamId": "New York Yankees",
-    "awayTeamId": "New York Mets",
+    "homeTeamId": "custom:ct_fixture_home_00",
+    "awayTeamId": "custom:ct_fixture_away_00",
     "createdAt": 1700000000000,
     "updatedAt": 1700000000000,
     "progressIdx": 12,
@@ -14,8 +13,8 @@
       "strategy": "balanced",
       "managedTeam": null,
       "managerMode": false,
-      "homeTeam": "New York Yankees",
-      "awayTeam": "New York Mets",
+      "homeTeam": "custom:ct_fixture_home_00",
+      "awayTeam": "custom:ct_fixture_away_00",
       "playerOverrides": [
         {},
         {}
@@ -34,8 +33,8 @@
           0
         ],
         "teams": [
-          "Mets",
-          "Yankees"
+          "custom:ct_fixture_away_00",
+          "custom:ct_fixture_home_00"
         ],
         "baseLayout": [
           0,
@@ -89,5 +88,5 @@
     }
   },
   "events": [],
-  "sig": "1404bff2"
+  "sig": "cde2bf20"
 }

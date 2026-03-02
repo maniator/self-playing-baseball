@@ -30,6 +30,10 @@ export type AppShellOutletContext = {
 export type ExhibitionGameSetup = {
   homeTeam: string;
   awayTeam: string;
+  /** Human-readable display name for the home team. */
+  homeTeamLabel: string;
+  /** Human-readable display name for the away team. */
+  awayTeamLabel: string;
   managedTeam: 0 | 1 | null;
   playerOverrides: PlayerOverrides;
 };

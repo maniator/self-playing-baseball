@@ -4,7 +4,7 @@ export const checkGameOver = (state: State, log: (msg: string) => void): State =
   if (state.inning >= 9) {
     const [away, home] = state.score;
     if (away !== home) {
-      const winner = away > home ? state.teams[0] : state.teams[1];
+      const winner = away > home ? state.teamLabels[0] : state.teamLabels[1];
       log(`That's the ball game! ${winner} win!`);
       return { ...state, gameOver: true };
     }
@@ -43,7 +43,7 @@ export const nextHalfInning = (state: State, log: (msg: string) => void): State 
   if (newHalfInning === 1 && newInning >= 9) {
     const [away, home] = next.score;
     if (home > away) {
-      log(`${next.teams[1]} win! No need to play the bottom of the ${newInning}th.`);
+      log(`${next.teamLabels[1]} win! No need to play the bottom of the ${newInning}th.`);
       return { ...next, gameOver: true };
     }
   }
@@ -68,7 +68,7 @@ export const nextHalfInning = (state: State, log: (msg: string) => void): State 
       }
     : next;
 
-  log(`${state.teams[newHalfInning]} are now up to bat!`);
+  log(`${state.teamLabels[newHalfInning]} are now up to bat!`);
   if (isExtra) log("Tiebreak rule: runner placed on 2nd base.");
   return nextWithBase;
 };
@@ -77,7 +77,7 @@ export const checkWalkoff = (state: State, log: (msg: string) => void): State =>
   if (state.inning >= 9 && state.atBat === 1) {
     const [away, home] = state.score;
     if (home > away) {
-      log(`Walk-off! ${state.teams[1]} win!`);
+      log(`Walk-off! ${state.teamLabels[1]} win!`);
       return { ...state, gameOver: true };
     }
   }

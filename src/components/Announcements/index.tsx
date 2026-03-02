@@ -1,10 +1,8 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
 import { useGameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { mq } from "@utils/mediaQueries";
 
 const HeadingRow = styled.div`
@@ -70,14 +68,20 @@ const Log = styled.div`
 const SCROLL_THRESHOLD = 60;
 
 const Announcements: React.FunctionComponent = () => {
-  const { log } = useGameContext();
-  const { teams: customTeams } = useCustomTeams();
+  const { log, teams, teamLabels } = useGameContext();
   const [expanded, setExpanded] = React.useState(false);
   const areaRef = React.useRef<HTMLDivElement>(null);
 
-  /** Replaces any `custom:<id>` fragment in a log entry with the team's display name. */
+  /**
+   * Replaces raw team IDs in old log entries with their display names.
+   * New log entries already contain display names (from teamLabels), so this
+   * is a backward-compatibility shim for saves created before the teamLabels fix.
+   */
   const resolveEntry = (entry: string): string =>
-    entry.replace(/custom:[a-zA-Z0-9_]+/g, (id) => resolveTeamLabel(id, customTeams));
+    teams.reduce((s, id, i) => {
+      const label = teamLabels[i];
+      return id !== label ? s.replaceAll(id, label) : s;
+    }, entry);
 
   React.useEffect(() => {
     if (!expanded) return;

@@ -41,16 +41,9 @@ test.describe("Responsive Smoke", () => {
 
   test("critical form fields are visible within viewport on New Game dialog", async ({ page }) => {
     await configureNewGame(page);
-    // These controls must all be fully visible (on the MLB tab, which configureNewGame switches to).
-    // play-ball-button viewport position is checked separately in "Play Ball button is in viewport
-    // without scrolling" — here we just confirm each field can be seen without horizontal clipping.
-    const criticalTestIds = [
-      "matchup-mode-select",
-      "home-team-select",
-      "away-team-select",
-      "seed-input",
-      "play-ball-button",
-    ];
+    // These controls must all be fully visible. play-ball-button viewport position is
+    // checked separately in "Play Ball button is in viewport without scrolling".
+    const criticalTestIds = ["seed-input", "play-ball-button"];
     const viewportHeight = await page.evaluate(() => window.innerHeight);
     for (const testId of criticalTestIds) {
       const el = page.getByTestId(testId);

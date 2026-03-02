@@ -4,7 +4,7 @@ import { BATTING_POSITIONS } from "@utils/roster";
 
 /**
  * Returns a stable game-session ID for a custom team.
- * Uses the `custom:` prefix so it is distinguishable from numeric MLB IDs.
+ * Uses the `custom:` prefix to distinguish it from other string team identifiers.
  */
 export function customTeamToGameId(team: CustomTeamDoc): string {
   return `custom:${team.id}`;
@@ -30,7 +30,7 @@ export function customTeamToLineupOrder(team: CustomTeamDoc): string[] {
  * Returns the abbreviation for a custom team, or a safe short fallback.
  * Used by compact UI surfaces like the line score.
  *
- * @param gameId - The game-session team string (e.g. `"custom:ct_123"` or an MLB name).
+ * @param gameId - The game-session team string (e.g. `"custom:ct_123"`).
  * @param teams  - List of known custom team docs for lookup.
  */
 export function customTeamToAbbreviation(
@@ -47,14 +47,18 @@ export function customTeamToAbbreviation(
 }
 
 /**
- * Returns the full display label for any team string (MLB name or `custom:<id>`).
+ * Returns the full display label for any team string (`custom:<id>`).
  * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
  *
- * @param gameId  - The game-session team string.
+ * All team IDs must now use the `custom:` prefix. Any ID that does not start
+ * with `custom:` is treated as an unknown/legacy identifier and returns a
+ * safe placeholder rather than echoing the raw ID into the UI.
+ *
+ * @param gameId  - The game-session team string (e.g. `"custom:ct_123"`).
  * @param teams   - Known custom team docs for lookup.
  */
 export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {
-  if (!gameId.startsWith("custom:")) return gameId;
+  if (!gameId.startsWith("custom:")) return "Unknown Team";
   const id = gameId.slice("custom:".length);
   const doc = teams.find((t) => t.id === id);
   // Safe short fallback: strip the `custom:` prefix and show the first 8 chars of the
@@ -65,11 +69,48 @@ export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string
 
 /**
  * Replaces all `custom:<id>` tokens in a string with their resolved display
- * labels.  Used to sanitize log entries, save names, and TTS strings before
- * they reach the UI.
+ * labels.  Used to sanitize free-text fields that may contain raw team IDs —
+ * specifically: save names (displayed in SavesModal / SavesPage) and TTS
+ * announcement strings (Game/index.tsx).  These surfaces receive opaque strings
+ * from legacy saves, so a regex scan is the correct approach here.
+ *
+ * The in-game play-by-play log (Announcements component) does NOT use this
+ * function — it uses the structured `teamLabels` from `State` directly via
+ * `String.replaceAll` on the two known team IDs, which is both faster and
+ * type-safe.  Do not add new callers of this function for structured data;
+ * prefer `teamLabels`-based substitution for those surfaces instead.
  */
 export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): string {
   return text.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
+}
+
+/**
+ * Resolves human-readable team labels for a restored save's game state.
+ *
+ * The parameter uses `teamLabels?: [string, string]` (optional) rather than the
+ * full `State` type because legacy saves may not carry this field at all at
+ * runtime, even though `State` declares it as required. The optional shape
+ * accurately reflects the actual runtime data coming from persisted snapshots.
+ *
+ * Legacy saves may lack `teamLabels` or carry raw game IDs as labels (when
+ * `teamLabels` was auto-populated from the `teams` array before display names
+ * were stored separately). In those cases the labels are resolved from the
+ * current custom team docs so reducer log messages use readable names.
+ * New saves that already carry display names are returned unchanged.
+ */
+export function resolveRestoreLabels(
+  state: { teams: [string, string]; teamLabels?: [string, string] },
+  customTeams: CustomTeamDoc[],
+): [string, string] {
+  const existing = state.teamLabels;
+  const needsResolution =
+    !existing ||
+    existing.some(
+      (l, i) => typeof l === "string" && l === state.teams[i] && l.startsWith("custom:"),
+    );
+  return needsResolution
+    ? [resolveTeamLabel(state.teams[0], customTeams), resolveTeamLabel(state.teams[1], customTeams)]
+    : existing;
 }
 
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;

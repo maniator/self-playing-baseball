@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import type { ContextValue } from "@context/index";
 import { GameContext } from "@context/index";
@@ -43,5 +43,24 @@ describe("Announcements", () => {
     expect(screen.getByText("Strike one.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /collapse play-by-play/i }));
     expect(screen.queryByText("Strike one.")).not.toBeInTheDocument();
+  });
+
+  it("resolves raw team IDs in legacy log entries to display names via teamLabels", () => {
+    // Simulate an old log entry that embeds the raw game ID (e.g. from a restored save
+    // created before the teamLabels fix). The new resolveEntry uses state.teamLabels for
+    // targeted replacement — no regex pattern matching needed.
+    const log = ["custom:ct_v-E1gLliCLzM manager: Defensive shift deployed."];
+    renderWithContext(
+      <Announcements />,
+      makeContextValue({
+        log,
+        teams: ["custom:ct_v-E1gLliCLzM", "custom:ct_home"],
+        teamLabels: ["Visitors", "Home"],
+      }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: /expand play-by-play/i }));
+    // Display name should appear; raw ID must not.
+    expect(screen.getByText(/Visitors manager: Defensive shift deployed\./)).toBeInTheDocument();
+    expect(screen.queryByText(/ct_v/)).not.toBeInTheDocument();
   });
 });

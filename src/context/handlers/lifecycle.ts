@@ -10,7 +10,7 @@ import { backfillRestoredState, createFreshGameState } from "../initialState";
 export const handleLifecycleAction = (state: State, action: GameAction): State | undefined => {
   switch (action.type) {
     case "reset":
-      return createFreshGameState(state.teams);
+      return createFreshGameState(state.teams, state.teamLabels);
     case "restore_game":
       return backfillRestoredState(action.payload as State);
     case "nextInning":

@@ -5,14 +5,6 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@utils/mlbTeams", async (importOriginal) => {
-  const mod = await importOriginal<typeof import("@utils/mlbTeams")>();
-  return {
-    ...mod,
-    fetchMlbTeams: vi.fn().mockResolvedValue({ al: mod.AL_FALLBACK, nl: mod.NL_FALLBACK }),
-  };
-});
-
 vi.mock("@utils/rng", () => ({
   getSeed: vi.fn(() => 0xdeadbeef),
   reinitSeed: vi.fn(),
@@ -75,23 +67,9 @@ describe("ExhibitionSetupPage", () => {
     expect(screen.getByTestId("exhibition-setup-page")).toBeInTheDocument();
   });
 
-  it("defaults to Custom Teams tab (aria-selected=true)", () => {
+  it("does not render an MLB Teams tab", () => {
     renderPage();
-    const customTab = screen.getByTestId("new-game-custom-teams-tab");
-    expect(customTab).toHaveAttribute("aria-selected", "true");
-  });
-
-  it("MLB Teams tab is not selected by default", () => {
-    renderPage();
-    const mlbTab = screen.getByTestId("new-game-mlb-teams-tab");
-    expect(mlbTab).toHaveAttribute("aria-selected", "false");
-  });
-
-  it("switching to MLB tab shows home-team-select", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    expect(screen.getByTestId("home-team-select")).toBeInTheDocument();
+    expect(screen.queryByTestId("new-game-mlb-teams-tab")).not.toBeInTheDocument();
   });
 
   it("renders the Play Ball button", () => {
@@ -117,29 +95,9 @@ describe("ExhibitionSetupPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/");
   });
 
-  it("submitting the form in MLB mode calls onStartGame with team names", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    // Switch to MLB tab
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Submit
-    await act(async () => {
-      await user.click(screen.getByTestId("play-ball-button"));
-    });
-    expect(rngModule.reinitSeed).toHaveBeenCalled();
-    expect(mockOnStartGame).toHaveBeenCalledWith(
-      expect.objectContaining({
-        homeTeam: expect.any(String),
-        awayTeam: expect.any(String),
-        managedTeam: null,
-      }),
-    );
-  });
-
   it("shows validation error message when no custom teams are available on submit", async () => {
     const user = userEvent.setup();
     renderPage();
-    // Stay on Custom Teams tab (default) — no teams available
     await act(async () => {
       await user.click(screen.getByTestId("play-ball-button"));
     });
@@ -200,7 +158,6 @@ describe("ExhibitionSetupPage", () => {
     const user = userEvent.setup();
     renderPage();
 
-    // Custom Teams tab is default — just submit
     await act(async () => {
       await user.click(screen.getByTestId("play-ball-button"));
     });
@@ -216,6 +173,7 @@ describe("ExhibitionSetupPage", () => {
         }),
       }),
     );
+    expect(rngModule.reinitSeed).toHaveBeenCalled();
   });
 
   it("clicking Go to Manage Teams navigates to /teams", async () => {
@@ -264,46 +222,10 @@ describe("ExhibitionSetupPage", () => {
 
     const user = userEvent.setup();
     renderPage();
-    // Click "Away" managed radio to make IIFE render the starter pitcher selector
+    // Click "Away" managed radio to show the starter pitcher selector
     const awayRadio = screen.getByRole("radio", { name: /away/i });
     await user.click(awayRadio);
     expect(screen.getByTestId("starting-pitcher-select")).toBeInTheDocument();
-  });
-
-  it("MLB mode: changing mode radio calls handleModeChange; changing team selects fires setHome/setAway", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Click the NL radio to fire handleModeChange
-    const nlRadio = screen.getByRole("radio", { name: "NL vs NL" });
-    await user.click(nlRadio);
-    // Change home team select
-    const homeSelect = screen.getByTestId("home-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(
-      homeSelect,
-      homeSelect.options[1]?.value ?? homeSelect.options[0].value,
-    );
-    // Change away team select
-    const awaySelect = screen.getByTestId("away-team-select") as HTMLSelectElement;
-    await userEvent.selectOptions(
-      awaySelect,
-      awaySelect.options[1]?.value ?? awaySelect.options[0].value,
-    );
-    // No assertion needed beyond exercising the handlers without throwing
-    expect(homeSelect).toBeInTheDocument();
-  });
-
-  it("MLB interleague mode: homeLeague radio fires handleHomeLeagueChange", async () => {
-    const user = userEvent.setup();
-    renderPage();
-    await user.click(screen.getByTestId("new-game-mlb-teams-tab"));
-    // Switch to Interleague to show the homeLeague radios
-    const interleagueRadio = screen.getByRole("radio", { name: "Interleague" });
-    await user.click(interleagueRadio);
-    // Click NL homeLeague radio
-    const nlHomeLeague = screen.getByRole("radio", { name: "NL" });
-    await user.click(nlHomeLeague);
-    expect(nlHomeLeague).toBeChecked();
   });
 
   it("shows 'create more teams' error when exactly one custom team exists", async () => {
@@ -335,6 +257,167 @@ describe("ExhibitionSetupPage", () => {
     expect(mockOnStartGame).not.toHaveBeenCalled();
     expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
       /create at least two custom teams/i,
+    );
+  });
+
+  it("self-matchup is blocked — shows validation error when home and away teams are the same", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const makeValidTeam = (id: string, name: string) => ({
+      id,
+      name,
+      city: "",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: [
+          {
+            id: `${id}-p1`,
+            name: "A",
+            position: "C",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p2`,
+            name: "B",
+            position: "1B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p3`,
+            name: "C",
+            position: "2B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p4`,
+            name: "D",
+            position: "3B",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p5`,
+            name: "E",
+            position: "SS",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p6`,
+            name: "F",
+            position: "LF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p7`,
+            name: "G",
+            position: "CF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p8`,
+            name: "H",
+            position: "RF",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+          {
+            id: `${id}-p9`,
+            name: "I",
+            position: "DH",
+            batting: { contact: 60, power: 60, speed: 60 },
+          },
+        ],
+        pitchers: [
+          {
+            id: `${id}-sp`,
+            name: "Starter",
+            role: "SP" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
+            pitching: { velocity: 60, control: 60, movement: 60 },
+          },
+        ],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeValidTeam("ct_away", "Away Team"), makeValidTeam("ct_home", "Home Team")] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Change the home select to match the away team (ct_away), creating a self-matchup.
+    const homeSelect = screen.getByTestId("new-game-custom-home-team-select");
+    await user.selectOptions(homeSelect, "ct_away");
+
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /away and home teams must be different/i,
+    );
+  });
+
+  it("managed team with no SP-eligible pitchers shows validation error", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
+    const makeTeamRpOnly = (id: string, name: string) => ({
+      id,
+      name,
+      city: "",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: POSITIONS.map((pos, i) => ({
+          id: `${id}-p${i}`,
+          name: `Player${i}`,
+          position: pos,
+          batting: { contact: 60, power: 60, speed: 60 },
+        })),
+        // pitchingRole: "RP" makes this pitcher NOT SP-eligible.
+        // getSpEligiblePitchers only includes pitchers with pitchingRole "SP", "SP/RP", or absent.
+        pitchers: [
+          {
+            id: `${id}-rp`,
+            name: "Reliever",
+            role: "pitcher" as const,
+            pitchingRole: "RP" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
+            pitching: { velocity: 60, control: 60, movement: 60 },
+          },
+        ],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        makeTeamRpOnly("ct_away", "Away Team"),
+        makeTeamRpOnly("ct_home", "Home Team"),
+      ] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Select "Away" as the managed team.
+    const awayRadio = screen.getByRole("radio", { name: /away/i });
+    await user.click(awayRadio);
+
+    await act(async () => {
+      await user.click(screen.getByTestId("play-ball-button"));
+    });
+
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+    expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
+      /no sp-eligible pitchers/i,
     );
   });
 });

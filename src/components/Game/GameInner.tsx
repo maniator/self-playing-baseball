@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { resolveRestoreLabels } from "@features/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -13,6 +14,7 @@ import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
@@ -68,6 +70,17 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
 
+  // Custom team docs for resolving display names when restoring legacy saves.
+  // Stored in a ref so restore effects can read the latest value without being
+  // re-triggered every time the reactive list updates.
+  // The useEffect is a cheap ref assignment — extra fires when useLiveRxQuery
+  // returns a new array reference are acceptable.
+  const { teams: customTeams } = useCustomTeams();
+  const customTeamsRef = React.useRef(customTeams);
+  React.useEffect(() => {
+    customTeamsRef.current = customTeams;
+  }, [customTeams]);
+
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
   const [activeTeam, setActiveTeam] = React.useState<0 | 1>(0);
@@ -104,7 +117,13 @@ const GameInner: React.FunctionComponent<Props> = ({
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    dispatch({
+      type: "restore_game",
+      payload: {
+        ...snap.state,
+        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+      },
+    });
     setStrategy(setup.strategy);
     if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
     setManagerMode(setup.managerMode);
@@ -116,6 +135,8 @@ const GameInner: React.FunctionComponent<Props> = ({
   const handleStart = (
     homeTeam: string,
     awayTeam: string,
+    homeTeamLabel: string,
+    awayTeamLabel: string,
     managedTeam: 0 | 1 | null,
     playerOverrides: PlayerOverrides,
   ) => {
@@ -129,6 +150,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       type: "setTeams",
       payload: {
         teams: [awayTeam, homeTeam],
+        teamLabels: [awayTeamLabel, homeTeamLabel],
         playerOverrides: [playerOverrides.away, playerOverrides.home],
         lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
         ...(playerOverrides.awayBench !== undefined &&
@@ -159,13 +181,12 @@ const GameInner: React.FunctionComponent<Props> = ({
     };
     createSave(
       {
-        matchupMode: "default",
         homeTeamId: homeTeam,
         awayTeamId: awayTeam,
         seed: currentSeedStr(),
         setup,
       },
-      { name: `${awayTeam} vs ${homeTeam}` },
+      { name: `${awayTeamLabel} vs ${homeTeamLabel}` },
     )
       .then((id) => {
         rxSaveIdRef.current = id;
@@ -213,6 +234,8 @@ const GameInner: React.FunctionComponent<Props> = ({
     handleStartRef.current(
       pendingGameSetup.homeTeam,
       pendingGameSetup.awayTeam,
+      pendingGameSetup.homeTeamLabel,
+      pendingGameSetup.awayTeamLabel,
       pendingGameSetup.managedTeam,
       pendingGameSetup.playerOverrides,
     );
@@ -234,7 +257,13 @@ const GameInner: React.FunctionComponent<Props> = ({
     }
 
     if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
+    dispatch({
+      type: "restore_game",
+      payload: {
+        ...snap.state,
+        teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+      },
+    });
 
     const { setup } = pendingLoadSave;
     setManagerMode(setup.managerMode);
@@ -258,13 +287,46 @@ const GameInner: React.FunctionComponent<Props> = ({
     onConsumePendingLoad,
   ]);
 
-  const handleLoadActivate = React.useCallback(
-    (saveId: string) => {
-      rxSaveIdRef.current = saveId;
-      setGameActive(true);
+  // ── Modal-triggered save load ─────────────────────────────────────────────
+  // Directly restores game state when the user loads a save from within the
+  // running game via the SavesModal. The scheduler's effect-level gameOver guard
+  // and the cancelled flag are sufficient to resume/restart auto-play — no
+  // false→true gameActive dance needed now that the scheduler no longer reads
+  // gameStateRef inside the timeout callback (the stale-ref guard was removed).
+  const handleModalLoad = React.useCallback(
+    (slot: SaveDoc) => {
+      const snap = slot.stateSnapshot;
+      if (!snap) return;
+
+      // Prevent the auto-resume effect from re-running while we restore.
+      restoredRef.current = true;
+
+      if (snap.rngState !== null) restoreRng(snap.rngState);
+      dispatch({
+        type: "restore_game",
+        payload: {
+          ...snap.state,
+          teamLabels: resolveRestoreLabels(snap.state, customTeamsRef.current),
+        },
+      });
+
+      const { setup } = slot;
+      setManagerMode(setup.managerMode);
+      setManagedTeam(setup.managedTeam ?? 0);
+      setStrategy(setup.strategy);
+
+      // Sync the URL seed so sharing/reloading lands on the same game.
+      if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
+        const url = new URL(window.location.href);
+        url.searchParams.set("seed", slot.seed);
+        window.history.replaceState(null, "", url.toString());
+      }
+
+      rxSaveIdRef.current = slot.id;
+      setGameActive(true); // no-op if already active; triggers scheduler if game was over
       onGameSessionStarted?.();
     },
-    [onGameSessionStarted],
+    [dispatch, setManagerMode, setManagedTeam, setStrategy, onGameSessionStarted],
   );
 
   return (
@@ -274,7 +336,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         key={gameKey}
         onNewGame={handleNewGame}
         gameStarted={gameActive}
-        onLoadActivate={handleLoadActivate}
+        onLoadSave={handleModalLoad}
         onBackToHome={onBackToHome}
       />
       <GameBody>

@@ -7,7 +7,6 @@ const GAME_LS_KEYS = [
   "managerMode",
   "strategy",
   "managedTeam",
-  "autoPlay",
 ];
 
 const clearGameStorage = () => {

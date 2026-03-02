@@ -1,6 +1,11 @@
 import { expect, test } from "@playwright/test";
 
-import { disableAnimations, resetAppState, waitForNewGameDialog } from "../../utils/helpers";
+import {
+  disableAnimations,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForNewGameDialog,
+} from "../../utils/helpers";
 
 /**
  * Visual regression snapshots — run across all 6 non-determinism viewport projects
@@ -41,12 +46,7 @@ test.describe("Visual", () => {
    */
   test("How to Play modal default state screenshot", async ({ page }) => {
     // Start a game so we're on /game where the How to Play button is available.
-    await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    // Switch to MLB tab and submit to start the game quickly.
-    await page.getByTestId("new-game-mlb-teams-tab").click();
-    await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+    await startGameViaPlayBall(page, { seed: "howtoplay1" });
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     await expect(page.getByTestId("instructions-modal")).toHaveScreenshot(
@@ -69,11 +69,7 @@ test.describe("Visual", () => {
       "All sections expanded snapshot is desktop-only",
     );
     // Start a game to reach /game where the How to Play button is available.
-    await page.getByTestId("home-new-game-button").click();
-    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    await page.getByTestId("new-game-mlb-teams-tab").click();
-    await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+    await startGameViaPlayBall(page, { seed: "howtoplay2" });
     await page.getByRole("button", { name: /how to play/i }).click();
     await expect(page.getByTestId("instructions-modal")).toBeVisible();
     // Use Playwright clicks (correct screen coordinates) so the dialog's

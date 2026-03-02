@@ -335,7 +335,7 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
    *
    * Flow:
    *   1. Create two custom teams via Manage Teams.
-   *   2. Start a New Game using those custom teams (Custom Teams tab).
+   *   2. Start a New Game using those custom teams.
    *   3. Wait for a few log lines, then save the game.
    *   4. Open the saves modal and snapshot it.
    *
@@ -362,9 +362,6 @@ test.describe("Visual — Stage 2B: saves modal with custom-team game rows", () 
     // Step 2: start a new game using those custom teams.
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-
-    // Switch to Custom Teams tab.
-    await page.getByTestId("new-game-custom-teams-tab").click();
 
     // The two custom team selects should now be visible.
     const awaySelect = page.getByTestId("new-game-custom-away-team-select");
@@ -438,9 +435,6 @@ test.describe("Visual — Starting pitcher selector in Exhibition Setup page", (
     // Open the New Game dialog.
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-
-    // Switch to Custom Teams tab.
-    await page.getByTestId("new-game-custom-teams-tab").click();
 
     // Wait for both custom team selects to populate.
     const awaySelect = page.getByTestId("new-game-custom-away-team-select");

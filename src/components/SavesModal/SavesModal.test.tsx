@@ -35,7 +35,6 @@ const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({
   createdAt: 1000,
   updatedAt: 2000,
   seed: "abc",
-  matchupMode: "manual",
   homeTeamId: "Home",
   awayTeamId: "Away",
   progressIdx: 5,
@@ -155,38 +154,33 @@ describe("SavesModal", () => {
     expect(screen.getByText("Test save")).toBeInTheDocument();
   });
 
-  it("calls updateProgress + dispatch + onSaveIdChange when Load is clicked", async () => {
+  it("calls onLoadSave and onSaveIdChange when Load is clicked", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: 42 } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onSaveIdChange = vi.fn();
-    const dispatch = vi.fn();
-    renderModal({ onSaveIdChange }, { dispatch });
+    const onLoadSave = vi.fn();
+    renderModal({ onSaveIdChange, onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "restore_game",
-      payload: slot.stateSnapshot?.state,
-    });
+    expect(onLoadSave).toHaveBeenCalledWith(slot);
     expect(onSaveIdChange).toHaveBeenCalledWith(slot.id);
   });
 
-  it("calls onSetupRestore with typed setup when Load is clicked", async () => {
+  it("passes the full slot (including setup) to onLoadSave when Load is clicked", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot({
       stateSnapshot: { state: makeState(), rngState: null },
-      setup: { ...mockSetup, strategy: "balanced" as Strategy, managedTeam: 1 as 0 | 1 },
+      setup: { ...mockSetup, strategy: "aggressive" as Strategy, managedTeam: 1 as 0 | 1 },
     });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
-    const onSetupRestore = vi.fn();
-    renderModal({ onSetupRestore });
+    const onLoadSave = vi.fn();
+    renderModal({ onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(onSetupRestore).toHaveBeenCalledWith({
-      strategy: slot.setup.strategy,
-      managedTeam: slot.setup.managedTeam,
-      managerMode: slot.setup.managerMode,
-    });
+    expect(onLoadSave).toHaveBeenCalledWith(
+      expect.objectContaining({ id: slot.id, setup: slot.setup }),
+    );
   });
 
   it("falls back to same-seed save's snapshot when clicked slot has none", async () => {
@@ -202,14 +196,19 @@ describe("SavesModal", () => {
     vi.mocked(useSaveStore).mockReturnValue(
       makeMockStore({ saves: [slotWithoutSnapshot, slotWithSnapshot] }),
     );
-    const dispatch = vi.fn();
+    const onLoadSave = vi.fn();
     const onSaveIdChange = vi.fn();
-    renderModal({ onSaveIdChange }, { dispatch });
+    renderModal({ onLoadSave, onSaveIdChange });
     await openPanel();
     // Click Load on the slot that has no snapshot (first in list)
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    // Should have used the other save's snapshot
-    expect(dispatch).toHaveBeenCalledWith({ type: "restore_game", payload: snapshotState });
+    // Should pass an enriched slot with the fallback snapshot filled in
+    expect(onLoadSave).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: slotWithoutSnapshot.id,
+        stateSnapshot: slotWithSnapshot.stateSnapshot,
+      }),
+    );
     expect(onSaveIdChange).toHaveBeenCalledWith(slotWithoutSnapshot.id);
   });
 
@@ -217,11 +216,11 @@ describe("SavesModal", () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot({ seed: "abc" }); // no stateSnapshot
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
-    const dispatch = vi.fn();
-    renderModal({}, { dispatch });
+    const onLoadSave = vi.fn();
+    renderModal({ onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(onLoadSave).not.toHaveBeenCalled();
     // Error message logged to play-by-play (via dispatchLog)
   });
 
@@ -338,31 +337,15 @@ describe("SavesModal", () => {
     }
   });
 
-  it("updates URL seed on load", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
-    const slot = makeSlot({
-      seed: "xyzseed",
-      stateSnapshot: { state: makeState(), rngState: null },
-    });
-    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
-    renderModal();
-    await openPanel();
-    const spy = vi.spyOn(window.history, "replaceState");
-    fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    const calledUrl = spy.mock.calls[0]?.[2] as string;
-    expect(calledUrl).toContain("xyzseed");
-    spy.mockRestore();
-  });
-
-  it("calls onLoadActivate with save id when Load is clicked", async () => {
+  it("calls onLoadSave with the full slot when Load is clicked", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: null } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
-    const onLoadActivate = vi.fn();
-    renderModal({ onLoadActivate });
+    const onLoadSave = vi.fn();
+    renderModal({ onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    expect(onLoadActivate).toHaveBeenCalledWith(slot.id);
+    expect(onLoadSave).toHaveBeenCalledWith(slot);
   });
 
   it("auto-loads imported save after successful paste import", async () => {
@@ -373,20 +356,17 @@ describe("SavesModal", () => {
     });
     const mockImport = vi.fn().mockResolvedValue(importedSlot);
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ importRxdbSave: mockImport }));
-    const dispatch = vi.fn();
-    renderModal({}, { dispatch });
+    const onLoadSave = vi.fn();
+    renderModal({ onLoadSave });
     await openPanel();
     fireEvent.change(screen.getByRole("textbox", { name: /import save json/i }), {
       target: { value: '{"valid":"json"}' },
     });
     await act(async () => {
       fireEvent.click(screen.getByRole("button", { name: /import from text/i }));
-      await vi.waitFor(() => expect(dispatch).toHaveBeenCalled());
+      await vi.waitFor(() => expect(onLoadSave).toHaveBeenCalled());
     });
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "restore_game",
-      payload: importedSlot.stateSnapshot?.state,
-    });
+    expect(onLoadSave).toHaveBeenCalledWith(importedSlot);
   });
 
   it("auto-loads imported save after successful file import", async () => {
@@ -407,8 +387,8 @@ describe("SavesModal", () => {
     };
     vi.spyOn(global, "FileReader").mockImplementation(() => mockReader as unknown as FileReader);
 
-    const dispatch = vi.fn();
-    const { container } = renderModal({}, { dispatch });
+    const onLoadSave = vi.fn();
+    const { container } = renderModal({ onLoadSave });
     await openPanel();
     const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement;
     Object.defineProperty(fileInput, "files", {
@@ -416,12 +396,9 @@ describe("SavesModal", () => {
     });
     await act(async () => {
       fireEvent.change(fileInput);
-      await vi.waitFor(() => expect(dispatch).toHaveBeenCalled());
+      await vi.waitFor(() => expect(onLoadSave).toHaveBeenCalled());
     });
-    expect(dispatch).toHaveBeenCalledWith({
-      type: "restore_game",
-      payload: importedSlot.stateSnapshot?.state,
-    });
+    expect(onLoadSave).toHaveBeenCalledWith(importedSlot);
   });
 
   it("defaults close button label to 'Close'", async () => {
@@ -462,19 +439,43 @@ describe("SavesModal", () => {
     expect(screen.getByTestId("save-game-button")).toBeInTheDocument();
   });
 
-  it("preserves custom team IDs in snapshot state when loading a save (resolved only at presentation time)", async () => {
+  it("handleSave stores no function fields in the state snapshot (regression: DataCloneError)", async () => {
+    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const mockUpdateProgress = vi.fn().mockResolvedValue(undefined);
+    vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ updateProgress: mockUpdateProgress }));
+    renderModal({ currentSaveId: "save_1", gameStarted: true });
+    await openPanel();
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: /update save/i }));
+      await vi.waitFor(() => expect(mockUpdateProgress).toHaveBeenCalled());
+    });
+    const [, , summary] = mockUpdateProgress.mock.calls[0];
+    const storedState = (summary as { stateSnapshot?: { state?: unknown } }).stateSnapshot?.state;
+    expect(storedState).toBeDefined();
+    // Every value in the stored state must be serializable (no functions).
+    const hasFunction = (obj: unknown): boolean => {
+      if (typeof obj === "function") return true;
+      if (obj !== null && typeof obj === "object") {
+        return Object.values(obj as Record<string, unknown>).some(hasFunction);
+      }
+      return false;
+    };
+    expect(hasFunction(storedState)).toBe(false);
+  });
+
+  it("preserves custom team IDs in snapshot state when onLoadSave is called (resolved only at presentation time)", async () => {
     const { useSaveStore } = await import("@hooks/useSaveStore");
     const snapState = makeState({ teams: ["custom:ct_abc", "Home"] as [string, string] });
     const slot = makeSlot({ stateSnapshot: { state: snapState, rngState: null } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
-    const dispatch = vi.fn();
-    renderModal({}, { dispatch });
+    const onLoadSave = vi.fn();
+    renderModal({ onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    const restoreCall = dispatch.mock.calls.find((c) => c[0]?.type === "restore_game");
-    expect(restoreCall).toBeDefined();
-    const teams: [string, string] = restoreCall?.[0]?.payload?.teams;
-    // custom: ID must be preserved so downstream logic (PlayerStatsPanel, etc.) keeps working
+    const calledSlot = onLoadSave.mock.calls[0]?.[0] as SaveDoc;
+    expect(calledSlot).toBeDefined();
+    const teams: [string, string] = calledSlot.stateSnapshot?.state?.teams as [string, string];
+    // custom: ID must be preserved so GameInner can resolve it at restore time
     expect(teams[0]).toBe("custom:ct_abc");
     expect(teams[1]).toBe("Home");
   });

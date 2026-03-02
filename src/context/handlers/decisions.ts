@@ -38,7 +38,7 @@ export const handleDecisionsAction = (
       return { ...state, suppressNextDecision: false };
     case "set_pinch_hitter_strategy": {
       const ph = action.payload as Strategy;
-      const battingTeam = state.teams[state.atBat as 0 | 1];
+      const battingTeam = state.teamLabels[state.atBat as 0 | 1];
       log(`${battingTeam} manager: Pinch hitter in — playing ${ph} strategy.`);
       const result = { ...state, pinchHitterStrategy: ph, pendingDecision: null };
       return withDecisionLog(state, result, `${state.pitchKey}:pinch:${ph}`);
@@ -49,7 +49,7 @@ export const handleDecisionsAction = (
       if (shiftOn === state.defensiveShift) {
         return { ...state, pendingDecision: null };
       }
-      const fieldingTeam = state.teams[(1 - (state.atBat as number)) as 0 | 1];
+      const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       if (shiftOn)
         log(`${fieldingTeam} manager: Defensive shift deployed — outfield repositioned.`);
       else log(`${fieldingTeam} manager: Normal alignment restored.`);
@@ -104,7 +104,7 @@ export const handleDecisionsAction = (
           teamIdx === 1 ? [...state.substitutedOut[1], oldPlayerId] : state.substitutedOut[1],
         ];
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
-        const teamName = state.teams[teamIdx];
+        const teamName = state.teamLabels[teamIdx];
         log(
           `${teamName}: ${getPlayerName(benchPlayerId)} in for ${getPlayerName(oldPlayerId)}${reasonSuffix}.`,
         );
@@ -149,7 +149,7 @@ export const handleDecisionsAction = (
           teamIdx === 1 ? 0 : state.pitcherBattersFaced[1],
         ];
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
-        const teamName = state.teams[teamIdx];
+        const teamName = state.teamLabels[teamIdx];
         log(`${teamName} manager: ${getPlayerName(newPitcherId)} now pitching${reasonSuffix}.`);
         return {
           ...state,

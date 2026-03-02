@@ -12,7 +12,7 @@ import { useImportSave } from "@hooks/useImportSave";
 import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
-import { getRngState, restoreRng } from "@utils/rng";
+import { getRngState } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
 
 interface Params {
@@ -21,12 +21,8 @@ interface Params {
   managerMode: boolean;
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
-  onSetupRestore?: (setup: {
-    strategy: Strategy;
-    managedTeam: 0 | 1 | null;
-    managerMode: boolean;
-  }) => void;
-  onLoadActivate?: (saveId: string) => void;
+  /** Called when the user loads a save; GameInner owns the actual restore logic. */
+  onLoadSave?: (slot: SaveDoc) => void;
 }
 
 export interface SavesModalState {
@@ -56,21 +52,20 @@ export const useSavesModal = ({
   managerMode,
   currentSaveId,
   onSaveIdChange,
-  onSetupRestore,
-  onLoadActivate,
+  onLoadSave,
 }: Params): SavesModalState => {
   const ref = React.useRef<HTMLDialogElement>(null);
+  // Exclude `dispatch` (function) and `log` (announcements array) — only serializable
+  // State fields must reach fullState; functions cannot be stored in IndexedDB (DataCloneError).
   const {
-    dispatch,
-    dispatchLog,
+    dispatch: _dispatch,
     log: _log,
+    dispatchLog,
     teams,
     inning,
     pitchKey,
     ...gameStateRest
   } = useGameContext();
-  void _log;
-
   // Reactive saves list — auto-updates when any save is mutated in RxDB.
   const { saves, createSave, updateProgress, deleteSave, exportRxdbSave, importRxdbSave } =
     useSaveStore();
@@ -93,6 +88,9 @@ export const useSavesModal = ({
       managerMode,
       homeTeam: teams[1],
       awayTeam: teams[0],
+      // NOTE: playerOverrides and lineupOrder here mirror stateSnapshot.state — the
+      // team docs referenced by homeTeamId/awayTeamId hold the canonical roster.
+      // This field is kept for backward compatibility with existing saves.
       playerOverrides: [fullState.playerOverrides[0], fullState.playerOverrides[1]],
       lineupOrder: [fullState.lineupOrder[0], fullState.lineupOrder[1]],
     };
@@ -114,7 +112,6 @@ export const useSavesModal = ({
       // Create a new explicit snapshot save.
       createSave(
         {
-          matchupMode: "manual",
           homeTeamId: teams[1],
           awayTeamId: teams[0],
           seed: currentSeedStr(),
@@ -138,10 +135,9 @@ export const useSavesModal = ({
   };
 
   const handleLoad = (slot: SaveDoc) => {
-    // Use the slot's own snapshot if available; otherwise fall back to the
-    // most recently-updated save that has a snapshot for the same seed.
-    // This lets a manual save (which always snapshots immediately) rescue an
-    // auto-save that hasn't yet crossed a half-inning boundary.
+    // Check snapshot availability for the error case.  The actual restore
+    // (dispatch, rng, localStorage) is handled by GameInner via onLoadSave so
+    // that the /saves-page and in-game-modal paths share identical logic.
     const snap =
       slot.stateSnapshot ??
       saves
@@ -152,21 +148,13 @@ export const useSavesModal = ({
       log(`Unable to load save "${slot.name}" — no state snapshot available yet.`);
       return;
     }
-    if (snap.rngState !== null) restoreRng(snap.rngState);
-    dispatch({ type: "restore_game", payload: snap.state });
-    if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-      const url = new URL(window.location.href);
-      url.searchParams.set("seed", slot.seed);
-      window.history.replaceState(null, "", url.toString());
-    }
-    const { setup } = slot;
-    onSetupRestore?.({
-      strategy: setup.strategy,
-      managedTeam: setup.managedTeam,
-      managerMode: setup.managerMode,
-    });
+
+    // Enrich the slot so GameInner always receives a snapshot (might be a
+    // fallback from a same-seed save when the clicked slot has none).
+    const slotWithSnapshot: SaveDoc = slot.stateSnapshot ? slot : { ...slot, stateSnapshot: snap };
+
     onSaveIdChange(slot.id);
-    onLoadActivate?.(slot.id);
+    onLoadSave?.(slotWithSnapshot);
     log(`Loaded: ${slot.name}`);
     close();
   };

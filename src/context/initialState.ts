@@ -8,10 +8,14 @@ const FALLBACK_TEAMS: [string, string] = ["Away", "Home"];
  * Returns a fresh game state with all fields reset to their starting values.
  * Used for the `reset` action and as the initial state for the context provider.
  */
-export const createFreshGameState = (teams: [string, string]): State => ({
+export const createFreshGameState = (
+  teams: [string, string],
+  teamLabels?: [string, string],
+): State => ({
   inning: 1,
   score: [0, 0] as [number, number],
   teams,
+  teamLabels: teamLabels ?? teams,
   baseLayout: [0, 0, 0] as [number, number, number],
   outs: 0,
   strikes: 0,
@@ -78,6 +82,7 @@ export const backfillRestoredState = (restored: State): State => {
   return {
     ...base,
     playLog,
+    teamLabels: base.teamLabels ?? base.teams,
     strikeoutLog: base.strikeoutLog ?? [],
     outLog: base.outLog ?? [],
     playerOverrides: base.playerOverrides ?? [{}, {}],

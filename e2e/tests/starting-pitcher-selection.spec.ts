@@ -2,11 +2,10 @@
  * Starting Pitcher Selection — E2E tests for the pregame pitcher selector.
  *
  * Covers:
- * 1. Pitcher selector is absent for MLB games (no custom roster)
- * 2. Pitcher selector is absent when no team is managed
- * 3. Pitcher selector appears for the managed team in a custom game
- * 4. Selector only shows SP-eligible pitchers (SP or SP/RP roles)
- * 5. Selecting a starter and starting the game applies the chosen pitcher
+ * 1. Pitcher selector is absent when no team is managed
+ * 2. Pitcher selector appears for the managed team in a custom game
+ * 3. Selector only shows SP-eligible pitchers (SP or SP/RP roles)
+ * 4. Selecting a starter and starting the game applies the chosen pitcher
  */
 import { expect, test } from "@playwright/test";
 
@@ -43,20 +42,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await disableAnimations(page);
   });
 
-  test("pitcher selector is absent for MLB game regardless of managed team", async ({
-    page,
-  }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
-
-    await waitForNewGameDialog(page);
-
-    // Select managed team on MLB tab
-    await page.locator('input[name="managed"][value="0"]').check();
-
-    // MLB tab: no pitcher selector
-    await expect(page.getByTestId("starting-pitcher-select")).not.toBeVisible();
-  });
-
   test("pitcher selector is absent when no team is managed (just watch)", async ({
     page,
   }, testInfo) => {
@@ -66,7 +51,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Test Away 1");
 
     await waitForNewGameDialog(page);
-    await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(
       page.getByTestId("new-game-custom-away-team-select").locator("option"),
     ).toHaveCount(2, { timeout: 5_000 });
@@ -84,7 +68,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Test Away 2");
 
     await waitForNewGameDialog(page);
-    await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(
       page.getByTestId("new-game-custom-away-team-select").locator("option"),
     ).toHaveCount(2, { timeout: 5_000 });
@@ -117,7 +100,6 @@ test.describe("Starting pitcher selector — New Game dialog", () => {
     await createAndSaveTeam(page, "SP Apply Away");
 
     await waitForNewGameDialog(page);
-    await page.getByTestId("new-game-custom-teams-tab").click();
     await expect(
       page.getByTestId("new-game-custom-away-team-select").locator("option"),
     ).toHaveCount(2, { timeout: 5_000 });

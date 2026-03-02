@@ -1,13 +1,49 @@
 import * as React from "react";
 
 import { render, screen } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import type { ContextValue } from "@context/index";
 import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
 
 import LineScore from ".";
+
+vi.mock("@hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn().mockReturnValue({
+    teams: [
+      {
+        id: "ct_linescore_away",
+        name: "Red Sox",
+        city: "",
+        abbreviation: "RSX",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+      {
+        id: "ct_linescore_home",
+        name: "Yankees",
+        city: "",
+        abbreviation: "YNK",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+    ],
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
 
 const renderWithContext = (ui: React.ReactElement, ctx: ContextValue = makeContextValue()) =>
   render(<GameContext.Provider value={ctx}>{ui}</GameContext.Provider>);
@@ -92,33 +128,27 @@ describe("getCellValue — extra innings", () => {
 // ---------------------------------------------------------------------------
 describe("LineScore", () => {
   it("shows both team names", () => {
-    renderWithContext(<LineScore />, makeContextValue({ teams: ["Yankees", "Red Sox"] }));
-    // Each team name is rendered in two spans (mobile label + full label) for
-    // responsive CSS toggling — use getAllByText to handle both occurrences.
-    expect(screen.getAllByText("Yankees").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Red Sox").length).toBeGreaterThanOrEqual(1);
-  });
-
-  it("renders the MLB abbreviation in the mobile label for a known team name", () => {
     renderWithContext(
       <LineScore />,
-      makeContextValue({ teams: ["New York Yankees", "New York Mets"] }),
+      makeContextValue({ teams: ["custom:ct_linescore_away", "custom:ct_linescore_home"] }),
     );
-    // The mobile-label span contains the abbreviation; the full-label span contains
-    // the full name. Both appear in the DOM (CSS toggles which is shown).
-    expect(screen.getAllByText("NYY").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("NYM").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("New York Yankees").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("New York Mets").length).toBeGreaterThanOrEqual(1);
+    // Each team name is rendered in two spans (mobile label + full label) for
+    // responsive CSS toggling — use getAllByText to handle both occurrences.
+    expect(screen.getAllByText("Red Sox").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Yankees").length).toBeGreaterThanOrEqual(1);
   });
 
-  it("uses first-3-chars fallback for unknown non-MLB team in mobile label, full name in desktop label", () => {
-    renderWithContext(<LineScore />, makeContextValue({ teams: ["Custom Away", "Custom Home"] }));
-    // Mobile compact label uses first-3-chars (CUS) fallback
-    expect(screen.getAllByText("CUS").length).toBeGreaterThanOrEqual(2);
-    // Desktop full label still shows the full team name
-    expect(screen.getAllByText("Custom Away").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText("Custom Home").length).toBeGreaterThanOrEqual(1);
+  it("shows fallback for unknown custom team IDs", () => {
+    // Use custom: IDs that are NOT in the mock teams list — exercises the fallback path.
+    renderWithContext(
+      <LineScore />,
+      makeContextValue({ teams: ["custom:ct_unknown_away", "custom:ct_unknown_home"] }),
+    );
+    // Mobile compact label strips "custom:" and takes first 3 chars (uppercase).
+    // "ct_unknown_away" → "CT_" × 2 (once per team)
+    expect(screen.getAllByText("CT_").length).toBeGreaterThanOrEqual(2);
+    // Desktop full label shows first 8 chars of the bare ID (no "custom:" prefix).
+    expect(screen.getAllByText("ct_unkno").length).toBeGreaterThanOrEqual(1);
   });
 
   it("shows R (runs) totals for each team", () => {

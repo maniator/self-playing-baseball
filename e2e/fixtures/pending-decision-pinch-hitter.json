@@ -4,7 +4,6 @@
     "id": "save_pinch_hitter_visual_fixture",
     "name": "Pinch Hitter Decision",
     "seed": "ph-visual-01",
-    "matchupMode": "custom",
     "homeTeamId": "custom:ct_vis_locals",
     "awayTeamId": "custom:ct_vis_visitors",
     "createdAt": 1700002000000,
@@ -429,5 +428,5 @@
     }
   },
   "events": [],
-  "sig": "7dfe343d"
+  "sig": "7ac302f5"
 }

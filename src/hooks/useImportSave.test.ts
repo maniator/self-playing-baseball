@@ -19,7 +19,6 @@ const makeSave = (id = "save_1"): SaveDoc =>
     id,
     name: "Test Save",
     seed: "abc",
-    matchupMode: "manual",
     homeTeamId: "Home",
     awayTeamId: "Away",
     createdAt: 1000,
