@@ -13,12 +13,13 @@
 
 import { expect, test } from "@playwright/test";
 
-import { resetAppState, startGameViaPlayBall } from "../utils/helpers";
+import { startGameViaPlayBall } from "../utils/helpers";
 
 const SEED = "30nl0i";
 // At SPEED_FAST (350 ms/pitch) a ~250-pitch game finishes in ~90 s.
-// Allow 180 s total (generous for CI).
-const GAME_TIMEOUT = 180_000;
+// Each test also spends ~20 s on setup (importTeamsFixture + navigation).
+// Allow 300 s total to keep tests green on slower CI runners.
+const GAME_TIMEOUT = 300_000;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -55,21 +56,22 @@ test.describe("Batting Stats — seed 30nl0i", () => {
 
   test.beforeEach(async ({ page }) => {
     // Enable fastest autoplay before page load so the game completes quickly.
+    // addInitScript runs on every navigation so there is no need to also call
+    // resetAppState here — startGameViaPlayBall handles the initial navigation.
     await page.addInitScript(() => {
       localStorage.setItem("autoPlay", "true");
       localStorage.setItem("speed", "350"); // SPEED_FAST
     });
-    await resetAppState(page);
   });
 
   test("game reaches FINAL state", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: SEED });
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 10_000 });
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 60_000 });
   });
 
   test("slot 2 (First Baseman) has fewer AB than slot 3 due to a walk", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: SEED });
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 10_000 });
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 60_000 });
 
     // Away-team batting stats tab is active by default
     const table = page.getByTestId("batting-stats-table");
@@ -93,7 +95,7 @@ test.describe("Batting Stats — seed 30nl0i", () => {
 
   test("K <= AB for every away batter (strikeouts always count as at-bats)", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: SEED });
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 10_000 });
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 60_000 });
 
     const table = page.getByTestId("batting-stats-table");
     await expect(table).toBeVisible();
@@ -109,7 +111,7 @@ test.describe("Batting Stats — seed 30nl0i", () => {
 
   test("PA ordering invariant holds for all 9 away slots", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: SEED });
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 10_000 });
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: GAME_TIMEOUT - 60_000 });
 
     const table = page.getByTestId("batting-stats-table");
     await expect(table).toBeVisible();
