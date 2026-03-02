@@ -122,7 +122,12 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
 
   const existingTeams = page.getByTestId("custom-team-list-item");
   const count = await existingTeams.count();
-  if (count >= 2) return; // Already have enough teams — skip
+  if (count >= 2) {
+    // Already have enough teams — skip creation but still return to home for callers.
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    return;
+  }
 
   const teamsToCreate = 2 - count;
   for (let i = 0; i < teamsToCreate; i++) {
