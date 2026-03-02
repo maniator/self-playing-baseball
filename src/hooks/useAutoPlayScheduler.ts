@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { DecisionType } from "@context/index";
 import { isSpeechPending } from "@utils/announce";
+import { appLog } from "@utils/logger";
 
 import { GameStateRef } from "./useGameRefs";
 
@@ -65,7 +66,14 @@ export const useAutoPlayScheduler = (
         betweenInningsPauseRef.current = false;
         // Reset extraWait so the next speech-wait window starts fresh for the new pitch.
         extraWait = 0;
-        handleClickRef.current();
+        try {
+          handleClickRef.current();
+        } catch (err) {
+          // An exception in the pitch handler must not silently kill the autoplay
+          // chain. Log it with context and continue scheduling so the game can
+          // recover or at least surface a visible error rather than freezing.
+          appLog.error("[autoplay] handleClick threw — continuing scheduler:", err);
+        }
         tick(speedRef.current);
       }, delay);
     };

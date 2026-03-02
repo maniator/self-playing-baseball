@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import * as announceModule from "@utils/announce";
+import * as loggerModule from "@utils/logger";
 
 import { useAutoPlayScheduler } from "./useAutoPlayScheduler";
 
@@ -240,5 +241,41 @@ describe("useAutoPlayScheduler", () => {
     // The timer chain must survive even though gameStateRef reports gameOver.
     vi.advanceTimersByTime(300);
     expect(handleClick).toHaveBeenCalled();
+  });
+
+  // -------------------------------------------------------------------------
+  // Bug regression: an exception in handleClick must not kill the autoplay chain.
+  // -------------------------------------------------------------------------
+
+  it("continues scheduling after handleClick throws an exception", () => {
+    const logErrorSpy = vi.spyOn(loggerModule.appLog, "error").mockImplementation(() => {});
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+
+    let callCount = 0;
+    const handleClick = vi.fn(() => {
+      callCount++;
+      if (callCount === 1) throw new Error("simulated pitch handler crash");
+    });
+
+    renderScheduler({
+      gameStarted: true,
+      mutedRef: { current: true } as any,
+      speedRef: { current: 100 } as any,
+      handleClickRef: { current: handleClick } as any,
+    });
+
+    // First tick fires at 100ms: handleClick throws — scheduler must log and continue.
+    vi.advanceTimersByTime(100);
+    expect(handleClick).toHaveBeenCalledTimes(1);
+    expect(logErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining("[autoplay]"),
+      expect.any(Error),
+    );
+
+    // Second tick fires at 200ms: scheduler is still alive and fires again.
+    vi.advanceTimersByTime(100);
+    expect(handleClick).toHaveBeenCalledTimes(2);
+
+    logErrorSpy.mockRestore();
   });
 });

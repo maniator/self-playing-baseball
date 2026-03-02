@@ -114,33 +114,45 @@ export const usePitchDispatch = (
     }
 
     // Batting-team AI: tactical decisions (steal, bunt, count modifiers, pinch-hitter).
-    if (isBattingUnmanaged && !currentState.suppressNextDecision) {
-      const battingDecision = detectDecision(currentState as State, "balanced", true);
-      if (battingDecision) {
-        const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
-        if (aiAction.kind === "tactical") {
-          dispatch({ type: aiAction.actionType as GameAction["type"], payload: aiAction.payload });
-          // After AI makes a concrete pinch-hit substitution, lock pinchHitterStrategy to
-          // prevent the decision from being re-offered during this at-bat.
-          // Use "contact" to reflect the AI's late-game tactical intent.
-          if (
-            battingDecision.kind === "pinch_hitter" &&
-            aiAction.actionType === "make_substitution"
-          ) {
-            dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
+    if (isBattingUnmanaged) {
+      if (currentState.suppressNextDecision) {
+        // Mirror the human-manager path: clear the suppress flag so AI decisions
+        // resume for the next batter (e.g. after an intentional walk).
+        dispatch({ type: "clear_suppress_decision" });
+        // Fall through to normal pitch after clearing the suppress flag.
+      } else {
+        const battingDecision = detectDecision(currentState as State, "balanced", true);
+        if (battingDecision) {
+          const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
+          if (aiAction.kind === "tactical") {
+            dispatch({
+              type: aiAction.actionType as GameAction["type"],
+              payload: aiAction.payload,
+            });
+            // After AI makes a concrete pinch-hit substitution, lock pinchHitterStrategy to
+            // prevent the decision from being re-offered during this at-bat.
+            // Use "contact" to reflect the AI's late-game tactical intent.
+            if (
+              battingDecision.kind === "pinch_hitter" &&
+              aiAction.actionType === "make_substitution"
+            ) {
+              dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
+            }
+            dispatchLog?.({
+              type: "log",
+              payload: `The manager: ${aiAction.reasonText}.`,
+            });
+            // Decisions that replace the pitch (steal_attempt, bunt_attempt,
+            // intentional_walk) should return early so the regular pitch is not
+            // also dispatched in the same tick.
+            const replacePitch = ["steal_attempt", "bunt_attempt", "intentional_walk"].includes(
+              aiAction.actionType,
+            );
+            if (replacePitch) return;
+          } else {
+            // AI decided not to act — skip the decision so it is not re-offered
+            dispatch({ type: "skip_decision" });
           }
-          dispatchLog?.({
-            type: "log",
-            payload: `The manager: ${aiAction.reasonText}.`,
-          });
-          // Decisions that replace the pitch (steal_attempt, bunt_attempt) should
-          // return early; count/modifier decisions let the pitch proceed.
-          const replacePitch =
-            aiAction.actionType === "steal_attempt" || aiAction.actionType === "bunt_attempt";
-          if (replacePitch) return;
-        } else {
-          // AI decided not to act — skip the decision so it is not re-offered
-          dispatch({ type: "skip_decision" });
         }
       }
     }
