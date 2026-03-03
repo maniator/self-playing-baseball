@@ -60,8 +60,7 @@ export async function resetAppState(page: Page): Promise<void> {
             .then((html) => html.slice(0, 1000))
             .catch(() => "<no-html>");
 
-          const consoleLog =
-            debugConsole.length > 0 ? `console=[${debugConsole.join("; ")}]` : "";
+          const consoleLog = debugConsole.length > 0 ? `console=[${debugConsole.join("; ")}]` : "";
           const errorLog =
             debugPageErrors.length > 0 ? `errors=[${debugPageErrors.join("; ")}]` : "";
 
