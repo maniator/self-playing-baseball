@@ -113,6 +113,7 @@ test.describe("Smoke", () => {
 
     await page.addInitScript(() => {
       localStorage.setItem("speed", "350"); // SPEED_FAST
+      localStorage.setItem("_e2eNoInningPause", "1"); // disable muted half-inning pause in CI
     });
     await startGameViaPlayBall(page, { seed: "smoke-final1" });
     await expect(page.getByText("FINAL")).toBeVisible({ timeout: 90_000 });

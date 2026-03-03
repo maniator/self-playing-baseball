@@ -44,9 +44,33 @@ function getCellValue(
 }
 
 const LineScore: React.FunctionComponent = () => {
-  const { teams, score, inning, atBat, gameOver, inningRuns, playLog, balls, strikes, outs } =
-    useGameContext();
+  const {
+    teams,
+    teamLabels,
+    score,
+    inning,
+    atBat,
+    gameOver,
+    inningRuns,
+    playLog,
+    balls,
+    strikes,
+    outs,
+  } = useGameContext();
   const { teams: customTeams } = useCustomTeams();
+
+  /**
+   * Returns the full display name for a team. Prefers `teamLabels` from state
+   * (always set to a human-readable name when a game starts or a save is restored)
+   * and falls back to `resolveTeamLabel` only for legacy saves where teamLabels
+   * may still be raw `custom:` IDs.
+   */
+  const fullLabel = (team: 0 | 1): string => {
+    const label = teamLabels[team];
+    return label && !label.startsWith("custom:")
+      ? label
+      : resolveTeamLabel(teams[team], customTeams);
+  };
 
   /** Returns the compact label for a team, preferring custom abbreviation. */
   const compactLabel = (teamStr: string): string =>
@@ -81,9 +105,9 @@ const LineScore: React.FunctionComponent = () => {
         <tbody>
           {([0, 1] as const).map((team) => (
             <tr key={team}>
-              <TeamTd $active={atBat === team} title={resolveTeamLabel(teams[team], customTeams)}>
+              <TeamTd $active={atBat === team} title={fullLabel(team)}>
                 <TeamMobileLabel>{compactLabel(teams[team])}</TeamMobileLabel>
-                <TeamFullLabel>{resolveTeamLabel(teams[team], customTeams)}</TeamFullLabel>
+                <TeamFullLabel>{fullLabel(team)}</TeamFullLabel>
               </TeamTd>
               {inningCols.map((n) => {
                 const val = getCellValue(team, n, inning, atBat as 0 | 1, gameOver, inningRuns);
