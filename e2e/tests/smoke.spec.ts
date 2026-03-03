@@ -109,7 +109,7 @@ test.describe("Smoke", () => {
       testInfo.project.name !== "desktop",
       "Full-game autoplay regression runs on desktop only",
     );
-    test.setTimeout(120_000);
+    test.setTimeout(180_000);
 
     // Set speed and the E2E inning-pause flag via evaluate so they are already in
     // localStorage when the app first mounts. addInitScript alone is unreliable here
@@ -124,7 +124,33 @@ test.describe("Smoke", () => {
       localStorage.setItem("_e2eNoInningPause", "1"); // disable muted half-inning pause in CI
     });
     await startGameViaPlayBall(page, { seed: "smoke-final1" });
-    await expect(page.getByText("FINAL")).toBeVisible({ timeout: 90_000 });
+
+    // Wait for FINAL with a progress watchdog that distinguishes a slow CI runner
+    // from a frozen game. If no new log lines appear for 15 s, fail immediately with
+    // actionable diagnostics so the failure is easy to triage.
+    let lastLogCount = 0;
+    let lastLogChangeTime = Date.now();
+    await expect(async () => {
+      if (await page.getByText("FINAL").isVisible()) return;
+
+      const currentCount = await page.locator("[data-log-index]").count();
+      if (currentCount > lastLogCount) {
+        lastLogCount = currentCount;
+        lastLogChangeTime = Date.now();
+      }
+      const stalledMs = Date.now() - lastLogChangeTime;
+      if (stalledMs > 15_000) {
+        const scoreboardText = await page
+          .getByTestId("scoreboard")
+          .textContent()
+          .catch(() => "?");
+        throw new Error(
+          `autoplay stalled: no new log lines for ${stalledMs}ms ` +
+            `(log count=${currentCount}; scoreboard="${scoreboardText?.trim()}")`,
+        );
+      }
+      throw new Error("FINAL not yet visible");
+    }).toPass({ timeout: 120_000, intervals: [500] });
 
     // Scoreboard must still be visible after game completes.
     await expect(page.getByTestId("scoreboard")).toBeVisible();
