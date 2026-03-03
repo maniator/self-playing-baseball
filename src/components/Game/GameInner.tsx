@@ -73,7 +73,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Custom team docs for resolving display names when restoring legacy saves.
   // Used directly in restore callbacks and effects; no ref needed since
   // resolveRestoreLabels returns existing labels unchanged for new saves.
-  const { teams: customTeams } = useCustomTeams();
+  const { teams: customTeams, loading: customTeamsLoading } = useCustomTeams();
 
   const [gameKey, setGameKey] = React.useState(0);
   const [gameActive, setGameActive] = React.useState(false);
@@ -110,6 +110,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const prevRxAutoSaveRef = React.useRef<SaveDoc | null>(null);
   React.useEffect(() => {
     if (!rxAutoSave || rxAutoSave === prevRxAutoSaveRef.current) return;
+    if (customTeamsLoading) return; // defer until custom teams are loaded
     prevRxAutoSaveRef.current = rxAutoSave;
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
@@ -131,6 +132,7 @@ const GameInner: React.FunctionComponent<Props> = ({
     dispatch,
     rxAutoSave,
     customTeams,
+    customTeamsLoading,
     setStrategy,
     setManagedTeam,
     setManagerMode,

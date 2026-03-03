@@ -3,7 +3,6 @@ import * as React from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import type { PitchingRole } from "@components/SubstitutionPanel";
-import type { State } from "@context/index";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
 import { useCustomTeams } from "@hooks/useCustomTeams";
@@ -25,43 +24,9 @@ export const useGameControls = ({
 }: {
   gameStarted?: boolean;
 } = {}) => {
-  const {
-    dispatch,
-    dispatchLog,
-    strikes,
-    balls,
-    baseLayout,
-    outs,
-    inning,
-    score,
-    atBat,
-    pendingDecision,
-    gameOver,
-    onePitchModifier,
-    teams,
-    teamLabels,
-    pitchKey,
-    suppressNextDecision,
-    pinchHitterStrategy,
-    defensiveShift,
-    defensiveShiftOffered,
-    decisionLog,
-    batterIndex,
-    inningRuns,
-    playLog,
-    strikeoutLog,
-    outLog,
-    playerOverrides,
-    lineupOrder,
-    rosterBench,
-    rosterPitchers,
-    activePitcherIdx,
-    lineupPositions,
-    pitcherBattersFaced,
-    substitutedOut,
-    baseRunnerIds,
-    resolvedMods,
-  }: ContextValue = useGameContext();
+  const { dispatch, dispatchLog, log: _log, ...currentState }: ContextValue = useGameContext();
+  const { strikes, balls, pendingDecision, teams, inning, atBat, gameOver, pitchKey } =
+    currentState;
 
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -125,80 +90,6 @@ export const useGameControls = ({
   }, [teams, customTeams]);
 
   useGameAudio(inning, atBat, gameOver, dispatchLog);
-
-  // Build current state snapshot for hooks that need it
-  const currentState = React.useMemo(
-    (): State => ({
-      strikes,
-      balls,
-      baseLayout,
-      outs,
-      inning,
-      score,
-      atBat,
-      pendingDecision,
-      gameOver,
-      onePitchModifier,
-      teams,
-      teamLabels,
-      suppressNextDecision,
-      pinchHitterStrategy,
-      defensiveShift,
-      defensiveShiftOffered,
-      pitchKey,
-      decisionLog,
-      batterIndex,
-      inningRuns,
-      playLog,
-      strikeoutLog,
-      outLog,
-      playerOverrides,
-      lineupOrder,
-      rosterBench,
-      rosterPitchers,
-      activePitcherIdx,
-      lineupPositions,
-      pitcherBattersFaced,
-      substitutedOut,
-      baseRunnerIds,
-      resolvedMods,
-    }),
-    [
-      strikes,
-      balls,
-      baseLayout,
-      outs,
-      inning,
-      score,
-      atBat,
-      pendingDecision,
-      gameOver,
-      onePitchModifier,
-      teams,
-      teamLabels,
-      suppressNextDecision,
-      pinchHitterStrategy,
-      defensiveShift,
-      defensiveShiftOffered,
-      pitchKey,
-      decisionLog,
-      batterIndex,
-      inningRuns,
-      playLog,
-      strikeoutLog,
-      outLog,
-      playerOverrides,
-      lineupOrder,
-      rosterBench,
-      rosterPitchers,
-      activePitcherIdx,
-      lineupPositions,
-      pitcherBattersFaced,
-      substitutedOut,
-      baseRunnerIds,
-      resolvedMods,
-    ],
-  );
 
   const handlePitch = usePitchDispatch({
     dispatch,
