@@ -10,14 +10,13 @@ import { disableAnimations, resetAppState } from "../../utils/helpers";
 const IMPORT_EXPORT_SNAPSHOT_OPTIONS = { maxDiffPixelRatio: 0.05 } as const;
 
 test.describe("Visual — Teams Import/Export UI states", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
     await resetAppState(page);
     await disableAnimations(page);
   });
 
   test("import/export section empty state (no teams)", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
-
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("teams-import-export-section")).toBeVisible();
@@ -29,8 +28,6 @@ test.describe("Visual — Teams Import/Export UI states", () => {
   });
 
   test("import error state after invalid file", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
-
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
@@ -52,8 +49,6 @@ test.describe("Visual — Teams Import/Export UI states", () => {
   });
 
   test("import success summary after importing a team", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
-
     // Create a team, export it, delete it, then re-import to reach success state
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
@@ -86,8 +81,6 @@ test.describe("Visual — Teams Import/Export UI states", () => {
   });
 
   test("export-all button visible when teams exist", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only snapshot");
-
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 

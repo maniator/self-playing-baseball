@@ -14,9 +14,61 @@ export async function resetAppState(page: Page): Promise<void> {
   await page.addInitScript(() => {
     localStorage.setItem("announcementVolume", "0");
   });
-  await page.goto("/");
-  // Wait until the home screen is visible (the app's new front door).
-  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+
+  const home = page.getByTestId("home-screen");
+  const loading = page.getByText("Loading game…");
+  const debugConsole: string[] = [];
+  const debugPageErrors: string[] = [];
+
+  const onConsole = (message: { type: () => string; text: () => string }) => {
+    if (debugConsole.length < 10) {
+      debugConsole.push(`${message.type()}: ${message.text()}`);
+    }
+  };
+  const onPageError = (error: Error) => {
+    if (debugPageErrors.length < 10) {
+      debugPageErrors.push(error.message);
+    }
+  };
+
+  page.on("console", onConsole);
+  page.on("pageerror", onPageError);
+
+  // Mobile WebKit can be slow to paint the first route under full parallel E2E load.
+  // Retry navigation once before failing to reduce startup flakes.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+
+    try {
+      await expect(home.or(loading)).toBeVisible({ timeout: 30_000 });
+      await expect(loading).not.toBeVisible({ timeout: 30_000 });
+      await expect(home).toBeVisible({ timeout: 30_000 });
+      return;
+    } catch (err) {
+      if (attempt === 1) {
+        const url = page.url();
+        const title = await page.title().catch(() => "<no-title>");
+        const bodyText = await page
+          .locator("body")
+          .innerText()
+          .then((txt) => txt.slice(0, 500))
+          .catch(() => "<no-body-text>");
+        const htmlSnippet = await page
+          .content()
+          .then((html) => html.slice(0, 1000))
+          .catch(() => "<no-html>");
+
+        const consoleLog = debugConsole.length > 0 ? `console=[${debugConsole.join("; ")}]` : "";
+        const errorLog = debugPageErrors.length > 0 ? `errors=[${debugPageErrors.join("; ")}]` : "";
+
+        throw new Error(
+          `resetAppState failed after 2 attempts. url=${url} title=${title} body=${bodyText} html=${htmlSnippet} ${consoleLog} ${errorLog}`,
+          { cause: err as Error },
+        );
+      }
+      await page.waitForTimeout(500);
+    }
+  }
 }
 
 /**
@@ -39,7 +91,6 @@ export async function openNewGameDialog(page: Page): Promise<void> {
 export async function waitForNewGameDialog(page: Page): Promise<void> {
   const setupUi = page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog"));
 
-  // Wait for either home screen or the setup UI to become visible.
   await expect(page.getByTestId("home-screen").or(setupUi)).toBeVisible({ timeout: 15_000 });
 
   // Only navigate if we're on the home screen AND the setup UI hasn't already appeared
