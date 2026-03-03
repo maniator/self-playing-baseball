@@ -1,54 +1,17 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import type { State } from "@context/index";
+import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
 import { usePitchDispatch } from "./usePitchDispatch";
 
 afterEach(() => vi.restoreAllMocks());
 
-const makeTestState = (overrides: Partial<State> = {}): State => ({
-  strikes: 0,
-  balls: 0,
-  baseLayout: [0, 0, 0],
-  outs: 0,
-  inning: 1,
-  score: [0, 0],
-  atBat: 0,
-  pendingDecision: null,
-  gameOver: false,
-  onePitchModifier: null,
-  teams: ["Away", "Home"],
-  teamLabels: ["Away", "Home"],
-  suppressNextDecision: false,
-  pinchHitterStrategy: null,
-  defensiveShift: false,
-  defensiveShiftOffered: false,
-  pitchKey: 0,
-  decisionLog: [],
-  lineupOrder: [[], []],
-  playerOverrides: [{}, {}],
-  batterIndex: [0, 0],
-  resolvedMods: [{}, {}],
-  rosterBench: [[], []],
-  rosterPitchers: [[], []],
-  activePitcherIdx: [0, 0],
-  lineupPositions: [[], []],
-  pitcherBattersFaced: [0, 0],
-  substitutedOut: [[], []],
-  baseRunnerIds: [null, null, null],
-  playLog: [],
-  strikeoutLog: [],
-  outLog: [],
-  inningRuns: [[], []],
-  ...overrides,
-});
-
 describe("usePitchDispatch", () => {
   it("dispatches set_pending_decision when manager mode and decision available", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ baseLayout: [1, 0, 0], outs: 1, atBat: 0 });
+    const state = makeState({ baseLayout: [1, 0, 0], outs: 1, atBat: 0 });
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
 
     const { result } = renderHook(() =>
@@ -73,7 +36,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches strike when swing (random < swingRate)", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.001)
@@ -101,7 +64,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit when random >= 920", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -127,7 +90,7 @@ describe("usePitchDispatch", () => {
 
   it("does nothing when gameOver is true", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ gameOver: true });
+    const state = makeState({ gameOver: true });
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -149,7 +112,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with contact strategy — Triple (hitRoll 8–9)", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
@@ -177,7 +140,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with contact strategy — Double (hitRoll 10–27)", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -205,7 +168,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Triple (hitRoll 13–14)", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -233,7 +196,7 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Double (hitRoll 15–34)", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
@@ -262,7 +225,7 @@ describe("usePitchDispatch", () => {
 
 describe("usePitchDispatch — power strategy hits", () => {
   const makeHitState = (hitRoll: number) => {
-    const state = makeTestState({ defensiveShiftOffered: true });
+    const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
@@ -326,7 +289,7 @@ describe("usePitchDispatch — suppressNextDecision", () => {
     // same tick (mirroring the AI-only path) so no dead click is introduced.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const state = makeTestState({
+    const state = makeState({
       atBat: 0,
       balls: 0,
       strikes: 0,
@@ -362,7 +325,7 @@ describe("usePitchDispatch — suppressNextDecision", () => {
     // With managerMode=false the human-manager guard never clears it — the AI path must.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const state = makeTestState({
+    const state = makeState({
       suppressNextDecision: true,
       defensiveShiftOffered: true, // skip shift check; focus on suppress clear
     });
@@ -394,7 +357,7 @@ describe("usePitchDispatch — AI intentional walk (pitch-replacing)", () => {
     // IBB condition: 1st base empty, runner on 2nd, 2 outs, inning 7+, score within 2.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const state = makeTestState({
+    const state = makeState({
       baseLayout: [0, 1, 0],
       outs: 2,
       inning: 7,
@@ -434,7 +397,7 @@ describe("usePitchDispatch — AI defensive shift (no dead tick)", () => {
     // so no dead click/interval is introduced.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const state = makeTestState({
+    const state = makeState({
       defensiveShiftOffered: false, // shift not yet offered — AI will apply it
       balls: 0,
       strikes: 0,
@@ -466,7 +429,7 @@ describe("usePitchDispatch — AI defensive shift (no dead tick)", () => {
 describe("usePitchDispatch — skip decision", () => {
   it("does NOT re-offer bunt after skip — skipDecision stays set until new batter", () => {
     const dispatch = vi.fn();
-    const state = makeTestState({
+    const state = makeState({
       atBat: 0,
       baseLayout: [1, 0, 0],
       outs: 0,
