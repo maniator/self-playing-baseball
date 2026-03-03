@@ -111,7 +111,15 @@ test.describe("Smoke", () => {
     );
     test.setTimeout(120_000);
 
-    await page.addInitScript(() => {
+    // Set speed and the E2E inning-pause flag via evaluate so they are already in
+    // localStorage when the app first mounts. addInitScript alone is unreliable here
+    // because the scripts run before page scripts on each navigation but the exact
+    // interaction with the React useLocalStorage hook can be racy. Using evaluate
+    // after an explicit goto ensures the values are present before startGameViaPlayBall
+    // navigates; localStorage persists across same-origin navigations so the settings
+    // remain active throughout the game.
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
       localStorage.setItem("speed", "350"); // SPEED_FAST
       localStorage.setItem("_e2eNoInningPause", "1"); // disable muted half-inning pause in CI
     });
@@ -138,8 +146,10 @@ test.describe("Smoke", () => {
     );
     test.setTimeout(120_000);
 
-    // Use fast speed so we hit 50 entries quickly.
-    await page.addInitScript(() => {
+    // Use fast speed so we hit 50 entries quickly. Set via evaluate so the value
+    // is in localStorage before startGameViaPlayBall mounts the app.
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.evaluate(() => {
       localStorage.setItem("speed", "350");
     });
     await startGameViaPlayBall(page, { seed: "perf-smoke1" });
