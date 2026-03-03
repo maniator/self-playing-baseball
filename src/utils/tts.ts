@@ -44,13 +44,14 @@ const flushBatch = (): void => {
   const parts = _pendingMessages.map(toSpeechText).filter(Boolean);
   _pendingMessages = [];
   if (parts.length === 0) return;
+  if (!synth?.speak || typeof SpeechSynthesisUtterance === "undefined") return;
 
   const utterThis = new SpeechSynthesisUtterance(parts.join(". "));
   utterThis.rate = _speechRate;
   utterThis.pitch = 1.05;
   utterThis.volume = _speechVolume;
   if (_bestVoice) utterThis.voice = _bestVoice;
-  synth?.speak?.(utterThis);
+  synth.speak(utterThis);
 };
 
 export const setAnnouncementVolume = (v: number): void => {
@@ -105,4 +106,4 @@ export const setSpeechRate = (intervalMs: number): void => {
 
 export const canAnnounce = () => !(synth?.speaking || synth?.pending);
 export const isSpeechPending = (): boolean =>
-  _batchTimer !== null || synth?.speaking || synth?.pending;
+  Boolean(_batchTimer !== null || synth?.speaking || synth?.pending);

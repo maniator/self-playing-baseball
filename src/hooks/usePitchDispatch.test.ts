@@ -1,6 +1,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import { type State } from "@context/index";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
