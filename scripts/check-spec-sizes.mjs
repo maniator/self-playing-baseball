@@ -8,7 +8,7 @@
  */
 
 import { readFileSync, readdirSync } from "fs";
-import { join } from "path"; 
+import { join } from "path";
 
 const WARN_THRESHOLD = 500;
 const FAIL_THRESHOLD = 900;
