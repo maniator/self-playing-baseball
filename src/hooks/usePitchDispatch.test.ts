@@ -1,69 +1,63 @@
-import * as React from "react";
-
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+import type { State } from "@context/index";
 import * as rngModule from "@utils/rng";
 
 import { usePitchDispatch } from "./usePitchDispatch";
 
 afterEach(() => vi.restoreAllMocks());
 
-const makeGameSnapshot = (overrides: Record<string, any> = {}) => ({
+const makeTestState = (overrides: Partial<State> = {}): State => ({
   strikes: 0,
   balls: 0,
-  baseLayout: [0, 0, 0] as [number, number, number],
+  baseLayout: [0, 0, 0],
   outs: 0,
   inning: 1,
-  score: [0, 0] as [number, number],
+  score: [0, 0],
   atBat: 0,
   pendingDecision: null,
   gameOver: false,
   onePitchModifier: null,
-  teams: ["Away", "Home"] as [string, string],
+  teams: ["Away", "Home"],
   suppressNextDecision: false,
   pinchHitterStrategy: null,
   defensiveShift: false,
   defensiveShiftOffered: false,
+  pitchKey: 0,
+  teamLabels: ["Away", "Home"],
+  decisionLog: [],
+  lineupOrder: [[], []],
+  playerOverrides: {},
+  batterNum: [0, 0],
+  resolvedMods: {},
+  rosterBench: [[], []],
+  activePitcher: [null, null],
+  playLog: [],
+  inningRuns: [[], []],
   ...overrides,
 });
-
-const makeRefs = (overrides: Record<string, any> = {}) => {
-  const snap = makeGameSnapshot(overrides.snap ?? {});
-  return {
-    gameStateRef: { current: snap } as React.MutableRefObject<typeof snap>,
-    managerModeRef: { current: overrides.managerMode ?? false } as React.MutableRefObject<boolean>,
-    strategyRef: { current: overrides.strategy ?? "balanced" } as React.MutableRefObject<any>,
-    managedTeamRef: { current: overrides.managedTeam ?? 0 } as React.MutableRefObject<0 | 1>,
-    skipDecisionRef: {
-      current: overrides.skipDecision ?? false,
-    } as React.MutableRefObject<boolean>,
-    strikesRef: { current: overrides.strikes ?? 0 } as React.MutableRefObject<number>,
-  };
-};
 
 describe("usePitchDispatch", () => {
   it("dispatches set_pending_decision when manager mode and decision available", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({
-      managerMode: true,
-      snap: { baseLayout: [1, 0, 0] as [number, number, number], outs: 1, atBat: 0 },
-    });
+    const state = makeTestState({ baseLayout: [1, 0, 0], outs: 1, atBat: 0 });
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: true,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "set_pending_decision" }),
@@ -72,25 +66,26 @@ describe("usePitchDispatch", () => {
 
   it("dispatches strike when swing (random < swingRate)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.001)
       .mockReturnValueOnce(0.5);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: expect.stringMatching(/^(strike|foul)$/) }),
@@ -99,71 +94,74 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit when random >= 920", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
       .mockReturnValueOnce(0.1);
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "hit" }));
   });
 
   it("does nothing when gameOver is true", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ snap: { gameOver: true } });
+    const state = makeTestState({ gameOver: true });
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).not.toHaveBeenCalled();
   });
 
   it("dispatches hit with contact strategy — Triple (hitRoll 8–9)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "contact", snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
       .mockReturnValueOnce(0.09); // hitRoll = 9, 8 <= 9 < 10 → Triple
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "contact",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
@@ -172,25 +170,26 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with contact strategy — Double (hitRoll 10–27)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "contact", snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
       .mockReturnValueOnce(0.19); // hitRoll = 19, 10 <= 19 < 28 → Double
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "contact",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
@@ -199,25 +198,26 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Triple (hitRoll 13–14)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "balanced", snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
       .mockReturnValueOnce(0.14); // hitRoll = 14, 13 <= 14 < 15 → Triple
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
@@ -226,25 +226,26 @@ describe("usePitchDispatch", () => {
 
   it("dispatches hit with default strategy — Double (hitRoll 15–34)", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({ strategy: "balanced", snap: { defensiveShiftOffered: true } });
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0)
       .mockReturnValueOnce(0.999)
       .mockReturnValueOnce(0.25); // hitRoll = 25, 15 <= 25 < 35 → Double
 
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
@@ -253,57 +254,58 @@ describe("usePitchDispatch", () => {
 });
 
 describe("usePitchDispatch — power strategy hits", () => {
-  const makeHitRefs = (hitRoll: number) => {
-    const refs = makeRefs({ strategy: "power", snap: { defensiveShiftOffered: true } });
+  const makeHitState = (hitRoll: number) => {
+    const state = makeTestState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
       .mockReturnValueOnce(0.0) // pitch type
       .mockReturnValueOnce(0.999) // main roll >= 920 → hit
       .mockReturnValueOnce(hitRoll / 100);
-    return refs;
+    return state;
   };
 
-  const dispatchAndGet = (refs: ReturnType<typeof makeRefs>) => {
+  const dispatchAndGet = (state: State) => {
     const dispatch = vi.fn();
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "power",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     return dispatch;
   };
 
   it("power Homerun (hitRoll < 20)", () => {
-    const dispatch = dispatchAndGet(makeHitRefs(10));
+    const dispatch = dispatchAndGet(makeHitState(10));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
     );
   });
 
   it("power Triple (hitRoll 20–22)", () => {
-    const dispatch = dispatchAndGet(makeHitRefs(21));
+    const dispatch = dispatchAndGet(makeHitState(21));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
     );
   });
 
   it("power Double (hitRoll 23–42)", () => {
-    const dispatch = dispatchAndGet(makeHitRefs(33));
+    const dispatch = dispatchAndGet(makeHitState(33));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
     );
   });
 
   it("power Single (hitRoll >= 43)", () => {
-    const dispatch = dispatchAndGet(makeHitRefs(55));
+    const dispatch = dispatchAndGet(makeHitState(55));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 0 }) }),
     );
@@ -314,32 +316,29 @@ describe("usePitchDispatch — suppressNextDecision", () => {
   it("dispatches clear_suppress_decision when suppressNextDecision is true", () => {
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const refs = makeRefs({
-      managerMode: true,
-      managedTeam: 0,
-      snap: {
-        atBat: 0,
-        balls: 0,
-        strikes: 0,
-        baseLayout: [0, 0, 0] as [number, number, number],
-        outs: 0,
-        suppressNextDecision: true,
-        defensiveShiftOffered: true, // already offered, so shift prompt is skipped
-      },
+    const state = makeTestState({
+      atBat: 0,
+      balls: 0,
+      strikes: 0,
+      baseLayout: [0, 0, 0],
+      outs: 0,
+      suppressNextDecision: true,
+      defensiveShiftOffered: true, // already offered, so shift prompt is skipped
     });
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: true,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
   });
@@ -349,26 +348,24 @@ describe("usePitchDispatch — suppressNextDecision", () => {
     // With managerMode=false the human-manager guard never clears it — the AI path must.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const refs = makeRefs({
-      managerMode: false,
-      snap: {
-        suppressNextDecision: true,
-        defensiveShiftOffered: true, // skip shift check; focus on suppress clear
-      },
+    const state = makeTestState({
+      suppressNextDecision: true,
+      defensiveShiftOffered: true, // skip shift check; focus on suppress clear
     });
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
     // A normal pitch action must also be dispatched in the same tick.
@@ -383,32 +380,30 @@ describe("usePitchDispatch — AI intentional walk (pitch-replacing)", () => {
     // IBB condition: 1st base empty, runner on 2nd, 2 outs, inning 7+, score within 2.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
-    const refs = makeRefs({
-      managerMode: false,
-      snap: {
-        baseLayout: [0, 1, 0] as [number, number, number],
-        outs: 2,
-        inning: 7,
-        score: [3, 1] as [number, number], // diff = 2, within threshold
-        balls: 0,
-        strikes: 0,
-        suppressNextDecision: false,
-        defensiveShiftOffered: true, // skip shift check; focus on IBB
-      },
+    const state = makeTestState({
+      baseLayout: [0, 1, 0],
+      outs: 2,
+      inning: 7,
+      score: [3, 1], // diff = 2, within threshold
+      balls: 0,
+      strikes: 0,
+      suppressNextDecision: false,
+      defensiveShiftOffered: true, // skip shift check; focus on IBB
     });
     const { result } = renderHook(() =>
-      usePitchDispatch(
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "intentional_walk" }));
     // Must NOT also dispatch a normal pitch action in the same tick.
@@ -419,32 +414,31 @@ describe("usePitchDispatch — AI intentional walk (pitch-replacing)", () => {
 });
 
 describe("usePitchDispatch — skip decision", () => {
-  it("does NOT re-offer bunt after skip — skipDecisionRef stays set until new batter", () => {
+  it("does NOT re-offer bunt after skip — skipDecision stays set until new batter", () => {
     const dispatch = vi.fn();
-    const refs = makeRefs({
-      managerMode: true,
-      managedTeam: 0,
-      snap: {
-        atBat: 0,
-        baseLayout: [1, 0, 0] as [number, number, number],
-        outs: 0,
-        balls: 0,
-        strikes: 0,
-      },
+    const state = makeTestState({
+      atBat: 0,
+      baseLayout: [1, 0, 0],
+      outs: 0,
+      balls: 0,
+      strikes: 0,
     });
-    const { result } = renderHook(() =>
-      usePitchDispatch(
+    
+    // First call with skipDecision=false should offer bunt
+    const { result: result1 } = renderHook(() =>
+      usePitchDispatch({
         dispatch,
-        refs.gameStateRef,
-        refs.managerModeRef,
-        refs.strategyRef,
-        refs.managedTeamRef,
-        refs.skipDecisionRef,
-        refs.strikesRef,
-      ),
+        currentState: state,
+        managerMode: true,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
     );
     act(() => {
-      result.current.current();
+      result1.current();
     });
     expect(dispatch).toHaveBeenCalledWith({
       type: "set_pending_decision",
@@ -452,10 +446,21 @@ describe("usePitchDispatch — skip decision", () => {
     });
     dispatch.mockClear();
 
-    refs.skipDecisionRef.current = true;
-
+    // Second call with skipDecision=true should NOT offer bunt
+    const { result: result2 } = renderHook(() =>
+      usePitchDispatch({
+        dispatch,
+        currentState: state,
+        managerMode: true,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: true,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
+    );
     act(() => {
-      result.current.current();
+      result2.current();
     });
     expect(dispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({

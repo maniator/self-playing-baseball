@@ -4,28 +4,25 @@ import { LogAction } from "@context/index";
 import { play7thInningStretch, playVictoryFanfare } from "@utils/announce";
 
 /**
- * Handles between-inning pause detection and victory fanfare.
- * Returns betweenInningsPauseRef, which the auto-play scheduler reads
- * to insert a brief hold when muted at half-inning transitions.
+ * Plays audio for special game moments: 7th inning stretch and victory fanfare.
+ * No longer manages pause state — the scheduler handles that internally.
  */
 export const useGameAudio = (
   inning: number,
   atBat: number,
   gameOver: boolean,
   dispatchLog: (action: LogAction) => void,
-): React.MutableRefObject<boolean> => {
+): void => {
   const log = React.useCallback(
     (msg: string) => dispatchLog({ type: "log", payload: msg }),
     [dispatchLog],
   );
 
-  const betweenInningsPauseRef = React.useRef(false);
   const prevInningSignatureRef = React.useRef(`${inning}-${atBat}`);
 
   React.useEffect(() => {
     const sig = `${inning}-${atBat}`;
     if (sig !== prevInningSignatureRef.current) {
-      betweenInningsPauseRef.current = true;
       prevInningSignatureRef.current = sig;
       if (inning === 7 && atBat === 1) {
         log("⚾ Seventh inning stretch! Take me out to the ball game!");
@@ -41,6 +38,4 @@ export const useGameAudio = (
     }
     prevGameOverRef.current = gameOver;
   }, [gameOver]);
-
-  return betweenInningsPauseRef;
 };

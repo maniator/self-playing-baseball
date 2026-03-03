@@ -70,6 +70,13 @@ export const usePlayerControls = ({
   };
 
   const prevAnnouncementVolumeRef = React.useRef(announcementVolume);
+  const prevAlertVolumeRef = React.useRef(alertVolume);
+
+  // Always keep prev refs up-to-date so unmuting restores the right level even if
+  // volume was changed via another surface (e.g. the slider).
+  if (announcementVolume > 0) prevAnnouncementVolumeRef.current = announcementVolume;
+  if (alertVolume > 0) prevAlertVolumeRef.current = alertVolume;
+
   const handleToggleAnnouncementMute = React.useCallback(() => {
     if (announcementVolume > 0) {
       prevAnnouncementVolumeRef.current = announcementVolume;
@@ -81,7 +88,6 @@ export const usePlayerControls = ({
     }
   }, [announcementVolume, setAnnouncementVolumeState]);
 
-  const prevAlertVolumeRef = React.useRef(alertVolume);
   const handleToggleAlertMute = React.useCallback(() => {
     if (alertVolume > 0) {
       prevAlertVolumeRef.current = alertVolume;

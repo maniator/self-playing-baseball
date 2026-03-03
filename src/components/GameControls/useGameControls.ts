@@ -78,42 +78,9 @@ export const useGameControls = ({
       setAlertVolumeState(1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const gameSnapshot = {
+  const { skipDecision } = useGameRefs({
     strikes,
     balls,
-    baseLayout,
-    outs,
-    inning,
-    score,
-    atBat,
-    pendingDecision,
-    gameOver,
-    onePitchModifier,
-    teams,
-    suppressNextDecision,
-    pinchHitterStrategy,
-    defensiveShift,
-    defensiveShiftOffered,
-  };
-
-  const {
-    mutedRef,
-    speedRef,
-    strikesRef,
-    managerModeRef,
-    strategyRef,
-    managedTeamRef,
-    gameStateRef,
-    skipDecisionRef,
-  } = useGameRefs({
-    announcementVolume: safeAnnouncementVolume,
-    speed: safeSpeed,
-    strikes,
-    balls,
-    managerMode: safeManagerMode,
-    strategy: safeStrategy,
-    managedTeam: safeManagedTeam,
-    gameSnapshot,
     pendingDecision,
   });
 
@@ -139,34 +106,78 @@ export const useGameControls = ({
     }) as [Record<string, PitchingRole>, Record<string, PitchingRole>];
   }, [teams, customTeams]);
 
-  const allTeamPitcherRolesRef =
-    React.useRef<[Record<string, PitchingRole>, Record<string, PitchingRole>]>(allTeamPitcherRoles);
-  allTeamPitcherRolesRef.current = allTeamPitcherRoles;
+  useGameAudio(inning, atBat, gameOver, dispatchLog);
 
-  const betweenInningsPauseRef = useGameAudio(inning, atBat, gameOver, dispatchLog);
-  const handleClickRef = usePitchDispatch(
-    dispatch,
-    gameStateRef,
-    managerModeRef,
-    strategyRef,
-    managedTeamRef,
-    skipDecisionRef,
-    strikesRef,
-    dispatchLog,
-    allTeamPitcherRolesRef,
+  // Build current state snapshot for hooks that need it
+  const currentState = React.useMemo(
+    (): State => ({
+      strikes,
+      balls,
+      baseLayout,
+      outs,
+      inning,
+      score,
+      atBat,
+      pendingDecision,
+      gameOver,
+      onePitchModifier,
+      teams,
+      suppressNextDecision,
+      pinchHitterStrategy,
+      defensiveShift,
+      defensiveShiftOffered,
+      pitchKey,
+      teamLabels: teams,
+      decisionLog: [],
+      lineupOrder: [[], []],
+      playerOverrides: {},
+      batterNum: [0, 0],
+      resolvedMods: {},
+      rosterBench: [[], []],
+      activePitcher: [null, null],
+    }),
+    [
+      strikes,
+      balls,
+      baseLayout,
+      outs,
+      inning,
+      score,
+      atBat,
+      pendingDecision,
+      gameOver,
+      onePitchModifier,
+      teams,
+      suppressNextDecision,
+      pinchHitterStrategy,
+      defensiveShift,
+      defensiveShiftOffered,
+      pitchKey,
+    ],
   );
 
-  useAutoPlayScheduler(
+  const handlePitch = usePitchDispatch({
+    dispatch,
+    currentState,
+    managerMode: safeManagerMode,
+    strategy: safeStrategy,
+    managedTeam: safeManagedTeam,
+    skipDecision,
+    dispatchLog,
+    allTeamPitcherRoles,
+  });
+
+  useAutoPlayScheduler({
     gameStarted,
     pendingDecision,
-    safeManagerMode,
+    managerMode: safeManagerMode,
     gameOver,
-    mutedRef,
-    speedRef,
-    handleClickRef,
-    gameStateRef,
-    betweenInningsPauseRef,
-  );
+    muted: false,
+    speed: safeSpeed,
+    handlePitch,
+    inning,
+    atBat,
+  });
   useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
 
   React.useEffect(() => {
@@ -202,7 +213,7 @@ export const useGameControls = ({
     setManagedTeam,
     teams,
     gameOver,
-    handleClickRef,
+    handlePitch,
     currentSaveId,
     setCurrentSaveId,
     ...playerControls,

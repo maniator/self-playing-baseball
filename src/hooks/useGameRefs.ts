@@ -1,81 +1,29 @@
 import * as React from "react";
 
-import { DecisionType, State, Strategy } from "@context/index";
-
-export type GameStateSnapshot = Pick<
-  State,
-  | "strikes"
-  | "balls"
-  | "baseLayout"
-  | "outs"
-  | "inning"
-  | "score"
-  | "atBat"
-  | "pendingDecision"
-  | "gameOver"
-  | "onePitchModifier"
-  | "teams"
-  | "suppressNextDecision"
-  | "pinchHitterStrategy"
-  | "defensiveShift"
-  | "defensiveShiftOffered"
->;
-
-export type GameStateRef = React.MutableRefObject<GameStateSnapshot>;
+import { DecisionType } from "@context/index";
 
 export interface UseGameRefsOptions {
-  announcementVolume: number;
-  speed: number;
   strikes: number;
   balls: number;
-  managerMode: boolean;
-  strategy: Strategy;
-  managedTeam: 0 | 1;
-  gameSnapshot: GameStateSnapshot;
   pendingDecision: DecisionType | null;
 }
 
 /**
- * Syncs all stable refs used by the pitch dispatcher and auto-play scheduler.
- * Returns refs + skipDecisionRef (which tracks pending-decision transitions).
+ * Tracks whether to skip decision re-evaluation after a decision resolves.
+ * Returns a boolean value (not a ref) for proper React data flow.
  */
 export const useGameRefs = ({
-  announcementVolume,
-  speed,
   strikes,
   balls,
-  managerMode,
-  strategy,
-  managedTeam,
-  gameSnapshot,
   pendingDecision,
-}: UseGameRefsOptions) => {
-  const mutedRef = React.useRef(announcementVolume === 0);
-  mutedRef.current = announcementVolume === 0;
-
-  const speedRef = React.useRef(speed);
-  speedRef.current = speed;
-
-  const strikesRef = React.useRef(strikes);
-  strikesRef.current = strikes;
-
-  const managerModeRef = React.useRef(managerMode);
-  managerModeRef.current = managerMode;
-
-  const strategyRef = React.useRef<Strategy>(strategy);
-  strategyRef.current = strategy;
-
-  const managedTeamRef = React.useRef<0 | 1>(managedTeam);
-  managedTeamRef.current = managedTeam;
-
-  const gameStateRef: GameStateRef = React.useRef(gameSnapshot);
-  gameStateRef.current = gameSnapshot;
-
-  const skipDecisionRef = React.useRef(false);
+}: UseGameRefsOptions): { skipDecision: boolean } => {
+  // Track decision transitions - skip re-evaluation immediately after a decision resolves
+  const [skipDecision, setSkipDecision] = React.useState(false);
   const prevPendingDecision = React.useRef<DecisionType | null>(pendingDecision);
+
   React.useEffect(() => {
     if (prevPendingDecision.current !== null && pendingDecision === null) {
-      skipDecisionRef.current = true;
+      setSkipDecision(true);
     }
     prevPendingDecision.current = pendingDecision;
   }, [pendingDecision]);
@@ -86,19 +34,10 @@ export const useGameRefs = ({
   React.useEffect(() => {
     const prev = prevCountRef.current;
     if (balls === 0 && strikes === 0 && (prev.balls > 0 || prev.strikes > 0)) {
-      skipDecisionRef.current = false;
+      setSkipDecision(false);
     }
     prevCountRef.current = { balls, strikes };
   }, [balls, strikes]);
 
-  return {
-    mutedRef,
-    speedRef,
-    strikesRef,
-    managerModeRef,
-    strategyRef,
-    managedTeamRef,
-    gameStateRef,
-    skipDecisionRef,
-  };
+  return { skipDecision };
 };

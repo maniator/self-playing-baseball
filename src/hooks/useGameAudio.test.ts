@@ -41,15 +41,4 @@ describe("useGameAudio", () => {
     expect(stretch).toHaveBeenCalledOnce();
     expect(dispatchLog).toHaveBeenCalledWith(expect.objectContaining({ type: "log" }));
   });
-
-  it("returns a betweenInningsPauseRef that is set true on inning change", () => {
-    const dispatchLog = vi.fn();
-    vi.spyOn(announceModule, "play7thInningStretch").mockImplementation(() => {});
-    const { result, rerender } = renderHook(
-      ({ inning, atBat }) => useGameAudio(inning, atBat, false, dispatchLog),
-      { initialProps: { inning: 1, atBat: 0 } },
-    );
-    rerender({ inning: 2, atBat: 0 });
-    expect(result.current.current).toBe(true);
-  });
 });

@@ -139,10 +139,10 @@
     │   ├── playerActions.ts        # playerStrike, playerBall, playerWait, stealAttempt (re-exports buntAttempt)
     │   └── reducer.ts              # Reducer factory; exports detectDecision(), re-exports stratMod
     ├── hooks/                      # All custom React hooks
-    │   ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
-    │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
-    │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
-    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; pauses on manager decisions; stops naturally when GamePage unmounts
+    │   ├── useGameRefs.ts          # Tracks skipDecision state to prevent re-offering same decision
+    │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch audio playback
+    │   ├── usePitchDispatch.ts     # Pitch handler — receives currentState object, returns handlePitch callback
+    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; receives inning/atBat as direct values; pauses on manager decisions
     │   ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
     │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
@@ -489,11 +489,9 @@ The app uses **React Router v7** (`react-router` package — not `react-router-d
 
 ---
 
-
-
 Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
-- Speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses refs so speed changes take effect immediately without stale closures.
+- Speech-gated `setTimeout` scheduler (`tick`) that calls `handlePitch()`. Receives `inning` and `atBat` as direct values for proper React dependency tracking.
 - **Route-aware pause** — `GamePage` unmounts when the user navigates away from `/game`, which cancels the scheduler's cleanup function. No `isRouteActive` flag needed — the component lifecycle handles it.
 - Manager Mode pausing — when `pendingDecision` is set, the scheduler returns early and restarts once the decision resolves.
 - All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.

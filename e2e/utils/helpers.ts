@@ -5,8 +5,15 @@ import path from "path";
  * Navigates to the app root and waits for it to finish loading (DB ready).
  * Each Playwright test runs in a fresh BrowserContext so IndexedDB and
  * localStorage are already isolated — no manual cleanup is needed.
+ *
+ * By default, mutes announcement volume to speed up tests — the scheduler
+ * otherwise waits up to 8 seconds for speech announcements to complete.
  */
 export async function resetAppState(page: Page): Promise<void> {
+  // Mute announcement volume BEFORE navigation so React picks it up on mount.
+  await page.addInitScript(() => {
+    localStorage.setItem("announcementVolume", "0");
+  });
   await page.goto("/");
   // Wait until the home screen is visible (the app's new front door).
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
