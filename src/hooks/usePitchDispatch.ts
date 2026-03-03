@@ -93,14 +93,9 @@ export const usePitchDispatch = ({
       currentState.balls === 0 &&
       currentState.strikes === 0
     ) {
-      const shiftDecision = makeAiTacticalDecision(
-        currentState as State,
-        {
-          kind: "defensive_shift",
-        },
-        undefined,
-        { strategy },
-      );
+      const shiftDecision = makeAiTacticalDecision(currentState as State, {
+        kind: "defensive_shift",
+      });
       if (shiftDecision.kind === "tactical") {
         dispatch({
           type: shiftDecision.actionType as GameAction["type"],
