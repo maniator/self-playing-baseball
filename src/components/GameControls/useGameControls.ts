@@ -3,6 +3,7 @@ import * as React from "react";
 import { useLocalStorage } from "usehooks-ts";
 
 import type { PitchingRole } from "@components/SubstitutionPanel";
+import type { State } from "@context/index";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
 import { useCustomTeams } from "@hooks/useCustomTeams";
@@ -215,7 +216,7 @@ export const useGameControls = ({
     pendingDecision,
     managerMode: safeManagerMode,
     gameOver,
-    muted: false,
+    muted: safeAnnouncementVolume === 0,
     speed: safeSpeed,
     handlePitch,
     inning,

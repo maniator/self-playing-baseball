@@ -114,7 +114,7 @@ export interface State {
   outs: number;
   strikes: number;
   balls: number;
-  atBat: number;
+  atBat: 0 | 1; // 0 = away batting, 1 = home batting
   hitType?: Hit;
   gameOver: boolean;
   pendingDecision: DecisionType | null;

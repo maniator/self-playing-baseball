@@ -215,29 +215,11 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
   indexes: [],
 };
 
-// Promise-based guard: set synchronously before the first await so concurrent
-// initDb calls share the same load (JS is single-threaded; ??= is atomic here).
-let devModePluginPromise: Promise<void> | null = null;
-
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
   addRxPlugin(RxDBMigrationSchemaPlugin);
-
-  // Dev-mode requires schema validators at storage level.
-  // Skip in test/build environments to avoid DVM1 errors.
-  if (import.meta.env.MODE === "development" && typeof window !== "undefined") {
-    devModePluginPromise ??= import("rxdb/plugins/dev-mode")
-      .then(({ RxDBDevModePlugin }) => {
-        addRxPlugin(RxDBDevModePlugin);
-      })
-      .catch(() => {
-        // If dev-mode fails to load, silently continue without it
-        // (can happen in test/build environments or with validator issues)
-      });
-    await devModePluginPromise;
-  }
 
   const db = await createRxDatabase<DbCollections>({
     name,
