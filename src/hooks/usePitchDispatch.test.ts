@@ -320,7 +320,10 @@ describe("usePitchDispatch — power strategy hits", () => {
 });
 
 describe("usePitchDispatch — suppressNextDecision", () => {
-  it("dispatches clear_suppress_decision when suppressNextDecision is true", () => {
+  it("manager mode: clears suppressNextDecision and still dispatches a pitch in the same tick", () => {
+    // After an intentional_walk the reducer sets suppressNextDecision=true.
+    // The manager-mode path must clear the flag AND let pitching proceed in the
+    // same tick (mirroring the AI-only path) so no dead click is introduced.
     const dispatch = vi.fn();
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
     const state = makeTestState({
@@ -348,6 +351,10 @@ describe("usePitchDispatch — suppressNextDecision", () => {
       result.current();
     });
     expect(dispatch).toHaveBeenCalledWith({ type: "clear_suppress_decision" });
+    // A normal pitch action must also be dispatched in the same tick.
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul|hit|wait)$/) }),
+    );
   });
 
   it("AI-only mode (managerMode=false): clears suppressNextDecision and still dispatches a pitch", () => {

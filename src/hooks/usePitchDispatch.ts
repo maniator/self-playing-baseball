@@ -49,8 +49,9 @@ export const usePitchDispatch = ({
 
     if (managerMode && !skipDecision && currentState.atBat === managedTeam) {
       if (currentState.suppressNextDecision) {
+        // Clear the suppression flag but still allow this pitch to proceed.
+        // Suppression only disables decision evaluation for a single pitch.
         dispatch({ type: "clear_suppress_decision" });
-        return;
       } else {
         const decision = detectDecision(currentState as State, strategy, true);
         if (decision) {

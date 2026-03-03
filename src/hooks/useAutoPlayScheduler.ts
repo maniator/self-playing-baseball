@@ -94,7 +94,7 @@ export const useAutoPlayScheduler = ({
           // An exception in the pitch handler must not silently kill the autoplay
           // chain. Log it with context and continue scheduling so the game can
           // recover or at least surface a visible error rather than freezing.
-          appLog.error("[autoplay] handleClick threw — continuing scheduler:", err);
+          appLog.error("[autoplay] handlePitch threw — continuing scheduler:", err);
         }
         tick(speed);
       }, delay);
