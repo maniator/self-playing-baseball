@@ -101,11 +101,8 @@ export const usePitchDispatch = ({
           type: shiftDecision.actionType as GameAction["type"],
           payload: shiftDecision.payload,
         });
-        // Mark that the shift has been offered so we don't re-offer it every 0-0 count.
-        // The human-manager path sets this via set_pending_decision, but the AI path
-        // dispatches the answer directly, so we need to set the flag explicitly here.
-        dispatch({ type: "set_pending_decision", payload: { kind: "defensive_shift" } });
-        dispatch({ type: "skip_decision" });
+        // The reducer for the defensive shift action marks the shift as offered so
+        // we don't re-offer it every 0-0 count; no need for a pending/skip pair here.
         dispatchLog?.({ type: "log", payload: `The manager: ${shiftDecision.reasonText}.` });
         // Return early to avoid pitching in the same tick as the shift decision.
         return;
