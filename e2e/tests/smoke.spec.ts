@@ -125,9 +125,17 @@ test.describe("Smoke", () => {
     });
     await startGameViaPlayBall(page, { seed: "smoke-final1" });
 
+    // Expand the play-by-play log so [data-log-index] elements are in the DOM.
+    // Without this the log is collapsed and the stall watchdog below always sees
+    // count=0, causing a false-positive "stalled" error even when the game runs fine.
+    await waitForLogLines(page, 1, 20_000);
+
     // Wait for FINAL with a progress watchdog that distinguishes a slow CI runner
     // from a frozen game. If no new log lines appear for 15 s, fail immediately with
     // actionable diagnostics so the failure is easy to triage.
+    // timeout is 160_000 to handle seeds that go to extra innings (smoke-final1 ties
+    // 3-3 after 9 innings); combined with the 20 s waitForLogLines above this stays
+    // within the 180 s test.setTimeout budget.
     let lastLogCount = 0;
     let lastLogChangeTime = Date.now();
     await expect(async () => {
@@ -150,7 +158,7 @@ test.describe("Smoke", () => {
         );
       }
       throw new Error("FINAL not yet visible");
-    }).toPass({ timeout: 120_000, intervals: [500] });
+    }).toPass({ timeout: 160_000, intervals: [500] });
 
     // Scoreboard must still be visible after game completes.
     await expect(page.getByTestId("scoreboard")).toBeVisible();
