@@ -42,6 +42,14 @@ export const useAutoPlayScheduler = ({
   const prevInningRef = React.useRef(inning);
   const prevAtBatRef = React.useRef(atBat);
 
+  // Stabilize the pitch callback so the scheduler effect does not restart on every render.
+  // handlePitch closes over currentState (recreated every pitch), so putting it in the effect
+  // dep array would tear down and restart the timer chain on every state update, effectively
+  // adding an extra render-time delay to the configured `speed` interval.
+  // Using a ref means the effect always invokes the latest version without re-mounting.
+  const handlePitchRef = React.useRef(handlePitch);
+  handlePitchRef.current = handlePitch;
+
   React.useEffect(() => {
     if (!gameStarted) return;
     if (gameOver) return;
@@ -89,7 +97,7 @@ export const useAutoPlayScheduler = ({
         // Reset extraWait so the next speech-wait window starts fresh for the new pitch.
         extraWait = 0;
         try {
-          handlePitch();
+          handlePitchRef.current();
         } catch (err) {
           // An exception in the pitch handler must not silently kill the autoplay
           // chain. Log it with context and continue scheduling so the game can
@@ -110,7 +118,8 @@ export const useAutoPlayScheduler = ({
     pendingDecision,
     managerMode,
     gameOver,
-    handlePitch,
+    // handlePitch intentionally omitted — stabilized via handlePitchRef so the effect
+    // does not restart on every pitch (handlePitch is recreated each render).
     muted,
     speed,
     inning,

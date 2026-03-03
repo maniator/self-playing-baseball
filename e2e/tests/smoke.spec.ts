@@ -86,25 +86,38 @@ test.describe("Smoke", () => {
     await waitForLogLines(page, 3, 30_000);
   });
 
-  test("game completes (FINAL banner) without any user interaction", async ({ page }, testInfo) => {
-    // Use a deterministic finished-game fixture so this smoke check is stable
-    // even when custom team generation or stats evolve.
-    // Restrict to desktop Chromium to avoid multiplying CI time across all
-    // viewport projects — the game-completion path is viewport-independent.
-    test.skip(
-      testInfo.project.name !== "desktop",
-      "Full-game completion test runs on desktop only",
-    );
+  test("game-over: finished-game fixture shows FINAL banner", async ({ page }, testInfo) => {
+    // Loads a pre-built finished-game fixture and verifies the FINAL banner is displayed.
+    // This is a fast smoke check for the game-over UI state, not a full autoplay regression.
+    // Restrict to desktop Chromium to avoid multiplying CI time.
+    test.skip(testInfo.project.name !== "desktop", "Game-over UI test runs on desktop only");
     test.setTimeout(60_000);
 
-    // Fastest speed ensures the full game finishes quickly.
-    await page.addInitScript(() => {
-      localStorage.setItem("speed", "350"); // SPEED_FAST
-    });
     await loadFixture(page, "finished-game.json");
     await expect(page.getByText("FINAL")).toBeVisible({ timeout: 15_000 });
 
     // After FINAL, the scoreboard should still be visible and no errors thrown.
+    await expect(page.getByTestId("scoreboard")).toBeVisible();
+  });
+
+  test("autoplay runs a full game from seed to FINAL (freeze regression)", async ({
+    page,
+  }, testInfo) => {
+    // Exercises the full autoplay path from a fresh game to FINAL so CI catches any
+    // scheduler freeze regression. Desktop-only to keep CI time reasonable.
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Full-game autoplay regression runs on desktop only",
+    );
+    test.setTimeout(120_000);
+
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", "350"); // SPEED_FAST
+    });
+    await startGameViaPlayBall(page, { seed: "smoke-final1" });
+    await expect(page.getByText("FINAL")).toBeVisible({ timeout: 90_000 });
+
+    // Scoreboard must still be visible after game completes.
     await expect(page.getByTestId("scoreboard")).toBeVisible();
   });
 
