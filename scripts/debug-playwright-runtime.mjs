@@ -1,4 +1,4 @@
-import { chromium, webkit } from "playwright";
+import { chromium, webkit } from "@playwright/test";
 
 async function probe(browserType, viewport) {
   const browser = await browserType.launch();

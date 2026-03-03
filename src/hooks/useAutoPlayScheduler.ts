@@ -62,7 +62,7 @@ export const useAutoPlayScheduler = ({
     const MAX_SPEECH_WAIT_MS = 8000;
     const SPEECH_POLL_MS = 300;
     // Allow E2E tests to disable the muted half-inning pause to avoid CI timeouts.
-    // Set localStorage._e2eNoInningPause = "1" via addInitScript to skip the pause.
+    // Set localStorage.setItem("_e2eNoInningPause", "1") via addInitScript to skip the pause.
     const INNING_PAUSE_MS =
       typeof localStorage !== "undefined" && localStorage.getItem("_e2eNoInningPause") ? 0 : 1500;
 
