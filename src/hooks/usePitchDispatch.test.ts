@@ -427,6 +427,42 @@ describe("usePitchDispatch — AI intentional walk (pitch-replacing)", () => {
   });
 });
 
+describe("usePitchDispatch — AI defensive shift (no dead tick)", () => {
+  it("dispatches set_defensive_shift AND a normal pitch in the same tick", () => {
+    // AI defensive shift is always applied at 0-0 count when not yet offered.
+    // After dispatching the shift, pitching must still proceed in the same tick
+    // so no dead click/interval is introduced.
+    const dispatch = vi.fn();
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5);
+    const state = makeTestState({
+      defensiveShiftOffered: false, // shift not yet offered — AI will apply it
+      balls: 0,
+      strikes: 0,
+      atBat: 0, // away team batting; home team (1) is fielding (unmanaged)
+    });
+    const { result } = renderHook(() =>
+      usePitchDispatch({
+        dispatch,
+        currentState: state,
+        managerMode: false,
+        strategy: "balanced",
+        managedTeam: 0,
+        skipDecision: false,
+        dispatchLog: undefined,
+        allTeamPitcherRoles: [{}, {}],
+      }),
+    );
+    act(() => {
+      result.current();
+    });
+    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "set_defensive_shift" }));
+    // A normal pitch must ALSO be dispatched in the same tick (no dead tick).
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: expect.stringMatching(/^(strike|foul|hit|wait)$/) }),
+    );
+  });
+});
+
 describe("usePitchDispatch — skip decision", () => {
   it("does NOT re-offer bunt after skip — skipDecision stays set until new batter", () => {
     const dispatch = vi.fn();

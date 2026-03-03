@@ -105,8 +105,7 @@ export const usePitchDispatch = ({
         // The reducer for the defensive shift action marks the shift as offered so
         // we don't re-offer it every 0-0 count; no need for a pending/skip pair here.
         dispatchLog?.({ type: "log", payload: `The manager: ${shiftDecision.reasonText}.` });
-        // Return early to avoid pitching in the same tick as the shift decision.
-        return;
+        // Fall through — the pitch is still processed in the same tick.
       }
     }
 
