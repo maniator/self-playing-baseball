@@ -46,14 +46,32 @@ export const handleDecisionsAction = (
     case "set_defensive_shift": {
       const shiftOn = action.payload as boolean;
       // Suppress re-announcement when the shift state hasn't actually changed.
+      // Always set defensiveShiftOffered=true so the AI does not re-evaluate every at-bat.
       if (shiftOn === state.defensiveShift) {
-        return { ...state, pendingDecision: null };
+        // True no-op: nothing to update at all.
+        if (state.pendingDecision === null && state.defensiveShiftOffered) return state;
+        const result = { ...state, pendingDecision: null, defensiveShiftOffered: true };
+        // If this resolves a real pending decision, record it in decisionLog so
+        // deterministic replay (useReplayDecisions) captures the manager's choice.
+        if (state.pendingDecision !== null) {
+          return withDecisionLog(
+            state,
+            result,
+            `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`,
+          );
+        }
+        return result;
       }
       const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       if (shiftOn)
         log(`${fieldingTeam} manager: Defensive shift deployed — outfield repositioned.`);
       else log(`${fieldingTeam} manager: Normal alignment restored.`);
-      const result = { ...state, defensiveShift: shiftOn, pendingDecision: null };
+      const result = {
+        ...state,
+        defensiveShift: shiftOn,
+        pendingDecision: null,
+        defensiveShiftOffered: true,
+      };
       return withDecisionLog(state, result, `${state.pitchKey}:shift:${shiftOn ? "on" : "off"}`);
     }
     case "make_substitution": {

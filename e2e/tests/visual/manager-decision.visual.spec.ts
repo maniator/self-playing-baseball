@@ -12,7 +12,8 @@ import { disableAnimations, loadFixture, resetAppState } from "../../utils/helpe
 
 // ─── Manager decision panel ───────────────────────────────────────────────────
 test.describe("Visual — Manager decision panel", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Decision panel snapshot is desktop-only");
     await resetAppState(page);
     await disableAnimations(page);
   });
@@ -28,8 +29,6 @@ test.describe("Visual — Manager decision panel", () => {
    * Restricted to desktop because the panel layout is identical across viewports.
    */
   test("manager decision panel screenshot", async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Decision panel snapshot is desktop-only");
-
     await loadFixture(page, "pending-decision.json");
     // The fixture has pendingDecision=defensive_shift and managerMode=true,
     // so the panel is visible immediately after load.
@@ -52,7 +51,11 @@ test.describe("Visual — Manager decision panel", () => {
 // no autoplay or real-time game progression needed.
 // Restricted to desktop only.
 test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== "desktop",
+      "Pinch hitter dropdown snapshot is desktop-only",
+    );
     await resetAppState(page);
     await disableAnimations(page);
   });
@@ -66,11 +69,6 @@ test.describe("Visual — Pinch hitter player dropdown in Decision Panel", () =>
   test("pinch hitter player dropdown visible in Decision Panel (desktop)", async ({
     page,
   }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== "desktop",
-      "Pinch hitter dropdown snapshot is desktop-only",
-    );
-
     await loadFixture(
       page,
       "pending-decision-pinch-hitter.json",

@@ -8,37 +8,35 @@ import { GameAction, LogAction, State, Strategy } from "@context/index";
 import { detectDecision } from "@context/reducer";
 import getRandomInt from "@utils/getRandomInt";
 
-import { GameStateRef } from "./useGameRefs";
-
 /**
- * Builds the handleClickButton callback and returns a stable ref to it.
- * All game state is read through refs to avoid stale closures.
+ * Builds and returns the pitch handler callback.
+ * Receives current game state as direct parameters for proper React data flow.
  */
-export const usePitchDispatch = (
-  dispatch: (action: GameAction) => void,
-  gameStateRef: GameStateRef,
-  managerModeRef: React.MutableRefObject<boolean>,
-  strategyRef: React.MutableRefObject<Strategy>,
-  managedTeamRef: React.MutableRefObject<0 | 1>,
-  skipDecisionRef: React.MutableRefObject<boolean>,
-  strikesRef: React.MutableRefObject<number>,
-  dispatchLog?: (action: LogAction) => void,
-  pitcherRolesRef?: React.MutableRefObject<
-    [Record<string, PitchingRole>, Record<string, PitchingRole>]
-  >,
-): React.MutableRefObject<() => void> => {
-  const handleClickButton = React.useCallback(() => {
-    const currentState = gameStateRef.current;
-
+export const usePitchDispatch = ({
+  dispatch,
+  currentState,
+  managerMode,
+  strategy,
+  managedTeam,
+  skipDecision,
+  dispatchLog,
+  allTeamPitcherRoles,
+}: {
+  dispatch: (action: GameAction) => void;
+  currentState: State;
+  managerMode: boolean;
+  strategy: Strategy;
+  managedTeam: 0 | 1;
+  skipDecision: boolean;
+  dispatchLog?: (action: LogAction) => void;
+  allTeamPitcherRoles?: [Record<string, PitchingRole>, Record<string, PitchingRole>];
+}): (() => void) => {
+  const handlePitch = React.useCallback(() => {
     if (currentState.gameOver) return;
-    if (managerModeRef.current && currentState.pendingDecision) return;
+    if (managerMode && currentState.pendingDecision) return;
 
     // Defensive shift: offered once per half-inning when the managed team is FIELDING
-    if (
-      managerModeRef.current &&
-      !skipDecisionRef.current &&
-      currentState.atBat !== managedTeamRef.current
-    ) {
+    if (managerMode && !skipDecision && currentState.atBat !== managedTeam) {
       if (
         !currentState.defensiveShiftOffered &&
         currentState.balls === 0 &&
@@ -49,15 +47,13 @@ export const usePitchDispatch = (
       }
     }
 
-    if (
-      managerModeRef.current &&
-      !skipDecisionRef.current &&
-      currentState.atBat === managedTeamRef.current
-    ) {
+    if (managerMode && !skipDecision && currentState.atBat === managedTeam) {
       if (currentState.suppressNextDecision) {
+        // Clear the suppression flag but still allow this pitch to proceed.
+        // Suppression only disables decision evaluation for a single pitch.
         dispatch({ type: "clear_suppress_decision" });
       } else {
-        const decision = detectDecision(currentState as State, strategyRef.current, true);
+        const decision = detectDecision(currentState as State, strategy, true);
         if (decision) {
           dispatch({ type: "set_pending_decision", payload: decision });
           return;
@@ -67,16 +63,14 @@ export const usePitchDispatch = (
 
     // ── AI manager for unmanaged teams ────────────────────────────────────────
     // Determine which teams are NOT managed by the human (or both when no manager mode).
-    const isBattingUnmanaged =
-      !managerModeRef.current || currentState.atBat !== managedTeamRef.current;
-    const isFieldingUnmanaged =
-      !managerModeRef.current || 1 - currentState.atBat !== managedTeamRef.current;
+    const isBattingUnmanaged = !managerMode || currentState.atBat !== managedTeam;
+    const isFieldingUnmanaged = !managerMode || 1 - currentState.atBat !== managedTeam;
 
     // Pitching change (fielding team): evaluate at start of each at-bat (0-0 count).
     if (currentState.balls === 0 && currentState.strikes === 0) {
       const pitchingTeamIdx = (1 - currentState.atBat) as 0 | 1;
       if (isFieldingUnmanaged) {
-        const roles = pitcherRolesRef?.current[pitchingTeamIdx] ?? {};
+        const roles = allTeamPitcherRoles?.[pitchingTeamIdx] ?? {};
         const aiDecision = makeAiPitchingDecision(currentState as State, pitchingTeamIdx, roles);
         if (aiDecision.kind === "pitching_change") {
           dispatch({
@@ -108,50 +102,64 @@ export const usePitchDispatch = (
           type: shiftDecision.actionType as GameAction["type"],
           payload: shiftDecision.payload,
         });
+        // The reducer for the defensive shift action marks the shift as offered so
+        // we don't re-offer it every 0-0 count; no need for a pending/skip pair here.
         dispatchLog?.({ type: "log", payload: `The manager: ${shiftDecision.reasonText}.` });
-        // Do NOT return early — the pitch continues after the shift is set.
+        // Fall through — the pitch is still processed in the same tick.
       }
     }
 
     // Batting-team AI: tactical decisions (steal, bunt, count modifiers, pinch-hitter).
-    if (isBattingUnmanaged && !currentState.suppressNextDecision) {
-      const battingDecision = detectDecision(currentState as State, "balanced", true);
-      if (battingDecision) {
-        const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
-        if (aiAction.kind === "tactical") {
-          dispatch({ type: aiAction.actionType as GameAction["type"], payload: aiAction.payload });
-          // After AI makes a concrete pinch-hit substitution, lock pinchHitterStrategy to
-          // prevent the decision from being re-offered during this at-bat.
-          // Use "contact" to reflect the AI's late-game tactical intent.
-          if (
-            battingDecision.kind === "pinch_hitter" &&
-            aiAction.actionType === "make_substitution"
-          ) {
-            dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
+    if (isBattingUnmanaged) {
+      if (currentState.suppressNextDecision) {
+        // Mirror the human-manager path: clear the suppress flag so AI decisions
+        // resume for the next batter (e.g. after an intentional walk).
+        dispatch({ type: "clear_suppress_decision" });
+        // Fall through to normal pitch after clearing the suppress flag.
+      } else {
+        const battingDecision = detectDecision(currentState as State, "balanced", true);
+        if (battingDecision) {
+          const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
+          if (aiAction.kind === "tactical") {
+            dispatch({
+              type: aiAction.actionType as GameAction["type"],
+              payload: aiAction.payload,
+            });
+            // After AI makes a concrete pinch-hit substitution, lock pinchHitterStrategy to
+            // prevent the decision from being re-offered during this at-bat.
+            // Use "contact" to reflect the AI's late-game tactical intent.
+            if (
+              battingDecision.kind === "pinch_hitter" &&
+              aiAction.actionType === "make_substitution"
+            ) {
+              dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
+            }
+            dispatchLog?.({
+              type: "log",
+              payload: `The manager: ${aiAction.reasonText}.`,
+            });
+            // Decisions that replace the pitch (steal_attempt, bunt_attempt,
+            // intentional_walk) should return early so the regular pitch is not
+            // also dispatched in the same tick.
+            const replacePitch = ["steal_attempt", "bunt_attempt", "intentional_walk"].includes(
+              aiAction.actionType,
+            );
+            if (replacePitch) return;
+          } else {
+            // AI decided not to act — skip the decision so it is not re-offered
+            dispatch({ type: "skip_decision" });
           }
-          dispatchLog?.({
-            type: "log",
-            payload: `The manager: ${aiAction.reasonText}.`,
-          });
-          // Decisions that replace the pitch (steal_attempt, bunt_attempt) should
-          // return early; count/modifier decisions let the pitch proceed.
-          const replacePitch =
-            aiAction.actionType === "steal_attempt" || aiAction.actionType === "bunt_attempt";
-          if (replacePitch) return;
-        } else {
-          // AI decided not to act — skip the decision so it is not re-offered
-          dispatch({ type: "skip_decision" });
         }
       }
     }
     // ── End AI manager ────────────────────────────────────────────────────────
 
     // Select pitch type based on current count, then roll main outcome.
-    const currentStrikes = strikesRef.current;
-    const currentBalls = (currentState as State).balls;
+    const currentStrikes = currentState.strikes;
+    const currentBalls = currentState.balls;
     const pitchType = selectPitchType(currentBalls, currentStrikes, getRandomInt(100));
 
-    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategyRef.current;
+    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategy;
     const random = getRandomInt(1000);
     const onePitchMod = currentState.onePitchModifier;
 
@@ -207,17 +215,13 @@ export const usePitchDispatch = (
   }, [
     dispatch,
     dispatchLog,
-    gameStateRef,
-    managedTeamRef,
-    managerModeRef,
-    pitcherRolesRef,
-    skipDecisionRef,
-    strategyRef,
-    strikesRef,
+    currentState,
+    managedTeam,
+    managerMode,
+    allTeamPitcherRoles,
+    skipDecision,
+    strategy,
   ]);
 
-  const handleClickRef = React.useRef(handleClickButton);
-  handleClickRef.current = handleClickButton;
-
-  return handleClickRef;
+  return handlePitch;
 };

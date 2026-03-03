@@ -215,22 +215,11 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
   indexes: [],
 };
 
-// Promise-based guard: set synchronously before the first await so concurrent
-// initDb calls share the same load (JS is single-threaded; ??= is atomic here).
-let devModePluginPromise: Promise<void> | null = null;
-
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
   addRxPlugin(RxDBMigrationSchemaPlugin);
-
-  if (import.meta.env.MODE === "development") {
-    devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
-      addRxPlugin(RxDBDevModePlugin);
-    });
-    await devModePluginPromise.catch(() => {}); // dev plugin is optional; don't block DB init
-  }
 
   const db = await createRxDatabase<DbCollections>({
     name,

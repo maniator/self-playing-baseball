@@ -16,8 +16,11 @@ nohup.out
 .vite
 
 coverage
+smoke-*.json
+e2e-*.json
+e2e/tests/**/*.spec.ts-snapshots/*-win32.png
 
 # Playwright
 playwright-report/
-test-results/
+test-results*/
 blob-report/

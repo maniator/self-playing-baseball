@@ -5,8 +5,8 @@ let _speechVolume = 1.0;
 let _bestVoice: SpeechSynthesisVoice | null = null;
 
 const pickVoice = (): void => {
-  if (typeof synth.getVoices !== "function") return;
-  const voices = synth.getVoices();
+  const voices = synth?.getVoices?.();
+  if (!voices || !Array.isArray(voices)) return;
   const en = voices.filter((v) => v.lang.startsWith("en") && !/female/i.test(v.name));
   if (en.length === 0) {
     const fallback = voices.filter((v) => v.lang.startsWith("en"));
@@ -21,9 +21,7 @@ const pickVoice = (): void => {
 };
 
 pickVoice();
-if (typeof synth.addEventListener === "function") {
-  synth.addEventListener("voiceschanged", pickVoice);
-}
+synth?.addEventListener?.("voiceschanged", pickVoice);
 
 const BATCH_DELAY = 50;
 let _pendingMessages: string[] = [];
@@ -46,6 +44,7 @@ const flushBatch = (): void => {
   const parts = _pendingMessages.map(toSpeechText).filter(Boolean);
   _pendingMessages = [];
   if (parts.length === 0) return;
+  if (!synth?.speak || typeof SpeechSynthesisUtterance === "undefined") return;
 
   const utterThis = new SpeechSynthesisUtterance(parts.join(". "));
   utterThis.rate = _speechRate;
@@ -63,7 +62,7 @@ export const setAnnouncementVolume = (v: number): void => {
       _batchTimer = null;
     }
     _pendingMessages = [];
-    synth.cancel();
+    synth?.cancel?.();
   }
 };
 
@@ -86,7 +85,7 @@ export const cancelAnnouncements = (): void => {
     _batchTimer = null;
   }
   _pendingMessages = [];
-  synth.cancel();
+  synth?.cancel?.();
 };
 
 /** Set the TTS speech rate. Call this when the autoplay speed changes.
@@ -105,6 +104,6 @@ export const setSpeechRate = (intervalMs: number): void => {
   _speechRate = MIN_RATE + t * (MAX_RATE - MIN_RATE);
 };
 
-export const canAnnounce = () => !(synth.speaking || synth.pending);
+export const canAnnounce = () => !(synth?.speaking || synth?.pending);
 export const isSpeechPending = (): boolean =>
-  _batchTimer !== null || synth.speaking || synth.pending;
+  Boolean(_batchTimer !== null || synth?.speaking || synth?.pending);

@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. A batter auto-plays through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, share a deterministic replay link, enable auto-play mode, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
+**Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. The game auto-plays continuously through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, adjust autoplay speed (slow/normal/fast), share a deterministic replay link, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
 **Repository size:** ~130 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
@@ -139,12 +139,11 @@
     │   ├── playerActions.ts        # playerStrike, playerBall, playerWait, stealAttempt (re-exports buntAttempt)
     │   └── reducer.ts              # Reducer factory; exports detectDecision(), re-exports stratMod
     ├── hooks/                      # All custom React hooks
-    │   ├── useGameRefs.ts          # Syncs all stable refs (autoPlay, muted, speed, etc.)
-    │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch; betweenInningsPauseRef
-    │   ├── usePitchDispatch.ts     # handleClickRef — pitch logic + manager decision detection
-    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; pauses on manager decisions; stops naturally when GamePage unmounts
-    │   ├── useKeyboardPitch.ts     # Spacebar → pitch (skipped when autoPlay active)
-    │   ├── usePlayerControls.ts    # All UI event handlers (autoplay, volume, mute, manager mode)
+    │   ├── useGameRefs.ts          # Tracks skipDecision state to prevent re-offering same decision
+    │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch audio playback
+    │   ├── usePitchDispatch.ts     # Pitch handler — receives currentState object, returns handlePitch callback
+    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; receives inning/atBat as direct values; pauses on manager decisions
+    │   ├── usePlayerControls.ts    # All UI event handlers (volume, mute, manager mode, share replay)
     │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
     │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
     │   │                           #   calls updateProgress (with full stateSnapshot) on half-inning / game-over
@@ -489,14 +488,12 @@ The app uses **React Router v7** (`react-router` package — not `react-router-d
 
 ---
 
-
-
 Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
-- Speech-gated `setTimeout` scheduler (`tick`) that calls `handleClickRef.current()`. Uses refs so speed changes take effect immediately without stale closures.
+- Speech-gated `setTimeout` scheduler (`tick`) that calls `handlePitch()`. Receives `inning` and `atBat` as direct values for proper React dependency tracking.
 - **Route-aware pause** — `GamePage` unmounts when the user navigates away from `/game`, which cancels the scheduler's cleanup function. No `isRouteActive` flag needed — the component lifecycle handles it.
 - Manager Mode pausing — when `pendingDecision` is set, the scheduler returns early and restarts once the decision resolves.
-- All settings are persisted in `localStorage` (`autoPlay`, `speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
+- All settings are persisted in `localStorage` (`speed`, `announcementVolume`, `alertVolume`, `managerMode`, `strategy`, `managedTeam`) and restored on page load.
 
 **Persistence split:**
 
