@@ -11,9 +11,15 @@ import path from "path";
  */
 export async function resetAppState(page: Page): Promise<void> {
   // Mute announcement volume BEFORE navigation so React picks it up on mount.
-  await page.addInitScript(() => {
-    localStorage.setItem("announcementVolume", "0");
-  });
+  // Guard against accumulating duplicate init scripts when resetAppState is called
+  // more than once within the same test (e.g. save-load.spec.ts).
+  const typedPage = page as Page & { _ballgameAnnouncementInitAdded?: boolean };
+  if (!typedPage._ballgameAnnouncementInitAdded) {
+    await page.addInitScript(() => {
+      localStorage.setItem("announcementVolume", "0");
+    });
+    typedPage._ballgameAnnouncementInitAdded = true;
+  }
 
   const home = page.getByTestId("home-screen");
   const loading = page.getByText("Loading game…");
