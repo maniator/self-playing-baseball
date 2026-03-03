@@ -175,6 +175,10 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
  * Skips creation if two or more teams already exist.
  */
 export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
+  // Mute announcer to speed up tests.
+  await page.addInitScript(() => {
+    localStorage.setItem("announcementVolume", "0");
+  });
   await page.goto("/teams");
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
@@ -376,6 +380,10 @@ export async function loadFixture(
   teamsFixtureName = "fixture-teams.json",
 ): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Mute announcer to speed up tests.
+  await page.addInitScript(() => {
+    localStorage.setItem("announcementVolume", "0");
+  });
   // Import fixture teams first so the save's custom team IDs pass validation.
   // Callers may pass a custom teams fixture when the save references non-standard team IDs.
   await importTeamsFixture(page, teamsFixtureName);
@@ -408,6 +416,10 @@ export async function loadFixture(
  */
 export async function importTeamsFixture(page: Page, fixtureName: string): Promise<void> {
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  // Mute announcer to speed up tests.
+  await page.addInitScript(() => {
+    localStorage.setItem("announcementVolume", "0");
+  });
   await page.goto("/");
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("home-manage-teams-button").click();
