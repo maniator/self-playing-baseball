@@ -36,38 +36,46 @@ export async function resetAppState(page: Page): Promise<void> {
 
   // Mobile WebKit can be slow to paint the first route under full parallel E2E load.
   // Retry navigation once before failing to reduce startup flakes.
-  for (let attempt = 0; attempt < 2; attempt++) {
-    await page.goto("/", { waitUntil: "domcontentloaded" });
+  // Listeners are always removed in `finally` so repeated calls don't accumulate them.
+  try {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      await page.goto("/", { waitUntil: "domcontentloaded" });
 
-    try {
-      await expect(home.or(loading)).toBeVisible({ timeout: 30_000 });
-      await expect(loading).not.toBeVisible({ timeout: 30_000 });
-      await expect(home).toBeVisible({ timeout: 30_000 });
-      return;
-    } catch (err) {
-      if (attempt === 1) {
-        const url = page.url();
-        const title = await page.title().catch(() => "<no-title>");
-        const bodyText = await page
-          .locator("body")
-          .innerText()
-          .then((txt) => txt.slice(0, 500))
-          .catch(() => "<no-body-text>");
-        const htmlSnippet = await page
-          .content()
-          .then((html) => html.slice(0, 1000))
-          .catch(() => "<no-html>");
+      try {
+        await expect(home.or(loading)).toBeVisible({ timeout: 30_000 });
+        await expect(loading).not.toBeVisible({ timeout: 30_000 });
+        await expect(home).toBeVisible({ timeout: 30_000 });
+        return;
+      } catch (err) {
+        if (attempt === 1) {
+          const url = page.url();
+          const title = await page.title().catch(() => "<no-title>");
+          const bodyText = await page
+            .locator("body")
+            .innerText()
+            .then((txt) => txt.slice(0, 500))
+            .catch(() => "<no-body-text>");
+          const htmlSnippet = await page
+            .content()
+            .then((html) => html.slice(0, 1000))
+            .catch(() => "<no-html>");
 
-        const consoleLog = debugConsole.length > 0 ? `console=[${debugConsole.join("; ")}]` : "";
-        const errorLog = debugPageErrors.length > 0 ? `errors=[${debugPageErrors.join("; ")}]` : "";
+          const consoleLog =
+            debugConsole.length > 0 ? `console=[${debugConsole.join("; ")}]` : "";
+          const errorLog =
+            debugPageErrors.length > 0 ? `errors=[${debugPageErrors.join("; ")}]` : "";
 
-        throw new Error(
-          `resetAppState failed after 2 attempts. url=${url} title=${title} body=${bodyText} html=${htmlSnippet} ${consoleLog} ${errorLog}`,
-          { cause: err as Error },
-        );
+          throw new Error(
+            `resetAppState failed after 2 attempts. url=${url} title=${title} body=${bodyText} html=${htmlSnippet} ${consoleLog} ${errorLog}`,
+            { cause: err as Error },
+          );
+        }
+        await page.waitForTimeout(500);
       }
-      await page.waitForTimeout(500);
     }
+  } finally {
+    page.off("console", onConsole);
+    page.off("pageerror", onPageError);
   }
 }
 
