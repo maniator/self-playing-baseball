@@ -42,7 +42,7 @@ export const useAutoPlayScheduler = ({
   const prevInningRef = React.useRef(inning);
   const prevAtBatRef = React.useRef(atBat);
 
-  React. useEffect(() => {
+  React.useEffect(() => {
     if (!gameStarted) return;
     if (gameOver) return;
     if (pendingDecision && managerMode) return;

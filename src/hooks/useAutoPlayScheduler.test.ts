@@ -47,22 +47,19 @@ const renderScheduler = ({
   inning = 1,
   atBat = 0 as 0 | 1 | null,
 } = {}) =>
-  renderHook(
-    (props) => useAutoPlayScheduler(props),
-    {
-      initialProps: {
-        gameStarted,
-        pendingDecision,
-        managerMode,
-        gameOver,
-        muted,
-        speed,
-        handlePitch,
-        inning,
-        atBat,
-      },
+  renderHook((props) => useAutoPlayScheduler(props), {
+    initialProps: {
+      gameStarted,
+      pendingDecision,
+      managerMode,
+      gameOver,
+      muted,
+      speed,
+      handlePitch,
+      inning,
+      atBat,
     },
-  );
+  });
 
 describe("useAutoPlayScheduler", () => {
   it("does not call handleClick when game has not started", () => {
@@ -141,7 +138,7 @@ describe("useAutoPlayScheduler", () => {
       inning: 1,
       atBat: 0,
     });
-    
+
     // Trigger half-inning transition by changing atBat
     rerender({
       gameStarted: true,
@@ -154,7 +151,7 @@ describe("useAutoPlayScheduler", () => {
       managerMode: false,
       gameOver: false,
     });
-    
+
     vi.advanceTimersByTime(100);
     expect(handleClick).not.toHaveBeenCalled();
     vi.advanceTimersByTime(1500);

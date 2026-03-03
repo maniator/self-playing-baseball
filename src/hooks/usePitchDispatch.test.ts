@@ -423,7 +423,7 @@ describe("usePitchDispatch — skip decision", () => {
       balls: 0,
       strikes: 0,
     });
-    
+
     // First call with skipDecision=false should offer bunt
     const { result: result1 } = renderHook(() =>
       usePitchDispatch({

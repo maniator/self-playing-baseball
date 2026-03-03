@@ -768,9 +768,11 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
       fireEvent.click(savesButton);
     });
 
-    const loadButtons = await screen.findAllByRole("button", { name: /^load$/i });
+    // Wait for SaveSlotList to render, then find Load button via data-testid
+    await screen.findByTestId("saves-modal-list");
+    const loadButton = await screen.findByTestId("load-save-button");
     await act(async () => {
-      fireEvent.click(loadButtons[0]);
+      fireEvent.click(loadButton);
     });
 
     // handleModalLoad must dispatch restore_game with the correct state payload.

@@ -225,11 +225,18 @@ async function initDb(
 ): Promise<BallgameDb> {
   addRxPlugin(RxDBMigrationSchemaPlugin);
 
-  if (import.meta.env.MODE === "development") {
-    devModePluginPromise ??= import("rxdb/plugins/dev-mode").then(({ RxDBDevModePlugin }) => {
-      addRxPlugin(RxDBDevModePlugin);
-    });
-    await devModePluginPromise.catch(() => {}); // dev plugin is optional; don't block DB init
+  // Dev-mode requires schema validators at storage level.
+  // Skip in test/build environments to avoid DVM1 errors.
+  if (import.meta.env.MODE === "development" && typeof window !== "undefined") {
+    devModePluginPromise ??= import("rxdb/plugins/dev-mode")
+      .then(({ RxDBDevModePlugin }) => {
+        addRxPlugin(RxDBDevModePlugin);
+      })
+      .catch(() => {
+        // If dev-mode fails to load, silently continue without it
+        // (can happen in test/build environments or with validator issues)
+      });
+    await devModePluginPromise;
   }
 
   const db = await createRxDatabase<DbCollections>({
