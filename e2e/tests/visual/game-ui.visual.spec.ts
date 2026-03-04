@@ -80,8 +80,12 @@ test.describe("Visual", () => {
     // Select the first batter row — this transitions Player Details from empty
     // to the populated card for batter slot 1.
     await page.getByTestId("batter-row-1").click();
-    // Wait for the SubLabel ("This game") to confirm the selected state is rendered.
-    await expect(statsPanel.getByText(/this game/i)).toBeVisible({ timeout: 5_000 });
+    // Wait for the "Clear player selection" button to confirm the selected state is rendered.
+    // (Previously matched /this game/i but that now has strict-mode violations after the
+    // "This game / Career" mode toggle was added to the same panel.)
+    await expect(statsPanel.getByRole("button", { name: "Clear player selection" })).toBeVisible({
+      timeout: 5_000,
+    });
     await expect(statsPanel).toHaveScreenshot("player-stats-panel-selected.png", {
       maxDiffPixelRatio: 0.05,
     });
