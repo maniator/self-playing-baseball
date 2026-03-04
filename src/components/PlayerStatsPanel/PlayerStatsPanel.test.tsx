@@ -159,7 +159,7 @@ describe("PlayerStatsPanel", () => {
     renderWithContext({ playLog });
     fireEvent.click(screen.getByTestId("batter-row-1"));
     expect(screen.getByText("Player Details")).toBeInTheDocument();
-    expect(screen.getByText(/this game/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/this game/i).length).toBeGreaterThan(0);
     expect(screen.getByText("AVG")).toBeInTheDocument();
     expect(screen.getByText("OBP")).toBeInTheDocument();
     expect(screen.getByText("SLG")).toBeInTheDocument();
@@ -178,14 +178,14 @@ describe("PlayerStatsPanel", () => {
     renderWithContext();
     fireEvent.keyDown(screen.getByTestId("batter-row-1"), { key: "Enter" });
     expect(screen.getByText("Player Details")).toBeInTheDocument();
-    expect(screen.getByText(/this game/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/this game/i).length).toBeGreaterThan(0);
   });
 
   it("selects a row when Space is pressed", () => {
     renderWithContext();
     fireEvent.keyDown(screen.getByTestId("batter-row-2"), { key: " " });
     expect(screen.getByText("Player Details")).toBeInTheDocument();
-    expect(screen.getByText(/this game/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/this game/i).length).toBeGreaterThan(0);
   });
 
   it("deselects row when Enter is pressed on the already-selected row", () => {

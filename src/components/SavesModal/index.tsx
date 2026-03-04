@@ -47,6 +47,11 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
     handleImportPaste,
     handleFileImport,
     resolveSaveName,
+    handleExportHistory,
+    handleImportHistoryFile,
+    historyImportError,
+    historyImportSuccess,
+    exportingHistory,
   } = useSavesModal(props);
 
   const handleClose = close;
@@ -137,6 +142,33 @@ const SavesModal: React.FunctionComponent<Props> = (props) => {
             {importing ? "Importing…" : "Import from text"}
           </SmallButton>
         </Row>
+
+        <SectionHeading>Game history</SectionHeading>
+        <Row>
+          <SmallButton
+            onClick={handleExportHistory}
+            disabled={exportingHistory}
+            data-testid="export-history-button"
+          >
+            {exportingHistory ? "Exporting…" : "Export history"}
+          </SmallButton>
+        </Row>
+        <Row>
+          <FileInput
+            type="file"
+            accept=".json,application/json"
+            onChange={handleImportHistoryFile}
+            data-testid="import-history-file-input"
+          />
+        </Row>
+        {historyImportError && (
+          <ErrorMsg data-testid="import-history-error">{historyImportError}</ErrorMsg>
+        )}
+        {historyImportSuccess && (
+          <ErrorMsg as="p" style={{ color: "#6ab0e0" }} data-testid="import-history-success">
+            {historyImportSuccess}
+          </ErrorMsg>
+        )}
 
         <CloseButton onClick={handleClose} data-testid="saves-modal-close-button">
           Close

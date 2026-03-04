@@ -1,3 +1,5 @@
+import { generateGameInstanceId } from "@storage/generateId";
+
 import type { PlayLogEntry, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "./index";
 import { buildResolvedMods } from "./resolvePlayerMods";
 
@@ -12,6 +14,7 @@ export const createFreshGameState = (
   teams: [string, string],
   teamLabels?: [string, string],
 ): State => ({
+  gameInstanceId: generateGameInstanceId(),
   inning: 1,
   score: [0, 0] as [number, number],
   teams,

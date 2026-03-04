@@ -105,6 +105,17 @@ export type DecisionType =
 export type OnePitchModifier = "take" | "swing" | "protect" | "normal" | null;
 
 export interface State {
+  /**
+   * Stable identity for the current game run — generated once when a new game
+   * starts (via the `reset` action) and carried in every subsequent save snapshot
+   * of that run. Used as `GameDoc.id` to deduplicate career-history commits across
+   * multiple mid-game save slots: finishing from Save A or Save B of the same run
+   * both resolve to the same `gameInstanceId`, so only one `GameDoc` is ever written.
+   *
+   * Absent on saves created before this field was introduced — `useGameHistorySync`
+   * falls back to `saveId` (legacy behaviour, same as before) for those saves.
+   */
+  gameInstanceId?: string;
   inning: number;
   score: [number, number];
   teams: [string, string];

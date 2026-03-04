@@ -28,6 +28,12 @@ export interface EditorPlayer {
    * editor.  Absent for brand-new players (sanitizePlayer generates a fresh one).
    */
   playerSeed?: string;
+  /**
+   * Team-independent stable identity — preserved from DB / export so career
+   * history follows this player if they are moved to another team.
+   * Absent for brand-new players (set by sanitizePlayer at first DB write).
+   */
+  globalPlayerId?: string;
 }
 
 export interface EditorState {
@@ -173,6 +179,7 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
   ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
+  ...(p.globalPlayerId !== undefined && { globalPlayerId: p.globalPlayerId }),
 });
 
 export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
@@ -290,6 +297,7 @@ const editorToTeamPlayer =
       }),
     ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
     ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
+    ...(p.globalPlayerId !== undefined && { globalPlayerId: p.globalPlayerId }),
   });
 
 /**
