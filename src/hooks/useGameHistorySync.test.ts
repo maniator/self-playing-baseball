@@ -1,12 +1,13 @@
 import * as React from "react";
 
-import { act, renderHook } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { makeContextValue } from "@test/testHelpers";
 
 // Mocks must use inline vi.fn() — no top-level variables before vi.mock().
+// Only commitCompletedGame is used by the hook; the full store API is not needed here.
 vi.mock("@storage/gameHistoryStore", () => ({
   GameHistoryStore: { commitCompletedGame: vi.fn() },
 }));
@@ -23,6 +24,16 @@ import { useGameContext } from "@context/index";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
 
 import { useGameHistorySync } from "./useGameHistorySync";
+
+/** Minimal subset of a committed stat row used for player-ID assertions in these tests.
+ *  Only `playerId` is needed; batting-stat fields are not asserted here. */
+type StatRowShape = { playerId: string };
+
+/**
+ * Generous timeout for the retry test: React schedules state updates asynchronously
+ * across 4 render cycles (initial + 3 retries). 2 s is ample for the test environment.
+ */
+const RETRY_TEST_TIMEOUT_MS = 2000;
 
 afterEach(() => {
   vi.clearAllMocks();
@@ -112,8 +123,9 @@ describe("useGameHistorySync", () => {
       });
       expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalledTimes(1);
       // Stat rows should include the batter from team 0.
-      const statRows = vi.mocked(GameHistoryStore.commitCompletedGame).mock.calls[0][2];
-      expect(statRows.some((r: { playerId: string }) => r.playerId === "p1")).toBe(true);
+      const statRows = vi.mocked(GameHistoryStore.commitCompletedGame).mock
+        .calls[0][2] as StatRowShape[];
+      expect(statRows.some((r) => r.playerId === "p1")).toBe(true);
     });
 
     it("skips slot-fallback entries (no playerId) in stat rows", async () => {
@@ -134,11 +146,10 @@ describe("useGameHistorySync", () => {
       await act(async () => {
         await Promise.resolve();
       });
-      const statRows = vi.mocked(GameHistoryStore.commitCompletedGame).mock.calls[0][2];
-      // The slot entry should have been skipped.
-      expect(statRows.every((r: { playerId?: string }) => !r.playerId?.startsWith("slot:"))).toBe(
-        true,
-      );
+      const statRows = vi.mocked(GameHistoryStore.commitCompletedGame).mock
+        .calls[0][2] as StatRowShape[];
+      // No stat row should have a slot-prefixed playerId — those entries are skipped.
+      expect(statRows.some((r) => r.playerId.startsWith("slot:"))).toBe(false);
     });
   });
 
@@ -167,26 +178,21 @@ describe("useGameHistorySync", () => {
   });
 
   describe("retry on transient failure", () => {
-    it("retries up to 3 times then stops on persistent commit failure", async () => {
+    it("retries exactly MAX_COMMIT_RETRIES (3) times after initial failure — 4 total calls", async () => {
       const error = Object.assign(new Error("DB error"), { code: "QUOTA_EXCEEDED" });
       vi.mocked(GameHistoryStore.commitCompletedGame).mockRejectedValue(error);
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
 
       renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
 
-      // Flush all microtasks — let the hook run all retries.
-      await act(async () => {
-        await new Promise((r) => setTimeout(r, 0));
-        await new Promise((r) => setTimeout(r, 0));
-        await new Promise((r) => setTimeout(r, 0));
-      });
-
-      // Should not exceed initial + MAX_COMMIT_RETRIES = 4 total calls.
-      expect(vi.mocked(GameHistoryStore.commitCompletedGame).mock.calls.length).toBeLessThanOrEqual(
-        4,
+      // waitFor polls until the assertion passes, making the test resilient to React's
+      // async render scheduling across 4 render cycles (initial + 3 retries = 4 total).
+      await waitFor(
+        () => {
+          expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalledTimes(4);
+        },
+        { timeout: RETRY_TEST_TIMEOUT_MS },
       );
-      // Should have been called at least once.
-      expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalled();
     });
   });
 });
