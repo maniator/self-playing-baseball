@@ -1,6 +1,7 @@
+import { generateGameInstanceId } from "@storage/generateId";
+
 import type { PlayLogEntry, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "./index";
 import { buildResolvedMods } from "./resolvePlayerMods";
-import { generateGameInstanceId } from "@storage/generateId";
 
 /** Fallback team names used when a very old save is missing the `teams` field. */
 const FALLBACK_TEAMS: [string, string] = ["Away", "Home"];
