@@ -11,6 +11,7 @@ import {
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
 import { generateSeed, generateTeamId } from "./generateId";
+import { fnv1a } from "./hash";
 import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
@@ -90,7 +91,12 @@ function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
   // without re-reading all teams. The fingerprint covers the immutable identity
   // fields (name, role, batting, pitching) plus the per-player seed.
   const fingerprint = buildPlayerSig({ ...sanitized, playerSeed });
-  return { ...sanitized, playerSeed, fingerprint };
+  // Derive a stable team-independent identity from the player's seed.
+  // "pl_" prefix distinguishes it from team IDs and raw nanoid strings.
+  // Using fnv1a(playerSeed) means the same player always gets the same globalPlayerId
+  // regardless of which team they belong to, enabling cross-team career aggregation.
+  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(playerSeed)}`;
+  return { ...sanitized, playerSeed, fingerprint, globalPlayerId };
 }
 
 function buildRoster(input: CreateCustomTeamInput["roster"]): TeamRoster {

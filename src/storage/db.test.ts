@@ -263,12 +263,12 @@ describe("schema version and reset flag", () => {
     expect(db.saves.schema.version).toBe(2);
   });
 
-  it("customTeams collection has schema version 3", () => {
-    expect(db.customTeams.schema.version).toBe(3);
+  it("customTeams collection has schema version 4", () => {
+    expect(db.customTeams.schema.version).toBe(4);
   });
 
-  it("players collection has schema version 2", () => {
-    expect(db.players.schema.version).toBe(2);
+  it("players collection has schema version 3", () => {
+    expect(db.players.schema.version).toBe(3);
   });
 
   it("games collection has schema version 0", () => {

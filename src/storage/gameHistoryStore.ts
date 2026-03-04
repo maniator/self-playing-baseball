@@ -71,7 +71,7 @@ function buildStore(getDbFn: GetDb) {
 
   /**
    * Returns cumulative career batting totals for a set of playerKeys.
-   * Sums across all PlayerGameStatDoc rows matching those keys.
+   * Performs a single bulk query and aggregates in memory.
    */
   async function getCareerStats(
     playerKeys: string[],
@@ -81,39 +81,45 @@ function buildStore(getDbFn: GetDb) {
     if (playerKeys.length === 0) return {};
     const db = await getDbFn();
 
+    // Single bulk query for all matching playerKeys — avoids N+1 round-trips.
+    const allRows = await db.playerGameStats
+      .find({ selector: { playerKey: { $in: playerKeys } } })
+      .exec();
+
     const results: Record<
       string,
       PlayerGameStatDoc["batting"] & { gamesPlayed: number; teamId: string }
     > = {};
 
-    for (const key of playerKeys) {
-      const rows = await db.playerGameStats.find({ selector: { playerKey: key } }).exec();
-      if (rows.length === 0) continue;
-      const acc = {
-        atBats: 0,
-        hits: 0,
-        walks: 0,
-        strikeouts: 0,
-        rbi: 0,
-        singles: 0,
-        doubles: 0,
-        triples: 0,
-        homers: 0,
-        gamesPlayed: rows.length,
-        teamId: rows[0].teamId,
-      };
-      for (const row of rows) {
-        acc.atBats += row.batting.atBats;
-        acc.hits += row.batting.hits;
-        acc.walks += row.batting.walks;
-        acc.strikeouts += row.batting.strikeouts;
-        acc.rbi += row.batting.rbi;
-        acc.singles += row.batting.singles;
-        acc.doubles += row.batting.doubles;
-        acc.triples += row.batting.triples;
-        acc.homers += row.batting.homers;
+    for (const row of allRows) {
+      const doc = row.toJSON() as PlayerGameStatDoc;
+      const existing = results[doc.playerKey];
+      if (!existing) {
+        results[doc.playerKey] = {
+          atBats: doc.batting.atBats,
+          hits: doc.batting.hits,
+          walks: doc.batting.walks,
+          strikeouts: doc.batting.strikeouts,
+          rbi: doc.batting.rbi,
+          singles: doc.batting.singles,
+          doubles: doc.batting.doubles,
+          triples: doc.batting.triples,
+          homers: doc.batting.homers,
+          gamesPlayed: 1,
+          teamId: doc.teamId,
+        };
+      } else {
+        existing.atBats += doc.batting.atBats;
+        existing.hits += doc.batting.hits;
+        existing.walks += doc.batting.walks;
+        existing.strikeouts += doc.batting.strikeouts;
+        existing.rbi += doc.batting.rbi;
+        existing.singles += doc.batting.singles;
+        existing.doubles += doc.batting.doubles;
+        existing.triples += doc.batting.triples;
+        existing.homers += doc.batting.homers;
+        existing.gamesPlayed++;
       }
-      results[key] = acc;
     }
     return results;
   }

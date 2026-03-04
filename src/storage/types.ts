@@ -169,6 +169,16 @@ export interface TeamPlayer {
    * Present only in export bundles; stripped before DB storage.
    */
   sig?: string;
+  /**
+   * Team-independent stable identity for this player.
+   * Set once at player creation (`"pl_" + fnv1a(playerSeed)`) and preserved
+   * across team moves, imports, and ID remapping.
+   * Used as the `playerKey` in `PlayerGameStatDoc` for cross-team career aggregation:
+   * if a player moves from Team A to Team B, their career stat rows accumulate under
+   * the same `globalPlayerId` regardless of which team they currently belong to.
+   * Absent on documents created before schema v3 — backfilled by the v2→v3 migration.
+   */
+  globalPlayerId?: string;
 }
 
 /** Keyed JSON export format for a single player. */

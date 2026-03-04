@@ -166,16 +166,40 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     if (statsMode !== "career") return;
     let cancelled = false;
     const teamId = teams[activeTeam];
-    const playerKeys = lineupIds.slice(0, 9).map((id) => `${teamId}:${id}`);
+
+    // Build per-player career query keys.
+    // For custom team players: use globalPlayerId (team-independent) when available,
+    // so career stats follow the player across team moves.
+    // For stock team players: fall back to "${teamId}:${playerId}" (team-scoped).
+    let customTeamDoc: (typeof customTeams)[number] | undefined;
+    if (teamId.startsWith("custom:")) {
+      const customId = teamId.slice("custom:".length);
+      customTeamDoc = customTeams.find((t) => t.id === customId);
+    }
+    const allRosterPlayers = customTeamDoc
+      ? [
+          ...customTeamDoc.roster.lineup,
+          ...customTeamDoc.roster.bench,
+          ...customTeamDoc.roster.pitchers,
+        ]
+      : [];
+
+    const playerKeys = lineupIds.slice(0, 9).map((id) => {
+      const player = allRosterPlayers.find((p) => p.id === id);
+      return player?.globalPlayerId ?? `${teamId}:${id}`;
+    });
+
     GameHistoryStore.getCareerStats(playerKeys)
       .then((results) => {
         if (cancelled) return;
-        // Re-key by playerId (strip teamId prefix) for consistent slot lookup.
+        // Re-key by lineup player ID for consistent slot lookup.
+        // The career result is keyed by playerKey (globalPlayerId or teamId:playerId).
+        // Build a reverse lookup: playerKey → lineup player ID.
         const byPlayerId: Record<string, BatterStat> = {};
-        for (const [key, val] of Object.entries(results)) {
-          const playerId = key.startsWith(`${teamId}:`) ? key.slice(teamId.length + 1) : key;
-          byPlayerId[playerId] = val;
-        }
+        lineupIds.slice(0, 9).forEach((id, idx) => {
+          const pk = playerKeys[idx];
+          if (results[pk]) byPlayerId[id] = results[pk];
+        });
         setCareerStats(byPlayerId);
       })
       .catch((err) => {
@@ -185,7 +209,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     return () => {
       cancelled = true;
     };
-  }, [statsMode, teams, activeTeam, lineupIds]);
+  }, [statsMode, teams, activeTeam, lineupIds, customTeams]);
 
   const stats = statsMode === "career" ? careerStats : gameStats;
 

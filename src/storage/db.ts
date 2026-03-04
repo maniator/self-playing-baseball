@@ -142,7 +142,12 @@ const customTeamsSchema: RxJsonSchema<CustomTeamDoc> = {
   //
   // Version 3: adds `teamSeed` and per-player `playerSeed` for instance-unique fingerprints.
   // Migration backfills random seeds for all existing docs and recomputes fingerprints.
-  version: 3,
+  //
+  // Version 4: adds `globalPlayerId` to every embedded roster player (for legacy teams
+  // that haven't yet been migrated to the `players` collection and still carry roster arrays).
+  // New teams store empty embedded arrays (players live in the `players` collection), so
+  // this migration is mostly a safe no-op for them.
+  version: 4,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -193,7 +198,12 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
   // manually-crafted import JSON). A new `playerId` field stores the original player ID
   // so roster assembly can reconstruct the correct `TeamPlayer.id`.
   // Migration v1→v2 computes the composite ID from the existing `teamId` field.
-  version: 2,
+  //
+  // Version 3: adds `globalPlayerId` — a team-independent stable identity derived from
+  // `playerSeed` as `"pl_" + fnv1a(playerSeed)`. Used as `playerKey` in PlayerGameStatDoc
+  // so career stats follow a player across team moves and imports.
+  // Migration v2→v3 backfills `globalPlayerId` from the existing `playerSeed` field.
+  version: 3,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -215,6 +225,7 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
     pitchingRole: { type: "string" },
     playerSeed: { type: "string", maxLength: 32 },
     fingerprint: { type: "string", maxLength: 8 },
+    globalPlayerId: { type: "string", maxLength: 32 },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
   required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
@@ -438,6 +449,53 @@ async function initDb(
             return oldDoc;
           }
         },
+        // v3→v4: backfill globalPlayerId in embedded roster players.
+        // New teams have empty embedded arrays so this is mostly a no-op; for
+        // legacy teams whose rosters haven't yet migrated to the players collection
+        // this ensures every player gets a stable globalPlayerId.
+        4: (oldDoc: Record<string, unknown>) => {
+          try {
+            const roster = oldDoc["roster"] as Record<string, unknown> | undefined;
+            if (!roster || typeof roster !== "object") return oldDoc;
+
+            const addGlobalId = (player: unknown): unknown => {
+              if (!player || typeof player !== "object") return player;
+              const p = player as Record<string, unknown>;
+              if (p["globalPlayerId"]) return p; // already has one
+              const playerSeed = p["playerSeed"] as string | undefined;
+              const fallbackSeed = (): string =>
+                Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
+              const seed = playerSeed ?? fallbackSeed();
+              const globalPlayerId = `pl_${fnv1a(seed)}`;
+              return { ...p, globalPlayerId };
+            };
+
+            const hasAnyPlayers =
+              (Array.isArray(roster["lineup"]) && roster["lineup"].length > 0) ||
+              (Array.isArray(roster["bench"]) && roster["bench"].length > 0) ||
+              (Array.isArray(roster["pitchers"]) && roster["pitchers"].length > 0);
+
+            if (!hasAnyPlayers) return oldDoc;
+
+            return {
+              ...oldDoc,
+              roster: {
+                ...roster,
+                lineup: Array.isArray(roster["lineup"])
+                  ? roster["lineup"].map(addGlobalId)
+                  : roster["lineup"],
+                bench: Array.isArray(roster["bench"])
+                  ? roster["bench"].map(addGlobalId)
+                  : roster["bench"],
+                pitchers: Array.isArray(roster["pitchers"])
+                  ? roster["pitchers"].map(addGlobalId)
+                  : roster["pitchers"],
+              },
+            };
+          } catch {
+            return oldDoc;
+          }
+        },
       },
     },
     players: {
@@ -466,6 +524,24 @@ async function initDb(
               "[players v1→v2 migration] failed to compute composite key; returning doc unchanged:",
               err,
             );
+            return oldDoc;
+          }
+        },
+        // v2→v3: backfill globalPlayerId from playerSeed.
+        // globalPlayerId = "pl_" + fnv1a(playerSeed) when playerSeed is available.
+        // For players without playerSeed (should be rare after v3 customTeams migration),
+        // generate a fresh random fallback using the inline seed generator.
+        3: (oldDoc: Record<string, unknown>) => {
+          try {
+            const existing = oldDoc["globalPlayerId"] as string | undefined;
+            if (existing) return oldDoc;
+            const playerSeed = oldDoc["playerSeed"] as string | undefined;
+            const fallbackSeed = (): string =>
+              Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
+            const seed = playerSeed ?? fallbackSeed();
+            const globalPlayerId = `pl_${fnv1a(seed)}`;
+            return { ...oldDoc, globalPlayerId };
+          } catch {
             return oldDoc;
           }
         },

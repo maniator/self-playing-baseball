@@ -92,7 +92,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
-  useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad);
+  useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
 
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();

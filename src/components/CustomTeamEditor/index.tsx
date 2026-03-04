@@ -466,7 +466,33 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             ...(section === "pitchers" &&
               importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
             ...(importedPlayer.playerSeed && { playerSeed: importedPlayer.playerSeed }),
+            // Preserve globalPlayerId so career stats follow the player.
+            ...(importedPlayer.globalPlayerId && { globalPlayerId: importedPlayer.globalPlayerId }),
           };
+
+          // ── Cross-team identity check (hard block) ──────────────────────────
+          // If the exported player has a globalPlayerId that already exists on a
+          // DIFFERENT team (not the current team being edited), block the import
+          // outright. This prevents duplicate identity copies that would break
+          // career continuity: the same player cannot simultaneously accumulate
+          // stats under two different teamIds.
+          if (importedPlayer.globalPlayerId) {
+            const currentTeamId = team?.id;
+            const owningTeam = allTeams.find(
+              (t: CustomTeamDoc) =>
+                t.id !== currentTeamId && // exclude the current team being edited
+                [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
+                  (p: TeamPlayer) => p.globalPlayerId === importedPlayer.globalPlayerId,
+                ),
+            );
+            if (owningTeam) {
+              dispatch({
+                type: "SET_ERROR",
+                error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
+              });
+              return;
+            }
+          }
 
           // Check if this player's fingerprint already exists in any saved team OR the
           // current editor state (to block re-import in the same unsaved editing session).
@@ -542,7 +568,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       };
       reader.readAsText(file);
     },
-    [allTeams, state.lineup, state.bench, state.pitchers],
+    [allTeams, state.lineup, state.bench, state.pitchers, team?.id],
   );
 
   // Pre-bind per-section import handlers. `handleImportPlayerFile` is a curried
