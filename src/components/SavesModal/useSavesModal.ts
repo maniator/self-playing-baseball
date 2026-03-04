@@ -11,6 +11,8 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useImportSave } from "@hooks/useImportSave";
 import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
+import { GameHistoryStore } from "@storage/gameHistoryStore";
+import { downloadJson } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState } from "@utils/rng";
 import { currentSeedStr } from "@utils/saves";
@@ -44,6 +46,13 @@ export interface SavesModalState {
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
   /** Replaces any `custom:<id>` fragment in a save name with the resolved display label. */
   resolveSaveName: (name: string) => string;
+  /** Exports all game history as a signed JSON bundle and downloads it. */
+  handleExportHistory: () => void;
+  /** Imports a game history bundle from a file input change event. */
+  handleImportHistoryFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  historyImportError: string | null;
+  historyImportSuccess: string | null;
+  exportingHistory: boolean;
 }
 
 export const useSavesModal = ({
@@ -73,7 +82,9 @@ export const useSavesModal = ({
   // Custom team docs for resolving human-readable labels on save names.
   const { teams: customTeams } = useCustomTeams();
 
-  const log = (msg: string) => dispatchLog({ type: "log", payload: msg });
+  const logRef = React.useRef(dispatchLog);
+  logRef.current = dispatchLog;
+  const log = React.useCallback((msg: string) => logRef.current({ type: "log", payload: msg }), []);
 
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
@@ -194,6 +205,49 @@ export const useSavesModal = ({
    */
   const resolveSaveName = (name: string): string => resolveCustomIdsInString(name, customTeams);
 
+  // ── Game history export/import ──────────────────────────────────────────
+  const [exportingHistory, setExportingHistory] = React.useState(false);
+  const [historyImportError, setHistoryImportError] = React.useState<string | null>(null);
+  const [historyImportSuccess, setHistoryImportSuccess] = React.useState<string | null>(null);
+
+  const handleExportHistory = React.useCallback(async () => {
+    setExportingHistory(true);
+    try {
+      const json = await GameHistoryStore.exportGameHistory();
+      downloadJson(json, `ballgame-history-${Date.now()}.json`);
+    } catch (err) {
+      log(`History export failed: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setExportingHistory(false);
+    }
+  }, [log]);
+
+  const handleImportHistoryFile = React.useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      setHistoryImportError(null);
+      setHistoryImportSuccess(null);
+      try {
+        const text = await file.text();
+        // Build set of known custom team IDs — stock teams always pass validation.
+        const customTeamIds = new Set(customTeams.map((t) => `custom:${t.id}`));
+        const result = await GameHistoryStore.importGameHistory(text, customTeamIds);
+        const msg =
+          `Imported ${result.gamesCreated} game(s), ${result.statsCreated} stat row(s). ` +
+          (result.gamesSkipped + result.statsSkipped > 0
+            ? `(${result.gamesSkipped} game(s), ${result.statsSkipped} stat row(s) already existed — skipped)`
+            : "");
+        setHistoryImportSuccess(msg.trim());
+      } catch (err) {
+        setHistoryImportError(err instanceof Error ? err.message : String(err));
+      }
+      // Reset file input so the same file can be re-imported.
+      e.target.value = "";
+    },
+    [customTeams],
+  );
+
   return {
     ref,
     saves,
@@ -210,5 +264,10 @@ export const useSavesModal = ({
     handleImportPaste,
     handleFileImport,
     resolveSaveName,
+    handleExportHistory,
+    handleImportHistoryFile,
+    historyImportError,
+    historyImportSuccess,
+    exportingHistory,
   };
 };

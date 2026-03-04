@@ -126,8 +126,9 @@ function buildStore(getDbFn: GetDb) {
 
     const teamIds = new Set<string>();
     for (const s of stats) {
-      teamIds.add(s.teamId);
-      teamIds.add(s.opponentTeamId);
+      // Only custom teams need to be present locally; stock teams are always available.
+      if (s.teamId.startsWith("custom:")) teamIds.add(s.teamId);
+      if (s.opponentTeamId.startsWith("custom:")) teamIds.add(s.opponentTeamId);
     }
 
     const payload: ExportedGameHistory["payload"] = {
@@ -185,8 +186,11 @@ function buildStore(getDbFn: GetDb) {
       );
     }
 
-    // Validate required teams.
-    const requiredTeamIds = bundle.payload.requiredTeamIds ?? [];
+    // Validate required teams — only custom: team IDs need local validation;
+    // stock (non-custom) teams are always available.
+    const requiredTeamIds = (bundle.payload.requiredTeamIds ?? []).filter((id) =>
+      id.startsWith("custom:"),
+    );
     const missingTeamIds = requiredTeamIds.filter((id) => !existingTeamIds.has(id));
     if (missingTeamIds.length > 0) {
       throw new Error(
