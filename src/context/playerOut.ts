@@ -1,5 +1,6 @@
 import { checkGameOver, nextHalfInning } from "./gameOver";
 import type { State, Strategy, StrikeoutEntry } from "./index";
+import { updateActivePitcherLog } from "./pitcherLog";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
 export const nextBatter = (state: State): State => {
@@ -47,11 +48,27 @@ export const playerOut = (
   // Increment pitcher fatigue when the batter's plate appearance is complete.
   const stateWithFatigue = batterCompleted ? incrementPitcherFatigue(stateWithOut) : stateWithOut;
   const stateAfterBatter = batterCompleted ? nextBatter(stateWithFatigue) : stateWithFatigue;
-  const newOuts = stateAfterBatter.outs + 1;
+
+  // Track out for the active pitcher on the pitching team.
+  const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+  const stateWithPitcherOut = {
+    ...stateAfterBatter,
+    pitcherGameLog: updateActivePitcherLog(
+      stateAfterBatter.pitcherGameLog ?? [[], []],
+      pitchingTeam,
+      (entry) => ({
+        ...entry,
+        outsPitched: entry.outsPitched + 1,
+        // battersFaced is incremented here for outs (not hits/walks — those are in hitBall).
+        battersFaced: batterCompleted ? entry.battersFaced + 1 : entry.battersFaced,
+      }),
+    ),
+  };
+  const newOuts = stateWithPitcherOut.outs + 1;
   if (newOuts === 3) {
-    const afterHalf = nextHalfInning(stateAfterBatter, log);
+    const afterHalf = nextHalfInning(stateWithPitcherOut, log);
     if (afterHalf.gameOver) return afterHalf;
-    if (stateAfterBatter.atBat === 1 && stateAfterBatter.inning >= 9) {
+    if (stateWithPitcherOut.atBat === 1 && stateWithPitcherOut.inning >= 9) {
       const maybe = checkGameOver(afterHalf, log);
       if (maybe.gameOver) return maybe;
     }
@@ -64,7 +81,7 @@ export const playerOut = (
   // defensiveShift and defensiveShiftOffered persist for the whole half-inning
   // and are reset in nextHalfInning.
   return {
-    ...stateAfterBatter,
+    ...stateWithPitcherOut,
     strikes: 0,
     balls: 0,
     outs: newOuts,

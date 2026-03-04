@@ -382,14 +382,76 @@ export interface PlayerGameStatDoc {
   schemaVersion: number;
 }
 
+/**
+ * Pitching statistics for a single pitcher in a single completed game.
+ *
+ * playerKey rules match PlayerGameStatDoc — globalPlayerId for custom-team pitchers,
+ * `${teamId}:${pitcherId}` for stock/generated-team pitchers.
+ *
+ * Outs are stored as integers; display IP as `Math.floor(outsPitched/3).Y` where
+ * Y = outsPitched % 3.
+ *
+ * v1 simplification: earnedRuns = runsAllowed (error-tracking not yet implemented).
+ */
+export interface PitcherGameStatDoc {
+  /**
+   * Primary key — composite: `${gameId}:${teamId}:${pitcherKey}`.
+   * Guarantees global uniqueness and idempotent inserts.
+   */
+  id: string;
+  /** FK → GameDoc.id */
+  gameId: string;
+  teamId: string;
+  opponentTeamId: string;
+  /**
+   * Stable cross-game identity string (mirrors PlayerGameStatDoc.playerKey rules).
+   * Custom-team pitchers: globalPlayerId when available.
+   * Stock/generated-team pitchers: `${teamId}:${pitcherId}`.
+   */
+  pitcherKey: string;
+  /** Roster player ID at game time — for display/debug. */
+  pitcherId: string;
+  /** Pitcher name captured at game time for readable history. */
+  nameAtGameTime: string;
+  /** Total outs recorded while this pitcher was in the game. Display as X.Y (Y = outsPitched%3). */
+  outsPitched: number;
+  /** Total batters faced. */
+  battersFaced: number;
+  /** Hits allowed by this pitcher. */
+  hitsAllowed: number;
+  /** Walks (and intentional walks) allowed. */
+  walksAllowed: number;
+  /** Strikeouts recorded (batters K'd). */
+  strikeoutsRecorded: number;
+  /** Home runs allowed. */
+  homersAllowed: number;
+  /** Runs allowed (all, not just earned). */
+  runsAllowed: number;
+  /**
+   * Earned runs. v1 approximation: equals runsAllowed.
+   * Will be refined when error/earned-run tracking is added.
+   */
+  earnedRuns: number;
+  /** Save recorded (1) or not (0). See SV rules in computePitcherGameStats.ts. */
+  saves: number;
+  /** Hold recorded (1) or not (0). */
+  holds: number;
+  /** Blown save recorded (1) or not (0). */
+  blownSaves: number;
+  /** Wall-clock timestamp when this row was created (ms since epoch). */
+  createdAt: number;
+  schemaVersion: number;
+}
+
 /** Portable signed export format for completed-game history. */
 export interface ExportedGameHistory {
   type: "gameHistory";
-  formatVersion: 1;
+  formatVersion: 2;
   exportedAt: string;
   payload: {
     games: GameDoc[];
     playerGameStats: PlayerGameStatDoc[];
+    pitcherGameStats: PitcherGameStatDoc[];
     /** Team IDs referenced by stats rows — must exist locally for import to succeed. */
     requiredTeamIds: string[];
   };
@@ -403,4 +465,6 @@ export interface ImportGameHistoryResult {
   gamesSkipped: number;
   statsCreated: number;
   statsSkipped: number;
+  pitcherStatsCreated: number;
+  pitcherStatsSkipped: number;
 }

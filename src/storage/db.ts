@@ -19,6 +19,7 @@ import type {
   CustomTeamDoc,
   EventDoc,
   GameDoc,
+  PitcherGameStatDoc,
   PlayerDoc,
   PlayerGameStatDoc,
   SaveDoc,
@@ -31,6 +32,7 @@ type DbCollections = {
   players: RxCollection<PlayerDoc>;
   games: RxCollection<GameDoc>;
   playerGameStats: RxCollection<PlayerGameStatDoc>;
+  pitcherGameStats: RxCollection<PitcherGameStatDoc>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
@@ -302,6 +304,58 @@ const playerGameStatsSchema: RxJsonSchema<PlayerGameStatDoc> = {
   indexes: ["gameId", ["playerKey", "createdAt"], ["teamId", "createdAt"]],
 };
 
+const pitcherGameStatsSchema: RxJsonSchema<PitcherGameStatDoc> = {
+  // Version 0: initial schema.
+  version: 0,
+  primaryKey: "id",
+  type: "object",
+  properties: {
+    id: { type: "string", maxLength: 256 },
+    gameId: { type: "string", maxLength: 128 },
+    teamId: { type: "string", maxLength: 128 },
+    opponentTeamId: { type: "string", maxLength: 128 },
+    pitcherKey: { type: "string", maxLength: 256 },
+    pitcherId: { type: "string" },
+    nameAtGameTime: { type: "string" },
+    outsPitched: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    battersFaced: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    hitsAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    walksAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    strikeoutsRecorded: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    homersAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    runsAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    earnedRuns: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    saves: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+    holds: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+    blownSaves: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+    createdAt: { type: "number", minimum: 0, maximum: 9_999_999_999_999, multipleOf: 1 },
+    schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+  },
+  required: [
+    "id",
+    "gameId",
+    "teamId",
+    "opponentTeamId",
+    "pitcherKey",
+    "pitcherId",
+    "nameAtGameTime",
+    "outsPitched",
+    "battersFaced",
+    "hitsAllowed",
+    "walksAllowed",
+    "strikeoutsRecorded",
+    "homersAllowed",
+    "runsAllowed",
+    "earnedRuns",
+    "saves",
+    "holds",
+    "blownSaves",
+    "createdAt",
+    "schemaVersion",
+  ],
+  indexes: ["gameId", ["pitcherKey", "createdAt"], ["teamId", "createdAt"]],
+};
+
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
@@ -564,6 +618,7 @@ async function initDb(
       },
     },
     playerGameStats: { schema: playerGameStatsSchema },
+    pitcherGameStats: { schema: pitcherGameStatsSchema },
   });
   return db;
 }
@@ -626,6 +681,9 @@ export const gamesCollection = async (): Promise<RxCollection<GameDoc>> => (awai
 
 export const playerGameStatsCollection = async (): Promise<RxCollection<PlayerGameStatDoc>> =>
   (await getDb()).playerGameStats;
+
+export const pitcherGameStatsCollection = async (): Promise<RxCollection<PitcherGameStatDoc>> =>
+  (await getDb()).pitcherGameStats;
 
 /**
  * Creates a fresh database with the given storage — intended for tests only.

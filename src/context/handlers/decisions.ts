@@ -1,4 +1,5 @@
 import type { DecisionType, GameAction, OnePitchModifier, State, Strategy } from "../index";
+import { createPitcherLogEntry, pushPitcherLogEntry } from "../pitcherLog";
 import type { ReducerCtx } from "../reducerHelpers";
 import { withDecisionLog } from "../reducerHelpers";
 
@@ -169,11 +170,19 @@ export const handleDecisionsAction = (
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
         const teamName = state.teamLabels[teamIdx];
         log(`${teamName} manager: ${getPlayerName(newPitcherId)} now pitching${reasonSuffix}.`);
+        // Add a new pitcher log entry for the incoming pitcher.
+        const newEntry = createPitcherLogEntry(teamIdx, newPitcherId, state);
+        const newPitcherGameLog = pushPitcherLogEntry(
+          state.pitcherGameLog ?? [[], []],
+          teamIdx,
+          newEntry,
+        );
         return {
           ...state,
           activePitcherIdx: newActivePitcherIdx,
           substitutedOut: newSubOut,
           pitcherBattersFaced: newBattersFaced,
+          pitcherGameLog: newPitcherGameLog,
         };
       }
 

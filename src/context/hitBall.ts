@@ -3,6 +3,7 @@ import getRandomInt from "@utils/getRandomInt";
 
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
+import { updateActivePitcherLog } from "./pitcherLog";
 import { incrementPitcherFatigue, nextBatter, playerOut } from "./playerOut";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
@@ -189,8 +190,31 @@ export const hitBall = (
     rbi: runsScored,
   };
 
+  // Update pitcher log: increment hits/walks/homers/runs/battersFaced for pitching team.
+  const isWalk = type === Hit.Walk;
+  const isHomer = type === Hit.Homerun;
+  const pitcherLogAfterHit = updateActivePitcherLog(
+    base.pitcherGameLog ?? [[], []],
+    pitchingTeam,
+    (entry) => ({
+      ...entry,
+      hitsAllowed: entry.hitsAllowed + (isWalk ? 0 : 1),
+      walksAllowed: entry.walksAllowed + (isWalk ? 1 : 0),
+      homersAllowed: entry.homersAllowed + (isHomer ? 1 : 0),
+      runsAllowed: entry.runsAllowed + runsScored,
+      battersFaced: entry.battersFaced + 1,
+    }),
+  );
+
   const withRuns = addInningRuns(
-    { ...base, baseLayout: newBase, score: newScore, hitType: type, baseRunnerIds: finalRunnerIds },
+    {
+      ...base,
+      baseLayout: newBase,
+      score: newScore,
+      hitType: type,
+      baseRunnerIds: finalRunnerIds,
+      pitcherGameLog: pitcherLogAfterHit,
+    },
     runsScored,
   );
 

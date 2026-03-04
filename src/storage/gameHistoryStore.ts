@@ -1,9 +1,9 @@
 /**
- * GameHistoryStore — persists completed-game records and player batting stats.
+ * GameHistoryStore — persists completed-game records, batting stats, and pitcher stats.
  *
  * Critical rules:
  *   - commitCompletedGame is idempotent: calling it multiple times with the same
- *     gameInstanceId always writes exactly one GameDoc and one stat row per player.
+ *     gameInstanceId always writes exactly one GameDoc and one stat row per player/pitcher.
  *     If the GameDoc already exists (concurrent insert or prior partial write),
  *     any missing stat rows are still written so no stats are permanently lost.
  *   - Loading an already-FINAL save must NOT call this function — the caller
@@ -17,10 +17,11 @@ import type {
   ExportedGameHistory,
   GameDoc,
   ImportGameHistoryResult,
+  PitcherGameStatDoc,
   PlayerGameStatDoc,
 } from "./types";
 
-/** Schema version written to every new GameDoc / PlayerGameStatDoc row. */
+/** Schema version written to every new GameDoc / stat row. */
 const HISTORY_SCHEMA_VERSION = 1;
 
 /** Signing key for game-history export bundles. */
@@ -35,27 +36,17 @@ type GetDb = () => Promise<BallgameDb>;
 
 function buildStore(getDbFn: GetDb) {
   /**
-   * Writes one GameDoc + N PlayerGameStatDoc rows for a completed game.
-   * Fully idempotent at both the game and stat-row level:
-   *   - If a GameDoc with `gameInstanceId` already exists, any missing stat rows
-   *     are still written (so a partial write followed by a retry never loses stats).
-   *   - Concurrent inserts of the same GameDoc are handled by treating the CONFLICT
-   *     error as "already committed" and falling through to the stat-row check.
-   *
-   * @param gameInstanceId - stable game identity key (State.gameInstanceId, with
-   *   legacy fallback to saveId for pre-gameInstanceId saves). Used as GameDoc.id
-   *   and as the prefix for PlayerGameStatDoc ids.
+   * Writes one GameDoc + N PlayerGameStatDoc rows + M PitcherGameStatDoc rows for a completed game.
+   * Fully idempotent at the game, batting-stat, and pitcher-stat row level.
    */
   async function commitCompletedGame(
     gameInstanceId: string,
     gameMeta: Omit<GameDoc, "id" | "schemaVersion">,
     statRows: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt">[],
+    pitcherRows: Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt">[] = [],
   ): Promise<void> {
     const db = await getDbFn();
 
-    // Idempotency guard: skip GameDoc insert if already committed, but always
-    // fall through to write any missing stat rows (so a partial write on a
-    // prior attempt does not permanently block stat rows from being written).
     const existing = await db.games.findOne(gameInstanceId).exec();
 
     if (!existing) {
@@ -68,34 +59,50 @@ function buildStore(getDbFn: GetDb) {
       try {
         await db.games.insert(gameDoc);
       } catch (err) {
-        // Idempotency under concurrency: if another tab/session inserted this game
-        // first, treat the conflict as "already committed" and fall through to
-        // write any missing stat rows below.
         if (!isConflictError(err)) {
           throw err;
         }
       }
     }
 
-    if (statRows.length === 0) return;
-
     const now = Date.now();
-    const statDocs: PlayerGameStatDoc[] = statRows.map((row) => ({
-      ...row,
-      // Composite PK: `${gameInstanceId}:${teamId}:${playerKey}` — globally unique.
-      id: `${gameInstanceId}:${row.teamId}:${row.playerKey}`,
-      createdAt: now,
-      schemaVersion: HISTORY_SCHEMA_VERSION,
-    }));
 
-    // Prefetch existing stat IDs to only insert missing rows — makes retries safe.
-    const statIds = statDocs.map((s) => s.id);
-    const existingStatDocs = await db.playerGameStats.findByIds(statIds).exec();
-    const existingStatIds = new Set(existingStatDocs.keys());
-    const missingStats = statDocs.filter((s) => !existingStatIds.has(s.id));
+    // Write batting stat rows.
+    if (statRows.length > 0) {
+      const statDocs: PlayerGameStatDoc[] = statRows.map((row) => ({
+        ...row,
+        id: `${gameInstanceId}:${row.teamId}:${row.playerKey}`,
+        createdAt: now,
+        schemaVersion: HISTORY_SCHEMA_VERSION,
+      }));
 
-    if (missingStats.length > 0) {
-      await db.playerGameStats.bulkInsert(missingStats);
+      const statIds = statDocs.map((s) => s.id);
+      const existingStatDocs = await db.playerGameStats.findByIds(statIds).exec();
+      const existingStatIds = new Set(existingStatDocs.keys());
+      const missingStats = statDocs.filter((s) => !existingStatIds.has(s.id));
+
+      if (missingStats.length > 0) {
+        await db.playerGameStats.bulkInsert(missingStats);
+      }
+    }
+
+    // Write pitcher stat rows.
+    if (pitcherRows.length > 0) {
+      const pitcherDocs: PitcherGameStatDoc[] = pitcherRows.map((row) => ({
+        ...row,
+        id: `${gameInstanceId}:${row.teamId}:${row.pitcherKey}`,
+        createdAt: now,
+        schemaVersion: HISTORY_SCHEMA_VERSION,
+      }));
+
+      const pitcherIds = pitcherDocs.map((p) => p.id);
+      const existingPitcherDocs = await db.pitcherGameStats.findByIds(pitcherIds).exec();
+      const existingPitcherIds = new Set(existingPitcherDocs.keys());
+      const missingPitchers = pitcherDocs.filter((p) => !existingPitcherIds.has(p.id));
+
+      if (missingPitchers.length > 0) {
+        await db.pitcherGameStats.bulkInsert(missingPitchers);
+      }
     }
   }
 
@@ -111,7 +118,6 @@ function buildStore(getDbFn: GetDb) {
     if (playerKeys.length === 0) return {};
     const db = await getDbFn();
 
-    // Single bulk query for all matching playerKeys — avoids N+1 round-trips.
     const allRows = await db.playerGameStats
       .find({ selector: { playerKey: { $in: playerKeys } } })
       .exec();
@@ -154,15 +160,155 @@ function buildStore(getDbFn: GetDb) {
     return results;
   }
 
-  /** Exports all game history as a signed portable bundle. */
+  /**
+   * Returns all batting stat rows for a single playerKey, ordered by createdAt ascending.
+   * Used for the player career page game-by-game log.
+   */
+  async function getPlayerCareerBatting(
+    playerKey: string,
+  ): Promise<PlayerGameStatDoc[]> {
+    const db = await getDbFn();
+    const rows = await db.playerGameStats
+      .find({ selector: { playerKey }, sort: [{ createdAt: "asc" }] })
+      .exec();
+    return rows.map((r) => r.toJSON() as PlayerGameStatDoc);
+  }
+
+  /**
+   * Returns all pitching stat rows for a single pitcherKey, ordered by createdAt ascending.
+   * Used for the player career page game-by-game log.
+   */
+  async function getPlayerCareerPitching(
+    pitcherKey: string,
+  ): Promise<PitcherGameStatDoc[]> {
+    const db = await getDbFn();
+    const rows = await db.pitcherGameStats
+      .find({ selector: { pitcherKey }, sort: [{ createdAt: "asc" }] })
+      .exec();
+    return rows.map((r) => r.toJSON() as PitcherGameStatDoc);
+  }
+
+  /**
+   * Returns cumulative career batting stats for all players associated with a team.
+   * Queries by teamId.
+   */
+  async function getTeamCareerBattingStats(
+    teamId: string,
+  ): Promise<(PlayerGameStatDoc["batting"] & { playerKey: string; nameAtGameTime: string; gamesPlayed: number })[]> {
+    const db = await getDbFn();
+    const rows = await db.playerGameStats
+      .find({ selector: { teamId } })
+      .exec();
+
+    const aggregated: Record<
+      string,
+      PlayerGameStatDoc["batting"] & { playerKey: string; nameAtGameTime: string; gamesPlayed: number }
+    > = {};
+
+    for (const row of rows) {
+      const doc = row.toJSON() as PlayerGameStatDoc;
+      const key = doc.playerKey;
+      if (!aggregated[key]) {
+        aggregated[key] = {
+          playerKey: key,
+          nameAtGameTime: doc.nameAtGameTime,
+          gamesPlayed: 0,
+          atBats: 0,
+          hits: 0,
+          walks: 0,
+          strikeouts: 0,
+          rbi: 0,
+          singles: 0,
+          doubles: 0,
+          triples: 0,
+          homers: 0,
+        };
+      }
+      const agg = aggregated[key];
+      agg.gamesPlayed++;
+      agg.atBats += doc.batting.atBats;
+      agg.hits += doc.batting.hits;
+      agg.walks += doc.batting.walks;
+      agg.strikeouts += doc.batting.strikeouts;
+      agg.rbi += doc.batting.rbi;
+      agg.singles += doc.batting.singles;
+      agg.doubles += doc.batting.doubles;
+      agg.triples += doc.batting.triples;
+      agg.homers += doc.batting.homers;
+    }
+
+    return Object.values(aggregated);
+  }
+
+  /**
+   * Returns cumulative career pitching stats for all pitchers associated with a team.
+   * Queries by teamId.
+   */
+  async function getTeamCareerPitchingStats(
+    teamId: string,
+  ): Promise<(Omit<PitcherGameStatDoc, "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"> & { gamesPlayed: number })[]> {
+    const db = await getDbFn();
+    const rows = await db.pitcherGameStats
+      .find({ selector: { teamId } })
+      .exec();
+
+    const aggregated: Record<
+      string,
+      { pitcherKey: string; nameAtGameTime: string; gamesPlayed: number; outsPitched: number; battersFaced: number; hitsAllowed: number; walksAllowed: number; strikeoutsRecorded: number; homersAllowed: number; runsAllowed: number; earnedRuns: number; saves: number; holds: number; blownSaves: number }
+    > = {};
+
+    for (const row of rows) {
+      const doc = row.toJSON() as PitcherGameStatDoc;
+      const key = doc.pitcherKey;
+      if (!aggregated[key]) {
+        aggregated[key] = {
+          pitcherKey: key,
+          nameAtGameTime: doc.nameAtGameTime,
+          gamesPlayed: 0,
+          outsPitched: 0,
+          battersFaced: 0,
+          hitsAllowed: 0,
+          walksAllowed: 0,
+          strikeoutsRecorded: 0,
+          homersAllowed: 0,
+          runsAllowed: 0,
+          earnedRuns: 0,
+          saves: 0,
+          holds: 0,
+          blownSaves: 0,
+        };
+      }
+      const agg = aggregated[key];
+      agg.gamesPlayed++;
+      agg.outsPitched += doc.outsPitched;
+      agg.battersFaced += doc.battersFaced;
+      agg.hitsAllowed += doc.hitsAllowed;
+      agg.walksAllowed += doc.walksAllowed;
+      agg.strikeoutsRecorded += doc.strikeoutsRecorded;
+      agg.homersAllowed += doc.homersAllowed;
+      agg.runsAllowed += doc.runsAllowed;
+      agg.earnedRuns += doc.earnedRuns;
+      agg.saves += doc.saves;
+      agg.holds += doc.holds;
+      agg.blownSaves += doc.blownSaves;
+    }
+
+    return Object.values(aggregated);
+  }
+
+  /** Exports all game history (batting + pitching) as a signed portable bundle. */
   async function exportGameHistory(): Promise<string> {
     const db = await getDbFn();
     const games = await db.games.find().exec();
     const stats = await db.playerGameStats.find().exec();
+    const pitcherStats = await db.pitcherGameStats.find().exec();
 
     const teamIds = new Set<string>();
     for (const s of stats) {
-      // Only custom teams need to be present locally; stock teams are always available.
+      if (s.teamId.startsWith("custom:")) teamIds.add(s.teamId);
+      if (s.opponentTeamId.startsWith("custom:")) teamIds.add(s.opponentTeamId);
+    }
+    for (const s of pitcherStats) {
       if (s.teamId.startsWith("custom:")) teamIds.add(s.teamId);
       if (s.opponentTeamId.startsWith("custom:")) teamIds.add(s.opponentTeamId);
     }
@@ -170,6 +316,7 @@ function buildStore(getDbFn: GetDb) {
     const payload: ExportedGameHistory["payload"] = {
       games: games.map((g) => g.toJSON() as GameDoc),
       playerGameStats: stats.map((s) => s.toJSON() as PlayerGameStatDoc),
+      pitcherGameStats: pitcherStats.map((s) => s.toJSON() as PitcherGameStatDoc),
       requiredTeamIds: Array.from(teamIds),
     };
 
@@ -177,7 +324,7 @@ function buildStore(getDbFn: GetDb) {
 
     const bundle: ExportedGameHistory = {
       type: "gameHistory",
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: new Date().toISOString(),
       payload,
       sig,
@@ -188,7 +335,7 @@ function buildStore(getDbFn: GetDb) {
 
   /**
    * Imports a signed game-history bundle.
-   * - Validates signature and format version.
+   * - Validates signature and format version (accepts v1 and v2).
    * - Validates that all required team IDs exist locally.
    * - Merges idempotently: skips any game or stat row whose ID already exists.
    */
@@ -207,7 +354,7 @@ function buildStore(getDbFn: GetDb) {
     if (bundle.type !== "gameHistory") {
       throw new Error(`Unexpected bundle type: ${String(bundle.type ?? "(none)")}`);
     }
-    if (bundle.formatVersion !== 1) {
+    if (bundle.formatVersion !== 1 && bundle.formatVersion !== 2) {
       throw new Error(`Unsupported game history format version: ${String(bundle.formatVersion)}`);
     }
     if (!bundle.payload || typeof bundle.payload !== "object") {
@@ -222,8 +369,6 @@ function buildStore(getDbFn: GetDb) {
       );
     }
 
-    // Validate required teams — only custom: team IDs need local validation;
-    // stock (non-custom) teams are always available.
     const requiredTeamIds = (bundle.payload.requiredTeamIds ?? []).filter((id) =>
       id.startsWith("custom:"),
     );
@@ -241,8 +386,9 @@ function buildStore(getDbFn: GetDb) {
 
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
+    const pitcherStats = (bundle.payload as { pitcherGameStats?: PitcherGameStatDoc[] }).pitcherGameStats ?? [];
 
-    // Prefetch existing game IDs in a single query, then bulk-insert the remainder.
+    // Games.
     const gameIds = games.map((g) => g.id);
     const existingGameDocs =
       gameIds.length > 0 ? await db.games.findByIds(gameIds).exec() : new Map();
@@ -259,7 +405,7 @@ function buildStore(getDbFn: GetDb) {
       gamesCreated = result.success.length;
     }
 
-    // Prefetch existing stat IDs in a single query, then bulk-insert the remainder.
+    // Batting stats.
     const statIds = stats.map((s) => s.id);
     const existingStatDocs =
       statIds.length > 0 ? await db.playerGameStats.findByIds(statIds).exec() : new Map();
@@ -280,10 +426,40 @@ function buildStore(getDbFn: GetDb) {
       statsCreated = result.success.length;
     }
 
-    return { gamesCreated, gamesSkipped, statsCreated, statsSkipped };
+    // Pitcher stats.
+    const pitcherIds = pitcherStats.map((p) => p.id);
+    const existingPitcherDocs =
+      pitcherIds.length > 0 ? await db.pitcherGameStats.findByIds(pitcherIds).exec() : new Map();
+    const existingPitcherIds = new Set(existingPitcherDocs.keys());
+    const pitchersToInsert = pitcherStats.filter((p) => !existingPitcherIds.has(p.id));
+
+    let pitcherStatsCreated = 0;
+    const pitcherStatsSkipped = existingPitcherIds.size;
+
+    if (pitchersToInsert.length > 0) {
+      const result = await db.pitcherGameStats.bulkInsert(
+        pitchersToInsert.map((p) => ({
+          ...p,
+          createdAt: p.createdAt ?? now,
+          schemaVersion: HISTORY_SCHEMA_VERSION,
+        })),
+      );
+      pitcherStatsCreated = result.success.length;
+    }
+
+    return { gamesCreated, gamesSkipped, statsCreated, statsSkipped, pitcherStatsCreated, pitcherStatsSkipped };
   }
 
-  return { commitCompletedGame, getCareerStats, exportGameHistory, importGameHistory };
+  return {
+    commitCompletedGame,
+    getCareerStats,
+    getPlayerCareerBatting,
+    getPlayerCareerPitching,
+    getTeamCareerBattingStats,
+    getTeamCareerPitchingStats,
+    exportGameHistory,
+    importGameHistory,
+  };
 }
 
 /** Default GameHistoryStore backed by the IndexedDB singleton. */
