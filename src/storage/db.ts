@@ -463,9 +463,12 @@ async function initDb(
               const p = player as Record<string, unknown>;
               if (p["globalPlayerId"]) return p; // already has one
               const playerSeed = p["playerSeed"] as string | undefined;
-              const fallbackSeed = (): string =>
-                Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
-              const seed = playerSeed ?? fallbackSeed();
+              // Derive a deterministic fallback from stable fields so the same legacy
+              // document always migrates to the same globalPlayerId on every device/run.
+              const id = p["id"] as string | undefined;
+              const fingerprint = p["fingerprint"] as string | undefined;
+              const deterministicBasis = `${id ?? ""}|${fingerprint ?? ""}`;
+              const seed = playerSeed ?? fnv1a(deterministicBasis);
               const globalPlayerId = `pl_${fnv1a(seed)}`;
               return { ...p, globalPlayerId };
             };
@@ -529,16 +532,21 @@ async function initDb(
         },
         // v2→v3: backfill globalPlayerId from playerSeed.
         // globalPlayerId = "pl_" + fnv1a(playerSeed) when playerSeed is available.
-        // For players without playerSeed (should be rare after v3 customTeams migration),
-        // generate a fresh random fallback using the inline seed generator.
+        // For players without playerSeed, derive a deterministic fallback from
+        // stable existing fields so the same legacy doc always migrates to the
+        // same globalPlayerId on every device/run.
         3: (oldDoc: Record<string, unknown>) => {
           try {
             const existing = oldDoc["globalPlayerId"] as string | undefined;
             if (existing) return oldDoc;
             const playerSeed = oldDoc["playerSeed"] as string | undefined;
-            const fallbackSeed = (): string =>
-              Math.random().toString(36).slice(2, 14) + Math.random().toString(36).slice(2, 6);
-            const seed = playerSeed ?? fallbackSeed();
+            // Derive a deterministic fallback from the composite key and fingerprint
+            // so re-running the migration on a different device yields the same result.
+            const id = oldDoc["id"] as string | undefined;
+            const playerId = oldDoc["playerId"] as string | undefined;
+            const fingerprint = oldDoc["fingerprint"] as string | undefined;
+            const deterministicBasis = `${id ?? ""}|${playerId ?? ""}|${fingerprint ?? ""}`;
+            const seed = playerSeed ?? fnv1a(deterministicBasis);
             const globalPlayerId = `pl_${fnv1a(seed)}`;
             return { ...oldDoc, globalPlayerId };
           } catch {

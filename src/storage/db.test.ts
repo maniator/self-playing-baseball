@@ -1340,3 +1340,407 @@ describe("schema migration: players v1 → v2 (team-scoped composite primary key
     await v2Db.close();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Migration tests for globalPlayerId backfill (added in this PR)
+// ---------------------------------------------------------------------------
+
+describe("schema migration: players v2 → v3 (globalPlayerId backfill)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
+
+  /** v2 players schema — same as what was deployed before this PR. */
+  const v2PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 2,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 256 },
+      playerId: { type: "string", maxLength: 128 },
+      teamId: { type: ["string", "null"] },
+      section: { type: "string", enum: ["lineup", "bench", "pitchers"], maxLength: 16 },
+      orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+      name: { type: "string" },
+      role: { type: "string" },
+      batting: { type: "object", additionalProperties: true },
+      pitching: { type: "object", additionalProperties: true },
+      playerSeed: { type: "string", maxLength: 32 },
+      fingerprint: { type: "string", maxLength: 8 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+    },
+    required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+    indexes: [],
+  };
+
+  it("backfills globalPlayerId from playerSeed on migration from v2 to v3", async () => {
+    const dbName = `players_v2v3_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── Step 1: Create a v2 DB with a player that has a playerSeed ────────────
+    const v2Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v2Db.addCollections({
+      players: {
+        schema: v2PlayersSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc },
+      },
+    });
+    await v2Db.players.insert({
+      id: "ct_alpha:p_alice",
+      playerId: "p_alice",
+      teamId: "ct_alpha",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Alice",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 50 },
+      playerSeed: "aliceseed123",
+      fingerprint: "abcd1234",
+      schemaVersion: 1,
+    });
+    await v2Db.close();
+
+    // ── Step 2: Reopen at v3 (triggers v2→v3 migration) ──────────────────────
+    const v3Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v3Db.players.findOne("ct_alpha:p_alice").exec();
+    expect(doc, "player doc must survive migration").not.toBeNull();
+    expect(doc?.name).toBe("Alice");
+
+    const raw = doc?.toJSON() as Record<string, unknown>;
+    // globalPlayerId must be present and follow the "pl_" prefix convention.
+    expect(typeof raw["globalPlayerId"]).toBe("string");
+    expect((raw["globalPlayerId"] as string).startsWith("pl_")).toBe(true);
+    // Deterministic: same playerSeed always produces the same globalPlayerId.
+    // Second open must return the same value.
+    const firstId = raw["globalPlayerId"] as string;
+    await v3Db.close();
+
+    const v3Db2 = await _createTestDb(getRxStorageDexie(), dbName);
+    const raw2 = (
+      (await v3Db2.players.findOne("ct_alpha:p_alice").exec())?.toJSON() as Record<string, unknown>
+    )["globalPlayerId"] as string;
+    await v3Db2.close();
+    expect(raw2).toBe(firstId);
+  });
+
+  it("produces deterministic globalPlayerId fallback when playerSeed is absent", async () => {
+    const dbName = `players_v2v3_noseed_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v2Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v2Db.addCollections({
+      players: {
+        schema: v2PlayersSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc },
+      },
+    });
+    // Player with no playerSeed — legacy scenario.
+    await v2Db.players.insert({
+      id: "ct_beta:p_bob",
+      playerId: "p_bob",
+      teamId: "ct_beta",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Bob",
+      role: "batter",
+      batting: { contact: 60, power: 70, speed: 55 },
+      schemaVersion: 1,
+    });
+    await v2Db.close();
+
+    // Open twice — both runs must produce the same globalPlayerId.
+    const v3Db1 = await _createTestDb(getRxStorageDexie(), dbName);
+    const raw1 = (
+      (await v3Db1.players.findOne("ct_beta:p_bob").exec())?.toJSON() as Record<string, unknown>
+    )["globalPlayerId"] as string;
+    await v3Db1.close();
+
+    const v3Db2 = await _createTestDb(getRxStorageDexie(), dbName);
+    const raw2 = (
+      (await v3Db2.players.findOne("ct_beta:p_bob").exec())?.toJSON() as Record<string, unknown>
+    )["globalPlayerId"] as string;
+    await v3Db2.close();
+
+    expect(raw1).toBe(raw2);
+    expect(raw1.startsWith("pl_")).toBe(true);
+  });
+
+  it("preserves existing globalPlayerId if already present (idempotent)", async () => {
+    const dbName = `players_v2v3_idem_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v2Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v2Db.addCollections({
+      players: {
+        schema: v2PlayersSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc },
+      },
+    });
+    await v2Db.players.insert({
+      id: "ct_gamma:p_carol",
+      playerId: "p_carol",
+      teamId: "ct_gamma",
+      section: "lineup",
+      orderIndex: 0,
+      name: "Carol",
+      role: "batter",
+      batting: { contact: 65, power: 65, speed: 65 },
+      playerSeed: "carolseed",
+      schemaVersion: 1,
+    });
+    await v2Db.close();
+
+    const v3Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v3Db.players.findOne("ct_gamma:p_carol").exec();
+    const raw = doc?.toJSON() as Record<string, unknown>;
+    const firstGlobalId = raw["globalPlayerId"] as string;
+    expect(firstGlobalId.startsWith("pl_")).toBe(true);
+
+    // Running migration again (open same DB at v3) must not change the id.
+    await v3Db.close();
+    const v3Db2 = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc2 = await v3Db2.players.findOne("ct_gamma:p_carol").exec();
+    const raw2 = doc2?.toJSON() as Record<string, unknown>;
+    expect(raw2["globalPlayerId"]).toBe(firstGlobalId);
+    await v3Db2.close();
+  });
+});
+
+describe("schema migration: customTeams v3 → v4 (embedded player globalPlayerId backfill)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
+
+  /** v3 customTeams schema — same as what was deployed before this PR. */
+  const v3CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 3,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 128 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+      createdAt: { type: "string", maxLength: 32 },
+      updatedAt: { type: "string", maxLength: 32 },
+      name: { type: "string", maxLength: 256 },
+      abbreviation: { type: "string", maxLength: 8 },
+      nickname: { type: "string", maxLength: 256 },
+      city: { type: "string", maxLength: 256 },
+      slug: { type: "string", maxLength: 256 },
+      source: { type: "string", enum: ["custom", "generated"], maxLength: 16 },
+      roster: { type: "object", additionalProperties: true },
+      metadata: { type: "object", additionalProperties: true },
+      statsProfile: { type: "string", maxLength: 64 },
+      fingerprint: { type: "string", maxLength: 8 },
+      teamSeed: { type: "string", maxLength: 32 },
+    },
+    required: [
+      "id",
+      "schemaVersion",
+      "createdAt",
+      "updatedAt",
+      "name",
+      "source",
+      "roster",
+      "metadata",
+    ],
+    indexes: ["updatedAt", "source"],
+  };
+
+  it("backfills globalPlayerId on embedded roster players from playerSeed on migration v3→v4", async () => {
+    const dbName = `ct_v3v4_${Math.random().toString(36).slice(2, 10)}`;
+
+    // ── Step 1: Create a v3 DB with players that have playerSeed ────────────
+    const v3Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v3Db.addCollections({
+      customTeams: {
+        schema: v3CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc, 3: (doc) => doc },
+      },
+    });
+    await v3Db.customTeams.insert({
+      id: "ct_v3team",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "V3 Team",
+      abbreviation: "V3T",
+      source: "custom",
+      teamSeed: "v3teamseed",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p1",
+            name: "Alice",
+            role: "batter",
+            batting: { contact: 70, power: 60, speed: 50 },
+            playerSeed: "p1seed",
+            fingerprint: "fp000001",
+          },
+        ],
+        bench: [
+          {
+            id: "p2",
+            name: "Bob",
+            role: "batter",
+            batting: { contact: 55, power: 65, speed: 60 },
+            // No playerSeed — tests deterministic fallback.
+            fingerprint: "fp000002",
+          },
+        ],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v3Db.close();
+
+    // ── Step 2: Reopen at v4 (triggers v3→v4 migration) ──────────────────────
+    const v4Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const doc = await v4Db.customTeams.findOne("ct_v3team").exec();
+    expect(doc, "team doc must survive migration").not.toBeNull();
+
+    const roster = (doc?.toJSON() as Record<string, unknown>)["roster"] as {
+      lineup: { id: string; playerSeed?: string; globalPlayerId?: string }[];
+      bench: { id: string; playerSeed?: string; globalPlayerId?: string }[];
+    };
+
+    // Lineup player (has playerSeed) — globalPlayerId must be set with "pl_" prefix.
+    expect(typeof roster.lineup[0].globalPlayerId).toBe("string");
+    expect(roster.lineup[0].globalPlayerId!.startsWith("pl_")).toBe(true);
+
+    // Bench player (no playerSeed) — globalPlayerId must still be present and deterministic.
+    expect(typeof roster.bench[0].globalPlayerId).toBe("string");
+    expect(roster.bench[0].globalPlayerId!.startsWith("pl_")).toBe(true);
+
+    await v4Db.close();
+  });
+
+  it("produces deterministic fallback globalPlayerId for player missing playerSeed across two opens", async () => {
+    const dbName = `ct_v3v4_det_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v3Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v3Db.addCollections({
+      customTeams: {
+        schema: v3CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc, 3: (doc) => doc },
+      },
+    });
+    await v3Db.customTeams.insert({
+      id: "ct_v3det",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Det Team",
+      abbreviation: "DET",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "px",
+            name: "Charlie",
+            role: "batter",
+            batting: { contact: 60, power: 60, speed: 60 },
+            fingerprint: "fp000003",
+            // No playerSeed — fallback must be deterministic.
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v3Db.close();
+
+    const v4Db1 = await _createTestDb(getRxStorageDexie(), dbName);
+    const roster1 = (
+      (await v4Db1.customTeams.findOne("ct_v3det").exec())?.toJSON() as Record<string, unknown>
+    )["roster"] as { lineup: { globalPlayerId?: string }[] };
+    const id1 = roster1.lineup[0].globalPlayerId;
+    await v4Db1.close();
+
+    const v4Db2 = await _createTestDb(getRxStorageDexie(), dbName);
+    const roster2 = (
+      (await v4Db2.customTeams.findOne("ct_v3det").exec())?.toJSON() as Record<string, unknown>
+    )["roster"] as { lineup: { globalPlayerId?: string }[] };
+    const id2 = roster2.lineup[0].globalPlayerId;
+    await v4Db2.close();
+
+    expect(id1).toBe(id2);
+    expect(id1!.startsWith("pl_")).toBe(true);
+  });
+
+  it("skips players that already have globalPlayerId (idempotent)", async () => {
+    const dbName = `ct_v3v4_idem_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v3Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    await v3Db.addCollections({
+      customTeams: {
+        schema: v3CustomTeamsSchema,
+        migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc, 3: (doc) => doc },
+      },
+    });
+    await v3Db.customTeams.insert({
+      id: "ct_v3idem",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Idem Team",
+      abbreviation: "IDM",
+      source: "custom",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "py",
+            name: "Dana",
+            role: "batter",
+            batting: { contact: 70, power: 70, speed: 70 },
+            playerSeed: "danaseed",
+            globalPlayerId: "pl_preexisting",
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    });
+    await v3Db.close();
+
+    const v4Db = await _createTestDb(getRxStorageDexie(), dbName);
+    const roster = (
+      (await v4Db.customTeams.findOne("ct_v3idem").exec())?.toJSON() as Record<string, unknown>
+    )["roster"] as { lineup: { globalPlayerId?: string }[] };
+
+    // Pre-existing globalPlayerId must NOT be overwritten.
+    expect(roster.lineup[0].globalPlayerId).toBe("pl_preexisting");
+    await v4Db.close();
+  });
+});

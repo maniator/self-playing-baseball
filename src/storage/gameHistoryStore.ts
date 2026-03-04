@@ -63,7 +63,17 @@ function buildStore(getDbFn: GetDb) {
 
     // Write game doc first, then stats. Both are fire-and-mostly-forget in the
     // hook, but here we surface errors to let the caller decide.
-    await db.games.insert(gameDoc);
+    try {
+      await db.games.insert(gameDoc);
+    } catch (err) {
+      // Idempotency under concurrency: if another tab/session inserted this game
+      // first, treat the conflict as "already committed" and return without
+      // writing stats again.
+      if (err && typeof err === "object" && (err as { code?: string }).code === "CONFLICT") {
+        return;
+      }
+      throw err;
+    }
     if (statDocs.length > 0) {
       await db.playerGameStats.bulkInsert(statDocs);
     }
@@ -212,33 +222,42 @@ function buildStore(getDbFn: GetDb) {
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
 
-    let gamesCreated = 0;
-    let gamesSkipped = 0;
-    let statsCreated = 0;
-    let statsSkipped = 0;
+    // Prefetch existing game IDs in a single query, then bulk-insert the remainder.
+    const gameIds = games.map((g) => g.id);
+    const existingGameDocs =
+      gameIds.length > 0 ? await db.games.findByIds(gameIds).exec() : new Map();
+    const existingGameIds = new Set(existingGameDocs.keys());
+    const gamesToInsert = games.filter((g) => !existingGameIds.has(g.id));
 
-    for (const game of games) {
-      const existing = await db.games.findOne(game.id).exec();
-      if (existing) {
-        gamesSkipped++;
-        continue;
-      }
-      await db.games.insert({ ...game, schemaVersion: HISTORY_SCHEMA_VERSION });
-      gamesCreated++;
+    let gamesCreated = 0;
+    const gamesSkipped = existingGameIds.size;
+
+    if (gamesToInsert.length > 0) {
+      const result = await db.games.bulkInsert(
+        gamesToInsert.map((g) => ({ ...g, schemaVersion: HISTORY_SCHEMA_VERSION })),
+      );
+      gamesCreated = result.success.length;
     }
 
-    for (const stat of stats) {
-      const existing = await db.playerGameStats.findOne(stat.id).exec();
-      if (existing) {
-        statsSkipped++;
-        continue;
-      }
-      await db.playerGameStats.insert({
-        ...stat,
-        createdAt: stat.createdAt ?? now,
-        schemaVersion: HISTORY_SCHEMA_VERSION,
-      });
-      statsCreated++;
+    // Prefetch existing stat IDs in a single query, then bulk-insert the remainder.
+    const statIds = stats.map((s) => s.id);
+    const existingStatDocs =
+      statIds.length > 0 ? await db.playerGameStats.findByIds(statIds).exec() : new Map();
+    const existingStatIds = new Set(existingStatDocs.keys());
+    const statsToInsert = stats.filter((s) => !existingStatIds.has(s.id));
+
+    let statsCreated = 0;
+    const statsSkipped = existingStatIds.size;
+
+    if (statsToInsert.length > 0) {
+      const result = await db.playerGameStats.bulkInsert(
+        statsToInsert.map((s) => ({
+          ...s,
+          createdAt: s.createdAt ?? now,
+          schemaVersion: HISTORY_SCHEMA_VERSION,
+        })),
+      );
+      statsCreated = result.success.length;
     }
 
     return { gamesCreated, gamesSkipped, statsCreated, statsSkipped };
