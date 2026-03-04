@@ -95,18 +95,38 @@ describe("CareerStatsPage", () => {
 
   it("shows the Career Stats heading", async () => {
     renderPage();
-    expect(screen.getByText(/career stats/i)).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /career stats/i })).toBeInTheDocument();
   });
 
-  it("has batting and pitching tab buttons", async () => {
+  it("has batting and pitching tab buttons (when a team exists)", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("t1", "Test Team")],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
     renderPage();
-    expect(screen.getByTestId("career-stats-batting-tab")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("career-stats-batting-tab")).toBeInTheDocument();
+    });
     expect(screen.getByTestId("career-stats-pitching-tab")).toBeInTheDocument();
   });
 
-  it("has a team selector", async () => {
+  it("has a team selector (when a team exists)", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("t1", "Test Team")],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
     renderPage();
-    expect(screen.getByTestId("career-stats-team-select")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("career-stats-team-select")).toBeInTheDocument();
+    });
   });
 
   it("back button navigates to home", async () => {
@@ -534,5 +554,28 @@ describe("CareerStatsPage", () => {
       const updatedRows = screen.getAllByRole("row");
       expect(updatedRows[1].textContent).toContain("ZebraCloser");
     });
+  });
+
+  it("shows no-teams empty state when there are no teams and no history", async () => {
+    // Ensure getDb returns empty collections so the loadTeamIds effect
+    // doesn't populate teamsWithHistory with non-custom team IDs from a
+    // prior test's overridden mock (clearAllMocks only resets call counts,
+    // not persistent mockResolvedValue implementations).
+    const { getDb } = await import("@storage/db");
+    vi.mocked(getDb).mockResolvedValue({
+      playerGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+      pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+    } as any);
+    renderPage();
+    // Wait for the async loadTeamIds effect to settle (empty → noTeams = true).
+    await waitFor(
+      () => {
+        expect(screen.getByTestId("career-stats-no-teams")).toBeInTheDocument();
+      },
+      { timeout: 3000 },
+    );
+    expect(screen.getByText(/no teams yet/i)).toBeInTheDocument();
+    // The team selector must NOT be rendered in this state.
+    expect(screen.queryByTestId("career-stats-team-select")).not.toBeInTheDocument();
   });
 });

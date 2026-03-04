@@ -558,3 +558,21 @@ export async function computeTeamsSignature(page: Page, payload: unknown): Promi
     return hash.toString(16).padStart(8, "0");
   }, payload);
 }
+
+/**
+ * Imports a game history export fixture via the SavesModal's history file-input.
+ *
+ * Requires a game to already be active (saves-button must be visible).  Call
+ * `startGameViaPlayBall` (or `loadFixture`) first to enter a game session.
+ *
+ * History fixtures live in `e2e/fixtures/` and must carry a valid FNV-1a
+ * signature: `fnv1a("ballgame:gameHistory:v1" + JSON.stringify(payload))`.
+ */
+export async function importHistoryFixture(page: Page, fixtureName: string): Promise<void> {
+  const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  await openSavesModal(page);
+  await page.getByTestId("import-history-file-input").setInputFiles(fixturePath);
+  await expect(page.getByTestId("import-history-success")).toBeVisible({ timeout: 10_000 });
+  await page.getByTestId("saves-modal-close-button").click();
+  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
+}

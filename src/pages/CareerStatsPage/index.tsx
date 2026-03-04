@@ -289,6 +289,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
   const isEmpty =
     !dataLoading && selectedTeamId !== "" && battingRows.length === 0 && pitchingRows.length === 0;
 
+  // When there are no teams at all (fresh install, no history) show a special message.
+  const noTeams = !teamsLoading && selectableTeamIds.length === 0;
+
   return (
     <CareerContainer data-testid="career-stats-page">
       <PageHeader>
@@ -299,202 +302,213 @@ const CareerStatsPage: React.FunctionComponent = () => {
 
       <PageTitle>📊 Career Stats</PageTitle>
 
-      <TeamSelectorRow>
-        <TeamSelectLabel htmlFor="career-stats-team-select">Team:</TeamSelectLabel>
-        <TeamSelect
-          id="career-stats-team-select"
-          data-testid="career-stats-team-select"
-          value={selectedTeamId}
-          onChange={(e) => setSelectedTeamId(e.target.value)}
-        >
-          {selectableTeamIds.length === 0 && <option value="">— No teams —</option>}
-          {selectableTeamIds.map((id) => (
-            <option key={id} value={id}>
-              {resolveTeamLabel(id, customTeams)}
-            </option>
-          ))}
-        </TeamSelect>
-      </TeamSelectorRow>
-
-      <TabBar>
-        <TabBtn
-          type="button"
-          $active={activeTab === "batting"}
-          onClick={() => setActiveTab("batting")}
-          data-testid="career-stats-batting-tab"
-        >
-          Batting
-        </TabBtn>
-        <TabBtn
-          type="button"
-          $active={activeTab === "pitching"}
-          onClick={() => setActiveTab("pitching")}
-          data-testid="career-stats-pitching-tab"
-        >
-          Pitching
-        </TabBtn>
-      </TabBar>
-
-      {isEmpty && (
-        <EmptyState data-testid="career-stats-empty">
-          No completed games yet for this team.
+      {noTeams ? (
+        <EmptyState data-testid="career-stats-no-teams">
+          No teams yet. Create a team and play a completed game to see career stats.
         </EmptyState>
-      )}
-
-      {!isEmpty && activeTab === "batting" && battingRows.length > 0 && (
-        <TableWrapper>
-          <StatsTable>
-            <thead>
-              <tr>
-                <Th $sortable data-sort-key="nameAtGameTime" onClick={handleBattingThClick}>
-                  Name{sortIndicator("nameAtGameTime", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="gamesPlayed" onClick={handleBattingThClick}>
-                  G{sortIndicator("gamesPlayed", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="atBats" onClick={handleBattingThClick}>
-                  AB{sortIndicator("atBats", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="hits" onClick={handleBattingThClick}>
-                  H{sortIndicator("hits", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="doubles" onClick={handleBattingThClick}>
-                  2B{sortIndicator("doubles", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="triples" onClick={handleBattingThClick}>
-                  3B{sortIndicator("triples", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="homers" onClick={handleBattingThClick}>
-                  HR{sortIndicator("homers", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="walks" onClick={handleBattingThClick}>
-                  BB{sortIndicator("walks", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="strikeouts" onClick={handleBattingThClick}>
-                  K{sortIndicator("strikeouts", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="rbi" onClick={handleBattingThClick}>
-                  RBI{sortIndicator("rbi", battingSort.key, battingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="avg" onClick={handleBattingThClick}>
-                  AVG{sortIndicator("avg", battingSort.key, battingSort.dir)}
-                </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedBattingRows.map((row) => (
-                <tr key={row.playerKey}>
-                  <Td>
-                    <PlayerLink
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/players/${encodeURIComponent(row.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
-                        )
-                      }
-                    >
-                      {row.nameAtGameTime}
-                    </PlayerLink>
-                  </Td>
-                  <Td>{row.gamesPlayed}</Td>
-                  <Td>{row.atBats}</Td>
-                  <Td>{row.hits}</Td>
-                  <Td>{row.doubles}</Td>
-                  <Td>{row.triples}</Td>
-                  <Td>{row.homers}</Td>
-                  <Td>{row.walks}</Td>
-                  <Td>{row.strikeouts}</Td>
-                  <Td>{row.rbi}</Td>
-                  <Td>{formatAVG(row.hits, row.atBats)}</Td>
-                </tr>
+      ) : (
+        <>
+          <TeamSelectorRow>
+            <TeamSelectLabel htmlFor="career-stats-team-select">Team:</TeamSelectLabel>
+            <TeamSelect
+              id="career-stats-team-select"
+              data-testid="career-stats-team-select"
+              value={selectedTeamId}
+              onChange={(e) => setSelectedTeamId(e.target.value)}
+            >
+              {selectableTeamIds.map((id) => (
+                <option key={id} value={id}>
+                  {resolveTeamLabel(id, customTeams)}
+                </option>
               ))}
-            </tbody>
-          </StatsTable>
-        </TableWrapper>
-      )}
+            </TeamSelect>
+          </TeamSelectorRow>
 
-      {!isEmpty && activeTab === "pitching" && pitchingRows.length > 0 && (
-        <TableWrapper>
-          <StatsTable>
-            <thead>
-              <tr>
-                <Th $sortable data-sort-key="nameAtGameTime" onClick={handlePitchingThClick}>
-                  Name{sortIndicator("nameAtGameTime", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="gamesPlayed" onClick={handlePitchingThClick}>
-                  G{sortIndicator("gamesPlayed", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="outsPitched" onClick={handlePitchingThClick}>
-                  IP{sortIndicator("outsPitched", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="hitsAllowed" onClick={handlePitchingThClick}>
-                  H{sortIndicator("hitsAllowed", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="walksAllowed" onClick={handlePitchingThClick}>
-                  BB{sortIndicator("walksAllowed", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="strikeoutsRecorded" onClick={handlePitchingThClick}>
-                  K{sortIndicator("strikeoutsRecorded", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="homersAllowed" onClick={handlePitchingThClick}>
-                  HR{sortIndicator("homersAllowed", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="runsAllowed" onClick={handlePitchingThClick}>
-                  R{sortIndicator("runsAllowed", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="earnedRuns" onClick={handlePitchingThClick}>
-                  ER{sortIndicator("earnedRuns", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="era" onClick={handlePitchingThClick}>
-                  ERA{sortIndicator("era", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="whip" onClick={handlePitchingThClick}>
-                  WHIP{sortIndicator("whip", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="saves" onClick={handlePitchingThClick}>
-                  SV{sortIndicator("saves", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="holds" onClick={handlePitchingThClick}>
-                  HLD{sortIndicator("holds", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-                <Th $sortable data-sort-key="blownSaves" onClick={handlePitchingThClick}>
-                  BS{sortIndicator("blownSaves", pitchingSort.key, pitchingSort.dir)}
-                </Th>
-              </tr>
-            </thead>
-            <tbody>
-              {sortedPitchingRows.map((row) => (
-                <tr key={row.pitcherKey}>
-                  <Td>
-                    <PlayerLink
-                      type="button"
-                      onClick={() =>
-                        navigate(
-                          `/players/${encodeURIComponent(row.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
-                        )
-                      }
+          <TabBar>
+            <TabBtn
+              type="button"
+              $active={activeTab === "batting"}
+              onClick={() => setActiveTab("batting")}
+              data-testid="career-stats-batting-tab"
+            >
+              Batting
+            </TabBtn>
+            <TabBtn
+              type="button"
+              $active={activeTab === "pitching"}
+              onClick={() => setActiveTab("pitching")}
+              data-testid="career-stats-pitching-tab"
+            >
+              Pitching
+            </TabBtn>
+          </TabBar>
+
+          {isEmpty && (
+            <EmptyState data-testid="career-stats-empty">
+              No completed games yet for this team.
+            </EmptyState>
+          )}
+
+          {!isEmpty && activeTab === "batting" && battingRows.length > 0 && (
+            <TableWrapper>
+              <StatsTable>
+                <thead>
+                  <tr>
+                    <Th $sortable data-sort-key="nameAtGameTime" onClick={handleBattingThClick}>
+                      Name{sortIndicator("nameAtGameTime", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="gamesPlayed" onClick={handleBattingThClick}>
+                      G{sortIndicator("gamesPlayed", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="atBats" onClick={handleBattingThClick}>
+                      AB{sortIndicator("atBats", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="hits" onClick={handleBattingThClick}>
+                      H{sortIndicator("hits", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="doubles" onClick={handleBattingThClick}>
+                      2B{sortIndicator("doubles", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="triples" onClick={handleBattingThClick}>
+                      3B{sortIndicator("triples", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="homers" onClick={handleBattingThClick}>
+                      HR{sortIndicator("homers", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="walks" onClick={handleBattingThClick}>
+                      BB{sortIndicator("walks", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="strikeouts" onClick={handleBattingThClick}>
+                      K{sortIndicator("strikeouts", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="rbi" onClick={handleBattingThClick}>
+                      RBI{sortIndicator("rbi", battingSort.key, battingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="avg" onClick={handleBattingThClick}>
+                      AVG{sortIndicator("avg", battingSort.key, battingSort.dir)}
+                    </Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedBattingRows.map((row) => (
+                    <tr key={row.playerKey}>
+                      <Td>
+                        <PlayerLink
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/players/${encodeURIComponent(row.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                            )
+                          }
+                        >
+                          {row.nameAtGameTime}
+                        </PlayerLink>
+                      </Td>
+                      <Td>{row.gamesPlayed}</Td>
+                      <Td>{row.atBats}</Td>
+                      <Td>{row.hits}</Td>
+                      <Td>{row.doubles}</Td>
+                      <Td>{row.triples}</Td>
+                      <Td>{row.homers}</Td>
+                      <Td>{row.walks}</Td>
+                      <Td>{row.strikeouts}</Td>
+                      <Td>{row.rbi}</Td>
+                      <Td>{formatAVG(row.hits, row.atBats)}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </StatsTable>
+            </TableWrapper>
+          )}
+
+          {!isEmpty && activeTab === "pitching" && pitchingRows.length > 0 && (
+            <TableWrapper>
+              <StatsTable>
+                <thead>
+                  <tr>
+                    <Th $sortable data-sort-key="nameAtGameTime" onClick={handlePitchingThClick}>
+                      Name{sortIndicator("nameAtGameTime", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="gamesPlayed" onClick={handlePitchingThClick}>
+                      G{sortIndicator("gamesPlayed", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="outsPitched" onClick={handlePitchingThClick}>
+                      IP{sortIndicator("outsPitched", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="hitsAllowed" onClick={handlePitchingThClick}>
+                      H{sortIndicator("hitsAllowed", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="walksAllowed" onClick={handlePitchingThClick}>
+                      BB{sortIndicator("walksAllowed", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th
+                      $sortable
+                      data-sort-key="strikeoutsRecorded"
+                      onClick={handlePitchingThClick}
                     >
-                      {row.nameAtGameTime}
-                    </PlayerLink>
-                  </Td>
-                  <Td>{row.gamesPlayed}</Td>
-                  <Td>{formatIP(row.outsPitched)}</Td>
-                  <Td>{row.hitsAllowed}</Td>
-                  <Td>{row.walksAllowed}</Td>
-                  <Td>{row.strikeoutsRecorded}</Td>
-                  <Td>{row.homersAllowed}</Td>
-                  <Td>{row.runsAllowed}</Td>
-                  <Td>{row.earnedRuns}</Td>
-                  <Td>{formatERA(row.earnedRuns, row.outsPitched)}</Td>
-                  <Td>{formatWHIP(row.walksAllowed, row.hitsAllowed, row.outsPitched)}</Td>
-                  <Td>{row.saves}</Td>
-                  <Td>{row.holds}</Td>
-                  <Td>{row.blownSaves}</Td>
-                </tr>
-              ))}
-            </tbody>
-          </StatsTable>
-        </TableWrapper>
+                      K{sortIndicator("strikeoutsRecorded", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="homersAllowed" onClick={handlePitchingThClick}>
+                      HR{sortIndicator("homersAllowed", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="runsAllowed" onClick={handlePitchingThClick}>
+                      R{sortIndicator("runsAllowed", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="earnedRuns" onClick={handlePitchingThClick}>
+                      ER{sortIndicator("earnedRuns", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="era" onClick={handlePitchingThClick}>
+                      ERA{sortIndicator("era", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="whip" onClick={handlePitchingThClick}>
+                      WHIP{sortIndicator("whip", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="saves" onClick={handlePitchingThClick}>
+                      SV{sortIndicator("saves", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="holds" onClick={handlePitchingThClick}>
+                      HLD{sortIndicator("holds", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                    <Th $sortable data-sort-key="blownSaves" onClick={handlePitchingThClick}>
+                      BS{sortIndicator("blownSaves", pitchingSort.key, pitchingSort.dir)}
+                    </Th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedPitchingRows.map((row) => (
+                    <tr key={row.pitcherKey}>
+                      <Td>
+                        <PlayerLink
+                          type="button"
+                          onClick={() =>
+                            navigate(
+                              `/players/${encodeURIComponent(row.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                            )
+                          }
+                        >
+                          {row.nameAtGameTime}
+                        </PlayerLink>
+                      </Td>
+                      <Td>{row.gamesPlayed}</Td>
+                      <Td>{formatIP(row.outsPitched)}</Td>
+                      <Td>{row.hitsAllowed}</Td>
+                      <Td>{row.walksAllowed}</Td>
+                      <Td>{row.strikeoutsRecorded}</Td>
+                      <Td>{row.homersAllowed}</Td>
+                      <Td>{row.runsAllowed}</Td>
+                      <Td>{row.earnedRuns}</Td>
+                      <Td>{formatERA(row.earnedRuns, row.outsPitched)}</Td>
+                      <Td>{formatWHIP(row.walksAllowed, row.hitsAllowed, row.outsPitched)}</Td>
+                      <Td>{row.saves}</Td>
+                      <Td>{row.holds}</Td>
+                      <Td>{row.blownSaves}</Td>
+                    </tr>
+                  ))}
+                </tbody>
+              </StatsTable>
+            </TableWrapper>
+          )}
+        </>
       )}
     </CareerContainer>
   );
