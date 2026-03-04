@@ -8,6 +8,9 @@ import { getRngState, getSeed } from "@utils/rng";
 import { generateRoster } from "@utils/roster";
 import { computeBattingStatsFromLogs } from "@utils/stats/computeBattingStatsFromLogs";
 
+/** Maximum number of automatic retry attempts after a transient commit failure. */
+const MAX_COMMIT_RETRIES = 3;
+
 /**
  * Builds the playerKey for cross-game identity.
  *
@@ -44,12 +47,14 @@ const buildPlayerKey = (teamId: string, playerId: string, customTeams: CustomTea
  * exactly once per game session.
  *
  * Idempotency is enforced at two levels:
- *   1. Session-level: a `committedRef` is set to true after the first commit
- *      so the hook never writes twice in the same browser session, even if
- *      `gameOver` briefly toggles (e.g. after a load).
- *   2. DB-level: `GameHistoryStore.commitCompletedGame` checks for an existing
- *      GameDoc with the same `saveId` before writing, so a page reload followed
- *      by re-watching an already-FINAL save cannot produce duplicate rows.
+ *   1. Session-level: an `inFlightRef` prevents concurrent commit attempts, and
+ *      `committedRef` is set to true only after a successful commit. On transient
+ *      failure the `retryCount` state is incremented (up to 3) so the effect
+ *      re-fires without requiring a page reload.
+ *   2. DB-level: `GameHistoryStore.commitCompletedGame` uses `gameInstanceId`
+ *      (or legacy `saveId`) as the GameDoc primary key — any concurrent insert
+ *      of the same key is treated as "already committed", and missing stat rows
+ *      are still written so a partial prior write never permanently loses stats.
  *
  * Loading an already-FINAL save must NOT trigger a new commit. The hook guards
  * against this by checking `wasAlreadyFinalOnLoad` — set when the save is
@@ -67,9 +72,13 @@ export const useGameHistorySync = (
 
   // True after we have successfully committed this game session.
   const committedRef = React.useRef(false);
+  // Prevents a second commit attempt while one is already in-flight.
+  const inFlightRef = React.useRef(false);
   // Capture the wasAlreadyFinalOnLoad flag in a ref so the effect sees the latest value.
   const alreadyFinalRef = React.useRef(wasAlreadyFinalOnLoad);
   alreadyFinalRef.current = wasAlreadyFinalOnLoad;
+  // Incremented on transient failure so the effect re-fires automatically (capped at 3).
+  const [retryCount, setRetryCount] = React.useState(0);
 
   const gameStateRef = React.useRef(gameContext);
   gameStateRef.current = gameContext;
@@ -79,13 +88,13 @@ export const useGameHistorySync = (
 
   React.useEffect(() => {
     if (!gameOver) return;
-    // Skip if: already committed, or the game was already FINAL when it was loaded.
-    if (committedRef.current || alreadyFinalRef.current) return;
+    // Skip if: already committed, in-flight, or the game was already FINAL when loaded.
+    if (committedRef.current || inFlightRef.current || alreadyFinalRef.current) return;
 
     const saveId = rxSaveIdRef.current;
     if (!saveId) return;
 
-    committedRef.current = true;
+    inFlightRef.current = true;
 
     const state = gameStateRef.current;
     const currentCustomTeams = customTeamsRef.current;
@@ -157,12 +166,19 @@ export const useGameHistorySync = (
       committedBySaveId: saveId,
     };
 
-    GameHistoryStore.commitCompletedGame(gameId, gameMeta, statRows).catch((err) => {
-      appLog.error("useGameHistorySync: failed to commit completed game", err);
-      // Reset the committed flag so a subsequent attempt can retry.
-      committedRef.current = false;
-    });
-  }, [gameOver, rxSaveIdRef]);
+    GameHistoryStore.commitCompletedGame(gameId, gameMeta, statRows)
+      .then(() => {
+        committedRef.current = true;
+        inFlightRef.current = false;
+      })
+      .catch((err) => {
+        appLog.error("useGameHistorySync: failed to commit completed game", err);
+        inFlightRef.current = false;
+        // Increment retry nonce so this effect re-fires automatically.
+        // Capped at 3 to prevent an infinite loop on persistent DB errors.
+        setRetryCount((c) => (c < MAX_COMMIT_RETRIES ? c + 1 : c));
+      });
+  }, [gameOver, rxSaveIdRef, retryCount]);
 
   // Reset the committed flag when a new save is loaded (rxSaveIdRef changes).
   // This ensures a new game session can be committed even within the same
@@ -173,6 +189,7 @@ export const useGameHistorySync = (
     if (current !== prevSaveIdRef.current) {
       prevSaveIdRef.current = current;
       committedRef.current = false;
+      inFlightRef.current = false;
     }
   });
 };

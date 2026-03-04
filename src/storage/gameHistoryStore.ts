@@ -3,7 +3,9 @@
  *
  * Critical rules:
  *   - commitCompletedGame is idempotent: calling it multiple times with the same
- *     gameId (save ID) always writes exactly one GameDoc and one stat row per player.
+ *     gameInstanceId always writes exactly one GameDoc and one stat row per player.
+ *     If the GameDoc already exists (concurrent insert or prior partial write),
+ *     any missing stat rows are still written so no stats are permanently lost.
  *   - Loading an already-FINAL save must NOT call this function — the caller
  *     (useGameHistorySync) is responsible for checking the save state before committing.
  *   - Export/import is idempotent: re-importing the same bundle skips existing rows.
@@ -24,58 +26,76 @@ const HISTORY_SCHEMA_VERSION = 1;
 /** Signing key for game-history export bundles. */
 export const GAME_HISTORY_EXPORT_KEY = "ballgame:gameHistory:v1";
 
+/** Returns true when an RxDB error is a primary-key conflict (concurrent insert). */
+function isConflictError(err: unknown): boolean {
+  return Boolean(err && typeof err === "object" && (err as { code?: string }).code === "CONFLICT");
+}
+
 type GetDb = () => Promise<BallgameDb>;
 
 function buildStore(getDbFn: GetDb) {
   /**
    * Writes one GameDoc + N PlayerGameStatDoc rows for a completed game.
-   * Safe to call multiple times — if a GameDoc with `gameId` already exists,
-   * the entire commit is skipped (no stats rows are written either).
+   * Fully idempotent at both the game and stat-row level:
+   *   - If a GameDoc with `gameInstanceId` already exists, any missing stat rows
+   *     are still written (so a partial write followed by a retry never loses stats).
+   *   - Concurrent inserts of the same GameDoc are handled by treating the CONFLICT
+   *     error as "already committed" and falling through to the stat-row check.
    *
-   * @param gameId - the save ID (SaveDoc.id) used as the GameDoc primary key
+   * @param gameInstanceId - stable game identity key (State.gameInstanceId, with
+   *   legacy fallback to saveId for pre-gameInstanceId saves). Used as GameDoc.id
+   *   and as the prefix for PlayerGameStatDoc ids.
    */
   async function commitCompletedGame(
-    gameId: string,
+    gameInstanceId: string,
     gameMeta: Omit<GameDoc, "id" | "schemaVersion">,
     statRows: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt">[],
   ): Promise<void> {
     const db = await getDbFn();
 
-    // Idempotency guard: skip if game already committed.
-    const existing = await db.games.findOne(gameId).exec();
-    if (existing) return;
+    // Idempotency guard: skip GameDoc insert if already committed, but always
+    // fall through to write any missing stat rows (so a partial write on a
+    // prior attempt does not permanently block stat rows from being written).
+    const existing = await db.games.findOne(gameInstanceId).exec();
+
+    if (!existing) {
+      const gameDoc: GameDoc = {
+        id: gameInstanceId,
+        ...gameMeta,
+        schemaVersion: HISTORY_SCHEMA_VERSION,
+      };
+
+      try {
+        await db.games.insert(gameDoc);
+      } catch (err) {
+        // Idempotency under concurrency: if another tab/session inserted this game
+        // first, treat the conflict as "already committed" and fall through to
+        // write any missing stat rows below.
+        if (!isConflictError(err)) {
+          throw err;
+        }
+      }
+    }
+
+    if (statRows.length === 0) return;
 
     const now = Date.now();
-
-    const gameDoc: GameDoc = {
-      id: gameId,
-      ...gameMeta,
-      schemaVersion: HISTORY_SCHEMA_VERSION,
-    };
-
     const statDocs: PlayerGameStatDoc[] = statRows.map((row) => ({
       ...row,
-      // Composite PK: `${gameId}:${teamId}:${playerKey}` — globally unique.
-      id: `${gameId}:${row.teamId}:${row.playerKey}`,
+      // Composite PK: `${gameInstanceId}:${teamId}:${playerKey}` — globally unique.
+      id: `${gameInstanceId}:${row.teamId}:${row.playerKey}`,
       createdAt: now,
       schemaVersion: HISTORY_SCHEMA_VERSION,
     }));
 
-    // Write game doc first, then stats. Both are fire-and-mostly-forget in the
-    // hook, but here we surface errors to let the caller decide.
-    try {
-      await db.games.insert(gameDoc);
-    } catch (err) {
-      // Idempotency under concurrency: if another tab/session inserted this game
-      // first, treat the conflict as "already committed" and return without
-      // writing stats again.
-      if (err && typeof err === "object" && (err as { code?: string }).code === "CONFLICT") {
-        return;
-      }
-      throw err;
-    }
-    if (statDocs.length > 0) {
-      await db.playerGameStats.bulkInsert(statDocs);
+    // Prefetch existing stat IDs to only insert missing rows — makes retries safe.
+    const statIds = statDocs.map((s) => s.id);
+    const existingStatDocs = await db.playerGameStats.findByIds(statIds).exec();
+    const existingStatIds = new Set(existingStatDocs.keys());
+    const missingStats = statDocs.filter((s) => !existingStatIds.has(s.id));
+
+    if (missingStats.length > 0) {
+      await db.playerGameStats.bulkInsert(missingStats);
     }
   }
 
