@@ -63,9 +63,7 @@ export const updateActivePitcherLog = (
   const lastIdx = entries.length - 1;
   const updated = updater(entries[lastIdx]);
   const newEntries = [...entries.slice(0, lastIdx), updated];
-  return teamIdx === 0
-    ? [newEntries, pitcherGameLog[1]]
-    : [pitcherGameLog[0], newEntries];
+  return teamIdx === 0 ? [newEntries, pitcherGameLog[1]] : [pitcherGameLog[0], newEntries];
 };
 
 /**
@@ -79,7 +77,5 @@ export const pushPitcherLogEntry = (
   entry: PitcherLogEntry,
 ): [PitcherLogEntry[], PitcherLogEntry[]] => {
   const newEntries = [...pitcherGameLog[teamIdx], entry];
-  return teamIdx === 0
-    ? [newEntries, pitcherGameLog[1]]
-    : [pitcherGameLog[0], newEntries];
+  return teamIdx === 0 ? [newEntries, pitcherGameLog[1]] : [pitcherGameLog[0], newEntries];
 };

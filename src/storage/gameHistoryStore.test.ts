@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "./db";
 import { makeGameHistoryStore } from "./gameHistoryStore";
-import type { GameDoc, PlayerGameStatDoc } from "./types";
+import type { GameDoc, PitcherGameStatDoc, PlayerGameStatDoc } from "./types";
 
 let db: BallgameDb;
 let store: ReturnType<typeof makeGameHistoryStore>;
@@ -268,5 +268,325 @@ describe("GameHistoryStore — gameInstanceId deduplication across save slots", 
     const career = await store.getCareerStats(["Yankees:p1"]);
     expect(career["Yankees:p1"].gamesPlayed).toBe(1);
     expect(career["Yankees:p1"].hits).toBe(2); // not 4 (would be 4 if double-counted)
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pitcher stat helpers
+// ---------------------------------------------------------------------------
+
+const makePitcherRow = (
+  gameId: string,
+  pitcherId: string,
+  overrides: Partial<Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt">> = {},
+): Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt"> => ({
+  gameId,
+  teamId: "Yankees",
+  opponentTeamId: "Mets",
+  pitcherKey: `Yankees:${pitcherId}`,
+  pitcherId,
+  nameAtGameTime: "Test Pitcher",
+  outsPitched: 9,
+  battersFaced: 12,
+  hitsAllowed: 3,
+  walksAllowed: 1,
+  strikeoutsRecorded: 5,
+  homersAllowed: 0,
+  runsAllowed: 1,
+  earnedRuns: 1,
+  saves: 0,
+  holds: 0,
+  blownSaves: 0,
+  ...overrides,
+});
+
+// ---------------------------------------------------------------------------
+// Pitcher stats — commitCompletedGame writes pitcher rows
+// ---------------------------------------------------------------------------
+
+describe("commitCompletedGame — pitcher stats", () => {
+  it("writes pitcher rows to pitcherGameStats collection", async () => {
+    const gameId = "game_pitcher_1";
+    await store.commitCompletedGame(
+      gameId,
+      { ...gameMeta },
+      [makeStatRow(gameId, "b1")],
+      [makePitcherRow(gameId, "p1")],
+    );
+
+    const pitchers = await db.pitcherGameStats.find().exec();
+    expect(pitchers).toHaveLength(1);
+    expect(pitchers[0].pitcherId).toBe("p1");
+    expect(pitchers[0].outsPitched).toBe(9);
+    expect(pitchers[0].saves).toBe(0);
+  });
+
+  it("is idempotent for pitcher rows — no duplicates on second commit", async () => {
+    const gameId = "game_pitcher_2";
+    const pitcherRow = makePitcherRow(gameId, "p1", { saves: 1 });
+
+    await store.commitCompletedGame(gameId, { ...gameMeta }, [], [pitcherRow]);
+    // Re-commit should not create a duplicate.
+    await store.commitCompletedGame(gameId, { ...gameMeta }, [], [pitcherRow]);
+
+    const pitchers = await db.pitcherGameStats.find().exec();
+    expect(pitchers).toHaveLength(1);
+    expect(pitchers[0].saves).toBe(1);
+  });
+
+  it("writes pitcher rows even when batting stat rows are empty", async () => {
+    const gameId = "game_pitcher_only";
+    await store.commitCompletedGame(
+      gameId,
+      { ...gameMeta },
+      [],
+      [
+        makePitcherRow(gameId, "p1"),
+        makePitcherRow(gameId, "p2", {
+          teamId: "Mets",
+          opponentTeamId: "Yankees",
+          pitcherKey: "Mets:p2",
+        }),
+      ],
+    );
+
+    const pitchers = await db.pitcherGameStats.find().exec();
+    expect(pitchers).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getTeamCareerBattingStats
+// ---------------------------------------------------------------------------
+
+describe("getTeamCareerBattingStats", () => {
+  it("returns empty array for team with no history", async () => {
+    const result = await store.getTeamCareerBattingStats("NonExistentTeam");
+    expect(result).toHaveLength(0);
+  });
+
+  it("aggregates batting stats across multiple games for a team", async () => {
+    const game1 = "game_batting_1";
+    const game2 = "game_batting_2";
+    await store.commitCompletedGame(game1, { ...gameMeta }, [makeStatRow(game1, "b1")]);
+    await store.commitCompletedGame(game2, { ...gameMeta, playedAt: Date.now() + 1 }, [
+      makeStatRow(game2, "b1"),
+    ]);
+
+    const result = await store.getTeamCareerBattingStats("Yankees");
+    expect(result).toHaveLength(1); // one player
+    const player = result[0];
+    expect(player.gamesPlayed).toBe(2);
+    expect(player.hits).toBe(4); // 2 hits × 2 games
+    expect(player.atBats).toBe(8); // 4 AB × 2 games
+    expect(player.rbi).toBe(2);
+  });
+
+  it("returns separate rows for different players on the same team", async () => {
+    const gameId = "game_batting_3";
+    await store.commitCompletedGame(gameId, { ...gameMeta }, [
+      makeStatRow(gameId, "b1"),
+      makeStatRow(gameId, "b2"),
+    ]);
+
+    const result = await store.getTeamCareerBattingStats("Yankees");
+    expect(result).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getTeamCareerPitchingStats
+// ---------------------------------------------------------------------------
+
+describe("getTeamCareerPitchingStats", () => {
+  it("returns empty array for team with no pitching history", async () => {
+    const result = await store.getTeamCareerPitchingStats("NonExistentTeam");
+    expect(result).toHaveLength(0);
+  });
+
+  it("aggregates pitching stats across multiple games", async () => {
+    const game1 = "game_pitching_1";
+    const game2 = "game_pitching_2";
+    await store.commitCompletedGame(game1, { ...gameMeta }, [], [makePitcherRow(game1, "p1")]);
+    await store.commitCompletedGame(
+      game2,
+      { ...gameMeta, playedAt: Date.now() + 1 },
+      [],
+      [makePitcherRow(game2, "p1", { saves: 1 })],
+    );
+
+    const result = await store.getTeamCareerPitchingStats("Yankees");
+    expect(result).toHaveLength(1);
+    const pitcher = result[0];
+    expect(pitcher.gamesPlayed).toBe(2);
+    expect(pitcher.outsPitched).toBe(18); // 9 × 2
+    expect(pitcher.saves).toBe(1); // from game2
+    expect(pitcher.strikeoutsRecorded).toBe(10); // 5 × 2
+  });
+
+  it("returns separate rows for different pitchers on same team", async () => {
+    const gameId = "game_pitching_2p";
+    await store.commitCompletedGame(
+      gameId,
+      { ...gameMeta },
+      [],
+      [
+        makePitcherRow(gameId, "p1"),
+        makePitcherRow(gameId, "p2", { pitcherKey: "Yankees:p2", pitcherId: "p2" }),
+      ],
+    );
+
+    const result = await store.getTeamCareerPitchingStats("Yankees");
+    expect(result).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getPlayerCareerBatting + getPlayerCareerPitching
+// ---------------------------------------------------------------------------
+
+describe("getPlayerCareerBatting", () => {
+  it("returns empty array when player has no history", async () => {
+    const result = await store.getPlayerCareerBatting("Yankees:nobody");
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns per-game rows ordered by createdAt", async () => {
+    const game1 = "game_player_bat_1";
+    const game2 = "game_player_bat_2";
+    await store.commitCompletedGame(game1, { ...gameMeta }, [makeStatRow(game1, "p1")]);
+    // Small delay to ensure different createdAt values.
+    await new Promise((r) => setTimeout(r, 5));
+    await store.commitCompletedGame(game2, { ...gameMeta, playedAt: Date.now() + 1 }, [
+      makeStatRow(game2, "p1"),
+    ]);
+
+    const result = await store.getPlayerCareerBatting("Yankees:p1");
+    expect(result).toHaveLength(2);
+    expect(result[0].gameId).toBe(game1);
+    expect(result[1].gameId).toBe(game2);
+  });
+});
+
+describe("getPlayerCareerPitching", () => {
+  it("returns empty array when pitcher has no history", async () => {
+    const result = await store.getPlayerCareerPitching("Yankees:nobody");
+    expect(result).toHaveLength(0);
+  });
+
+  it("returns per-game rows for a pitcher", async () => {
+    const game1 = "game_player_pitch_1";
+    await store.commitCompletedGame(
+      game1,
+      { ...gameMeta },
+      [],
+      [makePitcherRow(game1, "p1", { saves: 1, outsPitched: 9 })],
+    );
+
+    const result = await store.getPlayerCareerPitching("Yankees:p1");
+    expect(result).toHaveLength(1);
+    expect(result[0].saves).toBe(1);
+    expect(result[0].outsPitched).toBe(9);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Idempotency: same gameInstanceId from two different save slots
+// ---------------------------------------------------------------------------
+
+describe("idempotency: pitcher stats from duplicate save slots", () => {
+  it("does not double-count pitcher rows when same gameInstanceId committed twice", async () => {
+    const sharedGameInstanceId = "shared_game_pitcher";
+    const saveIdA = "save_slot_A";
+    const saveIdB = "save_slot_B";
+
+    // Save A commits first.
+    await store.commitCompletedGame(
+      sharedGameInstanceId,
+      { ...gameMeta, committedBySaveId: saveIdA },
+      [],
+      [makePitcherRow(sharedGameInstanceId, "p1", { outsPitched: 27, saves: 1 })],
+    );
+
+    // Save B (same gameInstanceId) commits second — should be a no-op for pitcher row.
+    await store.commitCompletedGame(
+      sharedGameInstanceId,
+      { ...gameMeta, committedBySaveId: saveIdB },
+      [],
+      [makePitcherRow(sharedGameInstanceId, "p1", { outsPitched: 27, saves: 1 })],
+    );
+
+    const allPitchers = await db.pitcherGameStats.find().exec();
+    expect(allPitchers).toHaveLength(1); // no duplicate
+
+    // Career stats should reflect exactly one game.
+    const career = await store.getTeamCareerPitchingStats("Yankees");
+    expect(career).toHaveLength(1);
+    expect(career[0].saves).toBe(1); // not 2
+    expect(career[0].outsPitched).toBe(27); // not 54
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Export / import — pitcherGameStats included in bundle
+// ---------------------------------------------------------------------------
+
+describe("exportGameHistory / importGameHistory — pitcher stats", () => {
+  it("exported bundle includes pitcherGameStats array", async () => {
+    const gameId = "game_export_pitcher";
+    await store.commitCompletedGame(
+      gameId,
+      { ...gameMeta },
+      [makeStatRow(gameId, "b1")],
+      [makePitcherRow(gameId, "p1", { saves: 1 })],
+    );
+
+    const json = await store.exportGameHistory();
+    const parsed = JSON.parse(json);
+    expect(parsed.formatVersion).toBe(2);
+    expect(Array.isArray(parsed.payload.pitcherGameStats)).toBe(true);
+    expect(parsed.payload.pitcherGameStats).toHaveLength(1);
+    expect(parsed.payload.pitcherGameStats[0].saves).toBe(1);
+  });
+
+  it("importGameHistory imports pitcher rows from bundle", async () => {
+    const gameId = "game_import_pitcher";
+    await store.commitCompletedGame(gameId, { ...gameMeta }, [], [makePitcherRow(gameId, "p1")]);
+
+    const json = await store.exportGameHistory();
+
+    // Fresh DB for import.
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
+
+    const result = await store2.importGameHistory(json, new Set());
+    expect(result.pitcherStatsCreated).toBe(1);
+    expect(result.pitcherStatsSkipped).toBe(0);
+
+    const pitchers = await db2.pitcherGameStats.find().exec();
+    expect(pitchers).toHaveLength(1);
+
+    await db2.close();
+  });
+
+  it("import is idempotent for pitcher rows", async () => {
+    const gameId = "game_import_pitcher_idem";
+    await store.commitCompletedGame(gameId, { ...gameMeta }, [], [makePitcherRow(gameId, "p1")]);
+    const json = await store.exportGameHistory();
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
+
+    const result1 = await store2.importGameHistory(json, new Set());
+    const result2 = await store2.importGameHistory(json, new Set());
+
+    expect(result1.pitcherStatsCreated).toBe(1);
+    expect(result2.pitcherStatsCreated).toBe(0); // skipped on second import
+    expect(result2.pitcherStatsSkipped).toBe(1);
+
+    const pitchers = await db2.pitcherGameStats.find().exec();
+    expect(pitchers).toHaveLength(1); // no duplicates
+
+    await db2.close();
   });
 });

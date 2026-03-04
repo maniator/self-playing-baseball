@@ -2,7 +2,12 @@ import * as React from "react";
 
 import { useGameContext } from "@context/index";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
-import type { CustomTeamDoc, PitcherGameStatDoc, PlayerGameStatDoc, TeamPlayer } from "@storage/types";
+import type {
+  CustomTeamDoc,
+  PitcherGameStatDoc,
+  PlayerGameStatDoc,
+  TeamPlayer,
+} from "@storage/types";
 import { appLog } from "@utils/logger";
 import { getRngState, getSeed } from "@utils/rng";
 import { generateRoster } from "@utils/roster";
@@ -173,10 +178,7 @@ export const useGameHistorySync = (
     const pitcherResults = computePitcherGameStats(pitcherGameLog, state.score);
 
     // Build pitcher name maps per team.
-    const pitcherNameMaps: [Map<string, string>, Map<string, string>] = [
-      new Map(),
-      new Map(),
-    ];
+    const pitcherNameMaps: [Map<string, string>, Map<string, string>] = [new Map(), new Map()];
     for (const teamIdx of [0, 1] as const) {
       const teamId = state.teams[teamIdx];
       const roster = generateRoster(teamId);

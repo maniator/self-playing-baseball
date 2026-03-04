@@ -164,9 +164,7 @@ function buildStore(getDbFn: GetDb) {
    * Returns all batting stat rows for a single playerKey, ordered by createdAt ascending.
    * Used for the player career page game-by-game log.
    */
-  async function getPlayerCareerBatting(
-    playerKey: string,
-  ): Promise<PlayerGameStatDoc[]> {
+  async function getPlayerCareerBatting(playerKey: string): Promise<PlayerGameStatDoc[]> {
     const db = await getDbFn();
     const rows = await db.playerGameStats
       .find({ selector: { playerKey }, sort: [{ createdAt: "asc" }] })
@@ -178,9 +176,7 @@ function buildStore(getDbFn: GetDb) {
    * Returns all pitching stat rows for a single pitcherKey, ordered by createdAt ascending.
    * Used for the player career page game-by-game log.
    */
-  async function getPlayerCareerPitching(
-    pitcherKey: string,
-  ): Promise<PitcherGameStatDoc[]> {
+  async function getPlayerCareerPitching(pitcherKey: string): Promise<PitcherGameStatDoc[]> {
     const db = await getDbFn();
     const rows = await db.pitcherGameStats
       .find({ selector: { pitcherKey }, sort: [{ createdAt: "asc" }] })
@@ -192,17 +188,23 @@ function buildStore(getDbFn: GetDb) {
    * Returns cumulative career batting stats for all players associated with a team.
    * Queries by teamId.
    */
-  async function getTeamCareerBattingStats(
-    teamId: string,
-  ): Promise<(PlayerGameStatDoc["batting"] & { playerKey: string; nameAtGameTime: string; gamesPlayed: number })[]> {
+  async function getTeamCareerBattingStats(teamId: string): Promise<
+    (PlayerGameStatDoc["batting"] & {
+      playerKey: string;
+      nameAtGameTime: string;
+      gamesPlayed: number;
+    })[]
+  > {
     const db = await getDbFn();
-    const rows = await db.playerGameStats
-      .find({ selector: { teamId } })
-      .exec();
+    const rows = await db.playerGameStats.find({ selector: { teamId } }).exec();
 
     const aggregated: Record<
       string,
-      PlayerGameStatDoc["batting"] & { playerKey: string; nameAtGameTime: string; gamesPlayed: number }
+      PlayerGameStatDoc["batting"] & {
+        playerKey: string;
+        nameAtGameTime: string;
+        gamesPlayed: number;
+      }
     > = {};
 
     for (const row of rows) {
@@ -246,15 +248,33 @@ function buildStore(getDbFn: GetDb) {
    */
   async function getTeamCareerPitchingStats(
     teamId: string,
-  ): Promise<(Omit<PitcherGameStatDoc, "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"> & { gamesPlayed: number })[]> {
+  ): Promise<
+    (Omit<
+      PitcherGameStatDoc,
+      "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"
+    > & { gamesPlayed: number })[]
+  > {
     const db = await getDbFn();
-    const rows = await db.pitcherGameStats
-      .find({ selector: { teamId } })
-      .exec();
+    const rows = await db.pitcherGameStats.find({ selector: { teamId } }).exec();
 
     const aggregated: Record<
       string,
-      { pitcherKey: string; nameAtGameTime: string; gamesPlayed: number; outsPitched: number; battersFaced: number; hitsAllowed: number; walksAllowed: number; strikeoutsRecorded: number; homersAllowed: number; runsAllowed: number; earnedRuns: number; saves: number; holds: number; blownSaves: number }
+      {
+        pitcherKey: string;
+        nameAtGameTime: string;
+        gamesPlayed: number;
+        outsPitched: number;
+        battersFaced: number;
+        hitsAllowed: number;
+        walksAllowed: number;
+        strikeoutsRecorded: number;
+        homersAllowed: number;
+        runsAllowed: number;
+        earnedRuns: number;
+        saves: number;
+        holds: number;
+        blownSaves: number;
+      }
     > = {};
 
     for (const row of rows) {
@@ -386,7 +406,8 @@ function buildStore(getDbFn: GetDb) {
 
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
-    const pitcherStats = (bundle.payload as { pitcherGameStats?: PitcherGameStatDoc[] }).pitcherGameStats ?? [];
+    const pitcherStats =
+      (bundle.payload as { pitcherGameStats?: PitcherGameStatDoc[] }).pitcherGameStats ?? [];
 
     // Games.
     const gameIds = games.map((g) => g.id);
@@ -447,7 +468,14 @@ function buildStore(getDbFn: GetDb) {
       pitcherStatsCreated = result.success.length;
     }
 
-    return { gamesCreated, gamesSkipped, statsCreated, statsSkipped, pitcherStatsCreated, pitcherStatsSkipped };
+    return {
+      gamesCreated,
+      gamesSkipped,
+      statsCreated,
+      statsSkipped,
+      pitcherStatsCreated,
+      pitcherStatsSkipped,
+    };
   }
 
   return {
