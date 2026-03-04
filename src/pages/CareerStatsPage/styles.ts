@@ -108,7 +108,7 @@ export const StatsTable = styled.table`
 `;
 
 /** Table header cell. */
-export const Th = styled.th`
+export const Th = styled.th<{ $sortable?: boolean }>`
   text-align: left;
   padding: 8px;
   border-bottom: 1px solid #2a2a3a;
@@ -116,6 +116,7 @@ export const Th = styled.th`
   color: #888;
   font-weight: 600;
   white-space: nowrap;
+  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none; &:hover { color: #ccc; }`}
 `;
 
 /** Table data cell. */

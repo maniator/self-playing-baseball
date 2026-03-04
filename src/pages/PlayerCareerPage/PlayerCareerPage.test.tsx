@@ -236,4 +236,107 @@ describe("PlayerCareerPage", () => {
     unmount();
     expect(true).toBe(true);
   });
+
+  it("shows Prev/Next buttons when ?team= param matches a known custom team", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_1",
+          name: "Aces",
+          abbreviation: "ACE",
+          city: "Springfield",
+          lineup: [
+            {
+              id: "plyr_1",
+              name: "First Batter",
+              role: "batter" as const,
+              batting: { contact: 50, power: 50, speed: 50 },
+              pitching: { control: 50, velocity: 50, stamina: 50 },
+            },
+            {
+              id: "plyr_2",
+              name: "Second Batter",
+              role: "batter" as const,
+              batting: { contact: 50, power: 50, speed: 50 },
+              pitching: { control: 50, velocity: 50, stamina: 50 },
+            },
+          ],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/players/plyr_1?team=custom:ct_1"]}>
+        <Routes>
+          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {});
+
+    // Should show Prev/Next nav since team context has 2 players.
+    expect(screen.getByTestId("player-career-prev")).toBeInTheDocument();
+    expect(screen.getByTestId("player-career-next")).toBeInTheDocument();
+    // Prev should be disabled (first player), Next should be enabled.
+    expect(screen.getByTestId("player-career-prev")).toBeDisabled();
+    expect(screen.getByTestId("player-career-next")).not.toBeDisabled();
+  });
+
+  it("clicking Next navigates to the next player in the roster", async () => {
+    const user = userEvent.setup();
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_1",
+          name: "Aces",
+          abbreviation: "ACE",
+          city: "Springfield",
+          lineup: [
+            {
+              id: "plyr_1",
+              name: "First Batter",
+              role: "batter" as const,
+              batting: { contact: 50, power: 50, speed: 50 },
+              pitching: { control: 50, velocity: 50, stamina: 50 },
+            },
+            {
+              id: "plyr_2",
+              name: "Second Batter",
+              role: "batter" as const,
+              batting: { contact: 50, power: 50, speed: 50 },
+              pitching: { control: 50, velocity: 50, stamina: 50 },
+            },
+          ],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+
+    render(
+      <MemoryRouter initialEntries={["/players/plyr_1?team=custom:ct_1"]}>
+        <Routes>
+          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {});
+    await user.click(screen.getByTestId("player-career-next"));
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("plyr_2"));
+  });
+
+  it("does not render Prev/Next when no ?team= param is provided", async () => {
+    renderPage("test_player_no_team");
+    await act(async () => {});
+    expect(screen.queryByTestId("player-career-prev")).toBeNull();
+    expect(screen.queryByTestId("player-career-next")).toBeNull();
+  });
 });

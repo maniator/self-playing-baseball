@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useSearchParams } from "react-router";
 
 import { BackBtn, PageHeader } from "@components/PageLayout/styles";
 import { useCustomTeams } from "@hooks/useCustomTeams";
@@ -17,6 +17,8 @@ import { computeERA, computeWHIP, formatIP } from "@utils/stats/computePitcherGa
 
 import {
   EmptyState,
+  NavBtn,
+  NavRow,
   PlayerCareerContainer,
   PlayerName,
   PlayerRoleLabel,
@@ -61,12 +63,49 @@ function formatDate(createdAt: number): string {
 const PlayerCareerPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { playerKey } = useParams<{ playerKey: string }>();
+  const [searchParams] = useSearchParams();
   const { teams: customTeams } = useCustomTeams();
 
   const [activeTab, setActiveTab] = React.useState<Tab>("batting");
   const [battingRows, setBattingRows] = React.useState<PlayerGameStatDoc[]>([]);
   const [pitchingRows, setPitchingRows] = React.useState<PitcherGameStatDoc[]>([]);
   const [loading, setLoading] = React.useState(true);
+
+  // Build the prev/next context from the ?team= query param + all players
+  // in that team's roster (lineup + bench + pitchers).
+  const teamContext = searchParams.get("team") ?? "";
+
+  const rosterPlayerKeys = React.useMemo<string[]>(() => {
+    if (!teamContext) return [];
+    // Strip "custom:" prefix to get the raw team ID.
+    const teamId = teamContext.startsWith("custom:") ? teamContext.slice("custom:".length) : "";
+    const team = customTeams.find((t) => t.id === teamId);
+    if (!team) return [];
+    const allPlayers = [...(team.lineup ?? []), ...(team.bench ?? []), ...(team.pitchers ?? [])];
+    // Use globalPlayerId as the nav key when available; fall back to the roster id.
+    const seen = new Set<string>();
+    const keys: string[] = [];
+    for (const p of allPlayers) {
+      const key = (p as { globalPlayerId?: string }).globalPlayerId ?? p.id;
+      if (!seen.has(key)) {
+        seen.add(key);
+        keys.push(key);
+      }
+    }
+    return keys;
+  }, [teamContext, customTeams]);
+
+  const currentIdx = rosterPlayerKeys.indexOf(playerKey ?? "");
+  const prevKey = currentIdx > 0 ? rosterPlayerKeys[currentIdx - 1] : null;
+  const nextKey =
+    currentIdx >= 0 && currentIdx < rosterPlayerKeys.length - 1
+      ? rosterPlayerKeys[currentIdx + 1]
+      : null;
+
+  const navigateToPlayer = (key: string) => {
+    const params = teamContext ? `?team=${encodeURIComponent(teamContext)}` : "";
+    navigate(`/players/${encodeURIComponent(key)}${params}`);
+  };
 
   React.useEffect(() => {
     if (!playerKey) {
@@ -185,6 +224,29 @@ const PlayerCareerPage: React.FunctionComponent = () => {
           ← Back
         </BackBtn>
       </PageHeader>
+
+      {rosterPlayerKeys.length > 0 && (
+        <NavRow>
+          <NavBtn
+            type="button"
+            disabled={prevKey === null}
+            onClick={() => prevKey && navigateToPlayer(prevKey)}
+            data-testid="player-career-prev"
+            aria-label="Previous player"
+          >
+            ← Prev
+          </NavBtn>
+          <NavBtn
+            type="button"
+            disabled={nextKey === null}
+            onClick={() => nextKey && navigateToPlayer(nextKey)}
+            data-testid="player-career-next"
+            aria-label="Next player"
+          >
+            Next →
+          </NavBtn>
+        </NavRow>
+      )}
 
       {!loading && (
         <>

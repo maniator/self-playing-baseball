@@ -451,4 +451,138 @@ describe("CareerStatsPage", () => {
     await user.click(screen.getByText("Click Pitcher"));
     expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/players/"));
   });
+
+  it("clicking a batting column header sorts rows by that column", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
+      {
+        playerKey: "p1",
+        nameAtGameTime: "Aaron",
+        gamesPlayed: 5,
+        atBats: 20,
+        hits: 8,
+        doubles: 1,
+        triples: 0,
+        homers: 2,
+        walks: 3,
+        strikeouts: 4,
+        rbi: 5,
+        singles: 5,
+      },
+      {
+        playerKey: "p2",
+        nameAtGameTime: "Bob",
+        gamesPlayed: 3,
+        atBats: 10,
+        hits: 2,
+        doubles: 0,
+        triples: 0,
+        homers: 0,
+        walks: 1,
+        strikeouts: 2,
+        rbi: 1,
+        singles: 2,
+      },
+    ]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Aaron")).toBeInTheDocument());
+
+    // Default sort is by gamesPlayed desc — Aaron (5) should come before Bob (3).
+    const rows = screen.getAllByRole("row");
+    expect(rows[1].textContent).toContain("Aaron");
+
+    // Click "G" header once (→ still desc, same key) then again (→ asc).
+    const gHeader = screen.getAllByRole("columnheader", { name: /^G/i })[0];
+    await user.click(gHeader); // toggles to asc
+    await waitFor(() => {
+      const updatedRows = screen.getAllByRole("row");
+      expect(updatedRows[1].textContent).toContain("Bob"); // Bob has fewer games
+    });
+  });
+
+  it("clicking a pitching column header sorts pitching rows", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
+      {
+        pitcherKey: "p1",
+        nameAtGameTime: "ZebraCloser",
+        gamesPlayed: 10,
+        outsPitched: 27,
+        battersFaced: 35,
+        hitsAllowed: 5,
+        walksAllowed: 3,
+        strikeoutsRecorded: 12,
+        homersAllowed: 1,
+        runsAllowed: 2,
+        earnedRuns: 2,
+        saves: 8,
+        holds: 0,
+        blownSaves: 2,
+      },
+      {
+        pitcherKey: "p2",
+        nameAtGameTime: "AcePitcher",
+        gamesPlayed: 15,
+        outsPitched: 135,
+        battersFaced: 160,
+        hitsAllowed: 20,
+        walksAllowed: 8,
+        strikeoutsRecorded: 50,
+        homersAllowed: 3,
+        runsAllowed: 12,
+        earnedRuns: 11,
+        saves: 0,
+        holds: 0,
+        blownSaves: 0,
+      },
+    ]);
+
+    renderPage();
+    const pitchingTab = screen.getByTestId("career-stats-pitching-tab");
+    await user.click(pitchingTab);
+    await waitFor(() => expect(screen.getByText("ZebraCloser")).toBeInTheDocument());
+
+    // Default sort is gamesPlayed desc — AcePitcher (15) should come first.
+    const rows = screen.getAllByRole("row");
+    expect(rows[1].textContent).toContain("AcePitcher");
+
+    // Click "Name" header → sort by name desc (Z before A).
+    const nameHeader = screen.getByRole("columnheader", { name: /^Name/i });
+    await user.click(nameHeader);
+    await waitFor(() => {
+      const updatedRows = screen.getAllByRole("row");
+      expect(updatedRows[1].textContent).toContain("ZebraCloser");
+    });
+  });
 });

@@ -136,3 +136,29 @@ export const SectionLabel = styled.h2`
   margin: 0 0 8px;
   font-weight: 600;
 `;
+
+/** Prev/Next navigation row. */
+export const NavRow = styled.div`
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+`;
+
+/** Prev/Next button. */
+export const NavBtn = styled.button`
+  background: #1a1a2e;
+  border: 1px solid #333;
+  color: #ccc;
+  padding: 6px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  &:hover:not(:disabled) {
+    background: #25254a;
+    color: #fff;
+  }
+  &:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+`;

@@ -56,6 +56,40 @@ type PitchingRow = {
 };
 
 type Tab = "batting" | "pitching";
+type SortDir = "asc" | "desc";
+type BattingSortKey =
+  | keyof Pick<
+      BattingRow,
+      | "nameAtGameTime"
+      | "gamesPlayed"
+      | "atBats"
+      | "hits"
+      | "doubles"
+      | "triples"
+      | "homers"
+      | "walks"
+      | "strikeouts"
+      | "rbi"
+    >
+  | "avg";
+type PitchingSortKey =
+  | keyof Pick<
+      PitchingRow,
+      | "nameAtGameTime"
+      | "gamesPlayed"
+      | "outsPitched"
+      | "hitsAllowed"
+      | "walksAllowed"
+      | "strikeoutsRecorded"
+      | "homersAllowed"
+      | "runsAllowed"
+      | "earnedRuns"
+      | "saves"
+      | "holds"
+      | "blownSaves"
+    >
+  | "era"
+  | "whip";
 
 /** Formats a batting average: H/AB to 3 decimal places, or ".---" when AB=0. */
 function formatAVG(hits: number, atBats: number): string {
@@ -78,6 +112,12 @@ function formatWHIP(walksAllowed: number, hitsAllowed: number, outsPitched: numb
   return whip.toFixed(2);
 }
 
+/** Returns ↑ / ↓ / "" indicator for a sortable column header. */
+function sortIndicator(key: string, activeKey: string, dir: SortDir): string {
+  if (key !== activeKey) return "";
+  return dir === "asc" ? " ↑" : " ↓";
+}
+
 const CareerStatsPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { teams: customTeams, loading: teamsLoading } = useCustomTeams();
@@ -88,6 +128,90 @@ const CareerStatsPage: React.FunctionComponent = () => {
   const [battingRows, setBattingRows] = React.useState<BattingRow[]>([]);
   const [pitchingRows, setPitchingRows] = React.useState<PitchingRow[]>([]);
   const [dataLoading, setDataLoading] = React.useState(false);
+  const [battingSort, setBattingSort] = React.useState<{ key: BattingSortKey; dir: SortDir }>({
+    key: "gamesPlayed",
+    dir: "desc",
+  });
+  const [pitchingSort, setPitchingSort] = React.useState<{ key: PitchingSortKey; dir: SortDir }>({
+    key: "gamesPlayed",
+    dir: "desc",
+  });
+
+  const toggleBattingSort = (key: BattingSortKey) => {
+    setBattingSort((prev) =>
+      prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" },
+    );
+  };
+  const togglePitchingSort = (key: PitchingSortKey) => {
+    setPitchingSort((prev) =>
+      prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" },
+    );
+  };
+
+  const handleBattingThClick = React.useCallback(
+    (e: React.MouseEvent<HTMLTableCellElement>) => {
+      const key = (e.currentTarget as HTMLElement).dataset.sortKey as BattingSortKey | undefined;
+      if (key) toggleBattingSort(key);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [battingSort],
+  );
+
+  const handlePitchingThClick = React.useCallback(
+    (e: React.MouseEvent<HTMLTableCellElement>) => {
+      const key = (e.currentTarget as HTMLElement).dataset.sortKey as PitchingSortKey | undefined;
+      if (key) togglePitchingSort(key);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [pitchingSort],
+  );
+
+  const sortedBattingRows = React.useMemo(() => {
+    const { key, dir } = battingSort;
+    return [...battingRows].sort((a, b) => {
+      let aVal: number | string;
+      let bVal: number | string;
+      if (key === "avg") {
+        aVal = a.atBats === 0 ? -1 : a.hits / a.atBats;
+        bVal = b.atBats === 0 ? -1 : b.hits / b.atBats;
+      } else if (key === "nameAtGameTime") {
+        aVal = a.nameAtGameTime;
+        bVal = b.nameAtGameTime;
+      } else {
+        aVal = a[key] as number;
+        bVal = b[key] as number;
+      }
+      if (aVal < bVal) return dir === "asc" ? -1 : 1;
+      if (aVal > bVal) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [battingRows, battingSort]);
+
+  const sortedPitchingRows = React.useMemo(() => {
+    const { key, dir } = pitchingSort;
+    return [...pitchingRows].sort((a, b) => {
+      let aVal: number | string;
+      let bVal: number | string;
+      if (key === "era") {
+        aVal = a.outsPitched === 0 ? Infinity : (a.earnedRuns * 27) / a.outsPitched;
+        bVal = b.outsPitched === 0 ? Infinity : (b.earnedRuns * 27) / b.outsPitched;
+      } else if (key === "whip") {
+        aVal =
+          a.outsPitched === 0 ? Infinity : ((a.walksAllowed + a.hitsAllowed) * 3) / a.outsPitched;
+        bVal =
+          b.outsPitched === 0 ? Infinity : ((b.walksAllowed + b.hitsAllowed) * 3) / b.outsPitched;
+      } else if (key === "nameAtGameTime") {
+        aVal = a.nameAtGameTime;
+        bVal = b.nameAtGameTime;
+      } else {
+        aVal = a[key] as number;
+        bVal = b[key] as number;
+      }
+      if (aVal < bVal) return dir === "asc" ? -1 : 1;
+      if (aVal > bVal) return dir === "asc" ? 1 : -1;
+      return 0;
+    });
+  }, [pitchingRows, pitchingSort]);
 
   // Build the full list of selectable team IDs:
   // union of custom teams + any team IDs found in game history.
@@ -222,26 +346,52 @@ const CareerStatsPage: React.FunctionComponent = () => {
           <StatsTable>
             <thead>
               <tr>
-                <Th>Name</Th>
-                <Th>G</Th>
-                <Th>AB</Th>
-                <Th>H</Th>
-                <Th>2B</Th>
-                <Th>3B</Th>
-                <Th>HR</Th>
-                <Th>BB</Th>
-                <Th>K</Th>
-                <Th>RBI</Th>
-                <Th>AVG</Th>
+                <Th $sortable data-sort-key="nameAtGameTime" onClick={handleBattingThClick}>
+                  Name{sortIndicator("nameAtGameTime", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="gamesPlayed" onClick={handleBattingThClick}>
+                  G{sortIndicator("gamesPlayed", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="atBats" onClick={handleBattingThClick}>
+                  AB{sortIndicator("atBats", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="hits" onClick={handleBattingThClick}>
+                  H{sortIndicator("hits", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="doubles" onClick={handleBattingThClick}>
+                  2B{sortIndicator("doubles", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="triples" onClick={handleBattingThClick}>
+                  3B{sortIndicator("triples", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="homers" onClick={handleBattingThClick}>
+                  HR{sortIndicator("homers", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="walks" onClick={handleBattingThClick}>
+                  BB{sortIndicator("walks", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="strikeouts" onClick={handleBattingThClick}>
+                  K{sortIndicator("strikeouts", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="rbi" onClick={handleBattingThClick}>
+                  RBI{sortIndicator("rbi", battingSort.key, battingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="avg" onClick={handleBattingThClick}>
+                  AVG{sortIndicator("avg", battingSort.key, battingSort.dir)}
+                </Th>
               </tr>
             </thead>
             <tbody>
-              {battingRows.map((row) => (
+              {sortedBattingRows.map((row) => (
                 <tr key={row.playerKey}>
                   <Td>
                     <PlayerLink
                       type="button"
-                      onClick={() => navigate(`/players/${encodeURIComponent(row.playerKey)}`)}
+                      onClick={() =>
+                        navigate(
+                          `/players/${encodeURIComponent(row.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                        )
+                      }
                     >
                       {row.nameAtGameTime}
                     </PlayerLink>
@@ -268,29 +418,61 @@ const CareerStatsPage: React.FunctionComponent = () => {
           <StatsTable>
             <thead>
               <tr>
-                <Th>Name</Th>
-                <Th>G</Th>
-                <Th>IP</Th>
-                <Th>H</Th>
-                <Th>BB</Th>
-                <Th>K</Th>
-                <Th>HR</Th>
-                <Th>R</Th>
-                <Th>ER</Th>
-                <Th>ERA</Th>
-                <Th>WHIP</Th>
-                <Th>SV</Th>
-                <Th>HLD</Th>
-                <Th>BS</Th>
+                <Th $sortable data-sort-key="nameAtGameTime" onClick={handlePitchingThClick}>
+                  Name{sortIndicator("nameAtGameTime", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="gamesPlayed" onClick={handlePitchingThClick}>
+                  G{sortIndicator("gamesPlayed", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="outsPitched" onClick={handlePitchingThClick}>
+                  IP{sortIndicator("outsPitched", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="hitsAllowed" onClick={handlePitchingThClick}>
+                  H{sortIndicator("hitsAllowed", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="walksAllowed" onClick={handlePitchingThClick}>
+                  BB{sortIndicator("walksAllowed", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="strikeoutsRecorded" onClick={handlePitchingThClick}>
+                  K{sortIndicator("strikeoutsRecorded", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="homersAllowed" onClick={handlePitchingThClick}>
+                  HR{sortIndicator("homersAllowed", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="runsAllowed" onClick={handlePitchingThClick}>
+                  R{sortIndicator("runsAllowed", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="earnedRuns" onClick={handlePitchingThClick}>
+                  ER{sortIndicator("earnedRuns", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="era" onClick={handlePitchingThClick}>
+                  ERA{sortIndicator("era", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="whip" onClick={handlePitchingThClick}>
+                  WHIP{sortIndicator("whip", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="saves" onClick={handlePitchingThClick}>
+                  SV{sortIndicator("saves", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="holds" onClick={handlePitchingThClick}>
+                  HLD{sortIndicator("holds", pitchingSort.key, pitchingSort.dir)}
+                </Th>
+                <Th $sortable data-sort-key="blownSaves" onClick={handlePitchingThClick}>
+                  BS{sortIndicator("blownSaves", pitchingSort.key, pitchingSort.dir)}
+                </Th>
               </tr>
             </thead>
             <tbody>
-              {pitchingRows.map((row) => (
+              {sortedPitchingRows.map((row) => (
                 <tr key={row.pitcherKey}>
                   <Td>
                     <PlayerLink
                       type="button"
-                      onClick={() => navigate(`/players/${encodeURIComponent(row.pitcherKey)}`)}
+                      onClick={() =>
+                        navigate(
+                          `/players/${encodeURIComponent(row.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                        )
+                      }
                     >
                       {row.nameAtGameTime}
                     </PlayerLink>
