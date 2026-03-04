@@ -4,7 +4,7 @@ import { useGameContext } from "@context/index";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
 import type { PlayerGameStatDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
-import { getRngState } from "@utils/rng";
+import { getRngState, getSeed } from "@utils/rng";
 import { generateRoster } from "@utils/roster";
 import { computeBattingStatsFromLogs } from "@utils/stats/computeBattingStatsFromLogs";
 
@@ -115,7 +115,7 @@ export const useGameHistorySync = (
 
     const gameMeta = {
       playedAt: Date.now(),
-      seed: state.teams[0] ? (rxSaveIdRef.current ?? "") : "",
+      seed: getSeed()?.toString(36) ?? "",
       rngState: getRngState(),
       homeTeamId: state.teams[1],
       awayTeamId: state.teams[0],

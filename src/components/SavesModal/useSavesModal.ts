@@ -84,7 +84,7 @@ export const useSavesModal = ({
 
   const logRef = React.useRef(dispatchLog);
   logRef.current = dispatchLog;
-  const log = React.useCallback((msg: string) => logRef.current({ type: "log", payload: msg }), []);
+  const log = (msg: string) => logRef.current({ type: "log", payload: msg });
 
   const open = () => ref.current?.showModal();
   const close = () => ref.current?.close();
@@ -216,11 +216,14 @@ export const useSavesModal = ({
       const json = await GameHistoryStore.exportGameHistory();
       downloadJson(json, `ballgame-history-${Date.now()}.json`);
     } catch (err) {
-      log(`History export failed: ${err instanceof Error ? err.message : String(err)}`);
+      logRef.current({
+        type: "log",
+        payload: `History export failed: ${err instanceof Error ? err.message : String(err)}`,
+      });
     } finally {
       setExportingHistory(false);
     }
-  }, [log]);
+  }, []);
 
   const handleImportHistoryFile = React.useCallback(
     async (e: React.ChangeEvent<HTMLInputElement>) => {

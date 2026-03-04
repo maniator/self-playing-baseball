@@ -164,10 +164,12 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   // Fetch career stats whenever the mode switches to "career" or the team/lineup changes.
   React.useEffect(() => {
     if (statsMode !== "career") return;
+    let cancelled = false;
     const teamId = teams[activeTeam];
     const playerKeys = lineupIds.slice(0, 9).map((id) => `${teamId}:${id}`);
     GameHistoryStore.getCareerStats(playerKeys)
       .then((results) => {
+        if (cancelled) return;
         // Re-key by playerId (strip teamId prefix) for consistent slot lookup.
         const byPlayerId: Record<string, BatterStat> = {};
         for (const [key, val] of Object.entries(results)) {
@@ -177,8 +179,12 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
         setCareerStats(byPlayerId);
       })
       .catch((err) => {
+        if (cancelled) return;
         appLog.error("PlayerStatsPanel: failed to load career stats", err);
       });
+    return () => {
+      cancelled = true;
+    };
   }, [statsMode, teams, activeTeam, lineupIds]);
 
   const stats = statsMode === "career" ? careerStats : gameStats;
