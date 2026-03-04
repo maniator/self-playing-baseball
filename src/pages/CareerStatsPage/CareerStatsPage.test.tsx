@@ -35,8 +35,31 @@ vi.mock("@storage/gameHistoryStore", () => ({
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
+import type { CustomTeamDoc } from "@storage/types";
 
 import CareerStatsPage from "./index";
+
+/**
+ * Creates a minimal valid CustomTeamDoc for test mocks.
+ * All required fields are filled with safe defaults.
+ */
+function makeTeamDoc(
+  id: string,
+  name: string,
+  opts: { city?: string; abbreviation?: string } = {},
+): CustomTeamDoc {
+  return {
+    id,
+    name,
+    schemaVersion: 4,
+    createdAt: "2024-01-01T00:00:00.000Z",
+    updatedAt: "2024-01-01T00:00:00.000Z",
+    source: "custom",
+    roster: { lineup: [], bench: [], pitchers: [] },
+    metadata: { notes: "", tags: [], archived: false },
+    ...opts,
+  } as CustomTeamDoc;
+}
 
 function renderPage() {
   return render(
@@ -53,7 +76,14 @@ function renderPage() {
 describe("CareerStatsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useCustomTeams).mockReturnValue({ teams: [], loading: false });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
   });
@@ -89,20 +119,12 @@ describe("CareerStatsPage", () => {
 
   it("shows empty state when no data for a team", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Test Team",
-          abbreviation: "TT",
-          city: "Test City",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-          fingerprint: undefined,
-          teamSeed: undefined,
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Test Team", { city: "Test City", abbreviation: "TT" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
@@ -115,18 +137,12 @@ describe("CareerStatsPage", () => {
 
   it("renders batting rows when data is available", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
@@ -156,18 +172,12 @@ describe("CareerStatsPage", () => {
   it("switches to pitching tab and renders pitching rows", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
@@ -202,26 +212,14 @@ describe("CareerStatsPage", () => {
   it("populates team selector with custom teams", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
-        {
-          id: "team1",
-          name: "Red Sox",
-          abbreviation: "BOS",
-          city: "Boston",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-        {
-          id: "team2",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
+        makeTeamDoc("team1", "Red Sox", { city: "Boston", abbreviation: "BOS" }),
+        makeTeamDoc("team2", "Yankees", { city: "NY", abbreviation: "NYY" }),
       ],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
 
     renderPage();
@@ -242,18 +240,12 @@ describe("CareerStatsPage", () => {
 
   it("handles error from getTeamCareerBattingStats — shows empty state", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Cubs",
-          abbreviation: "CHC",
-          city: "Chicago",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Cubs", { city: "Chicago", abbreviation: "CHC" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockRejectedValueOnce(
       new Error("query failed"),
@@ -295,18 +287,12 @@ describe("CareerStatsPage", () => {
   it("renders — with 0 IP pitcher row — WHIP and ERA display as '—'", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
@@ -341,18 +327,12 @@ describe("CareerStatsPage", () => {
 
   it("cleanup effects run without errors when component unmounts", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "t1",
-          name: "Tigers",
-          abbreviation: "DET",
-          city: "Detroit",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("t1", "Tigers", { city: "Detroit", abbreviation: "DET" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     const { unmount } = renderPage();
     // Let effects start so cancelled-check cleanup functions are registered.
@@ -369,26 +349,14 @@ describe("CareerStatsPage", () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
-        {
-          id: "team1",
-          name: "Red Sox",
-          abbreviation: "BOS",
-          city: "Boston",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-        {
-          id: "team2",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
+        makeTeamDoc("team1", "Red Sox", { city: "Boston", abbreviation: "BOS" }),
+        makeTeamDoc("team2", "Yankees", { city: "NY", abbreviation: "NYY" }),
       ],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
@@ -409,18 +377,12 @@ describe("CareerStatsPage", () => {
   it("clicking a player row in pitching table navigates to player page", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
@@ -455,18 +417,12 @@ describe("CareerStatsPage", () => {
   it("clicking a batting column header sorts rows by that column", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
@@ -519,18 +475,12 @@ describe("CareerStatsPage", () => {
   it("clicking a pitching column header sorts pitching rows", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "team1",
-          name: "Yankees",
-          abbreviation: "NYY",
-          city: "NY",
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        },
-      ],
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([

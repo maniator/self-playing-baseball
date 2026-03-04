@@ -174,9 +174,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     });
 
     const result = computePitcherGameStats([[], [homeStarter, homeCloser]], [1, 3]);
-    const closer = result.find(
-      (r) => r.result.pitcherKey === "home_closer" || r.result.pitcherId === "home_closer",
-    );
+    const closer = result.find((r) => r.result.pitcherId === "home_closer");
     // Gets a hold instead (left with lead intact but <3 outs)
     expect(closer?.result.saves).toBe(0);
     expect(closer?.result.holds).toBe(1);

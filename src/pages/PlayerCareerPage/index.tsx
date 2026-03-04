@@ -81,7 +81,11 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     const teamId = teamContext.startsWith("custom:") ? teamContext.slice("custom:".length) : "";
     const team = customTeams.find((t) => t.id === teamId);
     if (!team) return [];
-    const allPlayers = [...(team.lineup ?? []), ...(team.bench ?? []), ...(team.pitchers ?? [])];
+    const allPlayers = [
+      ...(team.roster.lineup ?? []),
+      ...(team.roster.bench ?? []),
+      ...(team.roster.pitchers ?? []),
+    ];
     // Use globalPlayerId as the nav key when available; fall back to the roster id.
     const seen = new Set<string>();
     const keys: string[] = [];

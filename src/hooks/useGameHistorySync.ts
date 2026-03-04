@@ -182,7 +182,7 @@ export const useGameHistorySync = (
     for (const teamIdx of [0, 1] as const) {
       const teamId = state.teams[teamIdx];
       const roster = generateRoster(teamId);
-      const allPlayers = [...roster.batters, ...(roster.pitchers ?? [])];
+      const allPlayers = [...roster.batters, ...(roster.pitcher ? [roster.pitcher] : [])];
       for (const p of allPlayers) {
         pitcherNameMaps[teamIdx].set(p.id, p.name);
       }

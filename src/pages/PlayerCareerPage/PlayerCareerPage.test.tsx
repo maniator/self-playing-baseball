@@ -246,27 +246,38 @@ describe("PlayerCareerPage", () => {
           name: "Aces",
           abbreviation: "ACE",
           city: "Springfield",
-          lineup: [
-            {
-              id: "plyr_1",
-              name: "First Batter",
-              role: "batter" as const,
-              batting: { contact: 50, power: 50, speed: 50 },
-              pitching: { control: 50, velocity: 50, stamina: 50 },
-            },
-            {
-              id: "plyr_2",
-              name: "Second Batter",
-              role: "batter" as const,
-              batting: { contact: 50, power: 50, speed: 50 },
-              pitching: { control: 50, velocity: 50, stamina: 50 },
-            },
-          ],
-          bench: [],
-          pitchers: [],
+          schemaVersion: 4,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+          source: "custom" as const,
+          roster: {
+            lineup: [
+              {
+                id: "plyr_1",
+                name: "First Batter",
+                role: "batter" as const,
+                batting: { contact: 50, power: 50, speed: 50 },
+                pitching: { control: 50, velocity: 50, stamina: 50 },
+              },
+              {
+                id: "plyr_2",
+                name: "Second Batter",
+                role: "batter" as const,
+                batting: { contact: 50, power: 50, speed: 50 },
+                pitching: { control: 50, velocity: 50, stamina: 50 },
+              },
+            ],
+            bench: [],
+            pitchers: [],
+          },
+          metadata: { notes: "", tags: [], archived: false },
         },
       ],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
 
     render(
@@ -297,27 +308,38 @@ describe("PlayerCareerPage", () => {
           name: "Aces",
           abbreviation: "ACE",
           city: "Springfield",
-          lineup: [
-            {
-              id: "plyr_1",
-              name: "First Batter",
-              role: "batter" as const,
-              batting: { contact: 50, power: 50, speed: 50 },
-              pitching: { control: 50, velocity: 50, stamina: 50 },
-            },
-            {
-              id: "plyr_2",
-              name: "Second Batter",
-              role: "batter" as const,
-              batting: { contact: 50, power: 50, speed: 50 },
-              pitching: { control: 50, velocity: 50, stamina: 50 },
-            },
-          ],
-          bench: [],
-          pitchers: [],
+          schemaVersion: 4,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+          source: "custom" as const,
+          roster: {
+            lineup: [
+              {
+                id: "plyr_1",
+                name: "First Batter",
+                role: "batter" as const,
+                batting: { contact: 50, power: 50, speed: 50 },
+                pitching: { control: 50, velocity: 50, stamina: 50 },
+              },
+              {
+                id: "plyr_2",
+                name: "Second Batter",
+                role: "batter" as const,
+                batting: { contact: 50, power: 50, speed: 50 },
+                pitching: { control: 50, velocity: 50, stamina: 50 },
+              },
+            ],
+            bench: [],
+            pitchers: [],
+          },
+          metadata: { notes: "", tags: [], archived: false },
         },
       ],
       loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
     });
 
     render(

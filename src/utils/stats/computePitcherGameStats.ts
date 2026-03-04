@@ -82,13 +82,11 @@ export const computeWHIP = (
  *
  * @param entries - Pitcher log entries for ONE team (the pitching team).
  * @param teamWon  - Whether this team won the game.
- * @param finalScore - [away, home] final score — used to check lead/trail at each moment.
  * @param teamIdx  - 0 if this is the away team's pitchers, 1 if home.
  */
 function computeSaveHoldBS(
   entries: PitcherLogEntry[],
   teamWon: boolean,
-  finalScore: [number, number],
   teamIdx: 0 | 1,
 ): Record<string, { saves: number; holds: number; blownSaves: number }> {
   const result: Record<string, { saves: number; holds: number; blownSaves: number }> = {};
@@ -174,7 +172,7 @@ export const computePitcherGameStats = (
     const awayWon = finalScore[0] > finalScore[1];
     const teamWon = teamIdx === 0 ? awayWon : !awayWon;
 
-    const saveHoldBS = computeSaveHoldBS(entries, teamWon, finalScore, teamIdx);
+    const saveHoldBS = computeSaveHoldBS(entries, teamWon, teamIdx);
 
     // Merge entries by pitcherId in case the same pitcher appears twice (rare edge case).
     const byPitcher: Record<string, PitcherLogEntry> = {};
