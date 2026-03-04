@@ -271,8 +271,8 @@ describe("schema version and reset flag", () => {
     expect(db.players.schema.version).toBe(3);
   });
 
-  it("games collection has schema version 0", () => {
-    expect(db.games.schema.version).toBe(0);
+  it("games collection has schema version 1", () => {
+    expect(db.games.schema.version).toBe(1);
   });
 
   it("playerGameStats collection has schema version 0", () => {

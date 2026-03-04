@@ -1,5 +1,6 @@
 import type { PlayLogEntry, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "./index";
 import { buildResolvedMods } from "./resolvePlayerMods";
+import { generateGameInstanceId } from "@storage/generateId";
 
 /** Fallback team names used when a very old save is missing the `teams` field. */
 const FALLBACK_TEAMS: [string, string] = ["Away", "Home"];
@@ -12,6 +13,7 @@ export const createFreshGameState = (
   teams: [string, string],
   teamLabels?: [string, string],
 ): State => ({
+  gameInstanceId: generateGameInstanceId(),
   inning: 1,
   score: [0, 0] as [number, number],
   teams,

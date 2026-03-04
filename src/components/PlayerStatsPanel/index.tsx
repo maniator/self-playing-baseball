@@ -141,7 +141,9 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
   const [statsMode, setStatsMode] = React.useState<"game" | "career">("game");
-  const [careerStats, setCareerStats] = React.useState<Record<string, BatterStat>>({});
+  const [persistedCareerStats, setPersistedCareerStats] = React.useState<
+    Record<string, BatterStat>
+  >({});
   const teamDisplayName = resolveTeamLabel(teams[activeTeam], customTeams);
 
   React.useEffect(() => {
@@ -161,7 +163,10 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     [lineupOrder, activeTeam, roster],
   );
 
-  // Fetch career stats whenever the mode switches to "career" or the team/lineup changes.
+  // Fetch persisted career stats (from previously COMPLETED games, NOT the current game)
+  // whenever the mode switches to "career" or the team/lineup changes.
+  // The current game's stats are merged on top (see `stats` below) so the Career view
+  // updates live during gameplay — not just after a FINAL commit.
   React.useEffect(() => {
     if (statsMode !== "career") return;
     let cancelled = false;
@@ -200,7 +205,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
           const pk = playerKeys[idx];
           if (results[pk]) byPlayerId[id] = results[pk];
         });
-        setCareerStats(byPlayerId);
+        setPersistedCareerStats(byPlayerId);
       })
       .catch((err) => {
         if (cancelled) return;
@@ -210,6 +215,33 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
       cancelled = true;
     };
   }, [statsMode, teams, activeTeam, lineupIds, customTeams]);
+
+  // Career mode = persisted history (prior completed games) + current game so far.
+  // This updates live during gameplay (gameStats re-computes on every playLog change)
+  // while only writing to DB once at FINAL.
+  const careerStats = React.useMemo((): Record<string, BatterStat> => {
+    if (statsMode !== "career") return {};
+    const merged: Record<string, BatterStat> = { ...persistedCareerStats };
+    for (const [playerId, cur] of Object.entries(gameStats)) {
+      const prev = merged[playerId];
+      if (!prev) {
+        merged[playerId] = { ...cur };
+      } else {
+        merged[playerId] = {
+          atBats: prev.atBats + cur.atBats,
+          hits: prev.hits + cur.hits,
+          walks: prev.walks + cur.walks,
+          strikeouts: prev.strikeouts + cur.strikeouts,
+          rbi: prev.rbi + cur.rbi,
+          singles: prev.singles + cur.singles,
+          doubles: prev.doubles + cur.doubles,
+          triples: prev.triples + cur.triples,
+          homers: prev.homers + cur.homers,
+        };
+      }
+    }
+    return merged;
+  }, [statsMode, persistedCareerStats, gameStats]);
 
   const stats = statsMode === "career" ? careerStats : gameStats;
 

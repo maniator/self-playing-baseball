@@ -90,6 +90,12 @@ export const useGameHistorySync = (
     const state = gameStateRef.current;
     const currentCustomTeams = customTeamsRef.current;
 
+    // Prefer the stable gameInstanceId from state (generated once at game start,
+    // carried in every save snapshot of that run) so that multiple save slots of
+    // the same run all resolve to the same GameDoc.id — preventing double-counts.
+    // Fall back to saveId for pre-gameInstanceId saves (legacy behaviour).
+    const gameId = state.gameInstanceId ?? saveId;
+
     // Build stat rows for both teams.
     const statRows: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt">[] = [];
 
@@ -127,7 +133,7 @@ export const useGameHistorySync = (
           (slotIdx >= 0 ? `Batter ${slotIdx + 1}` : playerId);
 
         statRows.push({
-          gameId: saveId,
+          gameId,
           teamId,
           opponentTeamId,
           playerKey,
@@ -148,9 +154,10 @@ export const useGameHistorySync = (
       homeScore: state.score[1],
       awayScore: state.score[0],
       innings: state.inning,
+      committedBySaveId: saveId,
     };
 
-    GameHistoryStore.commitCompletedGame(saveId, gameMeta, statRows).catch((err) => {
+    GameHistoryStore.commitCompletedGame(gameId, gameMeta, statRows).catch((err) => {
       appLog.error("useGameHistorySync: failed to commit completed game", err);
       // Reset the committed flag so a subsequent attempt can retry.
       committedRef.current = false;

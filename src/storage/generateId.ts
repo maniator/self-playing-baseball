@@ -28,3 +28,11 @@ export const generateSaveId = (): string => `save_${nanoid(12)}`;
 
 /** Generates a random 16-char alphanumeric seed for fingerprint computation. */
 export const generateSeed = (): string => nanoid(16);
+
+/**
+ * Generates a stable identity for a single game run (`game_…`).
+ * Created once when a new game starts and carried in every subsequent save
+ * snapshot of that run, so loading from any mid-game save slot always refers
+ * to the same underlying game instance when committing history.
+ */
+export const generateGameInstanceId = (): string => `game_${nanoid(12)}`;

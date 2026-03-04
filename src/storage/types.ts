@@ -307,7 +307,11 @@ export interface ExportedCustomTeams {
  * must never create a new GameDoc.
  */
 export interface GameDoc {
-  /** Primary key — the RxDB save ID (`save_…`) for the completed game. */
+  /**
+   * Primary key — the `gameInstanceId` stored in `State` for the completed run.
+   * Using `gameInstanceId` (not `saveId`) ensures that loading any mid-game
+   * save slot from the same run and finishing it does NOT produce a second entry.
+   */
   id: string;
   /** Wall-clock timestamp when the game was committed (ms since epoch). */
   playedAt: number;
@@ -321,6 +325,8 @@ export interface GameDoc {
   awayScore: number;
   /** Number of innings played (9 normally; more for extras). */
   innings: number;
+  /** The save ID (`SaveDoc.id`) that triggered the commit — for debug/traceability only. */
+  committedBySaveId?: string;
   schemaVersion: number;
 }
 

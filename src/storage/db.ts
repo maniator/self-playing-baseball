@@ -236,8 +236,8 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
 };
 
 const gamesSchema: RxJsonSchema<GameDoc> = {
-  // Version 0: initial schema.
-  version: 0,
+  // Version 1: added optional committedBySaveId field for debug traceability.
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -250,6 +250,7 @@ const gamesSchema: RxJsonSchema<GameDoc> = {
     homeScore: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
     awayScore: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
     innings: { type: "number", minimum: 1, maximum: 999, multipleOf: 1 },
+    committedBySaveId: { type: "string" },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
   required: [
@@ -555,7 +556,13 @@ async function initDb(
         },
       },
     },
-    games: { schema: gamesSchema },
+    games: {
+      schema: gamesSchema,
+      migrationStrategies: {
+        // v0 → v1: added optional committedBySaveId field — identity migration is safe.
+        1: (oldDoc: Record<string, unknown>) => oldDoc,
+      },
+    },
     playerGameStats: { schema: playerGameStatsSchema },
   });
   return db;

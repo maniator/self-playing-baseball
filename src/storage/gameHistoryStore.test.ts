@@ -234,3 +234,39 @@ describe("GameHistoryStore export/import", () => {
     await expect(store.importGameHistory("not json {}", new Set())).rejects.toThrow("Invalid JSON");
   });
 });
+
+describe("GameHistoryStore — gameInstanceId deduplication across save slots", () => {
+  it("finishing the same game from two different save slots writes only one GameDoc", async () => {
+    // Two save slots (saveA, saveB) represent mid-game snapshots of the SAME game run.
+    // Both carry the same gameInstanceId.
+    const sharedGameInstanceId = "game_instance_shared";
+    const saveIdA = "save_slot_a";
+    const saveIdB = "save_slot_b";
+
+    // Slot A finishes first.
+    await store.commitCompletedGame(
+      sharedGameInstanceId,
+      { ...gameMeta, committedBySaveId: saveIdA },
+      [makeStatRow(sharedGameInstanceId, "p1")],
+    );
+
+    // Slot B finishes the same game (same gameInstanceId). Should be a no-op.
+    await store.commitCompletedGame(
+      sharedGameInstanceId,
+      { ...gameMeta, committedBySaveId: saveIdB },
+      [makeStatRow(sharedGameInstanceId, "p1")],
+    );
+
+    const allGames = await db.games.find().exec();
+    expect(allGames.length).toBe(1);
+    expect(allGames[0].committedBySaveId).toBe(saveIdA); // first commit wins
+
+    const allStats = await db.playerGameStats.find().exec();
+    expect(allStats.length).toBe(1); // no duplicate stat row
+
+    // Career totals should reflect exactly one game's worth of stats.
+    const career = await store.getCareerStats(["Yankees:p1"]);
+    expect(career["Yankees:p1"].gamesPlayed).toBe(1);
+    expect(career["Yankees:p1"].hits).toBe(2); // not 4 (would be 4 if double-counted)
+  });
+});
