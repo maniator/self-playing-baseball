@@ -30,11 +30,13 @@ afterEach(async () => {
 });
 
 describe("db collections", () => {
-  it("creates saves, events, customTeams, and players collections", () => {
+  it("creates saves, events, customTeams, players, games, and playerGameStats collections", () => {
     expect(db.saves).toBeDefined();
     expect(db.events).toBeDefined();
     expect(db.customTeams).toBeDefined();
     expect(db.players).toBeDefined();
+    expect(db.games).toBeDefined();
+    expect(db.playerGameStats).toBeDefined();
   });
 
   it("inserts and retrieves a saves document", async () => {
@@ -130,8 +132,7 @@ describe("savesCollection / eventsCollection helpers (singleton)", () => {
 
 describe("players collection", () => {
   it("inserts and retrieves a player document", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    await testDb.players.insert({
+    await db.players.insert({
       id: "team1:lineup:0",
       teamId: "team1",
       section: "lineup",
@@ -141,17 +142,15 @@ describe("players collection", () => {
       batting: { contact: 70, power: 60, speed: 50 },
       schemaVersion: 1,
     });
-    const doc = await testDb.players.findOne("team1:lineup:0").exec();
+    const doc = await db.players.findOne("team1:lineup:0").exec();
     expect(doc?.name).toBe("Alice");
     expect(doc?.teamId).toBe("team1");
     expect(doc?.section).toBe("lineup");
     expect(doc?.orderIndex).toBe(0);
-    await testDb.close();
   });
 
   it("queries players by teamId", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    await testDb.players.bulkInsert([
+    await db.players.bulkInsert([
       {
         id: "t1:lineup:0",
         teamId: "t1",
@@ -183,16 +182,14 @@ describe("players collection", () => {
         schemaVersion: 1,
       },
     ]);
-    const t1Players = await testDb.players.find({ selector: { teamId: "t1" } }).exec();
+    const t1Players = await db.players.find({ selector: { teamId: "t1" } }).exec();
     expect(t1Players).toHaveLength(2);
-    const t2Players = await testDb.players.find({ selector: { teamId: "t2" } }).exec();
+    const t2Players = await db.players.find({ selector: { teamId: "t2" } }).exec();
     expect(t2Players).toHaveLength(1);
-    await testDb.close();
   });
 
   it("queries players by teamId + section", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    await testDb.players.bulkInsert([
+    await db.players.bulkInsert([
       {
         id: "tm:lineup:0",
         teamId: "tm",
@@ -224,17 +221,15 @@ describe("players collection", () => {
         schemaVersion: 1,
       },
     ]);
-    const lineupPlayers = await testDb.players
+    const lineupPlayers = await db.players
       .find({ selector: { teamId: "tm", section: "lineup" } })
       .exec();
     expect(lineupPlayers).toHaveLength(1);
     expect(lineupPlayers[0].name).toBe("Lineup Player");
-    await testDb.close();
   });
 
   it("players from different teams are isolated", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    await testDb.players.bulkInsert([
+    await db.players.bulkInsert([
       {
         id: "teamA:lineup:0",
         teamId: "teamA",
@@ -256,31 +251,32 @@ describe("players collection", () => {
         schemaVersion: 1,
       },
     ]);
-    const teamAPlayers = await testDb.players.find({ selector: { teamId: "teamA" } }).exec();
+    const teamAPlayers = await db.players.find({ selector: { teamId: "teamA" } }).exec();
     expect(teamAPlayers.map((p) => p.name)).toEqual(["A Player"]);
-    const teamBPlayers = await testDb.players.find({ selector: { teamId: "teamB" } }).exec();
+    const teamBPlayers = await db.players.find({ selector: { teamId: "teamB" } }).exec();
     expect(teamBPlayers.map((p) => p.name)).toEqual(["B Player"]);
-    await testDb.close();
   });
 });
 
 describe("schema version and reset flag", () => {
-  it("saves collection has schema version 2", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.saves.schema.version).toBe(2);
-    await testDb.close();
+  it("saves collection has schema version 2", () => {
+    expect(db.saves.schema.version).toBe(2);
   });
 
-  it("customTeams collection has schema version 3", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.customTeams.schema.version).toBe(3);
-    await testDb.close();
+  it("customTeams collection has schema version 3", () => {
+    expect(db.customTeams.schema.version).toBe(3);
   });
 
-  it("players collection has schema version 2", async () => {
-    const testDb = await _createTestDb(getRxStorageMemory());
-    expect(testDb.players.schema.version).toBe(2);
-    await testDb.close();
+  it("players collection has schema version 2", () => {
+    expect(db.players.schema.version).toBe(2);
+  });
+
+  it("games collection has schema version 0", () => {
+    expect(db.games.schema.version).toBe(0);
+  });
+
+  it("playerGameStats collection has schema version 0", () => {
+    expect(db.playerGameStats.schema.version).toBe(0);
   });
 
   it("wasDbReset() returns false initially", () => {
@@ -300,8 +296,21 @@ describe("schema version and reset flag", () => {
  *   1. A v0 database with existing saves can be reopened with the v2 code.
  *   2. All migrations (v0→v1 and v1→v2) run without throwing.
  *   3. All save documents remain accessible and intact after migration.
+ *
+ * NOTE: Migration tests close the global `db` (from the outer beforeEach) before
+ * running so that only ONE RxDB database is open at a time. RxDB 17 beta has a
+ * global collection registry that can throw COL23 when multiple databases with the
+ * same collection names are open simultaneously (storage-agnostic).
  */
 describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
+  beforeEach(async () => {
+    if (db) {
+      await db.close();
+    }
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   it("migrates saves created with the pre-Stage-3B v0 schema to v2 without data loss", async () => {
     // The pre-Stage-3B schema had plain `{ type: "object", additionalProperties: true }`
     // for setup / scoreSnapshot / inningSnapshot / stateSnapshot.
@@ -558,6 +567,12 @@ describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
  * docs — no backfill is needed at migration time.
  */
 describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   /** The v0 schema that shipped before this branch. */
   const v0CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
     version: 0,
@@ -696,6 +711,12 @@ describe("schema migration: customTeams v0 → v1 (fingerprint + abbreviation)",
  * O(1) global duplicate detection without re-reading all teams.
  */
 describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   /** The v1 schema (abbreviated to match what was shipped). */
   const v1CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
     version: 1,
@@ -924,6 +945,12 @@ describe("schema migration: customTeams v1 → v2 (player fingerprints)", () => 
  * roster player, then recomputes all fingerprints using the new seed-based formula.
  */
 describe("schema migration: customTeams v2 → v3 (seed-based fingerprints)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   /** The v2 schema (matches what was shipped at v2). */
   const v2CustomTeamsSchema: RxJsonSchema<Record<string, unknown>> = {
     version: 2,
@@ -1146,8 +1173,12 @@ describe("isMigrationFailure (via _isMigrationFailureForTest)", () => {
 });
 
 describe("getDb() recovery path", () => {
-  afterEach(() => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
     _resetDbForTest();
+    db = await _createTestDb(getRxStorageMemory());
   });
 
   it("wasDbReset() stays false when getDb() succeeds normally", async () => {
@@ -1164,6 +1195,12 @@ describe("getDb() recovery path", () => {
 });
 
 describe("schema migration: players v0 → v1 (teamId now nullable)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   it("migrates a v0 player document (required teamId) to v1 (optional teamId) without data loss", async () => {
     const v0PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
       version: 0,
@@ -1228,6 +1265,12 @@ describe("schema migration: players v0 → v1 (teamId now nullable)", () => {
 });
 
 describe("schema migration: players v1 → v2 (team-scoped composite primary key)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
   it("migrates a player document to a composite primary key and adds playerId (v0→v1→v2 chain)", async () => {
     // The v1→v2 migration transforms `id: "${playerId}"` to `id: "${teamId}:${playerId}"`
     // and adds the `playerId` field. This test verifies that migration by running the full

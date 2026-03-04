@@ -15,6 +15,7 @@ import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { useGameHistorySync } from "@hooks/useGameHistorySync";
 import { useRxdbGameSync } from "@hooks/useRxdbGameSync";
 import { useSaveStore } from "@hooks/useSaveStore";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
@@ -86,7 +87,12 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Tracks the RxDB save ID for the current game session.
   const rxSaveIdRef = React.useRef<string | null>(null);
 
+  // True when the currently-loaded save was already in FINAL state on load.
+  // Prevents useGameHistorySync from re-committing stats for a completed game.
+  const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
+
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
+  useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad);
 
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
@@ -126,6 +132,8 @@ const GameInner: React.FunctionComponent<Props> = ({
     if (setup.managedTeam !== null) setManagedTeam(setup.managedTeam);
     setManagerMode(setup.managerMode);
     rxSaveIdRef.current = rxAutoSave.id;
+    // If the restored save was already FINAL, mark it so history sync skips re-commit.
+    setWasAlreadyFinalOnLoad(snap.state.gameOver === true);
     setGameActive(true);
     onGameSessionStarted?.();
   }, [
@@ -147,6 +155,8 @@ const GameInner: React.FunctionComponent<Props> = ({
     managedTeam: 0 | 1 | null,
     playerOverrides: PlayerOverrides,
   ) => {
+    // A fresh game is never "already final".
+    setWasAlreadyFinalOnLoad(false);
     setManagerMode(managedTeam !== null);
     if (managedTeam !== null) {
       setManagedTeam(managedTeam);
@@ -272,12 +282,14 @@ const GameInner: React.FunctionComponent<Props> = ({
       },
     });
 
-    const { setup } = pendingLoadSave;
+    const setup = pendingLoadSave.setup;
     setManagerMode(setup.managerMode);
     setManagedTeam(setup.managedTeam ?? 0);
     setStrategy(setup.strategy);
 
     rxSaveIdRef.current = pendingLoadSave.id;
+    // If the loaded save was already FINAL, mark it so history sync skips re-commit.
+    setWasAlreadyFinalOnLoad(snap.state.gameOver === true);
     setGameActive(true);
     onGameSessionStarted?.();
     onConsumePendingLoad?.();
@@ -331,6 +343,8 @@ const GameInner: React.FunctionComponent<Props> = ({
       }
 
       rxSaveIdRef.current = slot.id;
+      // If the loaded save was already FINAL, mark it so history sync skips re-commit.
+      setWasAlreadyFinalOnLoad(snap.state.gameOver === true);
       setGameActive(true); // no-op if already active; triggers scheduler if game was over
       onGameSessionStarted?.();
     },

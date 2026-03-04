@@ -4,12 +4,15 @@ import * as React from "react";
 import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
-import { Hit } from "@constants/hitTypes";
-import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
+import { GameHistoryStore } from "@storage/gameHistoryStore";
 import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
+import {
+  computeBattingStatsFromLogs,
+  emptyBatterStat,
+} from "@utils/stats/computeBattingStatsFromLogs";
 
 import PlayerDetails, { type BatterStat } from "./PlayerDetails";
 
@@ -35,6 +38,21 @@ const Toggle = styled.button`
   padding: 0 2px;
   &:hover {
     color: #aaa;
+  }
+`;
+
+const ModeToggle = styled.button<{ $active?: boolean }>`
+  background: none;
+  border: 1px solid ${({ $active }) => ($active ? "#6ab0e0" : "#333")};
+  color: ${({ $active }) => ($active ? "#6ab0e0" : "#555")};
+  font-size: 10px;
+  cursor: pointer;
+  padding: 1px 6px;
+  border-radius: 3px;
+  margin-left: 4px;
+  &:hover {
+    color: #aaa;
+    border-color: #aaa;
   }
 `;
 
@@ -88,73 +106,6 @@ const Tr = styled.tr<{ $selected?: boolean }>`
  *     restore time (`restore_game`); stat aggregation falls back to 0 via
  *     `entry.rbi ?? 0` only for entries that are still absent after backfill
  */
-/** Returns a blank batting stat record. */
-const emptyBatterStat = (): BatterStat => ({
-  atBats: 0,
-  hits: 0,
-  walks: 0,
-  strikeouts: 0,
-  rbi: 0,
-  singles: 0,
-  doubles: 0,
-  triples: 0,
-  homers: 0,
-});
-
-/**
- * Returns the stat key for a log entry.
- *
- * Entries carry `playerId` so stats are grouped by player rather than
- * by batting-order slot. This means a substitute's stat line starts at zero and
- * the replaced player's stats stay under their own ID.
- *
- * Older entries (no `playerId`) fall back to a slot-number string key
- * (`"slot:1"` … `"slot:9"`) so the legacy slot-based grouping still works for
- * older saves.
- */
-const statKey = (entry: { playerId?: string; batterNum: number }): string =>
-  entry.playerId ?? `slot:${entry.batterNum}`;
-
-const computeStats = (
-  team: 0 | 1,
-  playLog: PlayLogEntry[],
-  strikeoutLog: StrikeoutEntry[],
-  outLog: StrikeoutEntry[],
-): Record<string, BatterStat> => {
-  const stats: Record<string, BatterStat> = {};
-  const getOrCreate = (key: string): BatterStat => {
-    if (!stats[key]) stats[key] = emptyBatterStat();
-    return stats[key];
-  };
-  for (const entry of playLog) {
-    if (entry.team !== team) continue;
-    const s = getOrCreate(statKey(entry));
-    if (entry.event === Hit.Walk) {
-      s.walks++;
-    } else {
-      s.hits++;
-      if (entry.event === Hit.Single) s.singles++;
-      else if (entry.event === Hit.Double) s.doubles++;
-      else if (entry.event === Hit.Triple) s.triples++;
-      else if (entry.event === Hit.Homerun) s.homers++;
-    }
-    s.rbi += entry.rbi ?? 0;
-  }
-  for (const entry of strikeoutLog) {
-    if (entry.team !== team) continue;
-    getOrCreate(statKey(entry)).strikeouts++;
-  }
-  // AB = H + outLog entries (outLog includes K + regular outs; walks are excluded from AB)
-  for (const entry of outLog) {
-    if (entry.team !== team) continue;
-    getOrCreate(statKey(entry)).atBats++;
-  }
-  // AB must also include hits (reached-base events are not in outLog)
-  for (const key of Object.keys(stats)) {
-    stats[key].atBats += stats[key].hits;
-  }
-  return stats;
-};
 
 /**
  * Dev-mode invariant: verify that K ≤ AB for each player's stat record.
@@ -189,14 +140,48 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   const { teams: customTeams } = useCustomTeams();
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
+  const [statsMode, setStatsMode] = React.useState<"game" | "career">("game");
+  const [careerStats, setCareerStats] = React.useState<Record<string, BatterStat>>({});
   const teamDisplayName = resolveTeamLabel(teams[activeTeam], customTeams);
 
   React.useEffect(() => {
     setSelectedSlot(null);
   }, [activeTeam]);
 
-  const stats = computeStats(activeTeam, playLog, strikeoutLog, outLog);
-  warnBattingStatsInvariant(stats, activeTeam, teamDisplayName);
+  const gameStats = computeBattingStatsFromLogs(activeTeam, playLog, strikeoutLog, outLog);
+  warnBattingStatsInvariant(gameStats, activeTeam, teamDisplayName);
+
+  // Build the roster order and player-to-name map for this team.
+  const roster = React.useMemo(() => generateRoster(teams[activeTeam]), [teams, activeTeam]);
+  const lineupIds = React.useMemo(
+    () =>
+      lineupOrder[activeTeam].length > 0
+        ? lineupOrder[activeTeam]
+        : roster.batters.map((p) => p.id),
+    [lineupOrder, activeTeam, roster],
+  );
+
+  // Fetch career stats whenever the mode switches to "career" or the team/lineup changes.
+  React.useEffect(() => {
+    if (statsMode !== "career") return;
+    const teamId = teams[activeTeam];
+    const playerKeys = lineupIds.slice(0, 9).map((id) => `${teamId}:${id}`);
+    GameHistoryStore.getCareerStats(playerKeys)
+      .then((results) => {
+        // Re-key by playerId (strip teamId prefix) for consistent slot lookup.
+        const byPlayerId: Record<string, BatterStat> = {};
+        for (const [key, val] of Object.entries(results)) {
+          const playerId = key.startsWith(`${teamId}:`) ? key.slice(teamId.length + 1) : key;
+          byPlayerId[playerId] = val;
+        }
+        setCareerStats(byPlayerId);
+      })
+      .catch((err) => {
+        appLog.error("PlayerStatsPanel: failed to load career stats", err);
+      });
+  }, [statsMode, teams, activeTeam, lineupIds]);
+
+  const stats = statsMode === "career" ? careerStats : gameStats;
 
   const handleRowSelect = (slot: number) => {
     setSelectedSlot((prev) => (prev === slot ? null : slot));
@@ -211,19 +196,14 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
 
   // Build slot→name map for the active team
   const slotNames = React.useMemo(() => {
-    const roster = generateRoster(teams[activeTeam]);
-    const order =
-      lineupOrder[activeTeam].length > 0
-        ? lineupOrder[activeTeam]
-        : roster.batters.map((p) => p.id);
     const idToPlayer = new Map(roster.batters.map((p) => [p.id, p]));
     const overrides = playerOverrides[activeTeam];
-    return order.slice(0, 9).map((id, idx) => {
+    return lineupIds.slice(0, 9).map((id, idx) => {
       const player = idToPlayer.get(id);
       const nickname = overrides[id]?.nickname?.trim();
       return nickname || player?.name || `Batter ${idx + 1}`;
     });
-  }, [teams, activeTeam, lineupOrder, playerOverrides]);
+  }, [roster, activeTeam, lineupIds, playerOverrides]);
 
   // Build slot→position map for the active team.
   // lineupPositions holds the in-game defensive slot assignment set at game-start
@@ -237,11 +217,6 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     }
     // Fallback: derive from roster natural positions (stock teams / older saves).
     const teamId = teams[activeTeam];
-    const roster = generateRoster(teamId);
-    const order =
-      lineupOrder[activeTeam].length > 0
-        ? lineupOrder[activeTeam]
-        : roster.batters.map((p) => p.id);
     const idToGenerated = new Map(roster.batters.map((p) => [p.id, p.position]));
 
     let customPositions: Map<string, string> | undefined;
@@ -254,19 +229,21 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
       }
     }
 
-    return order.slice(0, 9).map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
-  }, [lineupPositions, teams, activeTeam, lineupOrder, customTeams]);
+    return lineupIds
+      .slice(0, 9)
+      .map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
+  }, [lineupPositions, teams, activeTeam, lineupIds, roster, customTeams]);
 
   // Look up stats for a slot by player ID falling back to slot-number string key
   // (legacy saves where playerId was not recorded). Always returns a defined BatterStat.
   const getSlotStats = React.useCallback(
     (slotNum: number): BatterStat => {
-      const playerId = lineupOrder[activeTeam][slotNum - 1];
+      const playerId = lineupIds[slotNum - 1];
       return (
         (playerId ? stats[playerId] : undefined) ?? stats[`slot:${slotNum}`] ?? emptyBatterStat()
       );
     },
-    [stats, lineupOrder, activeTeam],
+    [stats, lineupIds],
   );
 
   const selectedStats = selectedSlot != null ? getSlotStats(selectedSlot) : null;
@@ -278,12 +255,32 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     <div data-testid="player-stats-panel">
       <HeadingRow>
         <span>Batting Stats</span>
-        <Toggle
-          onClick={() => setCollapsed((c) => !c)}
-          aria-label={collapsed ? "Expand batting stats" : "Collapse batting stats"}
-        >
-          {collapsed ? "▶ show" : "▼ hide"}
-        </Toggle>
+        <span>
+          <ModeToggle
+            $active={statsMode === "game"}
+            onClick={() => setStatsMode("game")}
+            aria-label="Show this game stats"
+            aria-pressed={statsMode === "game"}
+            data-testid="stats-mode-game"
+          >
+            This game
+          </ModeToggle>
+          <ModeToggle
+            $active={statsMode === "career"}
+            onClick={() => setStatsMode("career")}
+            aria-label="Show career stats"
+            aria-pressed={statsMode === "career"}
+            data-testid="stats-mode-career"
+          >
+            Career
+          </ModeToggle>
+          <Toggle
+            onClick={() => setCollapsed((c) => !c)}
+            aria-label={collapsed ? "Expand batting stats" : "Collapse batting stats"}
+          >
+            {collapsed ? "▶ show" : "▼ hide"}
+          </Toggle>
+        </span>
       </HeadingRow>
       {!collapsed && (
         <>
