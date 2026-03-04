@@ -1,4 +1,10 @@
-import type { GameAction, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "../index";
+import type {
+  GameAction,
+  PitcherLogEntry,
+  ResolvedPlayerMods,
+  State,
+  TeamCustomPlayerOverrides,
+} from "../index";
 import { createPitcherLogEntry, pushPitcherLogEntry } from "../pitcherLog";
 import { buildResolvedMods } from "../resolvePlayerMods";
 
@@ -60,7 +66,12 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         ];
       }
       // Compute pitcher log initial entries for each team when pitchers are provided.
-      let newPitcherGameLog = state.pitcherGameLog ?? ([[], []] as [never[], never[]]);
+      // When rosterPitchers is provided, always start fresh so repeated setTeams dispatches
+      // (e.g. changing starting pitcher selection) don't accumulate duplicate entries.
+      // When rosterPitchers is not provided, preserve the existing log.
+      let newPitcherGameLog: [PitcherLogEntry[], PitcherLogEntry[]] = p.rosterPitchers
+        ? [[], []]
+        : (state.pitcherGameLog ?? [[], []]);
       if (p.rosterPitchers) {
         // Initialize pitcher log for each team's starting pitcher.
         for (const teamIdx of [0, 1] as const) {

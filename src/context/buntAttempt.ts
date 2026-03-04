@@ -48,7 +48,7 @@ export const buntAttempt = (
       // lead runner on 2nd is out; runner on 3rd scores (ID drops)
     }
     // batter goes to 1st — ID unknown here (null)
-    // Track pitcher: runs scored + battersFaced (batter reached base).
+    // Track pitcher: runs scored only. battersFaced is incremented by playerOut(…, true) below.
     const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
     const pitcherLogAfterFC = updateActivePitcherLog(
       state.pitcherGameLog ?? [[], []],
@@ -56,7 +56,6 @@ export const buntAttempt = (
       (entry) => ({
         ...entry,
         runsAllowed: entry.runsAllowed + runsScored,
-        battersFaced: entry.battersFaced + 1,
       }),
     );
     const afterFC = addInningRuns(
