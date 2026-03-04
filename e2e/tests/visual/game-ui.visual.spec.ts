@@ -91,6 +91,12 @@ test.describe("Visual", () => {
     });
   });
 
+  /**
+   * Saves modal screenshot — verifies the full modal layout when a save is present.
+   * Covers the save slot row, the action buttons (Load / Export / Delete), and the
+   * "Game history" export/import section added with cross-game stats.
+   * Masks the date/time stamp so the snapshot is stable across runs.
+   */
   test("saves modal screenshot with one save present", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual2" });
     await waitForLogLines(page, 5);
