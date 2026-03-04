@@ -115,7 +115,17 @@ describe("CareerStatsPage", () => {
 
   it("renders batting rows when data is available", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [{ id: "team1", name: "Yankees", abbreviation: "NYY", city: "NY", lineup: [], bench: [], pitchers: [] }],
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
       loading: false,
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
@@ -146,7 +156,17 @@ describe("CareerStatsPage", () => {
   it("switches to pitching tab and renders pitching rows", async () => {
     const user = userEvent.setup();
     vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [{ id: "team1", name: "Yankees", abbreviation: "NYY", city: "NY", lineup: [], bench: [], pitchers: [] }],
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
       loading: false,
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
@@ -182,8 +202,24 @@ describe("CareerStatsPage", () => {
   it("populates team selector with custom teams", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
-        { id: "team1", name: "Red Sox", abbreviation: "BOS", city: "Boston", lineup: [], bench: [], pitchers: [] },
-        { id: "team2", name: "Yankees", abbreviation: "NYY", city: "NY", lineup: [], bench: [], pitchers: [] },
+        {
+          id: "team1",
+          name: "Red Sox",
+          abbreviation: "BOS",
+          city: "Boston",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+        {
+          id: "team2",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
       ],
       loading: false,
     });
@@ -193,5 +229,226 @@ describe("CareerStatsPage", () => {
       const select = screen.getByTestId("career-stats-team-select");
       expect(select.querySelectorAll("option").length).toBeGreaterThanOrEqual(2);
     });
+  });
+
+  it("handles error from getDb silently — page still renders", async () => {
+    const { getDb } = await import("@storage/db");
+    vi.mocked(getDb).mockRejectedValueOnce(new Error("DB unavailable"));
+    renderPage();
+    await act(async () => {});
+    // Page should still render without crashing.
+    expect(screen.getByTestId("career-stats-page")).toBeInTheDocument();
+  });
+
+  it("handles error from getTeamCareerBattingStats — shows empty state", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Cubs",
+          abbreviation: "CHC",
+          city: "Chicago",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockRejectedValueOnce(
+      new Error("query failed"),
+    );
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockRejectedValueOnce(
+      new Error("query failed"),
+    );
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("career-stats-empty")).toBeInTheDocument();
+    });
+  });
+
+  it("loads teams from game history (non-custom teamIds) into the selector", async () => {
+    const { getDb } = await import("@storage/db");
+    // Return a DB with one batting row from a non-custom team.
+    vi.mocked(getDb).mockResolvedValue({
+      playerGameStats: {
+        find: vi.fn(() => ({
+          exec: vi.fn().mockResolvedValue([{ toJSON: () => ({ teamId: "Yankees" }) }]),
+        })),
+      },
+      pitcherGameStats: {
+        find: vi.fn(() => ({
+          exec: vi.fn().mockResolvedValue([{ toJSON: () => ({ teamId: "Mets" }) }]),
+        })),
+      },
+    } as any);
+
+    renderPage();
+    await waitFor(() => {
+      const select = screen.getByTestId("career-stats-team-select");
+      // Yankees and Mets were found in DB history and should appear as options.
+      const options = Array.from(select.querySelectorAll("option")).map((o) => o.value);
+      expect(options).toContain("Yankees");
+    });
+  });
+
+  it("renders — with 0 IP pitcher row — WHIP and ERA display as '—'", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
+      {
+        pitcherKey: "custom:ct_1:p1",
+        nameAtGameTime: "Zero IP Pitcher",
+        gamesPlayed: 1,
+        outsPitched: 0, // 0 IP → ERA and WHIP should display "—"
+        battersFaced: 0,
+        hitsAllowed: 0,
+        walksAllowed: 0,
+        strikeoutsRecorded: 0,
+        homersAllowed: 0,
+        runsAllowed: 0,
+        earnedRuns: 0,
+        saves: 0,
+        holds: 0,
+        blownSaves: 0,
+      },
+    ]);
+
+    renderPage();
+    const pitchingTab = screen.getByTestId("career-stats-pitching-tab");
+    await user.click(pitchingTab);
+    await waitFor(() => {
+      expect(screen.getByText("Zero IP Pitcher")).toBeInTheDocument();
+    });
+    // With 0 IP, ERA and WHIP should render as "—" (null guard in formatWHIP/formatERA)
+    const dashes = screen.getAllByText("—");
+    expect(dashes.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("cleanup effects run without errors when component unmounts", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "t1",
+          name: "Tigers",
+          abbreviation: "DET",
+          city: "Detroit",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    const { unmount } = renderPage();
+    // Let effects start so cancelled-check cleanup functions are registered.
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+    // Unmount triggers the cleanup functions: () => { cancelled = true; }
+    unmount();
+    // If no error thrown, cleanup executed correctly.
+    expect(true).toBe(true);
+  });
+
+  it("team select onChange fires and loads stats for the new team", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Red Sox",
+          abbreviation: "BOS",
+          city: "Boston",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+        {
+          id: "team2",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
+
+    renderPage();
+    const select = screen.getByTestId("career-stats-team-select");
+
+    // Wait for the first team to be auto-selected.
+    await waitFor(() => {
+      expect((select as HTMLSelectElement).value).not.toBe("");
+    });
+
+    // Change the selection to the second team — fires the onChange handler.
+    await user.selectOptions(select, "custom:team2");
+    expect((select as HTMLSelectElement).value).toBe("custom:team2");
+  });
+
+  it("clicking a player row in pitching table navigates to player page", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "team1",
+          name: "Yankees",
+          abbreviation: "NYY",
+          city: "NY",
+          lineup: [],
+          bench: [],
+          pitchers: [],
+        },
+      ],
+      loading: false,
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
+      {
+        pitcherKey: "custom:ct_1:p1",
+        nameAtGameTime: "Click Pitcher",
+        gamesPlayed: 1,
+        outsPitched: 9,
+        battersFaced: 12,
+        hitsAllowed: 2,
+        walksAllowed: 1,
+        strikeoutsRecorded: 5,
+        homersAllowed: 0,
+        runsAllowed: 1,
+        earnedRuns: 1,
+        saves: 0,
+        holds: 0,
+        blownSaves: 0,
+      },
+    ]);
+
+    renderPage();
+    const pitchingTab = screen.getByTestId("career-stats-pitching-tab");
+    await user.click(pitchingTab);
+    await waitFor(() => expect(screen.getByText("Click Pitcher")).toBeInTheDocument());
+
+    // Clicking the pitcher name fires the onClick at line 293.
+    await user.click(screen.getByText("Click Pitcher"));
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/players/"));
   });
 });

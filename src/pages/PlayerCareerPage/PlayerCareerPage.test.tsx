@@ -190,10 +190,50 @@ describe("PlayerCareerPage", () => {
   it("fetches data for the playerKey from the URL", async () => {
     renderPage("custom:ct_abc:plyr_xyz");
     await waitFor(() => {
-      expect(GameHistoryStore.getPlayerCareerBatting).toHaveBeenCalledWith("custom:ct_abc:plyr_xyz");
+      expect(GameHistoryStore.getPlayerCareerBatting).toHaveBeenCalledWith(
+        "custom:ct_abc:plyr_xyz",
+      );
       expect(GameHistoryStore.getPlayerCareerPitching).toHaveBeenCalledWith(
         "custom:ct_abc:plyr_xyz",
       );
     });
+  });
+
+  it("handles missing playerKey param gracefully (no fetch, page still renders)", async () => {
+    // Render without a matching param — useParams returns { playerKey: undefined }.
+    render(
+      <MemoryRouter initialEntries={["/players/"]}>
+        <Routes>
+          <Route path="/players/" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await act(async () => {});
+    expect(screen.getByTestId("player-career-page")).toBeInTheDocument();
+    // No fetch should have happened.
+    expect(GameHistoryStore.getPlayerCareerBatting).not.toHaveBeenCalled();
+  });
+
+  it("handles error from store — shows empty state without crashing", async () => {
+    vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockRejectedValueOnce(new Error("DB error"));
+    vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockRejectedValueOnce(
+      new Error("DB error"),
+    );
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByText(/no batting data/i)).toBeInTheDocument();
+    });
+  });
+
+  it("cleanup effect runs without errors when component unmounts mid-fetch", async () => {
+    // Delay the fetch so the cleanup fires while the fetch is in-flight.
+    vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockImplementationOnce(
+      () => new Promise((resolve) => setTimeout(() => resolve([]), 200)),
+    );
+    vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+    const { unmount } = renderPage();
+    // Unmount before async fetch resolves — triggers () => { cancelled = true; }
+    unmount();
+    expect(true).toBe(true);
   });
 });

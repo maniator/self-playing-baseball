@@ -266,4 +266,44 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     expect(r.runsAllowed).toBe(3);
     expect(r.earnedRuns).toBe(3); // v1: earnedRuns = runsAllowed
   });
+
+  it("merges stats when the same pitcher has multiple stints (logged twice)", () => {
+    // A pitcher who was removed and brought back — two PitcherLogEntry rows for same pitcherId.
+    const firstStint = makePitcherEntry({
+      teamIdx: 0,
+      pitcherId: "fireman",
+      outsPitched: 6,
+      hitsAllowed: 2,
+      walksAllowed: 1,
+      strikeoutsRecorded: 3,
+      runsAllowed: 1,
+      homersAllowed: 0,
+      battersFaced: 9,
+      scoreOnEntry: [0, 0],
+    });
+    const secondStint = makePitcherEntry({
+      teamIdx: 0,
+      pitcherId: "fireman",
+      outsPitched: 3,
+      hitsAllowed: 1,
+      walksAllowed: 0,
+      strikeoutsRecorded: 2,
+      runsAllowed: 0,
+      homersAllowed: 0,
+      battersFaced: 4,
+      scoreOnEntry: [1, 2],
+    });
+
+    // Two stints for the same pitcher; one placeholder for the opponent.
+    const result = computePitcherGameStats([[firstStint, secondStint], []], [1, 2]);
+    // Should produce one merged result row for "fireman".
+    const fireman = result.find((r) => r.result.pitcherId === "fireman");
+    expect(fireman).toBeDefined();
+    expect(fireman!.result.outsPitched).toBe(9); // 6 + 3
+    expect(fireman!.result.hitsAllowed).toBe(3); // 2 + 1
+    expect(fireman!.result.walksAllowed).toBe(1); // 1 + 0
+    expect(fireman!.result.strikeoutsRecorded).toBe(5); // 3 + 2
+    expect(fireman!.result.runsAllowed).toBe(1); // 1 + 0
+    expect(fireman!.result.battersFaced).toBe(13); // 9 + 4
+  });
 });
