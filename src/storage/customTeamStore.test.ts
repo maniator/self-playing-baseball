@@ -1300,10 +1300,46 @@ describe("importPlayer", () => {
       role: "batter",
       batting: { contact: 60, power: 55, speed: 50 },
       playerSeed: "no-team-seed",
+      globalPlayerId: "pl_no_team_gid",
     };
     const json = exportCustomPlayer(player);
     await expect(store.importPlayer("ct_nonexistent", json, "lineup")).rejects.toThrow(
       "Custom team not found",
+    );
+  });
+
+  it("throws when player bundle lacks globalPlayerId", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "No GID Team" }));
+    // Manually build a bundle without globalPlayerId by stripping the field.
+    const player: TeamPlayer = {
+      id: "p_no_gid",
+      name: "No GID Player",
+      role: "batter",
+      batting: { contact: 60, power: 55, speed: 50 },
+      playerSeed: "no-gid-seed",
+      // globalPlayerId intentionally omitted
+    };
+    const rawBundle = exportCustomPlayer(player);
+    // Strip globalPlayerId from the payload so we can test the guard.
+    const parsed = JSON.parse(rawBundle) as {
+      payload: { player: Record<string, unknown>; sig: string };
+      sig: string;
+    };
+    delete parsed.payload.player["globalPlayerId"];
+    // Re-sign the tampered bundle is intentionally skipped — we just want to confirm
+    // the store rejects missing globalPlayerId before any signature check would matter.
+    // We pass the original signed bundle but override parseExportedCustomPlayer indirectly
+    // by creating a player without globalPlayerId and signing it correctly.
+    // The simplest approach: a fresh export of a player with globalPlayerId explicitly undefined.
+    const playerWithoutGid: TeamPlayer = { ...player };
+    // Use the real export — it always adds globalPlayerId via sanitizePlayer in createCustomTeam,
+    // but exportCustomPlayer itself does not add it. If the player object lacks the field,
+    // the exported bundle will also lack it.
+    // Confirm that exportCustomPlayer produces a bundle parseable by parseExportedCustomPlayer,
+    // but importPlayer rejects it when globalPlayerId is absent.
+    const bundleWithoutGid = exportCustomPlayer(playerWithoutGid);
+    await expect(store.importPlayer(id, bundleWithoutGid, "lineup")).rejects.toThrow(
+      "globalPlayerId",
     );
   });
 

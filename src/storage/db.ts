@@ -205,7 +205,12 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
   // `playerSeed` as `"pl_" + fnv1a(playerSeed)`. Used as `playerKey` in PlayerGameStatDoc
   // so career stats follow a player across team moves and imports.
   // Migration v2→v3 backfills `globalPlayerId` from the existing `playerSeed` field.
-  version: 3,
+  //
+  // Version 4: adds an index on `globalPlayerId` so cross-team duplicate checks in
+  // importPlayer resolve in one index scan instead of a full roster hydration of all teams.
+  // Migration v3→v4 is a defensive identity pass that also ensures every doc has
+  // `globalPlayerId` (safety net for any doc that somehow missed the v2→v3 backfill).
+  version: 4,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -230,11 +235,22 @@ const playersSchema: RxJsonSchema<PlayerDoc> = {
     globalPlayerId: { type: "string", maxLength: 32 },
     schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
   },
-  required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+  required: [
+    "id",
+    "section",
+    "orderIndex",
+    "name",
+    "role",
+    "batting",
+    "schemaVersion",
+    "globalPlayerId",
+  ],
   // No index on teamId: RxDB 17 beta cannot compute index strings for nullable union types
   // (`type: ["string", "null"]`). Full collection scans are acceptable for the small
   // roster sizes (≤25 players per team) typical of this app.
-  indexes: [],
+  // globalPlayerId is indexed so importPlayer can resolve cross-team conflicts in one
+  // DB round-trip without hydrating every team's roster.
+  indexes: ["globalPlayerId"],
 };
 
 const gamesSchema: RxJsonSchema<GameDoc> = {
@@ -597,6 +613,25 @@ async function initDb(
             const playerSeed = oldDoc["playerSeed"] as string | undefined;
             // Derive a deterministic fallback from the composite key and fingerprint
             // so re-running the migration on a different device yields the same result.
+            const id = oldDoc["id"] as string | undefined;
+            const playerId = oldDoc["playerId"] as string | undefined;
+            const fingerprint = oldDoc["fingerprint"] as string | undefined;
+            const deterministicBasis = `${id ?? ""}|${playerId ?? ""}|${fingerprint ?? ""}`;
+            const seed = playerSeed ?? fnv1a(deterministicBasis);
+            const globalPlayerId = `pl_${fnv1a(seed)}`;
+            return { ...oldDoc, globalPlayerId };
+          } catch {
+            return oldDoc;
+          }
+        },
+        // v3→v4: adds a globalPlayerId index (no structural change to documents).
+        // Defensive safety pass: any doc that still lacks globalPlayerId (e.g.
+        // imported from a bundle created before the v2→v3 migration applied)
+        // gets the same deterministic backfill that v2→v3 would have applied.
+        4: (oldDoc: Record<string, unknown>) => {
+          try {
+            if (oldDoc["globalPlayerId"]) return oldDoc;
+            const playerSeed = oldDoc["playerSeed"] as string | undefined;
             const id = oldDoc["id"] as string | undefined;
             const playerId = oldDoc["playerId"] as string | undefined;
             const fingerprint = oldDoc["fingerprint"] as string | undefined;

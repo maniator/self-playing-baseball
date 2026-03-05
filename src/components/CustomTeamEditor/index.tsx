@@ -1,76 +1,23 @@
 import * as React from "react";
 
-import type { DragEndEvent } from "@dnd-kit/core";
-import {
-  closestCenter,
-  DndContext,
-  KeyboardSensor,
-  PointerSensor,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { generateDefaultCustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
+import { closestCenter, DndContext } from "@dnd-kit/core";
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import {
-  buildPlayerSig,
-  exportCustomPlayer,
-  parseExportedCustomPlayer,
-} from "@storage/customTeamExportImport";
-import { CustomTeamStore } from "@storage/customTeamStore";
-import { generateSeed } from "@storage/generateId";
-import { downloadJson, playerFilename } from "@storage/saveIO";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { CustomTeamDoc } from "@storage/types";
 
 import {
-  type EditorAction,
-  type EditorPlayer,
-  editorPlayerToTeamPlayer,
   editorReducer,
   editorStateToCreateInput,
   initEditorState,
-  makePlayerId,
   validateEditorState,
 } from "./editorState";
-import SortablePlayerRow from "./SortablePlayerRow";
-import {
-  AddPlayerBtn,
-  ButtonRow,
-  CancelBtn,
-  EditorContainer,
-  EditorTitle,
-  ErrorMsg,
-  FieldGroup,
-  FieldLabel,
-  FormSection,
-  GenerateBtn,
-  IdentityLockHint,
-  ImportPlayerBtn,
-  PlayerDuplicateActions,
-  PlayerDuplicateBanner,
-  ReadOnlyInput,
-  SaveBtn,
-  SectionHeading,
-  SmallIconBtn,
-  TeamInfoGrid,
-  TeamInfoSecondRow,
-  TextInput,
-} from "./styles";
-
-// The counter is seeded from the current timestamp on module load so that
-// each fresh page load produces different teams when "Generate Random" is clicked.
-// The counter increments on every click, so successive clicks in the same session
-// also produce distinct rosters.  Visual snapshot tests that need deterministic
-// output should call generateDefaultCustomTeamDraft() directly with a fixed seed
-// rather than going through the UI button.
-let _generateCounter = Date.now() | 0;
+import { BenchFormSection, LineupFormSection, PitchersSection } from "./RosterSections";
+import { ButtonRow, CancelBtn, EditorContainer, EditorTitle, ErrorMsg, SaveBtn } from "./styles";
+import { TeamInfoSection } from "./TeamInfoSection";
+import { useEditorDragHandlers } from "./useEditorDragHandlers";
+import type { PendingPlayerImport } from "./useImportPlayerFile";
+import { useImportPlayerFile } from "./useImportPlayerFile";
+import { usePlayerExport } from "./usePlayerExport";
 
 type Props = {
   /** Existing team to edit. Undefined means create-new mode. */
@@ -78,318 +25,6 @@ type Props = {
   onSave: (id: string) => void;
   onCancel: () => void;
 };
-
-const makeBlankBatter = (): EditorPlayer => ({
-  id: makePlayerId(),
-  playerSeed: generateSeed(),
-  name: "",
-  position: "",
-  handedness: "R",
-  contact: 60,
-  power: 60,
-  speed: 60,
-});
-
-const makeBlankPitcher = (): EditorPlayer => ({
-  id: makePlayerId(),
-  playerSeed: generateSeed(),
-  name: "",
-  position: "",
-  handedness: "R",
-  contact: 35,
-  power: 35,
-  speed: 35,
-  velocity: 60,
-  control: 60,
-  movement: 60,
-});
-
-// ── Shared types for section sub-components ────────────────────────────────────
-
-type PendingPlayerImport = {
-  player: EditorPlayer;
-  section: "lineup" | "bench" | "pitchers";
-  warning: string;
-  /** Called when the user clicks "Import Anyway". Handles persistence (edit mode) or state update (create mode). */
-  onConfirm: () => void | Promise<void>;
-};
-
-type EditorDispatch = React.Dispatch<EditorAction>;
-
-/** Sentinel droppable IDs for empty lineup/bench sections. */
-const LINEUP_DROPPABLE_ID = "lineup-droppable";
-const BENCH_DROPPABLE_ID = "bench-droppable";
-
-// ── LineupFormSection ──────────────────────────────────────────────────────────
-
-type LineupFormSectionProps = {
-  lineup: EditorPlayer[];
-  existingPlayerIds: Set<string>;
-  pendingPlayerImport: PendingPlayerImport | null;
-  dispatch: EditorDispatch;
-  setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  lineupFileRef: React.RefObject<HTMLInputElement | null>;
-  onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
-};
-
-/** DnD-enabled lineup section (shares DndContext with bench). */
-const LineupFormSection: React.FunctionComponent<LineupFormSectionProps> = ({
-  lineup,
-  existingPlayerIds,
-  pendingPlayerImport,
-  dispatch,
-  setPendingPlayerImport,
-  lineupFileRef,
-  onImportFile,
-  handleExportPlayer,
-}) => {
-  const { setNodeRef } = useDroppable({ id: LINEUP_DROPPABLE_ID });
-  return (
-    <FormSection ref={setNodeRef} data-testid="custom-team-lineup-section">
-      <SectionHeading>Lineup (drag to reorder; drag to/from Bench)</SectionHeading>
-      {pendingPlayerImport?.section === "lineup" && (
-        <PlayerDuplicateBanner role="alert" data-testid="player-import-lineup-duplicate-banner">
-          ⚠ {pendingPlayerImport.warning}
-          <PlayerDuplicateActions>
-            <SmallIconBtn
-              type="button"
-              data-testid="player-import-lineup-confirm-button"
-              onClick={() => {
-                void pendingPlayerImport.onConfirm();
-                setPendingPlayerImport(null);
-              }}
-            >
-              Import Anyway
-            </SmallIconBtn>
-            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
-              Cancel
-            </SmallIconBtn>
-          </PlayerDuplicateActions>
-        </PlayerDuplicateBanner>
-      )}
-      <SortableContext items={lineup.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        {lineup.map((p, i) => (
-          <SortablePlayerRow
-            key={p.id}
-            player={p}
-            isExistingPlayer={existingPlayerIds.has(p.id)}
-            onChange={(patch) =>
-              dispatch({ type: "UPDATE_PLAYER", section: "lineup", index: i, player: patch })
-            }
-            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "lineup", index: i })}
-            onExport={() => handleExportPlayer(p, "batter")}
-          />
-        ))}
-      </SortableContext>
-      <AddPlayerBtn
-        type="button"
-        data-testid="custom-team-add-lineup-player-button"
-        onClick={() =>
-          dispatch({ type: "ADD_PLAYER", section: "lineup", player: makeBlankBatter() })
-        }
-      >
-        + Add Player
-      </AddPlayerBtn>
-      <input
-        ref={lineupFileRef}
-        type="file"
-        accept=".json"
-        style={{ display: "none" }}
-        onChange={onImportFile}
-        data-testid="import-lineup-player-input"
-        aria-label="Import lineup player from file"
-      />
-      <ImportPlayerBtn type="button" onClick={() => lineupFileRef.current?.click()}>
-        ↑ Import Player
-      </ImportPlayerBtn>
-    </FormSection>
-  );
-};
-
-// ── BenchFormSection ───────────────────────────────────────────────────────────
-
-type BenchFormSectionProps = {
-  bench: EditorPlayer[];
-  existingPlayerIds: Set<string>;
-  pendingPlayerImport: PendingPlayerImport | null;
-  dispatch: EditorDispatch;
-  setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  benchFileRef: React.RefObject<HTMLInputElement | null>;
-  onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
-};
-
-/** DnD-enabled bench section (shares DndContext with lineup). */
-const BenchFormSection: React.FunctionComponent<BenchFormSectionProps> = ({
-  bench,
-  existingPlayerIds,
-  pendingPlayerImport,
-  dispatch,
-  setPendingPlayerImport,
-  benchFileRef,
-  onImportFile,
-  handleExportPlayer,
-}) => {
-  const { setNodeRef } = useDroppable({ id: BENCH_DROPPABLE_ID });
-  return (
-    <FormSection ref={setNodeRef} data-testid="custom-team-bench-section">
-      <SectionHeading>Bench (drag to reorder; drag to/from Lineup)</SectionHeading>
-      {pendingPlayerImport?.section === "bench" && (
-        <PlayerDuplicateBanner role="alert" data-testid="player-import-bench-duplicate-banner">
-          ⚠ {pendingPlayerImport.warning}
-          <PlayerDuplicateActions>
-            <SmallIconBtn
-              type="button"
-              data-testid="player-import-bench-confirm-button"
-              onClick={() => {
-                void pendingPlayerImport.onConfirm();
-                setPendingPlayerImport(null);
-              }}
-            >
-              Import Anyway
-            </SmallIconBtn>
-            <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
-              Cancel
-            </SmallIconBtn>
-          </PlayerDuplicateActions>
-        </PlayerDuplicateBanner>
-      )}
-      <SortableContext items={bench.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        {bench.map((p, i) => (
-          <SortablePlayerRow
-            key={p.id}
-            player={p}
-            isExistingPlayer={existingPlayerIds.has(p.id)}
-            onChange={(patch) =>
-              dispatch({ type: "UPDATE_PLAYER", section: "bench", index: i, player: patch })
-            }
-            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "bench", index: i })}
-            onExport={() => handleExportPlayer(p, "batter")}
-          />
-        ))}
-      </SortableContext>
-      <AddPlayerBtn
-        type="button"
-        data-testid="custom-team-add-bench-player-button"
-        onClick={() =>
-          dispatch({ type: "ADD_PLAYER", section: "bench", player: makeBlankBatter() })
-        }
-      >
-        + Add Player
-      </AddPlayerBtn>
-      <input
-        ref={benchFileRef}
-        type="file"
-        accept=".json"
-        style={{ display: "none" }}
-        onChange={onImportFile}
-        data-testid="import-bench-player-input"
-        aria-label="Import player from file"
-      />
-      <ImportPlayerBtn type="button" onClick={() => benchFileRef.current?.click()}>
-        ↑ Import Player
-      </ImportPlayerBtn>
-    </FormSection>
-  );
-};
-
-// ── PitchersSection ────────────────────────────────────────────────────────────
-
-type PitchersSectionProps = {
-  pitchers: EditorPlayer[];
-  existingPlayerIds: Set<string>;
-  pendingPlayerImport: PendingPlayerImport | null;
-  dispatch: EditorDispatch;
-  setPendingPlayerImport: React.Dispatch<React.SetStateAction<PendingPlayerImport | null>>;
-  pitchersFileRef: React.RefObject<HTMLInputElement | null>;
-  onImportFile: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleExportPlayer: (p: EditorPlayer, role: "batter" | "pitcher") => void;
-  sensors: ReturnType<typeof useSensors>;
-  handlePitchersDragEnd: (event: DragEndEvent) => void;
-};
-
-/** DnD-enabled pitchers section with its own DndContext (no cross-section transfer). */
-const PitchersSection: React.FunctionComponent<PitchersSectionProps> = ({
-  pitchers,
-  existingPlayerIds,
-  pendingPlayerImport,
-  dispatch,
-  setPendingPlayerImport,
-  pitchersFileRef,
-  onImportFile,
-  handleExportPlayer,
-  sensors,
-  handlePitchersDragEnd,
-}) => (
-  <FormSection data-testid="custom-team-pitchers-section">
-    <SectionHeading>Pitchers (drag to reorder)</SectionHeading>
-    {pendingPlayerImport?.section === "pitchers" && (
-      <PlayerDuplicateBanner role="alert" data-testid="player-import-pitchers-duplicate-banner">
-        ⚠ {pendingPlayerImport.warning}
-        <PlayerDuplicateActions>
-          <SmallIconBtn
-            type="button"
-            data-testid="player-import-pitchers-confirm-button"
-            onClick={() => {
-              void pendingPlayerImport.onConfirm();
-              setPendingPlayerImport(null);
-            }}
-          >
-            Import Anyway
-          </SmallIconBtn>
-          <SmallIconBtn type="button" onClick={() => setPendingPlayerImport(null)}>
-            Cancel
-          </SmallIconBtn>
-        </PlayerDuplicateActions>
-      </PlayerDuplicateBanner>
-    )}
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handlePitchersDragEnd}
-    >
-      <SortableContext items={pitchers.map((p) => p.id)} strategy={verticalListSortingStrategy}>
-        {pitchers.map((p, i) => (
-          <SortablePlayerRow
-            key={p.id}
-            player={p}
-            isPitcher
-            isExistingPlayer={existingPlayerIds.has(p.id)}
-            onChange={(patch) =>
-              dispatch({ type: "UPDATE_PLAYER", section: "pitchers", index: i, player: patch })
-            }
-            onRemove={() => dispatch({ type: "REMOVE_PLAYER", section: "pitchers", index: i })}
-            onExport={() => handleExportPlayer(p, "pitcher")}
-          />
-        ))}
-      </SortableContext>
-    </DndContext>
-    <AddPlayerBtn
-      type="button"
-      data-testid="custom-team-add-pitcher-button"
-      onClick={() =>
-        dispatch({ type: "ADD_PLAYER", section: "pitchers", player: makeBlankPitcher() })
-      }
-    >
-      + Add Pitcher
-    </AddPlayerBtn>
-    <input
-      ref={pitchersFileRef}
-      type="file"
-      accept=".json"
-      style={{ display: "none" }}
-      onChange={onImportFile}
-      data-testid="import-pitchers-player-input"
-      aria-label="Import pitcher from file"
-    />
-    <ImportPlayerBtn type="button" onClick={() => pitchersFileRef.current?.click()}>
-      ↑ Import Pitcher
-    </ImportPlayerBtn>
-  </FormSection>
-);
-
-// ── CustomTeamEditor (main component) ─────────────────────────────────────────
 
 const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCancel }) => {
   const [state, dispatch] = React.useReducer(editorReducer, team, initEditorState);
@@ -407,192 +42,26 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     [team],
   );
 
-  // ── File input refs for player import ─────────────────────────────────────
   const lineupFileRef = React.useRef<HTMLInputElement>(null);
   const benchFileRef = React.useRef<HTMLInputElement>(null);
   const pitchersFileRef = React.useRef<HTMLInputElement>(null);
-  // Tracks an import that is blocked pending user confirmation of a duplicate player.
   const [pendingPlayerImport, setPendingPlayerImport] = React.useState<PendingPlayerImport | null>(
     null,
   );
 
-  // ── Player export ──────────────────────────────────────────────────────────
-  const handleExportPlayer = React.useCallback((p: EditorPlayer, role: "batter" | "pitcher") => {
-    const teamPlayer = editorPlayerToTeamPlayer(p, role);
-    const json = exportCustomPlayer(teamPlayer);
-    downloadJson(json, playerFilename(teamPlayer.name || "player"));
-  }, []);
+  const handleExportPlayer = usePlayerExport();
 
-  // ── Player import ──────────────────────────────────────────────────────────
-  const handleImportPlayerFile = React.useCallback(
-    (section: "lineup" | "bench" | "pitchers") => (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      e.target.value = "";
-      if (!file) return;
+  const handleImportPlayerFile = useImportPlayerFile({
+    teamId: team?.id,
+    allTeams,
+    lineup: state.lineup,
+    bench: state.bench,
+    pitchers: state.pitchers,
+    dispatch,
+    setPendingPlayerImport,
+  });
 
-      const reader = new FileReader();
-      reader.onload = () => {
-        try {
-          const playerJson = reader.result as string;
-          const importedPlayer = parseExportedCustomPlayer(playerJson);
-          // Remap the ID to avoid collisions with existing players.
-          // Preserve playerSeed so sanitizePlayer reuses the original seed and
-          // produces the same fingerprint — enabling cross-device duplicate detection.
-          const editorPlayer: EditorPlayer = {
-            id: makePlayerId(),
-            name: importedPlayer.name,
-            position: importedPlayer.position ?? "",
-            handedness: importedPlayer.handedness ?? "R",
-            contact: importedPlayer.batting.contact,
-            power: importedPlayer.batting.power,
-            speed: importedPlayer.batting.speed,
-            // Only carry pitching stats when importing into the pitchers section.
-            // Importing a pitcher file into a lineup/bench slot would otherwise set
-            // pitcher-role semantics on a player without pitcher UI controls.
-            ...(section === "pitchers" &&
-              importedPlayer.pitching && {
-                velocity: importedPlayer.pitching.velocity,
-                control: importedPlayer.pitching.control,
-                movement: importedPlayer.pitching.movement,
-              }),
-            ...(section === "pitchers" &&
-              importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
-            ...(importedPlayer.playerSeed && { playerSeed: importedPlayer.playerSeed }),
-            // Preserve globalPlayerId so career stats follow the player.
-            ...(importedPlayer.globalPlayerId && { globalPlayerId: importedPlayer.globalPlayerId }),
-          };
-
-          const currentTeamId = team?.id;
-
-          /**
-           * Core import action — called both for immediate imports and after
-           * the user confirms a fingerprint-based soft-duplicate warning.
-           *
-           * Edit mode: delegates to CustomTeamStore.importPlayer which performs
-           *   the hard globalPlayerId cross-team conflict check and persists to DB.
-           * Create mode: applies the manual globalPlayerId check then dispatches
-           *   ADD_PLAYER to the editor's in-memory state (no team.id yet).
-           */
-          const performImport = async () => {
-            if (currentTeamId) {
-              // ── Edit mode: use store API (hard block + persistence) ──────────
-              const result = await CustomTeamStore.importPlayer(currentTeamId, playerJson, section);
-              if (result.status === "conflict") {
-                dispatch({
-                  type: "SET_ERROR",
-                  error: `"${importedPlayer.name}" already belongs to team "${result.conflictingTeamName}". Import cancelled. Remove that player from their current team before importing here.`,
-                });
-                return;
-              }
-              if (result.status === "alreadyOnThisTeam") {
-                dispatch({
-                  type: "SET_ERROR",
-                  error: `"${importedPlayer.name}" is already on this team.`,
-                });
-                return;
-              }
-              // Store API persisted the player; mirror to editor state for immediate UI update.
-              dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
-            } else {
-              // ── Create mode: manual cross-team check (no team.id yet) ────────
-              if (importedPlayer.globalPlayerId) {
-                const owningTeam = allTeams.find((t: CustomTeamDoc) =>
-                  [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
-                    (p: TeamPlayer) => p.globalPlayerId === importedPlayer.globalPlayerId,
-                  ),
-                );
-                if (owningTeam) {
-                  dispatch({
-                    type: "SET_ERROR",
-                    error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
-                  });
-                  return;
-                }
-              }
-              dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
-            }
-          };
-
-          // ── Fingerprint soft-duplicate check ──────────────────────────────────
-          // Runs before performImport to let the user confirm when a player with
-          // matching stats/name may already exist (soft warning, not a hard block).
-          // Skip this check when the player has a globalPlayerId — that field is the
-          // authoritative identity and the store's hard check in performImport will
-          // definitively handle any conflicts (cross-team or same-team).
-          if (importedPlayer.globalPlayerId) {
-            void performImport();
-            return;
-          }
-
-          const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
-          const incomingFp = buildPlayerSig({
-            name: importedPlayer.name,
-            role: sectionRole,
-            batting: importedPlayer.batting,
-            pitching:
-              sectionRole === "pitcher" && importedPlayer.pitching
-                ? importedPlayer.pitching
-                : undefined,
-            playerSeed: importedPlayer.playerSeed,
-          });
-
-          const editorPlayerFp = (p: EditorPlayer): string =>
-            buildPlayerSig({
-              name: p.name,
-              role: p.velocity !== undefined ? "pitcher" : "batter",
-              batting: { contact: p.contact, power: p.power, speed: p.speed },
-              pitching:
-                p.velocity !== undefined
-                  ? { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 }
-                  : undefined,
-              playerSeed: p.playerSeed,
-            });
-
-          const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
-            [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
-              (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
-            ),
-          );
-          const duplicateTeamName =
-            existingTeamWithPlayer?.name ??
-            ([...state.lineup, ...state.bench, ...state.pitchers].some(
-              (p) => editorPlayerFp(p) === incomingFp,
-            )
-              ? "this team"
-              : null);
-
-          if (duplicateTeamName !== null) {
-            setPendingPlayerImport({
-              player: editorPlayer,
-              section,
-              warning: `"${importedPlayer.name}" may already exist on team "${duplicateTeamName}". Import anyway?`,
-              onConfirm: performImport,
-            });
-          } else {
-            void performImport();
-          }
-        } catch (err) {
-          dispatch({
-            type: "SET_ERROR",
-            error: `Failed to import player: ${err instanceof Error ? err.message : String(err)}`,
-          });
-        }
-      };
-      reader.onerror = () => {
-        dispatch({
-          type: "SET_ERROR",
-          error: "Failed to read player file. Please try again with a valid JSON export.",
-        });
-      };
-      reader.readAsText(file);
-    },
-    [allTeams, state.lineup, state.bench, state.pitchers, team?.id],
-  );
-
-  // Pre-bind per-section import handlers. `handleImportPlayerFile` is a curried
-  // higher-order function, so `useMemo` (not `useCallback`) is the right hook here:
-  // it caches the function *returned* by `handleImportPlayerFile("section")` directly,
-  // rather than wrapping it in an outer closure that re-invokes the factory every call.
+  // Pre-bind per-section handlers; useMemo caches the curried function return values.
   const handleImportLineupFile = React.useMemo(
     () => handleImportPlayerFile("lineup"),
     [handleImportPlayerFile],
@@ -606,82 +75,17 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     [handleImportPlayerFile],
   );
 
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
-  );
-
-  const handleLineupBenchDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const activeInLineup = state.lineup.some((p) => p.id === active.id);
-    const activeInBench = state.bench.some((p) => p.id === active.id);
-    // Guard: dragged item must belong to lineup or bench (not pitchers or unknown).
-    if (!activeInLineup && !activeInBench) return;
-    const activeSection: "lineup" | "bench" = activeInLineup ? "lineup" : "bench";
-    // Check if over.id is a player or a section droppable sentinel.
-    const overInLineup = state.lineup.some((p) => p.id === over.id);
-    const overInBench = state.bench.some((p) => p.id === over.id);
-    const overSectionId =
-      over.id === LINEUP_DROPPABLE_ID ? "lineup" : over.id === BENCH_DROPPABLE_ID ? "bench" : null;
-    if (!overInLineup && !overInBench && !overSectionId) return;
-    const overSection: "lineup" | "bench" = overInLineup
-      ? "lineup"
-      : overInBench
-        ? "bench"
-        : (overSectionId as "lineup" | "bench");
-    if (activeSection === overSection && (overInLineup || overInBench)) {
-      // Same-section reorder — only when over.id is a player (not the sentinel).
-      const oldIndex = state[activeSection].findIndex((p) => p.id === active.id);
-      const newIndex = state[activeSection].findIndex((p) => p.id === over.id);
-      if (oldIndex === -1 || newIndex === -1) return;
-      const reordered = arrayMove(state[activeSection], oldIndex, newIndex);
-      dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
-    } else if (activeSection === overSection && overSectionId !== null) {
-      // Same section, dropped onto the section's own sentinel (the droppable area below the
-      // players). Treat as "move to end" — avoids silently swallowing the drag event.
-      const oldIndex = state[activeSection].findIndex((p) => p.id === active.id);
-      if (oldIndex === -1 || oldIndex === state[activeSection].length - 1) return;
-      const reordered = arrayMove(state[activeSection], oldIndex, state[activeSection].length - 1);
-      dispatch({ type: "REORDER", section: activeSection, orderedIds: reordered.map((p) => p.id) });
-    } else if (activeSection !== overSection) {
-      // Cross-section transfer — drop onto a player or onto the empty section droppable.
-      // When dropping onto an existing player, `toIndex` is the target player's current
-      // position (insert-at-index / before the target), which matches dnd-kit's standard
-      // visual feedback for vertical sortable lists.
-      const toIndex =
-        overInBench || overInLineup
-          ? state[overSection].findIndex((p) => p.id === over.id)
-          : state[overSection].length; // sentinel: append to end of empty section
-      dispatch({
-        type: "TRANSFER_PLAYER",
-        fromSection: activeSection,
-        toSection: overSection,
-        playerId: String(active.id),
-        toIndex: toIndex === -1 ? state[overSection].length : toIndex,
-      });
-    }
-  };
-
-  const handlePitchersDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = state.pitchers.findIndex((p) => p.id === active.id);
-    const newIndex = state.pitchers.findIndex((p) => p.id === over.id);
-    if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(state.pitchers, oldIndex, newIndex);
-    dispatch({ type: "REORDER", section: "pitchers", orderedIds: reordered.map((p) => p.id) });
-  };
-
-  const handleGenerate = () => {
-    dispatch({ type: "APPLY_DRAFT", draft: generateDefaultCustomTeamDraft(++_generateCounter) });
-  };
+  const { sensors, handleLineupBenchDragEnd, handlePitchersDragEnd } = useEditorDragHandlers({
+    lineup: state.lineup,
+    bench: state.bench,
+    pitchers: state.pitchers,
+    dispatch,
+  });
 
   const handleSave = async () => {
     const err = validateEditorState(state);
     if (err) {
       dispatch({ type: "SET_ERROR", error: err });
-      // Scroll to and focus the error summary so it is immediately visible
       setTimeout(() => {
         errorRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
         errorRef.current?.focus();
@@ -691,9 +95,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     try {
       const input = editorStateToCreateInput(state);
       if (team) {
-        await updateTeam(team.id, {
-          roster: input.roster,
-        });
+        await updateTeam(team.id, { roster: input.roster });
         onSave(team.id);
       } else {
         const id = await createTeam(input);
@@ -712,105 +114,7 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
     <EditorContainer>
       <EditorTitle>{team ? "Edit Team" : "Create Team"}</EditorTitle>
 
-      <FormSection>
-        <SectionHeading>Team Info</SectionHeading>
-        <TeamInfoGrid>
-          <FieldGroup>
-            <FieldLabel htmlFor="ct-name">Team Name *</FieldLabel>
-            {isEditMode ? (
-              <ReadOnlyInput
-                id="ct-name"
-                value={state.name}
-                readOnly
-                aria-readonly="true"
-                data-testid="custom-team-name-input"
-              />
-            ) : (
-              <TextInput
-                id="ct-name"
-                value={state.name}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
-                }
-                placeholder="e.g. Eagles"
-                aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
-                data-testid="custom-team-name-input"
-              />
-            )}
-          </FieldGroup>
-          <TeamInfoSecondRow>
-            <FieldGroup>
-              <FieldLabel htmlFor="ct-abbrev">Abbrev * (2–3 chars)</FieldLabel>
-              {isEditMode ? (
-                <ReadOnlyInput
-                  id="ct-abbrev"
-                  value={state.abbreviation}
-                  readOnly
-                  aria-readonly="true"
-                  data-testid="custom-team-abbreviation-input"
-                />
-              ) : (
-                <TextInput
-                  id="ct-abbrev"
-                  value={state.abbreviation}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    dispatch({
-                      type: "SET_FIELD",
-                      field: "abbreviation",
-                      value: e.target.value.toUpperCase(),
-                    })
-                  }
-                  placeholder="e.g. EAG"
-                  maxLength={3}
-                  aria-invalid={
-                    !!state.error &&
-                    (!state.abbreviation.trim() ||
-                      state.abbreviation.trim().length < 2 ||
-                      state.abbreviation.trim().length > 3)
-                      ? "true"
-                      : undefined
-                  }
-                  data-testid="custom-team-abbreviation-input"
-                />
-              )}
-            </FieldGroup>
-            <FieldGroup>
-              <FieldLabel htmlFor="ct-city">City</FieldLabel>
-              {isEditMode ? (
-                <ReadOnlyInput
-                  id="ct-city"
-                  value={state.city}
-                  readOnly
-                  aria-readonly="true"
-                  data-testid="custom-team-city-input"
-                />
-              ) : (
-                <TextInput
-                  id="ct-city"
-                  value={state.city}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    dispatch({ type: "SET_FIELD", field: "city", value: e.target.value })
-                  }
-                  placeholder="e.g. Austin"
-                  data-testid="custom-team-city-input"
-                />
-              )}
-            </FieldGroup>
-          </TeamInfoSecondRow>
-        </TeamInfoGrid>
-        {isEditMode && (
-          <IdentityLockHint>Team identity fields are locked after creation.</IdentityLockHint>
-        )}
-        {!team && (
-          <GenerateBtn
-            type="button"
-            onClick={handleGenerate}
-            data-testid="custom-team-regenerate-defaults-button"
-          >
-            ✨ Generate Random
-          </GenerateBtn>
-        )}
-      </FormSection>
+      <TeamInfoSection state={state} isEditMode={isEditMode} dispatch={dispatch} />
 
       {state.error && (
         <ErrorMsg

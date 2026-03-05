@@ -551,28 +551,46 @@ function buildStore(getDbFn: GetDb) {
     ): Promise<ImportPlayerResult> {
       const player = parseExportedCustomPlayerJson(playerJson);
 
-      const targetTeam = await this.getCustomTeam(targetTeamId);
-      if (!targetTeam) throw new Error(`Custom team not found: ${targetTeamId}`);
+      // globalPlayerId is required for cross-team identity enforcement.
+      // Every bundle produced by exportPlayer / exportCustomPlayer includes it.
+      // Re-export the player from the source team to get a valid bundle.
+      if (!player.globalPlayerId) {
+        throw new Error(
+          "Imported player bundle must include a globalPlayerId. Re-export the player from the source team to get a valid bundle.",
+        );
+      }
 
-      // Cross-team identity check using globalPlayerId (hard block).
-      // Prevents the same player from accumulating career stats under two
-      // different teamIds simultaneously.
-      if (player.globalPlayerId) {
-        const allTeams = await this.listCustomTeams({ includeArchived: true });
-        for (const t of allTeams) {
-          const allPlayers = [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers];
-          const match = allPlayers.find((p) => p.globalPlayerId === player.globalPlayerId);
-          if (match) {
-            if (t.id === targetTeamId) {
-              return { status: "alreadyOnThisTeam" };
-            }
-            return {
-              status: "conflict",
-              conflictingTeamId: t.id,
-              conflictingTeamName: t.name,
-            };
-          }
+      const db = await getDbFn();
+      const targetTeamDoc = await db.customTeams.findOne(targetTeamId).exec();
+      if (!targetTeamDoc) throw new Error(`Custom team not found: ${targetTeamId}`);
+      const targetTeam = await populateRoster(
+        db,
+        targetTeamDoc.toJSON() as unknown as CustomTeamDoc,
+      );
+
+      // Cross-team identity check: query the globalPlayerId index directly — one
+      // DB round-trip instead of hydrating every team's roster in memory.
+      const matchingDocs = await db.players
+        .find({ selector: { globalPlayerId: player.globalPlayerId } })
+        .exec();
+      if (matchingDocs.length > 0) {
+        const matchDoc = matchingDocs[0].toJSON() as unknown as PlayerDoc;
+        if (matchDoc.teamId === targetTeamId) {
+          return { status: "alreadyOnThisTeam" };
         }
+        // Resolve owning team name via a single findOne for the conflict message.
+        const owningTeamDoc = matchDoc.teamId
+          ? await db.customTeams.findOne(matchDoc.teamId).exec()
+          : null;
+        const owningTeamName =
+          (owningTeamDoc?.toJSON() as unknown as CustomTeamDoc | undefined)?.name ??
+          matchDoc.teamId ??
+          "another team";
+        return {
+          status: "conflict",
+          conflictingTeamId: matchDoc.teamId ?? "",
+          conflictingTeamName: owningTeamName,
+        };
       }
 
       // Append to the target section and persist.
