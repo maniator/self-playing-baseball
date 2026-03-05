@@ -113,8 +113,9 @@ test.describe("Career Stats with seeded history", () => {
    * the seeded team from the dropdown.
    */
   async function seedAndOpen(page: Page) {
-    // Pre-seed slow autoplay (1200 ms/pitch) so rapid re-renders on mobile
-    // WebKit don't detach the saves-button during importHistoryFixture.
+    // Pre-seed slow autoplay (1200 ms/pitch) so the game renders at most once
+    // per 1.2 s. Without this, rapid re-renders on mobile WebKit detach the
+    // saves-button from the DOM while importHistoryFixture tries to click it.
     await page.addInitScript(() => {
       localStorage.setItem("speed", "1200");
     });

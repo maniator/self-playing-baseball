@@ -58,7 +58,7 @@ test.describe("Visual — seeded history data", () => {
    */
   async function seedAndOpen(page: Page) {
     // Pre-seed slow autoplay speed (1200 ms/pitch) so the game renders at most
-    // once per 1.2 s after the fixture loads.  Without this, rapid re-renders on
+    // once per 1.2 s after the fixture loads. Without this, rapid re-renders on
     // mobile WebKit detach the saves-button from the DOM while
     // importHistoryFixture tries to click it, causing flaky 90-second timeouts.
     await page.addInitScript(() => {
