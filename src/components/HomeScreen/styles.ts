@@ -100,3 +100,28 @@ export const SecondaryBtn = styled.button`
     outline-offset: 2px;
   }
 `;
+
+/** Non-interactive teaser box for upcoming League mode. */
+export const LeagueTeaserBox = styled.div`
+  margin-top: 8px;
+  padding: 12px 20px;
+  background: #0d1b2e;
+  border: 1px solid #2a3a5a;
+  border-radius: 8px;
+  width: min(100%, 300px);
+  text-align: center;
+`;
+
+export const LeagueTeaserTitle = styled.p`
+  color: #f0c040;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+`;
+
+export const LeagueTeaserSub = styled.p`
+  color: #666;
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+`;

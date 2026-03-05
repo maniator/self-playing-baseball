@@ -14,11 +14,14 @@ import type { BallgameDb } from "./db";
 import { getDb } from "./db";
 import { fnv1a } from "./hash";
 import type {
+  BattingLeader,
   ExportedGameHistory,
   GameDoc,
   ImportGameHistoryResult,
   PitcherGameStatDoc,
+  PitchingLeader,
   PlayerGameStatDoc,
+  TeamCareerSummary,
 } from "./types";
 
 /** Schema version written to every new GameDoc / stat row. */
@@ -477,6 +480,178 @@ function buildStore(getDbFn: GetDb) {
     };
   }
 
+  /**
+   * Returns aggregate career team stats from completed games (W/L, RS/RA, streak, last10).
+   * Games are computed by matching teamId against homeTeamId or awayTeamId.
+   */
+  async function getTeamCareerSummary(teamId: string): Promise<TeamCareerSummary> {
+    const db = await getDbFn();
+    const rows = await db.games
+      .find({
+        selector: { $or: [{ homeTeamId: teamId }, { awayTeamId: teamId }] },
+        sort: [{ playedAt: "asc" }],
+      })
+      .exec();
+
+    const docs = rows.map((r) => r.toJSON() as GameDoc);
+
+    let wins = 0;
+    let losses = 0;
+    let runsScored = 0;
+    let runsAllowed = 0;
+
+    // Track each game's result (true=win, false=loss) in chronological order.
+    const results: boolean[] = [];
+
+    for (const doc of docs) {
+      const isHome = doc.homeTeamId === teamId;
+      const rs = isHome ? doc.homeScore : doc.awayScore;
+      const ra = isHome ? doc.awayScore : doc.homeScore;
+      runsScored += rs;
+      runsAllowed += ra;
+      const win = rs > ra;
+      if (win) wins++;
+      else losses++;
+      results.push(win);
+    }
+
+    const gamesPlayed = wins + losses;
+    const winPct = gamesPlayed === 0 ? 0 : wins / gamesPlayed;
+    const runDiff = runsScored - runsAllowed;
+    const rsPer9 = gamesPlayed === 0 ? 0 : runsScored / gamesPlayed;
+    const raPer9 = gamesPlayed === 0 ? 0 : runsAllowed / gamesPlayed;
+
+    // Compute current streak from the end of the results array.
+    let streak = "-";
+    if (results.length > 0) {
+      const last = results[results.length - 1];
+      let count = 0;
+      for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
+      streak = (last ? "W" : "L") + count;
+    }
+
+    // Compute last-10 record.
+    const last10Games = results.slice(-10);
+    const last10Wins = last10Games.filter(Boolean).length;
+    const last10Losses = last10Games.length - last10Wins;
+
+    return {
+      gamesPlayed,
+      wins,
+      losses,
+      winPct,
+      runsScored,
+      runsAllowed,
+      runDiff,
+      rsPer9,
+      raPer9,
+      streak,
+      last10: { wins: last10Wins, losses: last10Losses },
+    };
+  }
+
+  /** Minimum AB required for a player to qualify as the AVG leader. */
+  const MIN_AB_FOR_AVG_LEADER = 20;
+  /** Minimum outs pitched required for a player to qualify as the ERA leader. */
+  const MIN_OUTS_FOR_ERA_LEADER = 30;
+
+  /**
+   * Returns batting leaders (HR, AVG, RBI) for a team.
+   * Players below the AB threshold are excluded from the AVG leader calculation.
+   * Tie-breaking: value desc, then gamesPlayed desc, then name asc.
+   */
+  async function getTeamBattingLeaders(
+    teamId: string,
+    options: { minAbForAvg?: number } = {},
+  ): Promise<{
+    hrLeader: BattingLeader | null;
+    avgLeader: BattingLeader | null;
+    rbiLeader: BattingLeader | null;
+  }> {
+    const minAb = options.minAbForAvg ?? MIN_AB_FOR_AVG_LEADER;
+    const rows = await getTeamCareerBattingStats(teamId);
+
+    const pickLeader = (
+      candidates: typeof rows,
+      valueFn: (r: (typeof rows)[number]) => number,
+    ): BattingLeader | null => {
+      if (candidates.length === 0) return null;
+      const sorted = [...candidates].sort((a, b) => {
+        const diff = valueFn(b) - valueFn(a);
+        if (diff !== 0) return diff;
+        const gDiff = b.gamesPlayed - a.gamesPlayed;
+        if (gDiff !== 0) return gDiff;
+        return a.nameAtGameTime.localeCompare(b.nameAtGameTime);
+      });
+      const top = sorted[0];
+      return {
+        playerKey: top.playerKey,
+        nameAtGameTime: top.nameAtGameTime,
+        value: valueFn(top),
+        gamesPlayed: top.gamesPlayed,
+      };
+    };
+
+    const hrLeader = pickLeader(rows, (r) => r.homers);
+    const rbiLeader = pickLeader(rows, (r) => r.rbi);
+    const avgCandidates = rows.filter((r) => r.atBats >= minAb);
+    const avgLeader = pickLeader(avgCandidates, (r) => (r.atBats === 0 ? 0 : r.hits / r.atBats));
+
+    return { hrLeader, avgLeader, rbiLeader };
+  }
+
+  /**
+   * Returns pitching leaders (ERA, SV, K) for a team.
+   * Players below the outs threshold are excluded from the ERA leader calculation.
+   * Tie-breaking: value desc (ERA: asc), then gamesPlayed desc, then name asc.
+   */
+  async function getTeamPitchingLeaders(
+    teamId: string,
+    options: { minOutsForEra?: number } = {},
+  ): Promise<{
+    eraLeader: PitchingLeader | null;
+    savesLeader: PitchingLeader | null;
+    strikeoutsLeader: PitchingLeader | null;
+  }> {
+    const minOuts = options.minOutsForEra ?? MIN_OUTS_FOR_ERA_LEADER;
+    const rows = await getTeamCareerPitchingStats(teamId);
+
+    const pickPitchingLeader = (
+      candidates: typeof rows,
+      valueFn: (r: (typeof rows)[number]) => number,
+      sortAsc = false,
+    ): PitchingLeader | null => {
+      if (candidates.length === 0) return null;
+      const sorted = [...candidates].sort((a, b) => {
+        const aVal = valueFn(a);
+        const bVal = valueFn(b);
+        const diff = sortAsc ? aVal - bVal : bVal - aVal;
+        if (diff !== 0) return diff;
+        const gDiff = b.gamesPlayed - a.gamesPlayed;
+        if (gDiff !== 0) return gDiff;
+        return a.nameAtGameTime.localeCompare(b.nameAtGameTime);
+      });
+      const top = sorted[0];
+      return {
+        pitcherKey: top.pitcherKey,
+        nameAtGameTime: top.nameAtGameTime,
+        value: valueFn(top),
+        gamesPlayed: top.gamesPlayed,
+      };
+    };
+
+    const eraCandidates = rows.filter((r) => r.outsPitched >= minOuts);
+    const eraLeader = pickPitchingLeader(
+      eraCandidates,
+      (r) => (r.outsPitched === 0 ? Infinity : (r.earnedRuns * 27) / r.outsPitched),
+      true, // lower ERA is better
+    );
+    const savesLeader = pickPitchingLeader(rows, (r) => r.saves);
+    const strikeoutsLeader = pickPitchingLeader(rows, (r) => r.strikeoutsRecorded);
+
+    return { eraLeader, savesLeader, strikeoutsLeader };
+  }
+
   return {
     commitCompletedGame,
     getCareerStats,
@@ -484,6 +659,9 @@ function buildStore(getDbFn: GetDb) {
     getPlayerCareerPitching,
     getTeamCareerBattingStats,
     getTeamCareerPitchingStats,
+    getTeamCareerSummary,
+    getTeamBattingLeaders,
+    getTeamPitchingLeaders,
     exportGameHistory,
     importGameHistory,
   };

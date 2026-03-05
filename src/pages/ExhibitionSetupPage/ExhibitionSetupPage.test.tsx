@@ -8,6 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 vi.mock("@utils/rng", () => ({
   getSeed: vi.fn(() => 0xdeadbeef),
   reinitSeed: vi.fn(),
+  generateFreshSeed: vi.fn(() => 0xdeadbeef),
 }));
 
 vi.mock("@hooks/useCustomTeams", () => ({
@@ -77,7 +78,7 @@ describe("ExhibitionSetupPage", () => {
     expect(screen.getByTestId("new-game-back-home-button")).toBeInTheDocument();
   });
 
-  it("renders the seed input pre-filled with the current seed", () => {
+  it("renders the seed input pre-filled with a freshly generated seed", () => {
     renderPage();
     const seedInput = screen.getByTestId("seed-input") as HTMLInputElement;
     expect(seedInput.value).toBe((0xdeadbeef).toString(36));
@@ -414,5 +415,21 @@ describe("ExhibitionSetupPage", () => {
     expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
       /no sp-eligible pitchers/i,
     );
+  });
+
+  it("calls generateFreshSeed on mount to auto-populate the seed input", () => {
+    const { generateFreshSeed } = rngModule as any;
+    renderPage();
+    expect(generateFreshSeed).toHaveBeenCalled();
+    const seedInput = screen.getByTestId("seed-input") as HTMLInputElement;
+    // The seed input is pre-filled with the generated seed in base36
+    expect(seedInput.value).toBe((0xdeadbeef).toString(36));
+  });
+
+  it("does not call getSeed — uses generateFreshSeed instead", () => {
+    renderPage();
+    // getSeed is no longer called on mount (replaced by generateFreshSeed)
+    const { getSeed } = rngModule as any;
+    expect(getSeed).not.toHaveBeenCalled();
   });
 });

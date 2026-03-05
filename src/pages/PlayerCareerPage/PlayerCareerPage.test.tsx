@@ -365,4 +365,59 @@ describe("PlayerCareerPage", () => {
     expect(screen.queryByTestId("player-career-prev")).toBeNull();
     expect(screen.queryByTestId("player-career-next")).toBeNull();
   });
+
+  describe("role-aware tabs", () => {
+    it("shows both Batting and Pitching tabs when player has both", async () => {
+      vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([makeBattingRow()]);
+      vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([makePitchingRow()]);
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText("Batting")).toBeInTheDocument();
+        expect(screen.getByText("Pitching")).toBeInTheDocument();
+      });
+    });
+
+    it("shows only Batting tab for batter-only player (no pitching history)", async () => {
+      vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([makeBattingRow()]);
+      vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+      renderPage();
+      await waitFor(() => {
+        expect(screen.getByText("Batting")).toBeInTheDocument();
+        expect(screen.queryByText("Pitching")).toBeNull();
+      });
+    });
+
+    it("shows only Pitching tab for pitcher-only player (no batting history)", async () => {
+      vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
+      vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([makePitchingRow()]);
+      renderPage();
+      await waitFor(() => {
+        expect(screen.queryByText("Batting")).toBeNull();
+        expect(screen.getByText("Pitching")).toBeInTheDocument();
+      });
+    });
+
+    it("shows both tabs when player has no history (empty state)", async () => {
+      vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
+      vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+      renderPage();
+      await waitFor(() => {
+        // Both tabs shown when neither has rows (keep current empty behavior)
+        expect(screen.getByText("Batting")).toBeInTheDocument();
+        expect(screen.getByText("Pitching")).toBeInTheDocument();
+      });
+    });
+
+    it("auto-switches to Pitching tab when activeTab is batting but player is pitcher-only", async () => {
+      vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
+      vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([makePitchingRow()]);
+      renderPage();
+      await waitFor(() => {
+        // Pitching tab should be visible and active
+        expect(screen.getByText("Pitching")).toBeInTheDocument();
+        // Pitching content should be shown (not batting)
+        expect(screen.getByText("Test Pitcher")).toBeInTheDocument();
+      });
+    });
+  });
 });

@@ -470,3 +470,44 @@ export interface ImportGameHistoryResult {
   pitcherStatsCreated: number;
   pitcherStatsSkipped: number;
 }
+
+// ── Team Career Aggregates ────────────────────────────────────────────────────
+
+/** Aggregated team career statistics derived from completed games. */
+export interface TeamCareerSummary {
+  gamesPlayed: number;
+  wins: number;
+  losses: number;
+  /** Win percentage (0–1). */
+  winPct: number;
+  runsScored: number;
+  runsAllowed: number;
+  /** RS − RA */
+  runDiff: number;
+  /** Runs scored per game. */
+  rsPer9: number;
+  /** Runs allowed per game. */
+  raPer9: number;
+  /** Current streak string, e.g. "W3" or "L2". "-" when no games played. */
+  streak: string;
+  /** W-L record from the last 10 games played. */
+  last10: { wins: number; losses: number };
+}
+
+/** A single batting leader entry for a team. */
+export interface BattingLeader {
+  playerKey: string;
+  nameAtGameTime: string;
+  /** The stat value (e.g. HR count, batting average, RBI count). */
+  value: number;
+  gamesPlayed: number;
+}
+
+/** A single pitching leader entry for a team. */
+export interface PitchingLeader {
+  pitcherKey: string;
+  nameAtGameTime: string;
+  /** The stat value (e.g. ERA, saves, strikeouts). */
+  value: number;
+  gamesPlayed: number;
+}

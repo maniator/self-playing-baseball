@@ -30,6 +30,25 @@ vi.mock("@storage/gameHistoryStore", () => ({
   GameHistoryStore: {
     getTeamCareerBattingStats: vi.fn().mockResolvedValue([]),
     getTeamCareerPitchingStats: vi.fn().mockResolvedValue([]),
+    getTeamCareerSummary: vi.fn().mockResolvedValue({
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      winPct: 0,
+      runsScored: 0,
+      runsAllowed: 0,
+      runDiff: 0,
+      rsPer9: 0,
+      raPer9: 0,
+      streak: "-",
+      last10: { wins: 0, losses: 0 },
+    }),
+    getTeamBattingLeaders: vi
+      .fn()
+      .mockResolvedValue({ hrLeader: null, avgLeader: null, rbiLeader: null }),
+    getTeamPitchingLeaders: vi
+      .fn()
+      .mockResolvedValue({ eraLeader: null, savesLeader: null, strikeoutsLeader: null }),
   },
 }));
 

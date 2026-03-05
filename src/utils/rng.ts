@@ -27,6 +27,13 @@ const parseSeed = (seedString: string): number | null => {
 
 const generateSeed = (): number => ((Math.random() * 0xffffffff) ^ Date.now()) >>> 0;
 
+/**
+ * Generates a fresh random seed value without affecting the current PRNG state.
+ * Use this when you need a new seed for display (e.g. auto-populating the New Game
+ * seed input) without committing it to the global PRNG.
+ */
+export const generateFreshSeed = (): number => generateSeed();
+
 export const initSeedFromUrl = ({ writeToUrl = false }: SeedInitOptions = {}): number | null => {
   if (typeof window === "undefined" || typeof window.location === "undefined") {
     return seed;

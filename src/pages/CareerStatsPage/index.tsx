@@ -13,15 +13,33 @@ import { BackBtn, PageHeader } from "@components/PageLayout/styles";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { getDb } from "@storage/db";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
-import type { PlayerGameStatDoc } from "@storage/types";
+import type {
+  BattingLeader,
+  PitchingLeader,
+  PlayerGameStatDoc,
+  TeamCareerSummary,
+} from "@storage/types";
 import { computeERA, computeWHIP, formatIP } from "@utils/stats/computePitcherGameStats";
 
 import {
   CareerContainer,
   EmptyState,
+  LeaderCard,
+  LeaderCardPlaceholder,
+  LeaderCardsRow,
+  LeaderName,
+  LeaderPlaceholderText,
+  LeadersGroupLabel,
+  LeaderStatLabel,
+  LeaderValue,
   PageTitle,
   PlayerLink,
   StatsTable,
+  SummaryCell,
+  SummaryCellLabel,
+  SummaryCellValue,
+  SummaryGrid,
+  SummaryHeading,
   TabBar,
   TabBtn,
   TableWrapper,
@@ -29,6 +47,7 @@ import {
   TeamSelect,
   TeamSelectLabel,
   TeamSelectorRow,
+  TeamSummarySection,
   Th,
 } from "./styles";
 
@@ -112,6 +131,16 @@ function formatWHIP(walksAllowed: number, hitsAllowed: number, outsPitched: numb
   return whip.toFixed(2);
 }
 
+/** Formats win percentage to 3 decimal places, e.g. ".667". */
+function formatWinPct(winPct: number): string {
+  return winPct.toFixed(3).replace(/^0/, "");
+}
+
+/** Formats runs per game to 2 decimal places. */
+function formatRPG(rpg: number): string {
+  return rpg.toFixed(2);
+}
+
 /** Returns ↑ / ↓ / "" indicator for a sortable column header. */
 function sortIndicator(key: string, activeKey: string, dir: SortDir): string {
   if (key !== activeKey) return "";
@@ -138,6 +167,13 @@ const CareerStatsPage: React.FunctionComponent = () => {
   const [battingRows, setBattingRows] = React.useState<BattingRow[]>([]);
   const [pitchingRows, setPitchingRows] = React.useState<PitchingRow[]>([]);
   const [dataLoading, setDataLoading] = React.useState(false);
+  const [teamSummary, setTeamSummary] = React.useState<TeamCareerSummary | null>(null);
+  const [hrLeader, setHrLeader] = React.useState<BattingLeader | null>(null);
+  const [avgLeader, setAvgLeader] = React.useState<BattingLeader | null>(null);
+  const [rbiLeader, setRbiLeader] = React.useState<BattingLeader | null>(null);
+  const [eraLeader, setEraLeader] = React.useState<PitchingLeader | null>(null);
+  const [savesLeader, setSavesLeader] = React.useState<PitchingLeader | null>(null);
+  const [strikeoutsLeader, setStrikeoutsLeader] = React.useState<PitchingLeader | null>(null);
   const [battingSort, setBattingSort] = React.useState<{ key: BattingSortKey; dir: SortDir }>({
     key: "gamesPlayed",
     dir: "desc",
@@ -289,23 +325,41 @@ const CareerStatsPage: React.FunctionComponent = () => {
     if (!selectedTeamId) {
       setBattingRows([]);
       setPitchingRows([]);
+      setTeamSummary(null);
+      setHrLeader(null);
+      setAvgLeader(null);
+      setRbiLeader(null);
+      setEraLeader(null);
+      setSavesLeader(null);
+      setStrikeoutsLeader(null);
       return;
     }
     let cancelled = false;
     setDataLoading(true);
     async function loadStats() {
       try {
-        const [batting, pitching] = await Promise.all([
+        const [batting, pitching, summary, battingLeaders, pitchingLeaders] = await Promise.all([
           GameHistoryStore.getTeamCareerBattingStats(selectedTeamId),
           GameHistoryStore.getTeamCareerPitchingStats(selectedTeamId),
+          GameHistoryStore.getTeamCareerSummary(selectedTeamId),
+          GameHistoryStore.getTeamBattingLeaders(selectedTeamId),
+          GameHistoryStore.getTeamPitchingLeaders(selectedTeamId),
         ]);
         if (cancelled) return;
         setBattingRows(batting);
         setPitchingRows(pitching);
+        setTeamSummary(summary);
+        setHrLeader(battingLeaders.hrLeader);
+        setAvgLeader(battingLeaders.avgLeader);
+        setRbiLeader(battingLeaders.rbiLeader);
+        setEraLeader(pitchingLeaders.eraLeader);
+        setSavesLeader(pitchingLeaders.savesLeader);
+        setStrikeoutsLeader(pitchingLeaders.strikeoutsLeader);
       } catch {
         if (!cancelled) {
           setBattingRows([]);
           setPitchingRows([]);
+          setTeamSummary(null);
         }
       } finally {
         if (!cancelled) setDataLoading(false);
@@ -354,6 +408,180 @@ const CareerStatsPage: React.FunctionComponent = () => {
               ))}
             </TeamSelect>
           </TeamSelectorRow>
+
+          {/* Team Summary + Leaders panel */}
+          {!dataLoading && teamSummary && teamSummary.gamesPlayed > 0 && (
+            <TeamSummarySection data-testid="team-summary-section">
+              <SummaryHeading>Team Summary</SummaryHeading>
+              <SummaryGrid data-testid="team-summary-grid">
+                <SummaryCell>
+                  <SummaryCellLabel>W-L</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-wl">
+                    {teamSummary.wins}-{teamSummary.losses}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>WIN%</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-winpct">
+                    {formatWinPct(teamSummary.winPct)}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>RS</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-rs">
+                    {teamSummary.runsScored}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>RA</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-ra">
+                    {teamSummary.runsAllowed}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>DIFF</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-diff">
+                    {teamSummary.runDiff > 0 ? "+" : ""}
+                    {teamSummary.runDiff}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>RS/G</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-rspg">
+                    {formatRPG(teamSummary.rsPer9)}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>RA/G</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-rapg">
+                    {formatRPG(teamSummary.raPer9)}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>STREAK</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-streak">
+                    {teamSummary.streak}
+                  </SummaryCellValue>
+                </SummaryCell>
+                <SummaryCell>
+                  <SummaryCellLabel>LAST 10</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-last10">
+                    {teamSummary.last10.wins}-{teamSummary.last10.losses}
+                  </SummaryCellValue>
+                </SummaryCell>
+              </SummaryGrid>
+
+              <LeadersGroupLabel>Batting Leaders</LeadersGroupLabel>
+              <LeaderCardsRow data-testid="batting-leaders-row">
+                {hrLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="hr-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${hrLeader.playerKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>HR</LeaderStatLabel>
+                    <LeaderValue>{hrLeader.value}</LeaderValue>
+                    <LeaderName>{hrLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>HR — no data</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+                {avgLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="avg-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${avgLeader.playerKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>AVG (min {20} AB)</LeaderStatLabel>
+                    <LeaderValue>{avgLeader.value.toFixed(3).replace(/^0/, "")}</LeaderValue>
+                    <LeaderName>{avgLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>AVG — no qualifier</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+                {rbiLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="rbi-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${rbiLeader.playerKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>RBI</LeaderStatLabel>
+                    <LeaderValue>{rbiLeader.value}</LeaderValue>
+                    <LeaderName>{rbiLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>RBI — no data</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+              </LeaderCardsRow>
+
+              <LeadersGroupLabel>Pitching Leaders</LeadersGroupLabel>
+              <LeaderCardsRow data-testid="pitching-leaders-row">
+                {eraLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="era-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${eraLeader.pitcherKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>ERA (min 10.0 IP)</LeaderStatLabel>
+                    <LeaderValue>{eraLeader.value.toFixed(2)}</LeaderValue>
+                    <LeaderName>{eraLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>ERA — no qualifier</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+                {savesLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="saves-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${savesLeader.pitcherKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>SV</LeaderStatLabel>
+                    <LeaderValue>{savesLeader.value}</LeaderValue>
+                    <LeaderName>{savesLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>SV — no data</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+                {strikeoutsLeader ? (
+                  <LeaderCard
+                    type="button"
+                    data-testid="k-leader-card"
+                    onClick={() =>
+                      navigate(`/players/${strikeoutsLeader.pitcherKey}?team=${selectedTeamId}`)
+                    }
+                  >
+                    <LeaderStatLabel>K</LeaderStatLabel>
+                    <LeaderValue>{strikeoutsLeader.value}</LeaderValue>
+                    <LeaderName>{strikeoutsLeader.nameAtGameTime}</LeaderName>
+                  </LeaderCard>
+                ) : (
+                  <LeaderCardPlaceholder>
+                    <LeaderPlaceholderText>K — no data</LeaderPlaceholderText>
+                  </LeaderCardPlaceholder>
+                )}
+              </LeaderCardsRow>
+            </TeamSummarySection>
+          )}
 
           <TabBar>
             <TabBtn

@@ -45,6 +45,21 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     customTeams,
   } = usePlayerCareerData(playerKey);
 
+  // Determine which tabs are available based on history rows.
+  const hasBatting = battingRows.length > 0;
+  const hasPitching = pitchingRows.length > 0;
+  // Show batting tab when: loading (unknown yet), has batting rows, or neither has rows (empty state).
+  const showBattingTab = loading || hasBatting || (!hasBatting && !hasPitching);
+  // Show pitching tab when: loading (unknown yet), has pitching rows, or neither has rows (empty state).
+  const showPitchingTab = loading || hasPitching || (!hasBatting && !hasPitching);
+
+  // Auto-switch to valid tab once data loads.
+  React.useEffect(() => {
+    if (loading) return;
+    if (activeTab === "batting" && !showBattingTab) setActiveTab("pitching");
+    if (activeTab === "pitching" && !showPitchingTab) setActiveTab("batting");
+  }, [loading, showBattingTab, showPitchingTab, activeTab]);
+
   return (
     <PlayerCareerContainer data-testid="player-career-page">
       <PageHeader>
@@ -84,20 +99,24 @@ const PlayerCareerPage: React.FunctionComponent = () => {
       )}
 
       <TabBar>
-        <TabBtn
-          type="button"
-          $active={activeTab === "batting"}
-          onClick={() => setActiveTab("batting")}
-        >
-          Batting
-        </TabBtn>
-        <TabBtn
-          type="button"
-          $active={activeTab === "pitching"}
-          onClick={() => setActiveTab("pitching")}
-        >
-          Pitching
-        </TabBtn>
+        {showBattingTab && (
+          <TabBtn
+            type="button"
+            $active={activeTab === "batting"}
+            onClick={() => setActiveTab("batting")}
+          >
+            Batting
+          </TabBtn>
+        )}
+        {showPitchingTab && (
+          <TabBtn
+            type="button"
+            $active={activeTab === "pitching"}
+            onClick={() => setActiveTab("pitching")}
+          >
+            Pitching
+          </TabBtn>
+        )}
       </TabBar>
 
       {!loading && activeTab === "batting" && (
