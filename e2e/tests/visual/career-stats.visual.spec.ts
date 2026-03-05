@@ -130,3 +130,93 @@ test.describe("Visual — seeded history data", () => {
     );
   });
 });
+
+// ── Team Summary + Leaders ───────────────────────────────────────────────────
+
+test.describe("Visual — Team Summary and Leaders", () => {
+  async function seedSummaryAndOpen(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await loadFixture(page, "sample-save.json");
+    await disableAnimations(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+    await page.goto("/stats");
+    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    const teamSelect = page.getByTestId("career-stats-team-select");
+    await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    await teamSelect.selectOption("e2e_summary_team");
+    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+  }
+
+  test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    await page.getByTestId("career-stats-batting-tab").click();
+    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
+      "career-stats-team-summary-batting.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  test("Career Stats — Team Summary + leaders pitching tab", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    await page.getByTestId("career-stats-pitching-tab").click();
+    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
+      "career-stats-team-summary-pitching.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ── Role-aware Player Career tab snapshots ───────────────────────────────────
+
+test.describe("Visual — Role-aware Player Career tabs", () => {
+  async function seedForRoleAware(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await loadFixture(page, "sample-save.json");
+    await disableAnimations(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+  }
+
+  test("Player Career page — batter-only (no Pitching tab)", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_batter_qualify");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
+    await disableAnimations(page);
+    await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
+      "player-career-batter-only.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  test("Player Career page — pitcher-only (no Batting tab)", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_pitcher_starter");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
+    await disableAnimations(page);
+    await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
+      "player-career-pitcher-only.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ── Home page League teaser snapshot ─────────────────────────────────────────
+
+test.describe("Visual — Home page League teaser", () => {
+  test("Home page — League play coming soon teaser visible", async ({ page }) => {
+    await resetAppState(page);
+    await disableAnimations(page);
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("league-play-teaser")).toBeVisible();
+    await expect(page.getByTestId("home-screen")).toHaveScreenshot("home-with-league-teaser.png", {
+      maxDiffPixelRatio: 0.05,
+    });
+  });
+});
