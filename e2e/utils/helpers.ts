@@ -307,10 +307,30 @@ export async function captureGameSignature(
 
 /**
  * Opens the Saves modal by clicking the Saves button.
+ *
+ * Uses a retry loop with dispatchEvent to handle the case where the button
+ * cycles between detach/reattach during initial game-mount re-renders on slow
+ * WebKit viewports — a direct .click() would exceed the 90 s actionability
+ * timeout in those conditions.
  */
 export async function openSavesModal(page: Page): Promise<void> {
-  await page.getByTestId("saves-button").click();
-  await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+  const savesBtn = page.getByTestId("saves-button");
+  const savesModal = page.getByTestId("saves-modal");
+  await savesBtn.waitFor({ state: "visible", timeout: 15_000 });
+  // Retry: dispatch a synthetic click each iteration and check if the modal
+  // opened.  dispatchEvent bypasses Playwright's "stable" check, letting us
+  // land the click during the brief attached window even while React is
+  // cycling the component through re-renders.
+  await expect(async () => {
+    if (!(await savesModal.isVisible())) {
+      try {
+        await savesBtn.dispatchEvent("click", {}, { timeout: 2_000 });
+      } catch {
+        // Element was mid-detach — the outer retry will try again.
+      }
+    }
+    await expect(savesModal).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
 }
 
 /**
@@ -573,6 +593,19 @@ export async function importHistoryFixture(page: Page, fixtureName: string): Pro
   await openSavesModal(page);
   await page.getByTestId("import-history-file-input").setInputFiles(fixturePath);
   await expect(page.getByTestId("import-history-success")).toBeVisible({ timeout: 10_000 });
-  await page.getByTestId("saves-modal-close-button").click();
-  await expect(page.getByTestId("saves-modal")).not.toBeVisible({ timeout: 5_000 });
+  // Use the same retry+dispatchEvent pattern for the close button — it can
+  // also cycle detach/reattach on slow WebKit viewports while the history
+  // import triggers background DB writes and game-state updates.
+  const closeBtn = page.getByTestId("saves-modal-close-button");
+  const modal = page.getByTestId("saves-modal");
+  await expect(async () => {
+    if (await modal.isVisible()) {
+      try {
+        await closeBtn.dispatchEvent("click", {}, { timeout: 2_000 });
+      } catch {
+        // Element was mid-detach — the outer retry will try again.
+      }
+    }
+    await expect(modal).not.toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
 }

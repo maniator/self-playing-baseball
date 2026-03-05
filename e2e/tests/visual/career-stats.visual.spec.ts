@@ -57,12 +57,12 @@ test.describe("Visual — seeded history data", () => {
    * the e2e_home_team in the dropdown.
    */
   async function seedAndOpen(page: Page) {
-    // Pre-seed slow autoplay speed (1200 ms/pitch) so the game renders at most
-    // once per 1.2 s after the fixture loads. Without this, rapid re-renders on
-    // mobile WebKit detach the saves-button from the DOM while
-    // importHistoryFixture tries to click it, causing flaky 90-second timeouts.
+    // Pre-seed an effectively-paused autoplay speed (9999999 ms/pitch) so the
+    // game never auto-advances during the importHistoryFixture flow. Without
+    // this, rapid re-renders on mobile WebKit detach the saves-button and the
+    // saves-modal-close-button from the DOM, causing flaky 90-second timeouts.
     await page.addInitScript(() => {
-      localStorage.setItem("speed", "1200");
+      localStorage.setItem("speed", "9999999");
     });
     // Use loadFixture (loads a pre-built save snapshot) instead of startGameViaPlayBall
     // to avoid the Play Ball → /game navigation timing-out on slow mobile webkit in CI.
@@ -74,8 +74,10 @@ test.describe("Visual — seeded history data", () => {
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await teamSelect.selectOption("e2e_home_team");
-    // Wait for the batting rows to appear before snapping.
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
+    // Wait for the batting rows to appear before snapping.  The first RxDB
+    // query on a cold tablet WebKit viewport can take >20 s, so use a generous
+    // 30 s timeout here.
+    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 30_000 });
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
