@@ -75,10 +75,11 @@ test.describe("Visual — seeded history data", () => {
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await teamSelect.selectOption("e2e_home_team");
-    // Wait for the batting rows to appear before snapping.  The first RxDB
-    // query on a cold tablet WebKit viewport can take >20 s, so use a generous
-    // 30 s timeout here.
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 30_000 });
+    // Wait for the team summary section to appear — it renders once the RxDB
+    // queries resolve and gamesPlayed > 0.  Avoids the strict-mode violation from
+    // getByText("J. Slugger") which now matches both leader cards AND table rows.
+    // Use a generous 30 s timeout for cold tablet WebKit viewports.
+    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {

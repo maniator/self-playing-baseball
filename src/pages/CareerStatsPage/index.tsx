@@ -487,7 +487,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="hr-leader-card"
                     onClick={() =>
-                      navigate(`/players/${hrLeader.playerKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(hrLeader.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>HR</LeaderStatLabel>
@@ -504,7 +506,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="avg-leader-card"
                     onClick={() =>
-                      navigate(`/players/${avgLeader.playerKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(avgLeader.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>
@@ -526,7 +530,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="rbi-leader-card"
                     onClick={() =>
-                      navigate(`/players/${rbiLeader.playerKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(rbiLeader.playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>RBI</LeaderStatLabel>
@@ -547,7 +553,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="era-leader-card"
                     onClick={() =>
-                      navigate(`/players/${eraLeader.pitcherKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(eraLeader.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>
@@ -566,7 +574,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="saves-leader-card"
                     onClick={() =>
-                      navigate(`/players/${savesLeader.pitcherKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(savesLeader.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>SV</LeaderStatLabel>
@@ -583,7 +593,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     type="button"
                     data-testid="k-leader-card"
                     onClick={() =>
-                      navigate(`/players/${strikeoutsLeader.pitcherKey}?team=${selectedTeamId}`)
+                      navigate(
+                        `/players/${encodeURIComponent(strikeoutsLeader.pitcherKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+                      )
                     }
                   >
                     <LeaderStatLabel>K</LeaderStatLabel>

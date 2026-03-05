@@ -27,6 +27,8 @@ vi.mock("react-router", async (importOriginal) => {
 });
 
 vi.mock("@storage/gameHistoryStore", () => ({
+  MIN_AB_FOR_AVG_LEADER: 20,
+  MIN_OUTS_FOR_ERA_LEADER: 30,
   GameHistoryStore: {
     getTeamCareerBattingStats: vi.fn().mockResolvedValue([]),
     getTeamCareerPitchingStats: vi.fn().mockResolvedValue([]),
@@ -596,5 +598,421 @@ describe("CareerStatsPage", () => {
     expect(screen.getByText(/no teams yet/i)).toBeInTheDocument();
     // The team selector must NOT be rendered in this state.
     expect(screen.queryByTestId("career-stats-team-select")).not.toBeInTheDocument();
+  });
+
+  // ── Team Summary + Leader cards ─────────────────────────────────────────────
+
+  /** Helper: set up a team with gamesPlayed > 0 so TeamSummarySection renders. */
+  function setupTeamWithSummary() {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Cubs", { city: "Chicago", abbreviation: "CHC" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerSummary).mockResolvedValue({
+      gamesPlayed: 5,
+      wins: 3,
+      losses: 2,
+      winPct: 0.6,
+      runsScored: 25,
+      runsAllowed: 18,
+      runDiff: 7,
+      rsPer9: 5.0,
+      raPer9: 3.6,
+      streak: "W2",
+      last10: { wins: 3, losses: 2 },
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
+  }
+
+  it("renders TeamSummarySection when gamesPlayed > 0", async () => {
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("team-summary-section")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("summary-wl")).toHaveTextContent("3-2");
+    expect(screen.getByTestId("summary-rs")).toHaveTextContent("25");
+    expect(screen.getByTestId("summary-ra")).toHaveTextContent("18");
+    expect(screen.getByTestId("summary-diff")).toHaveTextContent("+7");
+    expect(screen.getByTestId("summary-streak")).toHaveTextContent("W2");
+    expect(screen.getByTestId("summary-last10")).toHaveTextContent("3-2");
+  });
+
+  it("shows leader card placeholders when no leaders are available", async () => {
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("team-summary-section")).toBeInTheDocument();
+    });
+    expect(screen.getByText("HR — no data")).toBeInTheDocument();
+    expect(screen.getByText("AVG — no qualifier")).toBeInTheDocument();
+    expect(screen.getByText("RBI — no data")).toBeInTheDocument();
+    expect(screen.getByText("ERA — no qualifier")).toBeInTheDocument();
+    expect(screen.getByText("SV — no data")).toBeInTheDocument();
+    expect(screen.getByText("K — no data")).toBeInTheDocument();
+  });
+
+  it("renders HR leader card and clicking it navigates with URL-encoded key", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: {
+        playerKey: "custom:ct_1:p_hr",
+        nameAtGameTime: "Homer King",
+        value: 12,
+        gamesPlayed: 5,
+      },
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("hr-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("hr-leader-card")).toHaveTextContent("Homer King");
+    expect(screen.getByTestId("hr-leader-card")).toHaveTextContent("12");
+
+    await user.click(screen.getByTestId("hr-leader-card"));
+    // playerKey and teamId must be encoded (colons become %3A)
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_hr?team=custom%3Ateam1");
+  });
+
+  it("renders AVG leader card and clicking it navigates with URL-encoded key", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: {
+        playerKey: "custom:ct_1:p_avg",
+        nameAtGameTime: "Avg Queen",
+        value: 0.345,
+        gamesPlayed: 5,
+      },
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("avg-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("avg-leader-card")).toHaveTextContent("Avg Queen");
+    // AVG value formatted as .345
+    expect(screen.getByTestId("avg-leader-card")).toHaveTextContent(".345");
+
+    await user.click(screen.getByTestId("avg-leader-card"));
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_avg?team=custom%3Ateam1");
+  });
+
+  it("renders RBI leader card and clicking it navigates", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: {
+        playerKey: "custom:ct_1:p_rbi",
+        nameAtGameTime: "RBI Boss",
+        value: 30,
+        gamesPlayed: 5,
+      },
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("rbi-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("rbi-leader-card")).toHaveTextContent("RBI Boss");
+
+    await user.click(screen.getByTestId("rbi-leader-card"));
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_rbi?team=custom%3Ateam1");
+  });
+
+  it("renders ERA leader card and clicking it navigates with URL-encoded pitcherKey", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: {
+        pitcherKey: "custom:ct_1:p_era",
+        nameAtGameTime: "Ace Starter",
+        value: 2.25,
+        gamesPlayed: 5,
+      },
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("era-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("era-leader-card")).toHaveTextContent("Ace Starter");
+    expect(screen.getByTestId("era-leader-card")).toHaveTextContent("2.25");
+
+    await user.click(screen.getByTestId("era-leader-card"));
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_era?team=custom%3Ateam1");
+  });
+
+  it("renders SV leader card and clicking it navigates", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: {
+        pitcherKey: "custom:ct_1:p_sv",
+        nameAtGameTime: "Save King",
+        value: 15,
+        gamesPlayed: 5,
+      },
+      strikeoutsLeader: null,
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("saves-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("saves-leader-card")).toHaveTextContent("Save King");
+
+    await user.click(screen.getByTestId("saves-leader-card"));
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_sv?team=custom%3Ateam1");
+  });
+
+  it("renders K (strikeouts) leader card and clicking it navigates", async () => {
+    const user = userEvent.setup();
+    setupTeamWithSummary();
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: {
+        pitcherKey: "custom:ct_1:p_k",
+        nameAtGameTime: "K Machine",
+        value: 88,
+        gamesPlayed: 5,
+      },
+    });
+
+    renderPage();
+    await waitFor(() => {
+      expect(screen.getByTestId("k-leader-card")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("k-leader-card")).toHaveTextContent("K Machine");
+
+    await user.click(screen.getByTestId("k-leader-card"));
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=custom%3Ateam1");
+  });
+
+  it("does not render TeamSummarySection when gamesPlayed is 0", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Cubs", { city: "Chicago", abbreviation: "CHC" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    // Explicitly set gamesPlayed: 0 to override any prior test's mock.
+    vi.mocked(GameHistoryStore.getTeamCareerSummary).mockResolvedValue({
+      gamesPlayed: 0,
+      wins: 0,
+      losses: 0,
+      winPct: 0,
+      runsScored: 0,
+      runsAllowed: 0,
+      runDiff: 0,
+      rsPer9: 0,
+      raPer9: 0,
+      streak: "-",
+      last10: { wins: 0, losses: 0 },
+    });
+    vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
+      hrLeader: null,
+      avgLeader: null,
+      rbiLeader: null,
+    });
+    vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
+      eraLeader: null,
+      savesLeader: null,
+      strikeoutsLeader: null,
+    });
+    renderPage();
+    await waitFor(() => {
+      // batting/pitching tabs should render once data loads
+      expect(screen.getByTestId("career-stats-batting-tab")).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId("team-summary-section")).not.toBeInTheDocument();
+  });
+
+  it("keyboard Enter on batting column header triggers sort", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
+      {
+        playerKey: "p1",
+        nameAtGameTime: "Alpha",
+        gamesPlayed: 10,
+        atBats: 30,
+        hits: 10,
+        doubles: 2,
+        triples: 0,
+        homers: 3,
+        walks: 4,
+        strikeouts: 5,
+        rbi: 8,
+        singles: 5,
+      },
+      {
+        playerKey: "p2",
+        nameAtGameTime: "Zeta",
+        gamesPlayed: 5,
+        atBats: 15,
+        hits: 3,
+        doubles: 0,
+        triples: 0,
+        homers: 0,
+        walks: 1,
+        strikeouts: 2,
+        rbi: 2,
+        singles: 3,
+      },
+    ]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
+
+    renderPage();
+    await waitFor(() => expect(screen.getByText("Alpha")).toBeInTheDocument());
+
+    // Focus the Name header and press Enter to sort by name desc.
+    const nameHeader = screen.getByRole("columnheader", { name: /^Name/i });
+    nameHeader.focus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      const updatedRows = screen.getAllByRole("row");
+      // Name desc: "Zeta" > "Alpha"
+      expect(updatedRows[1].textContent).toContain("Zeta");
+    });
+  });
+
+  it("keyboard Enter on pitching column header triggers sort", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Yankees", { city: "NY", abbreviation: "NYY" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
+      {
+        pitcherKey: "p1",
+        nameAtGameTime: "Alpha",
+        gamesPlayed: 5,
+        outsPitched: 27,
+        battersFaced: 30,
+        hitsAllowed: 5,
+        walksAllowed: 2,
+        strikeoutsRecorded: 12,
+        homersAllowed: 1,
+        runsAllowed: 3,
+        earnedRuns: 3,
+        saves: 0,
+        holds: 0,
+        blownSaves: 0,
+      },
+      {
+        pitcherKey: "p2",
+        nameAtGameTime: "Zeta",
+        gamesPlayed: 10,
+        outsPitched: 90,
+        battersFaced: 110,
+        hitsAllowed: 20,
+        walksAllowed: 8,
+        strikeoutsRecorded: 40,
+        homersAllowed: 3,
+        runsAllowed: 15,
+        earnedRuns: 14,
+        saves: 0,
+        holds: 0,
+        blownSaves: 0,
+      },
+    ]);
+
+    renderPage();
+    const pitchingTab = screen.getByTestId("career-stats-pitching-tab");
+    await user.click(pitchingTab);
+    await waitFor(() => expect(screen.getByText("Alpha")).toBeInTheDocument());
+
+    // Press Enter on Name header to sort by name desc.
+    const nameHeader = screen.getByRole("columnheader", { name: /^Name/i });
+    nameHeader.focus();
+    await user.keyboard("{Enter}");
+    await waitFor(() => {
+      const updatedRows = screen.getAllByRole("row");
+      expect(updatedRows[1].textContent).toContain("Zeta");
+    });
   });
 });
