@@ -382,6 +382,67 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     expect(closer?.result.holds).toBe(0);
   });
 
+  it("does NOT award a hold when the team loses (even if pitcher preserved lead while in game)", () => {
+    // Team ultimately loses — middle reliever held the lead in the 7th, but another pitcher
+    // blew the save and the team lost 3-4.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 18,
+      scoreOnEntry: [0, 0],
+      runsAllowed: 0,
+    });
+    const homeSetup = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_setup",
+      outsPitched: 6,
+      scoreOnEntry: [0, 3], // 3-0 lead — save situation
+      runsAllowed: 0, // preserved lead
+    });
+    const homeCloser = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_closer",
+      outsPitched: 3,
+      scoreOnEntry: [0, 3],
+      runsAllowed: 4, // blew it — team loses 4-3
+    });
+
+    const result = computePitcherGameStats([[], [homeStarter, homeSetup, homeCloser]], [4, 3]);
+
+    const setup = result.find((r) => r.result.pitcherId === "home_setup");
+    // Team lost → no hold awarded even though the pitcher preserved the lead while in.
+    expect(setup?.result.holds).toBe(0);
+    expect(setup?.result.saves).toBe(0);
+
+    const closer = result.find((r) => r.result.pitcherId === "home_closer");
+    expect(closer?.result.blownSaves).toBe(1);
+  });
+
+  it("does NOT award a save or hold when finalScore is tied (teamWon=false for both teams)", () => {
+    // Game ends in a tie 3-3 — no team can win, so no SV or HLD.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 18,
+      scoreOnEntry: [0, 0],
+      runsAllowed: 1,
+    });
+    const homeCloser = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_closer",
+      outsPitched: 9,
+      scoreOnEntry: [1, 3], // 2-run lead — would be a save situation
+      runsAllowed: 2, // gave up 2 — game tied 3-3
+    });
+
+    const result = computePitcherGameStats([[], [homeStarter, homeCloser]], [3, 3]);
+
+    const closer = result.find((r) => r.result.pitcherId === "home_closer");
+    expect(closer?.result.saves).toBe(0); // no SV — tied
+    expect(closer?.result.holds).toBe(0); // no HLD — tied
+    expect(closer?.result.blownSaves).toBe(1); // BS still credited
+  });
+
   it("does NOT award a save to the starter (i === 0) even when they are the only/finishing pitcher in a save situation", () => {
     // Starter pitches a complete game as the only pitcher.
     // scoreOnEntry is artificially set to a save situation (mid-game-restore edge case).

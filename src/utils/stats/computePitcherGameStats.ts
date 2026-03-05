@@ -14,6 +14,7 @@
  *   Note: The starter (i === 0) never receives a Save, even in a complete game.
  *
  * HOLD (HLD): Awarded to a relief pitcher (non-closer, non-starter) if:
+ *   - The team won the game, AND
  *   - They entered with a lead ≤ 3 runs, AND
  *   - They recorded at least 1 out, AND
  *   - They left the game with the lead intact (did not give up the lead or tie game).
@@ -152,8 +153,8 @@ function computeSaveHoldBS(
         r.saves++;
       }
       // Finisher with < 3 outs: no save, no hold.
-    } else if (i !== finisherIdx && i !== 0) {
-      // Relief pitcher (not the starter, not the finisher) who preserved a lead.
+    } else if (i !== finisherIdx && i !== 0 && teamWon) {
+      // Relief pitcher (not the starter, not the finisher) who preserved a lead for the winning team.
       r.holds++;
     }
   }
@@ -188,8 +189,9 @@ export const computePitcherGameStats = (
     if (entries.length === 0) continue;
 
     // Only award saves to the WINNING team's pitchers (and BS/HLD to any team in save sit).
-    const awayWon = finalScore[0] > finalScore[1];
-    const teamWon = teamIdx === 0 ? awayWon : !awayWon;
+    // Ties result in teamWon=false for both teams — no SV/HLD awarded on a tied final.
+    const otherIdx = teamIdx === 0 ? 1 : 0;
+    const teamWon = finalScore[teamIdx] > finalScore[otherIdx];
 
     const saveHoldBS = computeSaveHoldBS(entries, teamWon, teamIdx);
 
