@@ -406,8 +406,7 @@ function buildStore(getDbFn: GetDb) {
 
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
-    const pitcherStats =
-      (bundle.payload as { pitcherGameStats?: PitcherGameStatDoc[] }).pitcherGameStats ?? [];
+    const pitcherStats = bundle.payload.pitcherGameStats ?? [];
 
     // Games.
     const gameIds = games.map((g) => g.id);
