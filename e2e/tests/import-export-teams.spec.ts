@@ -277,3 +277,63 @@ test.describe("Custom Teams — Import/Export", () => {
     await expect(page.getByTestId("custom-team-list-item")).toHaveCount(1);
   });
 });
+
+// ── Cross-team player import blocked with owning-team message ─────────────────
+
+test.describe("Custom Team Editor — cross-team player import conflict", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("blocks cross-team player import with owning-team error message", async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
+
+    // ── Step 1: Create Team A and export one of its players ──────────────────
+    await page.getByTestId("home-manage-teams-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Team A");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Team A")).toBeVisible({ timeout: 15_000 });
+
+    // Open Team A editor and export the first lineup player
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 10_000 });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByTestId("export-player-button").first().click();
+    const download = await downloadPromise;
+
+    const playerPath = path.join(testInfo.outputDir, "team-a-player.json");
+    await download.saveAs(playerPath);
+
+    // ── Step 2: Navigate back and create Team B ──────────────────────────────
+    await page.getByTestId("manage-teams-editor-back-button").click();
+    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
+
+    await page.getByTestId("manage-teams-create-button").click();
+    await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    await page.getByTestId("custom-team-name-input").fill("Team B");
+    await page.getByTestId("custom-team-save-button").click();
+    await expect(page.getByText("Team B")).toBeVisible({ timeout: 15_000 });
+
+    // Open Team B editor
+    // The most recently created team appears first in the list (sorted by updatedAt desc)
+    await page.getByTestId("custom-team-edit-button").first().click();
+    await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 10_000 });
+
+    // ── Step 3: Attempt to import Team A's player into Team B ─────────────────
+    await page.getByTestId("import-lineup-player-input").setInputFiles(playerPath);
+
+    // Error message should appear naming Team A
+    await expect(page.getByTestId("custom-team-editor-error-summary")).toBeVisible({
+      timeout: 10_000,
+    });
+    const errText = await page.getByTestId("custom-team-editor-error-summary").textContent();
+    expect(errText).toMatch(/already belongs to team "Team A"/i);
+  });
+});

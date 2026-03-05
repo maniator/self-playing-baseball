@@ -24,6 +24,7 @@ import {
   exportCustomPlayer,
   parseExportedCustomPlayer,
 } from "@storage/customTeamExportImport";
+import { CustomTeamStore } from "@storage/customTeamStore";
 import { generateSeed } from "@storage/generateId";
 import { downloadJson, playerFilename } from "@storage/saveIO";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
@@ -109,6 +110,8 @@ type PendingPlayerImport = {
   player: EditorPlayer;
   section: "lineup" | "bench" | "pitchers";
   warning: string;
+  /** Called when the user clicks "Import Anyway". Handles persistence (edit mode) or state update (create mode). */
+  onConfirm: () => void | Promise<void>;
 };
 
 type EditorDispatch = React.Dispatch<EditorAction>;
@@ -153,11 +156,7 @@ const LineupFormSection: React.FunctionComponent<LineupFormSectionProps> = ({
               type="button"
               data-testid="player-import-lineup-confirm-button"
               onClick={() => {
-                dispatch({
-                  type: "ADD_PLAYER",
-                  section: "lineup",
-                  player: pendingPlayerImport.player,
-                });
+                void pendingPlayerImport.onConfirm();
                 setPendingPlayerImport(null);
               }}
             >
@@ -244,11 +243,7 @@ const BenchFormSection: React.FunctionComponent<BenchFormSectionProps> = ({
               type="button"
               data-testid="player-import-bench-confirm-button"
               onClick={() => {
-                dispatch({
-                  type: "ADD_PLAYER",
-                  section: "bench",
-                  player: pendingPlayerImport.player,
-                });
+                void pendingPlayerImport.onConfirm();
                 setPendingPlayerImport(null);
               }}
             >
@@ -337,11 +332,7 @@ const PitchersSection: React.FunctionComponent<PitchersSectionProps> = ({
             type="button"
             data-testid="player-import-pitchers-confirm-button"
             onClick={() => {
-              dispatch({
-                type: "ADD_PLAYER",
-                section: "pitchers",
-                player: pendingPlayerImport.player,
-              });
+              void pendingPlayerImport.onConfirm();
               setPendingPlayerImport(null);
             }}
           >
@@ -442,7 +433,8 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const importedPlayer = parseExportedCustomPlayer(reader.result as string);
+          const playerJson = reader.result as string;
+          const importedPlayer = parseExportedCustomPlayer(playerJson);
           // Remap the ID to avoid collisions with existing players.
           // Preserve playerSeed so sanitizePlayer reuses the original seed and
           // produces the same fingerprint — enabling cross-device duplicate detection.
@@ -470,38 +462,61 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             ...(importedPlayer.globalPlayerId && { globalPlayerId: importedPlayer.globalPlayerId }),
           };
 
-          // ── Cross-team identity check (hard block) ──────────────────────────
-          // If the exported player has a globalPlayerId that already exists on a
-          // DIFFERENT team (not the current team being edited), block the import
-          // outright. This prevents duplicate identity copies that would break
-          // career continuity: the same player cannot simultaneously accumulate
-          // stats under two different teamIds.
-          if (importedPlayer.globalPlayerId) {
-            const currentTeamId = team?.id;
-            const owningTeam = allTeams.find(
-              (t: CustomTeamDoc) =>
-                t.id !== currentTeamId && // exclude the current team being edited
-                [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
-                  (p: TeamPlayer) => p.globalPlayerId === importedPlayer.globalPlayerId,
-                ),
-            );
-            if (owningTeam) {
-              dispatch({
-                type: "SET_ERROR",
-                error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
-              });
-              return;
-            }
-          }
+          const currentTeamId = team?.id;
 
-          // Check if this player's fingerprint already exists in any saved team OR the
-          // current editor state (to block re-import in the same unsaved editing session).
-          // Use the role that will actually be stored for the destination section
-          // so the sig matches what will be written to the DB.
+          /**
+           * Core import action — called both for immediate imports and after
+           * the user confirms a fingerprint-based soft-duplicate warning.
+           *
+           * Edit mode: delegates to CustomTeamStore.importPlayer which performs
+           *   the hard globalPlayerId cross-team conflict check and persists to DB.
+           * Create mode: applies the manual globalPlayerId check then dispatches
+           *   ADD_PLAYER to the editor's in-memory state (no team.id yet).
+           */
+          const performImport = async () => {
+            if (currentTeamId) {
+              // ── Edit mode: use store API (hard block + persistence) ──────────
+              const result = await CustomTeamStore.importPlayer(currentTeamId, playerJson, section);
+              if (result.conflictingTeamName) {
+                dispatch({
+                  type: "SET_ERROR",
+                  error: `"${importedPlayer.name}" already belongs to team "${result.conflictingTeamName}". Import cancelled. Remove that player from their current team before importing here.`,
+                });
+                return;
+              }
+              if (result.alreadyOnThisTeam) {
+                dispatch({
+                  type: "SET_ERROR",
+                  error: `"${importedPlayer.name}" is already on this team.`,
+                });
+                return;
+              }
+              // Store API persisted the player; mirror to editor state for immediate UI update.
+              dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
+            } else {
+              // ── Create mode: manual cross-team check (no team.id yet) ────────
+              if (importedPlayer.globalPlayerId) {
+                const owningTeam = allTeams.find((t: CustomTeamDoc) =>
+                  [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
+                    (p: TeamPlayer) => p.globalPlayerId === importedPlayer.globalPlayerId,
+                  ),
+                );
+                if (owningTeam) {
+                  dispatch({
+                    type: "SET_ERROR",
+                    error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
+                  });
+                  return;
+                }
+              }
+              dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
+            }
+          };
+
+          // ── Fingerprint soft-duplicate check ──────────────────────────────────
+          // Runs before performImport to let the user confirm when a player with
+          // matching stats/name may already exist (soft warning, not a hard block).
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
-          // Build the fingerprint using only the fields that will be stored for this section.
-          // Spreading importedPlayer directly would retain pitching stats even for batter sections,
-          // producing a hash that diverges from what sanitizePlayer will store in the DB.
           const incomingFp = buildPlayerSig({
             name: importedPlayer.name,
             role: sectionRole,
@@ -513,7 +528,6 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             playerSeed: importedPlayer.playerSeed,
           });
 
-          // Helper: derive role and sig from an EditorPlayer (mirrors editorToTeamPlayer logic).
           const editorPlayerFp = (p: EditorPlayer): string =>
             buildPlayerSig({
               name: p.name,
@@ -526,11 +540,6 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
               playerSeed: p.playerSeed,
             });
 
-          // Check saved teams first (early-exit avoids constructing the editor spread).
-          // Note: for DB players without a stored `fingerprint` the fallback `buildPlayerSig(p)`
-          // uses `p.playerSeed` — but pre-v3-migration players have no seed, so the fallback
-          // computes a seed-free hash that will never equal the seed-based `incomingFp`.
-          // This is an inherent limitation: legacy players (no seed) are false-negatives here.
           const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
@@ -549,9 +558,10 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
               player: editorPlayer,
               section,
               warning: `"${importedPlayer.name}" may already exist on team "${duplicateTeamName}". Import anyway?`,
+              onConfirm: performImport,
             });
           } else {
-            dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
+            void performImport();
           }
         } catch (err) {
           dispatch({

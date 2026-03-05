@@ -1,10 +1,13 @@
 import * as React from "react";
 
 import type { DragEndEvent } from "@dnd-kit/core";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { exportCustomPlayer } from "@storage/customTeamExportImport";
+import { CustomTeamStore } from "@storage/customTeamStore";
 import { downloadJson } from "@storage/saveIO";
+import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import CustomTeamEditor from "./index";
 
@@ -34,6 +37,14 @@ vi.mock("@storage/saveIO", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@storage/saveIO")>();
   return { ...actual, downloadJson: vi.fn() };
 });
+
+// Stub CustomTeamStore so unit tests don't hit IndexedDB.
+// Individual tests override importPlayer as needed.
+vi.mock("@storage/customTeamStore", () => ({
+  CustomTeamStore: {
+    importPlayer: vi.fn().mockResolvedValue({ success: true }),
+  },
+}));
 
 // Mock dnd-kit sensors: PointerSensor requires pointer events not supported in JSDOM.
 // Also wrap DndContext to capture the onDragEnd prop so tests can trigger it directly.
@@ -576,6 +587,118 @@ describe("CustomTeamEditor — export, import-button, and DnD handlers", () => {
         active: { id: "same" },
         over: { id: "same" },
       } as unknown as DragEndEvent);
+    });
+  });
+});
+
+// ─── Import player — cross-team conflict detection ────────────────────────────
+
+describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", () => {
+  /** Minimal team fixture for edit-mode tests. */
+  const editTeam: CustomTeamDoc = {
+    id: "ct_edit_import",
+    schemaVersion: 1,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name: "Import Test Team",
+    abbreviation: "IMP",
+    source: "custom",
+    roster: {
+      schemaVersion: 1,
+      lineup: [
+        {
+          id: "p_existing",
+          name: "Existing Player",
+          role: "batter",
+          batting: { contact: 60, power: 55, speed: 50 },
+        },
+      ],
+      bench: [],
+      pitchers: [],
+    },
+    metadata: { archived: false },
+  };
+
+  /** Build a minimal signed player JSON for import tests. */
+  const makePlayerJson = (overrides: Partial<TeamPlayer> = {}): string => {
+    const player: TeamPlayer = {
+      id: "p_import_src",
+      name: "Imported Batter",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 55 },
+      playerSeed: "import-test-seed",
+      globalPlayerId: "pl_import_global",
+      ...overrides,
+    };
+    return exportCustomPlayer(player);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows cross-team conflict error when importPlayer returns conflictingTeamName", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      success: false,
+      conflictingTeamId: "ct_other",
+      conflictingTeamName: "Other Team",
+    });
+
+    renderEditor({ team: editTeam });
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makePlayerJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      const errorEl = screen.queryByTestId("custom-team-editor-error-summary");
+      expect(errorEl).not.toBeNull();
+      expect(errorEl?.textContent).toMatch(/already belongs to team "Other Team"/);
+    });
+  });
+
+  it("shows already-on-this-team error when importPlayer returns alreadyOnThisTeam", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      success: false,
+      alreadyOnThisTeam: true,
+    });
+
+    renderEditor({ team: editTeam });
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makePlayerJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      const errorEl = screen.queryByTestId("custom-team-editor-error-summary");
+      expect(errorEl).not.toBeNull();
+      expect(errorEl?.textContent).toMatch(/already on this team/i);
+    });
+  });
+
+  it("adds player to editor when importPlayer returns success", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ success: true });
+
+    renderEditor({ team: editTeam });
+
+    const playerJson = makePlayerJson({ name: "New Import Player" });
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([playerJson], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      // The new player's name input should appear in the lineup section.
+      const inputs = screen.getAllByDisplayValue("New Import Player");
+      expect(inputs.length).toBeGreaterThan(0);
     });
   });
 });
