@@ -6,12 +6,12 @@
  *
  * SV/HLD/BS rules (v1 simplified deterministic):
  *
- * SAVE (SV): Awarded to the winning team's finishing pitcher (last pitcher to record
- *   at least one out for the winning team) if:
+ * SAVE (SV): Awarded to the winning team's finishing RELIEF pitcher (last pitcher to record
+ *   at least one out for the winning team, and NOT the starter — i.e. i !== 0) if:
  *   - They pitched at least 3 outs, AND
  *   - They entered with a lead ≤ 3 runs, AND
  *   - They did not give up the lead (runsAllowed < scoreOnEntry lead margin).
- *   Note: The starter who pitches a complete game shutout does NOT get a save.
+ *   Note: The starter (i === 0) never receives a Save, even in a complete game.
  *
  * HOLD (HLD): Awarded to a relief pitcher (non-closer, non-starter) if:
  *   - They entered with a lead ≤ 3 runs, AND
@@ -145,8 +145,9 @@ function computeSaveHoldBS(
 
     // Pitcher held the lead — check for Save vs Hold.
     // The finishing pitcher can only receive a Save (never a Hold).
-    if (i === finisherIdx && teamWon) {
-      // Finishing pitcher of the winning team in a save situation.
+    // The starter (i === 0) never receives a Save or Hold — only relief pitchers qualify.
+    if (i === finisherIdx && teamWon && i !== 0) {
+      // Relief finishing pitcher of the winning team in a save situation.
       if (entry.outsPitched >= 3) {
         r.saves++;
       }
@@ -155,7 +156,15 @@ function computeSaveHoldBS(
       // Relief pitcher (not the starter, not the finisher) who preserved a lead.
       r.holds++;
     }
-    // The starter (i === 0) never receives a Hold or Save — only relief pitchers qualify.
+  }
+
+  // Enforce SV/HLD mutual exclusivity: a pitcher who earns a Save cannot also have a Hold.
+  // This can occur when the same pitcher pitches multiple stints — once as middle relief (HLD)
+  // and once as the finishing pitcher (SV). The Save takes precedence.
+  for (const r of Object.values(result)) {
+    if (r.saves > 0 && r.holds > 0) {
+      r.holds = 0;
+    }
   }
 
   return result;

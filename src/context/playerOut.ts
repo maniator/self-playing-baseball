@@ -58,8 +58,10 @@ export const playerOut = (
       pitchingTeam,
       (entry) => ({
         ...entry,
-        outsPitched: entry.outsPitched + 1,
-        // battersFaced is incremented here for outs (not hits/walks — those are in hitBall).
+        // Only credit the pitcher with this out when the batter's plate appearance is over.
+        // Caught-stealing / pickoff outs (batterCompleted=false) are runner outs and do
+        // not count toward innings pitched (IP) or batters faced.
+        outsPitched: batterCompleted ? entry.outsPitched + 1 : entry.outsPitched,
         battersFaced: batterCompleted ? entry.battersFaced + 1 : entry.battersFaced,
       }),
     ),

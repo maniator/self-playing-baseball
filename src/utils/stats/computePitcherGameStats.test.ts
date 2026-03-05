@@ -381,4 +381,65 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     expect(closer?.result.saves).toBe(1); // finisher (3+ outs, lead ≤ 3, no blown save)
     expect(closer?.result.holds).toBe(0);
   });
+
+  it("does NOT award a save to the starter (i === 0) even when they are the only/finishing pitcher in a save situation", () => {
+    // Starter pitches a complete game as the only pitcher.
+    // scoreOnEntry is artificially set to a save situation (mid-game-restore edge case).
+    // The starter is finisherIdx=0 and must NOT receive a Save.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 27,
+      scoreOnEntry: [0, 3], // 3-run lead — save situation
+      runsAllowed: 0,
+    });
+
+    const result = computePitcherGameStats([[], [homeStarter]], [0, 3]);
+
+    const starter = result.find((r) => r.result.pitcherId === "home_starter");
+    expect(starter?.result.saves).toBe(0); // starter never gets SV (i === 0)
+    expect(starter?.result.holds).toBe(0);
+  });
+
+  it("enforces SV/HLD mutual exclusivity when same pitcher appears in multiple stints (middle relief then finisher)", () => {
+    // "fireman" pitches in the 7th as a middle reliever (HLD candidate), is removed,
+    // then comes back as the closer (SV candidate). They must end up with SV only.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 15,
+      scoreOnEntry: [0, 0],
+      runsAllowed: 1,
+    });
+    const homeFiremanStint1 = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_fireman",
+      outsPitched: 6,
+      scoreOnEntry: [1, 3], // 2-run lead — save situation
+      runsAllowed: 0,
+    });
+    const homeSetup = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_setup",
+      outsPitched: 3,
+      scoreOnEntry: [1, 3],
+      runsAllowed: 0,
+    });
+    const homeFiremanStint2 = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_fireman", // same pitcher — second stint as finisher
+      outsPitched: 3,
+      scoreOnEntry: [1, 3],
+      runsAllowed: 0,
+    });
+
+    const result = computePitcherGameStats(
+      [[], [homeStarter, homeFiremanStint1, homeSetup, homeFiremanStint2]],
+      [1, 3],
+    );
+
+    const fireman = result.find((r) => r.result.pitcherId === "home_fireman");
+    expect(fireman?.result.saves).toBe(1); // gets SV as finisher
+    expect(fireman?.result.holds).toBe(0); // HLD cleared — SV takes precedence
+  });
 });
