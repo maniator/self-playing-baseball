@@ -66,16 +66,24 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         ];
       }
       // Compute pitcher log initial entries for each team when pitchers are provided.
-      // When rosterPitchers is provided, always start fresh so repeated setTeams dispatches
-      // (e.g. changing starting pitcher selection) don't accumulate duplicate entries.
-      // When rosterPitchers is not provided, preserve the existing log.
-      let newPitcherGameLog: [PitcherLogEntry[], PitcherLogEntry[]] = p.rosterPitchers
+      // When rosterPitchers is provided in the payload, always start fresh so repeated
+      // setTeams dispatches (e.g. changing starting pitcher selection) don't accumulate
+      // duplicate entries.
+      // When rosterPitchers is absent from the payload, fall back to state.rosterPitchers
+      // if it has entries (e.g. a subsequent setTeams that only updates labels/overrides
+      // while keeping the same roster). If neither has entries, preserve the existing log.
+      const effectivePitchers: [string[], string[]] | undefined = p.rosterPitchers
+        ? p.rosterPitchers
+        : state.rosterPitchers?.[0]?.length || state.rosterPitchers?.[1]?.length
+          ? state.rosterPitchers
+          : undefined;
+      let newPitcherGameLog: [PitcherLogEntry[], PitcherLogEntry[]] = effectivePitchers
         ? [[], []]
         : (state.pitcherGameLog ?? [[], []]);
-      if (p.rosterPitchers) {
+      if (effectivePitchers) {
         // Initialize pitcher log for each team's starting pitcher.
         for (const teamIdx of [0, 1] as const) {
-          const pitchers = p.rosterPitchers[teamIdx];
+          const pitchers = effectivePitchers[teamIdx];
           if (pitchers.length === 0) continue;
           const startingIdx =
             p.startingPitcherIdx?.[teamIdx] !== undefined &&
@@ -87,7 +95,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
           // Build a temporary state snapshot for the entry (score/inning at setup time).
           const tempState: State = {
             ...state,
-            ...(p.rosterPitchers ? { rosterPitchers: p.rosterPitchers } : {}),
+            rosterPitchers: effectivePitchers,
             activePitcherIdx: newActivePitcherIdx,
           };
           const entry = createPitcherLogEntry(teamIdx, pitcherId, tempState);

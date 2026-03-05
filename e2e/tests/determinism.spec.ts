@@ -27,7 +27,7 @@ async function runGameInFreshContext(
   try {
     await page.goto("/");
     await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    // Import fixture teams before starting (required since MLB tab removed).
+    // Import fixture teams before starting (custom teams required for new games).
     await importTeamsFixture(page, "fixture-teams.json");
     await page.goto("/exhibition/new");
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });

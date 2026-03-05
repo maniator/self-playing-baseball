@@ -14,15 +14,7 @@
       "managedTeam": null,
       "managerMode": false,
       "homeTeam": "custom:ct_fixture_home_00",
-      "awayTeam": "custom:ct_fixture_away_00",
-      "playerOverrides": [
-        {},
-        {}
-      ],
-      "lineupOrder": [
-        [],
-        []
-      ]
+      "awayTeam": "custom:ct_fixture_away_00"
     },
     "schemaVersion": 1,
     "stateSnapshot": {
@@ -88,5 +80,5 @@
     }
   },
   "events": [],
-  "sig": "cde2bf20"
+  "sig": "6be5c253"
 }

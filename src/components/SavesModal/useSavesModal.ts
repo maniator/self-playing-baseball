@@ -99,11 +99,6 @@ export const useSavesModal = ({
       managerMode,
       homeTeam: teams[1],
       awayTeam: teams[0],
-      // NOTE: playerOverrides and lineupOrder here mirror stateSnapshot.state — the
-      // team docs referenced by homeTeamId/awayTeamId hold the canonical roster.
-      // This field is kept for backward compatibility with existing saves.
-      playerOverrides: [fullState.playerOverrides[0], fullState.playerOverrides[1]],
-      lineupOrder: [fullState.lineupOrder[0], fullState.lineupOrder[1]],
     };
 
     if (currentSaveId) {

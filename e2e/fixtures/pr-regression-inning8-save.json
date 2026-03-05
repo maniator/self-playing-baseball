@@ -1,1 +1,1397 @@
-{"version":1,"header":{"id":"save_aCNZHn0326ox","name":"Boston Pioneers vs Portland Dynamo · Inning 8","seed":"1caam4t","homeTeamId":"custom:ct_xG1mk2Gd9hr_","awayTeamId":"custom:ct_yKNgI8ydSYiD","createdAt":1772467053198,"updatedAt":1772467730445,"progressIdx":268,"setup":{"strategy":"balanced","managedTeam":0,"managerMode":false,"homeTeam":"custom:ct_xG1mk2Gd9hr_","awayTeam":"custom:ct_yKNgI8ydSYiD","playerOverrides":[{"p_-1354600163_L0":{"nickname":"Sam Zavala","position":"SS","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L1":{"nickname":"Upton Ford","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L2":{"nickname":"Gary Turner","position":"CF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L3":{"nickname":"Frank Lane","position":"3B","contactMod":-10,"powerMod":-10,"speedMod":-20},"p_-1354600163_L4":{"nickname":"Sam Scott","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L5":{"nickname":"Ivan Vega","position":"1B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L6":{"nickname":"Yogi Owen","position":"2B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L7":{"nickname":"Ray Quinn","position":"RF","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L8":{"nickname":"Zane Moore","position":"C","contactMod":-20,"powerMod":-20,"speedMod":-10},"p_-1354600163_B0":{"nickname":"Yogi Davis","position":"C","contactMod":-20,"powerMod":-20,"speedMod":-10},"p_-1354600163_B1":{"nickname":"Jake Davis","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_B2":{"nickname":"Quinn Vega","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_B3":{"nickname":"Henry Xiong","position":"3B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_P0":{"nickname":"Xavier Owen","position":"SP","contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-20},"p_-1354600163_P1":{"nickname":"Yogi Xiong","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P2":{"nickname":"Leo Moore","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-10,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P3":{"nickname":"Carlos Jones","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P4":{"nickname":"Ben Lane","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-10}},{"p_-1354600173_L0":{"nickname":"Yogi Evans","position":"2B","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L1":{"nickname":"Eric Lane","position":"3B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600173_L2":{"nickname":"Frank Quinn","position":"RF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L3":{"nickname":"Oscar Baker","position":"SS","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L4":{"nickname":"Carlos Jones","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L5":{"nickname":"Yogi Turner","position":"1B","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L6":{"nickname":"Xavier Moore","position":"CF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L7":{"nickname":"Danny Nash","position":"C","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L8":{"nickname":"Jake Nash","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B0":{"nickname":"Jake Quinn","position":"2B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B1":{"nickname":"Marcus Jones","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B2":{"nickname":"Upton Young","position":"3B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600173_B3":{"nickname":"Carlos Irwin","position":"1B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_P0":{"nickname":"Tom Walsh","position":"SP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-10,"movementMod":-10},"p_-1354600173_P1":{"nickname":"Nathan Davis","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-20,"movementMod":-10},"p_-1354600173_P2":{"nickname":"Danny Zavala","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P3":{"nickname":"Quinn Jones","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P4":{"nickname":"Tom Urban","position":"RP","contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20}}],"lineupOrder":[["p_-1354600163_L0","p_-1354600163_L1","p_-1354600163_L2","p_-1354600163_L3","p_-1354600163_L4","p_-1354600163_L5","p_-1354600163_L6","p_-1354600163_L7","p_-1354600163_L8"],["p_-1354600173_L0","p_-1354600173_L1","p_-1354600173_L2","p_-1354600173_L3","p_-1354600173_L4","p_-1354600173_L5","p_-1354600173_L6","p_-1354600173_L7","p_-1354600173_L8"]]},"schemaVersion":1,"scoreSnapshot":{"away":3,"home":4},"inningSnapshot":{"inning":8,"atBat":1},"stateSnapshot":{"state":{"inning":8,"score":[3,4],"teams":["custom:ct_yKNgI8ydSYiD","custom:ct_xG1mk2Gd9hr_"],"teamLabels":["Boston Pioneers","Portland Dynamo"],"baseLayout":[1,1,0],"outs":1,"strikes":0,"balls":0,"atBat":1,"hitType":4,"gameOver":false,"pendingDecision":null,"onePitchModifier":null,"pitchKey":268,"decisionLog":[],"suppressNextDecision":false,"pinchHitterStrategy":null,"defensiveShift":true,"defensiveShiftOffered":false,"batterIndex":[6,6],"inningRuns":[[1,null,2],[null,null,3,null,null,null,null,1]],"playLog":[{"inning":1,"half":0,"batterNum":3,"playerId":"p_-1354600163_L2","team":0,"event":3,"runs":1,"rbi":1},{"inning":1,"half":0,"batterNum":4,"playerId":"p_-1354600163_L3","team":0,"event":4,"runs":0,"rbi":0},{"inning":2,"half":1,"batterNum":5,"playerId":"p_-1354600173_L4","team":1,"event":0,"runs":0,"rbi":0},{"inning":2,"half":1,"batterNum":7,"playerId":"p_-1354600173_L6","team":1,"event":4,"runs":0,"rbi":0},{"inning":3,"half":0,"batterNum":9,"playerId":"p_-1354600163_L8","team":0,"event":4,"runs":0,"rbi":0},{"inning":3,"half":0,"batterNum":2,"playerId":"p_-1354600163_L1","team":0,"event":3,"runs":2,"rbi":2},{"inning":3,"half":1,"batterNum":9,"playerId":"p_-1354600173_L8","team":1,"event":0,"runs":0,"rbi":0},{"inning":3,"half":1,"batterNum":1,"playerId":"p_-1354600173_L0","team":1,"event":4,"runs":0,"rbi":0},{"inning":3,"half":1,"batterNum":2,"playerId":"p_-1354600173_L1","team":1,"event":2,"runs":2,"rbi":2},{"inning":3,"half":1,"batterNum":3,"playerId":"p_-1354600173_L2","team":1,"event":4,"runs":0,"rbi":0},{"inning":3,"half":1,"batterNum":5,"playerId":"p_-1354600173_L4","team":1,"event":0,"runs":1,"rbi":1},{"inning":4,"half":0,"batterNum":7,"playerId":"p_-1354600163_L6","team":0,"event":1,"runs":0,"rbi":0},{"inning":5,"half":1,"batterNum":2,"playerId":"p_-1354600173_L1","team":1,"event":0,"runs":0,"rbi":0},{"inning":6,"half":0,"batterNum":4,"playerId":"p_-1354600163_L3","team":0,"event":0,"runs":0,"rbi":0},{"inning":7,"half":0,"batterNum":7,"playerId":"p_-1354600163_L6","team":0,"event":0,"runs":0,"rbi":0},{"inning":7,"half":1,"batterNum":1,"playerId":"p_-1354600173_L0","team":1,"event":0,"runs":0,"rbi":0},{"inning":8,"half":0,"batterNum":2,"playerId":"p_-1354600163_L1","team":0,"event":0,"runs":0,"rbi":0},{"inning":8,"half":0,"batterNum":5,"playerId":"p_-1354600163_L4","team":0,"event":4,"runs":0,"rbi":0},{"inning":8,"half":1,"batterNum":3,"playerId":"p_-1354600173_L2","team":1,"event":3,"runs":1,"rbi":1},{"inning":8,"half":1,"batterNum":5,"playerId":"p_-1354600173_L4","team":1,"event":0,"runs":0,"rbi":0},{"inning":8,"half":1,"batterNum":6,"playerId":"p_-1354600173_L5","team":1,"event":4,"runs":0,"rbi":0}],"strikeoutLog":[{"team":0,"batterNum":2,"playerId":"p_-1354600163_L1"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":1,"batterNum":1,"playerId":"p_-1354600173_L0"},{"team":1,"batterNum":2,"playerId":"p_-1354600173_L1"},{"team":1,"batterNum":3,"playerId":"p_-1354600173_L2"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":0,"batterNum":7,"playerId":"p_-1354600163_L6"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":1,"batterNum":6,"playerId":"p_-1354600173_L5"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":4,"playerId":"p_-1354600163_L3"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":0,"batterNum":8,"playerId":"p_-1354600163_L7"},{"team":1,"batterNum":7,"playerId":"p_-1354600173_L6"},{"team":1,"batterNum":8,"playerId":"p_-1354600173_L7"},{"team":1,"batterNum":9,"playerId":"p_-1354600173_L8"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":0,"batterNum":2,"playerId":"p_-1354600163_L1"},{"team":1,"batterNum":1,"playerId":"p_-1354600173_L0"},{"team":1,"batterNum":3,"playerId":"p_-1354600173_L2"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":1,"batterNum":6,"playerId":"p_-1354600173_L5"},{"team":1,"batterNum":7,"playerId":"p_-1354600173_L6"},{"team":0,"batterNum":8,"playerId":"p_-1354600163_L7"},{"team":0,"batterNum":9,"playerId":"p_-1354600163_L8"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":1,"batterNum":8,"playerId":"p_-1354600173_L7"},{"team":1,"batterNum":9,"playerId":"p_-1354600173_L8"},{"team":1,"batterNum":2,"playerId":"p_-1354600173_L1"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":4,"playerId":"p_-1354600163_L3"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"}],"outLog":[{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":0,"batterNum":2,"playerId":"p_-1354600163_L1"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":1,"batterNum":1,"playerId":"p_-1354600173_L0"},{"team":1,"batterNum":2,"playerId":"p_-1354600173_L1"},{"team":1,"batterNum":3,"playerId":"p_-1354600173_L2"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":0,"batterNum":7,"playerId":"p_-1354600163_L6"},{"team":0,"batterNum":8,"playerId":"p_-1354600163_L7"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":1,"batterNum":6,"playerId":"p_-1354600173_L5"},{"team":1,"batterNum":8,"playerId":"p_-1354600173_L7"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":4,"playerId":"p_-1354600163_L3"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":1,"batterNum":6,"playerId":"p_-1354600173_L5"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":0,"batterNum":8,"playerId":"p_-1354600163_L7"},{"team":1,"batterNum":7,"playerId":"p_-1354600173_L6"},{"team":1,"batterNum":8,"playerId":"p_-1354600173_L7"},{"team":1,"batterNum":9,"playerId":"p_-1354600173_L8"},{"team":0,"batterNum":9,"playerId":"p_-1354600163_L8"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":0,"batterNum":2,"playerId":"p_-1354600163_L1"},{"team":1,"batterNum":1,"playerId":"p_-1354600173_L0"},{"team":1,"batterNum":3,"playerId":"p_-1354600173_L2"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":5,"playerId":"p_-1354600163_L4"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":1,"batterNum":5,"playerId":"p_-1354600173_L4"},{"team":1,"batterNum":6,"playerId":"p_-1354600173_L5"},{"team":1,"batterNum":7,"playerId":"p_-1354600173_L6"},{"team":0,"batterNum":8,"playerId":"p_-1354600163_L7"},{"team":0,"batterNum":9,"playerId":"p_-1354600163_L8"},{"team":0,"batterNum":1,"playerId":"p_-1354600163_L0"},{"team":1,"batterNum":8,"playerId":"p_-1354600173_L7"},{"team":1,"batterNum":9,"playerId":"p_-1354600173_L8"},{"team":1,"batterNum":2,"playerId":"p_-1354600173_L1"},{"team":0,"batterNum":3,"playerId":"p_-1354600163_L2"},{"team":0,"batterNum":4,"playerId":"p_-1354600163_L3"},{"team":0,"batterNum":6,"playerId":"p_-1354600163_L5"},{"team":1,"batterNum":4,"playerId":"p_-1354600173_L3"}],"playerOverrides":[{"p_-1354600163_L0":{"nickname":"Sam Zavala","position":"SS","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L1":{"nickname":"Upton Ford","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L2":{"nickname":"Gary Turner","position":"CF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L3":{"nickname":"Frank Lane","position":"3B","contactMod":-10,"powerMod":-10,"speedMod":-20},"p_-1354600163_L4":{"nickname":"Sam Scott","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L5":{"nickname":"Ivan Vega","position":"1B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_L6":{"nickname":"Yogi Owen","position":"2B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L7":{"nickname":"Ray Quinn","position":"RF","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600163_L8":{"nickname":"Zane Moore","position":"C","contactMod":-20,"powerMod":-20,"speedMod":-10},"p_-1354600163_B0":{"nickname":"Yogi Davis","position":"C","contactMod":-20,"powerMod":-20,"speedMod":-10},"p_-1354600163_B1":{"nickname":"Jake Davis","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_B2":{"nickname":"Quinn Vega","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_B3":{"nickname":"Henry Xiong","position":"3B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600163_P0":{"nickname":"Xavier Owen","position":"SP","contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-20},"p_-1354600163_P1":{"nickname":"Yogi Xiong","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P2":{"nickname":"Leo Moore","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-10,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P3":{"nickname":"Carlos Jones","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P4":{"nickname":"Ben Lane","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-10}},{"p_-1354600173_L0":{"nickname":"Yogi Evans","position":"2B","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L1":{"nickname":"Eric Lane","position":"3B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600173_L2":{"nickname":"Frank Quinn","position":"RF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L3":{"nickname":"Oscar Baker","position":"SS","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L4":{"nickname":"Carlos Jones","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L5":{"nickname":"Yogi Turner","position":"1B","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L6":{"nickname":"Xavier Moore","position":"CF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_L7":{"nickname":"Danny Nash","position":"C","contactMod":-20,"powerMod":-10,"speedMod":-20},"p_-1354600173_L8":{"nickname":"Jake Nash","position":"LF","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B0":{"nickname":"Jake Quinn","position":"2B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B1":{"nickname":"Marcus Jones","position":"DH","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_B2":{"nickname":"Upton Young","position":"3B","contactMod":-10,"powerMod":-20,"speedMod":-20},"p_-1354600173_B3":{"nickname":"Carlos Irwin","position":"1B","contactMod":-20,"powerMod":-20,"speedMod":-20},"p_-1354600173_P0":{"nickname":"Tom Walsh","position":"SP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-10,"movementMod":-10},"p_-1354600173_P1":{"nickname":"Nathan Davis","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-20,"movementMod":-10},"p_-1354600173_P2":{"nickname":"Danny Zavala","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P3":{"nickname":"Quinn Jones","position":"RP","contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P4":{"nickname":"Tom Urban","position":"RP","contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20}}],"lineupOrder":[["p_-1354600163_L0","p_-1354600163_L1","p_-1354600163_L2","p_-1354600163_L3","p_-1354600163_L4","p_-1354600163_L5","p_-1354600163_L6","p_-1354600163_L7","p_-1354600163_L8"],["p_-1354600173_L0","p_-1354600173_L1","p_-1354600173_L2","p_-1354600173_L3","p_-1354600173_L4","p_-1354600173_L5","p_-1354600173_L6","p_-1354600173_L7","p_-1354600173_L8"]],"rosterBench":[["p_-1354600163_B0","p_-1354600163_B1","p_-1354600163_B2","p_-1354600163_B3"],["p_-1354600173_B0","p_-1354600173_B1","p_-1354600173_B2","p_-1354600173_B3"]],"rosterPitchers":[["p_-1354600163_P0","p_-1354600163_P1","p_-1354600163_P2","p_-1354600163_P3","p_-1354600163_P4"],["p_-1354600173_P0","p_-1354600173_P1","p_-1354600173_P2","p_-1354600173_P3","p_-1354600173_P4"]],"activePitcherIdx":[0,0],"lineupPositions":[["SS","DH","CF","3B","LF","1B","2B","RF","C"],["2B","3B","RF","SS","DH","1B","CF","C","LF"]],"pitcherBattersFaced":[33,33],"substitutedOut":[[],[]],"baseRunnerIds":["p_-1354600173_L5","p_-1354600173_L4",null],"resolvedMods":[{"p_-1354600163_L0":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L1":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L2":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L3":{"contactMod":-10,"powerMod":-10,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L4":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L5":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L6":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L7":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_L8":{"contactMod":-20,"powerMod":-20,"speedMod":-10,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_B0":{"contactMod":-20,"powerMod":-20,"speedMod":-10,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_B1":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_B2":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_B3":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600163_P0":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-20},"p_-1354600163_P1":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P2":{"contactMod":-20,"powerMod":-20,"speedMod":-10,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P3":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600163_P4":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-10,"movementMod":-10}},{"p_-1354600173_L0":{"contactMod":-20,"powerMod":-10,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L1":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L2":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L3":{"contactMod":-20,"powerMod":-10,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L4":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L5":{"contactMod":-20,"powerMod":-10,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L6":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L7":{"contactMod":-20,"powerMod":-10,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_L8":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_B0":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_B1":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_B2":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_B3":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":0,"controlMod":0,"movementMod":0},"p_-1354600173_P0":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-10,"movementMod":-10},"p_-1354600173_P1":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-10,"controlMod":-20,"movementMod":-10},"p_-1354600173_P2":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P3":{"contactMod":-20,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20},"p_-1354600173_P4":{"contactMod":-10,"powerMod":-20,"speedMod":-20,"velocityMod":-20,"controlMod":-20,"movementMod":-20}}]},"rngState":1502972068700}},"events":[],"sig":"e7ebd242"}
+{
+  "version": 1,
+  "header": {
+    "id": "save_aCNZHn0326ox",
+    "name": "Boston Pioneers vs Portland Dynamo \u00b7 Inning 8",
+    "seed": "1caam4t",
+    "homeTeamId": "custom:ct_xG1mk2Gd9hr_",
+    "awayTeamId": "custom:ct_yKNgI8ydSYiD",
+    "createdAt": 1772467053198,
+    "updatedAt": 1772467730445,
+    "progressIdx": 268,
+    "setup": {
+      "strategy": "balanced",
+      "managedTeam": 0,
+      "managerMode": false,
+      "homeTeam": "custom:ct_xG1mk2Gd9hr_",
+      "awayTeam": "custom:ct_yKNgI8ydSYiD"
+    },
+    "schemaVersion": 1,
+    "scoreSnapshot": {
+      "away": 3,
+      "home": 4
+    },
+    "inningSnapshot": {
+      "inning": 8,
+      "atBat": 1
+    },
+    "stateSnapshot": {
+      "state": {
+        "inning": 8,
+        "score": [
+          3,
+          4
+        ],
+        "teams": [
+          "custom:ct_yKNgI8ydSYiD",
+          "custom:ct_xG1mk2Gd9hr_"
+        ],
+        "teamLabels": [
+          "Boston Pioneers",
+          "Portland Dynamo"
+        ],
+        "baseLayout": [
+          1,
+          1,
+          0
+        ],
+        "outs": 1,
+        "strikes": 0,
+        "balls": 0,
+        "atBat": 1,
+        "hitType": 4,
+        "gameOver": false,
+        "pendingDecision": null,
+        "onePitchModifier": null,
+        "pitchKey": 268,
+        "decisionLog": [],
+        "suppressNextDecision": false,
+        "pinchHitterStrategy": null,
+        "defensiveShift": true,
+        "defensiveShiftOffered": false,
+        "batterIndex": [
+          6,
+          6
+        ],
+        "inningRuns": [
+          [
+            1,
+            null,
+            2
+          ],
+          [
+            null,
+            null,
+            3,
+            null,
+            null,
+            null,
+            null,
+            1
+          ]
+        ],
+        "playLog": [
+          {
+            "inning": 1,
+            "half": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2",
+            "team": 0,
+            "event": 3,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 1,
+            "half": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3",
+            "team": 0,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 2,
+            "half": 1,
+            "batterNum": 5,
+            "playerId": "p_-1354600173_L4",
+            "team": 1,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 2,
+            "half": 1,
+            "batterNum": 7,
+            "playerId": "p_-1354600173_L6",
+            "team": 1,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 3,
+            "half": 0,
+            "batterNum": 9,
+            "playerId": "p_-1354600163_L8",
+            "team": 0,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 3,
+            "half": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1",
+            "team": 0,
+            "event": 3,
+            "runs": 2,
+            "rbi": 2
+          },
+          {
+            "inning": 3,
+            "half": 1,
+            "batterNum": 9,
+            "playerId": "p_-1354600173_L8",
+            "team": 1,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 3,
+            "half": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0",
+            "team": 1,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 3,
+            "half": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1",
+            "team": 1,
+            "event": 2,
+            "runs": 2,
+            "rbi": 2
+          },
+          {
+            "inning": 3,
+            "half": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2",
+            "team": 1,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 3,
+            "half": 1,
+            "batterNum": 5,
+            "playerId": "p_-1354600173_L4",
+            "team": 1,
+            "event": 0,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 4,
+            "half": 0,
+            "batterNum": 7,
+            "playerId": "p_-1354600163_L6",
+            "team": 0,
+            "event": 1,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 5,
+            "half": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1",
+            "team": 1,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 6,
+            "half": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3",
+            "team": 0,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 7,
+            "half": 0,
+            "batterNum": 7,
+            "playerId": "p_-1354600163_L6",
+            "team": 0,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 7,
+            "half": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0",
+            "team": 1,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 8,
+            "half": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1",
+            "team": 0,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 8,
+            "half": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4",
+            "team": 0,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 8,
+            "half": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2",
+            "team": 1,
+            "event": 3,
+            "runs": 1,
+            "rbi": 1
+          },
+          {
+            "inning": 8,
+            "half": 1,
+            "batterNum": 5,
+            "playerId": "p_-1354600173_L4",
+            "team": 1,
+            "event": 0,
+            "runs": 0,
+            "rbi": 0
+          },
+          {
+            "inning": 8,
+            "half": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5",
+            "team": 1,
+            "event": 4,
+            "runs": 0,
+            "rbi": 0
+          }
+        ],
+        "strikeoutLog": [
+          {
+            "team": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1"
+          },
+          {
+            "team": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 7,
+            "playerId": "p_-1354600163_L6"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 8,
+            "playerId": "p_-1354600163_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 7,
+            "playerId": "p_-1354600173_L6"
+          },
+          {
+            "team": 1,
+            "batterNum": 8,
+            "playerId": "p_-1354600173_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 9,
+            "playerId": "p_-1354600173_L8"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1"
+          },
+          {
+            "team": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 7,
+            "playerId": "p_-1354600173_L6"
+          },
+          {
+            "team": 0,
+            "batterNum": 8,
+            "playerId": "p_-1354600163_L7"
+          },
+          {
+            "team": 0,
+            "batterNum": 9,
+            "playerId": "p_-1354600163_L8"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 8,
+            "playerId": "p_-1354600173_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 9,
+            "playerId": "p_-1354600173_L8"
+          },
+          {
+            "team": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          }
+        ],
+        "outLog": [
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1"
+          },
+          {
+            "team": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 7,
+            "playerId": "p_-1354600163_L6"
+          },
+          {
+            "team": 0,
+            "batterNum": 8,
+            "playerId": "p_-1354600163_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 8,
+            "playerId": "p_-1354600173_L7"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 0,
+            "batterNum": 8,
+            "playerId": "p_-1354600163_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 7,
+            "playerId": "p_-1354600173_L6"
+          },
+          {
+            "team": 1,
+            "batterNum": 8,
+            "playerId": "p_-1354600173_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 9,
+            "playerId": "p_-1354600173_L8"
+          },
+          {
+            "team": 0,
+            "batterNum": 9,
+            "playerId": "p_-1354600163_L8"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 0,
+            "batterNum": 2,
+            "playerId": "p_-1354600163_L1"
+          },
+          {
+            "team": 1,
+            "batterNum": 1,
+            "playerId": "p_-1354600173_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 3,
+            "playerId": "p_-1354600173_L2"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 5,
+            "playerId": "p_-1354600163_L4"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 5,
+            "playerId": "p_-1354600173_L4"
+          },
+          {
+            "team": 1,
+            "batterNum": 6,
+            "playerId": "p_-1354600173_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 7,
+            "playerId": "p_-1354600173_L6"
+          },
+          {
+            "team": 0,
+            "batterNum": 8,
+            "playerId": "p_-1354600163_L7"
+          },
+          {
+            "team": 0,
+            "batterNum": 9,
+            "playerId": "p_-1354600163_L8"
+          },
+          {
+            "team": 0,
+            "batterNum": 1,
+            "playerId": "p_-1354600163_L0"
+          },
+          {
+            "team": 1,
+            "batterNum": 8,
+            "playerId": "p_-1354600173_L7"
+          },
+          {
+            "team": 1,
+            "batterNum": 9,
+            "playerId": "p_-1354600173_L8"
+          },
+          {
+            "team": 1,
+            "batterNum": 2,
+            "playerId": "p_-1354600173_L1"
+          },
+          {
+            "team": 0,
+            "batterNum": 3,
+            "playerId": "p_-1354600163_L2"
+          },
+          {
+            "team": 0,
+            "batterNum": 4,
+            "playerId": "p_-1354600163_L3"
+          },
+          {
+            "team": 0,
+            "batterNum": 6,
+            "playerId": "p_-1354600163_L5"
+          },
+          {
+            "team": 1,
+            "batterNum": 4,
+            "playerId": "p_-1354600173_L3"
+          }
+        ],
+        "playerOverrides": [
+          {
+            "p_-1354600163_L0": {
+              "nickname": "Sam Zavala",
+              "position": "SS",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L1": {
+              "nickname": "Upton Ford",
+              "position": "DH",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L2": {
+              "nickname": "Gary Turner",
+              "position": "CF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L3": {
+              "nickname": "Frank Lane",
+              "position": "3B",
+              "contactMod": -10,
+              "powerMod": -10,
+              "speedMod": -20
+            },
+            "p_-1354600163_L4": {
+              "nickname": "Sam Scott",
+              "position": "LF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L5": {
+              "nickname": "Ivan Vega",
+              "position": "1B",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L6": {
+              "nickname": "Yogi Owen",
+              "position": "2B",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L7": {
+              "nickname": "Ray Quinn",
+              "position": "RF",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_L8": {
+              "nickname": "Zane Moore",
+              "position": "C",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10
+            },
+            "p_-1354600163_B0": {
+              "nickname": "Yogi Davis",
+              "position": "C",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10
+            },
+            "p_-1354600163_B1": {
+              "nickname": "Jake Davis",
+              "position": "LF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_B2": {
+              "nickname": "Quinn Vega",
+              "position": "DH",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_B3": {
+              "nickname": "Henry Xiong",
+              "position": "3B",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600163_P0": {
+              "nickname": "Xavier Owen",
+              "position": "SP",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -10,
+              "movementMod": -20
+            },
+            "p_-1354600163_P1": {
+              "nickname": "Yogi Xiong",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P2": {
+              "nickname": "Leo Moore",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P3": {
+              "nickname": "Carlos Jones",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P4": {
+              "nickname": "Ben Lane",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -10,
+              "movementMod": -10
+            }
+          },
+          {
+            "p_-1354600173_L0": {
+              "nickname": "Yogi Evans",
+              "position": "2B",
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20
+            },
+            "p_-1354600173_L1": {
+              "nickname": "Eric Lane",
+              "position": "3B",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_L2": {
+              "nickname": "Frank Quinn",
+              "position": "RF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_L3": {
+              "nickname": "Oscar Baker",
+              "position": "SS",
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20
+            },
+            "p_-1354600173_L4": {
+              "nickname": "Carlos Jones",
+              "position": "DH",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_L5": {
+              "nickname": "Yogi Turner",
+              "position": "1B",
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20
+            },
+            "p_-1354600173_L6": {
+              "nickname": "Xavier Moore",
+              "position": "CF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_L7": {
+              "nickname": "Danny Nash",
+              "position": "C",
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20
+            },
+            "p_-1354600173_L8": {
+              "nickname": "Jake Nash",
+              "position": "LF",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_B0": {
+              "nickname": "Jake Quinn",
+              "position": "2B",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_B1": {
+              "nickname": "Marcus Jones",
+              "position": "DH",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_B2": {
+              "nickname": "Upton Young",
+              "position": "3B",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_B3": {
+              "nickname": "Carlos Irwin",
+              "position": "1B",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20
+            },
+            "p_-1354600173_P0": {
+              "nickname": "Tom Walsh",
+              "position": "SP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -10,
+              "controlMod": -10,
+              "movementMod": -10
+            },
+            "p_-1354600173_P1": {
+              "nickname": "Nathan Davis",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -10,
+              "controlMod": -20,
+              "movementMod": -10
+            },
+            "p_-1354600173_P2": {
+              "nickname": "Danny Zavala",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600173_P3": {
+              "nickname": "Quinn Jones",
+              "position": "RP",
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600173_P4": {
+              "nickname": "Tom Urban",
+              "position": "RP",
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            }
+          }
+        ],
+        "lineupOrder": [
+          [
+            "p_-1354600163_L0",
+            "p_-1354600163_L1",
+            "p_-1354600163_L2",
+            "p_-1354600163_L3",
+            "p_-1354600163_L4",
+            "p_-1354600163_L5",
+            "p_-1354600163_L6",
+            "p_-1354600163_L7",
+            "p_-1354600163_L8"
+          ],
+          [
+            "p_-1354600173_L0",
+            "p_-1354600173_L1",
+            "p_-1354600173_L2",
+            "p_-1354600173_L3",
+            "p_-1354600173_L4",
+            "p_-1354600173_L5",
+            "p_-1354600173_L6",
+            "p_-1354600173_L7",
+            "p_-1354600173_L8"
+          ]
+        ],
+        "rosterBench": [
+          [
+            "p_-1354600163_B0",
+            "p_-1354600163_B1",
+            "p_-1354600163_B2",
+            "p_-1354600163_B3"
+          ],
+          [
+            "p_-1354600173_B0",
+            "p_-1354600173_B1",
+            "p_-1354600173_B2",
+            "p_-1354600173_B3"
+          ]
+        ],
+        "rosterPitchers": [
+          [
+            "p_-1354600163_P0",
+            "p_-1354600163_P1",
+            "p_-1354600163_P2",
+            "p_-1354600163_P3",
+            "p_-1354600163_P4"
+          ],
+          [
+            "p_-1354600173_P0",
+            "p_-1354600173_P1",
+            "p_-1354600173_P2",
+            "p_-1354600173_P3",
+            "p_-1354600173_P4"
+          ]
+        ],
+        "activePitcherIdx": [
+          0,
+          0
+        ],
+        "lineupPositions": [
+          [
+            "SS",
+            "DH",
+            "CF",
+            "3B",
+            "LF",
+            "1B",
+            "2B",
+            "RF",
+            "C"
+          ],
+          [
+            "2B",
+            "3B",
+            "RF",
+            "SS",
+            "DH",
+            "1B",
+            "CF",
+            "C",
+            "LF"
+          ]
+        ],
+        "pitcherBattersFaced": [
+          33,
+          33
+        ],
+        "substitutedOut": [
+          [],
+          []
+        ],
+        "baseRunnerIds": [
+          "p_-1354600173_L5",
+          "p_-1354600173_L4",
+          null
+        ],
+        "resolvedMods": [
+          {
+            "p_-1354600163_L0": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L1": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L2": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L3": {
+              "contactMod": -10,
+              "powerMod": -10,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L4": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L5": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L6": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L7": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_L8": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_B0": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_B1": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_B2": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_B3": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600163_P0": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -10,
+              "movementMod": -20
+            },
+            "p_-1354600163_P1": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P2": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -10,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P3": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600163_P4": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -10,
+              "movementMod": -10
+            }
+          },
+          {
+            "p_-1354600173_L0": {
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L1": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L2": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L3": {
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L4": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L5": {
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L6": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L7": {
+              "contactMod": -20,
+              "powerMod": -10,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_L8": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_B0": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_B1": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_B2": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_B3": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": 0,
+              "controlMod": 0,
+              "movementMod": 0
+            },
+            "p_-1354600173_P0": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -10,
+              "controlMod": -10,
+              "movementMod": -10
+            },
+            "p_-1354600173_P1": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -10,
+              "controlMod": -20,
+              "movementMod": -10
+            },
+            "p_-1354600173_P2": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600173_P3": {
+              "contactMod": -20,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            },
+            "p_-1354600173_P4": {
+              "contactMod": -10,
+              "powerMod": -20,
+              "speedMod": -20,
+              "velocityMod": -20,
+              "controlMod": -20,
+              "movementMod": -20
+            }
+          }
+        ]
+      },
+      "rngState": 1502972068700
+    }
+  },
+  "events": [],
+  "sig": "1d5df322"
+}

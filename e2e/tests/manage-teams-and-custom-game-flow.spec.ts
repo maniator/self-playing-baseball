@@ -192,7 +192,7 @@ test.describe("New Game dialog — custom team picker", () => {
     await waitForNewGameDialog(page);
     // No custom teams → empty state text
     await expect(page.getByText(/no custom teams/i)).toBeVisible({ timeout: 15_000 });
-    // MLB team selects should never be present
+    // Team selects should never be present without teams
     await expect(page.getByTestId("home-team-select")).not.toBeVisible();
   });
 

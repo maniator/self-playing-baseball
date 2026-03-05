@@ -257,7 +257,7 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
       const { candidates, teamIdx, lineupIdx } = decision;
       if (candidates.length > 0) {
         // Pick the candidate with the best contact mod for late-game situational hitting.
-        // Falls back to first candidate when all mods are equal (e.g. stock/MLB teams).
+        // Falls back to first candidate when all mods are equal.
         const bestCandidate = candidates.reduce((best, c) =>
           c.contactMod > best.contactMod ? c : best,
         );

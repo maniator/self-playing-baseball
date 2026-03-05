@@ -124,8 +124,8 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     ]);
   });
 
-  it("does NOT set lineupPositions when no player has a position (MLB path)", () => {
-    // MLB playerOverrides have no .position — all entries would be empty strings.
+  it("does NOT set lineupPositions when no player has a position (all empty strings)", () => {
+    // playerOverrides with no .position would produce all empty strings.
     // The fix: keep state.lineupPositions unchanged so UI falls back to roster lookup.
     const existing: [string[], string[]] = [
       ["SS", "CF"],
@@ -140,7 +140,7 @@ describe("handleSetupAction — setTeams (object payload)", () => {
           ["p1", "p2"],
           ["p3", "p4"],
         ] as [string[], string[]],
-        // No position fields — mimics stock MLB playerOverrides
+        // No position fields — all computed positions would be empty strings
         playerOverrides: [{ p1: { nickname: "Alice" } }, { p3: { nickname: "Bob" } }] as never,
       },
     });
@@ -148,7 +148,7 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     expect(next?.lineupPositions).toEqual(existing);
   });
 
-  it("lineupPositions stays [[], []] (initial) when MLB playerOverrides have no positions", () => {
+  it("lineupPositions stays [[], []] (initial) when playerOverrides have no positions", () => {
     const state = makeState(); // lineupPositions defaults to [[], []]
     const next = handleSetupAction(state, {
       type: "setTeams",

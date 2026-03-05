@@ -1,4 +1,4 @@
-import type { State, Strategy, TeamCustomPlayerOverrides } from "@context/index";
+import type { State, Strategy } from "@context/index";
 
 /** Persisted save-header document (one per save game). */
 export interface SaveDoc {
@@ -44,10 +44,6 @@ export interface GameSaveSetup {
   managerMode: boolean;
   homeTeam: string;
   awayTeam: string;
-  /** [away, home] per-player stat overrides for this session. */
-  playerOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides];
-  /** [away, home] batter IDs in batting order. */
-  lineupOrder: [string[], string[]];
 }
 
 /** Scored snapshot stored on the save header for quick display. */

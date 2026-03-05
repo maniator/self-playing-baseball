@@ -193,8 +193,6 @@ const GameInner: React.FunctionComponent<Props> = ({
       managerMode: managedTeam !== null,
       homeTeam,
       awayTeam,
-      playerOverrides: [playerOverrides.away, playerOverrides.home],
-      lineupOrder: [playerOverrides.awayOrder, playerOverrides.homeOrder],
     };
     createSave(
       {

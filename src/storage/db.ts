@@ -40,7 +40,7 @@ export type BallgameDb = RxDatabase<DbCollections>;
 const savesSchema: RxJsonSchema<SaveDoc> = {
   // Version 0: original schema with plain additionalProperties objects.
   // Version 1: explicit nested properties definitions for setup/snapshots.
-  // Version 2: removed matchupMode (MLB-only field, never used for game restore).
+  // Version 2: removed matchupMode (legacy field, never used for game restore).
   //   Migration drops the field; all other fields remain unchanged.
   version: 2,
   primaryKey: "id",
@@ -374,7 +374,7 @@ async function initDb(
         // Identity migration: all new schema fields were optional; existing
         // docs are already valid against the new schema.
         1: (oldDoc) => oldDoc,
-        // Drop matchupMode (MLB-only field removed in v2). All other fields unchanged.
+        // Drop matchupMode (legacy field removed in v2). All other fields unchanged.
         2: (oldDoc: Record<string, unknown>) => {
           const { matchupMode: _drop, ...rest } = oldDoc;
           return rest;

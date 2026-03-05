@@ -254,6 +254,7 @@ describe("PlayerCareerPage", () => {
             lineup: [
               {
                 id: "plyr_1",
+                globalPlayerId: "plyr_1",
                 name: "First Batter",
                 role: "batter" as const,
                 batting: { contact: 50, power: 50, speed: 50 },
@@ -261,6 +262,7 @@ describe("PlayerCareerPage", () => {
               },
               {
                 id: "plyr_2",
+                globalPlayerId: "plyr_2",
                 name: "Second Batter",
                 role: "batter" as const,
                 batting: { contact: 50, power: 50, speed: 50 },
@@ -316,6 +318,7 @@ describe("PlayerCareerPage", () => {
             lineup: [
               {
                 id: "plyr_1",
+                globalPlayerId: "plyr_1",
                 name: "First Batter",
                 role: "batter" as const,
                 batting: { contact: 50, power: 50, speed: 50 },
@@ -323,6 +326,7 @@ describe("PlayerCareerPage", () => {
               },
               {
                 id: "plyr_2",
+                globalPlayerId: "plyr_2",
                 name: "Second Batter",
                 role: "batter" as const,
                 batting: { contact: 50, power: 50, speed: 50 },

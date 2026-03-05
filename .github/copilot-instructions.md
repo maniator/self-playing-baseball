@@ -91,7 +91,6 @@
     │   ├── getRandomInt.ts         # Random number helper — delegates to rng.ts random()
     │   ├── logger.ts               # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │   ├── mediaQueries.ts         # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
-    │   ├── mlbTeams.ts             # Fetches MLB teams from MLB Stats API; caches per-team in RxDB `teams` collection
     │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
     │   └── saves.ts                # currentSeedStr() — returns current seed as base-36 string
     ├── storage/                    # RxDB local-only persistence (IndexedDB, no sync)
@@ -118,7 +117,7 @@
     │   ├── saveIO.ts               # formatSaveDate, downloadJson, readFileAsText, saveFilename,
     │   │                           #   teamsFilename, playerFilename, slugify (internal)
     │   ├── saveInspector.ts        # Read-only helpers for inspecting save bundles
-    │   └── types.ts                # SaveDoc, EventDoc, TeamDoc, GameSaveSetup, ScoreSnapshot,
+    │   └── types.ts                # SaveDoc, EventDoc, GameSaveSetup, ScoreSnapshot,
     │                               #   InningSnapshot, StateSnapshot, GameSetup, GameEvent,
     │                               #   ProgressSummary, RxdbExportedSave,
     │                               #   TeamPlayer (with playerSeed?: string, fingerprint?: string),
@@ -248,7 +247,6 @@
         │   │                       #   Defaults to Custom Teams tab; uses useExhibitionSetup hook
         │   │                       #   No IIFEs in JSX: computed variables derive managedSpPitchers/managedStarterIdx before return
         │   │                       #   Starter pitcher selector extracted to StarterPitcherSelector.tsx
-        │   ├── MlbTeamsSection.tsx # MLB-specific form fields (matchup radios, team selects, player customization)
         │   ├── StarterPitcherSelector.tsx  # Dropdown for managed-team starting pitcher — independently testable
         │   ├── styles.ts           # Styled components for the exhibition setup page
         │   └── useExhibitionSetup.ts  # Hook: orchestrates team selection, custom team logic, starter pitcher, form submit
@@ -350,7 +348,7 @@ vi.mock("@hooks/useSaveStore", () => ({
 |---|---|
 | `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.** |
 | `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. |
-| `teams` | MLB team cache (`TeamDoc`). Each team individually upserted/deleted by numeric MLB ID. |
+| `teams` | Legacy collection (unused — kept for migration compatibility). |
 | `customTeams` | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 3** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill; v2→v3: `teamSeed`/`playerSeed` backfill with seed-based fingerprint recomputation). |
 
 ### SaveStore API
@@ -500,7 +498,6 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 | What | Where |
 |---|---|
 | Game save state + events | RxDB (`saves` + `events` collections via `useRxdbGameSync`) |
-| MLB team roster cache | RxDB (`teams` collection, per-team upsert/delete by numeric ID) |
 | UI preferences (speed, volume, managerMode, strategy, managedTeam) | `localStorage` (scalars only) |
 
 ---
@@ -666,7 +663,7 @@ All stable test selectors added to the app:
 
 **Home screen:** `home-screen`, `home-new-game-button`, `home-resume-current-game-button`, `home-load-saves-button`, `home-manage-teams-button`, `home-help-button`
 
-**Exhibition Setup page (`/exhibition/new`):** `exhibition-setup-page`, `new-game-back-home-button`, `new-game-mlb-teams-tab`, `new-game-custom-teams-tab`, `matchup-mode-select`, `home-team-select`, `away-team-select`, `seed-input`, `play-ball-button`, `team-validation-error`, `starting-pitcher-select`
+**Exhibition Setup page (`/exhibition/new`):** `exhibition-setup-page`, `new-game-back-home-button`, `new-game-custom-teams-tab`, `home-team-select`, `away-team-select`, `seed-input`, `play-ball-button`, `team-validation-error`, `starting-pitcher-select`
 
 **Saves page (`/saves`):** `saves-page`, `saves-page-back-button`, `saves-list`, `saves-list-item`, `saves-page-empty`, `load-save-button`, `export-save-button`, `delete-save-button`, `import-save-file-input`, `import-error`
 
@@ -787,14 +784,14 @@ payload = {"version": 1, "header": header, "events": events, "sig": make_sig(hea
 | `managedTeam` (in `setup`) | Which team is managed | `0` = away, `1` = home |
 | `playLog` | RBI / hit stats | Each entry needs `{ inning, half, batterNum, team, event, runs, rbi }` where `event` is the Hit enum value (Single=0, Double=1, Triple=2, Homerun=3, Walk=4) |
 | `inningRuns` | Line-score display | `inningRuns[team][inning-1]` = runs that team scored in that inning |
-| `lineupOrder` | Player IDs in batting order | `[[], []]` for default MLB games; populate for custom-team games |
+| `lineupOrder` | Player IDs in batting order | Always populated for custom-team games |
 | `playerOverrides` | Custom names/positions/stat mods | Use player IDs as keys |
 | `resolvedMods` | Pre-computed stat mods | Needed for `pinch_hitter` candidates' `contactMod`/`powerMod` to be accurate |
 | `rosterBench` | Bench player IDs | Required for `pinch_hitter` decisions to show candidates |
 
 **Minimal fixture checklist:**
 
-1. Build `header` dict with `id`, `name`, `seed`, `matchupMode`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
+1. Build `header` dict with `id`, `name`, `seed`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
 2. Start from `BASE_STATE` (all array/object fields present with safe defaults) and override only what you need
 3. Compute `sig = make_sig(header, events=[])` in Python using the snippet above
 4. Place file in `e2e/fixtures/<name>.json`
