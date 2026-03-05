@@ -640,7 +640,15 @@ async function initDb(
             const globalPlayerId = `pl_${fnv1a(seed)}`;
             return { ...oldDoc, globalPlayerId };
           } catch {
-            return oldDoc;
+            // Migration must never throw. Apply a best-effort deterministic fallback so the
+            // required `globalPlayerId` field is always present in the migrated document.
+            try {
+              const basis = JSON.stringify(oldDoc ?? {});
+              const fallbackSeed = fnv1a(basis);
+              return { ...oldDoc, globalPlayerId: `pl_${fallbackSeed}` };
+            } catch {
+              return { ...oldDoc, globalPlayerId: "pl_fallback" };
+            }
           }
         },
       },

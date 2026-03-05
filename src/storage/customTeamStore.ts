@@ -574,23 +574,32 @@ function buildStore(getDbFn: GetDb) {
         .find({ selector: { globalPlayerId: player.globalPlayerId } })
         .exec();
       if (matchingDocs.length > 0) {
-        const matchDoc = matchingDocs[0].toJSON() as unknown as PlayerDoc;
-        if (matchDoc.teamId === targetTeamId) {
+        const matchingPlayerDocs = matchingDocs.map((doc) => doc.toJSON() as unknown as PlayerDoc);
+
+        // (1) If any match has a non-null teamId different from the target, it is a conflict.
+        const conflictingMatch = matchingPlayerDocs.find(
+          (doc) => doc.teamId !== null && doc.teamId !== undefined && doc.teamId !== targetTeamId,
+        );
+        if (conflictingMatch) {
+          const owningTeamDoc = conflictingMatch.teamId
+            ? await db.customTeams.findOne(conflictingMatch.teamId).exec()
+            : null;
+          const owningTeamName =
+            (owningTeamDoc?.toJSON() as unknown as CustomTeamDoc | undefined)?.name ??
+            "another team";
+          return {
+            status: "conflict",
+            conflictingTeamId: conflictingMatch.teamId ?? "",
+            conflictingTeamName: owningTeamName,
+          };
+        }
+
+        // (2) If any match is already on the target team, treat as a no-op.
+        const alreadyOnThisTeam = matchingPlayerDocs.some((doc) => doc.teamId === targetTeamId);
+        if (alreadyOnThisTeam) {
           return { status: "alreadyOnThisTeam" };
         }
-        // Resolve owning team name via a single findOne for the conflict message.
-        const owningTeamDoc = matchDoc.teamId
-          ? await db.customTeams.findOne(matchDoc.teamId).exec()
-          : null;
-        const owningTeamName =
-          (owningTeamDoc?.toJSON() as unknown as CustomTeamDoc | undefined)?.name ??
-          matchDoc.teamId ??
-          "another team";
-        return {
-          status: "conflict",
-          conflictingTeamId: matchDoc.teamId ?? "",
-          conflictingTeamName: owningTeamName,
-        };
+        // (3) Only free-agent matches (teamId null/undefined) remain — allow the import.
       }
 
       // Append to the target section and persist.

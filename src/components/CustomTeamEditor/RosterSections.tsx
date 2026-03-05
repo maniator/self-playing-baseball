@@ -53,8 +53,9 @@ export const makeBlankPitcher = (): EditorPlayer => ({
 type DuplicateBannerProps = {
   section: "lineup" | "bench" | "pitchers";
   pending: PendingPlayerImport;
-  onConfirm: () => void;
+  onConfirm: () => void | Promise<void>;
   onCancel: () => void;
+  dispatch: React.Dispatch<EditorAction>;
 };
 
 const DuplicateBanner: React.FunctionComponent<DuplicateBannerProps> = ({
@@ -62,23 +63,38 @@ const DuplicateBanner: React.FunctionComponent<DuplicateBannerProps> = ({
   pending,
   onConfirm,
   onCancel,
-}) => (
-  <PlayerDuplicateBanner role="alert" data-testid={`player-import-${section}-duplicate-banner`}>
-    ⚠ {pending.warning}
-    <PlayerDuplicateActions>
-      <SmallIconBtn
-        type="button"
-        data-testid={`player-import-${section}-confirm-button`}
-        onClick={onConfirm}
-      >
-        Import Anyway
-      </SmallIconBtn>
-      <SmallIconBtn type="button" onClick={onCancel}>
-        Cancel
-      </SmallIconBtn>
-    </PlayerDuplicateActions>
-  </PlayerDuplicateBanner>
-);
+  dispatch,
+}) => {
+  const handleConfirm = React.useCallback(async () => {
+    try {
+      await onConfirm();
+    } catch (error: unknown) {
+      dispatch({
+        type: "SET_ERROR",
+        error:
+          error instanceof Error ? error.message : "Failed to import player. Please try again.",
+      });
+    }
+  }, [onConfirm, dispatch]);
+
+  return (
+    <PlayerDuplicateBanner role="alert" data-testid={`player-import-${section}-duplicate-banner`}>
+      ⚠ {pending.warning}
+      <PlayerDuplicateActions>
+        <SmallIconBtn
+          type="button"
+          data-testid={`player-import-${section}-confirm-button`}
+          onClick={() => void handleConfirm()}
+        >
+          Import Anyway
+        </SmallIconBtn>
+        <SmallIconBtn type="button" onClick={onCancel}>
+          Cancel
+        </SmallIconBtn>
+      </PlayerDuplicateActions>
+    </PlayerDuplicateBanner>
+  );
+};
 
 // ── Shared section props ───────────────────────────────────────────────────────
 
@@ -116,8 +132,9 @@ export const LineupFormSection: React.FunctionComponent<LineupFormSectionProps> 
         <DuplicateBanner
           section="lineup"
           pending={pendingPlayerImport}
-          onConfirm={() => {
-            void pendingPlayerImport.onConfirm();
+          dispatch={dispatch}
+          onConfirm={async () => {
+            await pendingPlayerImport.onConfirm();
             setPendingPlayerImport(null);
           }}
           onCancel={() => setPendingPlayerImport(null)}
@@ -188,8 +205,9 @@ export const BenchFormSection: React.FunctionComponent<BenchFormSectionProps> = 
         <DuplicateBanner
           section="bench"
           pending={pendingPlayerImport}
-          onConfirm={() => {
-            void pendingPlayerImport.onConfirm();
+          dispatch={dispatch}
+          onConfirm={async () => {
+            await pendingPlayerImport.onConfirm();
             setPendingPlayerImport(null);
           }}
           onCancel={() => setPendingPlayerImport(null)}
@@ -262,8 +280,9 @@ export const PitchersSection: React.FunctionComponent<PitchersSectionProps> = ({
       <DuplicateBanner
         section="pitchers"
         pending={pendingPlayerImport}
-        onConfirm={() => {
-          void pendingPlayerImport.onConfirm();
+        dispatch={dispatch}
+        onConfirm={async () => {
+          await pendingPlayerImport.onConfirm();
           setPendingPlayerImport(null);
         }}
         onCancel={() => setPendingPlayerImport(null)}

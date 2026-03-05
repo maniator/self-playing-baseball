@@ -134,7 +134,15 @@ export function useImportPlayerFile({
           // When globalPlayerId is present it is the authoritative identity — the
           // store's hard check handles all conflicts. Skip the soft fingerprint warning.
           if (importedPlayer.globalPlayerId) {
-            void performImport();
+            performImport().catch((error: unknown) => {
+              dispatch({
+                type: "SET_ERROR",
+                error:
+                  error instanceof Error
+                    ? `Import failed: ${error.message}`
+                    : "Import failed due to an unexpected error.",
+              });
+            });
             return;
           }
 
@@ -182,7 +190,15 @@ export function useImportPlayerFile({
               onConfirm: performImport,
             });
           } else {
-            void performImport();
+            performImport().catch((error: unknown) => {
+              dispatch({
+                type: "SET_ERROR",
+                error:
+                  error instanceof Error
+                    ? `Import failed: ${error.message}`
+                    : "Import failed due to an unexpected error.",
+              });
+            });
           }
         } catch (err) {
           dispatch({
