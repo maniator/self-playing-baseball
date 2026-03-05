@@ -576,7 +576,7 @@ function buildStore(getDbFn: GetDb) {
         if (diff !== 0) return diff;
         const gDiff = b.gamesPlayed - a.gamesPlayed;
         if (gDiff !== 0) return gDiff;
-        return a.nameAtGameTime.localeCompare(b.nameAtGameTime);
+        return a.nameAtGameTime.localeCompare(b.nameAtGameTime, "en");
       });
       const top = sorted[0];
       return {
@@ -624,7 +624,7 @@ function buildStore(getDbFn: GetDb) {
         if (diff !== 0) return diff;
         const gDiff = b.gamesPlayed - a.gamesPlayed;
         if (gDiff !== 0) return gDiff;
-        return a.nameAtGameTime.localeCompare(b.nameAtGameTime);
+        return a.nameAtGameTime.localeCompare(b.nameAtGameTime, "en");
       });
       const top = sorted[0];
       return {
