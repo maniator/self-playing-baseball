@@ -86,11 +86,13 @@ const PlayerCareerPage: React.FunctionComponent = () => {
       ...(team.roster.bench ?? []),
       ...(team.roster.pitchers ?? []),
     ];
-    // Use globalPlayerId as the nav key when available; fall back to the roster id.
+    // Use globalPlayerId as the nav key when available; otherwise fall back to
+    // the same format buildPlayerKey() uses: "${teamContext}:${p.id}".
+    // This ensures nav keys match the playerKey/pitcherKey stored in career rows.
     const seen = new Set<string>();
     const keys: string[] = [];
     for (const p of allPlayers) {
-      const key = (p as { globalPlayerId?: string }).globalPlayerId ?? p.id;
+      const key = (p as { globalPlayerId?: string }).globalPlayerId ?? `${teamContext}:${p.id}`;
       if (!seen.has(key)) {
         seen.add(key);
         keys.push(key);
