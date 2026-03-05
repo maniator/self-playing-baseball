@@ -1,5 +1,40 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import path from "path";
+
+/**
+ * Speed value that effectively pauses autoplay (9 999 999 ms/pitch).
+ * Set via `page.addInitScript` before loading a fixture to prevent rapid
+ * game re-renders from detaching UI elements during E2E test setup flows.
+ */
+export const EFFECTIVELY_PAUSED_SPEED = "9999999";
+
+/**
+ * Clicks a locator using dispatchEvent inside a retry loop until `assertion`
+ * passes.  Pass a `guard` predicate to skip the click when it is not needed
+ * (e.g. the target state is already reached).
+ *
+ * This is needed when the click target can cycle between detach/reattach
+ * during React re-renders on slow WebKit viewports — a direct .click() would
+ * exceed Playwright's 90 s actionability timeout in those conditions.
+ */
+async function dispatchClickUntil(
+  locator: Locator,
+  assertion: () => Promise<void>,
+  options?: { guard?: () => Promise<boolean>; timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 30_000;
+  await expect(async () => {
+    const shouldClick = options?.guard ? await options.guard() : true;
+    if (shouldClick) {
+      try {
+        await locator.dispatchEvent("click", {}, { timeout: 2_000 });
+      } catch {
+        // Element was mid-detach — the outer retry will try again.
+      }
+    }
+    await assertion();
+  }).toPass({ timeout });
+}
 
 /**
  * Registers an `addInitScript` that mutes announcement volume exactly once per
@@ -317,20 +352,9 @@ export async function openSavesModal(page: Page): Promise<void> {
   const savesBtn = page.getByTestId("saves-button");
   const savesModal = page.getByTestId("saves-modal");
   await savesBtn.waitFor({ state: "visible", timeout: 15_000 });
-  // Retry: dispatch a synthetic click each iteration and check if the modal
-  // opened.  dispatchEvent bypasses Playwright's "stable" check, letting us
-  // land the click during the brief attached window even while React is
-  // cycling the component through re-renders.
-  await expect(async () => {
-    if (!(await savesModal.isVisible())) {
-      try {
-        await savesBtn.dispatchEvent("click", {}, { timeout: 2_000 });
-      } catch {
-        // Element was mid-detach — the outer retry will try again.
-      }
-    }
+  await dispatchClickUntil(savesBtn, async () => {
     await expect(savesModal).toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 30_000 });
+  }, { guard: async () => !(await savesModal.isVisible()) });
 }
 
 /**
@@ -598,14 +622,7 @@ export async function importHistoryFixture(page: Page, fixtureName: string): Pro
   // import triggers background DB writes and game-state updates.
   const closeBtn = page.getByTestId("saves-modal-close-button");
   const modal = page.getByTestId("saves-modal");
-  await expect(async () => {
-    if (await modal.isVisible()) {
-      try {
-        await closeBtn.dispatchEvent("click", {}, { timeout: 2_000 });
-      } catch {
-        // Element was mid-detach — the outer retry will try again.
-      }
-    }
+  await dispatchClickUntil(closeBtn, async () => {
     await expect(modal).not.toBeVisible({ timeout: 2_000 });
-  }).toPass({ timeout: 30_000 });
+  }, { guard: async () => await modal.isVisible() });
 }

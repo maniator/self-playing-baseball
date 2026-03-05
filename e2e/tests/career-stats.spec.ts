@@ -1,6 +1,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import {
+  EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   importTeamsFixture,
   resetAppState,
@@ -118,7 +119,7 @@ test.describe("Career Stats with seeded history", () => {
     // this, rapid re-renders on mobile WebKit detach the saves-button from the
     // DOM while importHistoryFixture tries to click it.
     await page.addInitScript(() => {
-      localStorage.setItem("speed", "9999999");
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
     await startGameViaPlayBall(page);
     await importHistoryFixture(page, "career-stats-history.json");

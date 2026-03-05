@@ -2,6 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 
 import {
   disableAnimations,
+  EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   loadFixture,
   resetAppState,
@@ -62,7 +63,7 @@ test.describe("Visual — seeded history data", () => {
     // this, rapid re-renders on mobile WebKit detach the saves-button and the
     // saves-modal-close-button from the DOM, causing flaky 90-second timeouts.
     await page.addInitScript(() => {
-      localStorage.setItem("speed", "9999999");
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
     // Use loadFixture (loads a pre-built save snapshot) instead of startGameViaPlayBall
     // to avoid the Play Ball → /game navigation timing-out on slow mobile webkit in CI.
