@@ -20,9 +20,8 @@ type ManagedTeam = 0 | 1 | null;
 /** All state, derived values, and the submit handler for ExhibitionSetupPage. */
 export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => void) => {
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
-  // Auto-generate a fresh seed each time the New Game page mounts (component lifecycle
-  // ensures this runs fresh on every entry). The user may freely edit it; we do not
-  // overwrite it mid-session since seedInput is normal state after mount.
+  // Auto-generates a fresh seed on mount. User edits are preserved since seedInput
+  // is normal state — the initializer only runs once per component mount.
   const [seedInput, setSeedInput] = React.useState(() => generateFreshSeed().toString(36));
   const [teamValidationError, setTeamValidationError] = React.useState<string>("");
 

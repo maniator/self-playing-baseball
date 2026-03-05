@@ -53,7 +53,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
       )}
     </MenuGroup>
     <LeagueTeaserBox data-testid="league-play-teaser">
-      <LeagueTeaserTitle>🏆 League play coming soon</LeagueTeaserTitle>
+      <LeagueTeaserTitle>
+        <span aria-hidden="true">🏆</span> League play coming soon
+      </LeagueTeaserTitle>
       <LeagueTeaserSub>
         Season schedules, standings, and playoffs are on the roadmap.
       </LeagueTeaserSub>

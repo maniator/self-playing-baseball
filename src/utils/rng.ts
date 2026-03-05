@@ -29,8 +29,9 @@ const generateSeed = (): number => ((Math.random() * 0xffffffff) ^ Date.now()) >
 
 /**
  * Generates a fresh random seed value without affecting the current PRNG state.
- * Use this when you need a new seed for display (e.g. auto-populating the New Game
- * seed input) without committing it to the global PRNG.
+ * Unlike `getSeed()`, this creates a brand-new seed value independent of the
+ * current PRNG state, making it suitable for initializing seed inputs (e.g. the
+ * New Game screen) without committing the value to the global RNG.
  */
 export const generateFreshSeed = (): number => generateSeed();
 

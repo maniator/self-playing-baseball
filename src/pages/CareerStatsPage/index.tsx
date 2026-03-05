@@ -12,7 +12,11 @@ import { useNavigate } from "react-router";
 import { BackBtn, PageHeader } from "@components/PageLayout/styles";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { getDb } from "@storage/db";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
+import {
+  GameHistoryStore,
+  MIN_AB_FOR_AVG_LEADER,
+  MIN_OUTS_FOR_ERA_LEADER,
+} from "@storage/gameHistoryStore";
 import type {
   BattingLeader,
   PitchingLeader,
@@ -498,7 +502,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
                       navigate(`/players/${avgLeader.playerKey}?team=${selectedTeamId}`)
                     }
                   >
-                    <LeaderStatLabel>AVG (min {20} AB)</LeaderStatLabel>
+                    <LeaderStatLabel>AVG (min {MIN_AB_FOR_AVG_LEADER} AB)</LeaderStatLabel>
                     <LeaderValue>{avgLeader.value.toFixed(3).replace(/^0/, "")}</LeaderValue>
                     <LeaderName>{avgLeader.nameAtGameTime}</LeaderName>
                   </LeaderCard>
@@ -536,7 +540,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
                       navigate(`/players/${eraLeader.pitcherKey}?team=${selectedTeamId}`)
                     }
                   >
-                    <LeaderStatLabel>ERA (min 10.0 IP)</LeaderStatLabel>
+                    <LeaderStatLabel>
+                      ERA (min {(MIN_OUTS_FOR_ERA_LEADER / 3).toFixed(1)} IP)
+                    </LeaderStatLabel>
                     <LeaderValue>{eraLeader.value.toFixed(2)}</LeaderValue>
                     <LeaderName>{eraLeader.nameAtGameTime}</LeaderName>
                   </LeaderCard>

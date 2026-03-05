@@ -501,7 +501,7 @@ function buildStore(getDbFn: GetDb) {
     let runsAllowed = 0;
 
     // Track each game's result (true=win, false=loss) in chronological order.
-    const results: boolean[] = [];
+    const gameResults: boolean[] = [];
 
     for (const doc of docs) {
       const isHome = doc.homeTeamId === teamId;
@@ -512,7 +512,7 @@ function buildStore(getDbFn: GetDb) {
       const win = rs > ra;
       if (win) wins++;
       else losses++;
-      results.push(win);
+      gameResults.push(win);
     }
 
     const gamesPlayed = wins + losses;
@@ -521,17 +521,17 @@ function buildStore(getDbFn: GetDb) {
     const rsPer9 = gamesPlayed === 0 ? 0 : runsScored / gamesPlayed;
     const raPer9 = gamesPlayed === 0 ? 0 : runsAllowed / gamesPlayed;
 
-    // Compute current streak from the end of the results array.
+    // Compute current streak from the end of the gameResults array.
     let streak = "-";
-    if (results.length > 0) {
-      const last = results[results.length - 1];
+    if (gameResults.length > 0) {
+      const last = gameResults[gameResults.length - 1];
       let count = 0;
-      for (let i = results.length - 1; i >= 0 && results[i] === last; i--) count++;
+      for (let i = gameResults.length - 1; i >= 0 && gameResults[i] === last; i--) count++;
       streak = (last ? "W" : "L") + count;
     }
 
     // Compute last-10 record.
-    const last10Games = results.slice(-10);
+    const last10Games = gameResults.slice(-10);
     const last10Wins = last10Games.filter(Boolean).length;
     const last10Losses = last10Games.length - last10Wins;
 
@@ -549,11 +549,6 @@ function buildStore(getDbFn: GetDb) {
       last10: { wins: last10Wins, losses: last10Losses },
     };
   }
-
-  /** Minimum AB required for a player to qualify as the AVG leader. */
-  const MIN_AB_FOR_AVG_LEADER = 20;
-  /** Minimum outs pitched required for a player to qualify as the ERA leader. */
-  const MIN_OUTS_FOR_ERA_LEADER = 30;
 
   /**
    * Returns batting leaders (HR, AVG, RBI) for a team.
@@ -643,6 +638,7 @@ function buildStore(getDbFn: GetDb) {
     const eraCandidates = rows.filter((r) => r.outsPitched >= minOuts);
     const eraLeader = pickPitchingLeader(
       eraCandidates,
+      // ERA formula: (earnedRuns * 27) / outsPitched — mirrors computeERA in computePitcherGameStats.ts
       (r) => (r.outsPitched === 0 ? Infinity : (r.earnedRuns * 27) / r.outsPitched),
       true, // lower ERA is better
     );
@@ -666,6 +662,11 @@ function buildStore(getDbFn: GetDb) {
     importGameHistory,
   };
 }
+
+/** Minimum AB required for a player to qualify as the AVG leader. */
+export const MIN_AB_FOR_AVG_LEADER = 20;
+/** Minimum outs pitched required for a player to qualify as the ERA leader (30 outs = 10.0 IP). */
+export const MIN_OUTS_FOR_ERA_LEADER = 30;
 
 /** Default GameHistoryStore backed by the IndexedDB singleton. */
 export const GameHistoryStore = buildStore(getDb);
