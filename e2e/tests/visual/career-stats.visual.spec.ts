@@ -98,7 +98,10 @@ test.describe("Visual — seeded history data", () => {
   test("Career Stats page — pitching tab with ERA/WHIP/SV/HLD columns", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-pitching-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -156,7 +159,10 @@ test.describe("Visual — Team Summary and Leaders", () => {
   test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {
     await seedSummaryAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
-    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
+    // J. Qualify is in all three batting leader cards AND the batting table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "J. Qualify", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-batting.png",
       { maxDiffPixelRatio: 0.05 },

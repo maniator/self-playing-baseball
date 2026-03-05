@@ -160,7 +160,10 @@ test.describe("Career Stats with seeded history", () => {
     // Switch to Pitching tab.
     await page.getByTestId("career-stats-pitching-tab").click();
     // All three seeded pitchers should appear.
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 5_000 });
     // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
     await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
@@ -177,7 +180,10 @@ test.describe("Career Stats with seeded history", () => {
   test("pitching tab shows IP and ERA correctly for A. Ace", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     // A. Ace: outsPitched=18 → IP=6.0; earnedRuns=3 → ERA=(3*27)/18=4.50
     const aceRow = page.locator("tr", { hasText: "A. Ace" });
     await expect(aceRow).toContainText("6.0"); // IP
