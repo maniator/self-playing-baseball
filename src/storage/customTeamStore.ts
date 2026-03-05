@@ -530,9 +530,9 @@ function buildStore(getDbFn: GetDb) {
      *
      * Identity checks (using `globalPlayerId`):
      *   - If the player already exists on the **same** target team → returns
-     *     `{ success: false, alreadyOnThisTeam: true }` (idempotent no-op).
+     *     `{ status: "alreadyOnThisTeam" }` (idempotent no-op).
      *   - If the player already exists on a **different** team → returns
-     *     `{ success: false, conflictingTeamId, conflictingTeamName }` so the UI
+     *     `{ status: "conflict", conflictingTeamId, conflictingTeamName }` so the UI
      *     can surface "That player already belongs to [team name]".
      *
      * On success the player is appended to the specified roster `section` and the
@@ -564,10 +564,10 @@ function buildStore(getDbFn: GetDb) {
           const match = allPlayers.find((p) => p.globalPlayerId === player.globalPlayerId);
           if (match) {
             if (t.id === targetTeamId) {
-              return { success: false, alreadyOnThisTeam: true };
+              return { status: "alreadyOnThisTeam" };
             }
             return {
-              success: false,
+              status: "conflict",
               conflictingTeamId: t.id,
               conflictingTeamName: t.name,
             };
@@ -585,7 +585,7 @@ function buildStore(getDbFn: GetDb) {
         },
       });
 
-      return { success: true };
+      return { status: "success" };
     },
   };
 }

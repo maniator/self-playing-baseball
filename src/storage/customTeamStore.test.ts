@@ -1039,7 +1039,7 @@ describe("exportPlayer — identity fields", () => {
 // ── importPlayer ──────────────────────────────────────────────────────────────
 
 describe("importPlayer", () => {
-  it("adds the player to the target team's lineup and returns success", async () => {
+  it("adds the player to the target team's bench and returns success", async () => {
     const targetId = await store.createCustomTeam(
       makeInput({
         name: "Target Team",
@@ -1076,7 +1076,7 @@ describe("importPlayer", () => {
     });
 
     const result = await store.importPlayer(targetId, playerJson, "bench");
-    expect(result.success).toBe(true);
+    expect(result.status).toBe("success");
 
     const updated = await store.getCustomTeam(targetId);
     expect(updated?.roster.bench.some((p) => p.name === "Import Me")).toBe(true);
@@ -1107,7 +1107,7 @@ describe("importPlayer", () => {
     const pitcherJson = exportCustomPlayer(pitcher);
 
     const result = await store.importPlayer(targetId, pitcherJson, "pitchers");
-    expect(result.success).toBe(true);
+    expect(result.status).toBe("success");
 
     const updated = await store.getCustomTeam(targetId);
     expect(updated?.roster.pitchers.some((p) => p.name === "Import Pitcher")).toBe(true);
@@ -1140,6 +1140,8 @@ describe("importPlayer", () => {
     const updated = await store.getCustomTeam(targetId);
     const imported = updated?.roster.bench.find((p) => p.name === "GID Preserved");
     expect(imported?.globalPlayerId).toBe("pl_preserved_gid_check");
+    expect(imported?.playerSeed).toBe("preserve-gid-seed");
+    expect(typeof imported?.fingerprint).toBe("string");
   });
 
   it("preserves playerSeed of imported player", async () => {
@@ -1169,6 +1171,8 @@ describe("importPlayer", () => {
     const updated = await store.getCustomTeam(targetId);
     const imported = updated?.roster.bench.find((p) => p.name === "Seed Preserved");
     expect(imported?.playerSeed).toBe("my-exact-seed-value");
+    expect(imported?.globalPlayerId).toBe("pl_seed_pres_check");
+    expect(typeof imported?.fingerprint).toBe("string");
   });
 
   it("blocks import when player's globalPlayerId already exists on a different team", async () => {
@@ -1201,10 +1205,11 @@ describe("importPlayer", () => {
 
     // Attempt to import into Team B — must be blocked
     const result = await store.importPlayer(teamBId, playerJson, "lineup");
-    expect(result.success).toBe(false);
-    expect(result.conflictingTeamId).toBe(teamAId);
-    expect(result.conflictingTeamName).toBe("Team A Block");
-    expect(result.alreadyOnThisTeam).toBeUndefined();
+    expect(result.status).toBe("conflict");
+    if (result.status === "conflict") {
+      expect(result.conflictingTeamId).toBe(teamAId);
+      expect(result.conflictingTeamName).toBe("Team A Block");
+    }
 
     // Team B roster must be unchanged
     const teamB = await store.getCustomTeam(teamBId);
@@ -1227,9 +1232,7 @@ describe("importPlayer", () => {
     const playerJson = exportCustomPlayer(existingPlayer);
 
     const result = await store.importPlayer(teamId, playerJson, "bench");
-    expect(result.success).toBe(false);
-    expect(result.alreadyOnThisTeam).toBe(true);
-    expect(result.conflictingTeamId).toBeUndefined();
+    expect(result.status).toBe("alreadyOnThisTeam");
 
     // Roster must be unchanged
     const after = await store.getCustomTeam(teamId);

@@ -42,7 +42,7 @@ vi.mock("@storage/saveIO", async (importOriginal) => {
 // Individual tests override importPlayer as needed.
 vi.mock("@storage/customTeamStore", () => ({
   CustomTeamStore: {
-    importPlayer: vi.fn().mockResolvedValue({ success: true }),
+    importPlayer: vi.fn().mockResolvedValue({ status: "success" }),
   },
 }));
 
@@ -639,7 +639,7 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
 
   it("shows cross-team conflict error when importPlayer returns conflictingTeamName", async () => {
     vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
-      success: false,
+      status: "conflict",
       conflictingTeamId: "ct_other",
       conflictingTeamName: "Other Team",
     });
@@ -662,8 +662,7 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
 
   it("shows already-on-this-team error when importPlayer returns alreadyOnThisTeam", async () => {
     vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
-      success: false,
-      alreadyOnThisTeam: true,
+      status: "alreadyOnThisTeam",
     });
 
     renderEditor({ team: editTeam });
@@ -683,7 +682,7 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
   });
 
   it("adds player to editor when importPlayer returns success", async () => {
-    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ success: true });
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ status: "success" });
 
     renderEditor({ team: editTeam });
 

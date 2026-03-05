@@ -858,15 +858,44 @@ describe("exportCustomPlayer — identity fields", () => {
 });
 
 describe("exportCustomTeams — identity fields per player", () => {
+  /** Reusable type for the parsed export payload */
+  type ParsedTeamsExport = {
+    payload: {
+      teams: Array<{
+        roster: {
+          lineup: Array<Record<string, unknown>>;
+          bench: Array<Record<string, unknown>>;
+          pitchers: Array<Record<string, unknown>>;
+        };
+      }>;
+    };
+  };
+
   it("preserves globalPlayerId for each player in lineup", () => {
     const player = makePlayer({ globalPlayerId: "pl_team_gid", playerSeed: "team-gid-seed" });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
-    const parsed = JSON.parse(exportCustomTeams([team])) as {
-      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
-    };
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
     expect(parsed.payload.teams[0].roster.lineup[0]["globalPlayerId"]).toBe("pl_team_gid");
+  });
+
+  it("preserves globalPlayerId for each player in bench", () => {
+    const player = makePlayer({ globalPlayerId: "pl_bench_gid", playerSeed: "bench-gid-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.bench[0]["globalPlayerId"]).toBe("pl_bench_gid");
+  });
+
+  it("preserves globalPlayerId for each player in pitchers", () => {
+    const player = makePlayer({ globalPlayerId: "pl_pitch_gid", playerSeed: "pitch-gid-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.pitchers[0]["globalPlayerId"]).toBe("pl_pitch_gid");
   });
 
   it("preserves playerSeed for each player in lineup", () => {
@@ -874,10 +903,26 @@ describe("exportCustomTeams — identity fields per player", () => {
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
-    const parsed = JSON.parse(exportCustomTeams([team])) as {
-      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
-    };
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
     expect(parsed.payload.teams[0].roster.lineup[0]["playerSeed"]).toBe("team-seed-val");
+  });
+
+  it("preserves playerSeed for each player in bench", () => {
+    const player = makePlayer({ playerSeed: "bench-seed-val" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.bench[0]["playerSeed"]).toBe("bench-seed-val");
+  });
+
+  it("preserves playerSeed for each player in pitchers", () => {
+    const player = makePlayer({ playerSeed: "pitch-seed-val" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.pitchers[0]["playerSeed"]).toBe("pitch-seed-val");
   });
 
   it("preserves fingerprint for each player in lineup", () => {
@@ -885,9 +930,25 @@ describe("exportCustomTeams — identity fields per player", () => {
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
-    const parsed = JSON.parse(exportCustomTeams([team])) as {
-      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
-    };
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
     expect(parsed.payload.teams[0].roster.lineup[0]["fingerprint"]).toBe("deadbeef");
+  });
+
+  it("preserves fingerprint for each player in bench", () => {
+    const player = makePlayer({ fingerprint: "cafebabe", playerSeed: "bench-fp-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.bench[0]["fingerprint"]).toBe("cafebabe");
+  });
+
+  it("preserves fingerprint for each player in pitchers", () => {
+    const player = makePlayer({ fingerprint: "feedface", playerSeed: "pitch-fp-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
+    expect(parsed.payload.teams[0].roster.pitchers[0]["fingerprint"]).toBe("feedface");
   });
 });

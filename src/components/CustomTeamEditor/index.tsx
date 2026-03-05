@@ -477,14 +477,14 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
             if (currentTeamId) {
               // ── Edit mode: use store API (hard block + persistence) ──────────
               const result = await CustomTeamStore.importPlayer(currentTeamId, playerJson, section);
-              if (result.conflictingTeamName) {
+              if (result.status === "conflict") {
                 dispatch({
                   type: "SET_ERROR",
                   error: `"${importedPlayer.name}" already belongs to team "${result.conflictingTeamName}". Import cancelled. Remove that player from their current team before importing here.`,
                 });
                 return;
               }
-              if (result.alreadyOnThisTeam) {
+              if (result.status === "alreadyOnThisTeam") {
                 dispatch({
                   type: "SET_ERROR",
                   error: `"${importedPlayer.name}" is already on this team.`,
