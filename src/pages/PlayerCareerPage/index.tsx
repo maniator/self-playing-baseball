@@ -53,12 +53,16 @@ const PlayerCareerPage: React.FunctionComponent = () => {
   // Show pitching tab when: loading (unknown yet), has pitching rows, or neither has rows (empty state).
   const showPitchingTab = loading || hasPitching || (!hasBatting && !hasPitching);
 
-  // Auto-switch to valid tab once data loads.
+  // Auto-switch to valid tab once data loads. Omit activeTab from deps to avoid
+  // a feedback loop — the effect only needs to fire when loading/availability changes.
   React.useEffect(() => {
     if (loading) return;
-    if (activeTab === "batting" && !showBattingTab) setActiveTab("pitching");
-    if (activeTab === "pitching" && !showPitchingTab) setActiveTab("batting");
-  }, [loading, showBattingTab, showPitchingTab, activeTab]);
+    setActiveTab((current) => {
+      if (current === "batting" && !showBattingTab) return "pitching";
+      if (current === "pitching" && !showPitchingTab) return "batting";
+      return current;
+    });
+  }, [loading, showBattingTab, showPitchingTab]);
 
   return (
     <PlayerCareerContainer data-testid="player-career-page">

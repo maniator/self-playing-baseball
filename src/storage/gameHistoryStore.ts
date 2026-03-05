@@ -638,7 +638,10 @@ function buildStore(getDbFn: GetDb) {
     const eraCandidates = rows.filter((r) => r.outsPitched >= minOuts);
     const eraLeader = pickPitchingLeader(
       eraCandidates,
-      // ERA formula: (earnedRuns * 27) / outsPitched — mirrors computeERA in computePitcherGameStats.ts
+      // ERA formula: (earnedRuns * 27) / outsPitched — this is equivalent to the
+      // standard baseball formula (earnedRuns * 9) / IP because 3 outs = 1 IP.
+      // Using outs directly avoids a division then multiplication by 3.
+      // Mirrors computeERA in computePitcherGameStats.ts.
       (r) => (r.outsPitched === 0 ? Infinity : (r.earnedRuns * 27) / r.outsPitched),
       true, // lower ERA is better
     );

@@ -55,6 +55,11 @@ import {
   Th,
 } from "./styles";
 
+/** Converts a raw outs count to an innings-pitched display string (e.g. 30 → "10.0"). */
+function formatOutsAsIP(outs: number): string {
+  return (outs / 3).toFixed(1);
+}
+
 type BattingRow = PlayerGameStatDoc["batting"] & {
   playerKey: string;
   nameAtGameTime: string;
@@ -502,7 +507,12 @@ const CareerStatsPage: React.FunctionComponent = () => {
                       navigate(`/players/${avgLeader.playerKey}?team=${selectedTeamId}`)
                     }
                   >
-                    <LeaderStatLabel>AVG (min {MIN_AB_FOR_AVG_LEADER} AB)</LeaderStatLabel>
+                    <LeaderStatLabel>
+                      AVG{" "}
+                      <span aria-label={`minimum ${MIN_AB_FOR_AVG_LEADER} at-bats required`}>
+                        (min {MIN_AB_FOR_AVG_LEADER} AB)
+                      </span>
+                    </LeaderStatLabel>
                     <LeaderValue>{avgLeader.value.toFixed(3).replace(/^0/, "")}</LeaderValue>
                     <LeaderName>{avgLeader.nameAtGameTime}</LeaderName>
                   </LeaderCard>
@@ -541,7 +551,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     }
                   >
                     <LeaderStatLabel>
-                      ERA (min {(MIN_OUTS_FOR_ERA_LEADER / 3).toFixed(1)} IP)
+                      ERA (min {formatOutsAsIP(MIN_OUTS_FOR_ERA_LEADER)} IP)
                     </LeaderStatLabel>
                     <LeaderValue>{eraLeader.value.toFixed(2)}</LeaderValue>
                     <LeaderName>{eraLeader.nameAtGameTime}</LeaderName>
