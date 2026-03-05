@@ -53,6 +53,57 @@ describe("playerOut", () => {
     expect(next.batterIndex[0]).toBe(3);
   });
 
+  it("does NOT increment outsPitched or battersFaced when batterCompleted=false (caught stealing)", () => {
+    const { log } = makeLogs();
+    const pitcherEntry = {
+      teamIdx: 1 as 0 | 1,
+      pitcherId: "p1",
+      inningEntered: 1,
+      halfEntered: 0 as 0 | 1,
+      scoreOnEntry: [0, 0] as [number, number],
+      outsPitched: 5,
+      battersFaced: 7,
+      hitsAllowed: 2,
+      walksAllowed: 1,
+      strikeoutsRecorded: 2,
+      runsAllowed: 0,
+      homersAllowed: 0,
+    };
+    // atBat=0 → away batting → home pitching (teamIdx=1)
+    const next = playerOut(
+      makeState({ atBat: 0, pitcherGameLog: [[], [pitcherEntry]] }),
+      log,
+      false,
+    );
+    expect(next.pitcherGameLog![1][0].outsPitched).toBe(5); // unchanged — runner out, not batter out
+    expect(next.pitcherGameLog![1][0].battersFaced).toBe(7); // unchanged
+  });
+
+  it("DOES increment outsPitched and battersFaced when batterCompleted=true (strikeout)", () => {
+    const { log } = makeLogs();
+    const pitcherEntry = {
+      teamIdx: 1 as 0 | 1,
+      pitcherId: "p1",
+      inningEntered: 1,
+      halfEntered: 0 as 0 | 1,
+      scoreOnEntry: [0, 0] as [number, number],
+      outsPitched: 5,
+      battersFaced: 7,
+      hitsAllowed: 2,
+      walksAllowed: 1,
+      strikeoutsRecorded: 2,
+      runsAllowed: 0,
+      homersAllowed: 0,
+    };
+    const next = playerOut(
+      makeState({ atBat: 0, pitcherGameLog: [[], [pitcherEntry]] }),
+      log,
+      true,
+    );
+    expect(next.pitcherGameLog![1][0].outsPitched).toBe(6); // incremented — batter's PA is done
+    expect(next.pitcherGameLog![1][0].battersFaced).toBe(8); // incremented
+  });
+
   it("batting order does NOT reset between half-innings", () => {
     const { log } = makeLogs();
     const next = playerOut(

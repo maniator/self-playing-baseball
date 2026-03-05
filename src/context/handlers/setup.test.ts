@@ -124,8 +124,8 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     ]);
   });
 
-  it("does NOT set lineupPositions when no player has a position (MLB path)", () => {
-    // MLB playerOverrides have no .position — all entries would be empty strings.
+  it("does NOT set lineupPositions when no player has a position (all empty strings)", () => {
+    // playerOverrides with no .position would produce all empty strings.
     // The fix: keep state.lineupPositions unchanged so UI falls back to roster lookup.
     const existing: [string[], string[]] = [
       ["SS", "CF"],
@@ -140,7 +140,7 @@ describe("handleSetupAction — setTeams (object payload)", () => {
           ["p1", "p2"],
           ["p3", "p4"],
         ] as [string[], string[]],
-        // No position fields — mimics stock MLB playerOverrides
+        // No position fields — all computed positions would be empty strings
         playerOverrides: [{ p1: { nickname: "Alice" } }, { p3: { nickname: "Bob" } }] as never,
       },
     });
@@ -148,7 +148,7 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     expect(next?.lineupPositions).toEqual(existing);
   });
 
-  it("lineupPositions stays [[], []] (initial) when MLB playerOverrides have no positions", () => {
+  it("lineupPositions stays [[], []] (initial) when playerOverrides have no positions", () => {
     const state = makeState(); // lineupPositions defaults to [[], []]
     const next = handleSetupAction(state, {
       type: "setTeams",
@@ -240,5 +240,56 @@ describe("handleSetupAction — setTeams (startingPitcherIdx)", () => {
     });
     // No rosterPitchers provided, so activePitcherIdx stays at state default
     expect(next?.activePitcherIdx).toEqual([0, 0]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// setTeams — pitcher log initialization correctness
+// ---------------------------------------------------------------------------
+
+describe("handleSetupAction — pitcher log initialization", () => {
+  it("initializes pitcher log entry using activePitcherIdx (not re-deriving startingIdx)", () => {
+    // When rosterPitchers is provided but startingPitcherIdx is omitted, startingIdx must
+    // default to 0 (via clamped newActivePitcherIdx), not blow up or use stale state.
+    const state = makeState({ activePitcherIdx: [1, 1] }); // stale from previous game
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        rosterPitchers: [
+          ["sp1", "rp1"],
+          ["sp2", "rp2"],
+        ],
+        // startingPitcherIdx intentionally omitted → should default to 0
+      },
+    });
+    // activePitcherIdx is reset to [0, 0] since startingPitcherIdx is absent.
+    expect(next?.activePitcherIdx).toEqual([0, 0]);
+    // The pitcher log entries must use pitcherId from index 0 for both teams.
+    const awayLog = next?.pitcherGameLog?.[0] ?? [];
+    const homeLog = next?.pitcherGameLog?.[1] ?? [];
+    expect(awayLog).toHaveLength(1);
+    expect(homeLog).toHaveLength(1);
+    expect(awayLog[0].pitcherId).toBe("sp1"); // index 0 of away roster
+    expect(homeLog[0].pitcherId).toBe("sp2"); // index 0 of home roster
+  });
+
+  it("records correct halfEntered for each team's starting pitcher", () => {
+    // Away pitcher (teamIdx=0) pitches in the BOTTOM half (home bats, atBat=1).
+    // Home pitcher (teamIdx=1) pitches in the TOP half (away bats, atBat=0).
+    // Both must be recorded correctly regardless of state.atBat at setup time.
+    const state = makeState({ atBat: 0 as 0 | 1 }); // atBat=0 at game start
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        rosterPitchers: [["away_starter"], ["home_starter"]],
+      },
+    });
+    const awayEntry = next?.pitcherGameLog?.[0]?.[0];
+    const homeEntry = next?.pitcherGameLog?.[1]?.[0];
+    // Away pitcher pitches in the bottom (atBat=1); home pitcher pitches in the top (atBat=0).
+    expect(awayEntry?.halfEntered).toBe(1);
+    expect(homeEntry?.halfEntered).toBe(0);
   });
 });

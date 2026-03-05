@@ -144,8 +144,6 @@ const makeAutoSaveSlot = () => ({
     managerMode: true,
     homeTeam: "Yankees",
     awayTeam: "Mets",
-    playerOverrides: [{}, {}] as [Record<string, unknown>, Record<string, unknown>],
-    lineupOrder: [[], []] as [string[], string[]],
   },
   stateSnapshot: {
     state: makeState({ inning: 5, teams: ["Mets", "Yankees"] as [string, string] }),
@@ -699,8 +697,6 @@ const makeModalSaveSlot = (): SaveDoc => ({
     managerMode: false,
     homeTeam: "Home",
     awayTeam: "Away",
-    playerOverrides: [{}, {}] as [Record<string, unknown>, Record<string, unknown>],
-    lineupOrder: [[], []] as [string[], string[]],
   },
   stateSnapshot: {
     state: makeState({ inning: 4, teams: ["Away", "Home"] as [string, string] }),

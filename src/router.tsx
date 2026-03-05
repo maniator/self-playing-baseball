@@ -8,9 +8,11 @@ import HomeScreen from "@components/HomeScreen";
 import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import RootLayout from "@components/RootLayout";
 
+const CareerStatsPage = React.lazy(() => import("./pages/CareerStatsPage"));
 const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
 const GamePage = React.lazy(() => import("./pages/GamePage"));
 const HelpPage = React.lazy(() => import("./pages/HelpPage"));
+const PlayerCareerPage = React.lazy(() => import("./pages/PlayerCareerPage"));
 const SavesPage = React.lazy(() => import("./pages/SavesPage"));
 
 /** Route element for `/` — reads navigation callbacks from AppShell outlet context. */
@@ -23,6 +25,7 @@ function HomeRoute() {
       onManageTeams={ctx.onManageTeams}
       onResumeCurrent={ctx.hasActiveSession ? ctx.onResumeCurrent : undefined}
       onHelp={ctx.onHelp}
+      onCareerStats={ctx.onCareerStats}
     />
   );
 }
@@ -104,6 +107,22 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={null}>
                 <ExhibitionSetupPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "stats",
+            element: (
+              <React.Suspense fallback={null}>
+                <CareerStatsPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "players/:playerKey",
+            element: (
+              <React.Suspense fallback={null}>
+                <PlayerCareerPage />
               </React.Suspense>
             ),
           },

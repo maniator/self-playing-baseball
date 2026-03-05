@@ -32,11 +32,9 @@ test.describe("Routing — exhibition setup page", () => {
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("Exhibition Setup shows custom-teams-only layout (no MLB tab)", async ({ page }) => {
+  test("Exhibition Setup shows custom-teams layout with Play Ball button", async ({ page }) => {
     await page.getByTestId("home-new-game-button").click();
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    // No MLB tab — custom teams are the only option
-    await expect(page.getByTestId("new-game-mlb-teams-tab")).not.toBeVisible();
     await expect(page.getByTestId("play-ball-button")).toBeVisible();
   });
 

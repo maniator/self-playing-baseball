@@ -22,6 +22,7 @@ export type AppShellOutletContext = {
   onManageTeams: () => void;
   onResumeCurrent: () => void;
   onHelp: () => void;
+  onCareerStats: () => void;
   onBackToHome: () => void;
   hasActiveSession: boolean;
 };
@@ -94,6 +95,10 @@ const AppShell: React.FunctionComponent = () => {
     navigate("/help");
   }, [navigate]);
 
+  const handleCareerStats = React.useCallback(() => {
+    navigate("/stats");
+  }, [navigate]);
+
   /** Called from /exhibition/new — navigates to /game with the setup as location state. */
   const handleStartFromExhibition = React.useCallback(
     (setup: ExhibitionGameSetup) => {
@@ -112,6 +117,7 @@ const AppShell: React.FunctionComponent = () => {
       onManageTeams: handleManageTeams,
       onResumeCurrent: handleResumeCurrent,
       onHelp: handleHelp,
+      onCareerStats: handleCareerStats,
       onBackToHome: handleBackToHome,
       hasActiveSession,
     }),
@@ -124,6 +130,7 @@ const AppShell: React.FunctionComponent = () => {
       handleManageTeams,
       handleResumeCurrent,
       handleHelp,
+      handleCareerStats,
       handleBackToHome,
       hasActiveSession,
     ],

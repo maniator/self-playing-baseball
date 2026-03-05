@@ -1,6 +1,12 @@
 import { generateGameInstanceId } from "@storage/generateId";
 
-import type { PlayLogEntry, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "./index";
+import type {
+  PitcherLogEntry,
+  PlayLogEntry,
+  ResolvedPlayerMods,
+  State,
+  TeamCustomPlayerOverrides,
+} from "./index";
 import { buildResolvedMods } from "./resolvePlayerMods";
 
 /** Fallback team names used when a very old save is missing the `teams` field. */
@@ -52,6 +58,7 @@ export const createFreshGameState = (
     Record<string, ResolvedPlayerMods>,
     Record<string, ResolvedPlayerMods>,
   ],
+  pitcherGameLog: [[], []] as [PitcherLogEntry[], PitcherLogEntry[]],
 });
 
 /**
@@ -104,5 +111,6 @@ export const backfillRestoredState = (restored: State): State => {
       base.resolvedMods && Object.keys(base.resolvedMods[0]).length > 0
         ? base.resolvedMods
         : [buildResolvedMods(base.playerOverrides[0]), buildResolvedMods(base.playerOverrides[1])],
+    pitcherGameLog: base.pitcherGameLog ?? [[], []],
   };
 };

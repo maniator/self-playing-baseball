@@ -4,6 +4,7 @@ import getRandomInt from "@utils/getRandomInt";
 import { checkWalkoff } from "./gameOver";
 import { addInningRuns, hitBall } from "./hitBall";
 import { DecisionType, OnePitchModifier, State, Strategy } from "./index";
+import { updateActivePitcherLog } from "./pitcherLog";
 import { playerOut } from "./playerOut";
 
 export const buntAttempt = (
@@ -47,6 +48,16 @@ export const buntAttempt = (
       // lead runner on 2nd is out; runner on 3rd scores (ID drops)
     }
     // batter goes to 1st — ID unknown here (null)
+    // Track pitcher: runs scored only. battersFaced is incremented by playerOut(…, true) below.
+    const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+    const pitcherLogAfterFC = updateActivePitcherLog(
+      state.pitcherGameLog ?? [[], []],
+      pitchingTeam,
+      (entry) => ({
+        ...entry,
+        runsAllowed: entry.runsAllowed + runsScored,
+      }),
+    );
     const afterFC = addInningRuns(
       {
         ...state,
@@ -59,6 +70,7 @@ export const buntAttempt = (
         balls: 0,
         hitType: undefined,
         pitchKey: (state.pitchKey ?? 0) + 1,
+        pitcherGameLog: pitcherLogAfterFC,
       },
       runsScored,
     );
@@ -83,6 +95,13 @@ export const buntAttempt = (
     if (oldBase[1]) sacNewRunnerIds[2] = sacOldIds[1]; // 2nd → 3rd
     if (oldBase[0]) sacNewRunnerIds[1] = sacOldIds[0]; // 1st → 2nd
     // runner on 3rd scores — ID drops; batter out — no ID placed
+    // Track pitcher: runs scored for sac-bunt plays.
+    const pitchingTeamSac = (1 - (state.atBat as number)) as 0 | 1;
+    const pitcherLogAfterSac = updateActivePitcherLog(
+      state.pitcherGameLog ?? [[], []],
+      pitchingTeamSac,
+      (entry) => ({ ...entry, runsAllowed: entry.runsAllowed + runsScored }),
+    );
     const afterBunt = addInningRuns(
       {
         ...state,
@@ -96,6 +115,7 @@ export const buntAttempt = (
         balls: 0,
         hitType: undefined,
         pitchKey: (state.pitchKey ?? 0) + 1,
+        pitcherGameLog: pitcherLogAfterSac,
       },
       runsScored,
     );

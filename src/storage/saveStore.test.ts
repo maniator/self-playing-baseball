@@ -19,8 +19,6 @@ const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
     managerMode: false,
     homeTeam: "Yankees",
     awayTeam: "Mets",
-    playerOverrides: [{}, {}],
-    lineupOrder: [[], []],
   },
   ...overrides,
 });
@@ -36,8 +34,6 @@ const makeCustomFormatSetup = (overrides: Partial<GameSetup> = {}): GameSetup =>
     managerMode: false,
     homeTeam: "ct_rt_home",
     awayTeam: "ct_rt_away",
-    playerOverrides: [{}, {}],
-    lineupOrder: [[], []],
   },
   ...overrides,
 });
@@ -409,8 +405,6 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
         managerMode: false,
         homeTeam: "ct_norm_home",
         awayTeam: "ct_norm_away",
-        playerOverrides: [{}, {}],
-        lineupOrder: [[], []],
       },
     };
     const events: unknown[] = [];
@@ -453,8 +447,6 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
         managerMode: false,
         homeTeam: "custom:ct_c_home",
         awayTeam: "custom:ct_c_away",
-        playerOverrides: [{}, {}],
-        lineupOrder: [[], []],
       },
     };
     const events: unknown[] = [];
@@ -722,8 +714,6 @@ describe("importRxdbSave — missing custom team rejection", () => {
         managerMode: false,
         homeTeam: "Custom Home",
         awayTeam: "Away Team",
-        playerOverrides: [{}, {}],
-        lineupOrder: [[], []],
       },
       schemaVersion: 1,
     };
@@ -774,17 +764,17 @@ describe("importRxdbSave — missing custom team rejection", () => {
     await expect(store.importRxdbSave(json)).resolves.not.toThrow();
   });
 
-  it("throws when team IDs use the legacy MLB format (non-custom: prefix)", async () => {
+  it("throws when team IDs use the legacy format (non-custom: prefix)", async () => {
     const { json } = makeCustomSave("New York Yankees", "New York Mets");
     await expect(store.importRxdbSave(json)).rejects.toThrow(
-      "Cannot import save: this save was created with the old MLB team format",
+      "Cannot import save: this save uses a legacy team format",
     );
   });
 
-  it("throws when team IDs use legacy numeric MLB team IDs", async () => {
+  it("throws when team IDs use legacy numeric team IDs", async () => {
     const { json } = makeCustomSave("147", "121");
     await expect(store.importRxdbSave(json)).rejects.toThrow(
-      "Cannot import save: this save was created with the old MLB team format",
+      "Cannot import save: this save uses a legacy team format",
     );
   });
 

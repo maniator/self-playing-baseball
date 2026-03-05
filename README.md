@@ -45,10 +45,9 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 - **Live batting stats panel** — AB, H, HR, RBI, AVG, OBP, and SLG for every batter in both lineups, updated in real time.
 - **Realistic game logic** — four pitch types (fastball, curveball, slider, changeup), ground-ball double plays, walk-off wins, extra-inning tiebreak runners, and a home-team "no need to bat" rule.
 - **Pre-game player customisation** — before the first pitch:
-  - Enter custom team names, or let the game auto-fetch real MLB rosters from the MLB Stats API (cached in IndexedDB).
-  - Upload a roster CSV to give each batter a real name.
+  - Create custom teams with names, rosters, and per-player stat settings.
   - Drag-and-drop batting order reordering.
-  - Per-player stat overrides for Contact, Power, and Speed.
+  - Per-player stat settings for Contact, Power, Speed, and pitching attributes.
 - **Custom team builder** — create, edit, and save your own teams with full roster management:
   - Lineup (9 players), bench (substitutes), and pitchers — all sections support **drag-and-drop reordering**.
   - Drag a lineup player onto the bench (or vice versa) to swap them between sections without copy-paste.
@@ -67,7 +66,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Count-based swing/take choices
 - **Browser notifications** — optional notifications alert you when a Manager decision is ready, even when the tab is in the background.
 - **10-second auto-skip** — decisions auto-skip with a countdown bar if you don't act in time.
-- **RxDB persistence** — saves, game events, and MLB team data are all stored locally in IndexedDB via [RxDB](https://rxdb.info). No server required. Auto-save resumes your last game on reload.
+- **RxDB persistence** — saves, game events, and custom team data are all stored locally in IndexedDB via [RxDB](https://rxdb.info). No server required. Auto-save resumes your last game on reload.
 - **Save management** — save named game slots, load previous games, export as JSON for backup/sharing, and import from a file.
 - **Volume controls** — independent sliders and mute buttons for voice announcements and alert chimes.
 

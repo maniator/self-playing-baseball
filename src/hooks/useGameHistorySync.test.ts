@@ -66,6 +66,7 @@ describe("useGameHistorySync", () => {
         "save_1",
         expect.objectContaining({ committedBySaveId: "save_1" }),
         expect.any(Array),
+        expect.any(Array),
       );
     });
 
@@ -80,6 +81,7 @@ describe("useGameHistorySync", () => {
       expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalledWith(
         "game_abc",
         expect.objectContaining({ committedBySaveId: "save_1" }),
+        expect.any(Array),
         expect.any(Array),
       );
     });

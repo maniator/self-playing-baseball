@@ -226,11 +226,11 @@ function buildStore(getDbFn: GetDb) {
       const canonicalHomeId = toCanonical(header.homeTeamId);
       const canonicalAwayId = toCanonical(header.awayTeamId);
 
-      // Reject saves created with the old MLB team format (no custom: prefix after normalization).
+      // Reject saves that use a legacy team format (no custom: prefix after normalization).
       for (const field of [canonicalHomeId, canonicalAwayId]) {
         if (!field.startsWith("custom:")) {
           throw new Error(
-            "Cannot import save: this save was created with the old MLB team format, which is no longer supported. Start a new game using your custom teams.",
+            "Cannot import save: this save uses a legacy team format that is no longer supported. Start a new game using your custom teams.",
           );
         }
       }

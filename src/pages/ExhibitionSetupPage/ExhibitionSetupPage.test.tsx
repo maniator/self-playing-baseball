@@ -67,11 +67,6 @@ describe("ExhibitionSetupPage", () => {
     expect(screen.getByTestId("exhibition-setup-page")).toBeInTheDocument();
   });
 
-  it("does not render an MLB Teams tab", () => {
-    renderPage();
-    expect(screen.queryByTestId("new-game-mlb-teams-tab")).not.toBeInTheDocument();
-  });
-
   it("renders the Play Ball button", () => {
     renderPage();
     expect(screen.getByTestId("play-ball-button")).toBeInTheDocument();

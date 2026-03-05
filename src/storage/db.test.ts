@@ -290,7 +290,7 @@ describe("schema version and reset flag", () => {
  *
  * Subsequent schema bumps:
  *   v0 → v1: added explicit sub-property definitions (identity migration)
- *   v1 → v2: removed matchupMode (MLB-only field)
+ *   v1 → v2: removed matchupMode (legacy field)
  *
  * This test verifies that:
  *   1. A v0 database with existing saves can be reopened with the v2 code.
@@ -478,7 +478,7 @@ describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
     await v1Db.close();
   });
 
-  it("schema migration: saves v1 → v2 drops matchupMode field", async () => {
+  it("schema migration: saves v1 → v2 drops legacy matchupMode field", async () => {
     // Verifies that saves created at schema v1 (with matchupMode) have
     // matchupMode stripped when migrated to v2.
     const v1SavesSchema: RxJsonSchema<Record<string, unknown>> = {
@@ -550,7 +550,7 @@ describe("schema migration: v0 → v2 (upgrade-path QA)", () => {
     expect(doc?.name).toBe("V1 Save");
     expect(doc?.homeTeamId).toBe("Home Team");
     expect(doc?.seed).toBe("seed1");
-    // matchupMode must have been stripped by the v2 migration.
+    // matchupMode must have been stripped by the v2 migration (legacy field cleanup).
     const raw = doc?.toJSON() as Record<string, unknown>;
     expect(raw["matchupMode"]).toBeUndefined();
 

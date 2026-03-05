@@ -21,7 +21,7 @@ import { useExhibitionSetup } from "./useExhibitionSetup";
 
 /**
  * Full-page Exhibition Setup — the primary "New Game" entry point.
- * Custom-teams-only: no MLB tab.
+ * Custom-teams-only entry point.
  */
 const ExhibitionSetupPage: React.FunctionComponent = () => {
   const navigate = useNavigate();

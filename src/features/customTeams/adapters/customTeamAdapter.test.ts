@@ -185,7 +185,7 @@ describe("customTeamToAbbreviation", () => {
     expect(customTeamToAbbreviation("custom:ct_abc", teams)).toBe("EAG");
   });
 
-  it("returns undefined for a non-custom (MLB-style) team string", () => {
+  it("returns undefined for a non-custom (unrecognized) team string", () => {
     expect(customTeamToAbbreviation("New York Yankees", [])).toBeUndefined();
   });
 
@@ -195,7 +195,7 @@ describe("customTeamToAbbreviation", () => {
 });
 
 describe("resolveTeamLabel", () => {
-  it("returns 'Unknown Team' for non-custom (legacy MLB) team strings", () => {
+  it("returns 'Unknown Team' for non-custom (unrecognized) team strings", () => {
     expect(resolveTeamLabel("New York Yankees", [])).toBe("Unknown Team");
   });
 

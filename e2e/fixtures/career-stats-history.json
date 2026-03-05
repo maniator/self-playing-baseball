@@ -1,0 +1,139 @@
+{
+  "type": "gameHistory",
+  "formatVersion": 2,
+  "exportedAt": "2023-11-14T21:33:20.000Z",
+  "payload": {
+    "games": [
+      {
+        "id": "e2e_career_game_001",
+        "playedAt": 1700000000000,
+        "seed": "e2ecareer",
+        "rngState": null,
+        "homeTeamId": "e2e_home_team",
+        "awayTeamId": "e2e_away_team",
+        "homeScore": 5,
+        "awayScore": 3,
+        "innings": 9,
+        "schemaVersion": 1
+      }
+    ],
+    "playerGameStats": [
+      {
+        "id": "e2e_career_game_001:e2e_home_team:e2e_batter_slugger",
+        "gameId": "e2e_career_game_001",
+        "teamId": "e2e_home_team",
+        "opponentTeamId": "e2e_away_team",
+        "playerKey": "e2e_batter_slugger",
+        "playerId": "batter_slugger",
+        "nameAtGameTime": "J. Slugger",
+        "role": "batter",
+        "batting": {
+          "atBats": 4,
+          "hits": 2,
+          "walks": 1,
+          "strikeouts": 1,
+          "rbi": 2,
+          "singles": 0,
+          "doubles": 1,
+          "triples": 0,
+          "homers": 1
+        },
+        "createdAt": 1700000001000,
+        "schemaVersion": 1
+      },
+      {
+        "id": "e2e_career_game_001:e2e_home_team:e2e_batter_contact",
+        "gameId": "e2e_career_game_001",
+        "teamId": "e2e_home_team",
+        "opponentTeamId": "e2e_away_team",
+        "playerKey": "e2e_batter_contact",
+        "playerId": "batter_contact",
+        "nameAtGameTime": "M. Contact",
+        "role": "batter",
+        "batting": {
+          "atBats": 4,
+          "hits": 3,
+          "walks": 0,
+          "strikeouts": 0,
+          "rbi": 1,
+          "singles": 3,
+          "doubles": 0,
+          "triples": 0,
+          "homers": 0
+        },
+        "createdAt": 1700000001000,
+        "schemaVersion": 1
+      }
+    ],
+    "pitcherGameStats": [
+      {
+        "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_ace",
+        "gameId": "e2e_career_game_001",
+        "teamId": "e2e_home_team",
+        "opponentTeamId": "e2e_away_team",
+        "pitcherKey": "e2e_pitcher_ace",
+        "pitcherId": "pitcher_ace",
+        "nameAtGameTime": "A. Ace",
+        "outsPitched": 18,
+        "battersFaced": 22,
+        "hitsAllowed": 5,
+        "walksAllowed": 2,
+        "strikeoutsRecorded": 7,
+        "homersAllowed": 1,
+        "runsAllowed": 3,
+        "earnedRuns": 3,
+        "saves": 0,
+        "holds": 0,
+        "blownSaves": 0,
+        "createdAt": 1700000001000,
+        "schemaVersion": 1
+      },
+      {
+        "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_setup",
+        "gameId": "e2e_career_game_001",
+        "teamId": "e2e_home_team",
+        "opponentTeamId": "e2e_away_team",
+        "pitcherKey": "e2e_pitcher_setup",
+        "pitcherId": "pitcher_setup",
+        "nameAtGameTime": "S. Setup",
+        "outsPitched": 6,
+        "battersFaced": 6,
+        "hitsAllowed": 0,
+        "walksAllowed": 0,
+        "strikeoutsRecorded": 3,
+        "homersAllowed": 0,
+        "runsAllowed": 0,
+        "earnedRuns": 0,
+        "saves": 0,
+        "holds": 1,
+        "blownSaves": 0,
+        "createdAt": 1700000001000,
+        "schemaVersion": 1
+      },
+      {
+        "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_closer",
+        "gameId": "e2e_career_game_001",
+        "teamId": "e2e_home_team",
+        "opponentTeamId": "e2e_away_team",
+        "pitcherKey": "e2e_pitcher_closer",
+        "pitcherId": "pitcher_closer",
+        "nameAtGameTime": "C. Closer",
+        "outsPitched": 3,
+        "battersFaced": 3,
+        "hitsAllowed": 0,
+        "walksAllowed": 0,
+        "strikeoutsRecorded": 2,
+        "homersAllowed": 0,
+        "runsAllowed": 0,
+        "earnedRuns": 0,
+        "saves": 1,
+        "holds": 0,
+        "blownSaves": 0,
+        "createdAt": 1700000001000,
+        "schemaVersion": 1
+      }
+    ],
+    "requiredTeamIds": []
+  },
+  "sig": "2a96d302"
+}

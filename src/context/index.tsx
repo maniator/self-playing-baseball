@@ -36,6 +36,33 @@ export type StrikeoutEntry = {
   playerId?: string;
 };
 
+/**
+ * One entry per pitcher-appearance in the current game.
+ * Tracked incrementally in state and used to compute PitcherGameStatDoc rows at FINAL.
+ *
+ * `teamIdx` is the PITCHING team (fielding), not the batting team.
+ * The corresponding fielding team is: `1 - state.atBat` when the entry is updated.
+ */
+export type PitcherLogEntry = {
+  /** Team index for the PITCHING team (0 = away pitching, 1 = home pitching). */
+  teamIdx: 0 | 1;
+  /** Roster player ID of this pitcher. */
+  pitcherId: string;
+  /** Inning when this pitcher entered. */
+  inningEntered: number;
+  /** Half-inning when this pitcher entered (0=top/away batting, 1=bottom/home batting). */
+  halfEntered: 0 | 1;
+  /** Score [away, home] when this pitcher entered — used to compute SV/HLD/BS. */
+  scoreOnEntry: [number, number];
+  outsPitched: number;
+  battersFaced: number;
+  hitsAllowed: number;
+  walksAllowed: number;
+  strikeoutsRecorded: number;
+  runsAllowed: number;
+  homersAllowed: number;
+};
+
 export const GameContext = React.createContext<ContextValue | undefined>(undefined);
 
 export const useGameContext = (): ContextValue => {
@@ -181,6 +208,14 @@ export interface State {
    * [away, home]
    */
   resolvedMods: [Record<string, ResolvedPlayerMods>, Record<string, ResolvedPlayerMods>];
+  /**
+   * Per-game pitcher appearance log. Each entry accumulates stats for one pitcher appearance.
+   * Indexed by [teamIdx][entryIndex] where teamIdx is the PITCHING team.
+   * Updated incrementally during play; used to build PitcherGameStatDoc rows at FINAL.
+   * Outer array: [away team pitchers (index 0), home team pitchers (index 1)].
+   * Falls back to [[],[]] for older saves (backfilled by backfillRestoredState).
+   */
+  pitcherGameLog: [PitcherLogEntry[], PitcherLogEntry[]];
 }
 
 export interface ContextValue extends State {

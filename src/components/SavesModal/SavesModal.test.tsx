@@ -25,8 +25,6 @@ const mockSetup: GameSaveSetup = {
   managerMode: false,
   homeTeam: "Home",
   awayTeam: "Away",
-  playerOverrides: [{}, {}],
-  lineupOrder: [[], []],
 };
 
 const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({

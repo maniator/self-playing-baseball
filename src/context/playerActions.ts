@@ -5,6 +5,7 @@ import getRandomInt from "@utils/getRandomInt";
 
 import { hitBall } from "./hitBall";
 import { OnePitchModifier, State, Strategy } from "./index";
+import { updateActivePitcherLog } from "./pitcherLog";
 import { playerOut } from "./playerOut";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
@@ -29,7 +30,17 @@ export const playerStrike = (
         ? msg("swing and a miss — strike three! He's out!")
         : msg("called strike three! He's out!"),
     );
-    return playerOut({ ...state, pitchKey }, log, true);
+    // Track strikeout for the active pitcher before recording the out.
+    const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+    const stateWithK = {
+      ...state,
+      pitcherGameLog: updateActivePitcherLog(
+        state.pitcherGameLog ?? [[], []],
+        pitchingTeam,
+        (entry) => ({ ...entry, strikeoutsRecorded: entry.strikeoutsRecorded + 1 }),
+      ),
+    };
+    return playerOut({ ...stateWithK, pitchKey }, log, true);
   }
 
   if (foul) {

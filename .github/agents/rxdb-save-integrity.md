@@ -24,7 +24,7 @@ You are a data integrity and persistence expert for `maniator/self-playing-baseb
 |---|---|
 | `saves` | One header doc per save (`SaveDoc`) — setup, `progressIdx`, `stateSnapshot`. **Current schema version: 1.** |
 | `events` | Append-only event log (`EventDoc`) — one doc per action, keyed `${saveId}:${idx}` |
-| `teams` | MLB team cache (`TeamDoc`) — upserted/deleted per numeric MLB ID |
+| `teams` | Legacy (removed — was MLB team cache). No longer a collection. |
 
 - `SaveStore` is a singleton backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))`.
 - `_createTestDb` requires `fake-indexeddb/auto` imported at the top of the test file.

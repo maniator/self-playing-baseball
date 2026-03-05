@@ -1,0 +1,86 @@
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2025-01-01T00:00:00.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_e2e_career",
+        "schemaVersion": 1,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z",
+        "name": "E2E Career Team",
+        "abbreviation": "E2E",
+        "city": "E2E City",
+        "source": "custom",
+        "teamSeed": "seed_e2e_career_team",
+        "metadata": {
+          "archived": false
+        },
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "e2e_batter_slugger",
+              "name": "J. Slugger",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 75,
+                "speed": 60
+              },
+              "position": "LF",
+              "handedness": "R",
+              "playerSeed": "seed_e2e_slugger",
+              "sig": "2cf78055",
+              "fingerprint": "2cf78055",
+              "globalPlayerId": "e2e_batter_slugger"
+            },
+            {
+              "id": "e2e_batter_contact",
+              "name": "M. Contact",
+              "role": "batter",
+              "batting": {
+                "contact": 80,
+                "power": 55,
+                "speed": 70
+              },
+              "position": "CF",
+              "handedness": "L",
+              "playerSeed": "seed_e2e_contact",
+              "sig": "f91ad496",
+              "fingerprint": "f91ad496",
+              "globalPlayerId": "e2e_batter_contact"
+            }
+          ],
+          "bench": [],
+          "pitchers": [
+            {
+              "id": "e2e_pitcher_career_p",
+              "name": "P. Pitcher",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 20,
+                "speed": 20
+              },
+              "pitching": {
+                "velocity": 65,
+                "control": 65,
+                "movement": 55
+              },
+              "position": "SP",
+              "handedness": "R",
+              "pitchingRole": "SP",
+              "playerSeed": "seed_e2e_career_p",
+              "sig": "aada29e6",
+              "fingerprint": "aada29e6"
+            }
+          ]
+        },
+        "fingerprint": "3571f09b"
+      }
+    ]
+  },
+  "sig": "21aff57f"
+}

@@ -1,5 +1,40 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 import path from "path";
+
+/**
+ * Speed value that effectively pauses autoplay (9 999 999 ms/pitch).
+ * Set via `page.addInitScript` before loading a fixture to prevent rapid
+ * game re-renders from detaching UI elements during E2E test setup flows.
+ */
+export const EFFECTIVELY_PAUSED_SPEED = "9999999";
+
+/**
+ * Clicks a locator using dispatchEvent inside a retry loop until `assertion`
+ * passes.  Pass a `guard` predicate to skip the click when it is not needed
+ * (e.g. the target state is already reached).
+ *
+ * This is needed when the click target can cycle between detach/reattach
+ * during React re-renders on slow WebKit viewports — a direct .click() would
+ * exceed Playwright's 90 s actionability timeout in those conditions.
+ */
+async function dispatchClickUntil(
+  locator: Locator,
+  assertion: () => Promise<void>,
+  options?: { guard?: () => Promise<boolean>; timeout?: number },
+): Promise<void> {
+  const timeout = options?.timeout ?? 30_000;
+  await expect(async () => {
+    const shouldClick = options?.guard ? await options.guard() : true;
+    if (shouldClick) {
+      try {
+        await locator.dispatchEvent("click", {}, { timeout: 2_000 });
+      } catch {
+        // Element was mid-detach — the outer retry will try again.
+      }
+    }
+    await assertion();
+  }).toPass({ timeout });
+}
 
 /**
  * Registers an `addInitScript` that mutes announcement volume exactly once per
@@ -307,10 +342,23 @@ export async function captureGameSignature(
 
 /**
  * Opens the Saves modal by clicking the Saves button.
+ *
+ * Uses a retry loop with dispatchEvent to handle the case where the button
+ * cycles between detach/reattach during initial game-mount re-renders on slow
+ * WebKit viewports — a direct .click() would exceed the 90 s actionability
+ * timeout in those conditions.
  */
 export async function openSavesModal(page: Page): Promise<void> {
-  await page.getByTestId("saves-button").click();
-  await expect(page.getByTestId("saves-modal")).toBeVisible({ timeout: 10_000 });
+  const savesBtn = page.getByTestId("saves-button");
+  const savesModal = page.getByTestId("saves-modal");
+  await savesBtn.waitFor({ state: "visible", timeout: 15_000 });
+  await dispatchClickUntil(
+    savesBtn,
+    async () => {
+      await expect(savesModal).toBeVisible({ timeout: 2_000 });
+    },
+    { guard: async () => !(await savesModal.isVisible()) },
+  );
 }
 
 /**
@@ -557,4 +605,32 @@ export async function computeTeamsSignature(page: Page, payload: unknown): Promi
     }
     return hash.toString(16).padStart(8, "0");
   }, payload);
+}
+
+/**
+ * Imports a game history export fixture via the SavesModal's history file-input.
+ *
+ * Requires a game to already be active (saves-button must be visible).  Call
+ * `startGameViaPlayBall` (or `loadFixture`) first to enter a game session.
+ *
+ * History fixtures live in `e2e/fixtures/` and must carry a valid FNV-1a
+ * signature: `fnv1a("ballgame:gameHistory:v1" + JSON.stringify(payload))`.
+ */
+export async function importHistoryFixture(page: Page, fixtureName: string): Promise<void> {
+  const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
+  await openSavesModal(page);
+  await page.getByTestId("import-history-file-input").setInputFiles(fixturePath);
+  await expect(page.getByTestId("import-history-success")).toBeVisible({ timeout: 10_000 });
+  // Use the same retry+dispatchEvent pattern for the close button — it can
+  // also cycle detach/reattach on slow WebKit viewports while the history
+  // import triggers background DB writes and game-state updates.
+  const closeBtn = page.getByTestId("saves-modal-close-button");
+  const modal = page.getByTestId("saves-modal");
+  await dispatchClickUntil(
+    closeBtn,
+    async () => {
+      await expect(modal).not.toBeVisible({ timeout: 2_000 });
+    },
+    { guard: async () => await modal.isVisible() },
+  );
 }

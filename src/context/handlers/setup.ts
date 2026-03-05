@@ -1,4 +1,11 @@
-import type { GameAction, ResolvedPlayerMods, State, TeamCustomPlayerOverrides } from "../index";
+import type {
+  GameAction,
+  PitcherLogEntry,
+  ResolvedPlayerMods,
+  State,
+  TeamCustomPlayerOverrides,
+} from "../index";
+import { createPitcherLogEntry, pushPitcherLogEntry } from "../pitcherLog";
 import { buildResolvedMods } from "../resolvePlayerMods";
 
 /** Computes the defensive slot assignments for a lineup from player overrides. */
@@ -47,16 +54,66 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         Record<string, ResolvedPlayerMods>,
       ] = [buildResolvedMods(newPlayerOverrides[0]), buildResolvedMods(newPlayerOverrides[1])];
       // Apply starting pitcher index per team (clamped to valid range; default 0).
+      // When rosterPitchers is provided, always re-initialize the index so stale state
+      // (e.g., from a previous game) doesn't bleed through if startingPitcherIdx is omitted.
       let newActivePitcherIdx: [number, number] = state.activePitcherIdx;
-      if (p.startingPitcherIdx && p.rosterPitchers) {
-        const clampIdx = (idx: number | null, pitchers: string[]) => {
+      if (p.rosterPitchers) {
+        const clampIdx = (idx: number | null | undefined, pitchers: string[]) => {
           if (idx === null || idx === undefined) return 0;
           return idx >= 0 && idx < pitchers.length ? idx : 0;
         };
         newActivePitcherIdx = [
-          clampIdx(p.startingPitcherIdx[0], p.rosterPitchers[0]),
-          clampIdx(p.startingPitcherIdx[1], p.rosterPitchers[1]),
+          clampIdx(p.startingPitcherIdx?.[0], p.rosterPitchers[0]),
+          clampIdx(p.startingPitcherIdx?.[1], p.rosterPitchers[1]),
         ];
+      } else if (p.startingPitcherIdx && state.rosterPitchers) {
+        // startingPitcherIdx provided but rosterPitchers not — apply against existing roster.
+        const clampIdx = (idx: number | null | undefined, pitchers: string[]) => {
+          if (idx === null || idx === undefined) return 0;
+          return idx >= 0 && idx < pitchers.length ? idx : 0;
+        };
+        newActivePitcherIdx = [
+          clampIdx(p.startingPitcherIdx[0], state.rosterPitchers[0]),
+          clampIdx(p.startingPitcherIdx[1], state.rosterPitchers[1]),
+        ];
+      }
+      // Compute pitcher log initial entries for each team when pitchers are provided.
+      // When rosterPitchers is provided in the payload, always start fresh so repeated
+      // setTeams dispatches (e.g. changing starting pitcher selection) don't accumulate
+      // duplicate entries.
+      // When rosterPitchers is absent from the payload, fall back to state.rosterPitchers
+      // if it has entries (e.g. a subsequent setTeams that only updates labels/overrides
+      // while keeping the same roster). If neither has entries, preserve the existing log.
+      const effectivePitchers: [string[], string[]] | undefined = p.rosterPitchers
+        ? p.rosterPitchers
+        : state.rosterPitchers?.[0]?.length || state.rosterPitchers?.[1]?.length
+          ? state.rosterPitchers
+          : undefined;
+      let newPitcherGameLog: [PitcherLogEntry[], PitcherLogEntry[]] = effectivePitchers
+        ? [[], []]
+        : (state.pitcherGameLog ?? [[], []]);
+      if (effectivePitchers) {
+        // Initialize pitcher log for each team's starting pitcher.
+        for (const teamIdx of [0, 1] as const) {
+          const pitchers = effectivePitchers[teamIdx];
+          if (pitchers.length === 0) continue;
+          // Use the already-clamped activePitcherIdx to avoid any mismatch when
+          // startingPitcherIdx is omitted from the payload.
+          const startingIdx = newActivePitcherIdx[teamIdx];
+          const pitcherId = pitchers[startingIdx];
+          // Build a temporary state snapshot for the entry (score/inning at setup time).
+          // Override atBat so halfEntered reflects the correct pitching half:
+          //   away pitchers (teamIdx=0) pitch when home bats (atBat=1);
+          //   home pitchers (teamIdx=1) pitch when away bats (atBat=0).
+          const tempState: State = {
+            ...state,
+            rosterPitchers: effectivePitchers,
+            activePitcherIdx: newActivePitcherIdx,
+            atBat: (teamIdx === 0 ? 1 : 0) as 0 | 1,
+          };
+          const entry = createPitcherLogEntry(teamIdx, pitcherId, tempState);
+          newPitcherGameLog = pushPitcherLogEntry(newPitcherGameLog, teamIdx, entry);
+        }
       }
       return {
         ...state,
@@ -69,6 +126,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         activePitcherIdx: newActivePitcherIdx,
         lineupPositions,
         resolvedMods: newResolvedMods,
+        pitcherGameLog: newPitcherGameLog,
       };
     }
     default:

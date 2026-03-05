@@ -2,11 +2,17 @@ import * as React from "react";
 
 import { useGameContext } from "@context/index";
 import { GameHistoryStore } from "@storage/gameHistoryStore";
-import type { CustomTeamDoc, PlayerGameStatDoc, TeamPlayer } from "@storage/types";
+import type {
+  CustomTeamDoc,
+  PitcherGameStatDoc,
+  PlayerGameStatDoc,
+  TeamPlayer,
+} from "@storage/types";
 import { appLog } from "@utils/logger";
 import { getRngState, getSeed } from "@utils/rng";
 import { generateRoster } from "@utils/roster";
 import { computeBattingStatsFromLogs } from "@utils/stats/computeBattingStatsFromLogs";
+import { computePitcherGameStats } from "@utils/stats/computePitcherGameStats";
 
 /** Maximum number of automatic retry attempts after a transient commit failure. */
 const MAX_COMMIT_RETRIES = 3;
@@ -166,7 +172,57 @@ export const useGameHistorySync = (
       committedBySaveId: saveId,
     };
 
-    GameHistoryStore.commitCompletedGame(gameId, gameMeta, statRows)
+    // Build pitcher stat rows from pitcherGameLog.
+    const pitcherRows: Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt">[] = [];
+    const pitcherGameLog = state.pitcherGameLog ?? [[], []];
+    const pitcherResults = computePitcherGameStats(pitcherGameLog, state.score);
+
+    // Build pitcher name maps per team.
+    const pitcherNameMaps: [Map<string, string>, Map<string, string>] = [new Map(), new Map()];
+    for (const teamIdx of [0, 1] as const) {
+      const teamId = state.teams[teamIdx];
+      const roster = generateRoster(teamId);
+      const allPlayers = [...roster.batters, ...(roster.pitcher ? [roster.pitcher] : [])];
+      for (const p of allPlayers) {
+        pitcherNameMaps[teamIdx].set(p.id, p.name);
+      }
+      // Also include custom team player overrides for nicknames.
+      for (const [id, override] of Object.entries(state.playerOverrides[teamIdx])) {
+        if (override.nickname?.trim()) {
+          pitcherNameMaps[teamIdx].set(id, override.nickname.trim());
+        }
+      }
+    }
+
+    for (const { teamIdx, result } of pitcherResults) {
+      const teamId = state.teams[teamIdx];
+      const opponentTeamId = state.teams[teamIdx === 0 ? 1 : 0];
+      const pitcherId = result.pitcherId;
+      const pitcherKey = buildPlayerKey(teamId, pitcherId, currentCustomTeams);
+      const nameAtGameTime = pitcherNameMaps[teamIdx].get(pitcherId) ?? pitcherId;
+
+      pitcherRows.push({
+        gameId,
+        teamId,
+        opponentTeamId,
+        pitcherKey,
+        pitcherId,
+        nameAtGameTime,
+        outsPitched: result.outsPitched,
+        battersFaced: result.battersFaced,
+        hitsAllowed: result.hitsAllowed,
+        walksAllowed: result.walksAllowed,
+        strikeoutsRecorded: result.strikeoutsRecorded,
+        homersAllowed: result.homersAllowed,
+        runsAllowed: result.runsAllowed,
+        earnedRuns: result.earnedRuns,
+        saves: result.saves,
+        holds: result.holds,
+        blownSaves: result.blownSaves,
+      });
+    }
+
+    GameHistoryStore.commitCompletedGame(gameId, gameMeta, statRows, pitcherRows)
       .then(() => {
         committedRef.current = true;
         inFlightRef.current = false;
