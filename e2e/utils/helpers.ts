@@ -352,9 +352,13 @@ export async function openSavesModal(page: Page): Promise<void> {
   const savesBtn = page.getByTestId("saves-button");
   const savesModal = page.getByTestId("saves-modal");
   await savesBtn.waitFor({ state: "visible", timeout: 15_000 });
-  await dispatchClickUntil(savesBtn, async () => {
-    await expect(savesModal).toBeVisible({ timeout: 2_000 });
-  }, { guard: async () => !(await savesModal.isVisible()) });
+  await dispatchClickUntil(
+    savesBtn,
+    async () => {
+      await expect(savesModal).toBeVisible({ timeout: 2_000 });
+    },
+    { guard: async () => !(await savesModal.isVisible()) },
+  );
 }
 
 /**
@@ -622,7 +626,11 @@ export async function importHistoryFixture(page: Page, fixtureName: string): Pro
   // import triggers background DB writes and game-state updates.
   const closeBtn = page.getByTestId("saves-modal-close-button");
   const modal = page.getByTestId("saves-modal");
-  await dispatchClickUntil(closeBtn, async () => {
-    await expect(modal).not.toBeVisible({ timeout: 2_000 });
-  }, { guard: async () => await modal.isVisible() });
+  await dispatchClickUntil(
+    closeBtn,
+    async () => {
+      await expect(modal).not.toBeVisible({ timeout: 2_000 });
+    },
+    { guard: async () => await modal.isVisible() },
+  );
 }
