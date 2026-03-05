@@ -33,7 +33,8 @@
               "handedness": "R",
               "playerSeed": "seed_e2e_slugger",
               "sig": "2cf78055",
-              "fingerprint": "2cf78055"
+              "fingerprint": "2cf78055",
+              "globalPlayerId": "e2e_batter_slugger"
             },
             {
               "id": "e2e_batter_contact",
@@ -48,7 +49,8 @@
               "handedness": "L",
               "playerSeed": "seed_e2e_contact",
               "sig": "f91ad496",
-              "fingerprint": "f91ad496"
+              "fingerprint": "f91ad496",
+              "globalPlayerId": "e2e_batter_contact"
             }
           ],
           "bench": [],
@@ -80,5 +82,5 @@
       }
     ]
   },
-  "sig": "d03b5f3c"
+  "sig": "21aff57f"
 }

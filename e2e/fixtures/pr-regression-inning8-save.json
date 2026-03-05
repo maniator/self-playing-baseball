@@ -2,7 +2,7 @@
   "version": 1,
   "header": {
     "id": "save_aCNZHn0326ox",
-    "name": "Boston Pioneers vs Portland Dynamo \u00b7 Inning 8",
+    "name": "Boston Pioneers vs Portland Dynamo · Inning 8",
     "seed": "1caam4t",
     "homeTeamId": "custom:ct_xG1mk2Gd9hr_",
     "awayTeamId": "custom:ct_yKNgI8ydSYiD",
@@ -1393,5 +1393,5 @@
     }
   },
   "events": [],
-  "sig": "1d5df322"
+  "sig": "6cbf1f6d"
 }
