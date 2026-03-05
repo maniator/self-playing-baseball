@@ -516,6 +516,14 @@ const CustomTeamEditor: React.FunctionComponent<Props> = ({ team, onSave, onCanc
           // ── Fingerprint soft-duplicate check ──────────────────────────────────
           // Runs before performImport to let the user confirm when a player with
           // matching stats/name may already exist (soft warning, not a hard block).
+          // Skip this check when the player has a globalPlayerId — that field is the
+          // authoritative identity and the store's hard check in performImport will
+          // definitively handle any conflicts (cross-team or same-team).
+          if (importedPlayer.globalPlayerId) {
+            void performImport();
+            return;
+          }
+
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
           const incomingFp = buildPlayerSig({
             name: importedPlayer.name,
