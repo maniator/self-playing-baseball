@@ -175,9 +175,45 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
 
     const result = computePitcherGameStats([[], [homeStarter, homeCloser]], [1, 3]);
     const closer = result.find((r) => r.result.pitcherId === "home_closer");
-    // Gets a hold instead (left with lead intact but <3 outs)
+    // The finishing pitcher never receives a HOLD regardless of outs pitched.
     expect(closer?.result.saves).toBe(0);
-    expect(closer?.result.holds).toBe(1);
+    expect(closer?.result.holds).toBe(0);
+  });
+
+  it("awards a blown save to a pitcher who records 0 outs but allows the tying run", () => {
+    // Home leads 3-1 entering the 9th. Closer enters, faces one batter,
+    // allows 2 runs (tying the game) without recording a single out.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 24,
+      scoreOnEntry: [0, 0],
+      runsAllowed: 1,
+    });
+    const homeCloser = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_closer",
+      outsPitched: 0, // 0 outs recorded
+      battersFaced: 1,
+      scoreOnEntry: [1, 3], // 2-run lead
+      runsAllowed: 2, // gave up 2 → game tied 3-3
+    });
+
+    // Another reliever came in to finish.
+    const homeReliever = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_reliever",
+      outsPitched: 3,
+      scoreOnEntry: [3, 3], // tie — no longer a save situation
+      runsAllowed: 0,
+    });
+
+    const result = computePitcherGameStats([[], [homeStarter, homeCloser, homeReliever]], [3, 3]);
+
+    const closer = result.find((r) => r.result.pitcherId === "home_closer");
+    expect(closer?.result.blownSaves).toBe(1);
+    expect(closer?.result.saves).toBe(0);
+    expect(closer?.result.holds).toBe(0);
   });
 
   it("awards a blown save to a pitcher who gave up the tying run in a save situation", () => {

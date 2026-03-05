@@ -118,6 +118,16 @@ function sortIndicator(key: string, activeKey: string, dir: SortDir): string {
   return dir === "asc" ? " ↑" : " ↓";
 }
 
+/** Returns the aria-sort value for a sortable column header. */
+function ariaSortValue(
+  key: string,
+  activeKey: string,
+  dir: SortDir,
+): "ascending" | "descending" | "none" {
+  if (key !== activeKey) return "none";
+  return dir === "asc" ? "ascending" : "descending";
+}
+
 const CareerStatsPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { teams: customTeams, loading: teamsLoading } = useCustomTeams();
@@ -137,24 +147,24 @@ const CareerStatsPage: React.FunctionComponent = () => {
     dir: "desc",
   });
 
-  const toggleBattingSort = (key: BattingSortKey) => {
+  const toggleBattingSort = React.useCallback((key: BattingSortKey) => {
     setBattingSort((prev) =>
       prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" },
     );
-  };
-  const togglePitchingSort = (key: PitchingSortKey) => {
+  }, []);
+
+  const togglePitchingSort = React.useCallback((key: PitchingSortKey) => {
     setPitchingSort((prev) =>
       prev.key === key ? { key, dir: prev.dir === "desc" ? "asc" : "desc" } : { key, dir: "desc" },
     );
-  };
+  }, []);
 
   const handleBattingThClick = React.useCallback(
     (e: React.MouseEvent<HTMLTableCellElement>) => {
       const key = (e.currentTarget as HTMLElement).dataset.sortKey as BattingSortKey | undefined;
       if (key) toggleBattingSort(key);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [battingSort],
+    [toggleBattingSort],
   );
 
   const handlePitchingThClick = React.useCallback(
@@ -162,8 +172,29 @@ const CareerStatsPage: React.FunctionComponent = () => {
       const key = (e.currentTarget as HTMLElement).dataset.sortKey as PitchingSortKey | undefined;
       if (key) togglePitchingSort(key);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [pitchingSort],
+    [togglePitchingSort],
+  );
+
+  const handleBattingThKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLTableCellElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const key = (e.currentTarget as HTMLElement).dataset.sortKey as BattingSortKey | undefined;
+        if (key) toggleBattingSort(key);
+      }
+    },
+    [toggleBattingSort],
+  );
+
+  const handlePitchingThKeyDown = React.useCallback(
+    (e: React.KeyboardEvent<HTMLTableCellElement>) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        const key = (e.currentTarget as HTMLElement).dataset.sortKey as PitchingSortKey | undefined;
+        if (key) togglePitchingSort(key);
+      }
+    },
+    [togglePitchingSort],
   );
 
   const sortedBattingRows = React.useMemo(() => {
@@ -354,37 +385,125 @@ const CareerStatsPage: React.FunctionComponent = () => {
               <StatsTable>
                 <thead>
                   <tr>
-                    <Th $sortable data-sort-key="nameAtGameTime" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="nameAtGameTime"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("nameAtGameTime", battingSort.key, battingSort.dir)}
+                    >
                       Name{sortIndicator("nameAtGameTime", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="gamesPlayed" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="gamesPlayed"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("gamesPlayed", battingSort.key, battingSort.dir)}
+                    >
                       G{sortIndicator("gamesPlayed", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="atBats" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="atBats"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("atBats", battingSort.key, battingSort.dir)}
+                    >
                       AB{sortIndicator("atBats", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="hits" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="hits"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("hits", battingSort.key, battingSort.dir)}
+                    >
                       H{sortIndicator("hits", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="doubles" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="doubles"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("doubles", battingSort.key, battingSort.dir)}
+                    >
                       2B{sortIndicator("doubles", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="triples" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="triples"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("triples", battingSort.key, battingSort.dir)}
+                    >
                       3B{sortIndicator("triples", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="homers" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="homers"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("homers", battingSort.key, battingSort.dir)}
+                    >
                       HR{sortIndicator("homers", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="walks" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="walks"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("walks", battingSort.key, battingSort.dir)}
+                    >
                       BB{sortIndicator("walks", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="strikeouts" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="strikeouts"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("strikeouts", battingSort.key, battingSort.dir)}
+                    >
                       K{sortIndicator("strikeouts", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="rbi" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="rbi"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("rbi", battingSort.key, battingSort.dir)}
+                    >
                       RBI{sortIndicator("rbi", battingSort.key, battingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="avg" onClick={handleBattingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="avg"
+                      onClick={handleBattingThClick}
+                      onKeyDown={handleBattingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("avg", battingSort.key, battingSort.dir)}
+                    >
                       AVG{sortIndicator("avg", battingSort.key, battingSort.dir)}
                     </Th>
                   </tr>
@@ -426,50 +545,166 @@ const CareerStatsPage: React.FunctionComponent = () => {
               <StatsTable>
                 <thead>
                   <tr>
-                    <Th $sortable data-sort-key="nameAtGameTime" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="nameAtGameTime"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue(
+                        "nameAtGameTime",
+                        pitchingSort.key,
+                        pitchingSort.dir,
+                      )}
+                    >
                       Name{sortIndicator("nameAtGameTime", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="gamesPlayed" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="gamesPlayed"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("gamesPlayed", pitchingSort.key, pitchingSort.dir)}
+                    >
                       G{sortIndicator("gamesPlayed", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="outsPitched" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="outsPitched"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("outsPitched", pitchingSort.key, pitchingSort.dir)}
+                    >
                       IP{sortIndicator("outsPitched", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="hitsAllowed" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="hitsAllowed"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("hitsAllowed", pitchingSort.key, pitchingSort.dir)}
+                    >
                       H{sortIndicator("hitsAllowed", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="walksAllowed" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="walksAllowed"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("walksAllowed", pitchingSort.key, pitchingSort.dir)}
+                    >
                       BB{sortIndicator("walksAllowed", pitchingSort.key, pitchingSort.dir)}
                     </Th>
                     <Th
                       $sortable
                       data-sort-key="strikeoutsRecorded"
                       onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue(
+                        "strikeoutsRecorded",
+                        pitchingSort.key,
+                        pitchingSort.dir,
+                      )}
                     >
                       K{sortIndicator("strikeoutsRecorded", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="homersAllowed" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="homersAllowed"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("homersAllowed", pitchingSort.key, pitchingSort.dir)}
+                    >
                       HR{sortIndicator("homersAllowed", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="runsAllowed" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="runsAllowed"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("runsAllowed", pitchingSort.key, pitchingSort.dir)}
+                    >
                       R{sortIndicator("runsAllowed", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="earnedRuns" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="earnedRuns"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("earnedRuns", pitchingSort.key, pitchingSort.dir)}
+                    >
                       ER{sortIndicator("earnedRuns", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="era" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="era"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("era", pitchingSort.key, pitchingSort.dir)}
+                    >
                       ERA{sortIndicator("era", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="whip" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="whip"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("whip", pitchingSort.key, pitchingSort.dir)}
+                    >
                       WHIP{sortIndicator("whip", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="saves" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="saves"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("saves", pitchingSort.key, pitchingSort.dir)}
+                    >
                       SV{sortIndicator("saves", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="holds" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="holds"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("holds", pitchingSort.key, pitchingSort.dir)}
+                    >
                       HLD{sortIndicator("holds", pitchingSort.key, pitchingSort.dir)}
                     </Th>
-                    <Th $sortable data-sort-key="blownSaves" onClick={handlePitchingThClick}>
+                    <Th
+                      $sortable
+                      data-sort-key="blownSaves"
+                      onClick={handlePitchingThClick}
+                      onKeyDown={handlePitchingThKeyDown}
+                      tabIndex={0}
+                      role="columnheader"
+                      aria-sort={ariaSortValue("blownSaves", pitchingSort.key, pitchingSort.dir)}
+                    >
                       BS{sortIndicator("blownSaves", pitchingSort.key, pitchingSort.dir)}
                     </Th>
                   </tr>

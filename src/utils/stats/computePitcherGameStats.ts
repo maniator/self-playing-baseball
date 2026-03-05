@@ -21,6 +21,8 @@
  * BLOWN SAVE (BS): Awarded to any relief pitcher who:
  *   - Entered in a save situation (lead ≤ 3 runs), AND
  *   - Gave up the tying or go-ahead run while pitching.
+ *   Note: A pitcher who records 0 outs but allows the tying/go-ahead run still
+ *   receives a BS — the 0-out restriction applies only to SV and HLD.
  */
 
 import type { PitcherLogEntry } from "@context/index";
@@ -99,15 +101,21 @@ function computeSaveHoldBS(
   // Only award SV/HLD/BS if this team won (or at minimum was in a lead on entry).
   // SV only goes to the team that won.
 
-  // Filter entries that had at least 1 out pitched.
-  const withOuts = entries.filter((e) => e.outsPitched > 0);
-  if (withOuts.length === 0) return result;
-
   // The "finishing pitcher" is the last entry with outsPitched > 0.
-  const finisherIdx = withOuts.length - 1;
+  // Used to distinguish SV candidates from HLD candidates.
+  let finisherIdx = -1;
+  for (let i = entries.length - 1; i >= 0; i--) {
+    if (entries[i].outsPitched > 0) {
+      finisherIdx = i;
+      break;
+    }
+  }
 
-  for (let i = 0; i < withOuts.length; i++) {
-    const entry = withOuts[i];
+  // Iterate ALL entries (including 0-out appearances) so that a pitcher who
+  // enters in a save situation and gives up runs without recording an out
+  // still receives a Blown Save.
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
     const r = getOrCreate(entry.pitcherId);
 
     // Score when pitcher entered — compute their team's lead at entry.
@@ -132,15 +140,17 @@ function computeSaveHoldBS(
       continue;
     }
 
+    // SV and HLD require at least 1 out recorded.
+    if (entry.outsPitched === 0) continue;
+
     // Pitcher held the lead — check for Save vs Hold.
+    // The finishing pitcher can only receive a Save (never a Hold).
     if (i === finisherIdx && teamWon) {
       // Finishing pitcher of the winning team in a save situation.
       if (entry.outsPitched >= 3) {
         r.saves++;
-      } else {
-        // Did not pitch enough — still a hold if they left with lead intact.
-        r.holds++;
       }
+      // Finisher with < 3 outs: no save, no hold.
     } else if (i !== finisherIdx) {
       // Not the finisher; non-starter relief pitcher who preserved a lead.
       r.holds++;
