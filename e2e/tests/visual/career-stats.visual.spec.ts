@@ -3,8 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 import {
   disableAnimations,
   importHistoryFixture,
+  loadFixture,
   resetAppState,
-  startGameViaPlayBall,
 } from "../../utils/helpers";
 
 /**
@@ -57,7 +57,9 @@ test.describe("Visual — seeded history data", () => {
    * the e2e_home_team in the dropdown.
    */
   async function seedAndOpen(page: Page) {
-    await startGameViaPlayBall(page);
+    // Use loadFixture (loads a pre-built save snapshot) instead of startGameViaPlayBall
+    // to avoid the Play Ball → /game navigation timing-out on slow mobile webkit in CI.
+    await loadFixture(page, "sample-save.json");
     await disableAnimations(page);
     await importHistoryFixture(page, "career-stats-history.json");
     await page.goto("/stats");

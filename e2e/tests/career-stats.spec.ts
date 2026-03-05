@@ -1,6 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { importHistoryFixture, resetAppState, startGameViaPlayBall } from "../utils/helpers";
+import {
+  importHistoryFixture,
+  importTeamsFixture,
+  resetAppState,
+  startGameViaPlayBall,
+} from "../utils/helpers";
 
 /**
  * E2E smoke tests for the Career Stats hub.
@@ -195,5 +200,23 @@ test.describe("Career Stats with seeded history", () => {
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
     const totalsRow = page.locator("tr").filter({ hasText: /1\.0/ }).first();
     await expect(totalsRow).toContainText("1"); // SV = 1
+  });
+
+  test("Prev/Next navigation works when a team context is provided", async ({ page }) => {
+    // Seed history first so player career data exists.
+    await seedAndOpen(page);
+    // Import a custom team that maps the fixture player IDs (e2e_batter_slugger,
+    // e2e_batter_contact) to a real custom team roster for roster-context navigation.
+    await importTeamsFixture(page, "career-stats-e2e-team.json");
+    // Navigate to the seeded batter with the custom team as navigation context.
+    await page.goto("/players/e2e_batter_slugger?team=custom:ct_e2e_career");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    // Both Prev and Next buttons must be visible (roster has 2 batters + 1 pitcher).
+    await expect(page.getByTestId("player-career-prev")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("player-career-next")).toBeVisible({ timeout: 5_000 });
+    // Click Next — navigates to the second player in the roster (M. Contact).
+    await page.getByTestId("player-career-next").click();
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
+    expect(page.url()).toContain("/players/e2e_batter_contact");
   });
 });
