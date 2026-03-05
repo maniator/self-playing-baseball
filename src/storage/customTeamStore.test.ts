@@ -496,6 +496,60 @@ describe("importCustomTeams", () => {
     expect(typeof result.skipped).toBe("number");
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
+
+  it("preserves globalPlayerId, playerSeed, and fingerprint when importing a team into a fresh DB", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const knownGid = "pl_identity_preserved_gid";
+    const knownSeed = "known-identity-seed-value";
+    const knownFingerprint = "aabbccdd";
+    const teamWithIdentity = {
+      id: "ct_identity_test",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Identity Team",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_id_test",
+            name: "Identity Player",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+            globalPlayerId: knownGid,
+            playerSeed: knownSeed,
+            fingerprint: knownFingerprint,
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+
+    // Export from the original team
+    const json = exportFn([teamWithIdentity]);
+
+    // Import into a fresh in-memory DB (simulates a different install)
+    const { _createTestDb } = await import("./db");
+    const { getRxStorageMemory } = await import("rxdb/plugins/storage-memory");
+    const freshDb = await _createTestDb(getRxStorageMemory());
+    const freshStore = makeCustomTeamStore(() => Promise.resolve(freshDb));
+
+    try {
+      const result = await freshStore.importCustomTeams(json);
+      // importCustomTeams may remap the team ID — resolve by name instead
+      const importedTeam = result.teams.find((t) => t.name === "Identity Team");
+      expect(importedTeam).toBeDefined();
+      const importedPlayer = importedTeam!.roster.lineup[0];
+      expect(importedPlayer.globalPlayerId).toBe(knownGid);
+      expect(importedPlayer.playerSeed).toBe(knownSeed);
+      expect(importedPlayer.fingerprint).toBe(knownFingerprint);
+    } finally {
+      await freshDb.close();
+    }
+  });
 });
 
 describe("exportPlayer", () => {
@@ -1256,5 +1310,44 @@ describe("importPlayer", () => {
   it("throws on invalid player JSON", async () => {
     const id = await store.createCustomTeam(makeInput({ name: "Bad JSON Team" }));
     await expect(store.importPlayer(id, "not valid json", "lineup")).rejects.toThrow();
+  });
+
+  it("remaps player.id when the incoming id already exists in the target roster", async () => {
+    const sharedId = "p_collision_id";
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Collision Target Team",
+        roster: {
+          lineup: [makePlayer({ id: sharedId, name: "Existing Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    // Create a different player that happens to have the same local id
+    const incomingPlayer: TeamPlayer = {
+      id: sharedId, // same local id as existing player
+      name: "Incoming Collision Player",
+      role: "batter",
+      batting: { contact: 55, power: 45, speed: 60 },
+      playerSeed: "collision-import-seed",
+      globalPlayerId: "pl_collision_unique_gid",
+    };
+    const json = exportCustomPlayer(incomingPlayer);
+
+    const result = await store.importPlayer(targetId, json, "bench");
+    expect(result.status).toBe("success");
+
+    const updated = await store.getCustomTeam(targetId);
+    const importedPlayer = updated?.roster.bench.find(
+      (p) => p.name === "Incoming Collision Player",
+    );
+    expect(importedPlayer).toBeDefined();
+    // Local id must have been remapped — must not collide with the existing lineup player
+    expect(importedPlayer?.id).not.toBe(sharedId);
+    // Identity fields must be preserved despite the id remap
+    expect(importedPlayer?.globalPlayerId).toBe("pl_collision_unique_gid");
+    expect(importedPlayer?.playerSeed).toBe("collision-import-seed");
   });
 });

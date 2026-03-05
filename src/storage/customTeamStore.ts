@@ -12,7 +12,7 @@ import {
   parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
-import { generateSeed, generateTeamId } from "./generateId";
+import { generatePlayerId, generateSeed, generateTeamId } from "./generateId";
 import { fnv1a } from "./hash";
 import type {
   CreateCustomTeamInput,
@@ -576,7 +576,17 @@ function buildStore(getDbFn: GetDb) {
       }
 
       // Append to the target section and persist.
-      const updatedSection = [...targetTeam.roster[section], player];
+      // Defensively remap the local player.id if it already exists in the target roster to
+      // avoid duplicate local IDs (the canonical identity is globalPlayerId, not the local id).
+      const allTargetIds = new Set([
+        ...targetTeam.roster.lineup.map((p) => p.id),
+        ...targetTeam.roster.bench.map((p) => p.id),
+        ...targetTeam.roster.pitchers.map((p) => p.id),
+      ]);
+      const playerToAppend: TeamPlayer = allTargetIds.has(player.id)
+        ? { ...player, id: generatePlayerId() }
+        : player;
+      const updatedSection = [...targetTeam.roster[section], playerToAppend];
       await this.updateCustomTeam(targetTeamId, {
         roster: {
           lineup: section === "lineup" ? updatedSection : targetTeam.roster.lineup,
