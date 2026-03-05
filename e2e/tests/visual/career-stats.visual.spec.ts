@@ -103,7 +103,8 @@ test.describe("Visual — seeded history data", () => {
     // Navigate to the seeded batter's player career page.
     await page.goto("/players/e2e_batter_slugger");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
+    // Use a generous timeout for Career Totals on slower mobile WebKit viewports.
+    await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
       "player-career-batting-data.png",
@@ -117,7 +118,8 @@ test.describe("Visual — seeded history data", () => {
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Switch to the Pitching tab.
     await page.getByText("Pitching").click();
-    await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
+    // Use a generous timeout for Career Totals on slower mobile WebKit viewports.
+    await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
       "player-career-pitching-data.png",
