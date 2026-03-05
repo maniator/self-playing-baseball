@@ -107,7 +107,7 @@ const PlayerCareerPage: React.FunctionComponent = () => {
         </>
       )}
 
-      <TabBar>
+      <TabBar aria-label="Player stats tabs">
         {showBattingTab && (
           <TabBtn
             type="button"
