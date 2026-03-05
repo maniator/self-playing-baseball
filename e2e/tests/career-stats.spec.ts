@@ -136,13 +136,18 @@ test.describe("Career Stats with seeded history", () => {
     // Default tab is Batting.
     await expect(page.getByTestId("career-stats-batting-tab")).toBeVisible();
     // Wait for the table to appear (stats load asynchronously).
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
+    // Use getByRole("button", exact) to target the table-row PlayerLink, not leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText("M. Contact")).toBeVisible({ timeout: 5_000 });
   });
 
   test("batting tab shows correct counting stats for J. Slugger", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     // J. Slugger: 4 AB, 2 H, 1 HR, 2 RBI — check at least the HR column value.
     // The page renders a table row; we verify the row contains expected numbers.
     const sluggerRow = page.locator("tr", { hasText: "J. Slugger" });
@@ -157,7 +162,10 @@ test.describe("Career Stats with seeded history", () => {
     // All three seeded pitchers should appear.
     await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("C. Closer")).toBeVisible({ timeout: 5_000 });
+    // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
     // C. Closer has SV=1 — find the row and verify SV column.
     const closerRow = page.locator("tr", { hasText: "C. Closer" });
     await expect(closerRow).toContainText("1"); // SV = 1
@@ -178,16 +186,22 @@ test.describe("Career Stats with seeded history", () => {
 
   test("clicking a batter row navigates to /players/:playerKey", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("J. Slugger").click();
+    // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "J. Slugger", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toContain("/players/e2e_batter_slugger");
   });
 
   test("player career page shows batting game log for J. Slugger", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("J. Slugger").click();
+    // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "J. Slugger", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Batting tab is active by default — should show career totals + game log.
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
@@ -199,8 +213,11 @@ test.describe("Career Stats with seeded history", () => {
   test("player career page shows pitching game log for C. Closer (SV=1)", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("C. Closer")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("C. Closer").click();
+    // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "C. Closer", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Switch to Pitching tab on player career page.
     await page.getByText("Pitching").click();
@@ -344,18 +361,26 @@ test.describe("Role-aware Player Career tabs", () => {
     await seedForRoleAware(page);
     await page.goto("/players/e2e_batter_qualify");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Batting")).toBeVisible({ timeout: 10_000 });
+    // Wait for player name (only rendered after loading completes) to avoid checking
+    // not.toBeVisible() while loading=true shows both tabs as placeholders.
+    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
     // Pitching tab must NOT be shown for a batter-only player
-    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("pitcher-only player (no batting history) does NOT show Batting tab", async ({ page }) => {
     await seedForRoleAware(page);
     await page.goto("/players/e2e_pitcher_starter");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByText("Pitching")).toBeVisible({ timeout: 10_000 });
+    // Wait for player name (only rendered after loading completes) to avoid checking
+    // not.toBeVisible() while loading=true shows both tabs as placeholders.
+    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
     // Batting tab must NOT be shown for a pitcher-only player
-    await expect(page.getByRole("button", { name: /^batting$/i })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /^batting$/i })).not.toBeVisible({
+      timeout: 10_000,
+    });
   });
 
   test("player with no history shows both tabs (empty state)", async ({ page }) => {

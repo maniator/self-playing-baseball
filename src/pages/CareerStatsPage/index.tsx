@@ -419,10 +419,16 @@ const CareerStatsPage: React.FunctionComponent = () => {
           </TeamSelectorRow>
 
           {/* Team Summary + Leaders panel */}
-          {!dataLoading && teamSummary && teamSummary.gamesPlayed > 0 && (
+          {!dataLoading && teamSummary && (
             <TeamSummarySection data-testid="team-summary-section">
               <SummaryHeading>Team Summary</SummaryHeading>
               <SummaryGrid data-testid="team-summary-grid">
+                <SummaryCell>
+                  <SummaryCellLabel>GP</SummaryCellLabel>
+                  <SummaryCellValue data-testid="summary-gp">
+                    {teamSummary.gamesPlayed}
+                  </SummaryCellValue>
+                </SummaryCell>
                 <SummaryCell>
                   <SummaryCellLabel>W-L</SummaryCellLabel>
                   <SummaryCellValue data-testid="summary-wl">

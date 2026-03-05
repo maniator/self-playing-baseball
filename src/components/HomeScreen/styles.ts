@@ -120,7 +120,7 @@ export const LeagueTeaserTitle = styled.p`
 `;
 
 export const LeagueTeaserSub = styled.p`
-  color: #666;
+  color: #aaa;
   font-size: 0.78rem;
   margin: 0;
   line-height: 1.4;

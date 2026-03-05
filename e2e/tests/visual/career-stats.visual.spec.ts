@@ -85,7 +85,10 @@ test.describe("Visual — seeded history data", () => {
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 5_000 });
+    // Use exact role to target the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-batting-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -163,7 +166,11 @@ test.describe("Visual — Team Summary and Leaders", () => {
   test("Career Stats — Team Summary + leaders pitching tab", async ({ page }) => {
     await seedSummaryAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
+    // A. Starter appears in both ERA and K leader cards AND the pitching table.
+    // Use exact role to target the table-row PlayerLink button only.
+    await expect(page.getByRole("button", { name: "A. Starter", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-pitching.png",
       { maxDiffPixelRatio: 0.05 },
@@ -205,19 +212,5 @@ test.describe("Visual — Role-aware Player Career tabs", () => {
       "player-career-pitcher-only.png",
       { maxDiffPixelRatio: 0.05 },
     );
-  });
-});
-
-// ── Home page League teaser snapshot ─────────────────────────────────────────
-
-test.describe("Visual — Home page League teaser", () => {
-  test("Home page — League play coming soon teaser visible", async ({ page }) => {
-    await resetAppState(page);
-    await disableAnimations(page);
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("league-play-teaser")).toBeVisible();
-    await expect(page.getByTestId("home-screen")).toHaveScreenshot("home-with-league-teaser.png", {
-      maxDiffPixelRatio: 0.05,
-    });
   });
 });

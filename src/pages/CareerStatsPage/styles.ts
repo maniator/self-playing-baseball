@@ -211,7 +211,7 @@ export const LeaderValue = styled.span`
 `;
 
 export const LeaderPlaceholderText = styled.span`
-  color: #444;
+  color: #aaa;
   font-size: 11px;
 `;
 

@@ -629,7 +629,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
   }
 
-  it("renders TeamSummarySection when gamesPlayed > 0", async () => {
+  it("renders TeamSummarySection with GP and stats when gamesPlayed > 0", async () => {
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: null,
@@ -646,6 +646,7 @@ describe("CareerStatsPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("team-summary-section")).toBeInTheDocument();
     });
+    expect(screen.getByTestId("summary-gp")).toHaveTextContent("5");
     expect(screen.getByTestId("summary-wl")).toHaveTextContent("3-2");
     expect(screen.getByTestId("summary-rs")).toHaveTextContent("25");
     expect(screen.getByTestId("summary-ra")).toHaveTextContent("18");
@@ -858,7 +859,7 @@ describe("CareerStatsPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=custom%3Ateam1");
   });
 
-  it("does not render TeamSummarySection when gamesPlayed is 0", async () => {
+  it("renders TeamSummarySection even when gamesPlayed is 0", async () => {
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [makeTeamDoc("team1", "Cubs", { city: "Chicago", abbreviation: "CHC" })],
       loading: false,
@@ -867,7 +868,7 @@ describe("CareerStatsPage", () => {
       deleteTeam: vi.fn(),
       refresh: vi.fn(),
     });
-    // Explicitly set gamesPlayed: 0 to override any prior test's mock.
+    // Explicitly set gamesPlayed: 0 — section should still render (shows GP=0).
     vi.mocked(GameHistoryStore.getTeamCareerSummary).mockResolvedValue({
       gamesPlayed: 0,
       wins: 0,
@@ -896,7 +897,9 @@ describe("CareerStatsPage", () => {
       // batting/pitching tabs should render once data loads
       expect(screen.getByTestId("career-stats-batting-tab")).toBeInTheDocument();
     });
-    expect(screen.queryByTestId("team-summary-section")).not.toBeInTheDocument();
+    // Section renders whenever teamSummary is non-null, regardless of gamesPlayed.
+    expect(screen.getByTestId("team-summary-section")).toBeInTheDocument();
+    expect(screen.getByTestId("summary-gp")).toHaveTextContent("0");
   });
 
   it("keyboard Enter on batting column header triggers sort", async () => {
