@@ -340,4 +340,45 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     expect(fireman!.result.runsAllowed).toBe(1); // 1 + 0
     expect(fireman!.result.battersFaced).toBe(13); // 9 + 4
   });
+
+  it("never awards a hold to the starting pitcher (i === 0) even if they leave in a save situation", () => {
+    // Starter leaves after 5 innings with a 2-run lead; reliever preserves lead; closer finishes.
+    // The starter's scoreOnEntry is [0, 0] (game start) so they can never be in a save situation.
+    // But if we artificially craft entries with the starter entering with a lead (edge-case
+    // simulation of a mid-game restore), they still must NOT receive a hold.
+    const homeStarter = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_starter",
+      outsPitched: 15,
+      scoreOnEntry: [0, 2], // artificial: entered with 2-run lead (would never happen at game start)
+      runsAllowed: 0,
+    });
+    const homeReliever = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_reliever",
+      outsPitched: 6,
+      scoreOnEntry: [0, 2], // still 2-0 lead
+      runsAllowed: 0,
+    });
+    const homeCloser = makePitcherEntry({
+      teamIdx: 1,
+      pitcherId: "home_closer",
+      outsPitched: 6,
+      scoreOnEntry: [0, 2],
+      runsAllowed: 0,
+    });
+
+    const result = computePitcherGameStats([[], [homeStarter, homeReliever, homeCloser]], [0, 2]);
+
+    const starter = result.find((r) => r.result.pitcherId === "home_starter");
+    expect(starter?.result.holds).toBe(0); // starter never gets HLD
+    expect(starter?.result.saves).toBe(0);
+
+    const reliever = result.find((r) => r.result.pitcherId === "home_reliever");
+    expect(reliever?.result.holds).toBe(1); // non-starter non-finisher gets HLD
+
+    const closer = result.find((r) => r.result.pitcherId === "home_closer");
+    expect(closer?.result.saves).toBe(1); // finisher (3+ outs, lead ≤ 3, no blown save)
+    expect(closer?.result.holds).toBe(0);
+  });
 });

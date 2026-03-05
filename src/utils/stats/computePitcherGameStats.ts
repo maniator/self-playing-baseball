@@ -151,11 +151,11 @@ function computeSaveHoldBS(
         r.saves++;
       }
       // Finisher with < 3 outs: no save, no hold.
-    } else if (i !== finisherIdx) {
-      // Not the finisher; non-starter relief pitcher who preserved a lead.
+    } else if (i !== finisherIdx && i !== 0) {
+      // Relief pitcher (not the starter, not the finisher) who preserved a lead.
       r.holds++;
     }
-    // The starter (i === 0) who never leaves does not get a save (complete game).
+    // The starter (i === 0) never receives a Hold or Save — only relief pitchers qualify.
   }
 
   return result;
