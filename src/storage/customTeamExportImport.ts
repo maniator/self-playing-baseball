@@ -54,6 +54,13 @@ export type ImportPlayerResult =
   | {
       /** Player was successfully added to the target team. */
       status: "success";
+      /**
+       * The local `id` the player was appended with. This may differ from the `id` in the
+       * import bundle if there was a collision with an existing player in the target roster.
+       * UI callers should use this value to keep their in-memory editor state aligned with
+       * what was persisted in the DB.
+       */
+      finalLocalId: string;
     }
   | {
       /**

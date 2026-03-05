@@ -42,7 +42,7 @@ vi.mock("@storage/saveIO", async (importOriginal) => {
 // Individual tests override importPlayer as needed.
 vi.mock("@storage/customTeamStore", () => ({
   CustomTeamStore: {
-    importPlayer: vi.fn().mockResolvedValue({ status: "success" }),
+    importPlayer: vi.fn().mockResolvedValue({ status: "success", finalLocalId: "mock-player-id" }),
   },
 }));
 
@@ -682,7 +682,10 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
   });
 
   it("adds player to editor when importPlayer returns success", async () => {
-    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ status: "success" });
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "success",
+      finalLocalId: "mock-player-id",
+    });
 
     renderEditor({ team: editTeam });
 

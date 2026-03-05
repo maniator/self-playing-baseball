@@ -622,7 +622,7 @@ function buildStore(getDbFn: GetDb) {
         },
       });
 
-      return { status: "success" };
+      return { status: "success", finalLocalId: playerToAppend.id };
     },
   };
 }

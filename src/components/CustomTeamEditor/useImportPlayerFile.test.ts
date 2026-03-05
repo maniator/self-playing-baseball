@@ -15,7 +15,7 @@ import { useImportPlayerFile } from "./useImportPlayerFile";
 
 vi.mock("@storage/customTeamStore", () => ({
   CustomTeamStore: {
-    importPlayer: vi.fn().mockResolvedValue({ status: "success" }),
+    importPlayer: vi.fn().mockResolvedValue({ status: "success", finalLocalId: "mock-player-id" }),
   },
 }));
 
@@ -107,7 +107,10 @@ describe("useImportPlayerFile — edit mode (teamId set)", () => {
   });
 
   it("calls CustomTeamStore.importPlayer and dispatches ADD_PLAYER on success", async () => {
-    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ status: "success" });
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "success",
+      finalLocalId: "mock-player-id",
+    });
     const playerJson = makePlayerJson({ name: "New Player" });
     _fileContent = playerJson;
 
@@ -176,7 +179,10 @@ describe("useImportPlayerFile — edit mode (teamId set)", () => {
     // allTeams contains a team with the same fingerprint — if the soft check ran,
     // setPendingPlayerImport would be called. It should NOT be called because
     // globalPlayerId is present and routes straight to performImport.
-    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({ status: "success" });
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "success",
+      finalLocalId: "mock-player-id",
+    });
     const playerJson = makePlayerJson({ name: "Alice" });
     _fileContent = playerJson;
 

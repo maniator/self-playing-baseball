@@ -110,7 +110,13 @@ export function useImportPlayerFile({
                 return;
               }
               // Store persisted the player; mirror to editor state for immediate UI update.
-              dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
+              // Use finalLocalId (the id the store chose, which may differ from editorPlayer.id
+              // if a local id collision was remapped) to keep editor state aligned with the DB.
+              const alignedPlayer =
+                result.finalLocalId === editorPlayer.id
+                  ? editorPlayer
+                  : { ...editorPlayer, id: result.finalLocalId };
+              dispatch({ type: "ADD_PLAYER", section, player: alignedPlayer });
             } else {
               // Create mode: manual cross-team check against in-memory allTeams.
               if (importedPlayer.globalPlayerId) {
