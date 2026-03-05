@@ -57,6 +57,13 @@ test.describe("Visual — seeded history data", () => {
    * the e2e_home_team in the dropdown.
    */
   async function seedAndOpen(page: Page) {
+    // Pre-seed slow autoplay speed (1200 ms/pitch) so the game renders at most
+    // once per 1.2 s after the fixture loads.  Without this, rapid re-renders on
+    // mobile WebKit detach the saves-button from the DOM while
+    // importHistoryFixture tries to click it, causing flaky 90-second timeouts.
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", "1200");
+    });
     // Use loadFixture (loads a pre-built save snapshot) instead of startGameViaPlayBall
     // to avoid the Play Ball → /game navigation timing-out on slow mobile webkit in CI.
     await loadFixture(page, "sample-save.json");

@@ -113,6 +113,11 @@ test.describe("Career Stats with seeded history", () => {
    * the seeded team from the dropdown.
    */
   async function seedAndOpen(page: Page) {
+    // Pre-seed slow autoplay (1200 ms/pitch) so rapid re-renders on mobile
+    // WebKit don't detach the saves-button during importHistoryFixture.
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", "1200");
+    });
     await startGameViaPlayBall(page);
     await importHistoryFixture(page, "career-stats-history.json");
     await page.goto("/stats");
