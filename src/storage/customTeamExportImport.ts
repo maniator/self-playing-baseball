@@ -40,6 +40,34 @@ export interface ImportCustomTeamsResult {
 }
 
 /**
+ * Result shape returned by `CustomTeamStore.importPlayer`.
+ *
+ * Exactly one of the following is true for each call:
+ *   - `success: true`  — player was appended to the target roster section.
+ *   - `alreadyOnThisTeam: true`  — player's globalPlayerId already existed on the
+ *     target team; no change was made (idempotent).
+ *   - `conflictingTeamId` is set  — player's globalPlayerId already exists on a
+ *     *different* team; import was blocked to prevent duplicate identities.
+ */
+export interface ImportPlayerResult {
+  /** true when the player was successfully added to the target team. */
+  success: boolean;
+  /**
+   * Set when the player's `globalPlayerId` already exists on a different team.
+   * The import is blocked and the caller should surface `conflictingTeamName` to
+   * the user so they can remove the player from their current team first.
+   */
+  conflictingTeamId?: string;
+  /** Human-readable display name of the team that currently owns the player. */
+  conflictingTeamName?: string;
+  /**
+   * true when the player already belongs to the target team — no change was made.
+   * The caller may treat this as a silent no-op or show a short informational message.
+   */
+  alreadyOnThisTeam?: boolean;
+}
+
+/**
  * Builds a stable seed-based fingerprint for a team (excludes id so it survives re-import).
  * Covers only team-identity fields (name + abbreviation, case-insensitive) plus the
  * per-team random seed generated at creation time.

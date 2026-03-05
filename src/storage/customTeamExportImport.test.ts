@@ -809,3 +809,85 @@ describe("parseExportedCustomPlayer", () => {
     expect(result.pitching?.movement).toBe(75);
   });
 });
+
+// ── Export identity fields (globalPlayerId / playerSeed / fingerprint) ────────
+
+describe("exportCustomPlayer — identity fields", () => {
+  it("preserves globalPlayerId in exported JSON", () => {
+    const p = makePlayer({ globalPlayerId: "pl_abc12345", playerSeed: "seed-xyz" });
+    const parsed = JSON.parse(exportCustomPlayer(p)) as {
+      payload: { player: Record<string, unknown> };
+    };
+    expect(parsed.payload.player["globalPlayerId"]).toBe("pl_abc12345");
+  });
+
+  it("preserves playerSeed in exported JSON", () => {
+    const p = makePlayer({ playerSeed: "my-stable-seed" });
+    const parsed = JSON.parse(exportCustomPlayer(p)) as {
+      payload: { player: Record<string, unknown> };
+    };
+    expect(parsed.payload.player["playerSeed"]).toBe("my-stable-seed");
+  });
+
+  it("preserves fingerprint in exported JSON", () => {
+    const p = makePlayer({ fingerprint: "aabbccdd", playerSeed: "fp-seed" });
+    const parsed = JSON.parse(exportCustomPlayer(p)) as {
+      payload: { player: Record<string, unknown> };
+    };
+    expect(parsed.payload.player["fingerprint"]).toBe("aabbccdd");
+  });
+
+  it("round-trips globalPlayerId through parseExportedCustomPlayer", () => {
+    const p = makePlayer({ globalPlayerId: "pl_roundtrip", playerSeed: "rt-seed" });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.globalPlayerId).toBe("pl_roundtrip");
+  });
+
+  it("round-trips playerSeed through parseExportedCustomPlayer", () => {
+    const p = makePlayer({ playerSeed: "round-trip-seed" });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.playerSeed).toBe("round-trip-seed");
+  });
+
+  it("round-trips fingerprint through parseExportedCustomPlayer", () => {
+    const fp = buildPlayerSig(makePlayer({ playerSeed: "fp-rt-seed" }));
+    const p = makePlayer({ fingerprint: fp, playerSeed: "fp-rt-seed" });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.fingerprint).toBe(fp);
+  });
+});
+
+describe("exportCustomTeams — identity fields per player", () => {
+  it("preserves globalPlayerId for each player in lineup", () => {
+    const player = makePlayer({ globalPlayerId: "pl_team_gid", playerSeed: "team-gid-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as {
+      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
+    };
+    expect(parsed.payload.teams[0].roster.lineup[0]["globalPlayerId"]).toBe("pl_team_gid");
+  });
+
+  it("preserves playerSeed for each player in lineup", () => {
+    const player = makePlayer({ playerSeed: "team-seed-val" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as {
+      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
+    };
+    expect(parsed.payload.teams[0].roster.lineup[0]["playerSeed"]).toBe("team-seed-val");
+  });
+
+  it("preserves fingerprint for each player in lineup", () => {
+    const player = makePlayer({ fingerprint: "deadbeef", playerSeed: "fp-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
+    });
+    const parsed = JSON.parse(exportCustomTeams([team])) as {
+      payload: { teams: Array<{ roster: { lineup: Array<Record<string, unknown>> } }> };
+    };
+    expect(parsed.payload.teams[0].roster.lineup[0]["fingerprint"]).toBe("deadbeef");
+  });
+});

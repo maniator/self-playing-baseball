@@ -8,6 +8,8 @@ import {
   importCustomTeams as importCustomTeamsParser,
   type ImportCustomTeamsOptions,
   type ImportCustomTeamsResult,
+  type ImportPlayerResult,
+  parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
 import { generateSeed, generateTeamId } from "./generateId";
@@ -521,6 +523,69 @@ function buildStore(getDbFn: GetDb) {
         }
       }
       return result;
+    },
+
+    /**
+     * Imports a single player from a signed player export bundle into a target team's roster.
+     *
+     * Identity checks (using `globalPlayerId`):
+     *   - If the player already exists on the **same** target team → returns
+     *     `{ success: false, alreadyOnThisTeam: true }` (idempotent no-op).
+     *   - If the player already exists on a **different** team → returns
+     *     `{ success: false, conflictingTeamId, conflictingTeamName }` so the UI
+     *     can surface "That player already belongs to [team name]".
+     *
+     * On success the player is appended to the specified roster `section` and the
+     * target team is updated in the DB.  The player's original `playerSeed` and
+     * `globalPlayerId` are preserved so career stats and duplicate detection remain intact.
+     *
+     * @param targetTeamId  Team to add the player to.
+     * @param playerJson    Signed JSON string produced by `exportPlayer` / `exportCustomPlayer`.
+     * @param section       Which roster section to append the player to.
+     * @throws If the target team is not found, or if the player bundle is invalid/tampered.
+     */
+    async importPlayer(
+      targetTeamId: string,
+      playerJson: string,
+      section: "lineup" | "bench" | "pitchers",
+    ): Promise<ImportPlayerResult> {
+      const player = parseExportedCustomPlayerJson(playerJson);
+
+      const targetTeam = await this.getCustomTeam(targetTeamId);
+      if (!targetTeam) throw new Error(`Custom team not found: ${targetTeamId}`);
+
+      // Cross-team identity check using globalPlayerId (hard block).
+      // Prevents the same player from accumulating career stats under two
+      // different teamIds simultaneously.
+      if (player.globalPlayerId) {
+        const allTeams = await this.listCustomTeams({ includeArchived: true });
+        for (const t of allTeams) {
+          const allPlayers = [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers];
+          const match = allPlayers.find((p) => p.globalPlayerId === player.globalPlayerId);
+          if (match) {
+            if (t.id === targetTeamId) {
+              return { success: false, alreadyOnThisTeam: true };
+            }
+            return {
+              success: false,
+              conflictingTeamId: t.id,
+              conflictingTeamName: t.name,
+            };
+          }
+        }
+      }
+
+      // Append to the target section and persist.
+      const updatedSection = [...targetTeam.roster[section], player];
+      await this.updateCustomTeam(targetTeamId, {
+        roster: {
+          lineup: section === "lineup" ? updatedSection : targetTeam.roster.lineup,
+          bench: section === "bench" ? updatedSection : targetTeam.roster.bench,
+          pitchers: section === "pitchers" ? updatedSection : targetTeam.roster.pitchers,
+        },
+      });
+
+      return { success: true };
     },
   };
 }
