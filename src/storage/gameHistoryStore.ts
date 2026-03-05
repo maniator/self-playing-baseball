@@ -518,8 +518,8 @@ function buildStore(getDbFn: GetDb) {
     const gamesPlayed = wins + losses;
     const winPct = gamesPlayed === 0 ? 0 : wins / gamesPlayed;
     const runDiff = runsScored - runsAllowed;
-    const rsPer9 = gamesPlayed === 0 ? 0 : runsScored / gamesPlayed;
-    const raPer9 = gamesPlayed === 0 ? 0 : runsAllowed / gamesPlayed;
+    const rsPerGame = gamesPlayed === 0 ? 0 : runsScored / gamesPlayed;
+    const raPerGame = gamesPlayed === 0 ? 0 : runsAllowed / gamesPlayed;
 
     // Compute current streak from the end of the gameResults array.
     let streak = "-";
@@ -543,8 +543,8 @@ function buildStore(getDbFn: GetDb) {
       runsScored,
       runsAllowed,
       runDiff,
-      rsPer9,
-      raPer9,
+      rsPerGame,
+      raPerGame,
       streak,
       last10: { wins: last10Wins, losses: last10Losses },
     };

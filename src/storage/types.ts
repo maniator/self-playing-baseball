@@ -485,9 +485,9 @@ export interface TeamCareerSummary {
   /** RS − RA */
   runDiff: number;
   /** Runs scored per game. */
-  rsPer9: number;
+  rsPerGame: number;
   /** Runs allowed per game. */
-  raPer9: number;
+  raPerGame: number;
   /** Current streak string (e.g. "W3", "L2", or "-" when no games played). */
   streak: string;
   /** W-L record from the last 10 games played. */

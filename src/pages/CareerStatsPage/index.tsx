@@ -57,7 +57,7 @@ import {
 
 /** Converts a raw outs count to an innings-pitched display string (e.g. 30 → "10.0"). */
 function formatOutsAsIP(outs: number): string {
-  return (outs / 3).toFixed(1);
+  return formatIP(outs);
 }
 
 type BattingRow = PlayerGameStatDoc["batting"] & {
@@ -457,13 +457,13 @@ const CareerStatsPage: React.FunctionComponent = () => {
                 <SummaryCell>
                   <SummaryCellLabel>RS/G</SummaryCellLabel>
                   <SummaryCellValue data-testid="summary-rspg">
-                    {formatRPG(teamSummary.rsPer9)}
+                    {formatRPG(teamSummary.rsPerGame)}
                   </SummaryCellValue>
                 </SummaryCell>
                 <SummaryCell>
                   <SummaryCellLabel>RA/G</SummaryCellLabel>
                   <SummaryCellValue data-testid="summary-rapg">
-                    {formatRPG(teamSummary.raPer9)}
+                    {formatRPG(teamSummary.raPerGame)}
                   </SummaryCellValue>
                 </SummaryCell>
                 <SummaryCell>
