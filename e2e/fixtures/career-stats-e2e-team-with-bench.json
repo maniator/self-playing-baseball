@@ -1,0 +1,86 @@
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2025-01-01T00:00:00.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_e2e_career_bench",
+        "schemaVersion": 1,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z",
+        "name": "E2E Bench Team",
+        "abbreviation": "EBT",
+        "city": "E2E City",
+        "source": "custom",
+        "teamSeed": "seed_e2e_bench_team",
+        "fingerprint": "00000000",
+        "metadata": {
+          "archived": false
+        },
+        "roster": {
+          "lineup": [
+            {
+              "id": "e2e_starter_1",
+              "name": "A. Starter",
+              "role": "batter",
+              "batting": {
+                "contact": 70,
+                "power": 70,
+                "speed": 70
+              },
+              "position": "CF",
+              "handedness": "R",
+              "playerSeed": "seed_starter_1",
+              "sig": "00000001",
+              "fingerprint": "00000001",
+              "globalPlayerId": "e2e_starter_1"
+            }
+          ],
+          "bench": [
+            {
+              "id": "e2e_bench_never_played",
+              "name": "B. Benchwarmer",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "speed": 50
+              },
+              "position": "DH",
+              "handedness": "R",
+              "playerSeed": "seed_bench_1",
+              "sig": "00000002",
+              "fingerprint": "00000002",
+              "globalPlayerId": "e2e_bench_never_played"
+            }
+          ],
+          "pitchers": [
+            {
+              "id": "e2e_pitcher_bench_test",
+              "name": "P. Starter",
+              "role": "pitcher",
+              "batting": {
+                "contact": 20,
+                "power": 20,
+                "speed": 20
+              },
+              "pitching": {
+                "velocity": 65,
+                "control": 60,
+                "stamina": 70
+              },
+              "position": "SP",
+              "handedness": "R",
+              "playerSeed": "seed_pitcher_bt",
+              "sig": "00000003",
+              "fingerprint": "00000003",
+              "globalPlayerId": "e2e_pitcher_bench_test"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "sig": "b33bc46f"
+}

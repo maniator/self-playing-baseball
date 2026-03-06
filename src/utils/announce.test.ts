@@ -231,11 +231,11 @@ describe("setSpeechRate", () => {
     vi.useRealTimers();
   });
 
-  it("sets fast rate for 350ms interval", () => {
-    expect(() => setSpeechRate(350)).not.toThrow();
+  it("sets fast rate for 150ms interval", () => {
+    expect(() => setSpeechRate(150)).not.toThrow();
   });
 
-  it("clamps values outside the 350–1200ms range", () => {
+  it("clamps values outside the 150–1200ms range", () => {
     expect(() => setSpeechRate(0)).not.toThrow();
     expect(() => setSpeechRate(9999)).not.toThrow();
   });

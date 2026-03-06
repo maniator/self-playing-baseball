@@ -278,7 +278,7 @@ describe("parseExportedCustomTeams", () => {
 
   it("throws on unsupported formatVersion", () => {
     const bad = makeSignedBundle({ formatVersion: 99 });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("Unsupported custom teams format version");
+    expect(() => parseExportedCustomTeams(bad)).toThrow("unsupported format version: 99");
   });
 
   it("throws when payload is missing", () => {

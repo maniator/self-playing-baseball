@@ -16,7 +16,7 @@ import { expect, test } from "@playwright/test";
 import { startGameViaPlayBall } from "../utils/helpers";
 
 const SEED = "30nl0i";
-// At SPEED_FAST (350 ms/pitch) a ~250-pitch game finishes in ~90 s.
+// At SPEED_FAST (150 ms/pitch) a ~250-pitch game finishes in ~40 s.
 // Each test also spends ~20 s on setup (importTeamsFixture + navigation).
 // Allow 300 s total to keep tests green on slower CI runners.
 const GAME_TIMEOUT = 300_000;
@@ -60,7 +60,7 @@ test.describe("Batting Stats — seed 30nl0i", () => {
     // resetAppState here — startGameViaPlayBall handles the initial navigation.
     await page.addInitScript(() => {
       localStorage.setItem("autoPlay", "true");
-      localStorage.setItem("speed", "350"); // SPEED_FAST
+      localStorage.setItem("speed", "150"); // SPEED_FAST
     });
   });
 

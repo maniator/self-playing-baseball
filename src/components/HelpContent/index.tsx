@@ -96,6 +96,12 @@ const HelpContent: React.FunctionComponent = () => (
           intentional walk, pinch-hitter, or defensive shift.
         </Li>
         <Li>
+          On a <strong>0-2 count</strong>, the game pauses to ask whether to{" "}
+          <strong>Protect</strong> (a contact-first defensive swing that trades power for
+          bat-on-ball, reducing strikeout risk) or swing normally. Protecting is generally smart
+          when a strikeout would end a rally.
+        </Li>
+        <Li>
           A chime sounds and a browser notification appears (if allowed) when a decision is ready.
         </Li>
         <Li>You have 10 seconds to decide; the game auto-skips if you don&apos;t.</Li>
