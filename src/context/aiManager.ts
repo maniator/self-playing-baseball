@@ -10,7 +10,8 @@
  * - Only handles actions available in the current game state.
  */
 
-import type { DecisionType, State } from "./index";
+import type { DecisionType, State, Strategy } from "./index";
+import { computeFatigueFactor } from "./pitchSimulation";
 
 /** Reason codes for AI manager decisions. */
 export type AiDecisionReason =
@@ -53,9 +54,21 @@ export interface AiNoneDecision {
 
 export type AiDecision = AiPitchingChangeDecision | AiTacticalDecision | AiNoneDecision;
 
-/** Batters-faced threshold above which the AI considers a pitching change. */
+/** Batters-faced reference thresholds used to derive fatigue-factor limits below. */
 export const AI_FATIGUE_THRESHOLD_HIGH = 18;
 export const AI_FATIGUE_THRESHOLD_MEDIUM = 12;
+
+/**
+ * Fatigue-factor limits for AI pitching-change decisions.
+ * Derived from the reference thresholds at default stamina (staminaMod = 0) so
+ * that default-stamina behavior stays identical while high/low stamina pitchers
+ * are pulled later/earlier respectively.
+ *
+ * computeFatigueFactor(18, 0) ≈ 1.225  →  AI_FATIGUE_FACTOR_HIGH
+ * computeFatigueFactor(12, 0) ≈ 1.075  →  AI_FATIGUE_FACTOR_MEDIUM
+ */
+export const AI_FATIGUE_FACTOR_HIGH = 1.225;
+export const AI_FATIGUE_FACTOR_MEDIUM = 1.075;
 
 /** Steal success % above which the AI sends the runner. */
 const AI_STEAL_THRESHOLD = 0.62;
@@ -138,12 +151,18 @@ export function makeAiPitchingDecision(
   const rosterPitchers = (state.rosterPitchers ?? [[], []])[pitchingTeamIdx];
   const substitutedOut = (state.substitutedOut ?? [[], []])[pitchingTeamIdx];
 
-  // Only consider a pitching change if the pitcher is getting tired.
-  const isFatigued =
-    battersFaced >= AI_FATIGUE_THRESHOLD_HIGH ||
-    (battersFaced >= AI_FATIGUE_THRESHOLD_MEDIUM && state.inning >= 6);
+  // Use stamina-aware fatigue factor so high-stamina pitchers stay in longer
+  // and low-stamina relievers get pulled sooner.
+  const activePitcherId = rosterPitchers[activePitcherIdx];
+  const staminaMod = activePitcherId
+    ? (state.resolvedMods?.[pitchingTeamIdx]?.[activePitcherId]?.staminaMod ?? 0)
+    : 0;
+  const fatigueFactor = computeFatigueFactor(battersFaced, staminaMod);
 
-  if (!isFatigued) return { kind: "none" };
+  const isHighFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_HIGH;
+  const isMediumFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM && state.inning >= 6;
+
+  if (!isHighFatigue && !isMediumFatigue) return { kind: "none" };
 
   // Find the best available reliever.
   const relieverIdx = findBestReliever(
@@ -157,8 +176,9 @@ export function makeAiPitchingDecision(
     return { kind: "none" };
   }
 
-  const reason: AiDecisionReason =
-    battersFaced >= AI_FATIGUE_THRESHOLD_HIGH ? "pitcher_fatigue_high" : "pitcher_fatigue_medium";
+  const reason: AiDecisionReason = isHighFatigue
+    ? "pitcher_fatigue_high"
+    : "pitcher_fatigue_medium";
 
   const reasonText =
     reason === "pitcher_fatigue_high"
@@ -300,4 +320,40 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
     default:
       return { kind: "none" };
   }
+}
+
+/**
+ * AI manager strategy selection — mirrors the choices a human manager can make.
+ *
+ * Picks a batting strategy based on game context so the unmanaged team responds
+ * intelligently instead of always using "balanced".
+ *
+ * Rules (evaluated in priority order):
+ *  - Down 2+ late game (inning ≥ 7) → "power"   (swing for extra bases)
+ *  - Down 1  late game (inning ≥ 7) → "aggressive" (pressure the bases)
+ *  - Ahead 3+ runs → "patient"                   (work the count, protect lead)
+ *  - 2 outs, close game (±2), inning ≥ 7 → "aggressive" (extend the inning)
+ *  - Early game with runners in scoring position → "contact" (put ball in play)
+ *  - Default → "balanced"
+ */
+export function makeAiStrategyDecision(state: State, battingTeamIdx: 0 | 1): Strategy {
+  const { score, inning, outs } = state;
+  const battingScore = score[battingTeamIdx];
+  const fieldingScore = score[1 - battingTeamIdx];
+  const runDiff = battingScore - fieldingScore; // positive = batting team leading
+
+  if (inning >= 7) {
+    if (runDiff <= -2) return "power";
+    if (runDiff === -1) return "aggressive";
+  }
+
+  if (runDiff >= 3) return "patient";
+
+  if (outs === 2 && inning >= 7 && Math.abs(runDiff) <= 2) return "aggressive";
+
+  // Runners in scoring position (no other condition matched) → contact hitting (put it in play)
+  const { baseLayout } = state;
+  if (baseLayout[1] || baseLayout[2]) return "contact";
+
+  return "balanced";
 }

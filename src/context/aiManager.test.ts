@@ -11,6 +11,7 @@ import {
   findBestReliever,
   isPitcherEligibleForChange,
   makeAiPitchingDecision,
+  makeAiStrategyDecision,
   makeAiTacticalDecision,
 } from "./aiManager";
 
@@ -294,5 +295,37 @@ describe("makeAiTacticalDecision", () => {
       expect(result.actionType).toBe("set_pinch_hitter_strategy");
       expect(result.payload).toBe("contact");
     }
+  });
+});
+
+describe("makeAiStrategyDecision", () => {
+  it("returns 'power' when down 2+ runs in inning 7+", () => {
+    const state = makeState({ score: [3, 1], atBat: 1, inning: 8 }); // home batting, trailing 3-1
+    expect(makeAiStrategyDecision(state, 1)).toBe("power");
+  });
+
+  it("returns 'aggressive' when down exactly 1 in inning 7+", () => {
+    const state = makeState({ score: [2, 1], atBat: 1, inning: 7 });
+    expect(makeAiStrategyDecision(state, 1)).toBe("aggressive");
+  });
+
+  it("returns 'patient' when leading by 3+", () => {
+    const state = makeState({ score: [0, 4], atBat: 1, inning: 3 });
+    expect(makeAiStrategyDecision(state, 1)).toBe("patient");
+  });
+
+  it("returns 'aggressive' with 2 outs in close late-game", () => {
+    const state = makeState({ score: [2, 2], atBat: 0, inning: 8, outs: 2 });
+    expect(makeAiStrategyDecision(state, 0)).toBe("aggressive");
+  });
+
+  it("returns 'contact' with runners in scoring position early", () => {
+    const state = makeState({ score: [0, 0], atBat: 0, inning: 3, baseLayout: [0, 1, 0] });
+    expect(makeAiStrategyDecision(state, 0)).toBe("contact");
+  });
+
+  it("returns 'balanced' by default", () => {
+    const state = makeState({ score: [0, 0], atBat: 0, inning: 2 });
+    expect(makeAiStrategyDecision(state, 0)).toBe("balanced");
   });
 });

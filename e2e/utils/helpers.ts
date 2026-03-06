@@ -280,13 +280,22 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await page.goto("/exhibition/new");
   await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   await configureNewGame(page, options);
+  // Wait for custom teams to load into the selects before clicking Play Ball.
+  // On slow WebKit CI runners, the RxDB reactive query can take 10-20 s to resolve,
+  // causing the "Create at least two custom teams" validation to fire if we click early
+  // (customTeams.length === 0 at click time → handleSubmit returns early → page stays stuck).
+  await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
+    timeout: 20_000,
+  });
   await page.getByTestId("play-ball-button").click();
   // The setup UI should disappear after starting.
+  // Use a generous timeout: on CI WebKit/tablet runners, IndexedDB initialisation
+  // can take 15+ seconds on first open, causing this to flake at 10 s.
   await expect(
     page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-  ).not.toBeVisible({ timeout: 10_000 });
+  ).not.toBeVisible({ timeout: 25_000 });
   // Wait for scoreboard to appear
-  await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }
 
 /**

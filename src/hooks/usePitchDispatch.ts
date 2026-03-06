@@ -1,11 +1,21 @@
 import * as React from "react";
 
 import type { PitchingRole } from "@components/SubstitutionPanel";
-import { Hit } from "@constants/hitTypes";
-import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
-import { makeAiPitchingDecision, makeAiTacticalDecision } from "@context/aiManager";
+import { selectPitchType } from "@constants/pitchTypes";
+import {
+  makeAiPitchingDecision,
+  makeAiStrategyDecision,
+  makeAiTacticalDecision,
+} from "@context/aiManager";
 import { GameAction, LogAction, State, Strategy } from "@context/index";
+import {
+  computeFatigueFactor,
+  computeSwingRate,
+  resolveBattedBallType,
+  resolveSwingOutcome,
+} from "@context/pitchSimulation";
 import { detectDecision } from "@context/reducer";
+import { ZERO_MODS } from "@context/resolvePlayerMods";
 import getRandomInt from "@utils/getRandomInt";
 
 /**
@@ -66,6 +76,12 @@ export const usePitchDispatch = ({
     const isBattingUnmanaged = !managerMode || currentState.atBat !== managedTeam;
     const isFieldingUnmanaged = !managerMode || 1 - currentState.atBat !== managedTeam;
 
+    // Context-aware strategy for the unmanaged batting team — only computed when
+    // needed (isBattingUnmanaged) so there's no overhead for human-managed pitches.
+    const aiStrategy = isBattingUnmanaged
+      ? makeAiStrategyDecision(currentState as State, currentState.atBat as 0 | 1)
+      : "balanced";
+
     // Pitching change (fielding team): evaluate at start of each at-bat (0-0 count).
     if (currentState.balls === 0 && currentState.strikes === 0) {
       const pitchingTeamIdx = (1 - currentState.atBat) as 0 | 1;
@@ -117,7 +133,8 @@ export const usePitchDispatch = ({
         dispatch({ type: "clear_suppress_decision" });
         // Fall through to normal pitch after clearing the suppress flag.
       } else {
-        const battingDecision = detectDecision(currentState as State, "balanced", true);
+        // AI picks a context-aware strategy (same choices a human manager has).
+        const battingDecision = detectDecision(currentState as State, aiStrategy, true);
         if (battingDecision) {
           const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
           if (aiAction.kind === "tactical") {
@@ -134,10 +151,22 @@ export const usePitchDispatch = ({
             ) {
               dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
             }
-            dispatchLog?.({
-              type: "log",
-              payload: `The manager: ${aiAction.reasonText}.`,
-            });
+            // Only log discrete, visible actions. Transient one-pitch modifiers
+            // (set_one_pitch_modifier, set_pinch_hitter_strategy) are re-applied on
+            // every pitch at the same count and would spam the play-by-play log.
+            const isDiscreteAction = [
+              "steal_attempt",
+              "bunt_attempt",
+              "intentional_walk",
+              "make_substitution",
+              "set_defensive_shift",
+            ].includes(aiAction.actionType);
+            if (isDiscreteAction) {
+              dispatchLog?.({
+                type: "log",
+                payload: `The manager: ${aiAction.reasonText}.`,
+              });
+            }
             // Decisions that replace the pitch (steal_attempt, bunt_attempt,
             // intentional_walk) should return early so the regular pitch is not
             // also dispatched in the same tick.
@@ -154,63 +183,81 @@ export const usePitchDispatch = ({
     }
     // ── End AI manager ────────────────────────────────────────────────────────
 
-    // Select pitch type based on current count, then roll main outcome.
+    // ── Pitch resolution pipeline ─────────────────────────────────────────────
     const currentStrikes = currentState.strikes;
     const currentBalls = currentState.balls;
+
+    // 1. Select pitch type based on current count.
     const pitchType = selectPitchType(currentBalls, currentStrikes, getRandomInt(100));
 
-    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategy;
-    const random = getRandomInt(1000);
+    // For unmanaged batting teams, use the AI's context-aware strategy.
+    // For the human-managed team, use the human's configured strategy.
+    // This applies regardless of whether the opposing team has a human manager.
+    const baseStrategy = isBattingUnmanaged ? aiStrategy : strategy;
+    const effectiveStrategy = currentState.pinchHitterStrategy ?? baseStrategy;
     const onePitchMod = currentState.onePitchModifier;
 
-    const protectBonus = onePitchMod === "protect" ? 0.7 : 1;
-    const contactMod =
-      effectiveStrategy === "contact" ? 1.15 : effectiveStrategy === "power" ? 0.9 : 1;
-    const baseSwingRate = Math.round((500 - 75 * currentStrikes) * contactMod * protectBonus);
-    const swingRate = Math.round(baseSwingRate * pitchSwingRateMod(pitchType));
-    const effectiveSwingRate = onePitchMod === "swing" ? 920 : swingRate;
+    // Look up batter contact/power mods.
+    const battingTeam = currentState.atBat as 0 | 1;
+    const batterSlotIdx = currentState.batterIndex[battingTeam];
+    const batterId = currentState.lineupOrder[battingTeam]?.[batterSlotIdx];
+    const batterMods = batterId
+      ? (currentState.resolvedMods?.[battingTeam]?.[batterId] ?? ZERO_MODS)
+      : ZERO_MODS;
 
-    if (random < effectiveSwingRate) {
-      if (getRandomInt(100) < 30) {
+    // Look up active pitcher mods (velocity, movement, stamina).
+    const pitchingTeam = (1 - (currentState.atBat as number)) as 0 | 1;
+    const activePitcherId =
+      currentState.rosterPitchers?.[pitchingTeam]?.[
+        currentState.activePitcherIdx?.[pitchingTeam] ?? 0
+      ];
+    const pitcherMods = activePitcherId
+      ? (currentState.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
+      : ZERO_MODS;
+
+    // Compute pitcher fatigue factor from batters faced and stamina.
+    const pitcherBattersFaced = (currentState.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
+    const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+
+    // 2. Determine swing vs. take.
+    const swingRoll = getRandomInt(1000);
+    const swingRate = computeSwingRate(currentStrikes, {
+      strategy: effectiveStrategy,
+      batterContactMod: batterMods.contactMod,
+      pitchType,
+      onePitchMod,
+    });
+
+    if (swingRoll < swingRate) {
+      // 3. Batter swings — resolve whiff / foul / contact.
+      const outcomeRoll = getRandomInt(100);
+      const swingOutcome = resolveSwingOutcome(outcomeRoll, {
+        pitcherVelocityMod: pitcherMods.velocityMod,
+        pitcherMovementMod: pitcherMods.movementMod,
+        batterContactMod: batterMods.contactMod,
+        fatigueFactor,
+      });
+
+      if (swingOutcome === "whiff") {
+        dispatch({ type: "strike", payload: { swung: true, pitchType } });
+      } else if (swingOutcome === "foul") {
         dispatch({ type: "foul", payload: { pitchType } });
       } else {
-        dispatch({ type: "strike", payload: { swung: true, pitchType } });
+        // 4. Contact — resolve batted-ball type (contact quality → ball-in-play shape).
+        const contactRoll = getRandomInt(100);
+        const typeRoll = getRandomInt(100);
+        const battedBallType = resolveBattedBallType(contactRoll, typeRoll, {
+          strategy: effectiveStrategy,
+          batterPowerMod: batterMods.powerMod,
+          pitcherVelocityMod: pitcherMods.velocityMod,
+          pitcherMovementMod: pitcherMods.movementMod,
+          fatigueFactor,
+        });
+        dispatch({ type: "hit", payload: { battedBallType, strategy: effectiveStrategy } });
       }
-    } else if (random < 920) {
-      dispatch({ type: "wait", payload: { strategy: effectiveStrategy, pitchType } });
     } else {
-      const strat = effectiveStrategy;
-      const hitRoll = getRandomInt(100);
-      let base: Hit;
-      if (strat === "power") {
-        base =
-          hitRoll < 20
-            ? Hit.Homerun
-            : hitRoll < 23
-              ? Hit.Triple
-              : hitRoll < 43
-                ? Hit.Double
-                : Hit.Single;
-      } else if (strat === "contact") {
-        base =
-          hitRoll < 8
-            ? Hit.Homerun
-            : hitRoll < 10
-              ? Hit.Triple
-              : hitRoll < 28
-                ? Hit.Double
-                : Hit.Single;
-      } else {
-        base =
-          hitRoll < 13
-            ? Hit.Homerun
-            : hitRoll < 15
-              ? Hit.Triple
-              : hitRoll < 35
-                ? Hit.Double
-                : Hit.Single;
-      }
-      dispatch({ type: "hit", payload: { hitType: base, strategy: strat } });
+      // 5. Batter takes the pitch — resolve ball or called strike.
+      dispatch({ type: "wait", payload: { strategy: effectiveStrategy, pitchType } });
     }
   }, [
     dispatch,

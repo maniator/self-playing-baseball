@@ -6,7 +6,6 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import type { GameAction, LogAction, State, TeamCustomPlayerOverrides } from "@context/index";
 import { makeState } from "@test/testHelpers";
 import { restoreRng } from "@utils/rng";
@@ -34,15 +33,15 @@ const makeReducer = () => {
  * runners via hits to exercise run-scoring and pop-out RNG paths).
  */
 const INNING_UNIT: GameAction[] = [
-  { type: "hit", payload: { hitType: Hit.Single, strategy: "balanced" } },
+  { type: "hit", payload: { battedBallType: "line_drive", strategy: "balanced" } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } }, // 1st out
-  { type: "hit", payload: { hitType: Hit.Double, strategy: "balanced" } },
+  { type: "hit", payload: { battedBallType: "deep_fly", strategy: "balanced" } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } }, // 2nd out
-  { type: "hit", payload: { hitType: Hit.Triple, strategy: "balanced" } },
+  { type: "hit", payload: { battedBallType: "hard_grounder", strategy: "balanced" } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } },
   { type: "strike", payload: { swung: true } }, // 3rd out → half-inning over

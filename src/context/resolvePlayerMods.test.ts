@@ -14,6 +14,11 @@ describe("resolvePlayerMods", () => {
     expect(result.contactMod).toBe(10);
     expect(result.speedMod).toBe(-5);
     expect(result.powerMod).toBe(0); // defaulted
+    expect(result.staminaMod).toBe(0); // defaulted
+  });
+  it("resolves staminaMod when provided", () => {
+    const result = resolvePlayerMods({ staminaMod: 20 });
+    expect(result.staminaMod).toBe(20);
   });
 });
 

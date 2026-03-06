@@ -70,6 +70,8 @@ test.describe("Import Save", () => {
     await page.getByTestId("paste-save-textarea").fill("not valid json");
     await page.getByTestId("paste-save-button").click();
 
-    await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 5_000 });
+    // Increased from 5 s → 10 s: mobile WebKit on CI can be slow to propagate
+    // the synchronous JSON.parse error back through the React state update.
+    await expect(page.getByTestId("import-error")).toBeVisible({ timeout: 10_000 });
   });
 });

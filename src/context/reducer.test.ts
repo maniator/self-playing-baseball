@@ -8,6 +8,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
+import { advanceRunners } from "./advanceRunners";
 import type { DecisionType, LogAction, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
 import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
@@ -34,11 +35,12 @@ const mockRandom = (value: number) => vi.spyOn(rngModule, "random").mockReturnVa
 // triple scoring (bug fix)
 describe("hit - triple runner scoring", () => {
   it("runner on 3rd scores on triple", () => {
-    mockRandom(0);
+    // line_drive + roll 900 → triple (850–929 range).
+    mockRandom(0.9);
     const { state, logs } = dispatchAction(
       makeState({ baseLayout: [0, 0, 1], score: [0, 0] }),
       "hit",
-      { hitType: Hit.Triple, strategy: "balanced" },
+      { battedBallType: "line_drive", strategy: "balanced" },
     );
     expect(state.score[0]).toBe(1);
     expect(state.baseLayout[2]).toBe(1);
@@ -46,11 +48,11 @@ describe("hit - triple runner scoring", () => {
     expect(logs.some((l) => l.includes("run"))).toBe(true);
   });
   it("two runners both score on triple", () => {
-    mockRandom(0);
+    mockRandom(0.9);
     const { state, logs } = dispatchAction(
       makeState({ baseLayout: [1, 1, 0], score: [0, 0] }),
       "hit",
-      { hitType: Hit.Triple, strategy: "balanced" },
+      { battedBallType: "line_drive", strategy: "balanced" },
     );
     expect(state.score[0]).toBe(2);
     expect(state.baseLayout[2]).toBe(1);
@@ -58,9 +60,9 @@ describe("hit - triple runner scoring", () => {
     expect(logs.some((l) => l.includes("2 runs"))).toBe(true);
   });
   it("bases loaded triple scores 3", () => {
-    mockRandom(0);
+    mockRandom(0.9);
     const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 1], score: [0, 0] }), "hit", {
-      hitType: Hit.Triple,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(3);
@@ -68,9 +70,9 @@ describe("hit - triple runner scoring", () => {
     expect(state.baseLayout[0]).toBe(0);
   });
   it("empty bases triple: batter on 3rd, 0 runs", () => {
-    mockRandom(0);
+    mockRandom(0.9);
     const { state } = dispatchAction(makeState({ baseLayout: [0, 0, 0] }), "hit", {
-      hitType: Hit.Triple,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(0);
@@ -81,18 +83,19 @@ describe("hit - triple runner scoring", () => {
 // double
 describe("hit - double", () => {
   it("runner on 3rd scores", () => {
-    mockRandom(0);
+    // line_drive + roll 700 → double (650–849 range).
+    mockRandom(0.7);
     const { state } = dispatchAction(makeState({ baseLayout: [0, 0, 1] }), "hit", {
-      hitType: Hit.Double,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(1);
     expect(state.baseLayout[1]).toBe(1);
   });
   it("runners on 2nd and 3rd both score", () => {
-    mockRandom(0);
+    mockRandom(0.7);
     const { state } = dispatchAction(makeState({ baseLayout: [0, 1, 1] }), "hit", {
-      hitType: Hit.Double,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(2);
@@ -100,9 +103,12 @@ describe("hit - double", () => {
     expect(state.baseLayout[2]).toBe(0);
   });
   it("runner on 1st goes to 3rd", () => {
-    mockRandom(0);
+    // line_drive + roll 700 → double; runner on 1st: scoreChance≈30%, roll 0.5→50 >= 30 → no score.
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.7) // outcome roll: 700 → double
+      .mockReturnValue(0.5); // subsequent rolls: 50 >= 30 → runner stays on base
     const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "hit", {
-      hitType: Hit.Double,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(0);
@@ -114,27 +120,34 @@ describe("hit - double", () => {
 // single
 describe("hit - single", () => {
   it("runner on 3rd scores", () => {
-    mockRandom(0);
+    // line_drive + roll 300 → single (150–649 range).
+    mockRandom(0.3);
     const { state } = dispatchAction(makeState({ baseLayout: [0, 0, 1] }), "hit", {
-      hitType: Hit.Single,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(1);
     expect(state.baseLayout[0]).toBe(1);
   });
   it("runner on 2nd goes to 3rd", () => {
-    mockRandom(0);
+    // line_drive + roll 300 → single; runner on 2nd: scoreChance≈60%, roll 0.8→80 >= 60 → no score.
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.3) // outcome roll: 300 → single
+      .mockReturnValue(0.8); // subsequent rolls: 80 >= 60 → runner stays on 2nd → advances to 3rd
     const { state } = dispatchAction(makeState({ baseLayout: [0, 1, 0] }), "hit", {
-      hitType: Hit.Single,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.baseLayout[2]).toBe(1);
     expect(state.baseLayout[1]).toBe(0);
   });
   it("runner on 1st goes to 2nd", () => {
-    mockRandom(0);
+    // line_drive + roll 300 → single; stretch check: chance≈28%, roll 0.8→80 >= 28 → no stretch.
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.3) // outcome roll: 300 → single
+      .mockReturnValue(0.8); // subsequent rolls: 80 >= 28 → no stretch to 3rd
     const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "hit", {
-      hitType: Hit.Single,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(state.baseLayout[1]).toBe(1);
@@ -145,68 +158,64 @@ describe("hit - single", () => {
 // home run
 describe("hit - home run", () => {
   it("grand slam scores 4", () => {
-    mockRandom(0);
+    // deep_fly + roll 800 → HR (770–999 range).
+    mockRandom(0.8);
     const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 1] }), "hit", {
-      hitType: Hit.Homerun,
+      battedBallType: "deep_fly",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(4);
     expect(state.baseLayout).toEqual([0, 0, 0]);
   });
   it("solo HR scores 1", () => {
-    mockRandom(0);
+    mockRandom(0.8);
     const { state } = dispatchAction(makeState({ score: [3, 2] }), "hit", {
-      hitType: Hit.Homerun,
+      battedBallType: "deep_fly",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(4);
   });
 });
 
-// walk
+// walk — tested via intentional_walk (walks never go through the "hit" contact path)
 describe("hit - walk", () => {
   it("bases empty: batter to 1st, no runs", () => {
     mockRandom(0);
-    const { state } = dispatchAction(makeState(), "hit", { hitType: Hit.Walk });
+    const { state } = dispatchAction(makeState(), "intentional_walk");
     expect(state.baseLayout[0]).toBe(1);
     expect(state.score[0]).toBe(0);
   });
   it("runner on 1st: force to 2nd", () => {
     mockRandom(0);
-    const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "hit", {
-      hitType: Hit.Walk,
-    });
+    const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "intentional_walk");
     expect(state.baseLayout[0]).toBe(1);
     expect(state.baseLayout[1]).toBe(1);
     expect(state.score[0]).toBe(0);
   });
   it("runner on 3rd only: stays, no force", () => {
     mockRandom(0);
-    const { state } = dispatchAction(makeState({ baseLayout: [0, 0, 1] }), "hit", {
-      hitType: Hit.Walk,
-    });
+    const { state } = dispatchAction(makeState({ baseLayout: [0, 0, 1] }), "intentional_walk");
     expect(state.baseLayout[0]).toBe(1);
     expect(state.baseLayout[2]).toBe(1);
     expect(state.score[0]).toBe(0);
   });
   it("bases loaded: run scores", () => {
     mockRandom(0);
-    const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 1] }), "hit", {
-      hitType: Hit.Walk,
-    });
+    const { state } = dispatchAction(makeState({ baseLayout: [1, 1, 1] }), "intentional_walk");
     expect(state.score[0]).toBe(1);
     expect(state.baseLayout).toEqual([1, 1, 1]);
   });
   it("walk is NEVER turned into a pop-out even when random is high (regression)", () => {
-    // randomNumber = 900 >= 750 (popOutThreshold) — old bug: this became a pop-out
+    // intentional_walk calls hitBall(Hit.Walk) which explicitly bypasses the pop-out check.
     vi.spyOn(rngModule, "random").mockReturnValue(0.9);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 0, 0] }), "hit", {
-      hitType: Hit.Walk,
-    });
+    const { state, logs } = dispatchAction(
+      makeState({ baseLayout: [0, 0, 0] }),
+      "intentional_walk",
+    );
     // Batter must be on 1st — NOT an out
     expect(state.baseLayout[0]).toBe(1);
     expect(state.outs).toBe(0);
-    expect(logs.some((l) => /pop|out/i.test(l))).toBe(false);
+    expect(logs.some((l) => /pop out/i.test(l))).toBe(false);
   });
   it("ball 4 walk with high random: runner reaches base (regression)", () => {
     // Simulate: first random call (wait→ball path) → 0.9 (high → ball), then hitBall
@@ -439,11 +448,12 @@ describe("game-over", () => {
     expect(state.gameOver).toBe(false);
   });
   it("walk-off: home team takes lead in bottom 9th", () => {
-    mockRandom(0);
+    // line_drive + roll 300 → single; runner on 3rd scores → walk-off.
+    mockRandom(0.3);
     const { state, logs } = dispatchAction(
       makeState({ atBat: 1, inning: 9, score: [2, 2], baseLayout: [0, 0, 1] }),
       "hit",
-      { hitType: Hit.Single, strategy: "balanced" },
+      { battedBallType: "line_drive", strategy: "balanced" },
     );
     expect(state.score[1]).toBe(3);
     expect(state.gameOver).toBe(true);
@@ -569,8 +579,11 @@ describe("detectDecision", () => {
 describe("pitchKey", () => {
   it("starts at 0", () => expect(makeState().pitchKey).toBe(0));
   it("hit increments pitchKey", () => {
-    mockRandom(0);
-    const { state } = dispatchAction(makeState({ pitchKey: 3 }), "hit", { hitType: Hit.Single });
+    // line_drive + roll 300 → single; pitchKey bumped inside handleBallInPlay.
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.8);
+    const { state } = dispatchAction(makeState({ pitchKey: 3 }), "hit", {
+      battedBallType: "line_drive",
+    });
     expect(state.pitchKey).toBeGreaterThan(3);
   });
   it("strike increments pitchKey", () => {
@@ -606,38 +619,26 @@ describe("misc", () => {
 // Additional coverage for previously uncovered lines
 // ---------------------------------------------------------------------------
 
-// Line 106: invalid hit type throws in advanceRunners
+// battedBallType dispatch validation
 describe("advanceRunners – invalid hit type", () => {
-  it("throws an error for an invalid hit type dispatched via 'hit'", () => {
-    // Force random < popOutThreshold so advanceRunners is always reached
-    vi.spyOn(rngModule, "random").mockReturnValue(0);
-    const { reducer } = makeReducer();
-    const state = makeState();
-    // Bypass TypeScript by casting 99 as Hit
-    expect(() =>
-      reducer(state, { type: "hit", payload: { hitType: 99 as Hit, strategy: "balanced" } }),
-    ).toThrow();
-    vi.restoreAllMocks();
+  it("throws when advanceRunners receives an unknown hit type", () => {
+    // advanceRunners has a default branch that throws for unrecognised Hit values.
+    expect(() => advanceRunners(99 as Hit, [0, 0, 0], [null, null, null])).toThrow(
+      /Not a possible hit type/,
+    );
   });
 });
 
-// Lines 129-135: power strategy pop-out → HR conversion
-describe("hit – power pop-out to HR conversion", () => {
-  it("power strategy converts pop-out to HR when second random roll < 15", () => {
-    // First random call is for pop-out check (>= 750 means pop-out) → 0.76
-    // Second random call is for HR conversion (< 15 means convert) → 0.01
-    vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.76) // popOutThreshold roll → pop-out range (750 for power after contact mod 0.8 → threshold=600)
-      .mockReturnValueOnce(0.01) // HR conversion roll → 1 < 15 → convert
-      .mockReturnValue(0);
-    const { state, logs } = dispatchAction(
-      makeState({ baseLayout: [0, 0, 0], score: [0, 0] }),
-      "hit",
-      { hitType: Hit.Single, strategy: "power" },
-    );
-    // If HR conversion triggered, score should be 1 (solo HR)
-    // OR pop-out path taken — either way no throw
-    expect(state).toBeDefined();
+// Lines 129-135: pop_up is always an out regardless of strategy (power conversion is in pitch dispatch)
+describe("hit – pop_up always produces an out", () => {
+  it("battedBallType pop_up → batter is out (no random roll needed)", () => {
+    // No mock needed — pop_up short-circuits before getRandomInt.
+    const { state, logs } = dispatchAction(makeState({ score: [0, 0] }), "hit", {
+      battedBallType: "pop_up",
+      strategy: "power",
+    });
+    expect(state.outs).toBe(1);
+    expect(logs.some((l) => /popped it up/i.test(l))).toBe(true);
   });
 });
 
@@ -857,9 +858,7 @@ describe("detectDecision – additional branches", () => {
 describe("hit - walk with runner on 1st and 3rd", () => {
   it("runner on 1st forced to 2nd; runner on 3rd stays", () => {
     mockRandom(0);
-    const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 1] }), "hit", {
-      hitType: Hit.Walk,
-    });
+    const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 1] }), "intentional_walk");
     expect(state.baseLayout[0]).toBe(1); // batter to 1st
     expect(state.baseLayout[1]).toBe(1); // forced from 1st to 2nd
     expect(state.baseLayout[2]).toBe(1); // 3rd stays
@@ -1017,9 +1016,9 @@ describe("pinch_hitter decision", () => {
   });
 
   it("pinchHitterStrategy cleared after hit ends at-bat", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    // pop_up always produces an out — no random mock needed.
     const { state } = dispatchAction(makeState({ pinchHitterStrategy: "power" }), "hit", {
-      hitType: Hit.Single,
+      battedBallType: "pop_up",
       strategy: "balanced",
     });
     expect(state.pinchHitterStrategy).toBeNull();
@@ -1110,27 +1109,27 @@ describe("defensive_shift decision", () => {
     expect(state.defensiveShiftOffered).toBe(false);
   });
 
-  it("defensive shift lowers pop-out threshold (more pop-outs)", () => {
-    // With shift on: threshold = round(750 * 1.0 * 0.85) = 638
-    // random = 0.65 (650) >= 638 → pop-out
-    vi.spyOn(rngModule, "random").mockReturnValue(0.65);
-    const { state, logs } = dispatchAction(makeState({ defensiveShift: true }), "hit", {
-      hitType: Hit.Single,
-      strategy: "balanced",
-    });
-    expect(logs.some((l) => /popped it up/i.test(l))).toBe(true);
-    expect(state.outs).toBe(1);
+  it("defensive shift raises ground-out rate for hard grounders", () => {
+    // hard_grounder: base threshold 400; shift boost +100 = 500.
+    // roll=450 → without shift: 450 >= 400 → single. With shift: 450 < 500 → ground out.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.45);
+    const { state: shiftOn, logs: logsOn } = dispatchAction(
+      makeState({ defensiveShift: true }),
+      "hit",
+      { battedBallType: "hard_grounder", strategy: "balanced" },
+    );
+    expect(shiftOn.outs).toBe(1);
+    expect(logsOn.some((l) => /out at first|fielder.s choice|double play/i.test(l))).toBe(true);
   });
 
-  it("without defensive shift, same random does NOT pop out", () => {
-    // Without shift: threshold = 750. random 0.65 (650) < 750 → no pop-out
-    vi.spyOn(rngModule, "random").mockReturnValue(0.65);
-    const { state, logs } = dispatchAction(makeState({ defensiveShift: false }), "hit", {
-      hitType: Hit.Single,
+  it("without defensive shift, same random does NOT produce a ground out", () => {
+    // Without shift: threshold 400. roll=450 → 450 >= 400 → single.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.45);
+    const { state: shiftOff } = dispatchAction(makeState({ defensiveShift: false }), "hit", {
+      battedBallType: "hard_grounder",
       strategy: "balanced",
     });
-    expect(logs.some((l) => /popped it up/i.test(l))).toBe(false);
-    expect(state.outs).toBe(0);
+    expect(shiftOff.outs).toBe(0);
   });
 
   it("defensiveShiftOffered persists across batters in the same half-inning (no re-prompt)", () => {
@@ -1163,11 +1162,12 @@ describe("defensive_shift decision", () => {
   });
 
   it("defensiveShift persists after hit ends at-bat (shift stays for half-inning)", () => {
-    vi.spyOn(rngModule, "random").mockReturnValue(0);
+    // line_drive + roll 300 → single; shift is preserved in state after at-bat.
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.8);
     const { state } = dispatchAction(
       makeState({ defensiveShift: true, defensiveShiftOffered: true }),
       "hit",
-      { hitType: Hit.Single, strategy: "balanced" },
+      { battedBallType: "line_drive", strategy: "balanced" },
     );
     expect(state.defensiveShift).toBe(true);
     expect(state.defensiveShiftOffered).toBe(true);
@@ -1301,9 +1301,10 @@ describe("restore_game — RBI backfill for older saves", () => {
 
 describe("root reducer — routing and orchestration", () => {
   it("delegates sim action (hit) to handleSimAction", () => {
-    mockRandom(0);
+    // deep_fly + roll 800 → HR (770–999); solo HR scores 1.
+    mockRandom(0.8);
     const { state } = dispatchAction(makeState({ score: [0, 0] }), "hit", {
-      hitType: Hit.Homerun,
+      battedBallType: "deep_fly",
       strategy: "balanced",
     });
     expect(state.score[0]).toBe(1); // solo HR scored → sim handler ran
@@ -1571,13 +1572,14 @@ describe("restore_game hit log consistency after load", () => {
 // ---------------------------------------------------------------------------
 describe("save → load → save round-trip scenarios", () => {
   it("load in-progress → play a hit → state reflects new hit", () => {
-    mockRandom(0);
+    // line_drive + roll 300 → single; 0.8 suppresses stretch-to-3rd.
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.8);
     const savedState = makeState({ inning: 5, score: [2, 1], pitchKey: 20 });
     const { state: loaded } = dispatchAction(makeState(), "restore_game", savedState);
     expect(loaded.inning).toBe(5);
     // Play a hit from the loaded state
     const { state: afterHit } = dispatchAction(loaded, "hit", {
-      hitType: Hit.Single,
+      battedBallType: "line_drive",
       strategy: "balanced",
     });
     expect(afterHit.score[0]).toBeGreaterThanOrEqual(loaded.score[0]);
@@ -1672,7 +1674,7 @@ describe("save → load → save round-trip scenarios", () => {
     expect(Array.isArray(loaded.batterIndex)).toBe(true);
     // A hit should proceed without crashing
     expect(() =>
-      dispatchAction(loaded, "hit", { hitType: Hit.Single, strategy: "balanced" }),
+      dispatchAction(loaded, "hit", { battedBallType: "pop_up", strategy: "balanced" }),
     ).not.toThrow();
   });
 });

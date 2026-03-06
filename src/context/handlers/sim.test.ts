@@ -11,6 +11,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { makeLogs, makeState, mockRandom } from "@test/testHelpers";
+import * as rngModule from "@utils/rng";
 
 import { handleSimAction } from "./sim";
 
@@ -53,12 +54,13 @@ describe("handleSimAction — non-sim actions return undefined", () => {
 
 describe("handleSimAction — hit", () => {
   it("homerun scores runner on 1st", () => {
-    mockRandom(0);
+    // deep_fly + roll 0.77 → 770 >= 770 → HR
+    vi.spyOn(rngModule, "random").mockReturnValue(0.77);
     const { log } = makeLogs();
     const state = makeState({ baseLayout: [1, 0, 0], score: [0, 0] });
     const next = handleSimAction(
       state,
-      { type: "hit", payload: { hitType: Hit.Homerun } },
+      { type: "hit", payload: { battedBallType: "deep_fly" } },
       { log },
     );
     expect(next?.score[0]).toBe(2);
@@ -66,20 +68,30 @@ describe("handleSimAction — hit", () => {
   });
 
   it("walkoff hit in bottom 9th ends game", () => {
-    mockRandom(0);
+    // line_drive + roll 0.3 → 300 → 150 ≤ 300 < 650 → single; runner on 3rd scores
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.0);
     const { log } = makeLogs();
     const state = makeState({ atBat: 1, inning: 9, score: [2, 2], baseLayout: [0, 0, 1] });
-    const next = handleSimAction(state, { type: "hit", payload: { hitType: Hit.Single } }, { log });
+    const next = handleSimAction(
+      state,
+      { type: "hit", payload: { battedBallType: "line_drive" } },
+      { log },
+    );
     expect(next?.score[1]).toBe(3);
     expect(next?.gameOver).toBe(true);
   });
 
   it("defaults to balanced strategy when not provided", () => {
-    mockRandom(0);
+    // line_drive + roll 0.3 → single; batter reaches 1st
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.9);
     const { log } = makeLogs();
     const state = makeState({ baseLayout: [0, 0, 0] });
     // Should not throw; result should be a valid state
-    const next = handleSimAction(state, { type: "hit", payload: { hitType: Hit.Single } }, { log });
+    const next = handleSimAction(
+      state,
+      { type: "hit", payload: { battedBallType: "line_drive" } },
+      { log },
+    );
     expect(next).toBeDefined();
     expect(next?.baseLayout[0]).toBe(1);
   });

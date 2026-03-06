@@ -6,6 +6,7 @@ import getRandomInt from "@utils/getRandomInt";
 import { hitBall } from "./hitBall";
 import { OnePitchModifier, State, Strategy } from "./index";
 import { updateActivePitcherLog } from "./pitcherLog";
+import { computeFatigueFactor } from "./pitchSimulation";
 import { playerOut } from "./playerOut";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
@@ -181,12 +182,19 @@ export const playerWait = (
     : ZERO_MODS;
   const pitcherControlMod = pitcherMods.controlMod;
   const pitcherVelocityMod = pitcherMods.velocityMod;
+
+  // Fatigue reduces effective control: a tired pitcher misses the zone more often.
+  const pitcherBattersFaced = (state.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
+  const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+  const fatigueControlPenalty = Math.round((fatigueFactor - 1) * 20);
+  const effectiveControlMod = pitcherControlMod - fatigueControlPenalty;
+
   const outcome = computeWaitOutcome(
     random,
     strategy,
     modifier,
     pitchType,
-    pitcherControlMod,
+    effectiveControlMod,
     pitcherVelocityMod,
   );
   return outcome === "ball"

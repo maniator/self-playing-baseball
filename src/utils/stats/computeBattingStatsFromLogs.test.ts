@@ -20,6 +20,7 @@ describe("emptyBatterStat", () => {
     expect(s.doubles).toBe(0);
     expect(s.triples).toBe(0);
     expect(s.homers).toBe(0);
+    expect(s.sacFlies).toBe(0);
   });
 });
 
@@ -43,11 +44,22 @@ describe("computeBattingStatsFromLogs", () => {
   ): PlayLogEntry => ({ inning: 1, half: team, batterNum, team, event, runs: rbi, rbi, playerId });
 
   const makeStrikeout = (team: 0 | 1, batterNum: number, playerId?: string): StrikeoutEntry => ({
-    inning: 1,
-    half: team,
     batterNum,
     team,
     playerId,
+  });
+
+  const makeSacFlyOut = (
+    team: 0 | 1,
+    batterNum: number,
+    playerId?: string,
+    rbi = 1,
+  ): StrikeoutEntry => ({
+    team,
+    batterNum,
+    playerId,
+    isSacFly: true,
+    rbi,
   });
 
   it("counts a single", () => {
@@ -127,5 +139,35 @@ describe("computeBattingStatsFromLogs", () => {
     expect(result["p1"].atBats).toBe(1);
     // p2: K in strikeoutLog AND outLog → AB = 1 (from outLog) + 0 (no hits) = 1
     expect(result["p2"].atBats).toBe(1);
+  });
+
+  it("sacrifice fly: counts as PA but not AB; awards RBI; increments sacFlies", () => {
+    const sf = makeSacFlyOut(0, 3, "p3", 1);
+    const result = computeBattingStatsFromLogs(0, [], [], [sf]);
+    // sac fly is NOT an AB
+    expect(result["p3"].atBats).toBe(0);
+    // sac fly counts as sacFlies
+    expect(result["p3"].sacFlies).toBe(1);
+    // batter earns 1 RBI
+    expect(result["p3"].rbi).toBe(1);
+  });
+
+  it("sacrifice fly uses explicit rbi field when provided", () => {
+    const sf = makeSacFlyOut(0, 1, "p1", 2);
+    const result = computeBattingStatsFromLogs(0, [], [], [sf]);
+    expect(result["p1"].sacFlies).toBe(1);
+    expect(result["p1"].rbi).toBe(2);
+    expect(result["p1"].atBats).toBe(0);
+  });
+
+  it("mix of regular out and sac fly for same batter: only non-sac out counts as AB", () => {
+    const regularOut = makeStrikeout(0, 1, "p1");
+    const sf = makeSacFlyOut(0, 1, "p1", 1);
+    const result = computeBattingStatsFromLogs(0, [], [regularOut], [regularOut, sf]);
+    // 1 regular out → AB=1; 1 sac fly → sacFlies=1; both → PA=2
+    expect(result["p1"].atBats).toBe(1);
+    expect(result["p1"].sacFlies).toBe(1);
+    expect(result["p1"].strikeouts).toBe(1);
+    expect(result["p1"].rbi).toBe(1);
   });
 });

@@ -20,6 +20,17 @@ export const incrementPitcherFatigue = (state: State): State => {
   return { ...state, pitcherBattersFaced: newFaced };
 };
 
+/** Options for `playerOut`. */
+export interface PlayerOutOptions {
+  /**
+   * When `true`, the outLog entry is flagged as a sacrifice fly.
+   * Sac flies count as PA but not AB; the batter earns RBI.
+   */
+  isSacFly?: boolean;
+  /** Number of RBI credited on this plate appearance. Only meaningful when `isSacFly` is true. */
+  rbi?: number;
+}
+
 /**
  * Record an out and handle half-inning transitions.
  *
@@ -32,8 +43,9 @@ export const playerOut = (
   state: State,
   log: (msg: string) => void,
   batterCompleted = false,
+  { isSacFly, rbi }: PlayerOutOptions = {},
 ): State => {
-  // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts).
+  // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts, sac flies).
   const battingTeam = state.atBat as 0 | 1;
   const slotIdx = state.batterIndex[battingTeam];
   const playerId = state.lineupOrder[battingTeam][slotIdx] || undefined;
@@ -42,6 +54,7 @@ export const playerOut = (
         team: battingTeam,
         batterNum: slotIdx + 1,
         ...(playerId ? { playerId } : {}),
+        ...(isSacFly ? { isSacFly: true, rbi: rbi ?? 1 } : {}),
       }
     : null;
   const stateWithOut = outEntry ? { ...state, outLog: [...state.outLog, outEntry] } : state;

@@ -46,6 +46,7 @@ export const ZERO_MODS: ResolvedPlayerMods = {
   velocityMod: 0,
   controlMod: 0,
   movementMod: 0,
+  staminaMod: 0,
 };
 
 /**
@@ -61,6 +62,7 @@ export const resolvePlayerMods = (ov: PlayerCustomization | undefined): Resolved
     velocityMod: ov.velocityMod ?? 0,
     controlMod: ov.controlMod ?? 0,
     movementMod: ov.movementMod ?? 0,
+    staminaMod: ov.staminaMod ?? 0,
   };
 };
 

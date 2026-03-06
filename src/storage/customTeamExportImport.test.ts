@@ -952,3 +952,324 @@ describe("exportCustomTeams — identity fields per player", () => {
     expect(parsed.payload.teams[0].roster.pitchers[0]["fingerprint"]).toBe("feedface");
   });
 });
+
+// ── Full schema round-trip: all player fields through exportCustomPlayer / parseExportedCustomPlayer ──
+
+describe("exportCustomPlayer / parseExportedCustomPlayer — full player field round-trip", () => {
+  it("round-trips all batting fields (contact, power, speed)", () => {
+    const p = makePlayer({ batting: { contact: 88, power: 72, speed: 65 } });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.batting.contact).toBe(88);
+    expect(result.batting.power).toBe(72);
+    expect(result.batting.speed).toBe(65);
+  });
+
+  it("round-trips all pitching fields (velocity, control, movement) for a pitcher", () => {
+    const p = makePlayer({
+      role: "pitcher",
+      batting: { contact: 30, power: 20, speed: 40 },
+      pitching: { velocity: 91, control: 85, movement: 78 },
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.pitching?.velocity).toBe(91);
+    expect(result.pitching?.control).toBe(85);
+    expect(result.pitching?.movement).toBe(78);
+  });
+
+  it("round-trips pitchingRole through exportCustomPlayer → parseExportedCustomPlayer", () => {
+    const p = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 90, control: 80, movement: 70 },
+      pitchingRole: "SP",
+    });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(p)).pitchingRole).toBe("SP");
+
+    const rp = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 88, control: 75, movement: 65 },
+      pitchingRole: "RP",
+    });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(rp)).pitchingRole).toBe("RP");
+
+    const swingman = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 87, control: 80, movement: 72 },
+      pitchingRole: "SP/RP",
+    });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(swingman)).pitchingRole).toBe("SP/RP");
+  });
+
+  it("round-trips handedness through exportCustomPlayer → parseExportedCustomPlayer", () => {
+    const righty = makePlayer({ handedness: "R" });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(righty)).handedness).toBe("R");
+
+    const lefty = makePlayer({ handedness: "L" });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(lefty)).handedness).toBe("L");
+
+    const switch_ = makePlayer({ handedness: "S" });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(switch_)).handedness).toBe("S");
+  });
+
+  it("round-trips position through exportCustomPlayer → parseExportedCustomPlayer", () => {
+    const p = makePlayer({ position: "CF" });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(p)).position).toBe("CF");
+  });
+
+  it("round-trips isBenchEligible and isPitcherEligible flags", () => {
+    const p = makePlayer({ isBenchEligible: true, isPitcherEligible: false });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.isBenchEligible).toBe(true);
+    expect(result.isPitcherEligible).toBe(false);
+  });
+
+  it("round-trips jerseyNumber (including null) through exportCustomPlayer", () => {
+    const p = makePlayer({ jerseyNumber: 42 });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(p)).jerseyNumber).toBe(42);
+
+    const nullJersey = makePlayer({ jerseyNumber: null });
+    expect(parseExportedCustomPlayer(exportCustomPlayer(nullJersey)).jerseyNumber).toBeNull();
+  });
+
+  it("round-trips role=two-way", () => {
+    const p = makePlayer({
+      role: "two-way",
+      batting: { contact: 65, power: 70, speed: 60 },
+      pitching: { velocity: 85, control: 80, movement: 70 },
+    });
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.role).toBe("two-way");
+    expect(result.batting.contact).toBe(65);
+    expect(result.pitching?.velocity).toBe(85);
+  });
+
+  it("complete round-trip: all identity and attribute fields together", () => {
+    const p: TeamPlayer = {
+      id: "player-full-rt",
+      name: "Complete Player",
+      role: "pitcher",
+      batting: { contact: 45, power: 38, speed: 52 },
+      pitching: { velocity: 93, control: 87, movement: 82 },
+      position: "SP",
+      handedness: "R",
+      isBenchEligible: false,
+      isPitcherEligible: true,
+      jerseyNumber: 22,
+      pitchingRole: "SP",
+      playerSeed: "full-rt-seed-abc",
+      fingerprint: buildPlayerSig({
+        name: "Complete Player",
+        role: "pitcher",
+        batting: { contact: 45, power: 38, speed: 52 },
+        pitching: { velocity: 93, control: 87, movement: 82 },
+        playerSeed: "full-rt-seed-abc",
+      }),
+      globalPlayerId: "pl_full_rt_gid",
+    };
+    const result = parseExportedCustomPlayer(exportCustomPlayer(p));
+    expect(result.name).toBe("Complete Player");
+    expect(result.role).toBe("pitcher");
+    expect(result.batting).toEqual({ contact: 45, power: 38, speed: 52 });
+    expect(result.pitching).toEqual({ velocity: 93, control: 87, movement: 82 });
+    expect(result.position).toBe("SP");
+    expect(result.handedness).toBe("R");
+    expect(result.isBenchEligible).toBe(false);
+    expect(result.isPitcherEligible).toBe(true);
+    expect(result.jerseyNumber).toBe(22);
+    expect(result.pitchingRole).toBe("SP");
+    expect(result.playerSeed).toBe("full-rt-seed-abc");
+    expect(result.globalPlayerId).toBe("pl_full_rt_gid");
+    // sig must be stripped — export-only metadata
+    expect("sig" in result).toBe(false);
+  });
+});
+
+// ── Full schema round-trip: all player fields through exportCustomTeams / importCustomTeams ──
+
+describe("exportCustomTeams / importCustomTeams — full player and team field round-trips", () => {
+  it("round-trips pitchingRole for pitchers through exportCustomTeams → importCustomTeams", () => {
+    const spPitcher = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 90, control: 82, movement: 75 },
+      pitchingRole: "SP",
+      playerSeed: "sp-seed",
+    });
+    const rpPitcher = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 87, control: 78, movement: 70 },
+      pitchingRole: "RP",
+      playerSeed: "rp-seed",
+    });
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer()],
+        bench: [],
+        pitchers: [spPitcher, rpPitcher],
+      },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.pitchers[0].pitchingRole).toBe("SP");
+    expect(result.teams[0].roster.pitchers[1].pitchingRole).toBe("RP");
+  });
+
+  it("round-trips handedness for all roster slots through exportCustomTeams → importCustomTeams", () => {
+    const lineupPlayer = makePlayer({ handedness: "L", playerSeed: "l-hand-seed" });
+    const benchPlayer = makePlayer({ handedness: "S", playerSeed: "s-hand-seed" });
+    const pitcher = makePlayer({
+      role: "pitcher",
+      handedness: "R",
+      pitching: { velocity: 88, control: 80, movement: 70 },
+      playerSeed: "r-hand-seed",
+    });
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [lineupPlayer],
+        bench: [benchPlayer],
+        pitchers: [pitcher],
+      },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.lineup[0].handedness).toBe("L");
+    expect(result.teams[0].roster.bench[0].handedness).toBe("S");
+    expect(result.teams[0].roster.pitchers[0].handedness).toBe("R");
+  });
+
+  it("round-trips position for all roster slots through exportCustomTeams → importCustomTeams", () => {
+    const lineupPlayer = makePlayer({ position: "SS", playerSeed: "pos-ss-seed" });
+    const benchPlayer = makePlayer({ position: "C", playerSeed: "pos-c-seed" });
+    const pitcher = makePlayer({
+      role: "pitcher",
+      position: "P",
+      pitching: { velocity: 88, control: 80, movement: 70 },
+      playerSeed: "pos-p-seed",
+    });
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [lineupPlayer],
+        bench: [benchPlayer],
+        pitchers: [pitcher],
+      },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.lineup[0].position).toBe("SS");
+    expect(result.teams[0].roster.bench[0].position).toBe("C");
+    expect(result.teams[0].roster.pitchers[0].position).toBe("P");
+  });
+
+  it("round-trips complete batting stats for all lineup players", () => {
+    const p1 = makePlayer({
+      batting: { contact: 85, power: 70, speed: 90 },
+      playerSeed: "bat-seed-1",
+    });
+    const p2 = makePlayer({
+      batting: { contact: 55, power: 90, speed: 40 },
+      playerSeed: "bat-seed-2",
+    });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [p1, p2], bench: [], pitchers: [] },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.lineup[0].batting).toEqual({ contact: 85, power: 70, speed: 90 });
+    expect(result.teams[0].roster.lineup[1].batting).toEqual({ contact: 55, power: 90, speed: 40 });
+  });
+
+  it("round-trips complete pitching stats (velocity, control, movement)", () => {
+    const pitcher = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 95, control: 88, movement: 80 },
+      playerSeed: "pitch-stats-seed",
+    });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [pitcher] },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.pitchers[0].pitching).toEqual({
+      velocity: 95,
+      control: 88,
+      movement: 80,
+    });
+  });
+
+  it("round-trips team identity fields: abbreviation, city, nickname, teamSeed through importCustomTeams", () => {
+    const team = makeTeam({
+      name: "River City Rockets",
+      abbreviation: "RCR",
+      city: "River City",
+      nickname: "Rockets",
+      teamSeed: "team-identity-seed-abc",
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].name).toBe("River City Rockets");
+    expect(result.teams[0].abbreviation).toBe("RCR");
+    expect(result.teams[0].city).toBe("River City");
+    expect(result.teams[0].nickname).toBe("Rockets");
+    expect(result.teams[0].teamSeed).toBe("team-identity-seed-abc");
+  });
+
+  it("round-trips isBenchEligible and isPitcherEligible flags through importCustomTeams", () => {
+    const bench = makePlayer({
+      isBenchEligible: true,
+      isPitcherEligible: false,
+      playerSeed: "bench-elig-seed",
+    });
+    const twoWay = makePlayer({
+      role: "two-way",
+      isBenchEligible: true,
+      isPitcherEligible: true,
+      playerSeed: "two-way-elig-seed",
+      pitching: { velocity: 80, control: 75, movement: 70 },
+    });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [bench, twoWay], bench: [], pitchers: [] },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect(result.teams[0].roster.lineup[0].isBenchEligible).toBe(true);
+    expect(result.teams[0].roster.lineup[0].isPitcherEligible).toBe(false);
+    expect(result.teams[0].roster.lineup[1].isBenchEligible).toBe(true);
+    expect(result.teams[0].roster.lineup[1].isPitcherEligible).toBe(true);
+  });
+
+  it("strips sig from all players after importCustomTeams — export-only metadata not stored", () => {
+    const player = makePlayer({ playerSeed: "strip-sig-seed" });
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    expect("sig" in result.teams[0].roster.lineup[0]).toBe(false);
+  });
+
+  it("legacy player without pitchingRole imports without error and leaves field absent", () => {
+    // Simulates a player from a pre-pitchingRole bundle (no pitchingRole field at all).
+    const legacyPlayer = makePlayer({
+      role: "pitcher",
+      pitching: { velocity: 88, control: 80, movement: 72 },
+      playerSeed: "legacy-role-seed",
+    });
+    // Explicitly ensure no pitchingRole field
+    const { pitchingRole: _removed, ...legacyNoRole } = legacyPlayer as TeamPlayer & {
+      pitchingRole?: string;
+    };
+    const team = makeTeam({
+      roster: {
+        schemaVersion: 1,
+        lineup: [makePlayer()],
+        bench: [],
+        pitchers: [legacyNoRole as TeamPlayer],
+      },
+    });
+    const json = exportCustomTeams([team]);
+    const result = importCustomTeams(json, []);
+    // pitchingRole absent rather than set to a wrong default
+    expect(result.teams[0].roster.pitchers[0].pitchingRole).toBeUndefined();
+  });
+});
