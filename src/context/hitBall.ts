@@ -204,11 +204,7 @@ const handleFlyOut = (
  *
  * `base` must already have pitchKey incremented and count/decision fields cleared.
  */
-const processConfirmedHit = (
-  type: Hit,
-  base: State,
-  log: (msg: string) => void,
-): State => {
+const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void): State => {
   const battingTeam = base.atBat as 0 | 1;
   const pitchingTeam = (1 - (base.atBat as number)) as 0 | 1;
   const batterSlotIdx = base.batterIndex[battingTeam];
@@ -380,7 +376,7 @@ export const handleBallInPlay = (
   battedBallType: BattedBallType,
   state: State,
   log: (msg: string) => void,
-  { strategy = "balanced" }: HandleBallInPlayOptions = {},
+  { strategy: _strategy = "balanced" }: HandleBallInPlayOptions = {},
 ): State => {
   const pitchKey = (state.pitchKey ?? 0) + 1;
   const base = {

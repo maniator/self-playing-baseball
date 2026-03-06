@@ -8,6 +8,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
+import { advanceRunners } from "./advanceRunners";
 import type { DecisionType, LogAction, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
 import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
@@ -207,7 +208,10 @@ describe("hit - walk", () => {
   it("walk is NEVER turned into a pop-out even when random is high (regression)", () => {
     // intentional_walk calls hitBall(Hit.Walk) which explicitly bypasses the pop-out check.
     vi.spyOn(rngModule, "random").mockReturnValue(0.9);
-    const { state, logs } = dispatchAction(makeState({ baseLayout: [0, 0, 0] }), "intentional_walk");
+    const { state, logs } = dispatchAction(
+      makeState({ baseLayout: [0, 0, 0] }),
+      "intentional_walk",
+    );
     // Batter must be on 1st — NOT an out
     expect(state.baseLayout[0]).toBe(1);
     expect(state.outs).toBe(0);
@@ -617,14 +621,11 @@ describe("misc", () => {
 
 // battedBallType dispatch validation
 describe("advanceRunners – invalid hit type", () => {
-  it("throws when advanceRunners receives an unknown hit type (passed via hitBall directly)", () => {
-    // This test validates that advanceRunners guards against invalid enum values.
-    // The reducer's "hit" action no longer uses hitType — this exercises the underlying guard.
-    const { hitBall } = require("./hitBall");
-    const state = makeState();
-    const log = vi.fn();
-    // Hit enum 99 is not valid; advanceRunners throws.
-    expect(() => hitBall(99, state, log)).toThrow();
+  it("throws when advanceRunners receives an unknown hit type", () => {
+    // advanceRunners has a default branch that throws for unrecognised Hit values.
+    expect(() => advanceRunners(99 as Hit, [0, 0, 0], [null, null, null])).toThrow(
+      /Not a possible hit type/,
+    );
   });
 });
 
@@ -1118,7 +1119,7 @@ describe("defensive_shift decision", () => {
       { battedBallType: "hard_grounder", strategy: "balanced" },
     );
     expect(shiftOn.outs).toBe(1);
-    expect(logsOn.some((l) => /ground out|fielder.s choice|double play/i.test(l))).toBe(true);
+    expect(logsOn.some((l) => /out at first|fielder.s choice|double play/i.test(l))).toBe(true);
   });
 
   it("without defensive shift, same random does NOT produce a ground out", () => {

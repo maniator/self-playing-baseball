@@ -6,7 +6,6 @@
 
 import { afterEach, describe, expect, it } from "vitest";
 
-
 import type { GameAction, LogAction, State, TeamCustomPlayerOverrides } from "@context/index";
 import { makeState } from "@test/testHelpers";
 import { restoreRng } from "@utils/rng";

@@ -4,14 +4,14 @@
  * Implements the layered baseball pitch-resolution model:
  *   1. Swing decision  (computeSwingRate)
  *   2. Swing outcome   (resolveSwingOutcome): whiff | foul | contact
- *   3. Contact quality (resolveContactHitType): weak → medium → hard → hit type
- *   4. Pitcher fatigue (computeFatigueFactor): degrades effectiveness over batters faced
+ *   3. Contact quality (resolveContactQuality): weak → medium → hard
+ *   4. Batted-ball type (resolveBattedBallType): pop_up | grounder | line_drive | fly ball
+ *   5. Pitcher fatigue (computeFatigueFactor): degrades effectiveness over batters faced
  *
  * All functions are pure (no side effects) and deterministic given the same inputs.
  * Random rolls are accepted as parameters so callers control the RNG sequence.
  */
 
-import { Hit } from "@constants/hitTypes";
 import type { PitchType } from "@constants/pitchTypes";
 import { pitchSwingRateMod } from "@constants/pitchTypes";
 
@@ -284,56 +284,5 @@ export const resolveBattedBallType = (
       if (typeRoll < 35) return "pop_up";
       if (typeRoll < 80) return "weak_grounder";
       return "medium_fly";
-  }
-};
-
-/**
- * Determine the hit type when the batter makes contact.
- *
- * @deprecated Use `resolveBattedBallType` + `handleBallInPlay` instead.
- *   This function is kept for unit-test backward-compatibility only and now
- *   derives its result via `resolveBattedBallType`.
- */
-export const resolveContactHitType = (
-  contactRoll: number,
-  typeRoll: number,
-  strategy: Strategy,
-  batterPowerMod: number,
-  pitcherVelocityMod: number,
-  pitcherMovementMod: number,
-  fatigueFactor = 1.0,
-): Hit => {
-  const bbt = resolveBattedBallType(contactRoll, typeRoll, {
-    strategy,
-    batterPowerMod,
-    pitcherVelocityMod,
-    pitcherMovementMod,
-    fatigueFactor,
-  });
-  // Map batted-ball type to the approximate hit type it would produce when it
-  // falls for a hit (used only by legacy tests; `handleBallInPlay` is the
-  // authoritative implementation for actual gameplay).
-  switch (bbt) {
-    case "pop_up":
-      return Hit.Single; // will be converted to an out by handleBallInPlay
-    case "weak_grounder":
-      return Hit.Single;
-    case "hard_grounder":
-      return Hit.Single;
-    case "line_drive":
-      if (typeRoll < 15) return Hit.Homerun;
-      if (typeRoll < 23) return Hit.Triple;
-      if (typeRoll < 50) return Hit.Double;
-      return Hit.Single;
-    case "medium_fly":
-      if (typeRoll < 5) return Hit.Homerun;
-      if (typeRoll < 8) return Hit.Triple;
-      if (typeRoll < 28) return Hit.Double;
-      return Hit.Single;
-    case "deep_fly":
-      if (typeRoll < 25) return Hit.Homerun;
-      if (typeRoll < 40) return Hit.Triple;
-      if (typeRoll < 80) return Hit.Double;
-      return Hit.Single;
   }
 };

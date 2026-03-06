@@ -200,130 +200,130 @@ describe("resolveSwingOutcome", () => {
 });
 
 // ---------------------------------------------------------------------------
-// resolveContactHitType
+// resolveBattedBallType
 // ---------------------------------------------------------------------------
 
-describe("resolveContactHitType", () => {
+describe("resolveBattedBallType", () => {
   // Hard contact: contactRoll < 25 (base hardThreshold with no mods)
   // Medium contact: 25 ≤ contactRoll < 60
   // Weak contact: contactRoll ≥ 60
 
   describe("hard contact (contactRoll < 25)", () => {
-    it("typeRoll < 15 → Homerun", () => {
-      expect(resolveContactHitType(0, 10, "balanced", 0, 0, 0)).toBe(Hit.Homerun);
+    it("typeRoll < 40 → deep_fly", () => {
+      expect(resolveBattedBallType(0, 10)).toBe("deep_fly");
     });
-    it("typeRoll 15–19 → Triple", () => {
-      expect(resolveContactHitType(0, 17, "balanced", 0, 0, 0)).toBe(Hit.Triple);
+    it("typeRoll 40–74 → line_drive", () => {
+      expect(resolveBattedBallType(0, 50)).toBe("line_drive");
     });
-    it("typeRoll 20–44 → Double", () => {
-      expect(resolveContactHitType(0, 30, "balanced", 0, 0, 0)).toBe(Hit.Double);
-    });
-    it("typeRoll ≥ 45 → Single", () => {
-      expect(resolveContactHitType(0, 50, "balanced", 0, 0, 0)).toBe(Hit.Single);
+    it("typeRoll ≥ 75 → hard_grounder", () => {
+      expect(resolveBattedBallType(0, 80)).toBe("hard_grounder");
     });
   });
 
   describe("medium contact (25 ≤ contactRoll < 60)", () => {
-    it("typeRoll < 5 → Homerun", () => {
-      expect(resolveContactHitType(40, 3, "balanced", 0, 0, 0)).toBe(Hit.Homerun);
+    it("typeRoll < 35 → medium_fly", () => {
+      expect(resolveBattedBallType(40, 10)).toBe("medium_fly");
     });
-    it("typeRoll 5–7 → Triple", () => {
-      expect(resolveContactHitType(40, 6, "balanced", 0, 0, 0)).toBe(Hit.Triple);
+    it("typeRoll 35–54 → hard_grounder", () => {
+      expect(resolveBattedBallType(40, 40)).toBe("hard_grounder");
     });
-    it("typeRoll 8–27 → Double", () => {
-      expect(resolveContactHitType(40, 18, "balanced", 0, 0, 0)).toBe(Hit.Double);
+    it("typeRoll 55–74 → line_drive", () => {
+      expect(resolveBattedBallType(40, 60)).toBe("line_drive");
     });
-    it("typeRoll ≥ 28 → Single", () => {
-      expect(resolveContactHitType(40, 40, "balanced", 0, 0, 0)).toBe(Hit.Single);
+    it("typeRoll ≥ 75 → weak_grounder", () => {
+      expect(resolveBattedBallType(40, 80)).toBe("weak_grounder");
     });
   });
 
   describe("weak contact (contactRoll ≥ 60)", () => {
-    it("typeRoll < 2 → Homerun (bloop or short porch)", () => {
-      expect(resolveContactHitType(80, 1, "balanced", 0, 0, 0)).toBe(Hit.Homerun);
+    it("typeRoll < 35 → pop_up", () => {
+      expect(resolveBattedBallType(80, 10)).toBe("pop_up");
     });
-    it("typeRoll 2–3 → Triple", () => {
-      expect(resolveContactHitType(80, 3, "balanced", 0, 0, 0)).toBe(Hit.Triple);
+    it("typeRoll 35–79 → weak_grounder", () => {
+      expect(resolveBattedBallType(80, 50)).toBe("weak_grounder");
     });
-    it("typeRoll 4–13 → Double", () => {
-      expect(resolveContactHitType(80, 8, "balanced", 0, 0, 0)).toBe(Hit.Double);
-    });
-    it("typeRoll ≥ 14 → Single", () => {
-      expect(resolveContactHitType(80, 50, "balanced", 0, 0, 0)).toBe(Hit.Single);
+    it("typeRoll ≥ 80 → medium_fly", () => {
+      expect(resolveBattedBallType(80, 85)).toBe("medium_fly");
     });
   });
 
-  describe("hard contact produces HRs more often than weak contact", () => {
-    it("HR rate for hard > HR rate for weak (typeRoll < 15 vs typeRoll < 2)", () => {
-      // Hard: HR if typeRoll < 15 → 15/100 = 15% chance
-      // Weak: HR if typeRoll < 2 → 2/100 = 2% chance
-      let hardHR = 0;
-      let weakHR = 0;
+  describe("hard contact produces more premium batted balls than weak contact", () => {
+    it("hard yields more deep_fly+line_drive than weak", () => {
+      let hardPremium = 0;
+      let weakPremium = 0;
       for (let typeRoll = 0; typeRoll < 100; typeRoll++) {
-        if (resolveContactHitType(0, typeRoll, "balanced", 0, 0, 0) === Hit.Homerun) hardHR++;
-        if (resolveContactHitType(80, typeRoll, "balanced", 0, 0, 0) === Hit.Homerun) weakHR++;
+        const hardBBT = resolveBattedBallType(0, typeRoll);
+        const weakBBT = resolveBattedBallType(80, typeRoll);
+        if (hardBBT === "deep_fly" || hardBBT === "line_drive") hardPremium++;
+        if (weakBBT === "deep_fly" || weakBBT === "line_drive") weakPremium++;
       }
-      expect(hardHR).toBeGreaterThan(weakHR);
+      expect(hardPremium).toBeGreaterThan(weakPremium);
     });
   });
 
   describe("power strategy", () => {
-    it("power + medium contact + typeRoll < 15 → HR (powerBoost upgrades to hard)", () => {
-      // Medium contact (contactRoll=40) + power strategy + typeRoll=5 < 15 → powerBoost
-      // quality upgrades medium → hard → typeRoll=5 < 15 → HR
-      expect(resolveContactHitType(40, 5, "power", 0, 0, 0)).toBe(Hit.Homerun);
+    it("power + medium contact + typeRoll < 15 → deep_fly (powerBoost)", () => {
+      // Medium contact (contactRoll=40) + power + typeRoll=5 < 15 → powerBoost upgrades to deep_fly
+      expect(resolveBattedBallType(40, 5, { strategy: "power" })).toBe("deep_fly");
     });
 
-    it("power + hard contact: no double-boost needed, hard HR at typeRoll < 15", () => {
-      // Already hard, typeRoll < 15 → HR regardless of powerBoost check
-      expect(resolveContactHitType(0, 10, "power", 0, 0, 0)).toBe(Hit.Homerun);
+    it("power + hard contact: already hard, typeRoll < 40 → deep_fly", () => {
+      expect(resolveBattedBallType(0, 10, { strategy: "power" })).toBe("deep_fly");
     });
 
     it("power + medium contact + typeRoll ≥ 15 → no boost (normal medium outcome)", () => {
-      // typeRoll=20 ≥ 15 → powerBoost is false → stays medium → 8≤20<28 → Double
-      expect(resolveContactHitType(40, 20, "power", 0, 0, 0)).toBe(Hit.Double);
+      // typeRoll=20 ≥ 15 → powerBoost is false → medium → typeRoll=20 < 35 → medium_fly
+      expect(resolveBattedBallType(40, 20, { strategy: "power" })).toBe("medium_fly");
     });
   });
 
   describe("pitcher stats affect contact quality", () => {
-    it("high pitcher velocity reduces hard contact threshold (fewer HR opportunities)", () => {
-      // With velocityMod=+20 and movementMod=+20:
-      //   hardThreshold = max(10, 25 - round((20+20)/10)) = max(10, 21) = 21
-      // contactRoll=24: hard with no mods (24 < 25), medium with high pitcher stuff (24 ≥ 21).
-      // Hard + typeRoll=10 < 15 → HR; Medium + typeRoll=10: 8≤10<28 → Double
-      expect(resolveContactHitType(24, 10, "balanced", 0, 0, 0)).toBe(Hit.Homerun); // hard → HR
-      expect(resolveContactHitType(24, 10, "balanced", 0, 20, 20)).toBe(Hit.Double); // medium → Double
+    it("high pitcher velocity reduces hard contact threshold (contact quality suppressed)", () => {
+      // No mods: hardThreshold=25; contactRoll=24 < 25 → hard → typeRoll=10 < 40 → deep_fly
+      // velocityMod=20, movementMod=20: hardThreshold = max(10, 25 - round(40/10)) = 21
+      //   contactRoll=24 ≥ 21 → medium → typeRoll=10 < 35 → medium_fly
+      expect(resolveBattedBallType(24, 10)).toBe("deep_fly");
+      expect(
+        resolveBattedBallType(24, 10, { pitcherVelocityMod: 20, pitcherMovementMod: 20 }),
+      ).toBe("medium_fly");
     });
   });
 
-  describe("pitcher fatigue increases hard contact", () => {
-    it("tired pitcher increases the hardThreshold (more hard contact)", () => {
-      // Fatigue adds to hardThreshold: +round((1.4-1)*10) = +4
-      // So hardThreshold rises from 25 to ~29 with fatigueFactor=1.4.
-      const freshHardThreshold = 25;
-      // contactRoll=26 is medium for fresh pitcher but might be hard for tired
-      const freshResult = resolveContactHitType(26, 10, "balanced", 0, 0, 0, 1.0);
-      const tiredResult = resolveContactHitType(26, 10, "balanced", 0, 0, 0, 1.4);
-      // Fresh: 26 ≥ 25 → medium, typeRoll=10 ≥ 8 → Double
-      expect(freshResult).toBe(Hit.Double);
-      // Tired: hardThreshold rises to ~29, so 26 < 29 → hard, typeRoll=10 < 15 → HR
-      expect(tiredResult).toBe(Hit.Homerun);
+  describe("pitcher fatigue increases hard contact (batted ball quality rises)", () => {
+    it("tired pitcher: contactRoll=26 becomes hard (was medium with fresh pitcher)", () => {
+      // fatigueFactor=1.0: hardThreshold=25; 26 ≥ 25 → medium → typeRoll=10 < 35 → medium_fly
+      // fatigueFactor=1.4: hardThreshold=25+round(0.4*10)=29; 26 < 29 → hard → typeRoll=10 < 40 → deep_fly
+      const freshResult = resolveBattedBallType(26, 10, { fatigueFactor: 1.0 });
+      const tiredResult = resolveBattedBallType(26, 10, { fatigueFactor: 1.4 });
+      expect(freshResult).toBe("medium_fly");
+      expect(tiredResult).toBe("deep_fly");
     });
   });
 
-  it("always returns a valid Hit type", () => {
-    const validHits = [Hit.Single, Hit.Double, Hit.Triple, Hit.Homerun];
+  it("always returns a valid BattedBallType", () => {
+    const validTypes = [
+      "pop_up",
+      "weak_grounder",
+      "hard_grounder",
+      "line_drive",
+      "medium_fly",
+      "deep_fly",
+    ];
     for (let cRoll = 0; cRoll < 100; cRoll++) {
       for (let tRoll = 0; tRoll < 100; tRoll += 10) {
-        expect(validHits).toContain(resolveContactHitType(cRoll, tRoll, "balanced", 0, 0, 0));
+        expect(validTypes).toContain(resolveBattedBallType(cRoll, tRoll));
       }
     }
   });
 
   it("is deterministic given identical inputs", () => {
-    expect(resolveContactHitType(15, 25, "contact", 10, -5, 0, 1.2)).toBe(
-      resolveContactHitType(15, 25, "contact", 10, -5, 0, 1.2),
-    );
+    const opts = {
+      strategy: "contact" as const,
+      batterPowerMod: 10,
+      pitcherVelocityMod: -5,
+      fatigueFactor: 1.2,
+    };
+    expect(resolveBattedBallType(15, 25, opts)).toBe(resolveBattedBallType(15, 25, opts));
   });
 });
 
