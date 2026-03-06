@@ -26,7 +26,7 @@ jobs:
         run: corepack enable
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: yarn install --immutable
 
       # Pre-pull the Playwright container image so the e2e-test-runner agent
       # can run `docker run` commands immediately without a download delay.

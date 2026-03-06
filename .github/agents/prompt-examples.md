@@ -230,7 +230,8 @@ Add an E2E save fixture for testing the [X] UI element.
 
 Requirements:
 - The fixture must put the game in state [describe state: inning N, pendingDecision=Y, RBI on board, etc.].
-- Use the Node.js FNV-1a script pattern from the existing fixtures in e2e/fixtures/ (use Node, not Python —
+- Use the Node.js FNV-1a signing approach defined in the "Authoring a new fixture" section of
+  copilot-instructions.md (use Node, not Python —
   Python json.dumps escapes non-ASCII differently from JS JSON.stringify, causing sig mismatches).
 - The `sig` field must be computed as fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events})).
 - Add a test that calls loadFixture(page, "new-fixture.json") and asserts [expected UI element] is visible.

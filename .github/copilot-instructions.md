@@ -763,24 +763,26 @@ await loadFixture(page, "pending-decision.json");
 
 ### Authoring a new fixture
 
-Fixtures are signed JSON bundles (`RxdbExportedSave` format). The signature is a FNV-1a 32-bit checksum:
+Fixtures are signed JSON bundles (`RxdbExportedSave` format). The signature is a FNV-1a 32-bit checksum. **Always use Node.js (not Python)** to compute signatures — Python's `json.dumps` escapes non-ASCII characters differently from JS `JSON.stringify` (e.g. `·` → `\u00b7`), which causes sig mismatches at import time.
 
-```python
-RXDB_EXPORT_KEY = "ballgame:rxdb:v1"
+```js
+const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
 
-def fnv1a(s: str) -> str:
-    h = 0x811c9dc5
-    for c in s:
-        h ^= ord(c)
-        h = (h * 0x01000193) & 0xFFFFFFFF
-    return format(h, '08x')
+function fnv1a(str) {
+  let h = 0x811c9dc5;
+  for (const c of str) {
+    h ^= c.codePointAt(0);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
 
-def make_sig(header, events):
-    # JSON.stringify with no extra whitespace (separators=(',', ':'))
-    inner = json.dumps({"header": header, "events": events}, separators=(',', ':'))
-    return fnv1a(RXDB_EXPORT_KEY + inner)
+function makeSig(header, events) {
+  const inner = JSON.stringify({ header, events });
+  return fnv1a(RXDB_EXPORT_KEY + inner);
+}
 
-payload = {"version": 1, "header": header, "events": events, "sig": make_sig(header, events)}
+const payload = { version: 1, header, events, sig: makeSig(header, []) };
 ```
 
 **Key fields in `header.stateSnapshot.state`:**
@@ -799,13 +801,11 @@ payload = {"version": 1, "header": header, "events": events, "sig": make_sig(hea
 
 **Minimal fixture checklist:**
 
-1. Build `header` dict with `id`, `name`, `seed`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
+1. Build `header` object with `id`, `name`, `seed`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
 2. Start from `BASE_STATE` (all array/object fields present with safe defaults) and override only what you need
-3. Compute `sig = make_sig(header, events=[])` in Python using the snippet above
+3. Compute `sig = makeSig(header, [])` using the Node.js snippet above (run via `node` in a scratch script)
 4. Place file in `e2e/fixtures/<name>.json`
 5. Use `await loadFixture(page, "<name>.json")` in the test
-
-**Using the Python generator script in `/tmp/gen-fixtures.py`** (see existing fixtures) is the recommended approach — it produces all fixtures in one run and prints each signature for verification.
 
 ### State restoration mechanics
 
