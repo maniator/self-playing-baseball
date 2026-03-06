@@ -281,15 +281,14 @@ test.describe("Custom Teams — Import/Export", () => {
 // ── Cross-team player import blocked with owning-team message ─────────────────
 
 test.describe("Custom Team Editor — cross-team player import conflict", () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
     await resetAppState(page);
   });
 
   test("blocks cross-team player import with owning-team error message", async ({
     page,
   }, testInfo) => {
-    test.skip(testInfo.project.name !== "desktop", "Desktop-only");
-
     // ── Step 1: Create Team A and export one of its players ──────────────────
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });

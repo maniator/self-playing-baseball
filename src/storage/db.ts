@@ -647,7 +647,21 @@ async function initDb(
               const fallbackSeed = fnv1a(basis);
               return { ...oldDoc, globalPlayerId: `pl_${fallbackSeed}` };
             } catch {
-              return { ...oldDoc, globalPlayerId: "pl_fallback" };
+              // Derive a deterministic ID from whatever stable fields remain so
+              // each doc gets a unique fallback rather than a shared constant.
+              const id = (oldDoc as Record<string, unknown>)["id"] as string | undefined;
+              const playerId = (oldDoc as Record<string, unknown>)["playerId"] as
+                | string
+                | undefined;
+              const fingerprint = (oldDoc as Record<string, unknown>)["fingerprint"] as
+                | string
+                | undefined;
+              const basis = `${id ?? ""}|${playerId ?? ""}|${fingerprint ?? ""}|${Object.keys(
+                oldDoc ?? {},
+              )
+                .sort()
+                .join(",")}`;
+              return { ...oldDoc, globalPlayerId: `pl_${fnv1a(basis)}` };
             }
           }
         },
