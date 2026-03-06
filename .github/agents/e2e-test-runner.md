@@ -39,6 +39,12 @@ container:
 
 Use the following pattern for all `docker run` invocations. The `n 24` step installs Node 24 (matching `.nvmrc`) over the container's default Node, and `hash -r` refreshes the shell path so the new binary is used immediately.
 
+> **Root ownership caveat:** The container runs as `root`. Files written during the run (e.g., `dist/`, `node_modules/`, regenerated snapshot PNGs) will be owned by root on the host. After each `docker run` command, fix ownership so subsequent `git`, `yarn`, and editor operations work:
+> ```bash
+> sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/
+> ```
+> Run this once after each `docker run` invocation that writes to the working tree. If `sudo` is unavailable, append `&& chown -R $(id -u):$(id -g) dist/ node_modules/ .yarn/ e2e/tests/` to the `bash -c` string inside the container (requires the container to have the host user's UID accessible, which may not always be true).
+
 ```bash
 # Run all E2E tests (all projects)
 docker run --rm \
@@ -47,6 +53,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test"
+sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/
 
 # Run a single spec file (desktop project only — fastest feedback loop)
 docker run --rm \
@@ -107,6 +114,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=desktop --project=pixel-7 --project=pixel-5 --update-snapshots"
+sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/
 ```
 
 **2. Run `--update-snapshots` for WebKit projects:**
@@ -118,6 +126,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=tablet --project=iphone-15-pro-max --project=iphone-15 --update-snapshots"
+sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/
 ```
 
 **3. Verify the updated baselines pass:**
