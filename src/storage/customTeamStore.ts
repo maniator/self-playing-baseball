@@ -8,9 +8,11 @@ import {
   importCustomTeams as importCustomTeamsParser,
   type ImportCustomTeamsOptions,
   type ImportCustomTeamsResult,
+  type ImportPlayerResult,
+  parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
 import { type BallgameDb, getDb } from "./db";
-import { generateSeed, generateTeamId } from "./generateId";
+import { generatePlayerId, generateSeed, generateTeamId } from "./generateId";
 import { fnv1a } from "./hash";
 import type {
   CreateCustomTeamInput,
@@ -118,8 +120,16 @@ function toPlayerDoc(
   section: "lineup" | "bench" | "pitchers",
   orderIndex: number,
 ): PlayerDoc {
+  // Backfill globalPlayerId for players imported from legacy bundles (created before
+  // globalPlayerId was added to the schema). The v4 players schema requires this field;
+  // without the backfill, bulkUpsert throws a validation error and the whole import fails.
+  // Use playerSeed first (gives the canonical stable identity), fall back to player.id
+  // (always present in TeamPlayer) so every player gets a unique value even if both
+  // playerSeed and globalPlayerId are absent.
+  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? player.id)}`;
   return {
     ...player,
+    globalPlayerId,
     // Use a team-scoped composite primary key to prevent cross-team collisions
     // when two different teams contain a player with the same original ID.
     id: `${teamId}:${player.id}`,
@@ -521,6 +531,106 @@ function buildStore(getDbFn: GetDb) {
         }
       }
       return result;
+    },
+
+    /**
+     * Imports a single player from a signed player export bundle into a target team's roster.
+     *
+     * Identity checks (using `globalPlayerId`):
+     *   - If the player already exists on the **same** target team → returns
+     *     `{ status: "alreadyOnThisTeam" }` (idempotent no-op).
+     *   - If the player already exists on a **different** team → returns
+     *     `{ status: "conflict", conflictingTeamId, conflictingTeamName }` so the UI
+     *     can surface "That player already belongs to [team name]".
+     *
+     * On success the player is appended to the specified roster `section` and the
+     * target team is updated in the DB.  The player's original `playerSeed` and
+     * `globalPlayerId` are preserved so career stats and duplicate detection remain intact.
+     *
+     * @param targetTeamId  Team to add the player to.
+     * @param playerJson    Signed JSON string produced by `exportPlayer` / `exportCustomPlayer`.
+     * @param section       Which roster section to append the player to.
+     * @throws If the target team is not found, or if the player bundle is invalid/tampered.
+     */
+    async importPlayer(
+      targetTeamId: string,
+      playerJson: string,
+      section: "lineup" | "bench" | "pitchers",
+    ): Promise<ImportPlayerResult> {
+      const player = parseExportedCustomPlayerJson(playerJson);
+
+      // globalPlayerId is required for cross-team identity enforcement.
+      // Every bundle produced by exportPlayer / exportCustomPlayer includes it.
+      // Re-export the player from the source team to get a valid bundle.
+      if (!player.globalPlayerId) {
+        throw new Error(
+          "Imported player bundle must include a globalPlayerId. Re-export the player from the source team to get a valid bundle.",
+        );
+      }
+
+      const db = await getDbFn();
+      const targetTeamDoc = await db.customTeams.findOne(targetTeamId).exec();
+      if (!targetTeamDoc) throw new Error(`Custom team not found: ${targetTeamId}`);
+      const targetTeam = await populateRoster(
+        db,
+        targetTeamDoc.toJSON() as unknown as CustomTeamDoc,
+      );
+
+      // Cross-team identity check: query the globalPlayerId index directly — one
+      // DB round-trip instead of hydrating every team's roster in memory.
+      const matchingDocs = await db.players
+        .find({ selector: { globalPlayerId: player.globalPlayerId } })
+        .exec();
+      if (matchingDocs.length > 0) {
+        const matchingPlayerDocs = matchingDocs.map((doc) => doc.toJSON() as unknown as PlayerDoc);
+
+        // (1) If any match has a non-null teamId different from the target, it is a conflict.
+        const conflictingMatch = matchingPlayerDocs.find(
+          (doc) => doc.teamId !== null && doc.teamId !== undefined && doc.teamId !== targetTeamId,
+        );
+        if (conflictingMatch) {
+          const owningTeamDoc = conflictingMatch.teamId
+            ? await db.customTeams.findOne(conflictingMatch.teamId).exec()
+            : null;
+          const owningTeamName =
+            (owningTeamDoc?.toJSON() as unknown as CustomTeamDoc | undefined)?.name ??
+            "another team";
+          return {
+            status: "conflict",
+            conflictingTeamId: conflictingMatch.teamId ?? "",
+            conflictingTeamName: owningTeamName,
+          };
+        }
+
+        // (2) If any match is already on the target team, treat as a no-op.
+        const alreadyOnThisTeam = matchingPlayerDocs.some((doc) => doc.teamId === targetTeamId);
+        if (alreadyOnThisTeam) {
+          return { status: "alreadyOnThisTeam" };
+        }
+        // (3) Only free-agent matches (teamId null/undefined) remain — allow the import.
+      }
+
+      // Append to the target section and persist.
+      // Defensively remap the local player.id if it already exists in the target roster to
+      // avoid duplicate local IDs (the canonical identity is globalPlayerId, not the local id).
+      const allTargetIds = new Set([
+        ...targetTeam.roster.lineup.map((p) => p.id),
+        ...targetTeam.roster.bench.map((p) => p.id),
+        ...targetTeam.roster.pitchers.map((p) => p.id),
+      ]);
+      const playerToAppend: TeamPlayer = allTargetIds.has(player.id)
+        ? { ...player, id: generatePlayerId() }
+        : player;
+      const updatedSection = [...targetTeam.roster[section], playerToAppend];
+      await this.updateCustomTeam(targetTeamId, {
+        roster: {
+          lineup: section === "lineup" ? updatedSection : targetTeam.roster.lineup,
+          bench: section === "bench" ? updatedSection : targetTeam.roster.bench,
+          pitchers: section === "pitchers" ? updatedSection : targetTeam.roster.pitchers,
+        },
+      });
+
+      return { status: "success", finalLocalId: playerToAppend.id };
     },
   };
 }

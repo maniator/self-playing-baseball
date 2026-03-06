@@ -267,8 +267,8 @@ describe("schema version and reset flag", () => {
     expect(db.customTeams.schema.version).toBe(4);
   });
 
-  it("players collection has schema version 3", () => {
-    expect(db.players.schema.version).toBe(3);
+  it("players collection has schema version 4", () => {
+    expect(db.players.schema.version).toBe(4);
   });
 
   it("games collection has schema version 1", () => {
@@ -1742,5 +1742,131 @@ describe("schema migration: customTeams v3 → v4 (embedded player globalPlayerI
     // Pre-existing globalPlayerId must NOT be overwritten.
     expect(roster.lineup[0].globalPlayerId).toBe("pl_preexisting");
     await v4Db.close();
+  });
+});
+
+describe("schema migration: players v3 → v4 (globalPlayerId index + defensive backfill)", () => {
+  beforeEach(async () => {
+    if (db) await db.close();
+  });
+  afterEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+  });
+
+  /** v3 players schema — same structure as v3, no globalPlayerId index yet. */
+  const v3PlayersSchema: RxJsonSchema<Record<string, unknown>> = {
+    version: 3,
+    primaryKey: "id",
+    type: "object",
+    properties: {
+      id: { type: "string", maxLength: 256 },
+      playerId: { type: "string", maxLength: 128 },
+      teamId: { type: ["string", "null"] },
+      section: { type: "string", enum: ["lineup", "bench", "pitchers"], maxLength: 16 },
+      orderIndex: { type: "number", minimum: 0, maximum: 9999, multipleOf: 1 },
+      name: { type: "string" },
+      role: { type: "string" },
+      batting: { type: "object", additionalProperties: true },
+      playerSeed: { type: "string", maxLength: 32 },
+      fingerprint: { type: "string", maxLength: 8 },
+      globalPlayerId: { type: "string", maxLength: 32 },
+      schemaVersion: { type: "number", minimum: 0, maximum: 999, multipleOf: 1 },
+    },
+    required: ["id", "section", "orderIndex", "name", "role", "batting", "schemaVersion"],
+    indexes: [],
+  };
+
+  it("preserves globalPlayerId on migration from v3 to v4", async () => {
+    const dbName = `players_v3v4_${Math.random().toString(36).slice(2, 10)}`;
+
+    const v3Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    try {
+      await v3Db.addCollections({
+        players: {
+          schema: v3PlayersSchema,
+          migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc, 3: (doc) => doc },
+        },
+      });
+      await v3Db.players.insert({
+        id: "ct_v3v4:p_dave",
+        playerId: "p_dave",
+        teamId: "ct_v3v4",
+        section: "lineup",
+        orderIndex: 0,
+        name: "Dave",
+        role: "batter",
+        batting: { contact: 75, power: 65, speed: 55 },
+        playerSeed: "daveseed",
+        fingerprint: "aabb1122",
+        globalPlayerId: "pl_existing_dave",
+        schemaVersion: 1,
+      });
+    } finally {
+      await v3Db.close();
+    }
+
+    // Reopen at v4 — triggers v3→v4 migration.
+    const v4Db = await _createTestDb(getRxStorageDexie(), dbName);
+    try {
+      const doc = await v4Db.players.findOne("ct_v3v4:p_dave").exec();
+      expect(doc, "player doc must survive v3→v4 migration").not.toBeNull();
+      const raw = doc?.toJSON() as Record<string, unknown>;
+      // Existing globalPlayerId must be preserved unchanged.
+      expect(raw["globalPlayerId"]).toBe("pl_existing_dave");
+      expect(raw["name"]).toBe("Dave");
+    } finally {
+      await v4Db.close();
+    }
+  });
+
+  it("backfills globalPlayerId in v3→v4 migration for docs that somehow lack it", async () => {
+    const dbName = `players_v3v4_missing_${Math.random().toString(36).slice(2, 10)}`;
+
+    // Use v3PlayersSchema (globalPlayerId is optional in v3) and simply omit
+    // the field from the inserted doc to simulate a doc that missed the v2→v3 backfill.
+    const v3Db = await createRxDatabase({
+      name: dbName,
+      storage: getRxStorageDexie(),
+      multiInstance: false,
+    });
+    try {
+      await v3Db.addCollections({
+        players: {
+          schema: v3PlayersSchema,
+          migrationStrategies: { 1: (doc) => doc, 2: (doc) => doc, 3: (doc) => doc },
+        },
+      });
+      // globalPlayerId intentionally omitted — simulates a doc that skipped v2→v3.
+      await v3Db.players.insert({
+        id: "ct_v3nogid:p_eve",
+        playerId: "p_eve",
+        teamId: "ct_v3nogid",
+        section: "bench",
+        orderIndex: 0,
+        name: "Eve",
+        role: "batter",
+        batting: { contact: 60, power: 55, speed: 70 },
+        playerSeed: "eveseed123",
+        schemaVersion: 1,
+      });
+    } finally {
+      await v3Db.close();
+    }
+
+    const v4Db = await _createTestDb(getRxStorageDexie(), dbName);
+    try {
+      const doc = await v4Db.players.findOne("ct_v3nogid:p_eve").exec();
+      expect(doc, "player doc must survive v3→v4 migration").not.toBeNull();
+      const raw = doc?.toJSON() as Record<string, unknown>;
+      // Must have been backfilled by the v3→v4 defensive migration.
+      expect(typeof raw["globalPlayerId"]).toBe("string");
+      expect((raw["globalPlayerId"] as string).startsWith("pl_")).toBe(true);
+    } finally {
+      await v4Db.close();
+    }
   });
 });

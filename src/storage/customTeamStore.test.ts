@@ -1,6 +1,7 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { exportCustomPlayer } from "./customTeamExportImport";
 import { makeCustomTeamStore } from "./customTeamStore";
 import { _createTestDb, type BallgameDb } from "./db";
 import type { CreateCustomTeamInput, TeamPlayer, UpdateCustomTeamInput } from "./types";
@@ -495,6 +496,60 @@ describe("importCustomTeams", () => {
     expect(typeof result.skipped).toBe("number");
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
+
+  it("preserves globalPlayerId, playerSeed, and fingerprint when importing a team into a fresh DB", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const knownGid = "pl_identity_preserved_gid";
+    const knownSeed = "known-identity-seed-value";
+    const knownFingerprint = "aabbccdd";
+    const teamWithIdentity = {
+      id: "ct_identity_test",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Identity Team",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_id_test",
+            name: "Identity Player",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+            globalPlayerId: knownGid,
+            playerSeed: knownSeed,
+            fingerprint: knownFingerprint,
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+
+    // Export from the original team
+    const json = exportFn([teamWithIdentity]);
+
+    // Import into a fresh in-memory DB (simulates a different install)
+    const { _createTestDb } = await import("./db");
+    const { getRxStorageMemory } = await import("rxdb/plugins/storage-memory");
+    const freshDb = await _createTestDb(getRxStorageMemory());
+    const freshStore = makeCustomTeamStore(() => Promise.resolve(freshDb));
+
+    try {
+      const result = await freshStore.importCustomTeams(json);
+      // importCustomTeams may remap the team ID — resolve by name instead
+      const importedTeam = result.teams.find((t) => t.name === "Identity Team");
+      expect(importedTeam).toBeDefined();
+      const importedPlayer = importedTeam!.roster.lineup[0];
+      expect(importedPlayer.globalPlayerId).toBe(knownGid);
+      expect(importedPlayer.playerSeed).toBe(knownSeed);
+      expect(importedPlayer.fingerprint).toBe(knownFingerprint);
+    } finally {
+      await freshDb.close();
+    }
+  });
 });
 
 describe("exportPlayer", () => {
@@ -814,6 +869,46 @@ describe("players collection integration", () => {
     expect(sections).toEqual(["bench", "lineup"]);
   });
 
+  it("importCustomTeams backfills globalPlayerId for legacy bundle players that lack the field", async () => {
+    // Simulate the real-world case: fixture-teams.json was created before globalPlayerId
+    // was added to sanitizePlayer. Players have playerSeed+fingerprint but no globalPlayerId.
+    // The v4 players schema has required: ["globalPlayerId"], so without the backfill in
+    // toPlayerDoc, bulkUpsert throws a validation error and the import fails entirely.
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const legacyTeam = {
+      id: "ct_legacy_no_gpid",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Legacy No GlobalPlayerId",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "lgcy_p1",
+            name: "Legacy Batter",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+            // Explicitly no globalPlayerId — simulates fixture-teams.json format
+            playerSeed: "seed_legacy_p1",
+            fingerprint: "aabbccdd",
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([legacyTeam]);
+    // Should not throw even though the bundle player lacks globalPlayerId
+    await store.importCustomTeams(json);
+    const playerDocs = await db.players.find({ selector: { teamId: "ct_legacy_no_gpid" } }).exec();
+    expect(playerDocs).toHaveLength(1);
+    // globalPlayerId must be backfilled — it should be the fnv1a of playerSeed
+    expect(playerDocs[0].globalPlayerId).toMatch(/^pl_[0-9a-f]{8}$/);
+  });
+
   it("legacy team with embedded roster is backfilled into players collection on getCustomTeam", async () => {
     // Simulate a legacy team with embedded roster (no player docs in players collection)
     const legacyTeamDoc = {
@@ -957,5 +1052,361 @@ describe("listFreePlayers", () => {
     );
     const freePlayers = await store.listFreePlayers();
     expect(freePlayers).toHaveLength(0);
+  });
+});
+
+// ── exportPlayer — identity fields in export bundle ───────────────────────────
+
+describe("exportPlayer — identity fields", () => {
+  it("exported JSON includes globalPlayerId for a created player", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Identity Export Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_gid", name: "Global ID Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json = await store.exportPlayer(id, "p_gid");
+    const parsed = JSON.parse(json) as { payload: { player: Record<string, unknown> } };
+    expect(typeof parsed.payload.player["globalPlayerId"]).toBe("string");
+    expect((parsed.payload.player["globalPlayerId"] as string).length).toBeGreaterThan(0);
+  });
+
+  it("exported JSON includes playerSeed for a created player", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "PlayerSeed Export Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_seed_export", name: "Seed Export Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json = await store.exportPlayer(id, "p_seed_export");
+    const parsed = JSON.parse(json) as { payload: { player: Record<string, unknown> } };
+    expect(typeof parsed.payload.player["playerSeed"]).toBe("string");
+    expect((parsed.payload.player["playerSeed"] as string).length).toBeGreaterThan(0);
+  });
+
+  it("exported JSON includes fingerprint for a created player", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Fingerprint Export Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_fp_export", name: "Fingerprint Export Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json = await store.exportPlayer(id, "p_fp_export");
+    const parsed = JSON.parse(json) as { payload: { player: Record<string, unknown> } };
+    expect(typeof parsed.payload.player["fingerprint"]).toBe("string");
+    expect(parsed.payload.player["fingerprint"]).toMatch(/^[0-9a-f]{8}$/);
+  });
+
+  it("globalPlayerId is stable across export round-trips", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({
+        name: "Stable GID Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_stable_gid", name: "Stable Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const json1 = await store.exportPlayer(id, "p_stable_gid");
+    const json2 = await store.exportPlayer(id, "p_stable_gid");
+    const gid1 = (JSON.parse(json1) as { payload: { player: { globalPlayerId?: string } } }).payload
+      .player.globalPlayerId;
+    const gid2 = (JSON.parse(json2) as { payload: { player: { globalPlayerId?: string } } }).payload
+      .player.globalPlayerId;
+    expect(gid1).toBe(gid2);
+  });
+});
+
+// ── importPlayer ──────────────────────────────────────────────────────────────
+
+describe("importPlayer", () => {
+  it("adds the player to the target team's bench and returns success", async () => {
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Target Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_existing", name: "Existing Batter" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    // Create a player in a separate team to export
+    const sourceId = await store.createCustomTeam(
+      makeInput({
+        name: "Source Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_src", name: "Import Me" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const sourceTeam = await store.getCustomTeam(sourceId);
+    if (!sourceTeam) throw new Error("Source team not found in test setup");
+    const playerJson = exportCustomPlayer(sourceTeam.roster.lineup[0]);
+
+    // Remove from source team first so no cross-team conflict
+    await store.updateCustomTeam(sourceId, {
+      roster: {
+        lineup: [makePlayer({ id: "p_src_other", name: "Other Batter" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+
+    const result = await store.importPlayer(targetId, playerJson, "bench");
+    expect(result.status).toBe("success");
+
+    const updated = await store.getCustomTeam(targetId);
+    expect(updated?.roster.bench.some((p) => p.name === "Import Me")).toBe(true);
+  });
+
+  it("adds a pitcher to the pitchers section", async () => {
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Pitcher Target Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_bat", name: "Batter" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    // Build a pitcher player JSON directly (not stored in any team)
+    const pitcher: TeamPlayer = {
+      id: "p_pitcher_src",
+      name: "Import Pitcher",
+      role: "pitcher",
+      batting: { contact: 30, power: 20, speed: 25 },
+      pitching: { velocity: 88, control: 72, movement: 65 },
+      playerSeed: "pitcher-seed-unique",
+      globalPlayerId: "pl_pitcher_unique_import",
+    };
+    const pitcherJson = exportCustomPlayer(pitcher);
+
+    const result = await store.importPlayer(targetId, pitcherJson, "pitchers");
+    expect(result.status).toBe("success");
+
+    const updated = await store.getCustomTeam(targetId);
+    expect(updated?.roster.pitchers.some((p) => p.name === "Import Pitcher")).toBe(true);
+  });
+
+  it("preserves globalPlayerId of imported player", async () => {
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Preserve GID Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_preserve", name: "Existing" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    const player: TeamPlayer = {
+      id: "p_gid_preserved",
+      name: "GID Preserved",
+      role: "batter",
+      batting: { contact: 60, power: 55, speed: 50 },
+      playerSeed: "preserve-gid-seed",
+      globalPlayerId: "pl_preserved_gid_check",
+    };
+    const json = exportCustomPlayer(player);
+
+    await store.importPlayer(targetId, json, "bench");
+
+    const updated = await store.getCustomTeam(targetId);
+    const imported = updated?.roster.bench.find((p) => p.name === "GID Preserved");
+    expect(imported?.globalPlayerId).toBe("pl_preserved_gid_check");
+    expect(imported?.playerSeed).toBe("preserve-gid-seed");
+    expect(typeof imported?.fingerprint).toBe("string");
+  });
+
+  it("preserves playerSeed of imported player", async () => {
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Preserve Seed Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_seed_pres", name: "Existing" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    const player: TeamPlayer = {
+      id: "p_seed_check",
+      name: "Seed Preserved",
+      role: "batter",
+      batting: { contact: 60, power: 55, speed: 50 },
+      playerSeed: "my-exact-seed-value",
+      globalPlayerId: "pl_seed_pres_check",
+    };
+    const json = exportCustomPlayer(player);
+
+    await store.importPlayer(targetId, json, "bench");
+
+    const updated = await store.getCustomTeam(targetId);
+    const imported = updated?.roster.bench.find((p) => p.name === "Seed Preserved");
+    expect(imported?.playerSeed).toBe("my-exact-seed-value");
+    expect(imported?.globalPlayerId).toBe("pl_seed_pres_check");
+    expect(typeof imported?.fingerprint).toBe("string");
+  });
+
+  it("blocks import when player's globalPlayerId already exists on a different team", async () => {
+    // Create two teams; player starts on team A
+    const teamAId = await store.createCustomTeam(
+      makeInput({
+        name: "Team A Block",
+        roster: {
+          lineup: [makePlayer({ id: "p_cross_team", name: "Cross Team Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const teamA = await store.getCustomTeam(teamAId);
+    const playerOnTeamA = teamA!.roster.lineup[0];
+    // Export player from team A (has globalPlayerId)
+    const playerJson = exportCustomPlayer(playerOnTeamA);
+
+    const teamBId = await store.createCustomTeam(
+      makeInput({
+        name: "Team B Block",
+        roster: {
+          lineup: [makePlayer({ id: "p_other", name: "Other Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    // Attempt to import into Team B — must be blocked
+    const result = await store.importPlayer(teamBId, playerJson, "lineup");
+    expect(result.status).toBe("conflict");
+    if (result.status === "conflict") {
+      expect(result.conflictingTeamId).toBe(teamAId);
+      expect(result.conflictingTeamName).toBe("Team A Block");
+    }
+
+    // Team B roster must be unchanged
+    const teamB = await store.getCustomTeam(teamBId);
+    expect(teamB?.roster.lineup.some((p) => p.name === "Cross Team Player")).toBe(false);
+  });
+
+  it("returns alreadyOnThisTeam when player's globalPlayerId exists on the target team", async () => {
+    const teamId = await store.createCustomTeam(
+      makeInput({
+        name: "Same Team Check",
+        roster: {
+          lineup: [makePlayer({ id: "p_same_team", name: "Same Team Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(teamId);
+    const existingPlayer = team!.roster.lineup[0];
+    const playerJson = exportCustomPlayer(existingPlayer);
+
+    const result = await store.importPlayer(teamId, playerJson, "bench");
+    expect(result.status).toBe("alreadyOnThisTeam");
+
+    // Roster must be unchanged
+    const after = await store.getCustomTeam(teamId);
+    expect(after?.roster.bench).toHaveLength(0);
+  });
+
+  it("throws when target team does not exist", async () => {
+    const player: TeamPlayer = {
+      id: "p_no_team",
+      name: "No Team Player",
+      role: "batter",
+      batting: { contact: 60, power: 55, speed: 50 },
+      playerSeed: "no-team-seed",
+      globalPlayerId: "pl_no_team_gid",
+    };
+    const json = exportCustomPlayer(player);
+    await expect(store.importPlayer("ct_nonexistent", json, "lineup")).rejects.toThrow(
+      "Custom team not found",
+    );
+  });
+
+  it("throws when player bundle lacks globalPlayerId", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "No GID Team" }));
+    // exportCustomPlayer does not add globalPlayerId when the player object omits it,
+    // so this bundle will pass signature verification but fail the store guard.
+    const player: TeamPlayer = {
+      id: "p_no_gid",
+      name: "No GID Player",
+      role: "batter",
+      batting: { contact: 60, power: 55, speed: 50 },
+      playerSeed: "no-gid-seed",
+      // globalPlayerId intentionally omitted
+    };
+    const bundleWithoutGid = exportCustomPlayer(player);
+    await expect(store.importPlayer(id, bundleWithoutGid, "lineup")).rejects.toThrow(
+      "globalPlayerId",
+    );
+  });
+
+  it("throws on invalid player JSON", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Bad JSON Team" }));
+    await expect(store.importPlayer(id, "not valid json", "lineup")).rejects.toThrow();
+  });
+
+  it("remaps player.id when the incoming id already exists in the target roster", async () => {
+    const sharedId = "p_collision_id";
+    const targetId = await store.createCustomTeam(
+      makeInput({
+        name: "Collision Target Team",
+        roster: {
+          lineup: [makePlayer({ id: sharedId, name: "Existing Player" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+
+    // Create a different player that happens to have the same local id
+    const incomingPlayer: TeamPlayer = {
+      id: sharedId, // same local id as existing player
+      name: "Incoming Collision Player",
+      role: "batter",
+      batting: { contact: 55, power: 45, speed: 60 },
+      playerSeed: "collision-import-seed",
+      globalPlayerId: "pl_collision_unique_gid",
+    };
+    const json = exportCustomPlayer(incomingPlayer);
+
+    const result = await store.importPlayer(targetId, json, "bench");
+    expect(result.status).toBe("success");
+
+    const updated = await store.getCustomTeam(targetId);
+    const importedPlayer = updated?.roster.bench.find(
+      (p) => p.name === "Incoming Collision Player",
+    );
+    expect(importedPlayer).toBeDefined();
+    // Local id must have been remapped — must not collide with the existing lineup player
+    expect(importedPlayer?.id).not.toBe(sharedId);
+    // Identity fields must be preserved despite the id remap
+    expect(importedPlayer?.globalPlayerId).toBe("pl_collision_unique_gid");
+    expect(importedPlayer?.playerSeed).toBe("collision-import-seed");
   });
 });

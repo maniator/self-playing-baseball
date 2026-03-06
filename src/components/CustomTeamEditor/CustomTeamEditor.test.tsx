@@ -1,10 +1,13 @@
 import * as React from "react";
 
 import type { DragEndEvent } from "@dnd-kit/core";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { exportCustomPlayer } from "@storage/customTeamExportImport";
+import { CustomTeamStore } from "@storage/customTeamStore";
 import { downloadJson } from "@storage/saveIO";
+import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import CustomTeamEditor from "./index";
 
@@ -34,6 +37,14 @@ vi.mock("@storage/saveIO", async (importOriginal) => {
   const actual = await importOriginal<typeof import("@storage/saveIO")>();
   return { ...actual, downloadJson: vi.fn() };
 });
+
+// Stub CustomTeamStore so unit tests don't hit IndexedDB.
+// Individual tests override importPlayer as needed.
+vi.mock("@storage/customTeamStore", () => ({
+  CustomTeamStore: {
+    importPlayer: vi.fn().mockResolvedValue({ status: "success", finalLocalId: "mock-player-id" }),
+  },
+}));
 
 // Mock dnd-kit sensors: PointerSensor requires pointer events not supported in JSDOM.
 // Also wrap DndContext to capture the onDragEnd prop so tests can trigger it directly.
@@ -577,5 +588,270 @@ describe("CustomTeamEditor — export, import-button, and DnD handlers", () => {
         over: { id: "same" },
       } as unknown as DragEndEvent);
     });
+  });
+});
+
+// ─── Import player — cross-team conflict detection ────────────────────────────
+
+describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", () => {
+  /** Minimal team fixture for edit-mode tests. */
+  const editTeam: CustomTeamDoc = {
+    id: "ct_edit_import",
+    schemaVersion: 1,
+    createdAt: "2024-01-01T00:00:00Z",
+    updatedAt: "2024-01-01T00:00:00Z",
+    name: "Import Test Team",
+    abbreviation: "IMP",
+    source: "custom",
+    roster: {
+      schemaVersion: 1,
+      lineup: [
+        {
+          id: "p_existing",
+          name: "Existing Player",
+          role: "batter",
+          batting: { contact: 60, power: 55, speed: 50 },
+        },
+      ],
+      bench: [],
+      pitchers: [],
+    },
+    metadata: { archived: false },
+  };
+
+  /** Build a minimal signed player JSON for import tests. */
+  const makePlayerJson = (overrides: Partial<TeamPlayer> = {}): string => {
+    const player: TeamPlayer = {
+      id: "p_import_src",
+      name: "Imported Batter",
+      role: "batter",
+      batting: { contact: 70, power: 60, speed: 55 },
+      playerSeed: "import-test-seed",
+      globalPlayerId: "pl_import_global",
+      ...overrides,
+    };
+    return exportCustomPlayer(player);
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows cross-team conflict error when importPlayer returns conflictingTeamName", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "conflict",
+      conflictingTeamId: "ct_other",
+      conflictingTeamName: "Other Team",
+    });
+
+    renderEditor({ team: editTeam });
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makePlayerJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      const errorEl = screen.queryByTestId("custom-team-editor-error-summary");
+      expect(errorEl).not.toBeNull();
+      expect(errorEl?.textContent).toMatch(/already belongs to team "Other Team"/);
+    });
+  });
+
+  it("shows already-on-this-team error when importPlayer returns alreadyOnThisTeam", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "alreadyOnThisTeam",
+    });
+
+    renderEditor({ team: editTeam });
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makePlayerJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      const errorEl = screen.queryByTestId("custom-team-editor-error-summary");
+      expect(errorEl).not.toBeNull();
+      expect(errorEl?.textContent).toMatch(/already on this team/i);
+    });
+  });
+
+  it("adds player to editor when importPlayer returns success", async () => {
+    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
+      status: "success",
+      finalLocalId: "mock-player-id",
+    });
+
+    renderEditor({ team: editTeam });
+
+    const playerJson = makePlayerJson({ name: "New Import Player" });
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([playerJson], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      // The new player's name input should appear in the lineup section.
+      const inputs = screen.getAllByDisplayValue("New Import Player");
+      expect(inputs.length).toBeGreaterThan(0);
+    });
+  });
+});
+
+// ─── Soft fingerprint duplicate-warning banner (create mode) ─────────────────
+
+describe("CustomTeamEditor — soft fingerprint duplicate banner (create mode)", () => {
+  const dupPlayerStats = { contact: 60, power: 50, speed: 40 };
+
+  /** A player JSON WITHOUT globalPlayerId so the soft-fingerprint check fires. */
+  const makeNogidJson = (overrides: Partial<TeamPlayer> = {}) => {
+    const player: TeamPlayer = {
+      id: "p_nogid_src",
+      name: "Fingerprint Player",
+      role: "batter",
+      batting: dupPlayerStats,
+      ...overrides,
+    };
+    return exportCustomPlayer(player);
+  };
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    // Arrange: provide a team with a player that has the same stats/name
+    // so buildPlayerSig produces a matching fingerprint.
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_dup",
+          schemaVersion: 1,
+          createdAt: "2024-01-01T00:00:00Z",
+          updatedAt: "2024-01-01T00:00:00Z",
+          name: "Dup Team",
+          abbreviation: "DUP",
+          source: "custom",
+          roster: {
+            schemaVersion: 1,
+            lineup: [
+              {
+                id: "p_dup_existing",
+                name: "Fingerprint Player",
+                role: "batter",
+                batting: dupPlayerStats,
+              },
+            ],
+            bench: [],
+            pitchers: [],
+          },
+          metadata: { archived: false },
+        },
+      ],
+      loading: false,
+      createTeam: vi.fn().mockResolvedValue("ct_new"),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+    } as unknown as ReturnType<typeof useCustomTeams>);
+  });
+
+  it("shows duplicate banner for lineup when fingerprint matches an existing player", async () => {
+    renderEditor(); // create mode — no team prop
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makeNogidJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("player-import-lineup-duplicate-banner")).toBeInTheDocument();
+    });
+  });
+
+  it("Import Anyway confirms and adds player to lineup", async () => {
+    renderEditor();
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makeNogidJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("player-import-lineup-duplicate-banner")).toBeInTheDocument();
+    });
+
+    // Click Import Anyway.
+    await act(async () => {
+      fireEvent.click(screen.getByTestId("player-import-lineup-confirm-button"));
+    });
+
+    // Banner should be dismissed; player added to lineup.
+    await waitFor(() => {
+      expect(screen.queryByTestId("player-import-lineup-duplicate-banner")).toBeNull();
+    });
+  });
+
+  it("Cancel dismisses the duplicate banner without adding the player", async () => {
+    renderEditor();
+
+    const fileInput = screen.getByTestId("import-lineup-player-input");
+    const file = new File([makeNogidJson()], "player.json", { type: "application/json" });
+
+    await act(async () => {
+      fireEvent.change(fileInput, { target: { files: [file] } });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("player-import-lineup-duplicate-banner")).toBeInTheDocument();
+    });
+
+    // Click Cancel.
+    await act(async () => {
+      const cancelBtn = screen
+        .getByTestId("player-import-lineup-duplicate-banner")
+        .querySelectorAll("button")[1];
+      fireEvent.click(cancelBtn);
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId("player-import-lineup-duplicate-banner")).toBeNull();
+    });
+  });
+});
+
+// ─── Generate button and city input (TeamInfoSection coverage) ────────────────
+
+describe("CustomTeamEditor — TeamInfoSection field coverage", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("clicking the Generate Random button populates team fields", async () => {
+    renderEditor();
+    const genBtn = screen.getByTestId("custom-team-regenerate-defaults-button");
+    await act(async () => {
+      fireEvent.click(genBtn);
+    });
+    // After generate, the name input should have some value (generated team name).
+    const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
+    expect(nameInput.value.length).toBeGreaterThan(0);
+  });
+
+  it("changing the city input fires dispatch SET_FIELD", async () => {
+    renderEditor();
+    const cityInput = screen.getByTestId("custom-team-city-input");
+    await act(async () => {
+      fireEvent.change(cityInput, { target: { value: "Dallas" } });
+    });
+    expect((cityInput as HTMLInputElement).value).toBe("Dallas");
   });
 });

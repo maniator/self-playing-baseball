@@ -40,6 +40,49 @@ export interface ImportCustomTeamsResult {
 }
 
 /**
+ * Result shape returned by `CustomTeamStore.importPlayer`.
+ *
+ * Exactly one of the following statuses is returned for each call:
+ *   - `{ status: "success" }` — player was appended to the target roster section.
+ *   - `{ status: "alreadyOnThisTeam" }` — player's `globalPlayerId` already existed on the
+ *     target team; no change was made (idempotent).
+ *   - `{ status: "conflict", conflictingTeamId, conflictingTeamName }` — player's
+ *     `globalPlayerId` already exists on a *different* team; import was blocked to
+ *     prevent duplicate identities.
+ */
+export type ImportPlayerResult =
+  | {
+      /** Player was successfully added to the target team. */
+      status: "success";
+      /**
+       * The local `id` the player was appended with. This may differ from the `id` in the
+       * import bundle if there was a collision with an existing player in the target roster.
+       * UI callers should use this value to keep their in-memory editor state aligned with
+       * what was persisted in the DB.
+       */
+      finalLocalId: string;
+    }
+  | {
+      /**
+       * Player already belongs to the target team — no change was made.
+       * The caller may treat this as a silent no-op or show a short informational message.
+       */
+      status: "alreadyOnThisTeam";
+    }
+  | {
+      /**
+       * Player's `globalPlayerId` already exists on a different team.
+       * The import is blocked and the caller should surface `conflictingTeamName` to
+       * the user so they can remove the player from their current team first.
+       */
+      status: "conflict";
+      /** Identifier of the team that currently owns the player. */
+      conflictingTeamId: string;
+      /** Human-readable display name of the team that currently owns the player. */
+      conflictingTeamName: string;
+    };
+
+/**
  * Builds a stable seed-based fingerprint for a team (excludes id so it survives re-import).
  * Covers only team-identity fields (name + abbreviation, case-insensitive) plus the
  * per-team random seed generated at creation time.
