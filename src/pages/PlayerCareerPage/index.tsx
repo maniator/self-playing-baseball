@@ -45,6 +45,30 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     customTeams,
   } = usePlayerCareerData(playerKey);
 
+  // Determine which tabs are available based on history rows.
+  const hasBatting = battingRows.length > 0;
+  const hasPitching = pitchingRows.length > 0;
+  // Show batting tab when: loading (unknown yet), has batting rows, or neither has rows (empty state).
+  const showBattingTab = loading || hasBatting || (!hasBatting && !hasPitching);
+  // Show pitching tab when: loading (unknown yet), has pitching rows, or neither has rows (empty state).
+  const showPitchingTab = loading || hasPitching || (!hasBatting && !hasPitching);
+
+  // Derive the effective tab synchronously so the correct panel renders on the very
+  // first frame after loading completes — no transient wrong-panel flash from useEffect.
+  const effectiveActiveTab: Tab =
+    !loading && activeTab === "batting" && !showBattingTab
+      ? "pitching"
+      : !loading && activeTab === "pitching" && !showPitchingTab
+        ? "batting"
+        : activeTab;
+
+  // Keep activeTab state in sync so subsequent user clicks remain correct.
+  React.useEffect(() => {
+    if (effectiveActiveTab !== activeTab) {
+      setActiveTab(effectiveActiveTab);
+    }
+  }, [effectiveActiveTab, activeTab]);
+
   return (
     <PlayerCareerContainer data-testid="player-career-page">
       <PageHeader>
@@ -83,24 +107,28 @@ const PlayerCareerPage: React.FunctionComponent = () => {
         </>
       )}
 
-      <TabBar>
-        <TabBtn
-          type="button"
-          $active={activeTab === "batting"}
-          onClick={() => setActiveTab("batting")}
-        >
-          Batting
-        </TabBtn>
-        <TabBtn
-          type="button"
-          $active={activeTab === "pitching"}
-          onClick={() => setActiveTab("pitching")}
-        >
-          Pitching
-        </TabBtn>
+      <TabBar aria-label="Player stats tabs">
+        {showBattingTab && (
+          <TabBtn
+            type="button"
+            $active={effectiveActiveTab === "batting"}
+            onClick={() => setActiveTab("batting")}
+          >
+            Batting
+          </TabBtn>
+        )}
+        {showPitchingTab && (
+          <TabBtn
+            type="button"
+            $active={effectiveActiveTab === "pitching"}
+            onClick={() => setActiveTab("pitching")}
+          >
+            Pitching
+          </TabBtn>
+        )}
       </TabBar>
 
-      {!loading && activeTab === "batting" && (
+      {!loading && effectiveActiveTab === "batting" && (
         <PlayerCareerBattingTab
           battingRows={battingRows}
           battingTotals={battingTotals}
@@ -108,7 +136,7 @@ const PlayerCareerPage: React.FunctionComponent = () => {
         />
       )}
 
-      {!loading && activeTab === "pitching" && (
+      {!loading && effectiveActiveTab === "pitching" && (
         <PlayerCareerPitchingTab
           pitchingRows={pitchingRows}
           pitchingTotals={pitchingTotals}

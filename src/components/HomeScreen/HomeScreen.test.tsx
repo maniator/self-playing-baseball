@@ -96,4 +96,10 @@ describe("HomeScreen", () => {
     fireEvent.click(screen.getByTestId("home-help-button"));
     expect(onHelp).toHaveBeenCalled();
   });
+
+  it("always shows the League play coming soon teaser", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
+    expect(screen.getByTestId("league-play-teaser")).toBeInTheDocument();
+    expect(screen.getByText(/league play coming soon/i)).toBeInTheDocument();
+  });
 });

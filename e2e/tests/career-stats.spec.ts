@@ -136,13 +136,18 @@ test.describe("Career Stats with seeded history", () => {
     // Default tab is Batting.
     await expect(page.getByTestId("career-stats-batting-tab")).toBeVisible();
     // Wait for the table to appear (stats load asynchronously).
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
+    // Use getByRole("button", exact) to target the table-row PlayerLink, not leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText("M. Contact")).toBeVisible({ timeout: 5_000 });
   });
 
   test("batting tab shows correct counting stats for J. Slugger", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     // J. Slugger: 4 AB, 2 H, 1 HR, 2 RBI — check at least the HR column value.
     // The page renders a table row; we verify the row contains expected numbers.
     const sluggerRow = page.locator("tr", { hasText: "J. Slugger" });
@@ -155,9 +160,15 @@ test.describe("Career Stats with seeded history", () => {
     // Switch to Pitching tab.
     await page.getByTestId("career-stats-pitching-tab").click();
     // All three seeded pitchers should appear.
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("C. Closer")).toBeVisible({ timeout: 5_000 });
+    // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
     // C. Closer has SV=1 — find the row and verify SV column.
     const closerRow = page.locator("tr", { hasText: "C. Closer" });
     await expect(closerRow).toContainText("1"); // SV = 1
@@ -169,7 +180,10 @@ test.describe("Career Stats with seeded history", () => {
   test("pitching tab shows IP and ERA correctly for A. Ace", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     // A. Ace: outsPitched=18 → IP=6.0; earnedRuns=3 → ERA=(3*27)/18=4.50
     const aceRow = page.locator("tr", { hasText: "A. Ace" });
     await expect(aceRow).toContainText("6.0"); // IP
@@ -178,16 +192,22 @@ test.describe("Career Stats with seeded history", () => {
 
   test("clicking a batter row navigates to /players/:playerKey", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("J. Slugger").click();
+    // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "J. Slugger", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toContain("/players/e2e_batter_slugger");
   });
 
   test("player career page shows batting game log for J. Slugger", async ({ page }) => {
     await seedAndOpen(page);
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("J. Slugger").click();
+    // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "J. Slugger", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Batting tab is active by default — should show career totals + game log.
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
@@ -199,8 +219,11 @@ test.describe("Career Stats with seeded history", () => {
   test("player career page shows pitching game log for C. Closer (SV=1)", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("C. Closer")).toBeVisible({ timeout: 10_000 });
-    await page.getByText("C. Closer").click();
+    // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await page.getByRole("button", { name: "C. Closer", exact: true }).click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Switch to Pitching tab on player career page.
     await page.getByText("Pitching").click();
@@ -226,5 +249,209 @@ test.describe("Career Stats with seeded history", () => {
     await page.getByTestId("player-career-next").click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toContain("/players/e2e_batter_contact");
+  });
+});
+
+// ── 3. Team Summary + Leaders ────────────────────────────────────────────────
+
+test.describe("Team Summary and Leaders", () => {
+  /**
+   * Seeds the team-summary-history fixture and opens /stats with e2e_summary_team selected.
+   * The fixture has 3 games: W/L/W → streak=W1, W/L=2-1, RS=16, RA=10, DIFF=+6.
+   * Batting: J.Qualify (22 AB, qualifies), P.NoQualify (4 AB, does not qualify).
+   * Pitching: A.Starter (36 outs, qualifies), R.Reliever (3 outs, does not qualify).
+   */
+  async function seedSummaryAndOpen(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await startGameViaPlayBall(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+    await page.goto("/stats");
+    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    const teamSelect = page.getByTestId("career-stats-team-select");
+    await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    await teamSelect.selectOption("e2e_summary_team");
+    // Wait for team summary section to appear
+    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+  }
+
+  test("team summary section shows W/L record", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    // W/L = 2-1
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 10_000 });
+  });
+
+  test("team summary section shows correct RS and RA", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    // RS=16 (7+3+6), RA=10 (3+5+2)
+    await expect(page.getByTestId("summary-rs")).toHaveText("16", { timeout: 10_000 });
+    await expect(page.getByTestId("summary-ra")).toHaveText("10", { timeout: 5_000 });
+  });
+
+  test("team summary section shows correct run differential", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    // DIFF = +6
+    await expect(page.getByTestId("summary-diff")).toHaveText("+6", { timeout: 10_000 });
+  });
+
+  test("team summary section shows current streak", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    // Last game is a win → streak = W1
+    await expect(page.getByTestId("summary-streak")).toHaveText("W1", { timeout: 10_000 });
+  });
+
+  test("team summary section shows last-10 record", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    // 3 games total, 2 wins 1 loss
+    await expect(page.getByTestId("summary-last10")).toHaveText("2-1", { timeout: 10_000 });
+  });
+
+  test("HR leader card shows J. Qualify with 1 HR", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    const hrCard = page.getByTestId("hr-leader-card");
+    await expect(hrCard).toBeVisible({ timeout: 10_000 });
+    await expect(hrCard).toContainText("J. Qualify");
+    await expect(hrCard).toContainText("1");
+  });
+
+  test("AVG leader card shows J. Qualify (qualifies with 22 AB)", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    const avgCard = page.getByTestId("avg-leader-card");
+    await expect(avgCard).toBeVisible({ timeout: 10_000 });
+    await expect(avgCard).toContainText("J. Qualify");
+    // P. NoQualify (4 AB) should not appear — they don't meet the threshold
+    await expect(avgCard).not.toContainText("P. NoQualify");
+  });
+
+  test("ERA leader shows A. Starter (qualifies with 36 outs)", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    const eraCard = page.getByTestId("era-leader-card");
+    await expect(eraCard).toBeVisible({ timeout: 10_000 });
+    await expect(eraCard).toContainText("A. Starter");
+    // R. Reliever (3 outs) should not appear — doesn't meet the threshold
+    await expect(eraCard).not.toContainText("R. Reliever");
+  });
+
+  test("saves leader card shows R. Reliever with 1 save", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    const svCard = page.getByTestId("saves-leader-card");
+    await expect(svCard).toBeVisible({ timeout: 10_000 });
+    await expect(svCard).toContainText("R. Reliever");
+    await expect(svCard).toContainText("1");
+  });
+
+  test("clicking HR leader card navigates to the player's career page", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    const hrCard = page.getByTestId("hr-leader-card");
+    await expect(hrCard).toBeVisible({ timeout: 10_000 });
+    await hrCard.click();
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    expect(page.url()).toContain("/players/e2e_batter_qualify");
+    expect(page.url()).toContain("team=e2e_summary_team");
+  });
+});
+
+// ── 4. Role-aware Player Career tabs ─────────────────────────────────────────
+
+test.describe("Role-aware Player Career tabs", () => {
+  async function seedForRoleAware(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await startGameViaPlayBall(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+  }
+
+  test("batter-only player (no pitching history) does NOT show Pitching tab", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_batter_qualify");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    // Wait for player name (only rendered after loading completes) to avoid checking
+    // not.toBeVisible() while loading=true shows both tabs as placeholders.
+    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
+    // Pitching tab must NOT be shown for a batter-only player
+    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  test("pitcher-only player (no batting history) does NOT show Batting tab", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_pitcher_starter");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    // Wait for player name (only rendered after loading completes) to avoid checking
+    // not.toBeVisible() while loading=true shows both tabs as placeholders.
+    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
+    // Batting tab must NOT be shown for a pitcher-only player
+    await expect(page.getByRole("button", { name: /^batting$/i })).not.toBeVisible({
+      timeout: 10_000,
+    });
+  });
+
+  test("player with no history shows both tabs (empty state)", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_unknown_player");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    // Both tabs present in the empty state
+    await expect(page.getByRole("button", { name: /^batting$/i })).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("button", { name: /^pitching$/i })).toBeVisible({ timeout: 5_000 });
+  });
+});
+
+// ── 5. Home page League teaser ────────────────────────────────────────────────
+
+test.describe("Home page League teaser", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("Home page shows 'League play coming soon' teaser", async ({ page }) => {
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("league-play-teaser")).toBeVisible();
+    await expect(page.getByTestId("league-play-teaser")).toContainText(/league play coming soon/i);
+  });
+
+  test("League teaser is not a clickable link", async ({ page }) => {
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    const teaser = page.getByTestId("league-play-teaser");
+    await expect(teaser).toBeVisible();
+    // The teaser box is not a button or anchor — it's a non-interactive element
+    const tagName = await teaser.evaluate((el) => el.tagName.toLowerCase());
+    expect(["div", "section", "aside", "p", "span"]).toContain(tagName);
+  });
+});
+
+// ── 6. New Game auto-regenerates seed ─────────────────────────────────────────
+
+test.describe("New Game seed auto-regeneration", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("New Game seed input is pre-filled on open", async ({ page }) => {
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const seedInput = page.getByTestId("seed-input");
+    await expect(seedInput).toBeVisible();
+    const value = await seedInput.inputValue();
+    expect(value.length).toBeGreaterThan(0);
+  });
+
+  test("closing and reopening New Game regenerates a different seed", async ({ page }) => {
+    // First open
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const firstSeed = await page.getByTestId("seed-input").inputValue();
+
+    // Navigate away and back
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const secondSeed = await page.getByTestId("seed-input").inputValue();
+
+    // Seeds must differ (fresh generation each open)
+    expect(secondSeed).not.toBe(firstSeed);
   });
 });

@@ -13,14 +13,16 @@ import {
 import type { ExhibitionGameSetup } from "@components/AppShell";
 import { getSpEligiblePitchers } from "@components/NewGameDialog";
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { getSeed, reinitSeed } from "@utils/rng";
+import { generateFreshSeed, reinitSeed } from "@utils/rng";
 
 type ManagedTeam = 0 | 1 | null;
 
 /** All state, derived values, and the submit handler for ExhibitionSetupPage. */
 export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => void) => {
   const [managed, setManaged] = React.useState<"none" | "0" | "1">("none");
-  const [seedInput, setSeedInput] = React.useState(() => getSeed()?.toString(36) ?? "");
+  // Auto-generates a fresh seed on mount. User edits are preserved since seedInput
+  // is normal state — the initializer only runs once per component mount.
+  const [seedInput, setSeedInput] = React.useState(() => generateFreshSeed().toString(36));
   const [teamValidationError, setTeamValidationError] = React.useState<string>("");
 
   const { teams: customTeams } = useCustomTeams();

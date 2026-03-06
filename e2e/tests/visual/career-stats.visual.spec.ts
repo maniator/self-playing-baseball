@@ -75,16 +75,20 @@ test.describe("Visual — seeded history data", () => {
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await teamSelect.selectOption("e2e_home_team");
-    // Wait for the batting rows to appear before snapping.  The first RxDB
-    // query on a cold tablet WebKit viewport can take >20 s, so use a generous
-    // 30 s timeout here.
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 30_000 });
+    // Wait for the team summary section to appear — it renders once the RxDB
+    // queries resolve and gamesPlayed > 0.  Avoids the strict-mode violation from
+    // getByText("J. Slugger") which now matches both leader cards AND table rows.
+    // Use a generous 30 s timeout for cold tablet WebKit viewports.
+    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
-    await expect(page.getByText("J. Slugger")).toBeVisible({ timeout: 5_000 });
+    // Use exact role to target the table-row PlayerLink, not the HR/RBI leader cards.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 5_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-batting-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -94,7 +98,10 @@ test.describe("Visual — seeded history data", () => {
   test("Career Stats page — pitching tab with ERA/WHIP/SV/HLD columns", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
-    await expect(page.getByText("A. Ace")).toBeVisible({ timeout: 10_000 });
+    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-pitching-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -126,6 +133,89 @@ test.describe("Visual — seeded history data", () => {
     await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
       "player-career-pitching-data.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ── Team Summary + Leaders ───────────────────────────────────────────────────
+
+test.describe("Visual — Team Summary and Leaders", () => {
+  async function seedSummaryAndOpen(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await loadFixture(page, "sample-save.json");
+    await disableAnimations(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+    await page.goto("/stats");
+    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    const teamSelect = page.getByTestId("career-stats-team-select");
+    await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    await teamSelect.selectOption("e2e_summary_team");
+    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+  }
+
+  test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    await page.getByTestId("career-stats-batting-tab").click();
+    // J. Qualify is in all three batting leader cards AND the batting table; use exact role to target table row.
+    await expect(page.getByRole("button", { name: "J. Qualify", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
+      "career-stats-team-summary-batting.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  test("Career Stats — Team Summary + leaders pitching tab", async ({ page }) => {
+    await seedSummaryAndOpen(page);
+    await page.getByTestId("career-stats-pitching-tab").click();
+    // A. Starter appears in both ERA and K leader cards AND the pitching table.
+    // Use exact role to target the table-row PlayerLink button only.
+    await expect(page.getByRole("button", { name: "A. Starter", exact: true })).toBeVisible({
+      timeout: 10_000,
+    });
+    await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
+      "career-stats-team-summary-pitching.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+});
+
+// ── Role-aware Player Career tab snapshots ───────────────────────────────────
+
+test.describe("Visual — Role-aware Player Career tabs", () => {
+  async function seedForRoleAware(page: Page) {
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
+    });
+    await loadFixture(page, "sample-save.json");
+    await disableAnimations(page);
+    await importHistoryFixture(page, "team-summary-history.json");
+  }
+
+  test("Player Career page — batter-only (no Pitching tab)", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_batter_qualify");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
+    await disableAnimations(page);
+    await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
+      "player-career-batter-only.png",
+      { maxDiffPixelRatio: 0.05 },
+    );
+  });
+
+  test("Player Career page — pitcher-only (no Batting tab)", async ({ page }) => {
+    await seedForRoleAware(page);
+    await page.goto("/players/e2e_pitcher_starter");
+    await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
+    await disableAnimations(page);
+    await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
+      "player-career-pitcher-only.png",
       { maxDiffPixelRatio: 0.05 },
     );
   });

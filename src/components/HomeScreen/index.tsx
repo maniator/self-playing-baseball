@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { HomeContainer, HomeLogo, HomeSubtitle, HomeTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { HomeContainer, HomeLogo, HomeSubtitle, HomeTitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -52,6 +52,14 @@ const HomeScreen: React.FunctionComponent<Props> = ({
         </SecondaryBtn>
       )}
     </MenuGroup>
+    <LeagueTeaserBox data-testid="league-play-teaser">
+      <LeagueTeaserTitle>
+        <span aria-hidden="true">🏆</span> League play coming soon
+      </LeagueTeaserTitle>
+      <LeagueTeaserSub>
+        Season schedules, standings, and playoffs are on the roadmap.
+      </LeagueTeaserSub>
+    </LeagueTeaserBox>
   </HomeContainer>
 );
 
