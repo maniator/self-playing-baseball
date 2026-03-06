@@ -570,5 +570,5 @@ export const hitBall = (
   }
 
   if (HIT_CALLOUTS[type]) log(HIT_CALLOUTS[type]);
-  return processConfirmedHit(type, base, log);
+  return processConfirmedHit(type, base, log, strategy);
 };

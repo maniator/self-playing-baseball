@@ -151,10 +151,22 @@ export const usePitchDispatch = ({
             ) {
               dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
             }
-            dispatchLog?.({
-              type: "log",
-              payload: `The manager: ${aiAction.reasonText}.`,
-            });
+            // Only log discrete, visible actions. Transient one-pitch modifiers
+            // (set_one_pitch_modifier, set_pinch_hitter_strategy) are re-applied on
+            // every pitch at the same count and would spam the play-by-play log.
+            const isDiscreteAction = [
+              "steal_attempt",
+              "bunt_attempt",
+              "intentional_walk",
+              "make_substitution",
+              "set_defensive_shift",
+            ].includes(aiAction.actionType);
+            if (isDiscreteAction) {
+              dispatchLog?.({
+                type: "log",
+                payload: `The manager: ${aiAction.reasonText}.`,
+              });
+            }
             // Decisions that replace the pitch (steal_attempt, bunt_attempt,
             // intentional_walk) should return early so the regular pitch is not
             // also dispatched in the same tick.
