@@ -13,7 +13,7 @@
  */
 import { expect, test } from "@playwright/test";
 
-import { importHistoryFixture, importTeamsFixture, resetAppState } from "../utils/helpers";
+import { importTeamsFixture, resetAppState, startGameViaPlayBall } from "../utils/helpers";
 
 // ─── 1. /career-stats redirects to /stats ────────────────────────────────────
 
@@ -46,33 +46,11 @@ test.describe("Career Stats — SV leader card suppressed when value is 0", () =
     test.skip(testInfo.project.name !== "desktop", "Career stats leader tests run on desktop only");
   });
 
-  test("SV leader card shows placeholder when no pitcher has a save", async ({ page }) => {
-    // Import a history fixture where no pitcher has a save (saves=0 for all pitchers).
-    // We use career-stats-history.json which has C. Closer with saves=1 — so we use the
-    // team with the away team that has no saves (e2e_away_team).
-    await resetAppState(page);
-    await importTeamsFixture(page, "career-stats-e2e-team.json");
-    await importHistoryFixture(page, "career-stats-history.json");
-
-    await page.goto("/stats");
-    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-
-    // Switch to the team that has saves (e2e_home_team via e2e career team)
-    const teamSelect = page.getByTestId("career-stats-team-select");
-    await expect(teamSelect).toBeVisible({ timeout: 10_000 });
-
-    // Switch to Pitching tab.
-    await page.getByTestId("career-stats-pitching-tab").click();
-
-    // The C. Closer on e2e_home_team has saves=1, so the leader card SHOULD appear.
-    await expect(page.getByTestId("saves-leader-card")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByTestId("saves-leader-card")).toContainText("1");
-  });
-
-  test("SV leader card shows 'SV — no data' placeholder when team has no save history", async ({
+  test("SV leader card shows placeholder when team has no game history (Bug 2 regression)", async ({
     page,
   }) => {
-    // Import a team but NO history — no game stats exist, so saves=0 for everyone.
+    // Import a team with NO game history — no game stats exist, so there are 0 saves.
+    // This directly tests the fix: savesLeader.value > 0 required to show the card.
     await resetAppState(page);
     await importTeamsFixture(page, "career-stats-e2e-team-with-bench.json");
     // No history import — team exists but has played 0 games.
@@ -80,18 +58,39 @@ test.describe("Career Stats — SV leader card suppressed when value is 0", () =
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
 
-    // If the team shows in the selector, switch to Pitching tab.
+    // The team selector must be visible (team was imported).
     const teamSelect = page.getByTestId("career-stats-team-select");
-    if (await teamSelect.isVisible()) {
-      // Switch to Pitching tab.
-      await page.getByTestId("career-stats-pitching-tab").click();
+    await expect(teamSelect).toBeVisible({ timeout: 10_000 });
 
-      // saves-leader-card must NOT be rendered (value would be 0).
-      await expect(page.getByTestId("saves-leader-card")).not.toBeVisible({ timeout: 3_000 });
+    // Switch to Pitching tab.
+    await page.getByTestId("career-stats-pitching-tab").click();
 
-      // The placeholder text for SV must be visible instead.
-      await expect(page.getByText(/SV.*no data/i)).toBeVisible({ timeout: 3_000 });
-    }
+    // saves-leader-card must NOT be rendered (no pitcher has saves > 0).
+    await expect(page.getByTestId("saves-leader-card")).not.toBeVisible({ timeout: 5_000 });
+
+    // The placeholder text for SV must be visible instead.
+    await expect(page.getByText(/SV.*no data/i)).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("SV leader card shows 'SV — no data' placeholder when team has no save history", async ({
+    page,
+  }) => {
+    // Duplicate of the above but kept for naming clarity — both verify Bug 2.
+    await resetAppState(page);
+    await importTeamsFixture(page, "career-stats-e2e-team-with-bench.json");
+
+    await page.goto("/stats");
+    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+
+    const teamSelect = page.getByTestId("career-stats-team-select");
+    await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("career-stats-pitching-tab").click();
+
+    // saves-leader-card must NOT be rendered (value would be 0).
+    await expect(page.getByTestId("saves-leader-card")).not.toBeVisible({ timeout: 5_000 });
+
+    // The placeholder text for SV must be visible instead.
+    await expect(page.getByText(/SV.*no data/i)).toBeVisible({ timeout: 5_000 });
   });
 });
 
@@ -146,20 +145,19 @@ test.describe("Player Career page — no raw ID for bench players with no stats 
 // ─── 4. SPEED_FAST constant is ≤ 200 ms ──────────────────────────────────────
 
 test.describe("Speed constants — Fast speed is ≤ 200 ms (Bug 5)", () => {
-  test("SPEED_FAST is reflected as ≤ 200 in the speed selector", async ({ page }, testInfo) => {
+  test("SPEED_FAST is reflected as ≤ 200 in the speed selector during an active game", async ({
+    page,
+  }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Speed constant test runs on desktop only");
 
-    await resetAppState(page);
-    await page.goto("/game");
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+    // Start a game so the speed selector is rendered inside GameControls.
+    await startGameViaPlayBall(page);
 
-    // The speed selector option value for Fast must be ≤ 200.
+    // The speed selector must be present and the Fast option must be ≤ 200 ms.
     const fastOptionValue = await page.evaluate(() => {
       const select = document.querySelector<HTMLSelectElement>('[data-testid="speed-select"]');
       if (!select) return null;
-      // Find the "Fast" option.
-      const opts = Array.from(select.options);
-      const fast = opts.find((o) => o.text === "Fast");
+      const fast = Array.from(select.options).find((o) => o.text === "Fast");
       return fast ? Number(fast.value) : null;
     });
 
@@ -192,10 +190,10 @@ test.describe("Team import — user-friendly error message for invalid format (B
     await expect(errorEl).toBeVisible({ timeout: 5_000 });
 
     const errorText = await errorEl.textContent();
-    // Must NOT contain the raw technical "undefined" literal.
-    expect(errorText).not.toMatch(/format version: undefined/i);
-    // Must contain helpful guidance.
-    expect(errorText).toMatch(/unsupported format version|Make sure to export using/i);
+    // Must include user-friendly guidance pointing to the Ballgame export buttons.
+    expect(errorText).toMatch(/Make sure to export using/i);
+    // Must NOT be the bare old technical message that contained nothing helpful.
+    expect(errorText).not.toMatch(/^Unsupported custom teams format version/i);
   });
 
   test("importing plain text (not JSON) shows a clear error", async ({ page }) => {

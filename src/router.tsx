@@ -59,10 +59,9 @@ function GameRoute() {
  *       /teams               → TeamsRoute       → ManageTeamsScreen (list)
  *       /teams/new           → TeamsRoute       → ManageTeamsScreen (create editor)
  *       /teams/:teamId/edit  → TeamsRoute       → ManageTeamsScreen (edit editor)
- *       /saves               → SavesPage
- *       /help                → HelpPage
- *       /exhibition/new      → ExhibitionSetupPage
- *     * → redirect to /
+ *       /stats               → CareerStatsPage
+ *       /career-stats        → redirect to /stats
+ *       /players/:playerKey  → PlayerCareerPage
  */
 export const router = createBrowserRouter([
   {
@@ -112,6 +111,7 @@ export const router = createBrowserRouter([
           },
           { path: "career-stats", element: <Navigate to="/stats" replace /> },
           {
+            path: "stats",
             element: (
               <React.Suspense fallback={null}>
                 <CareerStatsPage />
