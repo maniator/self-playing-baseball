@@ -869,6 +869,46 @@ describe("players collection integration", () => {
     expect(sections).toEqual(["bench", "lineup"]);
   });
 
+  it("importCustomTeams backfills globalPlayerId for legacy bundle players that lack the field", async () => {
+    // Simulate the real-world case: fixture-teams.json was created before globalPlayerId
+    // was added to sanitizePlayer. Players have playerSeed+fingerprint but no globalPlayerId.
+    // The v4 players schema has required: ["globalPlayerId"], so without the backfill in
+    // toPlayerDoc, bulkUpsert throws a validation error and the import fails entirely.
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const legacyTeam = {
+      id: "ct_legacy_no_gpid",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Legacy No GlobalPlayerId",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "lgcy_p1",
+            name: "Legacy Batter",
+            role: "batter" as const,
+            batting: { contact: 70, power: 60, speed: 50 },
+            // Explicitly no globalPlayerId — simulates fixture-teams.json format
+            playerSeed: "seed_legacy_p1",
+            fingerprint: "aabbccdd",
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([legacyTeam]);
+    // Should not throw even though the bundle player lacks globalPlayerId
+    await store.importCustomTeams(json);
+    const playerDocs = await db.players.find({ selector: { teamId: "ct_legacy_no_gpid" } }).exec();
+    expect(playerDocs).toHaveLength(1);
+    // globalPlayerId must be backfilled — it should be the fnv1a of playerSeed
+    expect(playerDocs[0].globalPlayerId).toMatch(/^pl_[0-9a-f]{8}$/);
+  });
+
   it("legacy team with embedded roster is backfilled into players collection on getCustomTeam", async () => {
     // Simulate a legacy team with embedded roster (no player docs in players collection)
     const legacyTeamDoc = {

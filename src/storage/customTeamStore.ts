@@ -120,8 +120,16 @@ function toPlayerDoc(
   section: "lineup" | "bench" | "pitchers",
   orderIndex: number,
 ): PlayerDoc {
+  // Backfill globalPlayerId for players imported from legacy bundles (created before
+  // globalPlayerId was added to the schema). The v4 players schema requires this field;
+  // without the backfill, bulkUpsert throws a validation error and the whole import fails.
+  // Use playerSeed first (gives the canonical stable identity), fall back to player.id
+  // (always present in TeamPlayer) so every player gets a unique value even if both
+  // playerSeed and globalPlayerId are absent.
+  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? player.id)}`;
   return {
     ...player,
+    globalPlayerId,
     // Use a team-scoped composite primary key to prevent cross-team collisions
     // when two different teams contain a player with the same original ID.
     id: `${teamId}:${player.id}`,

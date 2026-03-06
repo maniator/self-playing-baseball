@@ -649,15 +649,16 @@ async function initDb(
             } catch {
               // Derive a deterministic ID from whatever stable fields remain so
               // each doc gets a unique fallback rather than a shared constant.
-              const id = (oldDoc as Record<string, unknown>)["id"] as string | undefined;
-              const playerId = (oldDoc as Record<string, unknown>)["playerId"] as
+              const safeDoc = oldDoc ?? {};
+              const id = (safeDoc as Record<string, unknown>)["id"] as string | undefined;
+              const playerId = (safeDoc as Record<string, unknown>)["playerId"] as
                 | string
                 | undefined;
-              const fingerprint = (oldDoc as Record<string, unknown>)["fingerprint"] as
+              const fingerprint = (safeDoc as Record<string, unknown>)["fingerprint"] as
                 | string
                 | undefined;
               const basis = `${id ?? ""}|${playerId ?? ""}|${fingerprint ?? ""}|${Object.keys(
-                oldDoc ?? {},
+                safeDoc,
               )
                 .sort()
                 .join(",")}`;
