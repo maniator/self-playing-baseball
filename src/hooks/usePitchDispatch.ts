@@ -7,7 +7,7 @@ import { GameAction, LogAction, State, Strategy } from "@context/index";
 import {
   computeFatigueFactor,
   computeSwingRate,
-  resolveContactHitType,
+  resolveBattedBallType,
   resolveSwingOutcome,
 } from "@context/pitchSimulation";
 import { detectDecision } from "@context/reducer";
@@ -218,19 +218,17 @@ export const usePitchDispatch = ({
       } else if (swingOutcome === "foul") {
         dispatch({ type: "foul", payload: { pitchType } });
       } else {
-        // 4. Contact — determine hit type from contact quality.
+        // 4. Contact — resolve batted-ball type (contact quality → ball-in-play shape).
         const contactRoll = getRandomInt(100);
         const typeRoll = getRandomInt(100);
-        const hitType = resolveContactHitType(
-          contactRoll,
-          typeRoll,
-          effectiveStrategy,
-          batterMods.powerMod,
-          pitcherMods.velocityMod,
-          pitcherMods.movementMod,
+        const battedBallType = resolveBattedBallType(contactRoll, typeRoll, {
+          strategy: effectiveStrategy,
+          batterPowerMod: batterMods.powerMod,
+          pitcherVelocityMod: pitcherMods.velocityMod,
+          pitcherMovementMod: pitcherMods.movementMod,
           fatigueFactor,
-        );
-        dispatch({ type: "hit", payload: { hitType, strategy: effectiveStrategy } });
+        });
+        dispatch({ type: "hit", payload: { battedBallType, strategy: effectiveStrategy } });
       }
     } else {
       // 5. Batter takes the pitch — resolve ball or called strike.

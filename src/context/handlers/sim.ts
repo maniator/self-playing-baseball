@@ -3,8 +3,9 @@ import type { PitchType } from "@constants/pitchTypes";
 import { pitchName } from "@constants/pitchTypes";
 
 import { checkWalkoff } from "../gameOver";
-import { hitBall } from "../hitBall";
+import { handleBallInPlay, hitBall } from "../hitBall";
 import type { GameAction, State, Strategy } from "../index";
+import type { BattedBallType } from "../pitchSimulation";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "../playerActions";
 import type { ReducerCtx } from "../reducerHelpers";
 import { withDecisionLog, withStrikeoutLog } from "../reducerHelpers";
@@ -24,10 +25,11 @@ export const handleSimAction = (
 
   switch (action.type) {
     case "hit": {
-      const p = action.payload as { hitType?: Hit; strategy?: Strategy };
+      const p = action.payload as { battedBallType: BattedBallType; strategy?: Strategy };
       const strategy: Strategy = p?.strategy ?? "balanced";
-      const hitType: Hit = p?.hitType ?? (action.payload as Hit);
-      return checkWalkoff(hitBall(hitType, state, log, strategy), log);
+      // Saves restore from stateSnapshot (not event replay), so all "hit" actions
+      // in active play carry a battedBallType — no legacy hitType fallback needed.
+      return checkWalkoff(handleBallInPlay(p.battedBallType, state, log, { strategy }), log);
     }
     case "strike": {
       const sp = action.payload as { swung?: boolean; pitchType?: PitchType };

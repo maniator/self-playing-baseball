@@ -834,6 +834,17 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 - **`announce.ts` is a barrel re-export** — always import from `@utils/announce`; never import directly from `tts.ts` or `audio.ts`.
 - **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`. No module may import from a module later in this chain.
 - **`Function` type is banned** — use explicit function signatures: `(action: GameAction) => void` for dispatch, `(action: LogAction) => void` for dispatchLog.
+- **Options-hash convention for new functions** — any new function with more than two non-`state`/`log` parameters must use an options object as its final argument instead of positional params. Define a named `interface` (or `type`) for it, give every field a clear name, and provide defaults via destructuring. This avoids callers passing magic `0` / `false` sentinels to skip optional params. Example:
+  ```typescript
+  // ✅ Correct: named options, defaults in destructuring
+  interface HandleFlyOutOptions { sacFlyPct: number; tagUp2ndPct?: number; }
+  const handleFlyOut = (state, log, pitchKey, { sacFlyPct, tagUp2ndPct = 0 }: HandleFlyOutOptions) => …
+
+  // ❌ Wrong: positional params requiring callers to pass 0 to skip
+  const handleFlyOut = (state, log, pitchKey, sacFlyPct, tagUp2ndPct) => …
+  handleFlyOut(state, log, key, 65, 0)  // what is 0?
+  ```
+  Exported options interfaces live alongside the function they describe in the same file. Existing functions with positional params are not required to be refactored unless they are being modified as part of the current task.
 - **ESLint enforces import order** — run `yarn lint:fix` after adding imports to auto-sort them.
 - **`@storage/*` alias** — always import from `@storage/saveStore`, `@storage/db`, `@storage/types`; never use relative paths across directories.
 - **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.

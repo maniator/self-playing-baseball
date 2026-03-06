@@ -24,7 +24,7 @@ import { selectPitchType } from "@constants/pitchTypes";
 import type { GameAction, LogAction, State } from "@context/index";
 import {
   computeSwingRate,
-  resolveContactHitType,
+  resolveBattedBallType,
   resolveSwingOutcome,
 } from "@context/pitchSimulation";
 import { makeState } from "@test/testHelpers";
@@ -64,8 +64,8 @@ const nextPitchAction = (state: State): GameAction => {
     if (outcome === "foul") return { type: "foul", payload: { pitchType } };
     const contactRoll = getRandomInt(100);
     const typeRoll = getRandomInt(100);
-    const hitType = resolveContactHitType(contactRoll, typeRoll, "balanced", 0, 0, 0);
-    return { type: "hit", payload: { hitType, strategy: "balanced" } };
+    const battedBallType = resolveBattedBallType(contactRoll, typeRoll);
+    return { type: "hit", payload: { battedBallType, strategy: "balanced" } };
   }
   return { type: "wait", payload: { strategy: "balanced", pitchType } };
 };

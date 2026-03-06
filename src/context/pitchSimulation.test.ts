@@ -5,18 +5,16 @@
  *   - computeFatigueFactor: stamina delays fatigue; fatigue increases over batters faced
  *   - computeSwingRate: count, strategy, and pitch-type effects
  *   - resolveSwingOutcome: whiff/foul/contact thresholds; pitcher stats and fatigue effects
- *   - resolveContactHitType: contact quality tiers; hit-type distribution; power strategy boost
+ *   - resolveBattedBallType: contact quality tiers; batted-ball distribution; power strategy boost
  *   - Integration: identical inputs always produce identical outputs (determinism)
  */
 
 import { describe, expect, it } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
-
 import {
   computeFatigueFactor,
   computeSwingRate,
-  resolveContactHitType,
+  resolveBattedBallType,
   resolveSwingOutcome,
 } from "./pitchSimulation";
 
@@ -359,16 +357,16 @@ describe("simulation stat sanity (aggregate)", () => {
     expect(highVeloWhiffs).toBeGreaterThan(lowVeloWhiffs);
   });
 
-  it("hard contact produces more HR+extra-base outcomes than weak contact", () => {
+  it("hard contact produces more deep_fly/line_drive than weak contact", () => {
     const typeRolls = Array.from({ length: 100 }, (_, i) => i);
-    const extraBaseHits = (contactRoll: number) =>
+    const premiumBBT = (contactRoll: number) =>
       typeRolls.filter((t) => {
-        const h = resolveContactHitType(contactRoll, t, "balanced", 0, 0, 0);
-        return h === Hit.Double || h === Hit.Triple || h === Hit.Homerun;
+        const b = resolveBattedBallType(contactRoll, t);
+        return b === "deep_fly" || b === "line_drive";
       }).length;
 
-    const hardExtra = extraBaseHits(5); // hard contact
-    const weakExtra = extraBaseHits(85); // weak contact
-    expect(hardExtra).toBeGreaterThan(weakExtra);
+    const hardPremium = premiumBBT(5); // hard contact
+    const weakPremium = premiumBBT(85); // weak contact
+    expect(hardPremium).toBeGreaterThan(weakPremium);
   });
 });

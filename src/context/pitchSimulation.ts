@@ -147,40 +147,58 @@ export const resolveSwingOutcome = (
 };
 
 // ---------------------------------------------------------------------------
-// Contact quality and hit-type resolution
+// Contact quality and batted-ball type resolution
 // ---------------------------------------------------------------------------
 
-/** Broad contact quality categories used internally. */
-type ContactQuality = "weak" | "medium" | "hard";
+/** Broad contact quality categories. */
+export type ContactQuality = "weak" | "medium" | "hard";
 
 /**
- * Determine the hit type when the batter makes contact.
+ * The type of ball put in play.
  *
- * Two independent rolls are accepted:
- *   `contactRoll` (0–99) — determines contact quality (weak/medium/hard).
- *   `typeRoll`    (0–99) — determines the specific hit type within the quality tier.
+ * This is the explicit intermediate layer between contact quality and the final
+ * ball-in-play result.  The final outcome (hit type or out) is determined by
+ * `handleBallInPlay()` in `hitBall.ts` using the batted-ball type.
  *
- * Note: `hitBall()` still applies a separate pop-out / grounder check, so
- * "contact = single" does not guarantee the batter reaches base.  These
- * represent the *potential* hit type before field defence is applied.
- *
- * @param contactRoll         0–99 roll for contact quality.
- * @param typeRoll            0–99 roll for hit type selection.
- * @param strategy            Batter's current strategy.
- * @param batterPowerMod      Batter's power modifier.
- * @param pitcherVelocityMod  Pitcher's velocity modifier.
- * @param pitcherMovementMod  Pitcher's movement modifier.
- * @param fatigueFactor       Pitcher fatigue (≥ 1.0; higher = more tired).
+ * Outcome shape per type (approximate):
+ *   pop_up       → ~100% out (pop-up)
+ *   weak_grounder→ ~65% out (ground out / FC / DP), ~35% infield single
+ *   hard_grounder→ ~40% out (ground out / FC / DP), ~60% single
+ *   line_drive   → ~15% out (liner caught),          ~85% hit (Single–HR)
+ *   medium_fly   → ~70% out (fly out),               ~30% hit (Single–Double)
+ *   deep_fly     → ~35% out (warning-track out),     ~65% hit (Double–HR)
  */
-export const resolveContactHitType = (
+export type BattedBallType =
+  | "pop_up"
+  | "weak_grounder"
+  | "hard_grounder"
+  | "line_drive"
+  | "medium_fly"
+  | "deep_fly";
+
+/**
+ * Compute contact quality from a 0–99 roll and pitcher/batter modifiers.
+ *
+ * Extracted so it can be reused by `resolveBattedBallType` and tested in
+ * isolation.
+ */
+export interface ResolveContactQualityOptions {
+  batterPowerMod?: number;
+  pitcherVelocityMod?: number;
+  pitcherMovementMod?: number;
+  /** Pitcher fatigue (≥ 1.0; higher = more tired, allows more hard contact). */
+  fatigueFactor?: number;
+}
+
+export const resolveContactQuality = (
   contactRoll: number,
-  typeRoll: number,
-  strategy: Strategy,
-  batterPowerMod: number,
-  pitcherVelocityMod: number,
-  pitcherMovementMod: number,
-  fatigueFactor = 1.0,
-): Hit => {
+  {
+    batterPowerMod = 0,
+    pitcherVelocityMod = 0,
+    pitcherMovementMod = 0,
+    fatigueFactor = 1.0,
+  }: ResolveContactQualityOptions = {},
+): ContactQuality => {
   // Hard contact threshold: batter power raises it; pitcher stuff lowers it;
   // fatigue raises it (tired pitchers allow more hard contact).
   const hardBase = 25;
@@ -196,41 +214,126 @@ export const resolveContactHitType = (
   );
   const mediumThreshold = Math.min(75, hardThreshold + 35);
 
-  let quality: ContactQuality;
-  if (contactRoll < hardThreshold) {
-    quality = "hard";
-  } else if (contactRoll < mediumThreshold) {
-    quality = "medium";
-  } else {
-    quality = "weak";
-  }
+  if (contactRoll < hardThreshold) return "hard";
+  if (contactRoll < mediumThreshold) return "medium";
+  return "weak";
+};
 
-  // Power strategy boosts the chance of hard contact converting to extra bases.
-  const powerBoost = strategy === "power" && quality !== "hard" && typeRoll < 15;
-  if (powerBoost) {
-    quality = quality === "weak" ? "medium" : "hard";
-  }
+/**
+ * Determine the batted-ball type from contact quality and a 0–99 type roll.
+ *
+ * This is the explicit ball-in-play intermediate layer:
+ *   contact quality → batted-ball type → final result (in `handleBallInPlay`)
+ *
+ * Hard contact skews toward deep fly balls and line drives.
+ * Medium contact produces a mix of fly balls, grounders, and liners.
+ * Weak contact mostly produces pop-ups and weak grounders.
+ *
+ * Power strategy can upgrade the batted-ball type for the same contact quality.
+ */
+export interface ResolveBattedBallOptions {
+  strategy?: Strategy;
+  batterPowerMod?: number;
+  pitcherVelocityMod?: number;
+  pitcherMovementMod?: number;
+  /** Pitcher fatigue (≥ 1.0; higher = more tired). */
+  fatigueFactor?: number;
+}
+
+export const resolveBattedBallType = (
+  contactRoll: number,
+  typeRoll: number,
+  {
+    strategy = "balanced",
+    batterPowerMod = 0,
+    pitcherVelocityMod = 0,
+    pitcherMovementMod = 0,
+    fatigueFactor = 1.0,
+  }: ResolveBattedBallOptions = {},
+): BattedBallType => {
+  const quality = resolveContactQuality(contactRoll, {
+    batterPowerMod,
+    pitcherVelocityMod,
+    pitcherMovementMod,
+    fatigueFactor,
+  });
+
+  // Power strategy can upgrade the batted-ball type one tier toward extra bases.
+  const powerBoost = strategy === "power" && typeRoll < 15;
 
   switch (quality) {
     case "hard":
-      // Hard contact: meaningful HR and extra-base potential.
-      if (typeRoll < 15) return Hit.Homerun;
-      if (typeRoll < 20) return Hit.Triple;
-      if (typeRoll < 45) return Hit.Double;
-      return Hit.Single;
+      // Hard contact: deep fly (40%) → line drive (35%) → hard grounder (25%).
+      if (typeRoll < 40) return "deep_fly";
+      if (typeRoll < 75) return "line_drive";
+      return "hard_grounder";
 
     case "medium":
-      // Medium contact: mostly singles and doubles, occasional extra base.
+      // Power boost on medium: elevate to deep fly.
+      if (powerBoost) return "deep_fly";
+      // medium fly (35%) → hard grounder (20%) → line drive (20%) → weak grounder (25%).
+      if (typeRoll < 35) return "medium_fly";
+      if (typeRoll < 55) return "hard_grounder";
+      if (typeRoll < 75) return "line_drive";
+      return "weak_grounder";
+
+    case "weak":
+      // Power boost on weak: elevate to medium fly (at least a chance at a hit).
+      if (powerBoost) return "medium_fly";
+      // pop up (35%) → weak grounder (45%) → medium fly (20%).
+      if (typeRoll < 35) return "pop_up";
+      if (typeRoll < 80) return "weak_grounder";
+      return "medium_fly";
+  }
+};
+
+/**
+ * Determine the hit type when the batter makes contact.
+ *
+ * @deprecated Use `resolveBattedBallType` + `handleBallInPlay` instead.
+ *   This function is kept for unit-test backward-compatibility only and now
+ *   derives its result via `resolveBattedBallType`.
+ */
+export const resolveContactHitType = (
+  contactRoll: number,
+  typeRoll: number,
+  strategy: Strategy,
+  batterPowerMod: number,
+  pitcherVelocityMod: number,
+  pitcherMovementMod: number,
+  fatigueFactor = 1.0,
+): Hit => {
+  const bbt = resolveBattedBallType(contactRoll, typeRoll, {
+    strategy,
+    batterPowerMod,
+    pitcherVelocityMod,
+    pitcherMovementMod,
+    fatigueFactor,
+  });
+  // Map batted-ball type to the approximate hit type it would produce when it
+  // falls for a hit (used only by legacy tests; `handleBallInPlay` is the
+  // authoritative implementation for actual gameplay).
+  switch (bbt) {
+    case "pop_up":
+      return Hit.Single; // will be converted to an out by handleBallInPlay
+    case "weak_grounder":
+      return Hit.Single;
+    case "hard_grounder":
+      return Hit.Single;
+    case "line_drive":
+      if (typeRoll < 15) return Hit.Homerun;
+      if (typeRoll < 23) return Hit.Triple;
+      if (typeRoll < 50) return Hit.Double;
+      return Hit.Single;
+    case "medium_fly":
       if (typeRoll < 5) return Hit.Homerun;
       if (typeRoll < 8) return Hit.Triple;
       if (typeRoll < 28) return Hit.Double;
       return Hit.Single;
-
-    case "weak":
-      // Weak contact: mostly singles (many will become outs in hitBall).
-      if (typeRoll < 2) return Hit.Homerun;
-      if (typeRoll < 4) return Hit.Triple;
-      if (typeRoll < 14) return Hit.Double;
+    case "deep_fly":
+      if (typeRoll < 25) return Hit.Homerun;
+      if (typeRoll < 40) return Hit.Triple;
+      if (typeRoll < 80) return Hit.Double;
       return Hit.Single;
   }
 };

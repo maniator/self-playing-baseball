@@ -65,7 +65,7 @@ describe("usePitchDispatch", () => {
   it("dispatches hit when swing produces contact", () => {
     // Mock sequence: pitch type (0→fastball), swing (0.001→1<360→swing),
     // swing outcome (0.9→90≥55→contact), contact roll (0.0→0<25→hard),
-    // hit type roll (0.5→50≥45→Single).
+    // hit type roll (0.5→50 ≥ 40 and < 75 → line_drive).
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
@@ -73,7 +73,7 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.001) // swing roll: 1 < 360 → swing
       .mockReturnValueOnce(0.9) // swing outcome: 90 ≥ 55 → contact
       .mockReturnValueOnce(0.0) // contact quality: 0 < 25 → hard
-      .mockReturnValueOnce(0.5); // hit type: 50 ≥ 45 → Single
+      .mockReturnValueOnce(0.5); // hit type: 50 → line_drive
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -115,8 +115,8 @@ describe("usePitchDispatch", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("dispatches hit: hard contact + typeRoll 15-19 → Triple", () => {
-    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (15≤17<20 → Triple)
+  it("dispatches hit: hard contact + typeRoll 15-39 → deep_fly", () => {
+    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (17 < 40 → deep_fly).
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
@@ -124,7 +124,7 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.001) // swing
       .mockReturnValueOnce(0.9) // contact
       .mockReturnValueOnce(0.0) // hard contact (0 < 25)
-      .mockReturnValueOnce(0.17); // typeRoll=17: 15≤17<20 → Triple
+      .mockReturnValueOnce(0.17); // typeRoll=17: 17 < 40 → deep_fly
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -142,12 +142,15 @@ describe("usePitchDispatch", () => {
       result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 
-  it("dispatches hit: hard contact + typeRoll 20-44 → Double", () => {
-    // Hard contact (contactRoll=0 < 25) + typeRoll=30 (20≤30<45 → Double)
+  it("dispatches hit: hard contact + typeRoll 40-74 → line_drive", () => {
+    // Hard contact (contactRoll=0 < 25) + typeRoll=50 (40 ≤ 50 < 75 → line_drive).
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
@@ -155,7 +158,7 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.001) // swing
       .mockReturnValueOnce(0.9) // contact
       .mockReturnValueOnce(0.0) // hard contact
-      .mockReturnValueOnce(0.3); // typeRoll=30: 20≤30<45 → Double
+      .mockReturnValueOnce(0.5); // typeRoll=50: 40 ≤ 50 < 75 → line_drive
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -173,12 +176,15 @@ describe("usePitchDispatch", () => {
       result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "line_drive" }),
+      }),
     );
   });
 
-  it("dispatches hit: hard contact + typeRoll 15-19 → Triple (balanced strategy)", () => {
-    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (15≤17<20 → Triple)
+  it("dispatches hit: hard contact + typeRoll 15-39 → deep_fly (balanced strategy)", () => {
+    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (17 < 40 → deep_fly).
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
@@ -186,7 +192,7 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.001) // swing
       .mockReturnValueOnce(0.9) // contact
       .mockReturnValueOnce(0.0) // hard contact (0 < 25)
-      .mockReturnValueOnce(0.17); // typeRoll=17: 15≤17<20 → Triple
+      .mockReturnValueOnce(0.17); // typeRoll=17: 17 < 40 → deep_fly
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -204,11 +210,14 @@ describe("usePitchDispatch", () => {
       result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 
-  it("dispatches hit: hard contact + typeRoll 20-44 → Double (balanced strategy)", () => {
+  it("dispatches hit: hard contact + typeRoll 40-74 → line_drive (balanced strategy)", () => {
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
@@ -216,7 +225,7 @@ describe("usePitchDispatch", () => {
       .mockReturnValueOnce(0.001) // swing
       .mockReturnValueOnce(0.9) // contact
       .mockReturnValueOnce(0.0) // hard contact
-      .mockReturnValueOnce(0.3); // typeRoll=30: 20≤30<45 → Double
+      .mockReturnValueOnce(0.5); // typeRoll=50: 40 ≤ 50 < 75 → line_drive
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -234,7 +243,10 @@ describe("usePitchDispatch", () => {
       result.current();
     });
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "line_drive" }),
+      }),
     );
   });
 });
@@ -273,44 +285,59 @@ describe("usePitchDispatch — power strategy hits", () => {
     return dispatch;
   };
 
-  it("power Homerun (hard contact, typeRoll < 15)", () => {
-    // contactRoll=10 → hard (10 < 25); typeRoll=10 < 15 → HR
+  it("power deep_fly (hard contact, typeRoll < 40)", () => {
+    // contactRoll=10 → hard (10 < 25); typeRoll=10 < 40 → deep_fly
     const dispatch = dispatchAndGet(makeHitState(10, 10));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 
-  it("power Triple (hard contact, typeRoll 15–19)", () => {
-    // contactRoll=10 → hard; typeRoll=17: 15≤17<20 → Triple
+  it("power deep_fly (hard contact, typeRoll 15–39)", () => {
+    // contactRoll=10 → hard; typeRoll=17: 17 < 40 → deep_fly
     const dispatch = dispatchAndGet(makeHitState(10, 17));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 
-  it("power Double (hard contact, typeRoll 20–44)", () => {
-    // contactRoll=10 → hard; typeRoll=33: 20≤33<45 → Double
+  it("power deep_fly (hard contact, typeRoll 20–39)", () => {
+    // contactRoll=10 → hard; typeRoll=33: 33 < 40 → deep_fly
     const dispatch = dispatchAndGet(makeHitState(10, 33));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 
-  it("power Single (hard contact, typeRoll ≥ 45)", () => {
-    // contactRoll=10 → hard; typeRoll=55: ≥45 → Single
+  it("power line_drive (hard contact, typeRoll 40–74)", () => {
+    // contactRoll=10 → hard; typeRoll=55: 40 ≤ 55 < 75 → line_drive
     const dispatch = dispatchAndGet(makeHitState(10, 55));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 0 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "line_drive" }),
+      }),
     );
   });
 
-  it("power strategy boosts medium contact to hard (typeRoll < 15)", () => {
-    // Medium contact (contactRoll=40, 25≤40<60) + power strategy + typeRoll=5 < 15 → powerBoost
-    // → quality upgrades to hard → typeRoll=5 < 15 → HR
+  it("power strategy boosts medium contact to deep_fly via powerBoost (typeRoll < 15)", () => {
+    // Medium contact (contactRoll=40, 25≤40<60) + power strategy + typeRoll=5 < 15
+    // → powerBoost upgrades to deep_fly regardless of original quality.
     const dispatch = dispatchAndGet(makeHitState(40, 5));
     expect(dispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
+      expect.objectContaining({
+        type: "hit",
+        payload: expect.objectContaining({ battedBallType: "deep_fly" }),
+      }),
     );
   });
 });
