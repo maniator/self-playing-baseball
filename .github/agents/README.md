@@ -71,12 +71,27 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 
 ---
 
+### `e2e-test-runner`
+
+**When to use:** Running, debugging, authoring, or updating Playwright E2E tests — especially when visual snapshot baselines need to be regenerated.
+
+**Key guardrails:**
+- Always runs tests inside `mcr.microsoft.com/playwright:v1.58.2-noble` via `docker run` — never on the host
+- Can regenerate and **commit visual snapshot baselines directly** (no workflow wait) because the container is identical to CI
+- Only commits PNGs for intentionally changed visuals — no unrelated snapshot churn
+- Uses `loadFixture` for instant game-state setup; never adds `test.setTimeout()`
+
+**Critical — Node 24 inside the container:**
+> The Playwright container does not ship Node 24. Every `docker run` command must install it first: `npm install -g n && n 24 && hash -r` before `corepack enable && yarn install`.
+
+---
+
 ## Common gotchas
 
 | Gotcha | Detail |
 |---|---|
 | Determinism | All `random()` calls flow through `src/utils/rng.ts`. Any conditional call insertion/removal breaks seed replay. |
-| Snapshot environment | Regenerate baselines inside `mcr.microsoft.com/playwright:v1.58.2-noble` or via the `update-visual-snapshots` workflow to match CI fonts/libs. |
+| Snapshot environment | Regenerate baselines inside `mcr.microsoft.com/playwright:v1.58.2-noble` using the `e2e-test-runner` agent (`docker run --update-snapshots`) or via the `update-visual-snapshots` workflow. Never commit locally generated PNGs. |
 | Copilot setup workflow | `copilot-setup-steps.yml` must not use `container:` — known bootstrap shell compatibility issue. |
 | Reducer cycle order | `strategy → advanceRunners → gameOver → playerOut → hitBall → buntAttempt → playerActions → reducer`. No circular imports. |
 | RxDB schema versioning | Any change to a collection's `properties`, `required`, or `indexes` at the same `version` causes DB6 for all existing users. Always bump `version`, add a migration strategy that never throws, and add an upgrade-path unit test. |

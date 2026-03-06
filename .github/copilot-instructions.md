@@ -542,7 +542,7 @@ yarn test             # vitest run (one-shot)
 yarn test:coverage    # vitest run --coverage (thresholds: lines/functions/statements 90%, branches 80%)
 yarn test:e2e         # build app then run all Playwright E2E tests headlessly
 yarn test:e2e:ui      # open Playwright UI mode for interactive debugging
-yarn test:e2e:update-snapshots  # regenerate visual regression baseline PNGs (local only — do NOT commit; use the update-visual-snapshots workflow instead, see Visual snapshots section)
+yarn test:e2e:update-snapshots  # regenerate visual regression baseline PNGs — do NOT run locally and commit; use the e2e-test-runner agent (docker run inside the container) or the update-visual-snapshots workflow instead
 yarn lint             # ESLint check
 yarn lint:fix         # ESLint auto-fix
 yarn format:check     # Prettier check
@@ -561,7 +561,7 @@ Validate changes by:
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
 3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
 4. `yarn typecheck:e2e` — **always run when adding or changing E2E test files** (`e2e/**/*.ts`). This type-checks the Playwright suite against `e2e/tsconfig.json`. Playwright's `Page` API differs from Testing Library — for example `page.getByDisplayValue` does not exist; use `page.locator('input[value="…"]')` instead.
-5. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, visual baselines may need updating — the **`update-visual-snapshots`** workflow fires **automatically** on every push to any non-master branch. You can also trigger it manually: Actions → "Update Visual Snapshots" → Run workflow. Never run `yarn test:e2e:update-snapshots` locally and commit the result — local rendering differs from the CI container.
+5. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, visual baselines may need updating — use the **`e2e-test-runner`** agent to regenerate them inside the Docker container and commit directly, or let the **`update-visual-snapshots`** workflow handle it automatically on push.
 
 **Do not call `report_progress` until all five steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
@@ -687,11 +687,16 @@ Committed baseline PNGs live in `e2e/tests/visual.spec.ts-snapshots/` named `<sc
 
 **Never run `yarn test:e2e:update-snapshots` locally and commit the result.** Local OS fonts and rendering differ from the CI container, causing false visual-diff failures on every subsequent CI run.
 
-When an intentional UI change requires new baselines, the **`update-visual-snapshots`** workflow handles it automatically:
+When an intentional UI change requires new baselines, you have two options:
+
+**Option 1 — Use the `e2e-test-runner` agent (preferred for Copilot sessions):** The agent runs `--update-snapshots` inside the same Docker container and commits the updated PNGs directly to the branch in the same session. No workflow wait required. See `.github/agents/e2e-test-runner.md` for the exact `docker run` commands.
+
+**Option 2 — Use the `update-visual-snapshots` GitHub Actions workflow:**
 - It fires **automatically** on every push to any non-master branch.
 - For manual control: **Actions → "Update Visual Snapshots" → Run workflow → select your branch → Run workflow**.
 - The workflow runs inside the same Playwright container as CI, regenerates all snapshot PNGs, and commits them back to your branch (without `[skip ci]`), so `playwright-e2e.yml` runs against the updated baselines on that commit.
-- Do **not** regenerate snapshots unless you are intentionally changing a visual.
+
+Do **not** regenerate snapshots unless you are intentionally changing a visual.
 
 ### Workflow sequencing for snapshot changes
 
@@ -708,13 +713,12 @@ Once `update-visual-snapshots` commits the new baselines, a *second* `playwright
 2. `npx playwright test` — runs all projects headlessly (browser binaries pre-installed in the container)
 3. Uploads `playwright-report/` + `test-results/` as artifacts on failure
 
-`.github/workflows/update-visual-snapshots.yml` — sole snapshot regeneration workflow:
+`.github/workflows/update-visual-snapshots.yml` — snapshot regeneration workflow (auto-triggers on every push to non-master branches):
 - Runs inside the **same** `mcr.microsoft.com/playwright:v1.58.2-noble` container as `playwright-e2e.yml`.
 - **Auto-trigger:** every push to any non-master branch.
 - **Manual trigger:** Actions → "Update Visual Snapshots" → Run workflow → select branch.
 - Commits updated PNGs back to the branch; the commit triggers `playwright-e2e` to validate them.
 - Concurrency group: cancels stale queued runs when a newer push arrives.
-- Use this workflow — **not** `yarn test:e2e:update-snapshots` locally — whenever baselines need refreshing.
 
 ---
 

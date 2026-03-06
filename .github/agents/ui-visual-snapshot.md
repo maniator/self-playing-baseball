@@ -55,7 +55,10 @@ This container ships pre-installed OS/system dependencies, fonts (`Noto`, `Liber
 
 ### When regenerating snapshots:
 
-Use the **`update-visual-snapshots`** GitHub Actions workflow — it runs inside the same container as CI and commits the updated PNGs back to your branch automatically:
+**Preferred for Copilot sessions — use the `e2e-test-runner` agent:**
+Run `--update-snapshots` inside `mcr.microsoft.com/playwright:v1.58.2-noble` via `docker run` and commit the updated PNGs directly. This is faster than waiting for the workflow. See `.github/agents/e2e-test-runner.md` for the exact commands.
+
+**Alternative — use the `update-visual-snapshots` GitHub Actions workflow:**
 
 1. Go to **Actions → "Update Visual Snapshots" → Run workflow → select your branch → Run workflow**.
 2. The workflow regenerates all snapshot PNGs inside `mcr.microsoft.com/playwright:v1.58.2-noble` and commits them back.
@@ -77,5 +80,5 @@ This container guidance is **only for Playwright visual snapshot work**. The **C
 - [ ] `yarn build` — clean compile
 - [ ] `yarn test` — unit tests pass
 - [ ] `yarn test:e2e` — all Playwright projects pass (including visual diffs)
-- [ ] Snapshots regenerated via the `update-visual-snapshots` workflow (not local regen) if baselines changed
+- [ ] Snapshots regenerated via the `e2e-test-runner` agent (`docker run --update-snapshots`) or the `update-visual-snapshots` workflow — never via local `yarn test:e2e:update-snapshots`
 - [ ] `responsive-smoke.spec.ts` passes on all 7 projects (Play Ball button within viewport, no horizontal overflow)
