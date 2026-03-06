@@ -531,6 +531,53 @@ describe("SaveStore.appendEvents — counter initialisation from existing events
   });
 });
 
+describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", () => {
+  it("round-trips outLog entries with isSacFly and rbi through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "sacflysave" }));
+    const stateWithSacFly = makeState({
+      outLog: [{ team: 0, batterNum: 2, isSacFly: true, rbi: 1 }],
+    });
+    await store.updateProgress(saveId, 6, {
+      stateSnapshot: { state: stateWithSacFly, rngState: 42 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    const outLog = saves[0].stateSnapshot?.state.outLog ?? [];
+    expect(outLog).toHaveLength(1);
+    expect(outLog[0].isSacFly).toBe(true);
+    expect(outLog[0].rbi).toBe(1);
+    await db2.close();
+  });
+
+  it("round-trips outLog entries without isSacFly (legacy saves)", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "legacyout" }));
+    const legacyState = makeState({
+      outLog: [{ team: 0, batterNum: 1 }],
+    });
+    await store.updateProgress(saveId, 2, {
+      stateSnapshot: { state: legacyState, rngState: null },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    const outLog = saves[0].stateSnapshot?.state.outLog ?? [];
+    expect(outLog).toHaveLength(1);
+    expect(outLog[0].isSacFly).toBeUndefined();
+    await db2.close();
+  });
+});
+
 describe("SaveStore — RBI in stateSnapshot export/import compatibility", () => {
   it("round-trips a stateSnapshot containing playLog entries with rbi", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup({ seed: "rbisave" }));
