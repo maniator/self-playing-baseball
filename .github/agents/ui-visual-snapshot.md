@@ -12,7 +12,7 @@ You are a UI/UX and front-end engineering expert for `maniator/self-playing-base
 
 ## Core rules
 
-- For **any** UI/layout/font/spacing/typography change, assume **Playwright visual snapshots must be regenerated** (`yarn test:e2e:update-snapshots`).
+- For **any** UI/layout/font/spacing/typography change, assume **Playwright visual snapshots must be regenerated**. Always regenerate inside `mcr.microsoft.com/playwright:v1.58.2-noble` — via the `e2e-test-runner` agent (`docker run --update-snapshots`) or the `update-visual-snapshots` workflow. Never run `yarn test:e2e:update-snapshots` directly on the host OS and commit the result.
 - Keep UI fixes targeted. Avoid redesigns unless explicitly requested.
 - Do not blindly update snapshots when there are regressions. Fix the layout first, then regenerate.
 - Always use `mq` helpers from `@utils/mediaQueries` in styled-components. Never write raw `@media` strings inline.
@@ -71,7 +71,7 @@ This container guidance is **only for Playwright visual snapshot work**. The **C
 ## Snapshot file conventions
 
 - Baseline PNGs live in `e2e/tests/visual.spec.ts-snapshots/` named `<screen>-<project>-linux.png`.
-- Run `yarn test:e2e:update-snapshots` after any intentional visual change.
+- After any intentional visual change, regenerate snapshots inside `mcr.microsoft.com/playwright:v1.58.2-noble` — use the `e2e-test-runner` agent (`docker run --update-snapshots`) or the `update-visual-snapshots` workflow. **Never run `yarn test:e2e:update-snapshots` on the host OS and commit the result** — local fonts and rendering differ from the container.
 - Do NOT regenerate snapshots for unrelated layout areas.
 
 ## Pre-commit checklist
