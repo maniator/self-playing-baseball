@@ -48,9 +48,14 @@ let lastFreshSeed: number | null = null;
  */
 export const generateFreshSeed = (): number => {
   let s = generateSeed();
-  if (s === lastFreshSeed) {
-    // Re-generate to guarantee a different value on rapid successive calls.
+  // Loop to guarantee a different value even on rapid successive calls.
+  // With crypto.getRandomValues, collision probability is 1/2^32 per attempt;
+  // three attempts reduce the chance to negligible (< 1 in 10^28).
+  const maxRetries = 3;
+  let retries = 0;
+  while (s === lastFreshSeed && retries < maxRetries) {
     s = generateSeed();
+    retries++;
   }
   lastFreshSeed = s;
   return s;

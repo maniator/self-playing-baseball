@@ -37,6 +37,19 @@ function isConflictError(err: unknown): boolean {
 
 type GetDb = () => Promise<BallgameDb>;
 
+/** Batting stats row type returned by `getTeamCareerBattingStats`. */
+export type TeamBattingStatsRow = PlayerGameStatDoc["batting"] & {
+  playerKey: string;
+  nameAtGameTime: string;
+  gamesPlayed: number;
+};
+
+/** Pitching stats row type returned by `getTeamCareerPitchingStats`. */
+export type TeamPitchingStatsRow = Omit<
+  PitcherGameStatDoc,
+  "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"
+> & { gamesPlayed: number };
+
 function buildStore(getDbFn: GetDb) {
   /**
    * Writes one GameDoc + N PlayerGameStatDoc rows + M PitcherGameStatDoc rows for a completed game.
@@ -191,24 +204,11 @@ function buildStore(getDbFn: GetDb) {
    * Returns cumulative career batting stats for all players associated with a team.
    * Queries by teamId.
    */
-  async function getTeamCareerBattingStats(teamId: string): Promise<
-    (PlayerGameStatDoc["batting"] & {
-      playerKey: string;
-      nameAtGameTime: string;
-      gamesPlayed: number;
-    })[]
-  > {
+  async function getTeamCareerBattingStats(teamId: string): Promise<TeamBattingStatsRow[]> {
     const db = await getDbFn();
     const rows = await db.playerGameStats.find({ selector: { teamId } }).exec();
 
-    const aggregated: Record<
-      string,
-      PlayerGameStatDoc["batting"] & {
-        playerKey: string;
-        nameAtGameTime: string;
-        gamesPlayed: number;
-      }
-    > = {};
+    const aggregated: Record<string, TeamBattingStatsRow> = {};
 
     for (const row of rows) {
       const doc = row.toJSON() as PlayerGameStatDoc;
@@ -249,36 +249,11 @@ function buildStore(getDbFn: GetDb) {
    * Returns cumulative career pitching stats for all pitchers associated with a team.
    * Queries by teamId.
    */
-  async function getTeamCareerPitchingStats(
-    teamId: string,
-  ): Promise<
-    (Omit<
-      PitcherGameStatDoc,
-      "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"
-    > & { gamesPlayed: number })[]
-  > {
+  async function getTeamCareerPitchingStats(teamId: string): Promise<TeamPitchingStatsRow[]> {
     const db = await getDbFn();
     const rows = await db.pitcherGameStats.find({ selector: { teamId } }).exec();
 
-    const aggregated: Record<
-      string,
-      {
-        pitcherKey: string;
-        nameAtGameTime: string;
-        gamesPlayed: number;
-        outsPitched: number;
-        battersFaced: number;
-        hitsAllowed: number;
-        walksAllowed: number;
-        strikeoutsRecorded: number;
-        homersAllowed: number;
-        runsAllowed: number;
-        earnedRuns: number;
-        saves: number;
-        holds: number;
-        blownSaves: number;
-      }
-    > = {};
+    const aggregated: Record<string, TeamPitchingStatsRow> = {};
 
     for (const row of rows) {
       const doc = row.toJSON() as PitcherGameStatDoc;
@@ -574,7 +549,7 @@ function buildStore(getDbFn: GetDb) {
     teamId: string,
     options: {
       minAbForAvg?: number;
-      rows?: Awaited<ReturnType<typeof getTeamCareerBattingStats>>;
+      rows?: TeamBattingStatsRow[];
     } = {},
   ): Promise<{
     hrLeader: BattingLeader | null;
@@ -585,8 +560,8 @@ function buildStore(getDbFn: GetDb) {
     const rows = options.rows ?? (await getTeamCareerBattingStats(teamId));
 
     const pickLeader = (
-      candidates: typeof rows,
-      valueFn: (r: (typeof rows)[number]) => number,
+      candidates: TeamBattingStatsRow[],
+      valueFn: (r: TeamBattingStatsRow) => number,
     ): BattingLeader | null => {
       if (candidates.length === 0) return null;
       const sorted = [...candidates].sort((a, b) => {
@@ -625,7 +600,7 @@ function buildStore(getDbFn: GetDb) {
     teamId: string,
     options: {
       minOutsForEra?: number;
-      rows?: Awaited<ReturnType<typeof getTeamCareerPitchingStats>>;
+      rows?: TeamPitchingStatsRow[];
     } = {},
   ): Promise<{
     eraLeader: PitchingLeader | null;
@@ -636,8 +611,8 @@ function buildStore(getDbFn: GetDb) {
     const rows = options.rows ?? (await getTeamCareerPitchingStats(teamId));
 
     const pickPitchingLeader = (
-      candidates: typeof rows,
-      valueFn: (r: (typeof rows)[number]) => number,
+      candidates: TeamPitchingStatsRow[],
+      valueFn: (r: TeamPitchingStatsRow) => number,
       sortAsc = false,
     ): PitchingLeader | null => {
       if (candidates.length === 0) return null;
