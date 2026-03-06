@@ -36,14 +36,14 @@ vi.mock("@storage/gameHistoryStore", () => ({
       gamesPlayed: 0,
       wins: 0,
       losses: 0,
+      ties: 0,
       winPct: 0,
-      runsScored: 0,
       runsAllowed: 0,
       runDiff: 0,
       rsPerGame: 0,
       raPerGame: 0,
       streak: "-",
-      last10: { wins: 0, losses: 0 },
+      last10: { wins: 0, losses: 0, ties: 0 },
     }),
     getTeamBattingLeaders: vi
       .fn()
@@ -616,6 +616,7 @@ describe("CareerStatsPage", () => {
       gamesPlayed: 5,
       wins: 3,
       losses: 2,
+      ties: 0,
       winPct: 0.6,
       runsScored: 25,
       runsAllowed: 18,
@@ -623,7 +624,7 @@ describe("CareerStatsPage", () => {
       rsPerGame: 5.0,
       raPerGame: 3.6,
       streak: "W2",
-      last10: { wins: 3, losses: 2 },
+      last10: { wins: 3, losses: 2, ties: 0 },
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([]);
@@ -873,6 +874,7 @@ describe("CareerStatsPage", () => {
       gamesPlayed: 0,
       wins: 0,
       losses: 0,
+      ties: 0,
       winPct: 0,
       runsScored: 0,
       runsAllowed: 0,
@@ -880,7 +882,7 @@ describe("CareerStatsPage", () => {
       rsPerGame: 0,
       raPerGame: 0,
       streak: "-",
-      last10: { wins: 0, losses: 0 },
+      last10: { wins: 0, losses: 0, ties: 0 },
     });
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: null,

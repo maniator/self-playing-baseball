@@ -481,8 +481,9 @@ function buildStore(getDbFn: GetDb) {
   }
 
   /**
-   * Returns aggregate career team stats from completed games (W/L, RS/RA, streak, last10).
+   * Returns aggregate career team stats from completed games (W/L/T, RS/RA, streak, last10).
    * Games are computed by matching teamId against homeTeamId or awayTeamId.
+   * Tied games (rs === ra) are tracked separately and excluded from win-percentage calculation.
    */
   async function getTeamCareerSummary(teamId: string): Promise<TeamCareerSummary> {
     const db = await getDbFn();
@@ -497,11 +498,12 @@ function buildStore(getDbFn: GetDb) {
 
     let wins = 0;
     let losses = 0;
+    let ties = 0;
     let runsScored = 0;
     let runsAllowed = 0;
 
-    // Track each game's result (true=win, false=loss) in chronological order.
-    const gameResults: boolean[] = [];
+    // Track each game's result ("W", "L", or "T") in chronological order.
+    const gameResults: ("W" | "L" | "T")[] = [];
 
     for (const doc of docs) {
       const isHome = doc.homeTeamId === teamId;
@@ -509,14 +511,22 @@ function buildStore(getDbFn: GetDb) {
       const ra = isHome ? doc.awayScore : doc.homeScore;
       runsScored += rs;
       runsAllowed += ra;
-      const win = rs > ra;
-      if (win) wins++;
-      else losses++;
-      gameResults.push(win);
+      if (rs > ra) {
+        wins++;
+        gameResults.push("W");
+      } else if (rs < ra) {
+        losses++;
+        gameResults.push("L");
+      } else {
+        ties++;
+        gameResults.push("T");
+      }
     }
 
-    const gamesPlayed = wins + losses;
-    const winPct = gamesPlayed === 0 ? 0 : wins / gamesPlayed;
+    const gamesPlayed = wins + losses + ties;
+    // Win % excludes tied games (standard baseball convention).
+    const decidedGames = wins + losses;
+    const winPct = decidedGames === 0 ? 0 : wins / decidedGames;
     const runDiff = runsScored - runsAllowed;
     const rsPerGame = gamesPlayed === 0 ? 0 : runsScored / gamesPlayed;
     const raPerGame = gamesPlayed === 0 ? 0 : runsAllowed / gamesPlayed;
@@ -527,18 +537,20 @@ function buildStore(getDbFn: GetDb) {
       const last = gameResults[gameResults.length - 1];
       let count = 0;
       for (let i = gameResults.length - 1; i >= 0 && gameResults[i] === last; i--) count++;
-      streak = (last ? "W" : "L") + count;
+      streak = last + count;
     }
 
     // Compute last-10 record.
     const last10Games = gameResults.slice(-10);
-    const last10Wins = last10Games.filter(Boolean).length;
-    const last10Losses = last10Games.length - last10Wins;
+    const last10Wins = last10Games.filter((r) => r === "W").length;
+    const last10Losses = last10Games.filter((r) => r === "L").length;
+    const last10Ties = last10Games.filter((r) => r === "T").length;
 
     return {
       gamesPlayed,
       wins,
       losses,
+      ties,
       winPct,
       runsScored,
       runsAllowed,
@@ -546,7 +558,7 @@ function buildStore(getDbFn: GetDb) {
       rsPerGame,
       raPerGame,
       streak,
-      last10: { wins: last10Wins, losses: last10Losses },
+      last10: { wins: last10Wins, losses: last10Losses, ties: last10Ties },
     };
   }
 
@@ -554,17 +566,23 @@ function buildStore(getDbFn: GetDb) {
    * Returns batting leaders (HR, AVG, RBI) for a team.
    * Players below the AB threshold are excluded from the AVG leader calculation.
    * Tie-breaking: value desc, then gamesPlayed desc, then name asc.
+   *
+   * Pass `options.rows` (pre-fetched from `getTeamCareerBattingStats`) to skip
+   * a redundant DB query when the caller already has the rows.
    */
   async function getTeamBattingLeaders(
     teamId: string,
-    options: { minAbForAvg?: number } = {},
+    options: {
+      minAbForAvg?: number;
+      rows?: Awaited<ReturnType<typeof getTeamCareerBattingStats>>;
+    } = {},
   ): Promise<{
     hrLeader: BattingLeader | null;
     avgLeader: BattingLeader | null;
     rbiLeader: BattingLeader | null;
   }> {
     const minAb = options.minAbForAvg ?? MIN_AB_FOR_AVG_LEADER;
-    const rows = await getTeamCareerBattingStats(teamId);
+    const rows = options.rows ?? (await getTeamCareerBattingStats(teamId));
 
     const pickLeader = (
       candidates: typeof rows,
@@ -599,17 +617,23 @@ function buildStore(getDbFn: GetDb) {
    * Returns pitching leaders (ERA, SV, K) for a team.
    * Players below the outs threshold are excluded from the ERA leader calculation.
    * Tie-breaking: value desc (ERA: asc), then gamesPlayed desc, then name asc.
+   *
+   * Pass `options.rows` (pre-fetched from `getTeamCareerPitchingStats`) to skip
+   * a redundant DB query when the caller already has the rows.
    */
   async function getTeamPitchingLeaders(
     teamId: string,
-    options: { minOutsForEra?: number } = {},
+    options: {
+      minOutsForEra?: number;
+      rows?: Awaited<ReturnType<typeof getTeamCareerPitchingStats>>;
+    } = {},
   ): Promise<{
     eraLeader: PitchingLeader | null;
     savesLeader: PitchingLeader | null;
     strikeoutsLeader: PitchingLeader | null;
   }> {
     const minOuts = options.minOutsForEra ?? MIN_OUTS_FOR_ERA_LEADER;
-    const rows = await getTeamCareerPitchingStats(teamId);
+    const rows = options.rows ?? (await getTeamCareerPitchingStats(teamId));
 
     const pickPitchingLeader = (
       candidates: typeof rows,

@@ -347,12 +347,17 @@ const CareerStatsPage: React.FunctionComponent = () => {
     setDataLoading(true);
     async function loadStats() {
       try {
-        const [batting, pitching, summary, battingLeaders, pitchingLeaders] = await Promise.all([
+        // Fetch batting stats, pitching stats, and team summary in parallel.
+        // Then pass the already-fetched rows to the leader functions to avoid
+        // redundant DB queries (batting + pitching rows are re-used for leaders).
+        const [batting, pitching, summary] = await Promise.all([
           GameHistoryStore.getTeamCareerBattingStats(selectedTeamId),
           GameHistoryStore.getTeamCareerPitchingStats(selectedTeamId),
           GameHistoryStore.getTeamCareerSummary(selectedTeamId),
-          GameHistoryStore.getTeamBattingLeaders(selectedTeamId),
-          GameHistoryStore.getTeamPitchingLeaders(selectedTeamId),
+        ]);
+        const [battingLeaders, pitchingLeaders] = await Promise.all([
+          GameHistoryStore.getTeamBattingLeaders(selectedTeamId, { rows: batting }),
+          GameHistoryStore.getTeamPitchingLeaders(selectedTeamId, { rows: pitching }),
         ]);
         if (cancelled) return;
         setBattingRows(batting);
@@ -433,6 +438,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
                   <SummaryCellLabel>W-L</SummaryCellLabel>
                   <SummaryCellValue data-testid="summary-wl">
                     {teamSummary.wins}-{teamSummary.losses}
+                    {teamSummary.ties > 0 ? `-${teamSummary.ties}` : ""}
                   </SummaryCellValue>
                 </SummaryCell>
                 <SummaryCell>
@@ -482,6 +488,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
                   <SummaryCellLabel>LAST 10</SummaryCellLabel>
                   <SummaryCellValue data-testid="summary-last10">
                     {teamSummary.last10.wins}-{teamSummary.last10.losses}
+                    {teamSummary.last10.ties > 0 ? `-${teamSummary.last10.ties}` : ""}
                   </SummaryCellValue>
                 </SummaryCell>
               </SummaryGrid>

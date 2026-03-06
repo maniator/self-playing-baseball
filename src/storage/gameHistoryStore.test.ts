@@ -779,6 +779,60 @@ describe("getTeamCareerSummary", () => {
     expect(result.runsScored).toBe(11); // 5 (home) + 6 (away)
     expect(result.runsAllowed).toBe(5); // 3 (home) + 2 (away)
   });
+
+  it("handles tied games (rs === ra): counts as ties, not losses, and excludes from winPct", async () => {
+    // Win, Loss, Tie
+    await store.commitCompletedGame(
+      "sum_tie_w",
+      { ...gameMeta, homeScore: 5, awayScore: 3, playedAt: 1000 },
+      [],
+    );
+    await store.commitCompletedGame(
+      "sum_tie_l",
+      { ...gameMeta, homeScore: 2, awayScore: 4, playedAt: 2000 },
+      [],
+    );
+    await store.commitCompletedGame(
+      "sum_tie_t",
+      { ...gameMeta, homeScore: 3, awayScore: 3, playedAt: 3000 },
+      [],
+    );
+
+    const result = await store.getTeamCareerSummary("Yankees");
+    expect(result.gamesPlayed).toBe(3); // 1W + 1L + 1T
+    expect(result.wins).toBe(1);
+    expect(result.losses).toBe(1);
+    expect(result.ties).toBe(1);
+    // Win% excludes ties: 1 / (1 + 1) = 0.5
+    expect(result.winPct).toBeCloseTo(0.5);
+    // Streak: most recent result is "T"
+    expect(result.streak).toBe("T1");
+    // last10 includes the tie
+    expect(result.last10.wins).toBe(1);
+    expect(result.last10.losses).toBe(1);
+    expect(result.last10.ties).toBe(1);
+  });
+
+  it("tie streak: consecutive ties are tracked with T prefix", async () => {
+    await store.commitCompletedGame(
+      "sum_tstr_w",
+      { ...gameMeta, homeScore: 5, awayScore: 3, playedAt: 1000 },
+      [],
+    );
+    await store.commitCompletedGame(
+      "sum_tstr_t1",
+      { ...gameMeta, homeScore: 3, awayScore: 3, playedAt: 2000 },
+      [],
+    );
+    await store.commitCompletedGame(
+      "sum_tstr_t2",
+      { ...gameMeta, homeScore: 2, awayScore: 2, playedAt: 3000 },
+      [],
+    );
+
+    const result = await store.getTeamCareerSummary("Yankees");
+    expect(result.streak).toBe("T2");
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -478,7 +478,9 @@ export interface TeamCareerSummary {
   gamesPlayed: number;
   wins: number;
   losses: number;
-  /** Win percentage (0–1). */
+  /** Number of tied games (rs === ra). Ties are excluded from W/L% calculation. */
+  ties: number;
+  /** Win percentage (0–1), computed as wins / (wins + losses), excluding ties. */
   winPct: number;
   runsScored: number;
   runsAllowed: number;
@@ -488,10 +490,10 @@ export interface TeamCareerSummary {
   rsPerGame: number;
   /** Runs allowed per game. */
   raPerGame: number;
-  /** Current streak string (e.g. "W3", "L2", or "-" when no games played). */
+  /** Current streak string (e.g. "W3", "L2", "T1", or "-" when no games played). */
   streak: string;
-  /** W-L record from the last 10 games played. */
-  last10: { wins: number; losses: number };
+  /** W-L-T record from the last 10 games played. */
+  last10: { wins: number; losses: number; ties: number };
 }
 
 /** A single batting leader entry for a team. */
