@@ -159,37 +159,100 @@ before writing to RxDB. Verify:
 
 ---
 
-## E2E save fixtures
+## E2E test runner
+
+### Run a single failing spec inside the container
+
+```
+@e2e-test-runner
+
+Run e2e/tests/smoke.spec.ts against the desktop project inside the Playwright
+Docker container and report which assertions fail. Do not modify any app code.
+```
+
+### Run all E2E tests (full suite)
+
+```
+@e2e-test-runner
+
+Run the full Playwright E2E suite inside mcr.microsoft.com/playwright:v1.58.2-noble.
+Report any failures with the test name, project, and assertion message.
+```
+
+### Regenerate visual snapshot baselines after a UI change
+
+```
+@e2e-test-runner
+
+The NewGameDialog layout was updated. Regenerate the visual snapshot baselines for
+all affected projects inside the Playwright Docker container and commit the updated
+PNGs directly to this branch.
+
+Requirements:
+- Run --update-snapshots for Chromium projects (desktop, pixel-7, pixel-5).
+- Run --update-snapshots for WebKit projects (tablet, iphone-15-pro-max, iphone-15).
+- Verify all visual tests pass after regeneration.
+- Commit only the PNGs that changed; do not commit unrelated snapshot diffs.
+```
+
+### Add a new E2E test using a fixture
+
+```
+@e2e-test-runner
+
+Add an E2E test for the manager decision panel that uses the existing
+pending-decision.json fixture instead of waiting for autoplay.
+
+Requirements:
+- Use loadFixture(page, "pending-decision.json") to enter the game state instantly.
+- Assert the decision panel is visible and the countdown bar renders.
+- Run the new test inside the Docker container to confirm it passes on desktop.
+- No test.setTimeout() — the fixture makes setup instant.
+```
+
+### Debug a flaky test
+
+```
+@e2e-test-runner
+
+The test "saves modal opens" in modals.spec.ts is flaking on WebKit.
+Run it inside the Playwright Docker container with --trace=on and --repeat-each=5
+on the tablet project, then inspect the trace artifacts to identify the root cause.
+```
+
 
 ### Add a fixture for a specific game state
 
 ```
-@ci-workflow
+@e2e-test-runner
 
 Add an E2E save fixture for testing the [X] UI element.
 
 Requirements:
 - The fixture must put the game in state [describe state: inning N, pendingDecision=Y, RBI on board, etc.].
-- Use the Python FNV-1a script pattern from the existing fixtures in e2e/fixtures/.
+- Use the Node.js FNV-1a signing approach defined in the "Authoring a new fixture" section of
+  `../docs/e2e-testing.md` (use Node, not Python —
+  Python json.dumps escapes non-ASCII differently from JS JSON.stringify, causing sig mismatches).
 - The `sig` field must be computed as fnv1a("ballgame:rxdb:v1" + JSON.stringify({header, events})).
 - Add a test that calls loadFixture(page, "new-fixture.json") and asserts [expected UI element] is visible.
 - Remove any test.setTimeout() that was previously needed for the long autoplay wait.
-- Document the fixture in the fixtures table in copilot-instructions.md.
+- Document the fixture in the fixtures table in `../docs/e2e-testing.md`.
 ```
 
 ### Convert a slow E2E test to use a fixture
 
 ```
-@ci-workflow
+@e2e-test-runner
 
 The test "[test name]" in [spec file] has a [N]s timeout waiting for autoplay to reach [state].
 Convert it to use a pre-crafted save fixture instead.
 
 Requirements:
 1. Identify the minimum game state needed (inning, pendingDecision, playLog entries, etc.).
-2. Generate a fixture JSON using the Python FNV-1a pattern in /tmp/gen-fixtures.py (see existing fixtures).
+2. Generate a fixture JSON using the Node.js FNV-1a pattern (use Node, not Python —
+   Python json.dumps escapes non-ASCII differently from JS JSON.stringify, causing sig mismatches).
 3. Replace startGameViaPlayBall + long waitForLogLines / toBeVisible timeout with loadFixture(page, "fixture.json").
 4. Remove test.setTimeout() — the fixture makes the test instant.
-5. Update the fixtures table in copilot-instructions.md.
+5. Update the fixtures table in `../docs/e2e-testing.md`.
 6. Confirm the test still asserts the same behavior it did before.
 ```
