@@ -44,8 +44,6 @@ describe("computeBattingStatsFromLogs", () => {
   ): PlayLogEntry => ({ inning: 1, half: team, batterNum, team, event, runs: rbi, rbi, playerId });
 
   const makeStrikeout = (team: 0 | 1, batterNum: number, playerId?: string): StrikeoutEntry => ({
-    inning: 1,
-    half: team,
     batterNum,
     team,
     playerId,

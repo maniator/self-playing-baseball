@@ -1,5 +1,5 @@
 import { checkGameOver, nextHalfInning } from "./gameOver";
-import type { PlayerOutOptions, State, Strategy, StrikeoutEntry } from "./index";
+import type { State, Strategy, StrikeoutEntry } from "./index";
 import { updateActivePitcherLog } from "./pitcherLog";
 
 /** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
