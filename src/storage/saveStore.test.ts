@@ -627,6 +627,106 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
 });
 
 // ---------------------------------------------------------------------------
+// SaveStore — manager decision state in stateSnapshot export/import
+// ---------------------------------------------------------------------------
+
+describe("SaveStore — manager decision state in stateSnapshot export/import", () => {
+  it("round-trips pendingDecision defensive_shift through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "decshift" }));
+    const stateWithDecision = makeState({
+      pendingDecision: { kind: "defensive_shift" },
+      managerMode: true,
+    } as Parameters<typeof makeState>[0]);
+    await store.updateProgress(saveId, 7, {
+      stateSnapshot: { state: stateWithDecision, rngState: 10 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    expect(saves[0].stateSnapshot?.state.pendingDecision).toEqual({ kind: "defensive_shift" });
+    await db2.close();
+  });
+
+  it("round-trips onePitchModifier through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "onemod" }));
+    const stateWithMod = makeState({ onePitchModifier: "swing" });
+    await store.updateProgress(saveId, 3, {
+      stateSnapshot: { state: stateWithMod, rngState: 5 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    expect(saves[0].stateSnapshot?.state.onePitchModifier).toBe("swing");
+    await db2.close();
+  });
+
+  it("round-trips pitcherBattersFaced (fatigue progress) through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "fatigue" }));
+    const stateWithFatigue = makeState({ pitcherBattersFaced: [15, 6] });
+    await store.updateProgress(saveId, 9, {
+      stateSnapshot: { state: stateWithFatigue, rngState: 20 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    expect(saves[0].stateSnapshot?.state.pitcherBattersFaced).toEqual([15, 6]);
+    await db2.close();
+  });
+
+  it("round-trips decisionLog through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "declog" }));
+    const stateWithLog = makeState({ decisionLog: ["AI: steal 2nd", "AI: bunt"] });
+    await store.updateProgress(saveId, 4, {
+      stateSnapshot: { state: stateWithLog, rngState: 1 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    expect(saves[0].stateSnapshot?.state.decisionLog).toEqual(["AI: steal 2nd", "AI: bunt"]);
+    await db2.close();
+  });
+
+  it("round-trips defensiveShift flag through export/import", async () => {
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "defshift" }));
+    const stateWithShift = makeState({ defensiveShift: true, defensiveShiftOffered: true });
+    await store.updateProgress(saveId, 5, {
+      stateSnapshot: { state: stateWithShift, rngState: 3 },
+    });
+    const json = await store.exportRxdbSave(saveId);
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    await insertMinimalTeam(db2, "ct_rt_home");
+    await insertMinimalTeam(db2, "ct_rt_away");
+    const store2 = makeSaveStore(() => Promise.resolve(db2));
+    await store2.importRxdbSave(json);
+    const saves = await store2.listSaves();
+    expect(saves[0].stateSnapshot?.state.defensiveShift).toBe(true);
+    expect(saves[0].stateSnapshot?.state.defensiveShiftOffered).toBe(true);
+    await db2.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // SaveStore — event ordering and persistence invariants
 // ---------------------------------------------------------------------------
 

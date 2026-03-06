@@ -122,6 +122,98 @@ describe("GameHistoryStore.getCareerStats", () => {
 });
 
 describe("GameHistoryStore export/import", () => {
+  it("round-trips batting sacFlies through export/import", async () => {
+    const gameId = "game_sacfly_roundtrip";
+    const statRow: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+      ...makeStatRow(gameId, "sf1"),
+      batting: {
+        ...makeStatRow(gameId, "sf1").batting,
+        sacFlies: 2,
+        rbi: 3,
+      },
+    };
+    await store.commitCompletedGame(gameId, gameMeta, [statRow]);
+
+    const json = await store.exportGameHistory();
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
+    await store2.importGameHistory(json, new Set(["Yankees", "Mets"]));
+
+    const stats = await db2.playerGameStats.find().exec();
+    expect(stats).toHaveLength(1);
+    expect(stats[0].batting.sacFlies).toBe(2);
+    expect(stats[0].batting.rbi).toBe(3);
+
+    await db2.close();
+  });
+
+  it("imports legacy stats without sacFlies without error", async () => {
+    // Simulate a bundle produced before sacFlies was added — batting has no sacFlies field.
+    const { fnv1a } = await import("./hash");
+    const { GAME_HISTORY_EXPORT_KEY } = await import("./gameHistoryStore");
+    const gameDoc: GameDoc = {
+      id: "game_legacy_sf",
+      playedAt: Date.now(),
+      seed: "legacy",
+      rngState: null,
+      homeTeamId: "Yankees",
+      awayTeamId: "Mets",
+      homeScore: 3,
+      awayScore: 1,
+      innings: 9,
+      schemaVersion: 1,
+    };
+    const legacyStat: PlayerGameStatDoc = {
+      id: "game_legacy_sf:Yankees:Yankees:lp1",
+      gameId: "game_legacy_sf",
+      teamId: "Yankees",
+      opponentTeamId: "Mets",
+      playerKey: "Yankees:lp1",
+      playerId: "lp1",
+      nameAtGameTime: "Legacy Player",
+      role: "batter",
+      batting: {
+        atBats: 4,
+        hits: 1,
+        walks: 0,
+        strikeouts: 2,
+        rbi: 0,
+        singles: 1,
+        doubles: 0,
+        triples: 0,
+        homers: 0,
+      },
+      createdAt: Date.now(),
+      schemaVersion: 1,
+    };
+    const payload = {
+      games: [gameDoc],
+      playerGameStats: [legacyStat],
+      pitcherGameStats: [],
+      requiredTeamIds: ["Yankees", "Mets"],
+    };
+    const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
+    const bundle = JSON.stringify({
+      type: "gameHistory",
+      formatVersion: 2,
+      exportedAt: new Date().toISOString(),
+      payload,
+      sig,
+    });
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
+    const result = await store2.importGameHistory(bundle, new Set(["Yankees", "Mets"]));
+    expect(result.statsCreated).toBe(1);
+
+    const stats = await db2.playerGameStats.find().exec();
+    // sacFlies may be undefined — callers must use ?? 0.
+    expect(stats[0].batting.sacFlies ?? 0).toBe(0);
+
+    await db2.close();
+  });
+
   it("exports and re-imports history (idempotent)", async () => {
     await store.commitCompletedGame("game_e1", gameMeta, [makeStatRow("game_e1", "p1")]);
 

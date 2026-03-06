@@ -3,8 +3,23 @@ import { describe, expect, it } from "vitest";
 import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
-import type { PlayLogEntry, TeamCustomPlayerOverrides } from "./index";
+import type { PlayLogEntry, ResolvedPlayerMods, TeamCustomPlayerOverrides } from "./index";
 import { backfillRestoredState, createFreshGameState } from "./initialState";
+
+/** Builds a pre-staminaMod ResolvedPlayerMods entry (6 fields, no staminaMod). */
+function makeOldMods(
+  overrides: Partial<Omit<ResolvedPlayerMods, "staminaMod">> = {},
+): Omit<ResolvedPlayerMods, "staminaMod"> {
+  return {
+    contactMod: 0,
+    powerMod: 0,
+    speedMod: 0,
+    velocityMod: 0,
+    controlMod: 0,
+    movementMod: 0,
+    ...overrides,
+  };
+}
 
 describe("createFreshGameState", () => {
   it("returns a state with inning 1 and zero scores", () => {
@@ -252,5 +267,123 @@ describe("backfillRestoredState", () => {
     expect(hitsTeam0).toBe(2);
     const hitsTeam1 = result.playLog.filter((e) => e.team === 1 && e.event !== Hit.Walk).length;
     expect(hitsTeam1).toBe(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // staminaMod backfill — resolvedMods entries from saves predating the
+  // staminaMod field must have staminaMod: 0 injected so computeFatigueFactor
+  // never receives undefined and returns NaN.
+  // -------------------------------------------------------------------------
+  it("backfills staminaMod: 0 in resolvedMods entries missing the field (pre-staminaMod save)", () => {
+    const restored = makeState();
+    // Simulate a save written before staminaMod was added — 6 fields, no staminaMod.
+    restored.resolvedMods = [
+      {
+        p1: makeOldMods({
+          contactMod: 5,
+          powerMod: 3,
+          speedMod: 1,
+          controlMod: 5,
+        }) as ResolvedPlayerMods,
+      },
+      {
+        p2: makeOldMods({
+          contactMod: 2,
+          velocityMod: 10,
+          controlMod: 8,
+          movementMod: 5,
+        }) as ResolvedPlayerMods,
+      },
+    ];
+    const result = backfillRestoredState(restored);
+    expect(result.resolvedMods[0]["p1"].staminaMod).toBe(0);
+    expect(result.resolvedMods[1]["p2"].staminaMod).toBe(0);
+    // Other fields must be preserved.
+    expect(result.resolvedMods[0]["p1"].contactMod).toBe(5);
+    expect(result.resolvedMods[1]["p2"].velocityMod).toBe(10);
+  });
+
+  it("preserves existing staminaMod values when already present in resolvedMods", () => {
+    const restored = makeState();
+    restored.resolvedMods = [
+      {
+        pitcher: {
+          ...makeOldMods({ velocityMod: 15, controlMod: 10, movementMod: 5 }),
+          staminaMod: 12,
+        },
+      },
+      {},
+    ];
+    const result = backfillRestoredState(restored);
+    expect(result.resolvedMods[0]["pitcher"].staminaMod).toBe(12);
+  });
+
+  // -------------------------------------------------------------------------
+  // Manager decision fields round-trip through backfillRestoredState.
+  // These are part of State and must survive restore unchanged.
+  // -------------------------------------------------------------------------
+  it("preserves pendingDecision when present in restored state", () => {
+    const restored = makeState({
+      pendingDecision: { kind: "defensive_shift" },
+    });
+    const result = backfillRestoredState(restored);
+    expect(result.pendingDecision).toEqual({ kind: "defensive_shift" });
+  });
+
+  it("defaults pendingDecision to null when absent from restored state", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.pendingDecision;
+    const result = backfillRestoredState(restored);
+    expect(result.pendingDecision).toBeNull();
+  });
+
+  it("preserves onePitchModifier when present in restored state", () => {
+    const restored = makeState({ onePitchModifier: "swing" });
+    const result = backfillRestoredState(restored);
+    expect(result.onePitchModifier).toBe("swing");
+  });
+
+  it("defaults onePitchModifier to null when absent from restored state", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.onePitchModifier;
+    const result = backfillRestoredState(restored);
+    expect(result.onePitchModifier).toBeNull();
+  });
+
+  it("preserves pitcherBattersFaced when present (fatigue progress round-trip)", () => {
+    const restored = makeState({ pitcherBattersFaced: [12, 4] });
+    const result = backfillRestoredState(restored);
+    expect(result.pitcherBattersFaced).toEqual([12, 4]);
+  });
+
+  it("defaults pitcherBattersFaced to [0,0] when absent from restored state", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.pitcherBattersFaced;
+    const result = backfillRestoredState(restored);
+    expect(result.pitcherBattersFaced).toEqual([0, 0]);
+  });
+
+  it("preserves pinchHitterStrategy when present in restored state", () => {
+    const restored = makeState({ pinchHitterStrategy: "aggressive" });
+    const result = backfillRestoredState(restored);
+    expect(result.pinchHitterStrategy).toBe("aggressive");
+  });
+
+  it("preserves defensiveShift and defensiveShiftOffered flags", () => {
+    const restored = makeState({ defensiveShift: true, defensiveShiftOffered: true });
+    const result = backfillRestoredState(restored);
+    expect(result.defensiveShift).toBe(true);
+    expect(result.defensiveShiftOffered).toBe(true);
+  });
+
+  it("defaults suppressNextDecision to false when absent from restored state", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.suppressNextDecision;
+    const result = backfillRestoredState(restored);
+    expect(result.suppressNextDecision).toBe(false);
   });
 });

@@ -74,6 +74,22 @@ export const createFreshGameState = (
  * values, which can appear when a save was written during an older code version
  * that stored null rather than omitting the field entirely.
  */
+/**
+ * Ensures every entry in a resolved-mods map has `staminaMod` present.
+ * Saves written before `staminaMod` was added to `ResolvedPlayerMods` lack
+ * the field; without this backfill `computeFatigueFactor` would receive
+ * `undefined` and return `NaN`, silently breaking the fatigue model.
+ */
+const backfillTeamMods = (
+  teamMods: Record<string, ResolvedPlayerMods>,
+): Record<string, ResolvedPlayerMods> =>
+  Object.fromEntries(
+    Object.entries(teamMods).map(([id, m]) => [
+      id,
+      m.staminaMod !== undefined ? m : { ...m, staminaMod: 0 },
+    ]),
+  );
+
 export const backfillRestoredState = (restored: State): State => {
   // Build a fresh-defaults base using the save's own teams (fall back to a
   // safe placeholder if teams is absent in a very old save).
@@ -109,7 +125,7 @@ export const backfillRestoredState = (restored: State): State => {
     baseRunnerIds: base.baseRunnerIds ?? [null, null, null],
     resolvedMods:
       base.resolvedMods && Object.keys(base.resolvedMods[0]).length > 0
-        ? base.resolvedMods
+        ? [backfillTeamMods(base.resolvedMods[0]), backfillTeamMods(base.resolvedMods[1])]
         : [buildResolvedMods(base.playerOverrides[0]), buildResolvedMods(base.playerOverrides[1])],
     pitcherGameLog: base.pitcherGameLog ?? [[], []],
   };
