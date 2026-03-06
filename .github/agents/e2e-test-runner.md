@@ -52,7 +52,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test"
 sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/
 
 # Run a single spec file (desktop project only — fastest feedback loop)
@@ -61,7 +61,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
 
 # Run a specific set of projects
 docker run --rm \
@@ -69,7 +69,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test --project=desktop --project=pixel-7 --project=pixel-5"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test --project=desktop --project=pixel-7 --project=pixel-5"
 
 # Skip only `yarn build` if dist/ already exists and is up to date (yarn install still runs)
 docker run --rm \
@@ -77,7 +77,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
 ```
 
 > **Tip:** The Docker image is pre-pulled in the Copilot session setup steps, so `docker run` starts immediately without a download delay.
@@ -113,7 +113,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=desktop --project=pixel-7 --project=pixel-5 --update-snapshots"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=desktop --project=pixel-7 --project=pixel-5 --update-snapshots"
 sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/
 ```
 
@@ -125,7 +125,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=tablet --project=iphone-15-pro-max --project=iphone-15 --update-snapshots"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=tablet --project=iphone-15-pro-max --project=iphone-15 --update-snapshots"
 sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/
 ```
 
@@ -137,13 +137,13 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts"
 ```
 
 **4. Commit the updated PNG files** (from outside the container, using normal `git` commands):
 
 ```bash
-git add e2e/tests/visual/ e2e/tests/layout.spec.ts-snapshots/
+git add "e2e/tests/**/*-snapshots/**/*.png"
 git status  # review which PNGs changed
 # then use report_progress to commit and push
 ```
@@ -160,7 +160,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/visual/ --project=desktop --update-snapshots -g 'home screen'"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ --project=desktop --update-snapshots -g 'home screen'"
 ```
 
 ## Test helpers (`e2e/utils/helpers.ts`)
@@ -214,7 +214,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --reporter=list"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --reporter=list"
 ```
 
 **Capture traces for post-run inspection (written to `test-results/`):**
@@ -225,7 +225,7 @@ docker run --rm \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --trace=on"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --trace=on"
 ```
 
 **Visual diff failures** — inspect the `-diff.png` and `-received.png` in `test-results/` alongside the committed `-expected.png` baseline. If the diff shows an intentional UI change, regenerate the baseline following the snapshot update flow above.
