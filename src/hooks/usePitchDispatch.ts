@@ -2,7 +2,11 @@ import * as React from "react";
 
 import type { PitchingRole } from "@components/SubstitutionPanel";
 import { selectPitchType } from "@constants/pitchTypes";
-import { makeAiPitchingDecision, makeAiTacticalDecision } from "@context/aiManager";
+import {
+  makeAiPitchingDecision,
+  makeAiStrategyDecision,
+  makeAiTacticalDecision,
+} from "@context/aiManager";
 import { GameAction, LogAction, State, Strategy } from "@context/index";
 import {
   computeFatigueFactor,
@@ -72,6 +76,12 @@ export const usePitchDispatch = ({
     const isBattingUnmanaged = !managerMode || currentState.atBat !== managedTeam;
     const isFieldingUnmanaged = !managerMode || 1 - currentState.atBat !== managedTeam;
 
+    // Context-aware strategy for the unmanaged batting team — only computed when
+    // needed (isBattingUnmanaged) so there's no overhead for human-managed pitches.
+    const aiStrategy = isBattingUnmanaged
+      ? makeAiStrategyDecision(currentState as State, currentState.atBat as 0 | 1)
+      : "balanced";
+
     // Pitching change (fielding team): evaluate at start of each at-bat (0-0 count).
     if (currentState.balls === 0 && currentState.strikes === 0) {
       const pitchingTeamIdx = (1 - currentState.atBat) as 0 | 1;
@@ -123,7 +133,8 @@ export const usePitchDispatch = ({
         dispatch({ type: "clear_suppress_decision" });
         // Fall through to normal pitch after clearing the suppress flag.
       } else {
-        const battingDecision = detectDecision(currentState as State, "balanced", true);
+        // AI picks a context-aware strategy (same choices a human manager has).
+        const battingDecision = detectDecision(currentState as State, aiStrategy, true);
         if (battingDecision) {
           const aiAction = makeAiTacticalDecision(currentState as State, battingDecision);
           if (aiAction.kind === "tactical") {
@@ -167,7 +178,11 @@ export const usePitchDispatch = ({
     // 1. Select pitch type based on current count.
     const pitchType = selectPitchType(currentBalls, currentStrikes, getRandomInt(100));
 
-    const effectiveStrategy = currentState.pinchHitterStrategy ?? strategy;
+    // For unmanaged batting teams, use the AI's context-aware strategy.
+    // For the human-managed team, use the human's configured strategy.
+    // This applies regardless of whether the opposing team has a human manager.
+    const baseStrategy = isBattingUnmanaged ? aiStrategy : strategy;
+    const effectiveStrategy = currentState.pinchHitterStrategy ?? baseStrategy;
     const onePitchMod = currentState.onePitchModifier;
 
     // Look up batter contact/power mods.

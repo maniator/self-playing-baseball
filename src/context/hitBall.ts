@@ -204,15 +204,21 @@ const handleFlyOut = (
  *
  * `base` must already have pitchKey incremented and count/decision fields cleared.
  */
-const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void): State => {
+const processConfirmedHit = (
+  type: Hit,
+  base: State,
+  log: (msg: string) => void,
+  strategy: Strategy = "balanced",
+): State => {
   const battingTeam = base.atBat as 0 | 1;
   const pitchingTeam = (1 - (base.atBat as number)) as 0 | 1;
   const batterSlotIdx = base.batterIndex[battingTeam];
   const playerId = base.lineupOrder[battingTeam][batterSlotIdx] || undefined;
 
-  // ── Speed-based runner advancement ────────────────────────────────────────
+  // ── Speed-based + strategy-based runner advancement ───────────────────────
   // Apply probabilistic advancement BEFORE calling advanceRunners so that
   // runners who score early are removed from the base layout first.
+  const advanceMod = stratMod(strategy, "advance");
   const currentRunnerIds =
     base.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
 
@@ -223,10 +229,13 @@ const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void)
   let bonusRuns = 0;
 
   if (type === Hit.Single) {
-    // Runner on 2nd: probabilistic scoring chance (~60% base, modified by runner speed).
+    // Runner on 2nd: probabilistic scoring chance (~60% base, scaled by strategy + runner speed).
     if (adjustedBase[1]) {
       const runner2ndSpeedMod = getSpeedMod(base, adjustedRunnerIds[1]);
-      const scoreChance = Math.max(40, Math.min(85, 60 + Math.round(runner2ndSpeedMod * 1.5)));
+      const scoreChance = Math.max(
+        40,
+        Math.min(85, Math.round(60 * advanceMod) + Math.round(runner2ndSpeedMod * 1.5)),
+      );
       if (getRandomInt(100) < scoreChance) {
         adjustedBase[1] = 0;
         adjustedRunnerIds[1] = null;
@@ -235,11 +244,14 @@ const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void)
       }
     }
   } else if (type === Hit.Double) {
-    // Runner on 1st: probabilistic scoring chance (~30% base, modified by runner speed).
+    // Runner on 1st: probabilistic scoring chance (~30% base, scaled by strategy + runner speed).
     // (advanceRunners places runner from 1st on 3rd for a double by default.)
     if (adjustedBase[0]) {
       const runner1stSpeedMod = getSpeedMod(base, adjustedRunnerIds[0]);
-      const scoreChance = Math.max(15, Math.min(55, 30 + Math.round(runner1stSpeedMod * 1.5)));
+      const scoreChance = Math.max(
+        15,
+        Math.min(55, Math.round(30 * advanceMod) + Math.round(runner1stSpeedMod * 1.5)),
+      );
       if (getRandomInt(100) < scoreChance) {
         adjustedBase[0] = 0;
         adjustedRunnerIds[0] = null;
@@ -248,7 +260,7 @@ const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void)
       }
     }
   }
-  // ── End speed-based pre-processing ────────────────────────────────────────
+  // ── End speed-based + strategy pre-processing ─────────────────────────────
 
   const { newBase, runsScored, newRunnerIds } = advanceRunners(
     type,
@@ -276,7 +288,10 @@ const processConfirmedHit = (type: Hit, base: State, log: (msg: string) => void)
     // Check if they can stretch to 3rd (only if 3rd is still empty).
     if (finalBase[1] && !finalBase[2]) {
       const runner1stSpeedMod = getSpeedMod(base, currentRunnerIds[0]);
-      const stretchChance = Math.max(10, Math.min(45, 28 + Math.round(runner1stSpeedMod * 1.5)));
+      const stretchChance = Math.max(
+        10,
+        Math.min(45, Math.round(28 * advanceMod) + Math.round(runner1stSpeedMod * 1.5)),
+      );
       if (getRandomInt(100) < stretchChance) {
         finalBase[2] = 1;
         finalBase[1] = 0;
@@ -376,7 +391,7 @@ export const handleBallInPlay = (
   battedBallType: BattedBallType,
   state: State,
   log: (msg: string) => void,
-  { strategy: _strategy = "balanced" }: HandleBallInPlayOptions = {},
+  { strategy = "balanced" }: HandleBallInPlayOptions = {},
 ): State => {
   const pitchKey = (state.pitchKey ?? 0) + 1;
   const base = {
@@ -401,18 +416,27 @@ export const handleBallInPlay = (
   // Defensive shift raises the ground-out threshold for grounders (shifted infield covers more).
   const shiftBoost = (state.defensiveShift ?? false) ? 100 : 0;
 
+  // HR threshold for deep_fly shifts with strategy via stratMod(strategy, "homerun"):
+  //   power  (1.6) → shift = -(0.6 * 50) = -30 → hrThreshold = 740  (more HRs)
+  //   contact (0.7) → shift = +(0.3 * 50) = +15 → hrThreshold = 785  (fewer HRs)
+  //   balanced (1.0) → shift = 0 → hrThreshold = 770  (default)
+  const hrThreshold = Math.max(
+    720,
+    Math.min(820, 770 - Math.round((stratMod(strategy, "homerun") - 1.0) * 50)),
+  );
+
   switch (battedBallType) {
     case "weak_grounder":
       // 65% ground out (may produce FC or DP if runner on 1st); +10% with defensive shift.
       if (roll < 650 + shiftBoost) return handleGrounder(state, log, pitchKey);
       log("Tapper sneaks through — infield single!");
-      return processConfirmedHit(Hit.Single, base, log);
+      return processConfirmedHit(Hit.Single, base, log, strategy);
 
     case "hard_grounder":
       // 40% ground out (may produce FC or DP if runner on 1st); +10% with defensive shift.
       if (roll < 400 + shiftBoost) return handleGrounder(state, log, pitchKey);
       log("Sharp grounder finds a hole — single!");
-      return processConfirmedHit(Hit.Single, base, log);
+      return processConfirmedHit(Hit.Single, base, log, strategy);
 
     case "line_drive":
       // 15% liner caught (sac fly: 40%, tag-up from 2nd: 10%); 85% hit spread.
@@ -422,18 +446,18 @@ export const handleBallInPlay = (
       }
       if (roll < 650) {
         log(HIT_CALLOUTS[Hit.Single]);
-        return processConfirmedHit(Hit.Single, base, log);
+        return processConfirmedHit(Hit.Single, base, log, strategy);
       }
       if (roll < 850) {
         log(HIT_CALLOUTS[Hit.Double]);
-        return processConfirmedHit(Hit.Double, base, log);
+        return processConfirmedHit(Hit.Double, base, log, strategy);
       }
       if (roll < 930) {
         log(HIT_CALLOUTS[Hit.Triple]);
-        return processConfirmedHit(Hit.Triple, base, log);
+        return processConfirmedHit(Hit.Triple, base, log, strategy);
       }
       log(HIT_CALLOUTS[Hit.Homerun]);
-      return processConfirmedHit(Hit.Homerun, base, log);
+      return processConfirmedHit(Hit.Homerun, base, log, strategy);
 
     case "medium_fly":
       // 70% fly out (sac fly: 65%, tag-up from 2nd: 20%); 30% hit: Single (18%), Double (12%).
@@ -443,27 +467,28 @@ export const handleBallInPlay = (
       }
       if (roll < 880) {
         log(HIT_CALLOUTS[Hit.Single]);
-        return processConfirmedHit(Hit.Single, base, log);
+        return processConfirmedHit(Hit.Single, base, log, strategy);
       }
       log(HIT_CALLOUTS[Hit.Double]);
-      return processConfirmedHit(Hit.Double, base, log);
+      return processConfirmedHit(Hit.Double, base, log, strategy);
 
     case "deep_fly":
       // 35% warning-track out (sac fly: 80%, tag-up from 2nd: 35%); 65% hit spread.
+      // HR threshold shifts by strategy: power → more HRs; contact → fewer HRs.
       if (roll < 350) {
         log("Long fly ball — hauled in at the warning track.");
         return handleFlyOut(state, log, pitchKey, { sacFlyPct: 80, tagUp2ndPct: 35 });
       }
       if (roll < 650) {
         log(HIT_CALLOUTS[Hit.Double]);
-        return processConfirmedHit(Hit.Double, base, log);
+        return processConfirmedHit(Hit.Double, base, log, strategy);
       }
-      if (roll < 770) {
+      if (roll < hrThreshold) {
         log(HIT_CALLOUTS[Hit.Triple]);
-        return processConfirmedHit(Hit.Triple, base, log);
+        return processConfirmedHit(Hit.Triple, base, log, strategy);
       }
       log(HIT_CALLOUTS[Hit.Homerun]);
-      return processConfirmedHit(Hit.Homerun, base, log);
+      return processConfirmedHit(Hit.Homerun, base, log, strategy);
   }
 };
 

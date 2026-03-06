@@ -271,7 +271,10 @@ describe("usePitchDispatch — power strategy hits", () => {
       usePitchDispatch({
         dispatch,
         currentState: state,
-        managerMode: false,
+        // managerMode=true + managedTeam=atBat: human manages the batting team with "power" strategy.
+        // This is required to test human-manager power strategy — when a team is unmanaged
+        // the AI picks its own context-aware strategy and ignores the "power" prop.
+        managerMode: true,
         strategy: "power",
         managedTeam: 0,
         skipDecision: false,

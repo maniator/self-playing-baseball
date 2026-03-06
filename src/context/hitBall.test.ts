@@ -4,7 +4,7 @@ import { Hit } from "@constants/hitTypes";
 import { makeLogs, makeState, mockRandom } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
-import { hitBall } from "./hitBall";
+import { handleBallInPlay, hitBall } from "./hitBall";
 import type { ModPreset, TeamCustomPlayerOverrides } from "./index";
 
 afterEach(() => vi.restoreAllMocks());
@@ -346,5 +346,50 @@ describe("hitBall — baseRunnerIds in grounder paths", () => {
     const next = hitBall(Hit.Single, state, () => {});
     // 2nd base runner unaffected; batter is out
     expect(next.baseRunnerIds[1]).toBe("runner_2nd");
+  });
+});
+
+describe("handleBallInPlay — strategy effects", () => {
+  it("power strategy lowers HR threshold on deep_fly (more HRs at roll=750)", () => {
+    // Default hrThreshold=770: roll=750 → triple. Power: hrThreshold=740 → HR.
+    const state = makeState({ score: [0, 0] });
+
+    vi.spyOn(rngModule, "random").mockReturnValue(0.75); // roll=750
+    const { logs: balancedLogs } = makeLogs();
+    handleBallInPlay("deep_fly", state, balancedLogs.push.bind(balancedLogs));
+    const isTriple = balancedLogs.some((l) => l.includes("triple"));
+
+    vi.spyOn(rngModule, "random").mockReturnValue(0.75); // roll=750 again
+    const { logs: powerLogs } = makeLogs();
+    handleBallInPlay("deep_fly", state, powerLogs.push.bind(powerLogs), { strategy: "power" });
+    const isHR = powerLogs.some((l) => l.includes("home run") || l.includes("GONE"));
+
+    expect(isTriple).toBe(true);
+    expect(isHR).toBe(true);
+  });
+
+  it("aggressive strategy scores runner from 2nd more often on single (higher advance mod)", () => {
+    // aggressive: stratMod(advance)=1.3 → scoreChance=round(60*1.3)=78 vs balanced=60.
+    // With roll forced below 60 → both score; roll between 60-78 → only aggressive scores.
+    // Use roll=0.65 → getRandomInt(100)=65. Balanced: 65 ≥ 60 → no score. Aggressive: 65 < 78 → score.
+    const state = makeState({ baseLayout: [0, 1, 0], score: [0, 0] });
+
+    // two random calls: main outcome roll (must be single), then scoreChance roll
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.3) // outcome roll → 300 → line_drive single
+      .mockReturnValueOnce(0.65); // scoreChance roll
+    const { logs: balancedLogs, log: balLog } = makeLogs();
+    handleBallInPlay("line_drive", state, balLog);
+    const balancedScored = balancedLogs.some((l) => l.includes("scores"));
+
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.3) // outcome roll → 300 → line_drive single
+      .mockReturnValueOnce(0.65); // scoreChance roll
+    const { logs: aggressiveLogs, log: aggLog } = makeLogs();
+    handleBallInPlay("line_drive", state, aggLog, { strategy: "aggressive" });
+    const aggressiveScored = aggressiveLogs.some((l) => l.includes("scores"));
+
+    expect(balancedScored).toBe(false);
+    expect(aggressiveScored).toBe(true);
   });
 });
