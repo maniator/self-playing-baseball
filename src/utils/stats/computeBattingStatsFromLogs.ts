@@ -12,6 +12,8 @@ export type BatterStat = {
   doubles: number;
   triples: number;
   homers: number;
+  /** Sacrifice flies: plate appearances where a caught fly ball drove in a run. Counts as PA but not AB. */
+  sacFlies: number;
 };
 
 /** Returns a blank batting stat record. */
@@ -25,6 +27,7 @@ export const emptyBatterStat = (): BatterStat => ({
   doubles: 0,
   triples: 0,
   homers: 0,
+  sacFlies: 0,
 });
 
 /**
@@ -50,7 +53,7 @@ export const statKey = (entry: { playerId?: string; batterNum: number }): string
  * @param team - 0 = away, 1 = home
  * @param playLog - all hit/walk events with batter attribution
  * @param strikeoutLog - all strikeout events with batter attribution
- * @param outLog - all batter-completed out events (K + pop-out + groundout + FC + sac-bunt)
+ * @param outLog - all batter-completed out events (K + pop-out + groundout + FC + sac-bunt + sac-fly)
  * @returns map of statKey → BatterStat for the given team
  */
 export const computeBattingStatsFromLogs = (
@@ -82,10 +85,17 @@ export const computeBattingStatsFromLogs = (
     if (entry.team !== team) continue;
     getOrCreate(statKey(entry)).strikeouts++;
   }
-  // AB = H + outLog entries (outLog includes K + regular outs; walks are excluded from AB)
+  // AB = H + non-sac-fly outLog entries (sac flies count as PA but not AB).
+  // Sac flies earn RBI and increment sacFlies instead of atBats.
   for (const entry of outLog) {
     if (entry.team !== team) continue;
-    getOrCreate(statKey(entry)).atBats++;
+    if (entry.isSacFly) {
+      const s = getOrCreate(statKey(entry));
+      s.sacFlies++;
+      s.rbi += entry.rbi ?? 1;
+    } else {
+      getOrCreate(statKey(entry)).atBats++;
+    }
   }
   // AB must also include hits (reached-base events are not in outLog)
   for (const key of Object.keys(stats)) {

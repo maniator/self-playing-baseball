@@ -157,6 +157,7 @@ function buildStore(getDbFn: GetDb) {
           doubles: doc.batting.doubles,
           triples: doc.batting.triples,
           homers: doc.batting.homers,
+          sacFlies: doc.batting.sacFlies ?? 0, // ?? 0 for legacy docs written before sacFlies field existed
           gamesPlayed: 1,
           teamId: doc.teamId,
         };
@@ -170,6 +171,7 @@ function buildStore(getDbFn: GetDb) {
         existing.doubles += doc.batting.doubles;
         existing.triples += doc.batting.triples;
         existing.homers += doc.batting.homers;
+        existing.sacFlies = (existing.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
         existing.gamesPlayed++;
       }
     }
@@ -227,6 +229,7 @@ function buildStore(getDbFn: GetDb) {
           doubles: 0,
           triples: 0,
           homers: 0,
+          sacFlies: 0,
         };
       }
       const agg = aggregated[key];
@@ -240,6 +243,7 @@ function buildStore(getDbFn: GetDb) {
       agg.doubles += doc.batting.doubles;
       agg.triples += doc.batting.triples;
       agg.homers += doc.batting.homers;
+      agg.sacFlies = (agg.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
     }
 
     return Object.values(aggregated);

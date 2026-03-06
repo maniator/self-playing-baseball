@@ -34,6 +34,17 @@ export type StrikeoutEntry = {
   batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
   /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
   playerId?: string;
+  /**
+   * Set to `true` when this out was a sacrifice fly (runner on 3rd tagged up after the catch and scored).
+   * Sac flies count as a plate appearance but NOT as an at-bat, and the batter earns RBI.
+   * Omitted (undefined / falsy) for all other out types.
+   */
+  isSacFly?: boolean;
+  /**
+   * RBI credited on this play. Only set when `isSacFly` is true (run scored on the fly out).
+   * Omitted for all other out types. Optional for backward compatibility.
+   */
+  rbi?: number;
 };
 
 /**

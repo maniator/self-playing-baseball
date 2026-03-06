@@ -136,6 +136,7 @@ const handleFlyOut = (
 ): State => {
   const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
   let s = state;
+  let didSacFly = false;
 
   // Sacrifice fly: runner on 3rd tags and scores after the catch (< 2 outs only).
   if (s.baseLayout[2] && s.outs < 2) {
@@ -169,6 +170,7 @@ const handleFlyOut = (
           (entry) => ({ ...entry, runsAllowed: entry.runsAllowed + 1 }),
         ),
       };
+      didSacFly = true;
     }
   }
 
@@ -194,7 +196,13 @@ const handleFlyOut = (
   }
 
   // Batter is out; at-bat is complete.
-  return playerOut({ ...s, pitchKey, hitType: undefined }, log, true);
+  // Sacrifice fly: counts as PA but not AB; batter earns 1 RBI.
+  return playerOut(
+    { ...s, pitchKey, hitType: undefined },
+    log,
+    true,
+    didSacFly ? { isSacFly: true, rbi: 1 } : {},
+  );
 };
 
 /**

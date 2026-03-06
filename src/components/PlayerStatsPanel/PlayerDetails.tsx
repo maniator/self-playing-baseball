@@ -12,6 +12,8 @@ export type BatterStat = {
   doubles: number;
   triples: number;
   homers: number;
+  /** Sacrifice flies: PA where a caught fly drove in a run. Counts as PA but not AB. */
+  sacFlies: number;
 };
 
 interface Props {
@@ -137,7 +139,8 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
 
   // Calculate rate stats
   const avg = stats.atBats > 0 ? stats.hits / stats.atBats : 0;
-  const pa = stats.atBats + stats.walks;
+  // PA = AB + BB + SF (sac flies count as PA but not AB)
+  const pa = stats.atBats + stats.walks + stats.sacFlies;
   const obp = pa > 0 ? (stats.hits + stats.walks) / pa : 0;
   const totalBases = stats.singles + 2 * stats.doubles + 3 * stats.triples + 4 * stats.homers;
   const slg = stats.atBats > 0 ? totalBases / stats.atBats : 0;

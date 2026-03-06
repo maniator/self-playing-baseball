@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { GameContext } from "@context/index";
+import { GameHistoryStore } from "@storage/gameHistoryStore";
 import { makeContextValue } from "@test/testHelpers";
 import * as loggerModule from "@utils/logger";
 
@@ -420,5 +421,216 @@ describe("PlayerStatsPanel — player-ID stat tracking", () => {
     const rbiCell = rows[1]?.querySelectorAll("td")[rows[1].querySelectorAll("td").length - 1];
     expect(hitCell?.textContent).toBe("1");
     expect(rbiCell?.textContent).toBe("1");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Sacrifice fly stat tests
+// ---------------------------------------------------------------------------
+
+describe("PlayerStatsPanel — sacrifice fly stats", () => {
+  it("sac fly: shows RBI from outLog isSacFly entry without counting as AB", () => {
+    // Player p_alice hits a sac fly: in outLog but NOT as a normal out (isSacFly=true).
+    const outLog = [
+      {
+        team: 0 as const,
+        batterNum: 1,
+        playerId: "p_alice",
+        isSacFly: true,
+        rbi: 1,
+      },
+    ];
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob"], []];
+    renderWithContext({ outLog, lineupOrder });
+
+    const rows = screen.getAllByRole("row");
+    const cells1 = rows[1]?.querySelectorAll("td");
+    // AB cell (index 2): 0 (sac fly is not an AB)
+    expect(cells1?.[2]?.textContent).toBe("–");
+    // RBI cell (last): 1
+    expect(cells1?.[cells1.length - 1]?.textContent).toBe("1");
+  });
+
+  it("sac fly: normal out still counts as AB (not affected by sac fly logic)", () => {
+    const outLog = [
+      { team: 0 as const, batterNum: 2, playerId: "p_bob" }, // regular out, no isSacFly
+    ];
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob"], []];
+    renderWithContext({ outLog, lineupOrder });
+
+    const rows = screen.getAllByRole("row");
+    const cells2 = rows[2]?.querySelectorAll("td");
+    // AB cell (index 2): 1 (regular out counts as AB)
+    expect(cells2?.[2]?.textContent).toBe("1");
+    // RBI cell (last): 0 (shown as –)
+    expect(cells2?.[cells2.length - 1]?.textContent).toBe("–");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Career RBI regression tests
+// ---------------------------------------------------------------------------
+
+// Mock GameHistoryStore for career stats tests (avoids real DB calls in JSDOM).
+vi.mock("@storage/gameHistoryStore", () => ({
+  GameHistoryStore: {
+    getCareerStats: vi.fn().mockResolvedValue({}),
+    getTeamCareerBattingStats: vi.fn().mockResolvedValue([]),
+    getTeamCareerPitchingStats: vi.fn().mockResolvedValue([]),
+    getPlayerCareerBatting: vi.fn().mockResolvedValue([]),
+    getPlayerCareerPitching: vi.fn().mockResolvedValue([]),
+    getBattingLeaders: vi
+      .fn()
+      .mockResolvedValue({ hrLeader: null, avgLeader: null, rbiLeader: null }),
+    commitCompletedGame: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+describe("PlayerStatsPanel — career RBI regression", () => {
+  afterEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /** Helper: set what getCareerStats resolves with for the next test. */
+  const mockCareerStats = (stats: ReturnType<typeof vi.fn>["mock"]["results"][0]["value"]) =>
+    vi.mocked(GameHistoryStore.getCareerStats).mockResolvedValue(stats);
+
+  it("career RBIs from prior games show immediately without needing a current-game event", async () => {
+    // Regression: prior-game career RBIs should appear as soon as the career stats
+    // are fetched from the DB — they must NOT require a current-game RBI event to trigger.
+    mockCareerStats({
+      "Away:p_alice": {
+        atBats: 20,
+        hits: 5,
+        walks: 2,
+        strikeouts: 4,
+        rbi: 7,
+        singles: 3,
+        doubles: 2,
+        triples: 0,
+        homers: 0,
+        sacFlies: 1,
+        gamesPlayed: 3,
+        teamId: "Away",
+      },
+    });
+
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob", "p_carol"], []];
+    const { unmount } = renderWithContext({
+      lineupOrder,
+      // No current-game events at all
+      playLog: [],
+      strikeoutLog: [],
+      outLog: [],
+    });
+
+    // Switch to career mode
+    await act(async () => {
+      screen.getByRole("button", { name: /career/i }).click();
+    });
+    // Let the async getCareerStats promise resolve
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // slot 1 (p_alice) should show career RBI = 7 even with no current-game events
+    const rows = screen.getAllByRole("row");
+    const cells1 = rows[1]?.querySelectorAll("td");
+    const rbiCell = cells1?.[cells1.length - 1];
+    expect(rbiCell?.textContent).toBe("7");
+
+    unmount();
+  });
+
+  it("career RBIs show correctly before any current-game plate appearances", async () => {
+    // Regression: careerStats merge must preserve persistedCareerStats entries for
+    // players who have not yet had a plate appearance in the current game.
+    mockCareerStats({
+      "Away:p_alice": {
+        atBats: 10,
+        hits: 3,
+        walks: 1,
+        strikeouts: 2,
+        rbi: 4,
+        singles: 2,
+        doubles: 1,
+        triples: 0,
+        homers: 0,
+        sacFlies: 0,
+        gamesPlayed: 2,
+        teamId: "Away",
+      },
+    });
+
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob"], []];
+    const { unmount } = renderWithContext({
+      lineupOrder,
+      playLog: [],
+      strikeoutLog: [],
+      outLog: [],
+    });
+
+    await act(async () => {
+      screen.getByRole("button", { name: /career/i }).click();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // p_alice: 4 career RBI from prior games, 0 current-game RBI → shows 4
+    const rows = screen.getAllByRole("row");
+    const cells = rows[1]?.querySelectorAll("td");
+    expect(cells?.[cells.length - 1]?.textContent).toBe("4");
+
+    unmount();
+  });
+
+  it("career RBIs are additive: prior-game RBIs plus current-game RBIs sum correctly", async () => {
+    mockCareerStats({
+      "Away:p_alice": {
+        atBats: 10,
+        hits: 3,
+        walks: 1,
+        strikeouts: 2,
+        rbi: 3,
+        singles: 2,
+        doubles: 1,
+        triples: 0,
+        homers: 0,
+        sacFlies: 0,
+        gamesPlayed: 2,
+        teamId: "Away",
+      },
+    });
+
+    // Current-game: p_alice hit a single with 2 RBI
+    const playLog = [
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p_alice",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 2,
+        rbi: 2,
+      },
+    ];
+    const lineupOrder: [string[], string[]] = [["p_alice", "p_bob"], []];
+    const { unmount } = renderWithContext({ lineupOrder, playLog, strikeoutLog: [], outLog: [] });
+
+    await act(async () => {
+      screen.getByRole("button", { name: /career/i }).click();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    // p_alice: 3 prior-game RBI + 2 current-game RBI = 5
+    const rows = screen.getAllByRole("row");
+    const cells = rows[1]?.querySelectorAll("td");
+    expect(cells?.[cells.length - 1]?.textContent).toBe("5");
+
+    unmount();
   });
 });

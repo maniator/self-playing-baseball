@@ -237,6 +237,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
           doubles: prev.doubles + cur.doubles,
           triples: prev.triples + cur.triples,
           homers: prev.homers + cur.homers,
+          sacFlies: (prev.sacFlies ?? 0) + (cur.sacFlies ?? 0),
         };
       }
     }

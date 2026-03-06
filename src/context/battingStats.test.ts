@@ -12,8 +12,8 @@
  *      consistency — an earlier batter cannot have *fewer* plate appearances than
  *      a later batter in the same game).
  *   2. K (strikeouts) <= AB for every batter (strikeouts always count as ABs).
- *   3. AB = PA - BB for every batter (walks are the only non-AB plate appearances
- *      modelled in this simulator).
+ *   3. AB = PA - BB - SF for every batter (walks and sacrifice flies are the only
+ *      non-AB plate appearances modelled in this simulator).
  */
 
 import { afterEach, describe, expect, it } from "vitest";
@@ -103,12 +103,12 @@ const runGame = (seed: number): State => {
   return state;
 };
 
-type BatterStats = { ab: number; h: number; bb: number; k: number; pa: number };
+type BatterStats = { ab: number; h: number; bb: number; k: number; pa: number; sf: number };
 
 /** Compute per-slot stats from game state for one team. */
 const computeStats = (team: 0 | 1, state: State): Record<number, BatterStats> => {
   const stats: Record<number, BatterStats> = {};
-  for (let i = 1; i <= 9; i++) stats[i] = { ab: 0, h: 0, bb: 0, k: 0, pa: 0 };
+  for (let i = 1; i <= 9; i++) stats[i] = { ab: 0, h: 0, bb: 0, k: 0, pa: 0, sf: 0 };
 
   for (const e of state.playLog) {
     if (e.team !== team) continue;
@@ -125,7 +125,11 @@ const computeStats = (team: 0 | 1, state: State): Record<number, BatterStats> =>
   }
   for (const e of state.outLog) {
     if (e.team !== team) continue;
-    stats[e.batterNum].ab++;
+    if (e.isSacFly) {
+      stats[e.batterNum].sf++;
+    } else {
+      stats[e.batterNum].ab++;
+    }
     stats[e.batterNum].pa++;
   }
   // AB includes hits (hits are in playLog, not outLog)
@@ -163,11 +167,11 @@ describe("batting stats — seed 30nl0i regression", () => {
     }
   });
 
-  it("AB = PA - BB for every batter (walks are the only non-AB plate appearances)", () => {
+  it("AB = PA - BB - SF for every batter (walks and sac flies are the only non-AB plate appearances)", () => {
     const state = runGame(SEED_30NL0I);
     const stats = computeStats(0, state);
     for (let slot = 1; slot <= 9; slot++) {
-      expect(stats[slot].ab).toBe(stats[slot].pa - stats[slot].bb);
+      expect(stats[slot].ab).toBe(stats[slot].pa - stats[slot].bb - stats[slot].sf);
     }
   });
 
