@@ -282,11 +282,13 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await configureNewGame(page, options);
   await page.getByTestId("play-ball-button").click();
   // The setup UI should disappear after starting.
+  // Use a generous timeout: on CI WebKit/tablet runners, IndexedDB initialisation
+  // can take 15+ seconds on first open, causing this to flake at 10 s.
   await expect(
     page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-  ).not.toBeVisible({ timeout: 10_000 });
+  ).not.toBeVisible({ timeout: 25_000 });
   // Wait for scoreboard to appear
-  await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+  await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }
 
 /**
