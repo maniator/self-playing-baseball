@@ -550,6 +550,8 @@ describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", 
     const saves = await store2.listSaves();
     const outLog = saves[0].stateSnapshot?.state.outLog ?? [];
     expect(outLog).toHaveLength(1);
+    expect(outLog[0].team).toBe(0);
+    expect(outLog[0].batterNum).toBe(2);
     expect(outLog[0].isSacFly).toBe(true);
     expect(outLog[0].rbi).toBe(1);
     await db2.close();

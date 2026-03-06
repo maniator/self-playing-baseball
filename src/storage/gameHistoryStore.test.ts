@@ -4,7 +4,8 @@ import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "./db";
-import { makeGameHistoryStore } from "./gameHistoryStore";
+import { GAME_HISTORY_EXPORT_KEY, makeGameHistoryStore } from "./gameHistoryStore";
+import { fnv1a } from "./hash";
 import type { GameDoc, PitcherGameStatDoc, PlayerGameStatDoc } from "./types";
 
 let db: BallgameDb;
@@ -150,8 +151,6 @@ describe("GameHistoryStore export/import", () => {
 
   it("imports legacy stats without sacFlies without error", async () => {
     // Simulate a bundle produced before sacFlies was added — batting has no sacFlies field.
-    const { fnv1a } = await import("./hash");
-    const { GAME_HISTORY_EXPORT_KEY } = await import("./gameHistoryStore");
     const gameDoc: GameDoc = {
       id: "game_legacy_sf",
       playedAt: Date.now(),
@@ -236,8 +235,6 @@ describe("GameHistoryStore export/import", () => {
 
   it("imports new games from bundle", async () => {
     // Build a bundle manually
-    const { fnv1a } = await import("./hash");
-    const { GAME_HISTORY_EXPORT_KEY } = await import("./gameHistoryStore");
     const gameDoc: GameDoc = {
       id: "game_import_1",
       playedAt: Date.now(),
@@ -273,8 +270,6 @@ describe("GameHistoryStore export/import", () => {
   });
 
   it("rejects bundles with missing custom team IDs", async () => {
-    const { fnv1a } = await import("./hash");
-    const { GAME_HISTORY_EXPORT_KEY } = await import("./gameHistoryStore");
     const payload = {
       games: [],
       playerGameStats: [],
