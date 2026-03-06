@@ -20,8 +20,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
-import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
+import { selectPitchType } from "@constants/pitchTypes";
 import type { GameAction, LogAction, State } from "@context/index";
+import {
+  computeSwingRate,
+  resolveContactHitType,
+  resolveSwingOutcome,
+} from "@context/pitchSimulation";
 import { makeState } from "@test/testHelpers";
 import getRandomInt from "@utils/getRandomInt";
 import { restoreRng } from "@utils/rng";
@@ -43,21 +48,26 @@ const makeReducer = () => {
 
 const nextPitchAction = (state: State): GameAction => {
   const pitchType = selectPitchType(state.balls, state.strikes, getRandomInt(100));
-  const random = getRandomInt(1000);
-  const baseSwingRate = Math.round(500 - 75 * state.strikes);
-  const swingRate = Math.round(baseSwingRate * pitchSwingRateMod(pitchType));
+  const swingRate = computeSwingRate(
+    state.strikes,
+    "balanced",
+    0,
+    pitchType,
+    state.onePitchModifier,
+  );
+  const swingRoll = getRandomInt(1000);
 
-  if (random < swingRate) {
-    if (getRandomInt(100) < 30) return { type: "foul", payload: { pitchType } };
-    return { type: "strike", payload: { swung: true, pitchType } };
+  if (swingRoll < swingRate) {
+    const outcomeRoll = getRandomInt(100);
+    const outcome = resolveSwingOutcome(outcomeRoll, 0, 0, 0);
+    if (outcome === "whiff") return { type: "strike", payload: { swung: true, pitchType } };
+    if (outcome === "foul") return { type: "foul", payload: { pitchType } };
+    const contactRoll = getRandomInt(100);
+    const typeRoll = getRandomInt(100);
+    const hitType = resolveContactHitType(contactRoll, typeRoll, "balanced", 0, 0, 0);
+    return { type: "hit", payload: { hitType, strategy: "balanced" } };
   }
-  if (random < 920) {
-    return { type: "wait", payload: { strategy: "balanced", pitchType } };
-  }
-  const hitRoll = getRandomInt(100);
-  const hitType =
-    hitRoll < 13 ? Hit.Homerun : hitRoll < 15 ? Hit.Triple : hitRoll < 35 ? Hit.Double : Hit.Single;
-  return { type: "hit", payload: { hitType, strategy: "balanced" } };
+  return { type: "wait", payload: { strategy: "balanced", pitchType } };
 };
 
 const AWAY_TEAM = "New York Mets";

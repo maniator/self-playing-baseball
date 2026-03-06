@@ -1,7 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { type State } from "@context/index";
 import { makeState } from "@test/testHelpers";
 import * as rngModule from "@utils/rng";
 
@@ -63,13 +62,18 @@ describe("usePitchDispatch", () => {
     );
   });
 
-  it("dispatches hit when random >= 920", () => {
+  it("dispatches hit when swing produces contact", () => {
+    // Mock sequence: pitch type (0→fastball), swing (0.001→1<360→swing),
+    // swing outcome (0.9→90≥55→contact), contact roll (0.0→0<25→hard),
+    // hit type roll (0.5→50≥45→Single).
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.999)
-      .mockReturnValueOnce(0.1);
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing roll: 1 < 360 → swing
+      .mockReturnValueOnce(0.9) // swing outcome: 90 ≥ 55 → contact
+      .mockReturnValueOnce(0.0) // contact quality: 0 < 25 → hard
+      .mockReturnValueOnce(0.5); // hit type: 50 ≥ 45 → Single
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -111,13 +115,16 @@ describe("usePitchDispatch", () => {
     expect(dispatch).not.toHaveBeenCalled();
   });
 
-  it("dispatches hit with contact strategy — Triple (hitRoll 8–9)", () => {
+  it("dispatches hit: hard contact + typeRoll 15-19 → Triple", () => {
+    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (15≤17<20 → Triple)
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0) // pitch type
-      .mockReturnValueOnce(0.999) // main roll >= 920 → hit
-      .mockReturnValueOnce(0.09); // hitRoll = 9, 8 <= 9 < 10 → Triple
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing
+      .mockReturnValueOnce(0.9) // contact
+      .mockReturnValueOnce(0.0) // hard contact (0 < 25)
+      .mockReturnValueOnce(0.17); // typeRoll=17: 15≤17<20 → Triple
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -139,13 +146,16 @@ describe("usePitchDispatch", () => {
     );
   });
 
-  it("dispatches hit with contact strategy — Double (hitRoll 10–27)", () => {
+  it("dispatches hit: hard contact + typeRoll 20-44 → Double", () => {
+    // Hard contact (contactRoll=0 < 25) + typeRoll=30 (20≤30<45 → Double)
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.999)
-      .mockReturnValueOnce(0.19); // hitRoll = 19, 10 <= 19 < 28 → Double
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing
+      .mockReturnValueOnce(0.9) // contact
+      .mockReturnValueOnce(0.0) // hard contact
+      .mockReturnValueOnce(0.3); // typeRoll=30: 20≤30<45 → Double
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -167,13 +177,17 @@ describe("usePitchDispatch", () => {
     );
   });
 
-  it("dispatches hit with default strategy — Triple (hitRoll 13–14)", () => {
+  it("dispatches hit: hard contact + typeRoll 15-19 → Triple (balanced strategy)", () => {
+    // Hard contact + typeRoll=14 (15≤14? No: 14 < 15 → Triple cutoff boundary)
+    // typeRoll=17 → 15≤17<20 → Triple
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.999)
-      .mockReturnValueOnce(0.14); // hitRoll = 14, 13 <= 14 < 15 → Triple
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing
+      .mockReturnValueOnce(0.9) // contact
+      .mockReturnValueOnce(0.0) // hard contact (0 < 25)
+      .mockReturnValueOnce(0.17); // typeRoll=17: 15≤17<20 → Triple
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -195,13 +209,15 @@ describe("usePitchDispatch", () => {
     );
   });
 
-  it("dispatches hit with default strategy — Double (hitRoll 15–34)", () => {
+  it("dispatches hit: hard contact + typeRoll 20-44 → Double (balanced strategy)", () => {
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0)
-      .mockReturnValueOnce(0.999)
-      .mockReturnValueOnce(0.25); // hitRoll = 25, 15 <= 25 < 35 → Double
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing
+      .mockReturnValueOnce(0.9) // contact
+      .mockReturnValueOnce(0.0) // hard contact
+      .mockReturnValueOnce(0.3); // typeRoll=30: 20≤30<45 → Double
 
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -225,16 +241,20 @@ describe("usePitchDispatch", () => {
 });
 
 describe("usePitchDispatch — power strategy hits", () => {
-  const makeHitState = (hitRoll: number) => {
+  // power swing rate: computeSwingRate(0, "power", 0, "fastball", null) = floor(360 * 0.95) = 342
+  // Contact path: swing roll 0.001 (1<342), swing outcome 0.9 (90≥55→contact)
+  const makeHitState = (contactRoll: number, typeRoll: number) => {
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")
-      .mockReturnValueOnce(0.0) // pitch type
-      .mockReturnValueOnce(0.999) // main roll >= 920 → hit
-      .mockReturnValueOnce(hitRoll / 100);
+      .mockReturnValueOnce(0.0) // pitch type → fastball
+      .mockReturnValueOnce(0.001) // swing roll: 1 < 342 → swing
+      .mockReturnValueOnce(0.9) // swing outcome: 90 ≥ 55 → contact
+      .mockReturnValueOnce(contactRoll / 100) // contact quality roll
+      .mockReturnValueOnce(typeRoll / 100); // hit type roll
     return state;
   };
 
-  const dispatchAndGet = (state: State) => {
+  const dispatchAndGet = (state: ReturnType<typeof makeState>) => {
     const dispatch = vi.fn();
     const { result } = renderHook(() =>
       usePitchDispatch({
@@ -254,31 +274,44 @@ describe("usePitchDispatch — power strategy hits", () => {
     return dispatch;
   };
 
-  it("power Homerun (hitRoll < 20)", () => {
-    const dispatch = dispatchAndGet(makeHitState(10));
+  it("power Homerun (hard contact, typeRoll < 15)", () => {
+    // contactRoll=10 → hard (10 < 25); typeRoll=10 < 15 → HR
+    const dispatch = dispatchAndGet(makeHitState(10, 10));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
     );
   });
 
-  it("power Triple (hitRoll 20–22)", () => {
-    const dispatch = dispatchAndGet(makeHitState(21));
+  it("power Triple (hard contact, typeRoll 15–19)", () => {
+    // contactRoll=10 → hard; typeRoll=17: 15≤17<20 → Triple
+    const dispatch = dispatchAndGet(makeHitState(10, 17));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 2 }) }),
     );
   });
 
-  it("power Double (hitRoll 23–42)", () => {
-    const dispatch = dispatchAndGet(makeHitState(33));
+  it("power Double (hard contact, typeRoll 20–44)", () => {
+    // contactRoll=10 → hard; typeRoll=33: 20≤33<45 → Double
+    const dispatch = dispatchAndGet(makeHitState(10, 33));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 1 }) }),
     );
   });
 
-  it("power Single (hitRoll >= 43)", () => {
-    const dispatch = dispatchAndGet(makeHitState(55));
+  it("power Single (hard contact, typeRoll ≥ 45)", () => {
+    // contactRoll=10 → hard; typeRoll=55: ≥45 → Single
+    const dispatch = dispatchAndGet(makeHitState(10, 55));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 0 }) }),
+    );
+  });
+
+  it("power strategy boosts medium contact to hard (typeRoll < 15)", () => {
+    // Medium contact (contactRoll=40, 25≤40<60) + power strategy + typeRoll=5 < 15 → powerBoost
+    // → quality upgrades to hard → typeRoll=5 < 15 → HR
+    const dispatch = dispatchAndGet(makeHitState(40, 5));
+    expect(dispatch).toHaveBeenCalledWith(
+      expect.objectContaining({ type: "hit", payload: expect.objectContaining({ hitType: 3 }) }),
     );
   });
 });

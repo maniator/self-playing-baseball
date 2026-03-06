@@ -98,6 +98,8 @@ export type ResolvedPlayerMods = {
   velocityMod: number;
   controlMod: number;
   movementMod: number;
+  /** Higher staminaMod = pitcher stays effective for more batters before fatigue sets in. */
+  staminaMod: number;
 };
 
 /** Bench player info surfaced in the pinch_hitter decision for concrete player selection. */

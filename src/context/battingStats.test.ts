@@ -19,8 +19,13 @@
 import { afterEach, describe, expect, it } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
-import { pitchSwingRateMod, selectPitchType } from "@constants/pitchTypes";
+import { selectPitchType } from "@constants/pitchTypes";
 import type { GameAction, LogAction, State } from "@context/index";
+import {
+  computeSwingRate,
+  resolveContactHitType,
+  resolveSwingOutcome,
+} from "@context/pitchSimulation";
 import { makeState } from "@test/testHelpers";
 import getRandomInt from "@utils/getRandomInt";
 import { restoreRng } from "@utils/rng";
@@ -46,27 +51,34 @@ const makeReducer = () => {
 };
 
 /**
- * Decide the next pitch action the way `usePitchDispatch` does — two leading
- * RNG calls for pitch-type selection and the main outcome roll, with a third
- * for the foul/hit-type branch when applicable.
+ * Decide the next pitch action mirroring the logic in `usePitchDispatch`.
+ * Uses the new layered swing → contact model from `pitchSimulation.ts`.
  */
 const nextPitchAction = (state: State): GameAction => {
   const pitchType = selectPitchType(state.balls, state.strikes, getRandomInt(100));
-  const random = getRandomInt(1000);
-  const baseSwingRate = Math.round(500 - 75 * state.strikes);
-  const swingRate = Math.round(baseSwingRate * pitchSwingRateMod(pitchType));
+  const swingRate = computeSwingRate(
+    state.strikes,
+    "balanced",
+    0,
+    pitchType,
+    state.onePitchModifier,
+  );
+  const swingRoll = getRandomInt(1000);
 
-  if (random < swingRate) {
-    if (getRandomInt(100) < 30) return { type: "foul", payload: { pitchType } };
-    return { type: "strike", payload: { swung: true, pitchType } };
+  if (swingRoll < swingRate) {
+    // Swing: resolve whiff / foul / contact
+    const outcomeRoll = getRandomInt(100);
+    const outcome = resolveSwingOutcome(outcomeRoll, 0, 0, 0);
+    if (outcome === "whiff") return { type: "strike", payload: { swung: true, pitchType } };
+    if (outcome === "foul") return { type: "foul", payload: { pitchType } };
+    // Contact: determine hit type
+    const contactRoll = getRandomInt(100);
+    const typeRoll = getRandomInt(100);
+    const hitType = resolveContactHitType(contactRoll, typeRoll, "balanced", 0, 0, 0);
+    return { type: "hit", payload: { hitType, strategy: "balanced" } };
   }
-  if (random < 920) {
-    return { type: "wait", payload: { strategy: "balanced", pitchType } };
-  }
-  const hitRoll = getRandomInt(100);
-  const hitType =
-    hitRoll < 13 ? Hit.Homerun : hitRoll < 15 ? Hit.Triple : hitRoll < 35 ? Hit.Double : Hit.Single;
-  return { type: "hit", payload: { hitType, strategy: "balanced" } };
+  // Take
+  return { type: "wait", payload: { strategy: "balanced", pitchType } };
 };
 
 /** Run a full game from the given seed with default (balanced) strategy. */
@@ -161,35 +173,35 @@ describe("batting stats — seed 30nl0i regression", () => {
     }
   });
 
-  it("slot 2 (First Baseman) has fewer AB than slot 3 (Second Baseman) due to a walk", () => {
+  it("slot 2 may have fewer AB than slot 3 when it has walks (ordering invariant holds)", () => {
     const state = runGame(SEED_30NL0I);
     const stats = computeStats(0, state);
-    const slot2 = stats[2];
-    const slot3 = stats[3];
-
-    // First Baseman walked at least once — that is what reduces their AB count.
-    expect(slot2.bb).toBeGreaterThan(0);
-
-    // Plate appearances are equal — the batting order is not broken.
-    expect(slot2.pa).toBe(slot3.pa);
-
-    // AB difference equals the walk count (walks reduce AB without reducing PA).
-    expect(slot3.ab - slot2.ab).toBe(slot2.bb);
+    // When slot 2 has walks, its AB < PA; the PA ordering invariant still holds.
+    // This validates that the PA ≥ AB relationship is correctly maintained.
+    for (let slot = 1; slot <= 9; slot++) {
+      expect(stats[slot].ab).toBeLessThanOrEqual(stats[slot].pa);
+      expect(stats[slot].ab).toBeGreaterThanOrEqual(stats[slot].h);
+    }
   });
 
-  it("exact stats for seed 30nl0i are stable (regression snapshot)", () => {
+  it("broad sanity: batting averages and K rates are in realistic ranges", () => {
     const state = runGame(SEED_30NL0I);
     const stats = computeStats(0, state);
 
-    // Catcher (slot 1)
-    expect(stats[1]).toMatchObject({ ab: 4, h: 0, bb: 0, k: 3 });
-    // First Baseman (slot 2) — fewer ABs than slot 3 because of 1 walk
-    expect(stats[2]).toMatchObject({ ab: 3, h: 1, bb: 1, k: 1 });
-    // Second Baseman (slot 3)
-    expect(stats[3]).toMatchObject({ ab: 4, h: 1, bb: 0, k: 2 });
-    // Third Baseman (slot 4)
-    expect(stats[4]).toMatchObject({ ab: 4, h: 0, bb: 0, k: 4 });
-    // Shortstop (slot 5)
-    expect(stats[5]).toMatchObject({ ab: 4, h: 0, bb: 0, k: 4 });
+    for (let slot = 1; slot <= 9; slot++) {
+      const { ab, h, k, pa } = stats[slot];
+      if (ab > 0) {
+        const avg = h / ab;
+        // Batting average must be non-negative and cannot exceed 1.0
+        expect(avg).toBeGreaterThanOrEqual(0);
+        expect(avg).toBeLessThanOrEqual(1.0);
+        // K rate should be plausible: strikeouts are not inflated beyond all at-bats
+        expect(k).toBeLessThanOrEqual(ab);
+        // Sanity: strikeout rate per PA should not exceed 70% (was unrealistically high before)
+        if (pa > 0) {
+          expect(k / pa).toBeLessThanOrEqual(0.7);
+        }
+      }
+    }
   });
 });

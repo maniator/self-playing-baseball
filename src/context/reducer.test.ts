@@ -100,7 +100,11 @@ describe("hit - double", () => {
     expect(state.baseLayout[2]).toBe(0);
   });
   it("runner on 1st goes to 3rd", () => {
-    mockRandom(0);
+    // Mock: pop-out check = 0 (no pop-out), then high value so runner doesn't
+    // score via probabilistic advancement (score chance is ~30%, roll must be >= 30).
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0) // pop-out roll: 0 < 750 → hit
+      .mockReturnValue(0.5); // all subsequent rolls: 50 >= 30 → runner stays on base
     const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "hit", {
       hitType: Hit.Double,
       strategy: "balanced",
@@ -123,7 +127,11 @@ describe("hit - single", () => {
     expect(state.baseLayout[0]).toBe(1);
   });
   it("runner on 2nd goes to 3rd", () => {
-    mockRandom(0);
+    // Mock: pop-out check = 0 (hit), then high value so runner doesn't score via
+    // speed-based advancement (base score chance ~60%, roll must be >= 60).
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0) // pop-out roll: 0 < 750 → hit
+      .mockReturnValue(0.8); // subsequent rolls: 80 >= 60 → runner stays on 2nd → advances to 3rd
     const { state } = dispatchAction(makeState({ baseLayout: [0, 1, 0] }), "hit", {
       hitType: Hit.Single,
       strategy: "balanced",
@@ -132,7 +140,11 @@ describe("hit - single", () => {
     expect(state.baseLayout[1]).toBe(0);
   });
   it("runner on 1st goes to 2nd", () => {
-    mockRandom(0);
+    // Mock: pop-out check = 0 (hit), then high value so runner doesn't stretch to 3rd
+    // (base stretch chance ~28%, roll must be >= 28).
+    vi.spyOn(rngModule, "random")
+      .mockReturnValueOnce(0.0) // pop-out roll: 0 < 750 → hit
+      .mockReturnValue(0.8); // subsequent rolls: 80 >= 28 → runner stays on 2nd (no stretch)
     const { state } = dispatchAction(makeState({ baseLayout: [1, 0, 0] }), "hit", {
       hitType: Hit.Single,
       strategy: "balanced",
