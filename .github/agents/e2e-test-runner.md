@@ -204,7 +204,7 @@ Use `loadFixture` instead of long autoplay-based setup whenever the test only ne
 
 1. Co-locate test files with existing spec files in `e2e/tests/` or in `e2e/tests/visual/` for snapshot tests.
 2. Always call `resetAppState(page)` (or `loadFixture`) at the start of each test to isolate IndexedDB state.
-3. Use `data-testid` selectors — see the full reference in `docs/e2e-testing.md`.
+3. Use `data-testid` selectors — see the full reference in `../docs/e2e-testing.md`.
 4. For visual snapshot tests, place them in `e2e/tests/visual/` and call `disableAnimations(page)` before taking the screenshot.
 5. Never add `test.setTimeout()` — use a fixture if autoplay needs more than 30 s to reach a state.
 6. Run `yarn typecheck:e2e` after adding or changing any E2E test files to catch Playwright API type errors early.

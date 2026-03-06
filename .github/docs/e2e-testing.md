@@ -169,6 +169,7 @@ function makeSig(header, events) {
   return fnv1a(RXDB_EXPORT_KEY + inner);
 }
 
+const events = []; // empty for most fixtures; populate if your fixture needs recorded events
 const payload = { version: 1, header, events, sig: makeSig(header, events) };
 ```
 
