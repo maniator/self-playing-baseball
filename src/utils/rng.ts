@@ -45,6 +45,9 @@ let lastFreshSeed: number | null = null;
  *
  * Guaranteed to return a different value from the previous call even when called
  * in rapid succession (e.g. consecutive page opens within the same millisecond).
+ * After up to 3 random retries, falls back to a deterministic rotation
+ * (lastSeed + 1) to ensure uniqueness in the extremely unlikely event that all
+ * random attempts produce a collision.
  */
 export const generateFreshSeed = (): number => {
   let s = generateSeed();
@@ -56,6 +59,11 @@ export const generateFreshSeed = (): number => {
   while (s === lastFreshSeed && retries < maxRetries) {
     s = generateSeed();
     retries++;
+  }
+  // Deterministic fallback: if all retries still collided (extremely unlikely),
+  // rotate by 1 to unconditionally guarantee a different value.
+  if (s === lastFreshSeed) {
+    s = ((lastFreshSeed ?? 0) + 1) >>> 0;
   }
   lastFreshSeed = s;
   return s;

@@ -38,6 +38,7 @@ vi.mock("@storage/gameHistoryStore", () => ({
       losses: 0,
       ties: 0,
       winPct: 0,
+      runsScored: 0,
       runsAllowed: 0,
       runDiff: 0,
       rsPerGame: 0,
