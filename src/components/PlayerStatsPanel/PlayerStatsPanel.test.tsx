@@ -492,7 +492,8 @@ describe("PlayerStatsPanel — career RBI regression", () => {
   });
 
   /** Helper: set what getCareerStats resolves with for the next test. */
-  const mockCareerStats = (stats: ReturnType<typeof vi.fn>["mock"]["results"][0]["value"]) =>
+  type CareerStats = Awaited<ReturnType<typeof GameHistoryStore.getCareerStats>>;
+  const mockCareerStats = (stats: CareerStats) =>
     vi.mocked(GameHistoryStore.getCareerStats).mockResolvedValue(stats);
 
   it("career RBIs from prior games show immediately without needing a current-game event", async () => {

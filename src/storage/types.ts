@@ -372,8 +372,10 @@ export interface PlayerGameStatDoc {
     doubles: number;
     triples: number;
     homers: number;
-    /** Sacrifice flies: plate appearances where a caught fly ball drove in a run (PA but not AB). */
-    sacFlies: number;
+    /** Sacrifice flies: plate appearances where a caught fly ball drove in a run (PA but not AB).
+     * Optional for backward compatibility — legacy docs written before this field was added will
+     * not have it; all consumers must fall back to `?? 0`. */
+    sacFlies?: number;
   };
   /** Wall-clock timestamp when this row was created (ms since epoch). */
   createdAt: number;
