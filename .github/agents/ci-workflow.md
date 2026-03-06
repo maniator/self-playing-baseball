@@ -64,7 +64,7 @@ Available fixtures:
 | `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending + candidates | Pinch-hitter visual that never completed |
 | `mid-game-with-rbi.json` | Inning 5, RBI in playLog | 80 log-line wait for RBI values |
 
-To author a new fixture, use the Python script pattern in the `e2e/fixtures/` directory and compute the FNV-1a signature as documented in the "Save Fixtures for E2E Testing" section of `copilot-instructions.md`.
+To author a new fixture, use the Node.js signing approach documented in the "Authoring a new fixture" section of `docs/e2e-testing.md` (use Node, not Python — Python `json.dumps` escapes non-ASCII differently from JS `JSON.stringify`, causing sig mismatches).
 
 ## Copilot Setup Steps workflow (CRITICAL REPO-SPECIFIC NOTE)
 
