@@ -283,9 +283,11 @@ const processConfirmedHit = (
     string | null,
   ];
 
-  if (type === Hit.Single && base.baseLayout[0] && !base.baseLayout[2]) {
+  if (type === Hit.Single && base.baseLayout[0]) {
     // Original runner was on 1st; they are now on 2nd (newBase[1]).
-    // Check if they can stretch to 3rd (only if 3rd is still empty).
+    // Use post-advance state for the 3rd-base check: if 3rd is now empty the
+    // runner can stretch (e.g. a runner who was on 3rd may have scored on the play,
+    // opening up the bag — the pre-advance !base.baseLayout[2] guard was too strict).
     if (finalBase[1] && !finalBase[2]) {
       const runner1stSpeedMod = getSpeedMod(base, currentRunnerIds[0]);
       const stretchChance = Math.max(

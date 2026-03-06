@@ -209,24 +209,22 @@ export const usePitchDispatch = ({
 
     // 2. Determine swing vs. take.
     const swingRoll = getRandomInt(1000);
-    const swingRate = computeSwingRate(
-      currentStrikes,
-      effectiveStrategy,
-      batterMods.contactMod,
+    const swingRate = computeSwingRate(currentStrikes, {
+      strategy: effectiveStrategy,
+      batterContactMod: batterMods.contactMod,
       pitchType,
       onePitchMod,
-    );
+    });
 
     if (swingRoll < swingRate) {
       // 3. Batter swings — resolve whiff / foul / contact.
       const outcomeRoll = getRandomInt(100);
-      const swingOutcome = resolveSwingOutcome(
-        outcomeRoll,
-        pitcherMods.velocityMod,
-        pitcherMods.movementMod,
-        batterMods.contactMod,
+      const swingOutcome = resolveSwingOutcome(outcomeRoll, {
+        pitcherVelocityMod: pitcherMods.velocityMod,
+        pitcherMovementMod: pitcherMods.movementMod,
+        batterContactMod: batterMods.contactMod,
         fatigueFactor,
-      );
+      });
 
       if (swingOutcome === "whiff") {
         dispatch({ type: "strike", payload: { swung: true, pitchType } });

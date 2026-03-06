@@ -75,56 +75,65 @@ describe("computeFatigueFactor", () => {
 
 describe("computeSwingRate", () => {
   it("increases with more strikes (0→1→2)", () => {
-    const rate0 = computeSwingRate(0, "balanced", 0, undefined, null);
-    const rate1 = computeSwingRate(1, "balanced", 0, undefined, null);
-    const rate2 = computeSwingRate(2, "balanced", 0, undefined, null);
+    const rate0 = computeSwingRate(0);
+    const rate1 = computeSwingRate(1);
+    const rate2 = computeSwingRate(2);
     expect(rate1).toBeGreaterThan(rate0);
     expect(rate2).toBeGreaterThan(rate1);
   });
 
-  it("returns 920 for the 'swing' one-pitch modifier regardless of count", () => {
-    expect(computeSwingRate(0, "balanced", 0, undefined, "swing")).toBe(920);
-    expect(computeSwingRate(2, "power", 0, undefined, "swing")).toBe(920);
+  it("returns 1000 for the 'swing' one-pitch modifier (guarantees a swing)", () => {
+    expect(computeSwingRate(0, { onePitchMod: "swing" })).toBe(1000);
+    expect(computeSwingRate(2, { strategy: "power", onePitchMod: "swing" })).toBe(1000);
   });
 
   it("returns 0 for the 'take' one-pitch modifier", () => {
-    expect(computeSwingRate(0, "balanced", 0, undefined, "take")).toBe(0);
-    expect(computeSwingRate(2, "aggressive", 10, undefined, "take")).toBe(0);
+    expect(computeSwingRate(0, { onePitchMod: "take" })).toBe(0);
+    expect(
+      computeSwingRate(2, { strategy: "aggressive", batterContactMod: 10, onePitchMod: "take" }),
+    ).toBe(0);
   });
 
   it("aggressive strategy swings more than patient", () => {
-    const aggressive = computeSwingRate(0, "aggressive", 0, undefined, null);
-    const patient = computeSwingRate(0, "patient", 0, undefined, null);
+    const aggressive = computeSwingRate(0, { strategy: "aggressive" });
+    const patient = computeSwingRate(0, { strategy: "patient" });
     expect(aggressive).toBeGreaterThan(patient);
   });
 
   it("'protect' modifier increases the swing rate", () => {
-    const normal = computeSwingRate(1, "balanced", 0, undefined, null);
-    const protect = computeSwingRate(1, "balanced", 0, undefined, "protect");
+    const normal = computeSwingRate(1);
+    const protect = computeSwingRate(1, { onePitchMod: "protect" });
     expect(protect).toBeGreaterThan(normal);
   });
 
-  it("is always in [0, 920]", () => {
+  it("normal play is always in [0, 920]; 'swing' modifier reaches 1000", () => {
     const strategies = ["balanced", "aggressive", "patient", "contact", "power"] as const;
     const pitchTypes = ["fastball", "curveball", "slider", "changeup"] as const;
-    const mods = ["swing", "take", "protect", null] as const;
+    // Non-swing mods are capped at 920.
+    const normalMods = ["take", "protect", null] as const;
     for (const strat of strategies) {
       for (const pitch of pitchTypes) {
-        for (const mod of mods) {
+        for (const mod of normalMods) {
           for (const strikes of [0, 1, 2]) {
-            const rate = computeSwingRate(strikes, strat, 0, pitch, mod);
+            const rate = computeSwingRate(strikes, {
+              strategy: strat,
+              pitchType: pitch,
+              onePitchMod: mod,
+            });
             expect(rate).toBeGreaterThanOrEqual(0);
             expect(rate).toBeLessThanOrEqual(920);
           }
         }
       }
     }
+    // The "swing" modifier guarantees a swing.
+    expect(computeSwingRate(0, { onePitchMod: "swing" })).toBe(1000);
   });
 
   it("is deterministic given identical inputs", () => {
-    expect(computeSwingRate(1, "contact", 5, "slider", null)).toBe(
-      computeSwingRate(1, "contact", 5, "slider", null),
-    );
+    expect(
+      computeSwingRate(1, { strategy: "contact", batterContactMod: 5, pitchType: "slider" }),
+    ).toBe(computeSwingRate(1, { strategy: "contact", batterContactMod: 5, pitchType: "slider" }));
   });
 });
 
@@ -135,25 +144,25 @@ describe("computeSwingRate", () => {
 describe("resolveSwingOutcome", () => {
   it("low roll → whiff", () => {
     // Roll 0 is always below the whiff threshold (minimum whiff threshold is 8).
-    expect(resolveSwingOutcome(0, 0, 0, 0)).toBe("whiff");
+    expect(resolveSwingOutcome(0)).toBe("whiff");
   });
 
   it("mid roll → foul", () => {
     // Roll 30: above whiff threshold (22) but below foul threshold (22+33=55).
-    expect(resolveSwingOutcome(30, 0, 0, 0)).toBe("foul");
+    expect(resolveSwingOutcome(30)).toBe("foul");
   });
 
   it("high roll → contact", () => {
     // Roll 80: above foul threshold (55) → contact.
-    expect(resolveSwingOutcome(80, 0, 0, 0)).toBe("contact");
+    expect(resolveSwingOutcome(80)).toBe("contact");
   });
 
   it("high pitcher velocity increases whiff probability (lowers contact)", () => {
     const baseContactCount = [70, 75, 80].filter(
-      (r) => resolveSwingOutcome(r, 0, 0, 0) === "contact",
+      (r) => resolveSwingOutcome(r) === "contact",
     ).length;
     const highVeloContactCount = [70, 75, 80].filter(
-      (r) => resolveSwingOutcome(r, 20, 0, 0) === "contact",
+      (r) => resolveSwingOutcome(r, { pitcherVelocityMod: 20 }) === "contact",
     ).length;
     // More rolls become whiff/foul with high velocity → fewer contacts
     expect(highVeloContactCount).toBeLessThanOrEqual(baseContactCount);
@@ -161,8 +170,8 @@ describe("resolveSwingOutcome", () => {
 
   it("high batter contact skill reduces whiff rate", () => {
     // With contactMod=+20, the whiff threshold decreases → fewer whiffs at low rolls.
-    const whiffNoMod = resolveSwingOutcome(10, 0, 0, 0);
-    const whiffHighContact = resolveSwingOutcome(10, 0, 0, 20);
+    const whiffNoMod = resolveSwingOutcome(10);
+    const whiffHighContact = resolveSwingOutcome(10, { batterContactMod: 20 });
     // With lower whiff threshold, roll=10 might no longer be a whiff.
     // Either way, the threshold decreases — high contact can only equal or improve outcomes.
     expect(["whiff", "foul", "contact"]).toContain(whiffNoMod);
@@ -170,15 +179,15 @@ describe("resolveSwingOutcome", () => {
     // High contact should never *increase* whiff chance:
     // whiff threshold with contactMod=+20 is max(8, 22-2) = 20, so roll=10 is still whiff
     // but roll=21 would switch from whiff to foul.
-    expect(resolveSwingOutcome(21, 0, 0, 0)).toBe("whiff");
-    expect(resolveSwingOutcome(21, 0, 0, 20)).toBe("foul"); // no longer a whiff
+    expect(resolveSwingOutcome(21)).toBe("whiff");
+    expect(resolveSwingOutcome(21, { batterContactMod: 20 })).toBe("foul"); // no longer a whiff
   });
 
   it("fatigue reduces pitcher effectiveness (fewer whiffs)", () => {
     // A tired pitcher loses velocity bonus → lower whiff threshold → roll that was whiff may become foul/contact
     const roll = 20; // near the whiff threshold
-    const freshResult = resolveSwingOutcome(roll, 10, 0, 0, 1.0);
-    const tiredResult = resolveSwingOutcome(roll, 10, 0, 0, 1.4);
+    const freshResult = resolveSwingOutcome(roll, { pitcherVelocityMod: 10, fatigueFactor: 1.0 });
+    const tiredResult = resolveSwingOutcome(roll, { pitcherVelocityMod: 10, fatigueFactor: 1.4 });
     // With fatigue, the velocity bonus is reduced, so some whiffs shift to fouls or contact
     // Either stays whiff or becomes something better for batter — never worse
     if (freshResult === "whiff") {
@@ -190,12 +199,18 @@ describe("resolveSwingOutcome", () => {
   it("always returns a valid outcome", () => {
     const validOutcomes = ["whiff", "foul", "contact"] as const;
     for (let roll = 0; roll < 100; roll++) {
-      expect(validOutcomes).toContain(resolveSwingOutcome(roll, 0, 0, 0));
+      expect(validOutcomes).toContain(resolveSwingOutcome(roll));
     }
   });
 
   it("is deterministic given identical inputs", () => {
-    expect(resolveSwingOutcome(45, 10, 5, -5, 1.2)).toBe(resolveSwingOutcome(45, 10, 5, -5, 1.2));
+    const opts = {
+      pitcherVelocityMod: 10,
+      pitcherMovementMod: 5,
+      batterContactMod: -5,
+      fatigueFactor: 1.2,
+    };
+    expect(resolveSwingOutcome(45, opts)).toBe(resolveSwingOutcome(45, opts));
   });
 });
 
@@ -339,7 +354,9 @@ describe("simulation stat sanity (aggregate)", () => {
   it("contact rate is meaningfully higher with good contact batter vs average", () => {
     const rolls = Array.from({ length: 100 }, (_, i) => i);
     const countContact = (contactMod: number) =>
-      rolls.filter((roll) => resolveSwingOutcome(roll, 0, 0, contactMod) === "contact").length;
+      rolls.filter(
+        (roll) => resolveSwingOutcome(roll, { batterContactMod: contactMod }) === "contact",
+      ).length;
 
     const avgContact = countContact(0);
     const goodContact = countContact(20);
@@ -350,7 +367,9 @@ describe("simulation stat sanity (aggregate)", () => {
   it("high velocity pitcher produces more whiffs than low velocity", () => {
     const rolls = Array.from({ length: 100 }, (_, i) => i);
     const countWhiffs = (velocityMod: number) =>
-      rolls.filter((roll) => resolveSwingOutcome(roll, velocityMod, 0, 0) === "whiff").length;
+      rolls.filter(
+        (roll) => resolveSwingOutcome(roll, { pitcherVelocityMod: velocityMod }) === "whiff",
+      ).length;
 
     const lowVeloWhiffs = countWhiffs(-10);
     const highVeloWhiffs = countWhiffs(20);

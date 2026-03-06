@@ -56,10 +56,26 @@ const SWING_RATE_MODS: Record<Strategy, number> = {
 };
 
 /**
+ * Options for `computeSwingRate`.
+ *
+ * All fields are optional — defaults produce "balanced" swing behaviour with no modifiers.
+ */
+export interface ComputeSwingRateOptions {
+  strategy?: Strategy;
+  batterContactMod?: number;
+  pitchType?: PitchType;
+  onePitchMod?: OnePitchModifier;
+}
+
+/**
  * Compute the per-pitch swing rate for the current count, strategy, and context.
  *
  * Returns an integer in [0, 1000].  Compare with `getRandomInt(1000)`:
  * if roll < swingRate → swing, otherwise → take.
+ *
+ * Special modifiers:
+ *   "swing" → 1000 (guarantees a swing — batter committed to hack)
+ *   "take"  → 0   (batter takes the pitch no matter what)
  *
  * Swing rates by strikes (base):
  *   0 strikes → 360 (36%)  — selective early
@@ -68,12 +84,14 @@ const SWING_RATE_MODS: Record<Strategy, number> = {
  */
 export const computeSwingRate = (
   strikes: number,
-  strategy: Strategy,
-  batterContactMod: number,
-  pitchType: PitchType | undefined,
-  onePitchMod: OnePitchModifier,
+  {
+    strategy = "balanced",
+    batterContactMod = 0,
+    pitchType,
+    onePitchMod = null,
+  }: ComputeSwingRateOptions = {},
 ): number => {
-  if (onePitchMod === "swing") return 920;
+  if (onePitchMod === "swing") return 1000;
   if (onePitchMod === "take") return 0;
 
   const baseRates = [360, 450, 580];
@@ -88,6 +106,7 @@ export const computeSwingRate = (
   const pitchMod = pitchType ? pitchSwingRateMod(pitchType) : 1.0;
 
   const raw = Math.round(base * stratFactor * protectBonus * contactBonus * pitchMod);
+  // Normal play caps at 920 — only the "swing" modifier reaches 1000.
   return Math.min(920, Math.max(0, raw));
 };
 
@@ -99,6 +118,22 @@ export const computeSwingRate = (
 export type SwingOutcome = "whiff" | "foul" | "contact";
 
 /**
+ * Options for `resolveSwingOutcome`.
+ *
+ * All fields are optional — defaults model an average pitcher facing an average batter.
+ */
+export interface ResolveSwingOutcomeOptions {
+  /** Pitcher's velocity modifier (−20 … +20). Increases whiff rate. */
+  pitcherVelocityMod?: number;
+  /** Pitcher's movement modifier. Shifts fouls vs. contact. */
+  pitcherMovementMod?: number;
+  /** Batter's contact modifier. Reduces whiff and foul rates. */
+  batterContactMod?: number;
+  /** Pitcher fatigue (≥ 1.0; higher = more tired, reduces velocity effectiveness). */
+  fatigueFactor?: number;
+}
+
+/**
  * Determine whether a swing results in a whiff, foul, or contact.
  *
  * Uses a 0–99 roll.  Thresholds are modified by pitcher stuff and batter
@@ -106,18 +141,17 @@ export type SwingOutcome = "whiff" | "foul" | "contact";
  *
  * Base rates: whiff 22%, foul 33%, contact 45%.
  *
- * @param roll                0–99 random roll from the caller.
- * @param pitcherVelocityMod  Pitcher's velocity modifier (−20 … +20).
- * @param pitcherMovementMod  Pitcher's movement modifier.
- * @param batterContactMod    Batter's contact modifier.
- * @param fatigueFactor       Pitcher fatigue (≥ 1.0; higher = more tired).
+ * @param roll     0–99 random roll from the caller.
+ * @param options  Pitcher/batter modifier options (all default to 0 / 1.0).
  */
 export const resolveSwingOutcome = (
   roll: number,
-  pitcherVelocityMod: number,
-  pitcherMovementMod: number,
-  batterContactMod: number,
-  fatigueFactor = 1.0,
+  {
+    pitcherVelocityMod = 0,
+    pitcherMovementMod = 0,
+    batterContactMod = 0,
+    fatigueFactor = 1.0,
+  }: ResolveSwingOutcomeOptions = {},
 ): SwingOutcome => {
   const baseWhiff = 22;
   const baseFoul = 33;

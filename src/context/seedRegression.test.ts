@@ -48,18 +48,16 @@ const makeReducer = () => {
 
 const nextPitchAction = (state: State): GameAction => {
   const pitchType = selectPitchType(state.balls, state.strikes, getRandomInt(100));
-  const swingRate = computeSwingRate(
-    state.strikes,
-    "balanced",
-    0,
+  const swingRate = computeSwingRate(state.strikes, {
+    strategy: "balanced",
     pitchType,
-    state.onePitchModifier,
-  );
+    onePitchMod: state.onePitchModifier,
+  });
   const swingRoll = getRandomInt(1000);
 
   if (swingRoll < swingRate) {
     const outcomeRoll = getRandomInt(100);
-    const outcome = resolveSwingOutcome(outcomeRoll, 0, 0, 0);
+    const outcome = resolveSwingOutcome(outcomeRoll);
     if (outcome === "whiff") return { type: "strike", payload: { swung: true, pitchType } };
     if (outcome === "foul") return { type: "foul", payload: { pitchType } };
     const contactRoll = getRandomInt(100);

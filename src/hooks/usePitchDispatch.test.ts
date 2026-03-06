@@ -252,7 +252,7 @@ describe("usePitchDispatch", () => {
 });
 
 describe("usePitchDispatch — power strategy hits", () => {
-  // power swing rate: computeSwingRate(0, "power", 0, "fastball", null) = floor(360 * 0.95) = 342
+  // power swing rate: computeSwingRate(0, { strategy: "power", pitchType: "fastball" }) = floor(360 * 0.95) = 342
   // Contact path: swing roll 0.001 (1<342), swing outcome 0.9 (90≥55→contact)
   const makeHitState = (contactRoll: number, typeRoll: number) => {
     const state = makeState({ defensiveShiftOffered: true });
