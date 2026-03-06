@@ -268,6 +268,32 @@ describe("stat mods in hitBall", () => {
     const resultHighMovement = hitBall(Hit.Single, stateHighMovement, () => {});
     expect(resultHighMovement.outs).toBeGreaterThan(stateHighMovement.outs);
   });
+
+  it("pitcher fatigue raises pop-out threshold (tired pitcher → more hits)", () => {
+    // Fresh pitcher (0 batters faced): popOutThreshold = 750 * fatigueFactor(0) = 750 * 1.0 = 750
+    // Tired pitcher (20 batters faced): fatigueFactor ≈ 1.275, threshold ≈ 956 (above 1000 cap → 1000? no, Math.round(750*1.275)=956)
+    // Roll 800/1000:
+    //   fresh pitcher:  800 >= 750 → OUT
+    //   tired pitcher:  800 < 956 → HIT
+    const freshState = makeState({
+      rosterPitchers: [[], []] as [string[], string[]],
+      pitcherBattersFaced: [0, 0] as [number, number],
+    });
+    const tiredState = makeState({
+      rosterPitchers: [[], []] as [string[], string[]],
+      pitcherBattersFaced: [0, 20] as [number, number], // pitching team is 1 (atBat=0)
+    });
+
+    // Fresh: roll=0.8 → 800 >= 750 → out (then grounder check=0.6 → pop-out)
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.8).mockReturnValueOnce(0.6);
+    const freshResult = hitBall(Hit.Single, freshState, () => {});
+    expect(freshResult.outs).toBe(1);
+
+    // Tired: roll=0.8 → 800 < 956 → hit
+    vi.spyOn(rngModule, "random").mockReturnValue(0.8);
+    const tiredResult = hitBall(Hit.Single, tiredState, () => {});
+    expect(tiredResult.baseLayout[0]).toBe(1);
+  });
 });
 
 // ---------------------------------------------------------------------------

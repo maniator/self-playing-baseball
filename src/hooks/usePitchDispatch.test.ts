@@ -178,8 +178,7 @@ describe("usePitchDispatch", () => {
   });
 
   it("dispatches hit: hard contact + typeRoll 15-19 → Triple (balanced strategy)", () => {
-    // Hard contact + typeRoll=14 (15≤14? No: 14 < 15 → Triple cutoff boundary)
-    // typeRoll=17 → 15≤17<20 → Triple
+    // Hard contact (contactRoll=0 < 25) + typeRoll=17 (15≤17<20 → Triple)
     const dispatch = vi.fn();
     const state = makeState({ defensiveShiftOffered: true });
     vi.spyOn(rngModule, "random")

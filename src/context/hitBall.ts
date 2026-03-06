@@ -149,16 +149,16 @@ export const hitBall = (
   // contactMod: higher contact = higher threshold (easier to get hits)
   // movementMod: higher movement = lower threshold (harder to hit clean)
   // velocityMod: higher velocity = slightly lower threshold (harder to make solid contact)
-  // fatigueFactor > 1: tired pitcher → easier to hit → higher pop-out threshold
+  // fatigueFactor > 1: tired pitcher → higher threshold → easier to hit (more balls in play)
   const contactFactor = 1 + batterMods.contactMod / 100;
-  const pitchingFactor =
-    (1 - (pitcherMods.movementMod + pitcherMods.velocityMod / 2) / 100) * (2 - fatigueFactor);
+  const pitchingFactor = 1 - (pitcherMods.movementMod + pitcherMods.velocityMod / 2) / 100;
   const popOutThreshold = Math.round(
     750 *
       stratMod(strategy, "contact") *
       (state.defensiveShift ? 0.85 : 1) *
       contactFactor *
-      Math.max(0.5, pitchingFactor),
+      Math.max(0.5, pitchingFactor) *
+      fatigueFactor,
   );
 
   if (randomNumber >= popOutThreshold && type !== Hit.Homerun && type !== Hit.Walk) {
