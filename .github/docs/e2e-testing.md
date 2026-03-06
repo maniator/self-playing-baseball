@@ -157,8 +157,8 @@ const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
 
 function fnv1a(str) {
   let h = 0x811c9dc5;
-  for (const c of str) {
-    h ^= c.codePointAt(0);
+  for (let i = 0; i < str.length; i += 1) {
+    h ^= str.charCodeAt(i);
     h = Math.imul(h, 0x01000193) >>> 0;
   }
   return h.toString(16).padStart(8, "0");
@@ -169,7 +169,7 @@ function makeSig(header, events) {
   return fnv1a(RXDB_EXPORT_KEY + inner);
 }
 
-const payload = { version: 1, header, events, sig: makeSig(header, []) };
+const payload = { version: 1, header, events, sig: makeSig(header, events) };
 ```
 
 **Key fields in `header.stateSnapshot.state`:**
@@ -190,7 +190,7 @@ const payload = { version: 1, header, events, sig: makeSig(header, []) };
 
 1. Build `header` object with `id`, `name`, `seed`, `homeTeamId`, `awayTeamId`, `schemaVersion: 1`, `setup`, and `stateSnapshot`
 2. Start from `BASE_STATE` (all array/object fields present with safe defaults) and override only what you need
-3. Compute `sig = makeSig(header, [])` using the Node.js snippet above (run via `node` in a scratch script)
+3. Compute `sig = makeSig(header, events)` using the Node.js snippet above (run via `node` in a scratch script)
 4. Place file in `e2e/fixtures/<name>.json`
 5. Use `await loadFixture(page, "<name>.json")` in the test
 

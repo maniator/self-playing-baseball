@@ -41,9 +41,9 @@ Use the following pattern for all `docker run` invocations. The `n 24` step inst
 
 > **Root ownership caveat:** The container runs as `root`. Files written during the run (e.g., `dist/`, `node_modules/`, regenerated snapshot PNGs) will be owned by root on the host. After each `docker run` command, fix ownership so subsequent `git`, `yarn`, and editor operations work:
 > ```bash
-> sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+> sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 > ```
-> The `2>/dev/null || true` makes the command safe to copy-paste even when some directories don't exist yet (e.g., `dist/` is absent on a fresh clone). If `sudo` is unavailable, append `&& chown -R $(id -u):$(id -g) dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true` to the `bash -c` string inside the container (requires the container to have the host user's UID accessible, which may not always be true).
+> The `-h` flag (`--no-dereference`) ensures symlinks inside `node_modules/` are not followed on the host — only the symlink entries themselves get chowned. The `2>/dev/null || true` makes the command safe to copy-paste even when some directories don't exist yet (e.g., `dist/` is absent on a fresh clone).
 
 ```bash
 # Run all E2E tests (all projects)
@@ -53,7 +53,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 
 # Run a single spec file (desktop project only — fastest feedback loop)
 docker run --rm \
@@ -62,7 +62,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
 
 # Run a specific set of projects
 docker run --rm \
@@ -71,7 +71,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test --project=desktop --project=pixel-7 --project=pixel-5"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
 
 # Skip only `yarn build` if dist/ already exists and is up to date (yarn install still runs)
 docker run --rm \
@@ -80,7 +80,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test e2e/tests/smoke.spec.ts --project=desktop"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
 ```
 
 > **Tip:** The Docker image is pre-pulled in the Copilot session setup steps, so `docker run` starts immediately without a download delay.
@@ -117,7 +117,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=desktop --project=pixel-7 --project=pixel-5 --update-snapshots"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 **2. Run `--update-snapshots` for WebKit projects:**
@@ -129,7 +129,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts --project=tablet --project=iphone-15-pro-max --project=iphone-15 --update-snapshots"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 **3. Verify the updated baselines pass:**
@@ -141,7 +141,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ e2e/tests/layout.spec.ts"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 **4. Commit the updated PNG files** (from outside the container, using normal `git` commands):
@@ -165,7 +165,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/visual/ --project=desktop --update-snapshots -g 'home screen'"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 ## Test helpers (`e2e/utils/helpers.ts`)
@@ -220,7 +220,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --reporter=list"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 **Capture traces for post-run inspection (written to `test-results/`):**
@@ -232,7 +232,7 @@ docker run --rm \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
   bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test e2e/tests/failing.spec.ts --project=desktop --trace=on"
-sudo chown -R "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
 **Visual diff failures** — inspect the `-diff.png` and `-received.png` in `test-results/` alongside the committed `-expected.png` baseline. If the diff shows an intentional UI change, regenerate the baseline following the snapshot update flow above.
