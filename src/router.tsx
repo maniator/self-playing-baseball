@@ -110,8 +110,8 @@ export const router = createBrowserRouter([
               </React.Suspense>
             ),
           },
+          { path: "career-stats", element: <Navigate to="/stats" replace /> },
           {
-            path: "stats",
             element: (
               <React.Suspense fallback={null}>
                 <CareerStatsPage />

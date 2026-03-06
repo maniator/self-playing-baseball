@@ -92,10 +92,10 @@ export const cancelAnnouncements = (): void => {
  *  Maps the autoplay interval (ms) to a comfortable speech rate:
  *    1200ms (slow)   → 1.0  — clear, relaxed
  *     700ms (normal) → 1.15 — brisk commentator
- *     350ms (fast)   → 1.6  — excited rapid-fire
+ *     150ms (fast)   → 1.6  — excited rapid-fire
  */
 export const setSpeechRate = (intervalMs: number): void => {
-  const MIN_MS = 350;
+  const MIN_MS = 150;
   const MAX_MS = 1200;
   const MIN_RATE = 1.0;
   const MAX_RATE = 1.6;
