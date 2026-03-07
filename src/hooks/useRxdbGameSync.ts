@@ -129,7 +129,7 @@ export const useRxdbGameSync = (
         rngState: getRngState(),
       },
     }).catch((err) => {
-      appLog.error("useRxdbGameSync: failed to update progress (game over)", err);
+      appLog.error(`useRxdbGameSync: failed to update progress (game over) saveId=${saveId}`, err);
     });
   }, [gameOver, rxSaveIdRef]);
 

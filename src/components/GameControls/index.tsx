@@ -111,6 +111,7 @@ const GameControls: React.FunctionComponent<Props> = ({
               onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                 setSpeed(parseInt(e.target.value, 10))
               }
+              data-testid="speed-select"
             >
               <option value={SPEED_SLOW}>Slow</option>
               <option value={SPEED_NORMAL}>Normal</option>

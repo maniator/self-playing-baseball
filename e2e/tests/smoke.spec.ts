@@ -120,7 +120,7 @@ test.describe("Smoke", () => {
     // remain active throughout the game.
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
-      localStorage.setItem("speed", "350"); // SPEED_FAST
+      localStorage.setItem("speed", "150"); // SPEED_FAST
       localStorage.setItem("_e2eNoInningPause", "1"); // disable muted half-inning pause in CI
     });
     await startGameViaPlayBall(page, { seed: "smoke-final1" });
@@ -184,7 +184,7 @@ test.describe("Smoke", () => {
     // is in localStorage before startGameViaPlayBall mounts the app.
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.evaluate(() => {
-      localStorage.setItem("speed", "350");
+      localStorage.setItem("speed", "150"); // SPEED_FAST
     });
     await startGameViaPlayBall(page, { seed: "perf-smoke1" });
     await waitForLogLines(page, 50, 90_000);

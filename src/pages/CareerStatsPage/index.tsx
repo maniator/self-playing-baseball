@@ -582,7 +582,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
                     <LeaderPlaceholderText>ERA — no qualifier</LeaderPlaceholderText>
                   </LeaderCardPlaceholder>
                 )}
-                {savesLeader ? (
+                {savesLeader && savesLeader.value > 0 ? (
                   <LeaderCard
                     type="button"
                     data-testid="saves-leader-card"

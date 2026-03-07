@@ -102,8 +102,8 @@ describe("GameControls", () => {
   it("changing speed select updates the value", () => {
     renderWithContext(<GameControls />);
     const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "350" } });
-    expect((select as HTMLSelectElement).value).toBe("350");
+    fireEvent.change(select, { target: { value: "150" } });
+    expect((select as HTMLSelectElement).value).toBe("150");
   });
 
   it("changing announcement volume slider fires handler", () => {

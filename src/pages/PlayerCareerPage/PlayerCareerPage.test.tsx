@@ -420,4 +420,92 @@ describe("PlayerCareerPage", () => {
       });
     });
   });
+
+  // ── Bug regression: player name must not show raw globalPlayerId ─────────────
+
+  it("shows player name from roster when player has no game stats (Bug 1 regression)", async () => {
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [
+        {
+          id: "ct_bench",
+          name: "Rovers",
+          abbreviation: "ROV",
+          city: "Austin",
+          schemaVersion: 4,
+          createdAt: "2024-01-01T00:00:00.000Z",
+          updatedAt: "2024-01-01T00:00:00.000Z",
+          source: "custom" as const,
+          roster: {
+            lineup: [],
+            bench: [
+              {
+                id: "bench_1",
+                globalPlayerId: "pl_d29e3bad",
+                name: "Sandy Rivera",
+                role: "batter" as const,
+                batting: { contact: 40, power: 40, speed: 40 },
+                pitching: { control: 40, velocity: 40, stamina: 40 },
+              },
+            ],
+            pitchers: [],
+          },
+          metadata: { notes: "", tags: [], archived: false },
+        },
+      ],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    // No batting or pitching history — player never appeared in a game.
+    vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={["/players/pl_d29e3bad?team=custom:ct_bench"]}>
+        <Routes>
+          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      // Should show the real name from the roster, NOT the raw globalPlayerId.
+      expect(screen.getByText("Sandy Rivera")).toBeInTheDocument();
+      // The raw ID must NOT appear as the heading.
+      expect(screen.queryByText("pl_d29e3bad")).toBeNull();
+    });
+  });
+
+  it("shows 'Unknown Player' when player has no stats and is not found in any roster", async () => {
+    // No custom teams loaded — player is completely unknown.
+    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+    vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
+    vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+
+    render(
+      <MemoryRouter initialEntries={["/players/pl_totally_unknown?team=custom:ct_none"]}>
+        <Routes>
+          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Unknown Player")).toBeInTheDocument();
+      // The raw key must NOT appear as the heading.
+      expect(screen.queryByText("pl_totally_unknown")).toBeNull();
+    });
+  });
 });

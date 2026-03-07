@@ -153,8 +153,26 @@ export function usePlayerCareerData(playerKey: string | undefined) {
   const playerName = React.useMemo<string>(() => {
     if (battingRows.length > 0) return battingRows[battingRows.length - 1].nameAtGameTime;
     if (pitchingRows.length > 0) return pitchingRows[pitchingRows.length - 1].nameAtGameTime;
-    return playerKey ?? "Unknown Player";
-  }, [battingRows, pitchingRows, playerKey]);
+    // No game history yet — look up the player's name from the current roster so that
+    // bench/reserve players who have never appeared in a game show their real name
+    // instead of their raw globalPlayerId (e.g. "pl_d29e3bad").
+    if (playerKey && teamContext) {
+      const teamId = teamContext.startsWith("custom:") ? teamContext.slice("custom:".length) : "";
+      const team = customTeams.find((t) => t.id === teamId);
+      if (team) {
+        const allPlayers = [
+          ...(team.roster.lineup ?? []),
+          ...(team.roster.bench ?? []),
+          ...(team.roster.pitchers ?? []),
+        ] as TeamPlayer[];
+        const player = allPlayers.find(
+          (p) => (p.globalPlayerId ?? `${teamContext}:${p.id}`) === playerKey,
+        );
+        if (player?.name) return player.name;
+      }
+    }
+    return "Unknown Player";
+  }, [battingRows, pitchingRows, playerKey, teamContext, customTeams]);
 
   const roleLabel = React.useMemo<string>(() => {
     const hasBatting = battingRows.length > 0;

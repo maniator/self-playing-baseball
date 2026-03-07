@@ -208,7 +208,10 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   if (obj["type"] !== "customTeams")
     throw new Error(`Invalid custom teams file: expected type "customTeams", got "${obj["type"]}"`);
   if (obj["formatVersion"] !== 1)
-    throw new Error(`Unsupported custom teams format version: ${obj["formatVersion"]}`);
+    throw new Error(
+      `Invalid teams file (unsupported format version: ${obj["formatVersion"]}). ` +
+        `Make sure to export using the Ballgame app (Export All Teams or Export on a single team).`,
+    );
   if (!obj["payload"] || typeof obj["payload"] !== "object")
     throw new Error("Invalid custom teams file: missing payload");
 

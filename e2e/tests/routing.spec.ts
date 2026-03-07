@@ -318,7 +318,7 @@ test.describe("Routing — autoplay pauses off /game", () => {
     test.setTimeout(60_000);
 
     await page.addInitScript(() => {
-      localStorage.setItem("speed", "350"); // SPEED_FAST
+      localStorage.setItem("speed", "150"); // SPEED_FAST
     });
 
     await startGameViaPlayBall(page, { seed: "routing-pause1" });
