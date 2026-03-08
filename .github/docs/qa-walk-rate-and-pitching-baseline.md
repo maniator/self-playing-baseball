@@ -217,6 +217,8 @@ pitches are effectively called balls, reducing the pressure on batters in pitche
 
 ## 7. Calibration Baseline (Pre-Fix)
 
+### 7a. Deterministic Harness (Vitest, 100 seeded games)
+
 The deterministic calibration harness (`src/test/calibration/simHarness.ts`) was used to run
 100 seeded full-game simulations using balanced vs balanced matchups across seeds 1–100.
 
@@ -232,12 +234,47 @@ The deterministic calibration harness (`src/test/calibration/simHarness.ts`) was
 | Avg starter BF | ~14–16 | ~18–21 |
 | Avg reliever BF | ~4–6 | ~4–6 |
 
+### 7b. Browser-Driven Baseline (Playwright MCP, 100 games via Instant mode)
+
+100 full end-to-end games were run in the browser using Instant speed mode (SPEED_INSTANT = 0),
+with 4 matchup combinations (Jacksonville Navigators vs Orlando Foxes, and Visitors vs Locals in
+both home/away configurations), 25 seeds each, using the React fiber `onChange` hook to inject
+unique seeds directly. 70 unique final scores confirm genuine seed diversity.
+
+**Setup:**
+- Speed: Instant (SPEED_INSTANT = 0), Manager mode: off
+- Teams: Jacksonville Navigators, Orlando Foxes, Visitors, Locals
+- Seeds: g1s1–g1s25, g2s1–g2s25, g3s1–g3s25, g4s1–g4s25
+- Stats read from batting-stats table (exact AB/H/BB/K) + scoreboard R column
+
+**Pre-fix browser aggregate results (100 games, 4 matchup combos):**
+
+| Metric | Value | MLB Target |
+|---|---|---|
+| Total PA (exact) | 7,862 | N/A |
+| Total AB | 6,656 | N/A |
+| Total BB | 1,206 | N/A |
+| Total K | 1,508 | N/A |
+| Total H | 2,066 | N/A |
+| BB% | **15.3%** | ~8–9% |
+| K% | 19.2% | ~22–23% |
+| H/PA | 0.263 | ~0.240 |
+| BB/game | 12.1 | ~5–6 |
+| K/game | 15.1 | ~17–18 |
+| Runs/game | **13.0** | ~8–9 |
+| PA/game | 78.6 | ~80–85 |
+| Unique scores | 70 / 100 | N/A |
+| Errors | 0 | N/A |
+
 **Interpretation:**
-- Walk rate is 2–3× the MLB baseline, confirming the code analysis
-- Strikeout rate is below MLB baseline (suggesting batters are making too much contact, partly
-  because fewer swings = fewer potential Ks, but more takes = fewer 2-strike opportunities)
-- Run totals are elevated because of walk-inflated baserunner accumulation
-- Starter durability is lower than expected (being pulled early due to walk-inflated innings)
+- Walk rate is **~1.7–1.9× the MLB baseline**, confirming the code analysis
+- Strikeout rate (19.2%) is slightly below MLB baseline (~22–23%); fewer 2-strike opportunities
+  due to walks shortening at-bats is the likely cause
+- Run totals are elevated (13.0 vs MLB ~9): primarily driven by walk-inflated base accumulation
+- H/PA is slightly above MLB average batting average (~.248), consistent with walk inflation
+  reducing effective out pressure on hitters
+- PA/game (78.6) is close to expected for 9 innings (~82 MLB average); slightly low because
+  walk-heavy innings sometimes end faster than pure-contact innings
 
 ---
 

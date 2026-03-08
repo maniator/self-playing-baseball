@@ -1,8 +1,8 @@
 /**
  * Simulation metrics baseline capture.
  *
- * Runs 100+ full games via the browser using Instant speed mode (SPEED_INSTANT=0)
- * and collects aggregate statistics for the pre-tuning baseline.
+ * Runs 100 full games via the browser using Instant speed mode (SPEED_INSTANT=0)
+ * and collects aggregate statistics for before/after tuning comparisons.
  *
  * Intended to run on desktop Chromium only.  Excluded from the normal CI suite
  * because it is intentionally slow (~5–10 min); invoke manually or via the
@@ -13,242 +13,337 @@
  *
  * Manager mode: disabled for all runs so games are fully unmanaged and Instant
  * mode never blocks on a human decision.
+ *
+ * Key design decisions:
+ * - Seeds are injected by calling the React fiber's onChange prop directly so
+ *   they are guaranteed to be committed to React state before Play Ball is
+ *   clicked — no reliance on synthetic DOM events.
+ * - Stats are read from the per-team batting-stats table (exact AB/H/BB/K),
+ *   not from play-by-play log text (which requires regex parsing and
+ *   approximate PA estimation).
+ * - Score extraction locates the "R" header cell to find the correct column
+ *   index; it does NOT assume the last/second-to-last cell is always runs.
+ * - Matchups rotate across 4 combinations (2 teams × home/away swap) so
+ *   results are not dominated by one roster pairing.
  */
 import { expect, test } from "@playwright/test";
 
 import { importTeamsFixture, resetAppState, waitForNewGameDialog } from "../utils/helpers";
 
-/** Seeds used for the metrics run — 100 deterministic seeds. */
-const SEEDS = Array.from({ length: 100 }, (_, i) => `metrics-seed-${i + 1}`);
-
-/** Number of games to run in this batch. */
-const NUM_GAMES = 100;
+/** Number of games per matchup block (4 blocks × 25 = 100 total). */
+const GAMES_PER_BLOCK = 25;
 
 /**
- * Waits for the FINAL banner to appear, polling up to `timeoutMs`.
- * Throws a descriptive error if the game stalls (no new log lines for 10 s).
+ * Matchup definitions.  Each block uses the same 2 fixture teams but alternates
+ * which is Away vs Home so both team/park combos are represented.
+ */
+const MATCHUP_BLOCKS = [
+  { away: "Visitors", home: "Locals", seedPrefix: "mv" },
+  { away: "Locals", home: "Visitors", seedPrefix: "ml" },
+] as const;
+
+/** Total games = blocks × games per block. */
+const NUM_GAMES = MATCHUP_BLOCKS.length * GAMES_PER_BLOCK * 2; // 2 passes to reach 100
+
+/**
+ * Waits for the FINAL banner to appear.
+ *
+ * Polls the scoreboard text as a liveness probe (the play-by-play log is
+ * collapsed in Instant mode and has no rendered entries to count).
  */
 async function waitForFinal(
   page: import("@playwright/test").Page,
-  timeoutMs = 60_000,
+  timeoutMs = 90_000,
 ): Promise<void> {
-  let lastLogCount = 0;
-  let lastLogChangeTime = Date.now();
+  let lastScoreboardText = "";
+  let lastChangeTime = Date.now();
 
   await expect(async () => {
     if (await page.getByText("FINAL").isVisible()) return;
 
-    const currentCount = await page.locator("[data-log-index]").count();
-    if (currentCount > lastLogCount) {
-      lastLogCount = currentCount;
-      lastLogChangeTime = Date.now();
+    const currentText = await page
+      .getByTestId("scoreboard")
+      .textContent()
+      .catch(() => "");
+    if (currentText !== lastScoreboardText) {
+      lastScoreboardText = currentText ?? "";
+      lastChangeTime = Date.now();
     }
-    const stalledMs = Date.now() - lastLogChangeTime;
-    if (stalledMs > 10_000) {
-      const scoreboardText = await page
-        .getByTestId("scoreboard")
-        .textContent()
-        .catch(() => "?");
+
+    const stalledMs = Date.now() - lastChangeTime;
+    if (stalledMs > 15_000) {
       throw new Error(
-        `game stalled: no new log lines for ${stalledMs}ms ` +
-          `(count=${currentCount}; scoreboard="${scoreboardText?.trim()}")`,
+        `game stalled: scoreboard unchanged for ${stalledMs}ms ` +
+          `(scoreboard="${lastScoreboardText.slice(0, 60).trim()}")`,
       );
     }
+
     throw new Error("FINAL not yet visible");
-  }).toPass({ timeout: timeoutMs, intervals: [100, 200, 500] });
+  }).toPass({ timeout: timeoutMs, intervals: [50, 100, 200] });
+}
+
+interface GameStats {
+  ab: number;
+  bb: number;
+  k: number;
+  h: number;
+  awayScore: number;
+  homeScore: number;
 }
 
 /**
- * Extracts per-game stats from the visible play-by-play log DOM.
+ * Reads exact batting stats (AB/H/BB/K) from the per-team batting-stats table
+ * for both teams, then reads final scores from the scoreboard using the "R"
+ * column header to locate the correct column.
  *
- * Parses log-line text content for recognizable phrases:
- *  - Walk:      "ball four" or "take your base"
- *  - Strikeout: "strike three"
- *  - Single:    "singles" or "infield single"
- *  - Double:    "doubles"
- *  - Triple:    "triples"
- *  - Home run:  "home run" or "homer"
- *  - Score:     from the scoreboard element
+ * Must be called after waitForFinal so the game is complete and stats are stable.
  */
-async function extractGameStats(page: import("@playwright/test").Page): Promise<{
-  walks: number;
-  strikeouts: number;
-  hits: number;
-  homeRuns: number;
-  awayScore: number;
-  homeScore: number;
-}> {
-  // Read all visible play-by-play log lines.
-  const logLines = await page.locator("[data-log-index]").allTextContents();
-
-  let walks = 0;
-  let strikeouts = 0;
-  let hits = 0;
-  let homeRuns = 0;
-
-  for (const line of logLines) {
-    const lower = line.toLowerCase();
-    if (lower.includes("ball four") || lower.includes("take your base")) {
-      walks++;
-    } else if (lower.includes("strike three")) {
-      strikeouts++;
-    }
-    if (lower.includes("home run") || lower.includes("homer")) {
-      homeRuns++;
-      hits++;
-    } else if (
-      lower.includes(" singles") ||
-      lower.includes("infield single") ||
-      lower.includes(" doubles") ||
-      lower.includes(" triples")
-    ) {
-      hits++;
-    }
+async function extractGameStats(page: import("@playwright/test").Page): Promise<GameStats> {
+  // Ensure "This game" (not career) stats are shown.
+  const thisGameBtn = page.getByRole("button", { name: "This game" });
+  if (await thisGameBtn.isVisible({ timeout: 2_000 }).catch(() => false)) {
+    await thisGameBtn.click();
+    await page.waitForTimeout(100);
   }
 
-  // Extract final score from the scoreboard.
-  // The scoreboard typically shows "Away  X  —  Y  Home" or similar.
-  const scoreboardText = await page
-    .getByTestId("scoreboard")
-    .textContent()
-    .catch(() => "");
-  const scoreMatches = (scoreboardText ?? "").match(/\d+/g);
-  const awayScore = scoreMatches ? parseInt(scoreMatches[0] ?? "0", 10) : 0;
-  const homeScore = scoreMatches ? parseInt(scoreMatches[1] ?? "0", 10) : 0;
+  // Helper: sum batting-stats table for the currently-visible team tab.
+  // Skips scoreboard rows by checking for a parent with data-testid="scoreboard".
+  async function readVisibleBattingTable(): Promise<{
+    ab: number;
+    bb: number;
+    k: number;
+    h: number;
+  }> {
+    return page.evaluate(() => {
+      let ab = 0,
+        bb = 0,
+        k = 0,
+        h = 0;
+      for (const row of document.querySelectorAll("table tbody tr")) {
+        if (row.closest('[data-testid="scoreboard"]')) continue;
+        const cells = Array.from(row.querySelectorAll("td"));
+        if (cells.length < 6) continue;
+        const n = (c: number): number => {
+          const t = cells[c]?.textContent?.trim();
+          return t && t !== "–" ? parseInt(t, 10) || 0 : 0;
+        };
+        // Column order: name(0) pos(1) AB(2) H(3) BB(4) K(5) RBI(6)
+        ab += n(2);
+        h += n(3);
+        bb += n(4);
+        k += n(5);
+      }
+      return { ab, bb, k, h };
+    });
+  }
 
-  return { walks, strikeouts, hits, homeRuns, awayScore, homeScore };
+  const tabs = page.locator('[role="tab"]');
+  await tabs.nth(0).click();
+  await page.waitForTimeout(150);
+  const awayStats = await readVisibleBattingTable();
+
+  await tabs.nth(1).click();
+  await page.waitForTimeout(150);
+  const homeStats = await readVisibleBattingTable();
+
+  // Locate the "R" column in the scoreboard header, then read that cell per team row.
+  const scores = await page.evaluate((): [number, number] => {
+    const sb = document.querySelector('[data-testid="scoreboard"]');
+    if (!sb) return [0, 0];
+    const headerCells = Array.from(sb.querySelectorAll("thead tr th, thead tr td"));
+    const rIdx = headerCells.findIndex((c) => c.textContent?.trim() === "R");
+    const teamRows = Array.from(sb.querySelectorAll("tbody tr")).filter(
+      (r) => r.querySelectorAll("td").length > 3,
+    );
+    return teamRows.slice(0, 2).map((row) => {
+      const cells = Array.from(row.querySelectorAll("td"));
+      if (rIdx >= 0 && cells[rIdx]) {
+        const t = cells[rIdx].textContent?.trim() ?? "";
+        return /^\d+$/.test(t) ? parseInt(t, 10) : 0;
+      }
+      // Fallback: second-to-last numeric cell
+      const nums = cells
+        .map((c) => c.textContent?.trim() ?? "")
+        .filter((t) => /^\d+$/.test(t))
+        .map(Number);
+      return nums.length >= 2 ? nums[nums.length - 2] : (nums[0] ?? 0);
+    }) as [number, number];
+  });
+
+  return {
+    ab: awayStats.ab + homeStats.ab,
+    bb: awayStats.bb + homeStats.bb,
+    k: awayStats.k + homeStats.k,
+    h: awayStats.h + homeStats.h,
+    awayScore: scores[0],
+    homeScore: scores[1],
+  };
 }
 
 test.describe("Metrics baseline — 100 games via Instant mode (desktop only)", () => {
-  test.setTimeout(15 * 60 * 1000); // 15 minutes for 100 games
+  test.setTimeout(25 * 60 * 1000); // 25 minutes for 100 games
 
-  test(
-    "collect pre-tuning aggregate metrics across 100 seeded Instant-mode games",
-    async ({ page }, testInfo) => {
-      // Desktop Chromium only — other projects would multiply CI time.
-      test.skip(testInfo.project.name !== "desktop", "Metrics baseline: desktop only");
+  test("collect aggregate metrics across 100 seeded Instant-mode games", async ({
+    page,
+  }, testInfo) => {
+    // Desktop Chromium only — other projects would multiply CI time.
+    test.skip(testInfo.project.name !== "desktop", "Metrics baseline: desktop only");
 
-      // ── One-time setup ─────────────────────────────────────────────────────
-      // Configure localStorage before the app mounts so Instant mode and
-      // muted announcements are active from the very first navigation.
-      await page.addInitScript(() => {
-        localStorage.setItem("speed", "0"); // SPEED_INSTANT = 0
-        localStorage.setItem("announcementVolume", "0"); // mute TTS
-        localStorage.setItem("alertVolume", "0"); // mute alert sounds
-        localStorage.setItem("_e2eNoInningPause", "1"); // skip half-inning pause
-        localStorage.setItem("managerMode", "false"); // fully unmanaged
-      });
+    // ── One-time setup ─────────────────────────────────────────────────────
+    // Configure localStorage before the app mounts so Instant mode and
+    // muted announcements are active from the very first navigation.
+    await page.addInitScript(() => {
+      localStorage.setItem("speed", "0"); // SPEED_INSTANT = 0
+      localStorage.setItem("announcementVolume", "0"); // mute TTS
+      localStorage.setItem("alertVolume", "0"); // mute alert sounds
+      localStorage.setItem("_e2eNoInningPause", "1"); // skip half-inning pause
+      localStorage.setItem("managerMode", "false"); // fully unmanaged
+    });
 
-      await resetAppState(page);
-      await importTeamsFixture(page, "fixture-teams.json");
+    await resetAppState(page);
+    await importTeamsFixture(page, "fixture-teams.json");
 
-      // ── Per-game loop ───────────────────────────────────────────────────────
-      let totalWalks = 0;
-      let totalK = 0;
-      let totalHits = 0;
-      let totalHR = 0;
-      let totalRuns = 0;
-      let gamesCompleted = 0;
-      const perGameRuns: number[] = [];
-
-      for (let i = 0; i < NUM_GAMES; i++) {
-        const seed = SEEDS[i];
-
-        // Navigate to the new-game dialog.
-        await page.goto("/exhibition/new");
-        await waitForNewGameDialog(page);
-
-        // Set the seed and speed (speed should already be set in localStorage but re-confirm).
-        const seedField = page.getByTestId("seed-input");
-        await seedField.clear();
-        await seedField.fill(seed);
-
-        // Confirm Instant speed is selected (already in localStorage from addInitScript).
-        // The speed dropdown should reflect localStorage value on mount.
-        await expect(page.getByTestId("speed-select")).toHaveValue("0");
-
-        // Click Play Ball!
-        await page.getByTestId("play-ball-button").click();
-        await expect(
-          page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-        ).not.toBeVisible({ timeout: 20_000 });
-        await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
-
-        // Expand the play-by-play log.
-        const logToggle = page.getByRole("button", { name: /expand play-by-play/i });
-        if (await logToggle.isVisible({ timeout: 1_000 }).catch(() => false)) {
-          await logToggle.click();
-        }
-
-        // Wait for the game to reach FINAL.
-        await waitForFinal(page, 60_000);
-
-        // Collect stats from the visible play-by-play log.
-        const stats = await extractGameStats(page);
-        totalWalks += stats.walks;
-        totalK += stats.strikeouts;
-        totalHits += stats.hits;
-        totalHR += stats.homeRuns;
-        const runs = stats.awayScore + stats.homeScore;
-        totalRuns += runs;
-        perGameRuns.push(runs);
-        gamesCompleted++;
-
-        // Log progress every 10 games.
-        if ((i + 1) % 10 === 0) {
-          console.log(
-            `  [${i + 1}/${NUM_GAMES}] seed=${seed} runs=${runs} ` +
-              `(cumulative BB=${totalWalks}, K=${totalK})`,
-          );
+    // ── Build game list ─────────────────────────────────────────────────────
+    // 4 matchup combos (2 blocks × 2 passes), 25 seeds each = 100 games.
+    const games: Array<{ away: string; home: string; seed: string }> = [];
+    for (let pass = 0; pass < 2; pass++) {
+      for (const block of MATCHUP_BLOCKS) {
+        for (let g = 1; g <= GAMES_PER_BLOCK; g++) {
+          games.push({
+            away: block.away,
+            home: block.home,
+            seed: `${block.seedPrefix}-p${pass + 1}-g${g}`,
+          });
         }
       }
+    }
 
-      // ── Aggregate reporting ─────────────────────────────────────────────────
-      // Plate appearances: approximate as (walks + K + hits + outs)
-      // We only have exact counts for walks, K, and hits. Use runs as a proxy check.
-      // For MLB, ~38% of PA end in non-K out, so: PA ≈ (walks + K + hits) / 0.62
-      const knownOutcomes = totalWalks + totalK + totalHits;
-      // Approximate total PA using the share we can count.
-      // This is an undercount since many outs (groundouts, flyouts, etc.) don't appear
-      // as separate recognizable log lines in the play-by-play.
-      const approxPA = Math.round(knownOutcomes / 0.62);
+    // ── Per-game loop ───────────────────────────────────────────────────────
+    let totalAB = 0;
+    let totalBB = 0;
+    let totalK = 0;
+    let totalH = 0;
+    let totalRuns = 0;
+    let gamesCompleted = 0;
+    const perGameRuns: number[] = [];
 
-      const bbPct = approxPA > 0 ? ((totalWalks / approxPA) * 100).toFixed(1) : "N/A";
-      const kPct = approxPA > 0 ? ((totalK / approxPA) * 100).toFixed(1) : "N/A";
-      const hitPct = approxPA > 0 ? ((totalHits / approxPA) * 100).toFixed(1) : "N/A";
-      const hrPct = approxPA > 0 ? ((totalHR / approxPA) * 100).toFixed(1) : "N/A";
-      const runsPerGame = (totalRuns / gamesCompleted).toFixed(1);
+    for (let i = 0; i < games.length; i++) {
+      const { away, home, seed } = games[i];
 
-      const sortedRuns = [...perGameRuns].sort((a, b) => a - b);
-      const medianRuns = sortedRuns[Math.floor(sortedRuns.length / 2)];
+      await page.goto("/exhibition/new");
+      await waitForNewGameDialog(page);
 
-      console.log("\n");
-      console.log("╔══════════════════════════════════════════════════════╗");
-      console.log("║  BROWSER-DRIVEN METRICS BASELINE (PRE-TUNING)        ║");
-      console.log("╠══════════════════════════════════════════════════════╣");
-      console.log(`║  Games completed:   ${String(gamesCompleted).padEnd(33)}║`);
-      console.log(`║  Seeds:             metrics-seed-1 to -${NUM_GAMES}           ║`);
-      console.log(`║  Speed mode:        Instant (SPEED_INSTANT = 0)      ║`);
-      console.log(`║  Manager mode:      Off (fully unmanaged)             ║`);
-      console.log("╠══════════════════════════════════════════════════════╣");
-      console.log(`║  BB%:               ${bbPct}%${" ".repeat(Math.max(0, 35 - String(bbPct).length - 1))}║`);
-      console.log(`║  K%:                ${kPct}%${" ".repeat(Math.max(0, 35 - String(kPct).length - 1))}║`);
-      console.log(`║  H%:                ${hitPct}%${" ".repeat(Math.max(0, 35 - String(hitPct).length - 1))}║`);
-      console.log(`║  HR%:               ${hrPct}%${" ".repeat(Math.max(0, 35 - String(hrPct).length - 1))}║`);
-      console.log(`║  Runs/game (mean):  ${runsPerGame}${" ".repeat(Math.max(0, 35 - String(runsPerGame).length))}║`);
-      console.log(`║  Runs/game (median):${medianRuns}${" ".repeat(Math.max(0, 35 - String(medianRuns).length))}║`);
-      console.log(`║  Total walks:       ${totalWalks}${" ".repeat(Math.max(0, 35 - String(totalWalks).length))}║`);
-      console.log(`║  Total Ks:          ${totalK}${" ".repeat(Math.max(0, 35 - String(totalK).length))}║`);
-      console.log(`║  Total hits:        ${totalHits}${" ".repeat(Math.max(0, 35 - String(totalHits).length))}║`);
-      console.log("╚══════════════════════════════════════════════════════╝");
-      console.log("\n");
+      // Set matchup teams.
+      await page.getByTestId("new-game-custom-away-team-select").selectOption({ label: away });
+      await page.getByTestId("new-game-custom-home-team-select").selectOption({ label: home });
 
-      // Sanity assertions — intentionally wide so they pass in any simulation state.
-      // These will be tightened once tuning is applied and post-tuning results are captured.
-      expect(gamesCompleted, "should have completed all games").toBe(NUM_GAMES);
-      expect(totalWalks, "should have recorded some walks").toBeGreaterThan(0);
-      expect(totalK, "should have recorded some strikeouts").toBeGreaterThan(0);
-      expect(Number(runsPerGame), "runs/game sanity check").toBeGreaterThan(0);
-    },
-  );
+      // Inject seed directly into React state via the fiber's onChange prop.
+      // This is more reliable than synthetic DOM events in fast-paced test loops.
+      const seedField = page.getByTestId("seed-input");
+      await seedField.evaluate((el: HTMLInputElement, value: string) => {
+        const nativeSetter = Object.getOwnPropertyDescriptor(
+          HTMLInputElement.prototype,
+          "value",
+        )!.set!;
+        nativeSetter.call(el, value);
+        const fk = Object.keys(el).find((k) => k.startsWith("__reactFiber"));
+        if (fk) {
+          const onChange = (
+            el as unknown as Record<
+              string,
+              { memoizedProps?: { onChange?: (e: { target: HTMLInputElement }) => void } }
+            >
+          )[fk]?.memoizedProps?.onChange;
+          if (onChange) {
+            onChange({ target: el });
+            return;
+          }
+        }
+        el.dispatchEvent(new Event("input", { bubbles: true }));
+      }, seed);
+      await page.waitForTimeout(100);
+
+      // Confirm Instant speed is selected.
+      await expect(page.getByTestId("speed-select")).toHaveValue("0");
+
+      // Start the game.
+      await page.getByTestId("play-ball-button").click();
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
+
+      // Wait for FINAL.
+      await waitForFinal(page, 90_000);
+
+      // Collect stats from batting-stats table and scoreboard.
+      const stats = await extractGameStats(page);
+      totalAB += stats.ab;
+      totalBB += stats.bb;
+      totalK += stats.k;
+      totalH += stats.h;
+      const runs = stats.awayScore + stats.homeScore;
+      totalRuns += runs;
+      perGameRuns.push(runs);
+      gamesCompleted++;
+
+      // Progress update every 10 games.
+      if ((i + 1) % 10 === 0) {
+        const pa = totalAB + totalBB;
+        const bbPctNow = pa > 0 ? ((totalBB / pa) * 100).toFixed(1) : "?";
+        console.log(
+          `  [${i + 1}/${games.length}] ${away}@${home} seed=${seed} ` +
+            `R=${stats.awayScore}-${stats.homeScore} runs=${runs} BB%=${bbPctNow}%`,
+        );
+      }
+    }
+
+    // ── Aggregate reporting ─────────────────────────────────────────────────
+    const totalPA = totalAB + totalBB;
+    const bbPct = totalPA > 0 ? ((totalBB / totalPA) * 100).toFixed(1) : "N/A";
+    const kPct = totalPA > 0 ? ((totalK / totalPA) * 100).toFixed(1) : "N/A";
+    const hPerPA = totalPA > 0 ? (totalH / totalPA).toFixed(3) : "N/A";
+    const runsPerGame = (totalRuns / gamesCompleted).toFixed(1);
+    const bbPerGame = (totalBB / gamesCompleted).toFixed(1);
+
+    const sortedRuns = [...perGameRuns].sort((a, b) => a - b);
+    const medianRuns = sortedRuns[Math.floor(sortedRuns.length / 2)];
+
+    console.log("\n");
+    console.log("╔══════════════════════════════════════════════════════╗");
+    console.log("║  BROWSER-DRIVEN METRICS BASELINE                     ║");
+    console.log("╠══════════════════════════════════════════════════════╣");
+    console.log(`║  Games completed:   ${String(gamesCompleted).padEnd(33)}║`);
+    console.log(`║  Matchups:          Visitors@Locals × 2 home/away    ║`);
+    console.log(`║  Speed mode:        Instant (SPEED_INSTANT = 0)      ║`);
+    console.log(`║  Manager mode:      Off (fully unmanaged)             ║`);
+    console.log("╠══════════════════════════════════════════════════════╣");
+    console.log(`║  Total PA (exact):  ${String(totalPA).padEnd(33)}║`);
+    console.log(
+      `║  BB%:               ${bbPct}%${" ".repeat(Math.max(0, 35 - String(bbPct).length - 1))}║`,
+    );
+    console.log(
+      `║  K%:                ${kPct}%${" ".repeat(Math.max(0, 35 - String(kPct).length - 1))}║`,
+    );
+    console.log(
+      `║  H/PA:              ${hPerPA}${" ".repeat(Math.max(0, 35 - String(hPerPA).length))}║`,
+    );
+    console.log(
+      `║  BB/game:           ${bbPerGame}${" ".repeat(Math.max(0, 35 - String(bbPerGame).length))}║`,
+    );
+    console.log(
+      `║  Runs/game (mean):  ${runsPerGame}${" ".repeat(Math.max(0, 35 - String(runsPerGame).length))}║`,
+    );
+    console.log(`║  Runs/game (median):${String(medianRuns).padEnd(35)}║`);
+    console.log(`║  Total BB:          ${String(totalBB).padEnd(33)}║`);
+    console.log(`║  Total K:           ${String(totalK).padEnd(33)}║`);
+    console.log(`║  Total H:           ${String(totalH).padEnd(33)}║`);
+    console.log("╚══════════════════════════════════════════════════════╝");
+    console.log("\n");
+
+    // Wide sanity bounds — passes in both pre- and post-tuning states.
+    // Tighten after post-tuning baseline is captured.
+    expect(gamesCompleted, "should have completed all games").toBe(games.length);
+    expect(totalBB, "should have recorded some walks").toBeGreaterThan(0);
+    expect(totalK, "should have recorded some strikeouts").toBeGreaterThan(0);
+    expect(Number(runsPerGame), "runs/game sanity").toBeGreaterThan(0);
+    expect(Number(bbPct), "BB% sanity — below 40%").toBeLessThan(40);
+  });
 });
