@@ -801,6 +801,16 @@ yarn build && npx playwright test --config=playwright-metrics.config.ts --projec
 - **AI hook thresholds** — `AI_FATIGUE_THRESHOLD_HIGH = 100 pitches` (factor **1.225**), `AI_FATIGUE_THRESHOLD_MEDIUM = 85 pitches` (factor **1.09**). Previously BF-based.
 - **Post-game stats** — `pitchesThrown` added to `PitcherGameStatDoc` (RxDB schema v0→v1).
 
+### RxDB upgrade path for `pitchesThrown`
+
+**Existing local DBs upgrade cleanly.** The `pitcherGameStats` collection is bumped from version 0 to version 1. The migration strategy is:
+
+```ts
+1: (oldDoc) => ({ ...oldDoc, pitchesThrown: 0 })
+```
+
+Any existing pitcher-game-stat records are backfilled with `pitchesThrown = 0` on first launch. No manual intervention, no DB reset, no data loss. New records written after the upgrade are populated normally from the reducer's pitch-count tracking. The `pitchesThrown` field is not yet shown in any UI, so the neutral default on old records has no visible impact.
+
 ### Round 0 — Baseline confirmation (post-PR-140 master)
 
 | Metric | Value |
@@ -956,7 +966,7 @@ The BB% browser result (10.20%) is a modest improvement from baseline (10.42%) �
 1. **K% protected** — 23.21% is the best K% result across all passes, up from 22.70%. The concern about K% regression from the harness was not confirmed in the browser.
 2. **BB% moved in the right direction** — 10.20% vs 10.42% baseline. Smaller improvement than hoped, but still a gain with no harm to other stats.
 3. **Runs/game stable** — 10.30 vs 10.5 baseline. Slight improvement, well within noise.
-4. **Pitcher change model improved** — pitch-count-first fatigue creates more realistic hook behavior, even though it didn't dramatically change aggregate BB% in the browser.
+4. **Pitcher-change behavior: more realistic, less robotic** — under the old BF-only model, starters were hooked at a fixed batters-faced count regardless of how many pitches they threw; a pitcher who carved through 5 innings on 60 pitches was pulled at the same point as one who needed 110 pitches for the same outs. Under the new pitch-count-first model, the efficient 60-pitch outing stays in, while the 110-pitch grind triggers the hook earlier. The harness measured 2.3 pitching changes/game — a plausible rate that no longer aligns rigidly with inning boundaries. Qualitative observation from watching browser games: no visibly robotic same-inning double-hooks, and starters with clean outings routinely pitch deeper into games than before.
 5. **No regressions** — every metric is equal-to or better than the post-PR-140 baseline.
 
 The BB% gap from the target (~8–9%) remains, but the take-base lever is exhausted (PR #140) and the pitch-count-first fatigue model has been implemented. The remaining ~1.2 pp gap is structural and would require either lineup/batting-profile changes or further fatigue modeling that is out of scope for this PR.
