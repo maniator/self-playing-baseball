@@ -273,4 +273,57 @@ describe("useAutoPlayScheduler", () => {
 
     logErrorSpy.mockRestore();
   });
+
+  // -------------------------------------------------------------------------
+  // Instant mode (speed === 0) — must skip speech gating and inning pauses.
+  // -------------------------------------------------------------------------
+
+  it("fires immediately (no speech gate) in Instant mode (speed=0) even when speech is pending", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(true); // speech "pending"
+    renderScheduler({
+      gameStarted: true,
+      muted: false, // NOT muted, but instant mode should skip speech gating
+      speed: 0, // SPEED_INSTANT
+      handlePitch: handleClick,
+    });
+    // Even with speech pending, instant mode fires on next tick (delay=0)
+    vi.advanceTimersByTime(10);
+    expect(handleClick).toHaveBeenCalled();
+  });
+
+  it("instant mode skips inning pause at half-inning transition", () => {
+    const handleClick = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+
+    const { rerender } = renderScheduler({
+      gameStarted: true,
+      muted: true,
+      speed: 0, // SPEED_INSTANT
+      handlePitch: handleClick,
+      inning: 1,
+      atBat: 0 as 0 | 1,
+    });
+
+    // Advance past the initial tick so the scheduler fires at least once.
+    vi.advanceTimersByTime(10);
+    handleClick.mockClear();
+
+    // Trigger half-inning transition.
+    rerender({
+      gameStarted: true,
+      muted: true,
+      speed: 0,
+      handlePitch: handleClick,
+      inning: 1,
+      atBat: 1 as 0 | 1,
+      pendingDecision: null,
+      managerMode: false,
+      gameOver: false,
+    });
+
+    // With instant mode, should fire immediately even at half-inning boundary — no 1500ms pause.
+    vi.advanceTimersByTime(1);
+    expect(handleClick).toHaveBeenCalled();
+  });
 });
