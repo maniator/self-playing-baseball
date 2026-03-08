@@ -3,7 +3,7 @@ import * as React from "react";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@features/customTeams/adapters/customTeamAdapter", () => ({
+vi.mock("@feat/customTeams/adapters/customTeamAdapter", () => ({
   customTeamToDisplayName: vi.fn((team: { name: string }) => team.name),
 }));
 

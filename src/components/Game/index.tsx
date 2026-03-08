@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamAdapter";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";

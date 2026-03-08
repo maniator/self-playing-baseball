@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { resolveCustomIdsInString } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useNavigate, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";

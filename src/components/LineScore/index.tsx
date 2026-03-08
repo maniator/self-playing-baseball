@@ -3,7 +3,7 @@ import * as React from "react";
 import {
   customTeamToAbbreviation,
   resolveTeamLabel,
-} from "@features/customTeams/adapters/customTeamAdapter";
+} from "@feat/customTeams/adapters/customTeamAdapter";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";

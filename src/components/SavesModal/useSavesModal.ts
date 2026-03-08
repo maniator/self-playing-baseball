@@ -3,7 +3,7 @@ import * as React from "react";
 import {
   resolveCustomIdsInString,
   resolveTeamLabel,
-} from "@features/customTeams/adapters/customTeamAdapter";
+} from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";

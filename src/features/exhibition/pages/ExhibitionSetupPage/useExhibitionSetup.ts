@@ -8,7 +8,7 @@ import {
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
   validateCustomTeamForGame,
-} from "@features/customTeams/adapters/customTeamAdapter";
+} from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";
 import { getSpEligiblePitchers } from "@components/NewGameDialog";

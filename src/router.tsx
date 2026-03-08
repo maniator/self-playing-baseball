@@ -9,7 +9,7 @@ import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import RootLayout from "@components/RootLayout";
 
 const CareerStatsPage = React.lazy(() => import("./pages/CareerStatsPage"));
-const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
+const ExhibitionSetupPage = React.lazy(() => import("@feat/exhibition/pages/ExhibitionSetupPage"));
 const GamePage = React.lazy(() => import("./pages/GamePage"));
 const HelpPage = React.lazy(() => import("./pages/HelpPage"));
 const PlayerCareerPage = React.lazy(() => import("./pages/PlayerCareerPage"));

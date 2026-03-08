@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { customTeamToDisplayName } from "@features/customTeams/adapters/customTeamAdapter";
+import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { CustomTeamDoc } from "@storage/types";
 

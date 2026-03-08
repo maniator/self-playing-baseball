@@ -6,7 +6,7 @@
  */
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useNavigate } from "react-router";
 
 import { BackBtn, PageHeader } from "@components/PageLayout/styles";

@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import StarterPitcherSelector from "@feat/exhibition/components/StarterPitcherSelector";
 import { useNavigate, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";
@@ -15,7 +16,6 @@ import {
   TeamValidationError,
 } from "@components/NewGameDialog/styles";
 
-import StarterPitcherSelector from "./StarterPitcherSelector";
 import { BackBtn, PageContainer, PageHeader, PageTitle } from "./styles";
 import { useExhibitionSetup } from "./useExhibitionSetup";
 

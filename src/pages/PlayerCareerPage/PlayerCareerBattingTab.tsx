@@ -1,7 +1,7 @@
 /** Batting tab panel for the PlayerCareerPage. */
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { CustomTeamDoc, PlayerGameStatDoc } from "@storage/types";
 

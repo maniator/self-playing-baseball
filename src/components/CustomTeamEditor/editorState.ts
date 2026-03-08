@@ -1,4 +1,4 @@
-import type { CustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
+import type { CustomTeamDraft } from "@feat/customTeams/generation/generateDefaultTeam";
 
 import { generateSeed } from "@storage/generateId";
 import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";

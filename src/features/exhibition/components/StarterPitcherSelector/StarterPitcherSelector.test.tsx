@@ -4,7 +4,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
-import StarterPitcherSelector, { type SpPitcher } from "./StarterPitcherSelector";
+import StarterPitcherSelector, { type SpPitcher } from ".";
 
 const SP_PITCHERS: SpPitcher[] = [
   { id: "p1", idx: 0, name: "Ace Starter", pitchingRole: "SP" },

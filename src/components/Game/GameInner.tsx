@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { resolveRestoreLabels } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveRestoreLabels } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";

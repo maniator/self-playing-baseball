@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { generateDefaultCustomTeamDraft } from "@features/customTeams/generation/generateDefaultTeam";
+import { generateDefaultCustomTeamDraft } from "@feat/customTeams/generation/generateDefaultTeam";
 
 import type { EditorAction, EditorState } from "./editorState";
 import {

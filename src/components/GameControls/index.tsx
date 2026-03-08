@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 
 import { Strategy } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
