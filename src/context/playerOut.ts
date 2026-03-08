@@ -4,9 +4,10 @@ import { updateActivePitcherLog } from "./pitcherLog";
 
 /**
  * Increments the pitching team's pitch count.
- * Called once per pitch actually thrown to a batter:
+ * Called once per pitch event to a batter in this engine:
  * balls, called/swinging strikes, fouls (whether count advances or stays),
- * balls in play, and intentional walk throws all count.
+ * balls in play, and intentional_walk events all count.
+ * An intentional walk is modeled as a single pitch event here (not four pitches as in real baseball).
  * Steal attempts do NOT count — they are baserunning events, not pitches to the batter.
  */
 export const incrementPitchCount = (state: State): State => {

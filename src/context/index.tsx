@@ -207,9 +207,10 @@ export interface State {
    */
   pitcherBattersFaced: [number, number];
   /**
-   * Number of pitches thrown to batters by the current pitcher per team since their last entry.
+   * Number of pitch events thrown to batters by the current pitcher per team since their last entry.
    * Reset to 0 when a new pitcher comes in. Primary workload signal for fatigue.
-   * Counts all pitches thrown to a batter: strikes, balls, fouls, balls in play, and IBBs.
+   * Counts every pitch event to a batter: strikes, balls, fouls, balls in play, and intentional walks.
+   * An intentional walk (`intentional_walk`) is modeled as a single pitch event here (not four pitches).
    * Steal attempts do NOT count — they are baserunning events, not pitches to the batter.
    * [away, home]
    */
