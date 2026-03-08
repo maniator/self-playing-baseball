@@ -9,7 +9,7 @@
  */
 import { customTeamToPlayerOverrides } from "@features/customTeams/adapters/customTeamAdapter";
 import { readFileSync } from "fs";
-import { resolve } from "path";
+import { join } from "path";
 import { describe, expect, it } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
@@ -51,7 +51,7 @@ type FixtureTeam = {
   roster: { lineup: TeamPlayer[]; bench: TeamPlayer[]; pitchers: TeamPlayer[] };
 };
 
-const FIXTURE_PATH = resolve(__dirname, "../../../e2e/fixtures/metrics-teams.json");
+const FIXTURE_PATH = join(process.cwd(), "e2e/fixtures/metrics-teams.json");
 const fixtureRaw = JSON.parse(readFileSync(FIXTURE_PATH, "utf-8")) as {
   payload: { teams: FixtureTeam[] };
 };
@@ -83,8 +83,10 @@ const GAMES_PER_BLOCK = 10;
 // re-renders, audio, animation) can still cause divergence after game start.
 
 function seedStrToNumber(s: string): number {
-  const radix = /[a-z]/i.test(s) ? 36 : 10;
-  return parseInt(s, radix) >>> 0 || 1;
+  const trimmed = s.trim();
+  if (!trimmed) return 0;
+  const radix = /[a-z]/i.test(trimmed) ? 36 : 10;
+  return parseInt(trimmed, radix) >>> 0;
 }
 
 // ── Single-game runner ─────────────────────────────────────────────────────
@@ -150,7 +152,10 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   let maxTicks = 50000;
   let pitchingChanges = 0;
 
-  while (!state.gameOver && maxTicks-- > 0) {
+  while (!state.gameOver) {
+    if (maxTicks-- <= 0) {
+      throw new Error("customTeamMetrics harness exceeded maxTicks without reaching gameOver");
+    }
     const pitchingTeamIdx = (1 - state.atBat) as 0 | 1;
 
     if (state.balls === 0 && state.strikes === 0) {
