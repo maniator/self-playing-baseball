@@ -5,12 +5,12 @@ import {
   resolveCustomIdsInString,
   resolveTeamLabel,
 } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useImportSave } from "@feat/saves/hooks/useImportSave";
+import { useSaveSlotActions } from "@feat/saves/hooks/useSaveSlotActions";
 
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { useImportSave } from "@hooks/useImportSave";
-import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
 import { downloadJson } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
