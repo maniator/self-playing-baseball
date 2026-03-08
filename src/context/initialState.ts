@@ -117,6 +117,10 @@ export const backfillRestoredState = (restored: State): State => {
     decisionLog: base.decisionLog ?? [],
     inningRuns: base.inningRuns ?? [[], []],
     batterIndex: base.batterIndex ?? [0, 0],
+    // Clamp atBat to the valid 0|1 range — corrupted saves (e.g. fixtures written
+    // with atBat=3 from a bad snapshot) would yield pitchingTeam=-2, causing
+    // out-of-bounds array access in updateActivePitcherLog and a runtime crash.
+    atBat: (base.atBat === 0 || base.atBat === 1) ? base.atBat : (0 as 0 | 1),
     rosterBench: base.rosterBench ?? [[], []],
     rosterPitchers: base.rosterPitchers ?? [[], []],
     activePitcherIdx: base.activePitcherIdx ?? [0, 0],

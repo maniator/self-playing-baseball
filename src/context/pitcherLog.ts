@@ -59,8 +59,10 @@ export const updateActivePitcherLog = (
   teamIdx: 0 | 1,
   updater: (entry: PitcherLogEntry) => PitcherLogEntry,
 ): [PitcherLogEntry[], PitcherLogEntry[]] => {
-  const entries = pitcherGameLog[teamIdx];
-  if (entries.length === 0) return pitcherGameLog;
+  // Guard: pitcherGameLog[teamIdx] can be undefined at runtime if teamIdx is out-of-bounds
+  // (e.g. pitchingTeam derived from an invalid atBat value in a corrupted restore).
+  const entries = pitcherGameLog[teamIdx] as PitcherLogEntry[] | undefined;
+  if (!entries || entries.length === 0) return pitcherGameLog;
   const lastIdx = entries.length - 1;
   const updated = updater(entries[lastIdx]);
   const newEntries = [...entries.slice(0, lastIdx), updated];

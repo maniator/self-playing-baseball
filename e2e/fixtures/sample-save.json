@@ -36,7 +36,7 @@
         "outs": 2,
         "strikes": 1,
         "balls": 2,
-        "atBat": 3,
+        "atBat": 1,
         "gameOver": false,
         "pendingDecision": null,
         "onePitchModifier": null,
@@ -80,5 +80,5 @@
     }
   },
   "events": [],
-  "sig": "6be5c253"
+  "sig": "f65353c1"
 }
