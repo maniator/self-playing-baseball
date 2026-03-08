@@ -8,7 +8,7 @@
  * See that module for the full rule documentation.
  */
 
-import type { PitcherLogEntry } from "@context/index";
+import type { PitcherLogEntry } from "@feat/gameplay/context/index";
 
 import { computeSaveHoldBS } from "./computeSaveHoldBS";
 

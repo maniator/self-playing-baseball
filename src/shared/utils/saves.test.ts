@@ -1,6 +1,5 @@
+import * as rngModule from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import * as rngModule from "@utils/rng";
 
 import { currentSeedStr } from "./saves";
 

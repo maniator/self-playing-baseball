@@ -12,7 +12,7 @@
  *                       or go-ahead run.  0-out appearances are still eligible for BS.
  */
 
-import type { PitcherLogEntry } from "@context/index";
+import type { PitcherLogEntry } from "@feat/gameplay/context/index";
 
 /** Per-pitcher SV/HLD/BS totals for one game. */
 export type SaveHoldBSResult = Record<string, { saves: number; holds: number; blownSaves: number }>;

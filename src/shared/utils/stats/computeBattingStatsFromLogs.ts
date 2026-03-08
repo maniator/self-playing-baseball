@@ -1,5 +1,5 @@
-import { Hit } from "@constants/hitTypes";
-import type { PlayLogEntry, StrikeoutEntry } from "@context/index";
+import type { PlayLogEntry, StrikeoutEntry } from "@feat/gameplay/context/index";
+import { Hit } from "@shared/constants/hitTypes";
 
 /** Accumulated batting statistics for a single player. */
 export type BatterStat = {

@@ -2,9 +2,9 @@
  * Tests for src/utilities/rng.ts and getRandomInt.ts
  */
 
+import getRandomInt from "@feat/gameplay/utils/getRandomInt";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import getRandomInt from "./getRandomInt";
 import {
   buildReplayUrl,
   getDecisionsFromUrl,
