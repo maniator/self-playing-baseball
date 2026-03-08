@@ -6,10 +6,16 @@
  * Output is written to docs/screenshots/.
  */
 
+import {
+  type Browser,
+  type BrowserContext,
+  chromium,
+  devices,
+  type Page,
+  test,
+} from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
-
-import { chromium, devices, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
 
 import {
   loadFixture,
@@ -74,7 +80,10 @@ test.describe("Documentation Screenshots", () => {
     contexts = new Map();
     pages = new Map();
 
-    for (const [name, viewport] of Object.entries(VIEWPORTS) as [ViewportName, { width: number; height: number }][]) {
+    for (const [name, viewport] of Object.entries(VIEWPORTS) as [
+      ViewportName,
+      { width: number; height: number },
+    ][]) {
       const ctx = await browser.newContext({
         viewport,
         ...(name === "mobile" ? { userAgent: devices["iPhone 15 Pro Max"].userAgent } : {}),
@@ -98,7 +107,7 @@ test.describe("Documentation Screenshots", () => {
   async function forBothViewports(
     fn: (page: Page, viewportName: ViewportName) => Promise<void>,
   ): Promise<void> {
-    for (const name of (["desktop", "mobile"] as ViewportName[])) {
+    for (const name of ["desktop", "mobile"] as ViewportName[]) {
       const pg = pages.get(name)!;
       await fn(pg, name);
     }
@@ -108,7 +117,10 @@ test.describe("Documentation Screenshots", () => {
   test("1. Home screen", async () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
-      await page.waitForSelector("[data-testid='home-screen']", { state: "visible", timeout: 30_000 });
+      await page.waitForSelector("[data-testid='home-screen']", {
+        state: "visible",
+        timeout: 30_000,
+      });
       await captureScreenshot(page, `home-${viewport}.png`);
     });
   });
@@ -137,7 +149,10 @@ test.describe("Documentation Screenshots", () => {
       if (await logToggle.isVisible({ timeout: 2_000 }).catch(() => false)) {
         await logToggle.click();
         // Wait until the log section is visible/expanded before screenshotting
-        await page.getByTestId("play-by-play-log").waitFor({ state: "visible", timeout: 5_000 }).catch(() => {});
+        await page
+          .getByTestId("play-by-play-log")
+          .waitFor({ state: "visible", timeout: 5_000 })
+          .catch(() => {});
       }
       await captureScreenshot(page, `in-game-${viewport}.png`);
     });
