@@ -6,9 +6,12 @@
  *
  * Design:
  * - Pure functions — testable without mocking side effects.
- * - Deterministic given the same inputs (no random calls inside).
+ * - Deterministic given the same inputs (pitching-change decisions use random()
+ *   to add natural variance to pull timing so hooks feel less robotic).
  * - Only handles actions available in the current game state.
  */
+
+import { random } from "@utils/rng";
 
 import type { DecisionType, State, Strategy } from "./index";
 import { computeFatigueFactor } from "./pitchSimulation";
@@ -160,9 +163,25 @@ export function makeAiPitchingDecision(
   const fatigueFactor = computeFatigueFactor(battersFaced, staminaMod);
 
   const isHighFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_HIGH;
-  const isMediumFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM && state.inning >= 6;
+
+  // Medium-fatigue hook requires BOTH a fatigue threshold AND a game-context
+  // condition (late inning, tight game, or runners on base) so starters aren't
+  // pulled mechanically at the same BF count every single game.
+  const isTightGame = Math.abs((state.score[0] ?? 0) - (state.score[1] ?? 0)) <= 2;
+  const hasRunnersOn =
+    state.baseLayout != null && (state.baseLayout[0] || state.baseLayout[1] || state.baseLayout[2]);
+  const isMediumFatigue =
+    fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM && (state.inning >= 7 || isTightGame || hasRunnersOn);
 
   if (!isHighFatigue && !isMediumFatigue) return { kind: "none" };
+
+  // Probabilistic pull — breaks fixed-BF robotic hook feel.
+  // High fatigue: 60% at threshold, scaling toward 100% as fatigue grows further.
+  // Medium fatigue (context conditions already met): flat 40%.
+  const pullProbability = isHighFatigue
+    ? Math.min(1, 0.6 + (fatigueFactor - AI_FATIGUE_FACTOR_HIGH) * 2.5)
+    : 0.4;
+  if (random() > pullProbability) return { kind: "none" };
 
   // Find the best available reliever.
   const relieverIdx = findBestReliever(
@@ -331,7 +350,7 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
  * Rules (evaluated in priority order):
  *  - Down 2+ late game (inning ≥ 7) → "power"   (swing for extra bases)
  *  - Down 1  late game (inning ≥ 7) → "aggressive" (pressure the bases)
- *  - Ahead 3+ runs → "patient"                   (work the count, protect lead)
+ *  - Ahead 3+ runs → "balanced"                   (no need to force walks; protect by playing normally)
  *  - 2 outs, close game (±2), inning ≥ 7 → "aggressive" (extend the inning)
  *  - Early game with runners in scoring position → "contact" (put ball in play)
  *  - Default → "balanced"
@@ -347,7 +366,9 @@ export function makeAiStrategyDecision(state: State, battingTeamIdx: 0 | 1): Str
     if (runDiff === -1) return "aggressive";
   }
 
-  if (runDiff >= 3) return "patient";
+  // Removed: if (runDiff >= 3) return "patient" — this created a walk-farming
+  // feedback loop where the AI intentionally worked counts while already ahead,
+  // inflating BB% by an extra 2–3 percentage points across a season.
 
   if (outs === 2 && inning >= 7 && Math.abs(runDiff) <= 2) return "aggressive";
 

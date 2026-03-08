@@ -76,27 +76,38 @@ export const useAutoPlayScheduler = ({
         // React cleans up this effect (cancelled=true, clearTimeout) and re-runs it
         // with gameOver=true so it returns early without starting a new chain.
 
-        if (!muted && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
+        // Instant mode (speed === 0): skip all speech/inning delays.
+        const isInstant = speed === 0;
+
+        if (!isInstant && !muted && isSpeechPending() && extraWait < MAX_SPEECH_WAIT_MS) {
           extraWait += SPEECH_POLL_MS;
           tick(SPEECH_POLL_MS);
           return;
         }
 
-        // Detect half-inning transitions for muted pause
-        // Note: We use refs to track previous values across effect re-runs.
-        // The effect re-runs when inning/atBat change, but the ref persists.
-        if (inning !== prevInningRef.current || atBat !== prevAtBatRef.current) {
-          needsInningPause = true;
+        if (!isInstant) {
+          // Detect half-inning transitions for muted pause
+          // Note: We use refs to track previous values across effect re-runs.
+          // The effect re-runs when inning/atBat change, but the ref persists.
+          if (inning !== prevInningRef.current || atBat !== prevAtBatRef.current) {
+            needsInningPause = true;
+            prevInningRef.current = inning;
+            prevAtBatRef.current = atBat;
+          }
+
+          if (muted && needsInningPause) {
+            needsInningPause = false;
+            extraWait = 0;
+            tick(INNING_PAUSE_MS);
+            return;
+          }
+        } else {
+          // Always update inning refs in instant mode (no pause applied, just track
+          // for when we exit instant mode so refs stay consistent).
           prevInningRef.current = inning;
           prevAtBatRef.current = atBat;
         }
 
-        if (muted && needsInningPause) {
-          needsInningPause = false;
-          extraWait = 0;
-          tick(INNING_PAUSE_MS);
-          return;
-        }
         // Reset extraWait so the next speech-wait window starts fresh for the new pitch.
         extraWait = 0;
         try {
@@ -107,11 +118,11 @@ export const useAutoPlayScheduler = ({
           // recover or at least surface a visible error rather than freezing.
           appLog.error("[autoplay] handlePitch threw — continuing scheduler:", err);
         }
-        tick(speed);
+        tick(isInstant ? 0 : speed);
       }, delay);
     };
 
-    tick(speed);
+    tick(speed === 0 ? 0 : speed);
     return () => {
       cancelled = true;
       clearTimeout(timerId);

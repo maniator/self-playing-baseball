@@ -70,10 +70,10 @@ describe("pitchSwingRateMod", () => {
 
 describe("pitchStrikeZoneMod", () => {
   it("fastball: 1.0 (full zone)", () => expect(pitchStrikeZoneMod("fastball")).toBe(1.0));
-  it("curveball: 0.85 (breaks out of zone)", () =>
-    expect(pitchStrikeZoneMod("curveball")).toBe(0.85));
-  it("slider: 0.75 (lowest zone probability)", () =>
-    expect(pitchStrikeZoneMod("slider")).toBe(0.75));
+  it("curveball: 0.91 (breaks out of zone)", () =>
+    expect(pitchStrikeZoneMod("curveball")).toBe(0.91));
+  it("slider: 0.83 (lowest zone probability)", () =>
+    expect(pitchStrikeZoneMod("slider")).toBe(0.83));
   it("changeup: 0.90", () => expect(pitchStrikeZoneMod("changeup")).toBe(0.9));
   it("slider has lowest zone mod of all pitch types", () => {
     const types: PitchType[] = ["fastball", "curveball", "changeup"];

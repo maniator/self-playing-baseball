@@ -1,9 +1,10 @@
 /**
  * Unit tests for aiManager — AI manager decision engine for unmanaged teams.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeState } from "@test/testHelpers";
+import * as rng from "@utils/rng";
 
 import {
   AI_FATIGUE_THRESHOLD_HIGH,
@@ -78,6 +79,11 @@ describe("findBestReliever", () => {
 });
 
 describe("makeAiPitchingDecision", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Pin random() to 0 so the probabilistic pull always fires in fatigue tests.
+  const alwaysPull = () => vi.spyOn(rng, "random").mockReturnValue(0);
+
   it("returns none when pitcher is not fatigued", () => {
     const state = makeState({
       pitcherBattersFaced: [5, 5],
@@ -93,6 +99,7 @@ describe("makeAiPitchingDecision", () => {
   });
 
   it("returns pitching_change when fatigue is high", () => {
+    alwaysPull();
     const state = makeState({
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
       rosterPitchers: [[], ["sp1", "rp1"]],
@@ -109,8 +116,9 @@ describe("makeAiPitchingDecision", () => {
   });
 
   it("returns pitching_change in late innings at medium fatigue", () => {
+    alwaysPull();
     const state = makeState({
-      inning: 6,
+      inning: 7, // inning >= 7 now required for medium fatigue hook (context-aware)
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
@@ -123,10 +131,40 @@ describe("makeAiPitchingDecision", () => {
     }
   });
 
-  it("returns none at medium fatigue in early innings", () => {
+  it("returns none at medium fatigue in early innings with no game pressure", () => {
+    // Early inning + blowout score + no runners on → no medium-fatigue hook.
     const state = makeState({
       inning: 3,
+      score: [5, 0], // comfortable lead (not tight — diff > 2)
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      rosterPitchers: [[], ["sp1", "rp1"]],
+      activePitcherIdx: [0, 0],
+      substitutedOut: [[], []],
+      baseLayout: [0, 0, 0],
+    });
+    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
+    expect(decision.kind).toBe("none");
+  });
+
+  it("returns pitching_change at medium fatigue in tight early game", () => {
+    alwaysPull();
+    // Close game (score ±2) should trigger hook even in early innings.
+    const state = makeState({
+      inning: 3,
+      score: [1, 1], // tied = tight game
+      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      rosterPitchers: [[], ["sp1", "rp1"]],
+      activePitcherIdx: [0, 0],
+      substitutedOut: [[], []],
+    });
+    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
+    expect(decision.kind).toBe("pitching_change");
+  });
+
+  it("probabilistic skip: returns none when random() exceeds pull probability", () => {
+    vi.spyOn(rng, "random").mockReturnValue(1); // above any probability → never pull
+    const state = makeState({
+      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -309,9 +347,9 @@ describe("makeAiStrategyDecision", () => {
     expect(makeAiStrategyDecision(state, 1)).toBe("aggressive");
   });
 
-  it("returns 'patient' when leading by 3+", () => {
+  it("returns 'balanced' when leading by 3+ (no longer 'patient' — breaks walk-farming loop)", () => {
     const state = makeState({ score: [0, 4], atBat: 1, inning: 3 });
-    expect(makeAiStrategyDecision(state, 1)).toBe("patient");
+    expect(makeAiStrategyDecision(state, 1)).toBe("balanced");
   });
 
   it("returns 'aggressive' with 2 outs in close late-game", () => {
