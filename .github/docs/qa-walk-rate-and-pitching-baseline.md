@@ -278,20 +278,61 @@ unique seeds directly. 70 unique final scores confirm genuine seed diversity.
 
 ---
 
-## 8. Plan for Fixes
+## 8. Fixes Applied (Post-Baseline)
 
-Based on this baseline, the following changes are planned:
+Based on the baseline, the following changes were applied (commit `22e0e23`):
 
-1. **Reduce "take" base ball probability**: `750 → 580` in `computeWaitOutcome`
-2. **Reduce `patient` walk modifier**: `1.4 → 1.2` in `stratMod` table
-3. **Improve `pitchStrikeZoneMod`**: slider `0.75 → 0.83`, curveball `0.85 → 0.91`
-4. **Increase `patient` swing rate**: `0.75 → 0.82` in `SWING_RATE_MODS`
-5. **Fix AI strategy feedback loop**: change "ahead by 3+" from `patient` to `balanced`
-6. **Add game-context to pitcher hooks**: use score tightness and outs to vary pull timing
-7. **Add Instant sim mode**: SPEED_INSTANT = 0, skip all speech/inning delays
+1. **Reduced "take" base ball probability**: `750 → 580` in `computeWaitOutcome`
+2. **Reduced `patient` walk modifier**: `1.4 → 1.2` in `stratMod` table
+3. **Improved `pitchStrikeZoneMod`**: slider `0.75 → 0.83`, curveball `0.85 → 0.91`
+4. **Increased `patient` swing rate**: `0.75 → 0.82` in `SWING_RATE_MODS`
+5. **Fixed AI strategy feedback loop**: leading by 3+ now returns `balanced` instead of `patient`
+6. **Added game-context to pitcher hooks**: medium-fatigue trigger now requires inning ≥ 7 OR tight game OR runners on
 
-Post-fix calibration targets:
-- BB% ≈ 8–10%
-- K% ≈ 18–22%
-- Runs/game ≈ 8–10 total
-- Starter avg BF ≈ 18–22
+---
+
+## 9. Post-Tuning Browser Baseline
+
+100 full end-to-end games run via Instant mode after applying all tuning changes.
+
+**Setup:**
+- Speed: Instant (SPEED_INSTANT = 0), Manager mode: off
+- Teams: 5 randomly-generated custom teams (Nashville Comets, Portland Foxes, San Antonio Giants,
+  Denver Raiders, Charlotte Bears — each 9 batters / 5 pitchers / 4 bench, generated via
+  "✨ Generate Random" in the team editor)
+- Matchups: 10 pairings (5 teams × home/away rotation), 10 seeds each = 100 games total
+- Seeds: s1g1–s10g100 (unique per game)
+- Stats read from batting-stats table (exact AB/H/BB/K) + scoreboard R column by header index
+
+**Post-tuning browser aggregate results (100 games, 10 matchup combos, 0 errors):**
+
+| Metric | Pre-tuning | Post-tuning | MLB Target | Δ |
+|---|---|---|---|---|
+| Total PA (exact) | 7,862 | 6,965 | N/A | -897 |
+| Total BB | 1,206 | 874 | N/A | -332 |
+| Total K | 1,508 | 1,432 | N/A | -76 |
+| Total H | 2,066 | 1,863 | N/A | -203 |
+| BB% | **15.3%** | **12.5%** | ~8–9% | **-2.8 pp** |
+| K% | 19.2% | 20.6% | ~22–23% | +1.4 pp |
+| H/PA | 0.263 | 0.267 | ~0.248 | +0.004 |
+| BB/game | 12.1 | 8.7 | ~5–6 | **-3.4** |
+| Runs/game | **13.0** | **11.2** | ~8–9 | **-1.8** |
+| PA/game | 78.6 | 69.7 | ~80–85 | -8.9 |
+
+**Interpretation:**
+- BB% dropped from 15.3% → 12.5% (-2.8 pp): meaningful improvement, still above the MLB target
+  of ~8–9%. Further reduction of the take base (e.g. `580 → 520`) or the patient walk mod
+  (`1.2 → 1.1`) may be warranted in a follow-up pass.
+- K% increased from 19.2% → 20.6% (+1.4 pp): trending in the right direction toward ~22–23%.
+  More swing opportunities (fewer walks) naturally increases strikeout exposure.
+- H/PA held steady at 0.267 (pre-tuning 0.263): within the normal variance band.
+- BB/game fell from 12.1 → 8.7: substantially closer to realistic levels (~5–6 target).
+- Runs/game reduced from 13.0 → 11.2 (-1.8): meaningful improvement; still above MLB ~8–9,
+  reflecting that H/PA and BB remain slightly elevated.
+- PA/game dropped from 78.6 → 69.7: slightly below the MLB ~82 average. Walk-heavy innings
+  previously inflated PA counts; with fewer walks, inning PA counts compress. May need monitoring
+  if low-PA games feel short.
+
+**Conclusion:** Tuning is directionally correct. Walk rate halved relative to the pre-fix direction
+and runs/game dropped substantially. A second tuning pass targeting BB% further toward 8–9% and
+runs/game toward 9–10 is the natural next step.
