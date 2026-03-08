@@ -129,6 +129,17 @@ test.describe("Career Stats with seeded history", () => {
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await teamSelect.selectOption("e2e_home_team");
+    // Wait for the batting stats to finish loading before returning.
+    // The async RxDB query fires when the team changes, but seedAndOpen returns
+    // immediately after selectOption — on slow CI/mobile runners the 10 s
+    // per-assertion timeouts in the individual tests can expire before the data
+    // arrives.  Mirroring seedSummaryAndOpen's data-ready guard prevents the
+    // race condition that caused:
+    //   [tablet]          career-stats.spec.ts:158  "A. Ace" not found
+    //   [iphone-15-pro-max] career-stats.spec.ts:204  "J. Slugger" not found
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   test("batting tab shows seeded batter rows", async ({ page }) => {
@@ -272,8 +283,23 @@ test.describe("Team Summary and Leaders", () => {
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await teamSelect.selectOption("e2e_summary_team");
-    // Wait for team summary section to appear
-    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+    // Wait for the W-L record that is unique to the e2e_summary_team fixture
+    // (2 wins, 1 loss → "2-1") rather than just waiting for team-summary-section.
+    //
+    // team-summary-section renders for ANY selected team — even a custom team
+    // imported by startGameViaPlayBall that has zero history (getTeamCareerSummary
+    // always returns a non-null object, making the condition truthy immediately).
+    // The auto-select picks the first custom team from fixture-teams.json, so the
+    // old guard resolved instantly against the wrong team's empty summary section.
+    // The test then found saves-leader-card absent while e2e_summary_team was still
+    // loading — causing the flaky "[tablet]/[iphone-15-pro-max] saves leader card"
+    // failures.
+    //
+    // summary-wl is inside team-summary-section and is set in the SAME React batch
+    // as savesLeader (both come from the single loadStats async function), so when
+    // summary-wl shows "2-1", saves-leader-card is also rendered.  Using a specific
+    // text check makes this guard immune to the early-resolution race condition.
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 30_000 });
   }
 
   test("team summary section shows W/L record", async ({ page }) => {
