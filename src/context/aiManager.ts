@@ -65,11 +65,11 @@ export const AI_FATIGUE_THRESHOLD_MEDIUM = 85;
  * Fatigue-factor limits for AI pitching-change decisions.
  * Derived from the reference thresholds at default stamina (staminaMod = 0, battersFaced = 0):
  *
- * computeFatigueFactor(100, 0, 0) = 1.0 + 0.012*(100-75) = 1.30  →  AI_FATIGUE_FACTOR_HIGH
- * computeFatigueFactor(85,  0, 0) = 1.0 + 0.012*(85-75)  = 1.12  →  AI_FATIGUE_FACTOR_MEDIUM
+ * computeFatigueFactor(100, 0, 0) = 1.0 + 0.009*(100-75) = 1.225  →  AI_FATIGUE_FACTOR_HIGH
+ * computeFatigueFactor(85,  0, 0) = 1.0 + 0.009*(85-75)  = 1.09   →  AI_FATIGUE_FACTOR_MEDIUM
  */
-export const AI_FATIGUE_FACTOR_HIGH = 1.3;
-export const AI_FATIGUE_FACTOR_MEDIUM = 1.12;
+export const AI_FATIGUE_FACTOR_HIGH = 1.225;
+export const AI_FATIGUE_FACTOR_MEDIUM = 1.09;
 
 /** Steal success % above which the AI sends the runner. */
 const AI_STEAL_THRESHOLD = 0.62;

@@ -30,7 +30,7 @@ export const computeFatigueFactor = (
   // Primary: pitch count. High stamina raises the threshold; low stamina lowers it.
   const pitchFreshThreshold = 75 + Math.round(staminaMod * 1.5);
   const pitchesBeyond = Math.max(0, pitchCount - pitchFreshThreshold);
-  const pitchComponent = 0.012 * pitchesBeyond;
+  const pitchComponent = 0.009 * pitchesBeyond;
 
   // Secondary: batters faced. Pitchers who face many batters per outing
   // (walks, long at-bats) accumulate extra stress beyond their pitch count.

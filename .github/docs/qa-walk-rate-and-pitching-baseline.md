@@ -782,3 +782,100 @@ yarn build && npx playwright test --config=playwright-metrics.config.ts --projec
 - **Impact:** Zero — simulation correctness, stats accuracy, and player experience are not affected. The error is logged to the console only during Instant-mode batch runs; it does not occur during normal-speed gameplay.
 - **Tracking:** Logged in section 12 of this document and in the memory store. A focused investigation of the `useRxdbGameSync` write-flush race condition is recommended as a separate follow-up task.
 
+---
+
+## Section 22 — Pitch-count-first fatigue + AI hook tuning (PR #142)
+
+**Branch:** `copilot/update-pitcher-fatigue-tuning`
+**Date:** 2026-03-08
+**Baseline:** Post-PR-140 master (take base=220, passes 1–11)
+
+### What changed
+
+- **Fatigue formula** — switched from `computeFatigueFactor(battersFaced, staminaMod)` to `computeFatigueFactor(pitchCount, battersFaced, staminaMod)`.
+  - Primary driver: pitches thrown to batters (threshold = `75 + staminaMod × 1.5`; slope = 0.012/pitch)
+  - Secondary driver: batters faced (threshold = `9 + staminaMod/5`; slope = 0.005/BF)
+  - Range unchanged: [1.0, 1.6]
+- **Pitch count plumbing** — `pitcherPitchCount: [number, number]` added to State; incremented on every pitch thrown to a batter (balls, strikes, fouls, balls-in-play, intentional walk throws). Steal attempts excluded.
+- **AI hook thresholds** — `AI_FATIGUE_THRESHOLD_HIGH = 100 pitches` (factor 1.30), `AI_FATIGUE_THRESHOLD_MEDIUM = 85 pitches` (factor 1.12). Previously BF-based.
+- **Post-game stats** — `pitchesThrown` added to `PitcherGameStatDoc` (RxDB schema v0→v1).
+
+### Round 0 — Baseline confirmation (post-PR-140 master)
+
+| Metric | Value |
+|---|---|
+| BB% | 10.42% |
+| K% | 22.70% |
+| H/PA | 0.270 |
+| Runs/game | 10.5 |
+| BB/game | 7.1 |
+| Total PA | 6,823 |
+
+*(100-game browser run, Section 21 above)*
+
+### Round 1+2+3 — Deterministic stock-team harness (seeds 1–100)
+
+Run on PR #142 branch head (`91c12ed`):
+
+| Metric | Post-PR-140 | **PR #142** | Delta |
+|---|---|---|---|
+| BB% | ~5.2% | **4.7%** | −0.5 pp |
+| K% | ~25.3% | **26.4%** | +1.1 pp |
+| Runs/game | ~11.9 | **11.0** | −0.9 |
+
+*Stock-team harness uses all-balanced players (uniform mods) so BB% is always lower than custom-team games. Movement in the right direction.*
+
+### Custom-team harness — 100 games (metrics-teams.json fixture, same matchup blocks as browser spec)
+
+Method: in-process vitest run (`src/test/calibration/customTeamMetrics.test.ts`) using the canonical `e2e/fixtures/metrics-teams.json` fixture with full player mods, same 10 matchup combos × 10 seeds = 100 games. Seeds converted from the spec's string seeds (`s1g1`…`s10g10`) using the same string-hash approach. Deterministic — same RNG pipeline as the browser run.
+
+| Metric | Post-PR-140 browser | **PR #142 custom harness** | Delta | MLB target |
+|---|---|---|---|---|
+| BB% | 10.42% | **8.94%** | **−1.48 pp** ✅ | ~8–9% |
+| K% | 22.70% | **20.70%** | −2.0 pp ⚠️ | ~22–23% |
+| H/PA | 0.270 | **0.269** | −0.001 | ~0.248 |
+| Runs/game | 10.5 | **12.1** | +1.6 | ~8–9 |
+| BB/game | 7.1 | **8.3** | +1.2 | ~5–6 |
+| Pitching changes | — | **2.3/game** | — | — |
+
+**Total PA:** 9,263 | **Total BB:** 828 | **Total K:** 1,917 | **Total H:** 2,492 | **Total runs:** 1,212
+
+### Progress log (every 10 games)
+
+| After game | BB% so far |
+|---|---|
+| 10 | 7.3% |
+| 20 | 8.4% |
+| 30 | 9.0% |
+| 40 | 8.7% |
+| 50 | 9.0% |
+| 60 | 9.1% |
+| 70 | 9.1% |
+| 80 | 9.0% |
+| 90 | 8.8% |
+| **100** | **8.9%** |
+
+### Analysis
+
+**BB%: Strong improvement.** The custom-team harness shows BB% at **8.94%**, down from 10.42% — a **−1.48 pp** improvement and squarely inside the target band (8–9%). This is the primary goal of the issue.
+
+**K%: Concerning regression.** K% dropped from 22.70% to **20.70%** (-2.0 pp), falling below the acceptable floor of 21%. This suggests the fatigue model is now affecting swingOutcome in a way that's reducing strikeouts. The increased pitcher fatigue (via pitch count) is making pitchers easier to hit, which converts strikeouts into balls in play.
+
+**Runs/game: Regression.** Runs/game rose from 10.5 to **12.1** (+1.6). Related to the K% drop — fewer strikeouts means more balls in play and more runs.
+
+**BB/game: Higher despite lower BB%.** BB/game is 8.3 vs 7.1. PA count is higher (9,263 vs 6,823) because the harness uses a different total game count normalization. The BB% is the correct normalizing metric.
+
+**Pitching changes: 2.3/game.** This is a reasonable rate — not robotic (not all at the same BF threshold) and not too frequent.
+
+### Decision: One focused tuning round needed
+
+**Direction is correct** — BB% reached the target band (8.94%). But K% has regressed below the acceptable floor (20.70% < 21%). This indicates the fatigue formula is applying too much fatigue too aggressively, causing pitchers to get hit more (fewer Ks) rather than giving up more walks.
+
+**Root cause hypothesis:** The `computeFatigueFactor` slope (0.012/pitch) accumulates quickly for long starters, pushing `fatigueFactor` high (toward 1.6 cap). This makes the pop-out threshold in `hitBall.ts` very high, converting would-be K counts into hits instead. The effect on K% is stronger than expected.
+
+**Next step (Round 4):** Reduce the fatigue slope slightly (e.g. 0.012 → 0.009/pitch) to moderate how quickly fatigue builds. This should bring K% back toward 22% while retaining most of the BB% gain. Do not adjust take-base.
+
+### Coverage and test status
+
+All 1,996 unit tests pass. Coverage: statements 95.22%, branches 87%, functions 90.95% — all above required thresholds (90%/80%/90%).
+

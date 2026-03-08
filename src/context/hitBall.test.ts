@@ -271,10 +271,11 @@ describe("stat mods in hitBall", () => {
 
   it("pitcher fatigue raises pop-out threshold (tired pitcher → more hits)", () => {
     // Fresh pitcher (0 pitches thrown): fatigueFactor = 1.0, threshold = 750
-    // Tired pitcher (100 pitches thrown): fatigueFactor = 1.30, threshold ≈ Math.round(750*1.30) = 975
+    // Tired pitcher (100 pitches thrown): fatigueFactor = 1.0 + 0.009*(100-75) = 1.225,
+    //   threshold ≈ Math.round(750*1.225) = 919
     // Roll 800/1000:
     //   fresh pitcher:  800 >= 750 → OUT
-    //   tired pitcher:  800 < 975  → HIT
+    //   tired pitcher:  800 < 919  → HIT
     const freshState = makeState({
       rosterPitchers: [[], []] as [string[], string[]],
       pitcherPitchCount: [0, 0] as [number, number],
