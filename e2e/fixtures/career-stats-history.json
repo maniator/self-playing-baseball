@@ -86,7 +86,8 @@
         "holds": 0,
         "blownSaves": 0,
         "createdAt": 1700000001000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       },
       {
         "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_setup",
@@ -108,7 +109,8 @@
         "holds": 1,
         "blownSaves": 0,
         "createdAt": 1700000001000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       },
       {
         "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_closer",
@@ -130,10 +132,11 @@
         "holds": 0,
         "blownSaves": 0,
         "createdAt": 1700000001000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       }
     ],
     "requiredTeamIds": []
   },
-  "sig": "2a96d302"
+  "sig": "11cd59ec"
 }
