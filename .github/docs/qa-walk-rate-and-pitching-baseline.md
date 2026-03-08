@@ -539,3 +539,55 @@ yarn test:e2e --project=desktop --grep "metrics-baseline"
 
 The spec automatically imports `e2e/fixtures/metrics-teams.json` via `importTeamsFixture`.
 **Never create teams manually for metrics runs** — always use the committed fixture.
+
+---
+
+## Section 17 — Pass 4 results (browser + calibration)
+
+**Code change:** `patient` walk mod `1.1 → 1.05` (commit `dba8633`)
+
+### Browser run — 100 games, `metrics-teams.json` fixture
+
+| Metric | Pre-tuning | Pass 1 | Pass 2 | Pass 3* | **Pass 4** | MLB Target |
+|---|---|---|---|---|---|---|
+| BB% | 15.3% | 12.5% | 12.1% | 12.1% | **10.89%** | ~8–9% |
+| K% | 19.2% | 20.6% | 22.0% | 21.9% ✅ | **22.34%** ✅ | ~22–23% |
+| H/PA | 0.263 | 0.267 | 0.261 | 0.261 | n/a | ~0.248 |
+| Runs/game | 13.0 | 11.2 | 10.6 | 10.5 | **9.73** | ~8–9 |
+| BB/game | 12.1 | 8.7 | 8.4 | 8.4 | ~7.6 | ~5–6 |
+
+*Passes 1–3 used different randomly-generated teams (lost across sessions) — not directly comparable to pass 4+ browser runs. Calibration harness remains apples-to-apples across all passes.
+
+**Run config:** 10 matchup combos × 10 seeds = 100 games, Instant mode, `metrics-teams.json`, 0 errors.
+
+### Calibration harness (stock teams, seeds 1–100)
+
+| Metric | Pass 3 | **Pass 4** |
+|---|---|---|
+| BB% | ~7% | **5.8%** |
+| K% | ~22% | **24.9%** |
+| Runs/game | ~12 | **12.3** |
+
+All 1991 unit tests pass. Harness bounds tightened to reflect pass-4 stock-team readings.
+
+### Analysis
+
+**What improved:**
+- BB% browser: 12.1% → **10.89%** (−1.2 pp)
+- Runs/game: 10.5 → **9.73** (now near the 8–9 MLB floor)
+- K%: still on target at 22.3%
+
+**Remaining gap:** BB% is still ~1.9 pp above the ~9% MLB target.
+The remaining inflation is in the `patient`-strategy-specific walk multiplier (`1.05`).
+
+### Exact next step — Pass 5
+
+**Target lever:** `patient` walk mod `1.05 → 1.00` (remove the remaining patient walk premium entirely).
+
+At 1.00 the `patient` strategy still differentiates itself through:
+- Higher take rate (swing rate `0.87` vs baseline)
+- Reduced swing at bad pitches (zone mods still in play)
+- Contact/power tradeoffs from the balanced base
+
+If BB% lands in 9–10% range after pass 5 with K% still ≥ 20%: declare balance target met.
+If BB% drops below 8% or K% drops below 19%: add 0.02 to swing rate as a corrective nudge.

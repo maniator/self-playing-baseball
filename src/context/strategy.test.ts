@@ -24,8 +24,8 @@ describe("stratMod — all strategies × all stats", () => {
     expect(stratMod("aggressive", "walk")).toBeLessThan(1);
   });
 
-  it("patient boosts walk; reduces steal and strikeout", () => {
-    expect(stratMod("patient", "walk")).toBeGreaterThan(1);
+  it("patient does not inflate walk; reduces steal and strikeout", () => {
+    expect(stratMod("patient", "walk")).toBeLessThanOrEqual(1);
     expect(stratMod("patient", "steal")).toBeLessThan(1);
     expect(stratMod("patient", "strikeout")).toBeLessThan(1);
   });
@@ -49,7 +49,7 @@ describe("stratMod — all strategies × all stats", () => {
 
   it("exact values: aggressive steal = 1.3", () =>
     expect(stratMod("aggressive", "steal")).toBe(1.3));
-  it("exact values: patient walk = 1.05", () => expect(stratMod("patient", "walk")).toBe(1.05));
+  it("exact values: patient walk = 1.0", () => expect(stratMod("patient", "walk")).toBe(1.0));
   it("exact values: power homerun = 1.6", () => expect(stratMod("power", "homerun")).toBe(1.6));
   it("exact values: contact strikeout = 0.7", () =>
     expect(stratMod("contact", "strikeout")).toBe(0.7));

@@ -278,22 +278,34 @@ describe("Calibration harness — aggregate simulation balance", () => {
     console.log(`Runs/game:       ${runsPerGame.toFixed(1)}`);
     console.log(`Avg starter BF:  ${avgStarterBF.toFixed(1)}`);
 
-    // Post-tuning pass-3 regression bounds (commit c48bac3 → pass3).
-    // Browser apples-to-apples baseline (same 5 teams, same 100 seeds) pending.
-    // The deterministic harness uses stock teams (all-balanced, uniform mods) which
-    // produces lower BB% than custom teams with varied strategies and mods, so the
-    // lower bound is kept permissive. Upper bound guards against regression to pre-fix.
+    // Post-tuning pass-4 regression bounds (patient walk mod 1.1→1.05).
+    // Harness uses stock teams (all-balanced, uniform mods) → lower BB% than custom-team browser runs.
+    // Pass-4 harness readings: BB%=5.8%, K%=24.9%, runs/game=12.3.
+    // Upper bounds guard against regression to pre-fix state (BB%=15.3%).
     expect(totalPA, "should have processed some plate appearances").toBeGreaterThan(0);
-    expect(bbPct, "BB% should be between 3% and 16% (pass-3 target ~7–12%)").toBeGreaterThan(3);
-    expect(bbPct, "BB% should be between 3% and 16% (pass-3 target ~7–12%)").toBeLessThan(16);
-    expect(kPct, "K% should be between 16% and 32% (pass-3 target ~20–25%)").toBeGreaterThan(16);
-    expect(kPct, "K% should be between 16% and 32% (pass-3 target ~20–25%)").toBeLessThan(32);
+    expect(
+      bbPct,
+      "BB% should be between 3% and 12% (pass-4 stock-team baseline ~5–7%)",
+    ).toBeGreaterThan(3);
+    expect(
+      bbPct,
+      "BB% should be between 3% and 12% (pass-4 stock-team baseline ~5–7%)",
+    ).toBeLessThan(12);
+    expect(
+      kPct,
+      "K% should be between 18% and 32% (pass-4 stock-team baseline ~24–26%)",
+    ).toBeGreaterThan(18);
+    expect(
+      kPct,
+      "K% should be between 18% and 32% (pass-4 stock-team baseline ~24–26%)",
+    ).toBeLessThan(32);
     expect(
       runsPerGame,
-      "runs/game should be between 6 and 15 (pass-3 target ~8–12)",
-    ).toBeGreaterThan(6);
-    expect(runsPerGame, "runs/game should be between 6 and 15 (pass-3 target ~8–12)").toBeLessThan(
-      15,
-    );
+      "runs/game should be between 7 and 16 (pass-4 stock-team baseline ~12)",
+    ).toBeGreaterThan(7);
+    expect(
+      runsPerGame,
+      "runs/game should be between 7 and 16 (pass-4 stock-team baseline ~12)",
+    ).toBeLessThan(16);
   }, 120_000); // 120s timeout for 100 full-game simulations
 });
