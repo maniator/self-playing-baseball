@@ -26,7 +26,7 @@ vi.mock("react-router", async (importOriginal) => {
   };
 });
 
-vi.mock("@storage/gameHistoryStore", () => ({
+vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   MIN_AB_FOR_AVG_LEADER: 20,
   MIN_OUTS_FOR_ERA_LEADER: 30,
   GameHistoryStore: {
@@ -55,8 +55,9 @@ vi.mock("@storage/gameHistoryStore", () => ({
   },
 }));
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import type { CustomTeamDoc } from "@storage/types";
 
 import CareerStatsPage from "./index";

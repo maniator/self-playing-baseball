@@ -6,10 +6,10 @@
  */
 import * as React from "react";
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { useNavigate, useSearchParams } from "react-router";
 
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import type { PitcherGameStatDoc, PlayerGameStatDoc, TeamPlayer } from "@storage/types";
 import { computeERA, computeWHIP } from "@utils/stats/computePitcherGameStats";
 

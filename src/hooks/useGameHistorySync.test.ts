@@ -8,7 +8,7 @@ import { makeContextValue } from "@test/testHelpers";
 
 // Mocks must use inline vi.fn() — no top-level variables before vi.mock().
 // Only commitCompletedGame is used by the hook; the full store API is not needed here.
-vi.mock("@storage/gameHistoryStore", () => ({
+vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   GameHistoryStore: { commitCompletedGame: vi.fn() },
 }));
 
@@ -20,8 +20,9 @@ vi.mock("@utils/rng", () => ({
 }));
 
 // Import the hook and mocked modules after vi.mock declarations.
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+
 import { useGameContext } from "@context/index";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 
 import { useGameHistorySync } from "./useGameHistorySync";
 

@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import {
   resolveCustomIdsInString,
   resolveTeamLabel,
@@ -11,7 +12,6 @@ import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useImportSave } from "@hooks/useImportSave";
 import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { useSaveStore } from "@hooks/useSaveStore";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import { downloadJson } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState } from "@utils/rng";

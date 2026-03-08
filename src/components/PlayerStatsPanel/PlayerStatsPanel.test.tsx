@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
 import { GameContext } from "@context/index";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import { makeContextValue } from "@test/testHelpers";
 import * as loggerModule from "@utils/logger";
 
@@ -472,7 +472,7 @@ describe("PlayerStatsPanel — sacrifice fly stats", () => {
 // ---------------------------------------------------------------------------
 
 // Mock GameHistoryStore for career stats tests (avoids real DB calls in JSDOM).
-vi.mock("@storage/gameHistoryStore", () => ({
+vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   GameHistoryStore: {
     getCareerStats: vi.fn().mockResolvedValue({}),
     getTeamCareerBattingStats: vi.fn().mockResolvedValue([]),

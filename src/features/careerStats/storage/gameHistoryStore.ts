@@ -10,9 +10,9 @@
  *     (useGameHistorySync) is responsible for checking the save state before committing.
  *   - Export/import is idempotent: re-importing the same bundle skips existing rows.
  */
-import type { BallgameDb } from "./db";
-import { getDb } from "./db";
-import { fnv1a } from "./hash";
+import type { BallgameDb } from "@storage/db";
+import { getDb } from "@storage/db";
+import { fnv1a } from "@storage/hash";
 import type {
   BattingLeader,
   ExportedGameHistory,
@@ -22,7 +22,7 @@ import type {
   PitchingLeader,
   PlayerGameStatDoc,
   TeamCareerSummary,
-} from "./types";
+} from "@storage/types";
 
 /** Schema version written to every new GameDoc / stat row. */
 const HISTORY_SCHEMA_VERSION = 1;

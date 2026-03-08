@@ -1,12 +1,12 @@
 /// <reference types="vite/client" />
 import * as React from "react";
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import styled from "styled-components";
 
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import { appLog } from "@utils/logger";
 import { generateRoster } from "@utils/roster";
 import {

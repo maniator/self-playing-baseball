@@ -18,14 +18,14 @@ vi.mock("react-router", async (importOriginal) => {
   };
 });
 
-vi.mock("@storage/gameHistoryStore", () => ({
+vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   GameHistoryStore: {
     getPlayerCareerBatting: vi.fn().mockResolvedValue([]),
     getPlayerCareerPitching: vi.fn().mockResolvedValue([]),
   },
 }));
 
-import { GameHistoryStore } from "@storage/gameHistoryStore";
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 
 import PlayerCareerPage from "./index";
 

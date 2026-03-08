@@ -1,7 +1,8 @@
 import * as React from "react";
 
+import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+
 import { useGameContext } from "@context/index";
-import { GameHistoryStore } from "@storage/gameHistoryStore";
 import type {
   CustomTeamDoc,
   PitcherGameStatDoc,
