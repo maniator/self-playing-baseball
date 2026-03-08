@@ -49,7 +49,7 @@ vi.mock("@utils/rng", async (importOriginal) => {
   };
 });
 
-vi.mock("@storage/saveStore", () => ({
+vi.mock("@feat/saves/storage/saveStore", () => ({
   SaveStore: {
     listSaves: vi.fn().mockResolvedValue([]),
     createSave: vi.fn().mockResolvedValue("save_1"),

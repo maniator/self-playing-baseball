@@ -1,16 +1,16 @@
 import * as React from "react";
 
+import * as saveStoreModule from "@feat/saves/storage/saveStore";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContextValue, GameAction } from "@context/index";
 import { GameContext } from "@context/index";
-import * as saveStoreModule from "@storage/saveStore";
 import { makeContextValue } from "@test/testHelpers";
 
 import { useRxdbGameSync } from "./useRxdbGameSync";
 
-vi.mock("@storage/saveStore", () => ({
+vi.mock("@feat/saves/storage/saveStore", () => ({
   SaveStore: {
     appendEvents: vi.fn().mockResolvedValue(undefined),
     updateProgress: vi.fn().mockResolvedValue(undefined),

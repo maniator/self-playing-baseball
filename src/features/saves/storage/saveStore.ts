@@ -1,6 +1,6 @@
-import { type BallgameDb, getDb } from "./db";
-import { generateSaveId } from "./generateId";
-import { fnv1a } from "./hash";
+import { type BallgameDb, getDb } from "@storage/db";
+import { generateSaveId } from "@storage/generateId";
+import { fnv1a } from "@storage/hash";
 import type {
   EventDoc,
   GameEvent,
@@ -8,7 +8,7 @@ import type {
   ProgressSummary,
   RxdbExportedSave,
   SaveDoc,
-} from "./types";
+} from "@storage/types";
 
 // DOC_SCHEMA_VERSION is the schemaVersion field on SaveDoc/EventDoc rows —
 // it is independent of the RxDB collection schema version (saves collection is v2).

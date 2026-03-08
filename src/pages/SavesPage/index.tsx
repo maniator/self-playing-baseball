@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamAdapter";
+import { SaveStore } from "@feat/saves/storage/saveStore";
 import { useNavigate, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";
@@ -8,7 +9,6 @@ import SaveSlotList from "@components/SaveSlotList";
 import { useImportSave } from "@hooks/useImportSave";
 import { useSaveSlotActions } from "@hooks/useSaveSlotActions";
 import { customTeamsCollection } from "@storage/db";
-import { SaveStore } from "@storage/saveStore";
 import type { CustomTeamDoc, SaveDoc } from "@storage/types";
 
 import {

@@ -1,13 +1,12 @@
+import { makeSaveStore } from "@feat/saves/storage/saveStore";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { Hit } from "@constants/hitTypes";
+import { _createTestDb, type BallgameDb } from "@storage/db";
+import { fnv1a } from "@storage/hash";
+import type { GameSetup } from "@storage/types";
 import { makeState } from "@test/testHelpers";
-
-import { _createTestDb, type BallgameDb } from "./db";
-import { fnv1a } from "./hash";
-import { makeSaveStore } from "./saveStore";
-import type { GameSetup } from "./types";
 
 const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
   homeTeamId: "Yankees",
@@ -334,11 +333,13 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     await store.appendEvents(saveId, [{ type: "hit", at: 0, payload: {} }]);
     const json = await store.exportRxdbSave(saveId);
     // Import into a fresh db
-    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     // Insert the teams so importRxdbSave does not reject them as missing.
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
-    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
+      Promise.resolve(db2),
+    );
     const restoredSave = await store2.importRxdbSave(json);
     expect(restoredSave.id).toBe(saveId);
     const saves = await store2.listSaves();
@@ -376,10 +377,12 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
   it("importRxdbSave handles saves with no events", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup());
     const json = await store.exportRxdbSave(saveId);
-    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
-    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
+      Promise.resolve(db2),
+    );
     const restoredSave = await store2.importRxdbSave(json);
     expect(restoredSave.id).toBe(saveId);
     await db2.close();
@@ -411,10 +414,12 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header: legacyHeader, events }));
     const bundle = JSON.stringify({ version: 1, header: legacyHeader, events, sig });
 
-    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_norm_home");
     await insertMinimalTeam(db2, "ct_norm_away");
-    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
+      Promise.resolve(db2),
+    );
     const restored = await store2.importRxdbSave(bundle);
 
     // Top-level IDs must be normalized to canonical custom: format.
@@ -453,10 +458,12 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header: canonicalHeader, events }));
     const bundle = JSON.stringify({ version: 1, header: canonicalHeader, events, sig });
 
-    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_c_home");
     await insertMinimalTeam(db2, "ct_c_away");
-    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
+      Promise.resolve(db2),
+    );
     const restored = await store2.importRxdbSave(bundle);
 
     // Already-canonical IDs must be kept as-is (not double-prefixed).
@@ -484,10 +491,12 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
       RXDB_EXPORT_KEY + JSON.stringify({ header: envelope.header, events: envelope.events }),
     );
 
-    const db2 = await (await import("./db"))._createTestDb(getRxStorageMemory());
+    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
-    const store2 = (await import("./saveStore")).makeSaveStore(() => Promise.resolve(db2));
+    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
+      Promise.resolve(db2),
+    );
     const restored = await store2.importRxdbSave(JSON.stringify(envelope));
     expect(restored.id).toBe(saveId);
     expect((restored as Record<string, unknown>).matchupMode).toBeUndefined();

@@ -6,7 +6,7 @@ import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SaveStore so tests don't need IndexedDB
-vi.mock("@storage/saveStore", () => ({
+vi.mock("@feat/saves/storage/saveStore", () => ({
   SaveStore: {
     listSaves: vi.fn().mockResolvedValue([]),
     deleteSave: vi.fn().mockResolvedValue(undefined),
@@ -22,7 +22,8 @@ vi.mock("@storage/db", () => ({
   }),
 }));
 
-import { SaveStore } from "@storage/saveStore";
+import { SaveStore } from "@feat/saves/storage/saveStore";
+
 import type { SaveDoc } from "@storage/types";
 
 import SavesPage from "./index";

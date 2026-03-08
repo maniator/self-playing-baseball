@@ -1,8 +1,9 @@
 import * as React from "react";
 
+import { SaveStore } from "@feat/saves/storage/saveStore";
+
 import type { GameAction } from "@context/index";
 import { useGameContext } from "@context/index";
-import { SaveStore } from "@storage/saveStore";
 import { appLog } from "@utils/logger";
 import { getRngState } from "@utils/rng";
 

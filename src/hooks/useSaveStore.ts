@@ -1,8 +1,8 @@
 import * as React from "react";
 
+import { SaveStore } from "@feat/saves/storage/saveStore";
 import { useLiveRxQuery } from "rxdb/plugins/react";
 
-import { SaveStore } from "@storage/saveStore";
 import type { GameEvent, GameSetup, ProgressSummary, SaveDoc } from "@storage/types";
 
 export interface SaveStoreHook {
