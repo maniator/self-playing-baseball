@@ -591,3 +591,44 @@ At 1.00 the `patient` strategy still differentiates itself through:
 
 If BB% lands in 9–10% range after pass 5 with K% still ≥ 20%: declare balance target met.
 If BB% drops below 8% or K% drops below 19%: add 0.02 to swing rate as a corrective nudge.
+
+---
+
+## Section 18 — Pass 5 results + critical finding: `patient` strategy is AI-invisible
+
+**Code change:** `patient` walk mod `1.05 → 1.0` (commit `e8192a7`)
+
+### Browser run — 100 games, `metrics-teams.json` fixture
+
+| Metric | Pass 4 | **Pass 5** | Delta | MLB Target |
+|---|---|---|---|---|
+| BB% | 10.89% | **10.96%** | +0.07 pp | ~8–9% |
+| K% | 22.34% ✅ | **22.44%** ✅ | +0.10 pp | ~22–23% |
+| Runs/game | 9.73 | **10.64** | +0.91 | ~8–9 |
+| BB/game | ~7.6 | **7.51** | −0.09 | ~5–6 |
+
+**Pass 5 produced no meaningful improvement** — results are statistically identical to pass 4.
+
+### Root cause: `patient` strategy is never selected by the AI in unmanaged games
+
+`makeAiStrategyDecision` in `aiManager.ts` only ever returns: `balanced`, `aggressive`, `contact`, or `power`. It **never returns `patient`**. The `patient` strategy is exclusively a human (Manager Mode) choice.
+
+Because all 100 browser baseline games run without Manager Mode, the `patient` walk mod (`1.05 → 1.0`) has **zero effect** on browser-baseline metrics. Pass 4 and Pass 5 produce identical per-game outcomes for the same seeds.
+
+**The `patient` walk mod reductions across passes 3–5 were still correct** — they prevent walk-farming for human players who select `patient` in Manager Mode. But they cannot close the remaining ~2 pp BB% gap in AI games.
+
+### True next lever for AI-game BB% reduction
+
+The dominant strategy in AI games is `balanced` (the default). Current `balanced` walk mod = **0.90**. The actual next lever is:
+
+**Pass 6:** `balanced` walk mod `0.90 → 0.85` in `strategy.ts`
+
+This directly affects every AI PA, unlike `patient` which only affects Manager Mode.
+
+**Expected impact:** ~0.5–1 pp BB% reduction based on prior `balanced` mod progression (1.0→0.90 = ~1.5 pp drop across passes 2–3).
+
+If pass 6 brings BB% to ~10.0–10.3%, a pass 7 of `0.85 → 0.80` may be needed to reach the 8–9% MLB target.
+
+### On the K% question (18% target)
+
+K% at 22.4% is **already on target** (MLB average is ~22–23%). Reducing to 18% would push below MLB average — pitching would feel too easy and offense too clean. The correct target is to keep K% in the 20–24% band while closing the BB% gap. Endorsing 22% as the correct K% target.

@@ -5,7 +5,7 @@ export const stratMod = (
   stat: "walk" | "strikeout" | "homerun" | "contact" | "steal" | "advance",
 ): number => {
   const table: Record<Strategy, Record<typeof stat, number>> = {
-    balanced: { walk: 0.9, strikeout: 1.0, homerun: 1.0, contact: 1.0, steal: 1.0, advance: 1.0 },
+    balanced: { walk: 0.85, strikeout: 1.0, homerun: 1.0, contact: 1.0, steal: 1.0, advance: 1.0 },
     aggressive: {
       walk: 0.72,
       strikeout: 1.1,

@@ -8,8 +8,8 @@ describe("stratMod — all strategies × all stats", () => {
   const stats = ["walk", "strikeout", "homerun", "contact", "steal", "advance"] as const;
   const strategies = ["balanced", "aggressive", "patient", "contact", "power"] as const;
 
-  it("balanced walk is slightly below 1.0 (0.90)", () => {
-    expect(stratMod("balanced", "walk")).toBe(0.9);
+  it("balanced walk is slightly below 1.0 (0.85)", () => {
+    expect(stratMod("balanced", "walk")).toBe(0.85);
   });
 
   it("balanced returns 1.0 for non-walk stats", () => {
