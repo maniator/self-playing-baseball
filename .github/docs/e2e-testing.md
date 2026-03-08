@@ -204,3 +204,58 @@ When `loadFixture` imports a save, `useSavesModal.ts` calls `handleLoad` which:
 4. Closes the modal
 
 Because `pendingDecision` is part of `State` and `backfillRestoredState` merges `restored` over `fresh` defaults, a fixture that carries `pendingDecision: { kind: "defensive_shift" }` will render the manager decision panel instantly on load — no pitch needs to be thrown.
+
+---
+
+## Simulation Metrics Baseline (`e2e/tests/metrics-baseline.spec.ts`)
+
+The metrics-baseline spec runs 100 full games via Instant mode (`SPEED_INSTANT=0`) and prints aggregate stats (BB%, K%, H/PA, runs/game) for before/after tuning comparisons. It is **excluded from the normal CI suite** and must be run manually.
+
+### How to run
+
+```bash
+# Build first, then run only the metrics spec on desktop Chromium
+yarn build
+yarn test:e2e --project=desktop --grep "metrics-baseline"
+```
+
+### Canonical team fixture
+
+All 100 games use the **5 teams committed to `e2e/fixtures/metrics-teams.json`**:
+- Charlotte Bears (CHB)
+- Denver Raiders (DRD)
+- San Antonio Giants (SAG)
+- Portland Foxes (PTF)
+- Nashville Comets (NSC)
+
+**This fixture is the single source of truth for all future passes.** Never recreate teams by clicking "Generate Random" across sessions — each run produces different random rosters, making cross-pass comparisons meaningless. Instead:
+1. Import from the fixture file at the start of the spec (done automatically via `importTeamsFixture(page, "metrics-teams.json")`)
+2. If teams must be regenerated: create 5 new teams, **Export All Teams** from the app, save the JSON over `e2e/fixtures/metrics-teams.json`, and commit **before** running any pass
+
+> ⚠️ **Pass 1–3 used different teams (lost across sessions).** Pass 4 is the first pass using the committed `metrics-teams.json` fixture. All passes from pass 4 onward use the same rosters and are directly comparable.
+
+### Starting the preview server for MCP browser automation
+
+When running the metrics spec interactively via the Playwright MCP browser (not via `yarn test:e2e`), start the preview server as a **detached background process** on `0.0.0.0`:
+
+```bash
+# In bash (detach: true so it survives session shutdown)
+cd /home/runner/work/self-playing-baseball/self-playing-baseball
+npx vite preview --port 4173 --host 0.0.0.0 > /tmp/vitepreview.log 2>&1 &
+
+# Verify it's up
+ss -tlnp | grep 4173
+curl -s -o /dev/null -w "HTTP %{http_code}\n" http://localhost:4173
+```
+
+Then navigate the Playwright browser using **`http://127.0.0.1:4173`** (not `http://localhost:4173`):
+
+```
+// ✅ Works in the MCP Playwright browser
+await page.goto("http://127.0.0.1:4173/exhibition/new");
+
+// ❌ Fails with ERR_CONNECTION_REFUSED in the MCP environment
+await page.goto("http://localhost:4173/exhibition/new");
+```
+
+`localhost` does not resolve correctly in the MCP browser sandbox even though the server listens on `0.0.0.0`. Use `127.0.0.1` explicitly.

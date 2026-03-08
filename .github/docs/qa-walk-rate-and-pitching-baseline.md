@@ -505,3 +505,37 @@ with non-patient strategies. The remaining gap is patient-strategy-specific.
 - [ ] Report both metrics vs pass-3 (100-game complete) and pass-2 baselines
 - [ ] If BB% is in 9–11% range: tighten calibration bounds to near-MLB targets and close PR
 - [ ] If BB% is still above 11%: one more targeted nudge (contact/power swing rates: +0.02)
+
+---
+
+## Section 16 — Pass 4 setup and team-ecology change note
+
+**Pass 4 applied:** `patient` walk mod `1.1 → 1.05` in `strategy.ts` (commit `dba8633`).
+
+### ⚠️ Team-ecology change: passes 1–3 vs pass 4+
+
+The 5 custom teams used in passes 1–3 (Charlotte Bears, Denver Raiders, San Antonio Giants,
+Portland Foxes, Nashville Comets) were created via "Generate Random" in the browser during the
+pass-1 session. Those teams existed only in the browser's IndexedDB for that session. When
+the session ended, the teams were lost and cannot be recreated with identical rosters.
+
+**Pass 4 uses a new set of 5 teams with the same names but different randomly-generated rosters**,
+committed as `e2e/fixtures/metrics-teams.json`. This is the canonical fixture for all future passes.
+
+Practical implication for comparisons:
+- Browser metrics from pass 4 vs passes 1–3 are **not directly comparable** due to different team ecology
+- The **deterministic calibration harness** (stock teams, seeded 1–100) remains apples-to-apples across all passes
+- Pass 4 vs pass 5+ will be fully apples-to-apples (same `metrics-teams.json`)
+- The absolute MLB-target comparison (BB%, K%, runs/game vs ~9%, ~22%, ~9) remains valid regardless of teams
+
+### How to reproduce pass 4+ browser runs exactly
+
+```bash
+yarn build
+# Navigate to http://127.0.0.1:4173 (not localhost) in the MCP browser
+# See e2e-testing.md § "Simulation Metrics Baseline" for full server setup
+yarn test:e2e --project=desktop --grep "metrics-baseline"
+```
+
+The spec automatically imports `e2e/fixtures/metrics-teams.json` via `importTeamsFixture`.
+**Never create teams manually for metrics runs** — always use the committed fixture.

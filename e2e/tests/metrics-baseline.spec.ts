@@ -30,20 +30,34 @@ import { expect, test } from "@playwright/test";
 
 import { importTeamsFixture, resetAppState, waitForNewGameDialog } from "../utils/helpers";
 
-/** Number of games per matchup block (4 blocks × 25 = 100 total). */
-const GAMES_PER_BLOCK = 25;
+/** Number of games per matchup block (10 blocks × 10 = 100 total). */
+const GAMES_PER_BLOCK = 10;
 
 /**
- * Matchup definitions.  Each block uses the same 2 fixture teams but alternates
- * which is Away vs Home so both team/park combos are represented.
+ * Matchup definitions — 10 combos across the 5 canonical metrics teams.
+ * These teams are imported from `e2e/fixtures/metrics-teams.json`, which is
+ * the committed fixture that guarantees identical rosters across all tuning
+ * passes.  10 combos × 10 seeds each = 100 games total.
+ *
+ * To regenerate the fixture teams: create 5 teams via Manage Teams → Generate
+ * Random, export via "Export All Teams", save to `e2e/fixtures/metrics-teams.json`,
+ * and commit.  All future passes must import from this file — never recreate.
  */
 const MATCHUP_BLOCKS = [
-  { away: "Visitors", home: "Locals", seedPrefix: "mv" },
-  { away: "Locals", home: "Visitors", seedPrefix: "ml" },
+  { away: "Charlotte Bears", home: "Denver Raiders", seedPrefix: "s1" },
+  { away: "Denver Raiders", home: "Charlotte Bears", seedPrefix: "s2" },
+  { away: "San Antonio Giants", home: "Portland Foxes", seedPrefix: "s3" },
+  { away: "Portland Foxes", home: "Nashville Comets", seedPrefix: "s4" },
+  { away: "Nashville Comets", home: "San Antonio Giants", seedPrefix: "s5" },
+  { away: "Charlotte Bears", home: "San Antonio Giants", seedPrefix: "s6" },
+  { away: "Denver Raiders", home: "Portland Foxes", seedPrefix: "s7" },
+  { away: "San Antonio Giants", home: "Nashville Comets", seedPrefix: "s8" },
+  { away: "Portland Foxes", home: "Charlotte Bears", seedPrefix: "s9" },
+  { away: "Nashville Comets", home: "Denver Raiders", seedPrefix: "s10" },
 ] as const;
 
-/** Total games = blocks × games per block. */
-const NUM_GAMES = MATCHUP_BLOCKS.length * GAMES_PER_BLOCK * 2; // 2 passes to reach 100
+/** Total games = 10 blocks × 10 seeds each = 100 games. */
+const NUM_GAMES = MATCHUP_BLOCKS.length * GAMES_PER_BLOCK;
 
 /**
  * Waits for the FINAL banner to appear.
@@ -201,20 +215,18 @@ test.describe("Metrics baseline — 100 games via Instant mode (desktop only)", 
     });
 
     await resetAppState(page);
-    await importTeamsFixture(page, "fixture-teams.json");
+    await importTeamsFixture(page, "metrics-teams.json");
 
     // ── Build game list ─────────────────────────────────────────────────────
-    // 4 matchup combos (2 blocks × 2 passes), 25 seeds each = 100 games.
+    // 10 matchup combos × 10 seeds each = 100 games.
     const games: Array<{ away: string; home: string; seed: string }> = [];
-    for (let pass = 0; pass < 2; pass++) {
-      for (const block of MATCHUP_BLOCKS) {
-        for (let g = 1; g <= GAMES_PER_BLOCK; g++) {
-          games.push({
-            away: block.away,
-            home: block.home,
-            seed: `${block.seedPrefix}-p${pass + 1}-g${g}`,
-          });
-        }
+    for (const block of MATCHUP_BLOCKS) {
+      for (let g = 1; g <= GAMES_PER_BLOCK; g++) {
+        games.push({
+          away: block.away,
+          home: block.home,
+          seed: `${block.seedPrefix}g${g}`,
+        });
       }
     }
 
@@ -311,7 +323,7 @@ test.describe("Metrics baseline — 100 games via Instant mode (desktop only)", 
     console.log("║  BROWSER-DRIVEN METRICS BASELINE                     ║");
     console.log("╠══════════════════════════════════════════════════════╣");
     console.log(`║  Games completed:   ${String(gamesCompleted).padEnd(33)}║`);
-    console.log(`║  Matchups:          Visitors@Locals × 2 home/away    ║`);
+    console.log(`║  Matchups:          10 combos × 5 teams (metrics-teams.json) ║`);
     console.log(`║  Speed mode:        Instant (SPEED_INSTANT = 0)      ║`);
     console.log(`║  Manager mode:      Off (fully unmanaged)             ║`);
     console.log("╠══════════════════════════════════════════════════════╣");
