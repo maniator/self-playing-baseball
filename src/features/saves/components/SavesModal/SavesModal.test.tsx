@@ -43,7 +43,9 @@ const makeSlot = (overrides: Partial<SaveDoc> = {}): SaveDoc => ({
 
 // Default no-op store returned by the hook mock.
 const makeMockStore = (
-  overrides: Partial<ReturnType<(typeof import("@hooks/useSaveStore"))["useSaveStore"]>> = {},
+  overrides: Partial<
+    ReturnType<(typeof import("@feat/saves/hooks/useSaveStore"))["useSaveStore"]>
+  > = {},
 ) => ({
   saves: [] as SaveDoc[],
   createSave: vi.fn().mockResolvedValue("save_1"),
@@ -55,7 +57,7 @@ const makeMockStore = (
   ...overrides,
 });
 
-vi.mock("@hooks/useSaveStore", () => ({
+vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => makeMockStore()),
 }));
 
@@ -97,7 +99,7 @@ const openPanel = () =>
 describe("SavesModal", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore());
     // Restore showModal/close mock implementations after vi.clearAllMocks()
     HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
@@ -131,7 +133,7 @@ describe("SavesModal", () => {
   });
 
   it("calls createSave and onSaveIdChange when save button is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockCreateSave = vi.fn().mockResolvedValue("save_1");
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ createSave: mockCreateSave }));
     const onSaveIdChange = vi.fn();
@@ -145,7 +147,7 @@ describe("SavesModal", () => {
   });
 
   it("shows saved slot name after opening", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [makeSlot()] }));
     renderModal();
     await openPanel();
@@ -153,7 +155,7 @@ describe("SavesModal", () => {
   });
 
   it("calls onLoadSave and onSaveIdChange when Load is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: 42 } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onSaveIdChange = vi.fn();
@@ -166,7 +168,7 @@ describe("SavesModal", () => {
   });
 
   it("passes the full slot (including setup) to onLoadSave when Load is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeSlot({
       stateSnapshot: { state: makeState(), rngState: null },
       setup: { ...mockSetup, strategy: "aggressive" as Strategy, managedTeam: 1 as 0 | 1 },
@@ -182,7 +184,7 @@ describe("SavesModal", () => {
   });
 
   it("falls back to same-seed save's snapshot when clicked slot has none", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const snapshotState = makeState({ inning: 3 });
     const slotWithSnapshot = makeSlot({
       id: "save_2",
@@ -211,7 +213,7 @@ describe("SavesModal", () => {
   });
 
   it("shows error when no snapshot exists for any save", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeSlot({ seed: "abc" }); // no stateSnapshot
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onLoadSave = vi.fn();
@@ -223,7 +225,7 @@ describe("SavesModal", () => {
   });
 
   it("calls deleteSave when ✕ is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockDeleteSave = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useSaveStore).mockReturnValue(
       makeMockStore({ saves: [makeSlot()], deleteSave: mockDeleteSave }),
@@ -237,7 +239,7 @@ describe("SavesModal", () => {
   });
 
   it("shows an error message when import text is invalid", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue(
       makeMockStore({
         importRxdbSave: vi.fn().mockRejectedValue(new Error("Invalid JSON")),
@@ -255,7 +257,7 @@ describe("SavesModal", () => {
   });
 
   it("calls importRxdbSave on successful paste import", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockImport = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ importRxdbSave: mockImport }));
     renderModal();
@@ -292,7 +294,7 @@ describe("SavesModal", () => {
   });
 
   it("calls onSaveIdChange(null) when the current save is deleted", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockDeleteSave = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useSaveStore).mockReturnValue(
       makeMockStore({ saves: [makeSlot()], deleteSave: mockDeleteSave }),
@@ -307,7 +309,7 @@ describe("SavesModal", () => {
   });
 
   it("calls exportRxdbSave and createObjectURL when Export is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeSlot();
     const mockExport = vi
       .fn()
@@ -336,7 +338,7 @@ describe("SavesModal", () => {
   });
 
   it("calls onLoadSave with the full slot when Load is clicked", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeSlot({ stateSnapshot: { state: makeState(), rngState: null } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));
     const onLoadSave = vi.fn();
@@ -347,7 +349,7 @@ describe("SavesModal", () => {
   });
 
   it("auto-loads imported save after successful paste import", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const importedSlot = makeSlot({
       id: "imported_1",
       stateSnapshot: { state: makeState({ inning: 6 }), rngState: null },
@@ -368,7 +370,7 @@ describe("SavesModal", () => {
   });
 
   it("auto-loads imported save after successful file import", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const importedSlot = makeSlot({
       id: "imported_2",
       stateSnapshot: { state: makeState({ inning: 7 }), rngState: null },
@@ -438,7 +440,7 @@ describe("SavesModal", () => {
   });
 
   it("handleSave stores no function fields in the state snapshot (regression: DataCloneError)", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockUpdateProgress = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ updateProgress: mockUpdateProgress }));
     renderModal({ currentSaveId: "save_1", gameStarted: true });
@@ -462,7 +464,7 @@ describe("SavesModal", () => {
   });
 
   it("preserves custom team IDs in snapshot state when onLoadSave is called (resolved only at presentation time)", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const snapState = makeState({ teams: ["custom:ct_abc", "Home"] as [string, string] });
     const slot = makeSlot({ stateSnapshot: { state: snapState, rngState: null } });
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore({ saves: [slot] }));

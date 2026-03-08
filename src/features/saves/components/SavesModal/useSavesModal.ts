@@ -7,11 +7,11 @@ import {
 } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useImportSave } from "@feat/saves/hooks/useImportSave";
 import { useSaveSlotActions } from "@feat/saves/hooks/useSaveSlotActions";
+import { useSaveStore } from "@feat/saves/hooks/useSaveStore";
 
 import type { State, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
-import { useSaveStore } from "@hooks/useSaveStore";
 import { downloadJson } from "@storage/saveIO";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { getRngState } from "@utils/rng";

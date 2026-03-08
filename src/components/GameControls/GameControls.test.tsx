@@ -25,7 +25,7 @@ vi.mock("@utils/announce", () => ({
   play7thInningStretch: vi.fn(),
 }));
 
-vi.mock("@hooks/useSaveStore", () => ({
+vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => ({
     saves: [],
     createSave: vi.fn().mockResolvedValue("save_1"),

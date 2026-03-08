@@ -60,7 +60,7 @@ vi.mock("@feat/saves/storage/saveStore", () => ({
   },
 }));
 
-vi.mock("@hooks/useSaveStore", () => ({
+vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => ({
     saves: [],
     createSave: vi.fn().mockResolvedValue("save_1"),
@@ -154,7 +154,7 @@ const makeAutoSaveSlot = () => ({
 
 describe("GameInner — auto-save resume", () => {
   beforeEach(async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [],
       createSave: vi.fn().mockResolvedValue("save_1"),
@@ -169,7 +169,7 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("auto-restores from rxAutoSave without dialog when snapshot exists", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [makeAutoSaveSlot() as SaveDoc],
       createSave: vi.fn().mockResolvedValue("save_abc"),
@@ -193,7 +193,7 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("does not auto-restore when no snapshot exists", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const noSnapshotSlot = { ...makeAutoSaveSlot(), stateSnapshot: undefined };
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [noSnapshotSlot as SaveDoc],
@@ -216,7 +216,7 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("calls restoreRng when a matched auto-save is present on mount", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [makeAutoSaveSlot() as SaveDoc],
       createSave: vi.fn().mockResolvedValue("save_abc"),
@@ -237,7 +237,7 @@ describe("GameInner — auto-save resume", () => {
   });
 
   it("calls createSave and onGameSessionStarted when starting a new game via pendingGameSetup", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const mockCreateSave = vi.fn().mockResolvedValue("save_1");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [],
@@ -404,7 +404,7 @@ describe("GameInner — custom team label resolution", () => {
       deleteTeam: vi.fn(),
       refresh: vi.fn(),
     });
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [],
       createSave: vi.fn().mockResolvedValue("save_1"),
@@ -479,7 +479,7 @@ describe("GameInner — custom team label resolution", () => {
   });
 
   it("auto-resume keeps custom: IDs intact in restored state", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const snapState = makeState({ teams: ["custom:ct_abc123", "Home"] as [string, string] });
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [
@@ -623,7 +623,7 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
     // Simulate the bug scenario: there is a finished game in RxDB saves, but the user
     // is starting a brand-new game.  The auto-resume logic must NOT overwrite the fresh
     // session with the finished-game state.
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const finishedSave = {
       ...makeAutoSaveSlot(),
       id: "finished-save",
@@ -717,7 +717,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
     ) {
       this.removeAttribute("open");
     });
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [],
       createSave: vi.fn().mockResolvedValue("save_1"),
@@ -736,7 +736,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
   });
 
   it("dispatches restore_game and calls onGameSessionStarted after Load is clicked in the modal", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeModalSaveSlot();
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [slot],
@@ -787,7 +787,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
   });
 
   it("updates URL seed and dispatches restore_game when a save is loaded from the modal", async () => {
-    const { useSaveStore } = await import("@hooks/useSaveStore");
+    const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeModalSaveSlot(); // seed: "modalseed"
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [slot],
