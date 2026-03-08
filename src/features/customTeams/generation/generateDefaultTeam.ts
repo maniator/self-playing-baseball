@@ -1,6 +1,6 @@
 import { BATTING_POSITIONS } from "@utils/roster";
 
-import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "../statBudget";
+import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "../components/CustomTeamEditor/statBudget";
 
 export interface GeneratedPlayer {
   id: string;

@@ -5,10 +5,10 @@ import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocation, useNavigate, useParams } from "react-router";
 
-import CustomTeamEditor from "@components/CustomTeamEditor";
-import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
 import { downloadJson, teamsFilename } from "@storage/saveIO";
 
+import CustomTeamEditor from "../../components/CustomTeamEditor";
+import { useImportCustomTeams } from "../../hooks/useImportCustomTeams";
 import {
   BackBtn,
   CreateBtn,

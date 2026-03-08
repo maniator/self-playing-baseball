@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import ManageTeamsScreen from "@feat/customTeams/pages/ManageTeamsScreen";
 import { createBrowserRouter, Navigate, redirect, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";
 import AppShell from "@components/AppShell";
 import HomeScreen from "@components/HomeScreen";
-import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import RootLayout from "@components/RootLayout";
 
 const CareerStatsPage = React.lazy(() => import("@feat/careerStats/pages/CareerStatsPage"));

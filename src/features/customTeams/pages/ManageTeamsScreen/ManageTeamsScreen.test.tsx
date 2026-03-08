@@ -15,7 +15,7 @@ vi.mock("@shared/hooks/useCustomTeams", () => ({
   })),
 }));
 
-vi.mock("@components/CustomTeamEditor", () => ({
+vi.mock("../../components/CustomTeamEditor", () => ({
   default: ({ onCancel, onSave }: { onCancel: () => void; onSave: () => void }) => (
     <div data-testid="custom-team-editor">
       <button onClick={onSave}>Save</button>
@@ -49,7 +49,7 @@ vi.mock("@storage/saveIO", () => ({
   teamsFilename: vi.fn(() => "ballgame-teams-test.json"),
 }));
 
-vi.mock("@hooks/useImportCustomTeams", () => ({
+vi.mock("../../hooks/useImportCustomTeams", () => ({
   useImportCustomTeams: vi.fn(({ onSuccess }: { onSuccess: (r: unknown) => void }) => ({
     importError: null,
     importing: false,
@@ -62,11 +62,11 @@ import type { ImportCustomTeamsResult } from "@feat/customTeams/storage/customTe
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { UseImportCustomTeamsReturn } from "@hooks/useImportCustomTeams";
-import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
 import { downloadJson } from "@storage/saveIO";
 import type { CustomTeamDoc } from "@storage/types";
 
+import type { UseImportCustomTeamsReturn } from "../../hooks/useImportCustomTeams";
+import { useImportCustomTeams } from "../../hooks/useImportCustomTeams";
 import ManageTeamsScreen from "./index";
 
 /** Renders ManageTeamsScreen inside a MemoryRouter with the teams routes set up. */
