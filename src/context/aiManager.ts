@@ -160,17 +160,7 @@ export function makeAiPitchingDecision(
   const fatigueFactor = computeFatigueFactor(battersFaced, staminaMod);
 
   const isHighFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_HIGH;
-  // Medium fatigue pull requires inning >= 6 AND a game-context trigger:
-  // - close game (≤1 run diff): pitcher is on a shorter leash
-  // - late game (inning >= 7): willing to pull even in a 2-run game
-  // - runners on base: higher leverage situation
-  const runDiff = Math.abs(state.score[0] - state.score[1]);
-  const isTightGame = runDiff <= 1;
-  const hasRunnersOn = state.baseLayout.some((b) => b === 1);
-  const isMediumFatigue =
-    fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM &&
-    state.inning >= 6 &&
-    (isTightGame || state.inning >= 7 || hasRunnersOn);
+  const isMediumFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM && state.inning >= 6;
 
   if (!isHighFatigue && !isMediumFatigue) return { kind: "none" };
 
@@ -357,7 +347,7 @@ export function makeAiStrategyDecision(state: State, battingTeamIdx: 0 | 1): Str
     if (runDiff === -1) return "aggressive";
   }
 
-  if (runDiff >= 3) return "balanced";
+  if (runDiff >= 3) return "patient";
 
   if (outs === 2 && inning >= 7 && Math.abs(runDiff) <= 2) return "aggressive";
 

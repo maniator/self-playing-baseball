@@ -135,52 +135,6 @@ describe("makeAiPitchingDecision", () => {
     expect(decision.kind).toBe("none");
   });
 
-  it("returns none at medium fatigue in inning 6 during blowout (no runners, 2+ run lead)", () => {
-    // In a blowout with nobody on base in exactly inning 6, starters stay longer.
-    const state = makeState({
-      inning: 6,
-      score: [0, 3], // home team leading by 3 (blowout)
-      baseLayout: [0, 0, 0],
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
-      rosterPitchers: [[], ["sp1", "rp1"]],
-      activePitcherIdx: [0, 0],
-      substitutedOut: [[], []],
-    });
-    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
-    // Blowout + inning 6 + nobody on = medium fatigue hook does NOT trigger
-    expect(decision.kind).toBe("none");
-  });
-
-  it("returns pitching_change at medium fatigue in inning 6 with runners on (high leverage)", () => {
-    // Runners on base in inning 6 triggers pull even in non-tight game.
-    const state = makeState({
-      inning: 6,
-      score: [0, 3], // home team leading by 3 (blowout)
-      baseLayout: [1, 0, 0], // runner on first → high leverage
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
-      rosterPitchers: [[], ["sp1", "rp1"]],
-      activePitcherIdx: [0, 0],
-      substitutedOut: [[], []],
-    });
-    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
-    expect(decision.kind).toBe("pitching_change");
-  });
-
-  it("returns pitching_change at medium fatigue in inning 7 regardless of score (late game rule)", () => {
-    // Inning 7+ medium fatigue always triggers regardless of score.
-    const state = makeState({
-      inning: 7,
-      score: [0, 4], // blowout
-      baseLayout: [0, 0, 0],
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
-      rosterPitchers: [[], ["sp1", "rp1"]],
-      activePitcherIdx: [0, 0],
-      substitutedOut: [[], []],
-    });
-    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
-    expect(decision.kind).toBe("pitching_change");
-  });
-
   it("returns none when all relievers are used (no-reentry)", () => {
     const state = makeState({
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
@@ -355,10 +309,9 @@ describe("makeAiStrategyDecision", () => {
     expect(makeAiStrategyDecision(state, 1)).toBe("aggressive");
   });
 
-  it("returns 'balanced' when leading by 3+ (walk-farming fix)", () => {
-    // Changed from 'patient' to 'balanced' to break the walk-rate inflation feedback loop.
+  it("returns 'patient' when leading by 3+", () => {
     const state = makeState({ score: [0, 4], atBat: 1, inning: 3 });
-    expect(makeAiStrategyDecision(state, 1)).toBe("balanced");
+    expect(makeAiStrategyDecision(state, 1)).toBe("patient");
   });
 
   it("returns 'aggressive' with 2 outs in close late-game", () => {
@@ -374,10 +327,5 @@ describe("makeAiStrategyDecision", () => {
   it("returns 'balanced' by default", () => {
     const state = makeState({ score: [0, 0], atBat: 0, inning: 2 });
     expect(makeAiStrategyDecision(state, 0)).toBe("balanced");
-  });
-
-  it("returns 'balanced' when leading by 3+ in late game", () => {
-    const state = makeState({ score: [0, 5], atBat: 1, inning: 8 });
-    expect(makeAiStrategyDecision(state, 1)).toBe("balanced");
   });
 });

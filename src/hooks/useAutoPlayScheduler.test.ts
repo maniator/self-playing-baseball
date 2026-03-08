@@ -284,7 +284,7 @@ describe("useAutoPlayScheduler", () => {
     renderScheduler({
       gameStarted: true,
       muted: false, // NOT muted, but instant mode should skip speech gating
-      speed: 0,     // SPEED_INSTANT
+      speed: 0, // SPEED_INSTANT
       handlePitch: handleClick,
     });
     // Even with speech pending, instant mode fires on next tick (delay=0)
