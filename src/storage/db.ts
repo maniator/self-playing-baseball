@@ -321,8 +321,8 @@ const playerGameStatsSchema: RxJsonSchema<PlayerGameStatDoc> = {
 };
 
 const pitcherGameStatsSchema: RxJsonSchema<PitcherGameStatDoc> = {
-  // Version 0: initial schema.
-  version: 0,
+  // Version 1: added pitchesThrown field.
+  version: 1,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -335,6 +335,7 @@ const pitcherGameStatsSchema: RxJsonSchema<PitcherGameStatDoc> = {
     nameAtGameTime: { type: "string" },
     outsPitched: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
     battersFaced: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
+    pitchesThrown: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
     hitsAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
     walksAllowed: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
     strikeoutsRecorded: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
@@ -357,6 +358,7 @@ const pitcherGameStatsSchema: RxJsonSchema<PitcherGameStatDoc> = {
     "nameAtGameTime",
     "outsPitched",
     "battersFaced",
+    "pitchesThrown",
     "hitsAllowed",
     "walksAllowed",
     "strikeoutsRecorded",
@@ -676,7 +678,13 @@ async function initDb(
       },
     },
     playerGameStats: { schema: playerGameStatsSchema },
-    pitcherGameStats: { schema: pitcherGameStatsSchema },
+    pitcherGameStats: {
+      schema: pitcherGameStatsSchema,
+      migrationStrategies: {
+        // v0 → v1: backfill pitchesThrown = 0 for existing records (field did not exist).
+        1: (oldDoc: Record<string, unknown>) => ({ ...oldDoc, pitchesThrown: 0 }),
+      },
+    },
   });
   return db;
 }

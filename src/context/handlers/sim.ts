@@ -7,6 +7,7 @@ import { handleBallInPlay, hitBall } from "../hitBall";
 import type { GameAction, State, Strategy } from "../index";
 import type { BattedBallType } from "../pitchSimulation";
 import { buntAttempt, playerStrike, playerWait, stealAttempt } from "../playerActions";
+import { incrementPitchCount } from "../playerOut";
 import type { ReducerCtx } from "../reducerHelpers";
 import { withDecisionLog, withStrikeoutLog } from "../reducerHelpers";
 
@@ -27,9 +28,14 @@ export const handleSimAction = (
     case "hit": {
       const p = action.payload as { battedBallType: BattedBallType; strategy?: Strategy };
       const strategy: Strategy = p?.strategy ?? "balanced";
+      // Count this pitch (ball in play) before resolving the hit.
+      const stateWithPitch = incrementPitchCount(state);
       // Saves restore from stateSnapshot (not event replay), so all "hit" actions
       // in active play carry a battedBallType — no legacy hitType fallback needed.
-      return checkWalkoff(handleBallInPlay(p.battedBallType, state, log, { strategy }), log);
+      return checkWalkoff(
+        handleBallInPlay(p.battedBallType, stateWithPitch, log, { strategy }),
+        log,
+      );
     }
     case "strike": {
       const sp = action.payload as { swung?: boolean; pitchType?: PitchType };
@@ -42,11 +48,13 @@ export const handleSimAction = (
       if (state.strikes < 2) return playerStrike(state, log, true, true, pt);
       const msg = pt ? `${pitchName(pt)} — foul ball — count stays.` : "Foul ball — count stays.";
       log(msg);
+      // Count this pitch (foul with 2 strikes — count stays, but a pitch was thrown).
+      const stateWithPitch = incrementPitchCount(state);
       return {
-        ...state,
+        ...stateWithPitch,
         pendingDecision: null,
         hitType: undefined,
-        pitchKey: (state.pitchKey ?? 0) + 1,
+        pitchKey: (stateWithPitch.pitchKey ?? 0) + 1,
       };
     }
     case "wait": {
@@ -76,8 +84,14 @@ export const handleSimAction = (
     case "intentional_walk": {
       const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       log(`${fieldingTeam} manager issues an intentional walk.`);
+      // Count as a single pitch event — the engine models the full IBB sequence as one pitch.
+      const stateWithPitch = incrementPitchCount(state);
       const result = checkWalkoff(
-        hitBall(Hit.Walk, { ...state, pendingDecision: null, suppressNextDecision: true }, log),
+        hitBall(
+          Hit.Walk,
+          { ...stateWithPitch, pendingDecision: null, suppressNextDecision: true },
+          log,
+        ),
         log,
       );
       return withDecisionLog(state, result, `${state.pitchKey}:ibb`);

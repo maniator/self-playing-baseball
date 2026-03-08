@@ -5,26 +5,28 @@ import { checkWalkoff } from "./gameOver";
 import { addInningRuns, hitBall } from "./hitBall";
 import { DecisionType, OnePitchModifier, State, Strategy } from "./index";
 import { updateActivePitcherLog } from "./pitcherLog";
-import { playerOut } from "./playerOut";
+import { incrementPitchCount, playerOut } from "./playerOut";
 
 export const buntAttempt = (
   state: State,
   log: (msg: string) => void,
   strategy: Strategy = "balanced",
 ): State => {
+  // Count this pitch — the pitcher is throwing to the batter on the bunt.
+  const stateWithPitch = incrementPitchCount(state);
   log("Batter squares to bunt...");
   const roll = getRandomInt(100);
   const singleChance = strategy === "contact" ? 20 : 8;
 
   if (roll < singleChance) {
     log("Bunt single!");
-    return hitBall(Hit.Single, { ...state, pendingDecision: null }, log, strategy);
+    return hitBall(Hit.Single, { ...stateWithPitch, pendingDecision: null }, log, strategy);
   }
 
   const fcChance = singleChance + 12;
   if (roll < fcChance) {
     log("Fielder's choice! Lead runner thrown out — batter reaches first safely.");
-    const oldBase = state.baseLayout;
+    const oldBase = stateWithPitch.baseLayout;
     const newBase: [number, number, number] = [1, 0, 0];
     let runsScored = 0;
     if (oldBase[0]) {
@@ -33,12 +35,13 @@ export const buntAttempt = (
     } else if (oldBase[1]) {
       if (oldBase[2]) runsScored++;
     }
-    const newScore: [number, number] = [state.score[0], state.score[1]];
-    newScore[state.atBat] += runsScored;
+    const newScore: [number, number] = [stateWithPitch.score[0], stateWithPitch.score[1]];
+    newScore[stateWithPitch.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
     // Shift runner IDs: lead runner is out, remaining runners advance per base movement
     const fcOldIds =
-      state.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
+      stateWithPitch.baseRunnerIds ??
+      ([null, null, null] as [string | null, string | null, string | null]);
     const fcNewRunnerIds: [string | null, string | null, string | null] = [null, null, null];
     if (oldBase[0]) {
       // lead runner on 1st is out; if runner on 2nd, they move to 3rd
@@ -49,9 +52,9 @@ export const buntAttempt = (
     }
     // batter goes to 1st — ID unknown here (null)
     // Track pitcher: runs scored only. battersFaced is incremented by playerOut(…, true) below.
-    const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+    const pitchingTeam = (1 - (stateWithPitch.atBat as number)) as 0 | 1;
     const pitcherLogAfterFC = updateActivePitcherLog(
-      state.pitcherGameLog ?? [[], []],
+      stateWithPitch.pitcherGameLog ?? [[], []],
       pitchingTeam,
       (entry) => ({
         ...entry,
@@ -60,7 +63,7 @@ export const buntAttempt = (
     );
     const afterFC = addInningRuns(
       {
-        ...state,
+        ...stateWithPitch,
         baseLayout: newBase,
         score: newScore,
         baseRunnerIds: fcNewRunnerIds,
@@ -69,7 +72,7 @@ export const buntAttempt = (
         strikes: 0,
         balls: 0,
         hitType: undefined,
-        pitchKey: (state.pitchKey ?? 0) + 1,
+        pitchKey: (stateWithPitch.pitchKey ?? 0) + 1,
         pitcherGameLog: pitcherLogAfterFC,
       },
       runsScored,
@@ -79,32 +82,33 @@ export const buntAttempt = (
 
   if (roll < 80) {
     log("Sacrifice bunt! Runner(s) advance.");
-    const oldBase = state.baseLayout;
+    const oldBase = stateWithPitch.baseLayout;
     const newBase: [number, number, number] = [0, 0, 0];
     let runsScored = 0;
     if (oldBase[2]) runsScored++;
     if (oldBase[1]) newBase[2] = 1;
     if (oldBase[0]) newBase[1] = 1;
-    const newScore: [number, number] = [state.score[0], state.score[1]];
-    newScore[state.atBat] += runsScored;
+    const newScore: [number, number] = [stateWithPitch.score[0], stateWithPitch.score[1]];
+    newScore[stateWithPitch.atBat] += runsScored;
     if (runsScored > 0) log(runsScored === 1 ? "One run scores!" : `${runsScored} runs score!`);
     // Shift runner IDs following the same movement as bases
     const sacOldIds =
-      state.baseRunnerIds ?? ([null, null, null] as [string | null, string | null, string | null]);
+      stateWithPitch.baseRunnerIds ??
+      ([null, null, null] as [string | null, string | null, string | null]);
     const sacNewRunnerIds: [string | null, string | null, string | null] = [null, null, null];
     if (oldBase[1]) sacNewRunnerIds[2] = sacOldIds[1]; // 2nd → 3rd
     if (oldBase[0]) sacNewRunnerIds[1] = sacOldIds[0]; // 1st → 2nd
     // runner on 3rd scores — ID drops; batter out — no ID placed
     // Track pitcher: runs scored for sac-bunt plays.
-    const pitchingTeamSac = (1 - (state.atBat as number)) as 0 | 1;
+    const pitchingTeamSac = (1 - (stateWithPitch.atBat as number)) as 0 | 1;
     const pitcherLogAfterSac = updateActivePitcherLog(
-      state.pitcherGameLog ?? [[], []],
+      stateWithPitch.pitcherGameLog ?? [[], []],
       pitchingTeamSac,
       (entry) => ({ ...entry, runsAllowed: entry.runsAllowed + runsScored }),
     );
     const afterBunt = addInningRuns(
       {
-        ...state,
+        ...stateWithPitch,
         baseLayout: newBase,
         score: newScore,
         baseRunnerIds: sacNewRunnerIds,
@@ -114,7 +118,7 @@ export const buntAttempt = (
         strikes: 0,
         balls: 0,
         hitType: undefined,
-        pitchKey: (state.pitchKey ?? 0) + 1,
+        pitchKey: (stateWithPitch.pitchKey ?? 0) + 1,
         pitcherGameLog: pitcherLogAfterSac,
       },
       runsScored,
@@ -124,7 +128,12 @@ export const buntAttempt = (
 
   log("Bunt popped up — out!");
   return playerOut(
-    { ...state, pendingDecision: null, hitType: undefined, pitchKey: (state.pitchKey ?? 0) + 1 },
+    {
+      ...stateWithPitch,
+      pendingDecision: null,
+      hitType: undefined,
+      pitchKey: (stateWithPitch.pitchKey ?? 0) + 1,
+    },
     log,
     true,
   );

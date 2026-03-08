@@ -67,6 +67,8 @@ export type PitcherLogEntry = {
   scoreOnEntry: [number, number];
   outsPitched: number;
   battersFaced: number;
+  /** Total pitches thrown in this appearance (balls put in play, strikes, balls, fouls). */
+  pitchesThrown: number;
   hitsAllowed: number;
   walksAllowed: number;
   strikeoutsRecorded: number;
@@ -204,6 +206,15 @@ export interface State {
    * [away, home]
    */
   pitcherBattersFaced: [number, number];
+  /**
+   * Number of pitch events thrown to batters by the current pitcher per team since their last entry.
+   * Reset to 0 when a new pitcher comes in. Primary workload signal for fatigue.
+   * Counts every pitch event to a batter: strikes, balls, fouls, balls in play, and intentional walks.
+   * An intentional walk (`intentional_walk`) is modeled as a single pitch event here (not four pitches).
+   * Steal attempts do NOT count — they are baserunning events, not pitches to the batter.
+   * [away, home]
+   */
+  pitcherPitchCount: [number, number];
   /**
    * Player IDs that have been substituted out (no-reentry rule) per team.
    * Once a player is in this set they may not re-enter the game.

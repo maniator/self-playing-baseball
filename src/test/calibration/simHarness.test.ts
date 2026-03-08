@@ -139,7 +139,12 @@ function runGame(seed: number): SimStats {
       : ZERO_MODS;
 
     const pitcherBattersFaced = (state.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
-    const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+    const pitcherPitchCount = (state.pitcherPitchCount ?? [0, 0])[pitchingTeam];
+    const fatigueFactor = computeFatigueFactor(
+      pitcherPitchCount,
+      pitcherBattersFaced,
+      pitcherMods.staminaMod,
+    );
 
     // Swing vs. take decision.
     const swingRoll = getRandomInt(1000);

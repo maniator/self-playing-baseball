@@ -23,49 +23,63 @@ import {
 // ---------------------------------------------------------------------------
 
 describe("computeFatigueFactor", () => {
-  it("returns exactly 1.0 when pitcher has faced 0 batters", () => {
-    expect(computeFatigueFactor(0, 0)).toBe(1.0);
+  it("returns exactly 1.0 when pitcher has thrown 0 pitches and faced 0 batters", () => {
+    expect(computeFatigueFactor(0, 0, 0)).toBe(1.0);
   });
 
-  it("returns 1.0 up to and including the freshThreshold (9 with no stamina mod)", () => {
-    for (let bf = 0; bf <= 9; bf++) {
-      expect(computeFatigueFactor(bf, 0)).toBe(1.0);
+  it("returns 1.0 up to and including the pitch fresh threshold (75 with no stamina mod)", () => {
+    for (let pc = 0; pc <= 75; pc++) {
+      expect(computeFatigueFactor(pc, 0, 0)).toBe(1.0);
     }
   });
 
-  it("grows beyond 1.0 after the freshThreshold", () => {
-    const at10 = computeFatigueFactor(10, 0);
-    const at15 = computeFatigueFactor(15, 0);
-    const at20 = computeFatigueFactor(20, 0);
-    expect(at10).toBeGreaterThan(1.0);
-    expect(at15).toBeGreaterThan(at10);
-    expect(at20).toBeGreaterThan(at15);
+  it("grows beyond 1.0 after the pitch fresh threshold", () => {
+    const at80 = computeFatigueFactor(80, 0, 0);
+    const at90 = computeFatigueFactor(90, 0, 0);
+    const at100 = computeFatigueFactor(100, 0, 0);
+    expect(at80).toBeGreaterThan(1.0);
+    expect(at90).toBeGreaterThan(at80);
+    expect(at100).toBeGreaterThan(at90);
   });
 
   it("is capped at 1.6", () => {
-    expect(computeFatigueFactor(1000, 0)).toBe(1.6);
-    expect(computeFatigueFactor(500, -20)).toBe(1.6);
+    expect(computeFatigueFactor(1000, 0, 0)).toBe(1.6);
+    expect(computeFatigueFactor(500, 0, -20)).toBe(1.6);
   });
 
-  it("higher staminaMod delays the onset of fatigue", () => {
-    // With staminaMod=+20, freshThreshold = 9 + 4 = 13.
-    // After 10 batters, no-stamina pitcher is tired; high-stamina pitcher is still fresh.
-    const noStamina = computeFatigueFactor(10, 0);
-    const highStamina = computeFatigueFactor(10, 20);
+  it("higher staminaMod raises the pitch fresh threshold", () => {
+    // With staminaMod=+20, pitchFreshThreshold = 75 + 30 = 105.
+    // After 80 pitches, default-stamina pitcher is fatigued; high-stamina pitcher is still fresh.
+    const noStamina = computeFatigueFactor(80, 0, 0);
+    const highStamina = computeFatigueFactor(80, 0, 20);
     expect(noStamina).toBeGreaterThan(1.0);
     expect(highStamina).toBe(1.0);
   });
 
-  it("negative staminaMod accelerates fatigue onset", () => {
-    // With staminaMod=-20, freshThreshold = 9 - 4 = 5.
-    const noStamina = computeFatigueFactor(6, 0);
-    const lowStamina = computeFatigueFactor(6, -20);
-    expect(noStamina).toBe(1.0); // still fresh
+  it("negative staminaMod lowers the pitch fresh threshold", () => {
+    // With staminaMod=-20, pitchFreshThreshold = 75 - 30 = 45.
+    const noStamina = computeFatigueFactor(50, 0, 0);
+    const lowStamina = computeFatigueFactor(50, 0, -20);
+    expect(noStamina).toBe(1.0); // still fresh at 50 pitches
     expect(lowStamina).toBeGreaterThan(1.0); // already fatigued
   });
 
+  it("batters faced adds a secondary stress component", () => {
+    // Same pitch count; more batters faced = slightly higher fatigue.
+    const fewBF = computeFatigueFactor(80, 5, 0);
+    const manyBF = computeFatigueFactor(80, 15, 0);
+    expect(manyBF).toBeGreaterThan(fewBF);
+  });
+
+  it("pitch count drives fatigue more strongly than batters faced", () => {
+    // Pitcher at 95 pitches / 5 BF vs 50 pitches / 25 BF — the high-pitch-count one is more fatigued.
+    const highPitch = computeFatigueFactor(95, 5, 0);
+    const highBF = computeFatigueFactor(50, 25, 0);
+    expect(highPitch).toBeGreaterThan(highBF);
+  });
+
   it("is deterministic given identical inputs", () => {
-    expect(computeFatigueFactor(12, 5)).toBe(computeFatigueFactor(12, 5));
+    expect(computeFatigueFactor(90, 20, 5)).toBe(computeFatigueFactor(90, 20, 5));
   });
 });
 

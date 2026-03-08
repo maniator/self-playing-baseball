@@ -89,7 +89,8 @@ describe("makeAiPitchingDecision", () => {
     // pull path does not make this test non-deterministic.
     alwaysPull();
     const state = makeState({
-      pitcherBattersFaced: [5, 5],
+      pitcherPitchCount: [5, 5],
+      pitcherBattersFaced: [2, 2],
       rosterPitchers: [
         ["sp1", "rp1"],
         ["sp1", "rp1"],
@@ -104,7 +105,8 @@ describe("makeAiPitchingDecision", () => {
   it("returns pitching_change when fatigue is high", () => {
     alwaysPull();
     const state = makeState({
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -122,7 +124,8 @@ describe("makeAiPitchingDecision", () => {
     alwaysPull();
     const state = makeState({
       inning: 7, // inning >= 7 now required for medium fatigue hook (context-aware)
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -139,7 +142,8 @@ describe("makeAiPitchingDecision", () => {
     const state = makeState({
       inning: 3,
       score: [5, 0], // comfortable lead (not tight — diff > 2)
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -155,7 +159,8 @@ describe("makeAiPitchingDecision", () => {
     const state = makeState({
       inning: 3,
       score: [1, 1], // tied = tight game
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -167,7 +172,8 @@ describe("makeAiPitchingDecision", () => {
   it("probabilistic skip: returns none when random() exceeds pull probability", () => {
     vi.spyOn(rng, "random").mockReturnValue(1); // above any probability → never pull
     const state = makeState({
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], []],
@@ -178,7 +184,8 @@ describe("makeAiPitchingDecision", () => {
 
   it("returns none when all relievers are used (no-reentry)", () => {
     const state = makeState({
-      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherBattersFaced: [0, 0],
       rosterPitchers: [[], ["sp1", "rp1"]],
       activePitcherIdx: [0, 0],
       substitutedOut: [[], ["rp1"]], // rp1 was subbed out
@@ -188,7 +195,7 @@ describe("makeAiPitchingDecision", () => {
     expect(decision.kind).toBe("none");
   });
 
-  it("handles missing pitcherBattersFaced gracefully (backward compat)", () => {
+  it("handles missing pitcherPitchCount gracefully (backward compat)", () => {
     // Simulate an older save without the field
     const state = makeState({
       rosterPitchers: [[], ["sp1", "rp1"]],
@@ -196,7 +203,7 @@ describe("makeAiPitchingDecision", () => {
       substitutedOut: [[], []],
     });
     // Delete the field to simulate an older save
-    delete (state as unknown as Record<string, unknown>)["pitcherBattersFaced"];
+    delete (state as unknown as Record<string, unknown>)["pitcherPitchCount"];
     const decision = makeAiPitchingDecision(state as typeof state, 1);
     expect(decision.kind).toBe("none");
   });

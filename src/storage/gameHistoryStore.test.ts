@@ -676,6 +676,45 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
 
     await db2.close();
   });
+
+  it("backfills pitchesThrown=0 when importing legacy bundle without that field", async () => {
+    // Simulate a pre-v1-schema bundle whose pitcher rows lack pitchesThrown.
+    const gameId = "game_import_legacy_pitcher";
+    const pitcherRow = makePitcherRow(gameId, "p_legacy");
+    const { pitchesThrown: _omit, ...rowWithoutPitchesThrown } = {
+      ...pitcherRow,
+      id: `${gameId}:Yankees:Yankees:p_legacy`,
+      schemaVersion: 0,
+      createdAt: Date.now(),
+      pitchesThrown: 0, // present only so we can destructure it off
+    };
+
+    const payload = {
+      games: [],
+      playerGameStats: [],
+      pitcherGameStats: [rowWithoutPitchesThrown],
+      requiredTeamIds: [],
+    };
+    const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
+    const bundle = JSON.stringify({
+      type: "gameHistory",
+      formatVersion: 2,
+      exportedAt: new Date().toISOString(),
+      payload,
+      sig,
+    });
+
+    const db2 = await _createTestDb(getRxStorageMemory());
+    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
+
+    const result = await store2.importGameHistory(bundle, new Set());
+    expect(result.pitcherStatsCreated).toBe(1);
+
+    const [imported] = await db2.pitcherGameStats.find().exec();
+    expect(imported.pitchesThrown).toBe(0);
+
+    await db2.close();
+  });
 });
 
 // ---------------------------------------------------------------------------

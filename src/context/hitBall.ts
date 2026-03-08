@@ -543,9 +543,14 @@ export const hitBall = (
     ? (state.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
     : ZERO_MODS;
 
-  // Pitcher fatigue: more batters faced → higher factor → easier to get hits.
+  // Pitcher fatigue: more pitches thrown → higher factor → easier to get hits.
   const pitcherBattersFaced = (state.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
-  const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+  const pitcherPitchCount = (state.pitcherPitchCount ?? [0, 0])[pitchingTeam];
+  const fatigueFactor = computeFatigueFactor(
+    pitcherPitchCount,
+    pitcherBattersFaced,
+    pitcherMods.staminaMod,
+  );
 
   // contactMod: higher contact = higher threshold (easier to get hits)
   // movementMod: higher movement = lower threshold (harder to hit clean)

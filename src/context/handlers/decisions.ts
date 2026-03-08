@@ -162,10 +162,14 @@ export const handleDecisionsAction = (
           teamIdx === 0 ? [...state.substitutedOut[0], oldPitcherId] : state.substitutedOut[0],
           teamIdx === 1 ? [...state.substitutedOut[1], oldPitcherId] : state.substitutedOut[1],
         ];
-        // Reset batters-faced counter for the new pitcher.
+        // Reset batters-faced and pitch-count counters for the new pitcher.
         const newBattersFaced: [number, number] = [
           teamIdx === 0 ? 0 : state.pitcherBattersFaced[0],
           teamIdx === 1 ? 0 : state.pitcherBattersFaced[1],
+        ];
+        const newPitchCount: [number, number] = [
+          teamIdx === 0 ? 0 : (state.pitcherPitchCount ?? [0, 0])[0],
+          teamIdx === 1 ? 0 : (state.pitcherPitchCount ?? [0, 0])[1],
         ];
         const reasonSuffix = p.reason ? ` (${p.reason})` : "";
         const teamName = state.teamLabels[teamIdx];
@@ -182,6 +186,7 @@ export const handleDecisionsAction = (
           activePitcherIdx: newActivePitcherIdx,
           substitutedOut: newSubOut,
           pitcherBattersFaced: newBattersFaced,
+          pitcherPitchCount: newPitchCount,
           pitcherGameLog: newPitcherGameLog,
         };
       }

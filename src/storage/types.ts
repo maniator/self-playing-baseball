@@ -417,6 +417,12 @@ export interface PitcherGameStatDoc {
   outsPitched: number;
   /** Total batters faced. */
   battersFaced: number;
+  /**
+   * Total pitch events thrown to batters (balls, strikes, fouls, balls in play, intentional walks).
+   * Uses the simulation's pitch-event model: an intentional walk is a single event (IBB = 1),
+   * not four separate pitches as in real-world pitch counts.
+   */
+  pitchesThrown: number;
   /** Hits allowed by this pitcher. */
   hitsAllowed: number;
   /** Walks (and intentional walks) allowed. */

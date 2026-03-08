@@ -156,7 +156,8 @@
         "holds": 0,
         "blownSaves": 0,
         "createdAt": 1700000001000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       },
       {
         "id": "sum_game_002:e2e_summary_team:e2e_pitcher_starter",
@@ -178,7 +179,8 @@
         "holds": 0,
         "blownSaves": 0,
         "createdAt": 1700000002000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       },
       {
         "id": "sum_game_003:e2e_summary_team:e2e_pitcher_reliever",
@@ -200,10 +202,11 @@
         "holds": 0,
         "blownSaves": 0,
         "createdAt": 1700000003000,
-        "schemaVersion": 1
+        "schemaVersion": 1,
+        "pitchesThrown": 0
       }
     ],
     "requiredTeamIds": []
   },
-  "sig": "1200a7ff"
+  "sig": "580c4afd"
 }

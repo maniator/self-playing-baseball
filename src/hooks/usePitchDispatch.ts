@@ -215,9 +215,14 @@ export const usePitchDispatch = ({
       ? (currentState.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
       : ZERO_MODS;
 
-    // Compute pitcher fatigue factor from batters faced and stamina.
+    // Compute pitcher fatigue factor from pitch count (primary) and batters faced (secondary).
     const pitcherBattersFaced = (currentState.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
-    const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+    const pitcherPitchCount = (currentState.pitcherPitchCount ?? [0, 0])[pitchingTeam];
+    const fatigueFactor = computeFatigueFactor(
+      pitcherPitchCount,
+      pitcherBattersFaced,
+      pitcherMods.staminaMod,
+    );
 
     // 2. Determine swing vs. take.
     const swingRoll = getRandomInt(1000);

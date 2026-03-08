@@ -23,6 +23,7 @@ const makePitcherEntry = (overrides: Partial<PitcherLogEntry> = {}): PitcherLogE
   scoreOnEntry: [0, 0],
   outsPitched: 0,
   battersFaced: 0,
+  pitchesThrown: 0,
   hitsAllowed: 0,
   walksAllowed: 0,
   strikeoutsRecorded: 0,
@@ -280,6 +281,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
       pitcherId: "pitcher1",
       outsPitched: 18,
       battersFaced: 22,
+      pitchesThrown: 85,
       hitsAllowed: 5,
       walksAllowed: 2,
       strikeoutsRecorded: 7,
@@ -293,6 +295,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     const r = result[0].result;
     expect(r.outsPitched).toBe(18);
     expect(r.battersFaced).toBe(22);
+    expect(r.pitchesThrown).toBe(85);
     expect(r.hitsAllowed).toBe(5);
     expect(r.walksAllowed).toBe(2);
     expect(r.strikeoutsRecorded).toBe(7);
@@ -313,6 +316,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
       runsAllowed: 1,
       homersAllowed: 0,
       battersFaced: 9,
+      pitchesThrown: 38,
       scoreOnEntry: [0, 0],
     });
     const secondStint = makePitcherEntry({
@@ -325,6 +329,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
       runsAllowed: 0,
       homersAllowed: 0,
       battersFaced: 4,
+      pitchesThrown: 15,
       scoreOnEntry: [1, 2],
     });
 
@@ -339,6 +344,7 @@ describe("computePitcherGameStats — SV/HLD/BS rules", () => {
     expect(fireman!.result.strikeoutsRecorded).toBe(5); // 3 + 2
     expect(fireman!.result.runsAllowed).toBe(1); // 1 + 0
     expect(fireman!.result.battersFaced).toBe(13); // 9 + 4
+    expect(fireman!.result.pitchesThrown).toBe(53); // 38 + 15
   });
 
   it("never awards a hold to the starting pitcher (i === 0) even if they leave in a save situation", () => {

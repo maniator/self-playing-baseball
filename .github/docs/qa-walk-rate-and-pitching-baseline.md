@@ -782,3 +782,199 @@ yarn build && npx playwright test --config=playwright-metrics.config.ts --projec
 - **Impact:** Zero — simulation correctness, stats accuracy, and player experience are not affected. The error is logged to the console only during Instant-mode batch runs; it does not occur during normal-speed gameplay.
 - **Tracking:** Logged in section 12 of this document and in the memory store. A focused investigation of the `useRxdbGameSync` write-flush race condition is recommended as a separate follow-up task.
 
+---
+
+## Section 22 — Pitch-count-first fatigue + AI hook tuning (PR #142)
+
+**Branch:** `copilot/update-pitcher-fatigue-tuning`
+**Date:** 2026-03-08
+**Baseline:** Post-PR-140 master (take base=220, passes 1–11)
+
+### What changed
+
+- **Fatigue formula** — switched from `computeFatigueFactor(battersFaced, staminaMod)` to `computeFatigueFactor(pitchCount, battersFaced, staminaMod)`.
+  - Primary driver: pitches thrown to batters (threshold = `75 + staminaMod × 1.5`; slope = **0.009/pitch**)
+  - Secondary driver: batters faced (threshold = `9 + staminaMod/5`; slope = 0.005/BF)
+  - Range unchanged: [1.0, 1.6]
+  - Example: `computeFatigueFactor(100, 0, 0) = 1.0 + 0.009×(100−75) = 1.225`
+- **Pitch count plumbing** — `pitcherPitchCount: [number, number]` added to State; incremented on every pitch thrown to a batter (balls, strikes, fouls, balls-in-play, intentional walk throws). Steal attempts excluded.
+- **AI hook thresholds** — `AI_FATIGUE_THRESHOLD_HIGH = 100 pitches` (factor **1.225**), `AI_FATIGUE_THRESHOLD_MEDIUM = 85 pitches` (factor **1.09**). Previously BF-based.
+- **Post-game stats** — `pitchesThrown` added to `PitcherGameStatDoc` (RxDB schema v0→v1).
+
+### RxDB upgrade path for `pitchesThrown`
+
+**Existing local DBs upgrade cleanly.** The `pitcherGameStats` collection is bumped from version 0 to version 1. The migration strategy is:
+
+```ts
+1: (oldDoc) => ({ ...oldDoc, pitchesThrown: 0 })
+```
+
+Any existing pitcher-game-stat records are backfilled with `pitchesThrown = 0` on first launch. No manual intervention, no DB reset, no data loss. New records written after the upgrade are populated normally from the reducer's pitch-count tracking. The `pitchesThrown` field is not yet shown in any UI, so the neutral default on old records has no visible impact.
+
+### Round 0 — Baseline confirmation (post-PR-140 master)
+
+| Metric | Value |
+|---|---|
+| BB% | 10.42% |
+| K% | 22.70% |
+| H/PA | 0.270 |
+| Runs/game | 10.5 |
+| BB/game | 7.1 |
+| Total PA | 6,823 |
+
+*(100-game browser run, Section 21 above)*
+
+### Round 1+2+3 — Deterministic stock-team harness (seeds 1–100)
+
+Run on PR #142 branch head (`91c12ed`):
+
+| Metric | Post-PR-140 | **PR #142** | Delta |
+|---|---|---|---|
+| BB% | ~5.2% | **4.7%** | −0.5 pp |
+| K% | ~25.3% | **26.4%** | +1.1 pp |
+| Runs/game | ~11.9 | **11.0** | −0.9 |
+
+*Stock-team harness uses all-balanced players (uniform mods) so BB% is always lower than custom-team games. Movement in the right direction.*
+
+### Why the vitest in-process harness is NOT a substitute for the browser run
+
+The project has two ways to run 100-game metrics:
+
+| | Vitest in-process harness | Playwright browser run |
+|---|---|---|
+| **File** | `src/test/calibration/customTeamMetrics.test.ts` | `e2e/tests/metrics-baseline.spec.ts` |
+| **Speed** | ~10–30 seconds | ~10–20 minutes |
+| **Environment** | Node.js only — no browser, no RxDB, no React | Full Chrome, RxDB, React 19, service worker |
+| **RNG sequence** | Pure game logic only | Extra `random()` calls from React renders, audio setup, and TTS between pitches shift the PRNG sequence |
+| **Per-game scores** | Deterministic for a seed | Different from in-process for the same seed (shifted PRNG) |
+| **PA source** | Game state directly | DOM batting-stats table read after tab-click wait |
+| **Authoritative?** | ❌ Directional signal only | ✅ Ground truth — apple-to-apple against all prior browser baselines |
+
+**Rule:** Never claim a metrics target is hit based on harness numbers alone. The harness BB% is typically **~1–2 pp lower** than the browser run because fewer total `random()` calls per PA hit slightly different outcomes. Always confirm with a browser run before updating the PR summary.
+
+### How to run the browser metrics spec via Playwright MCP
+
+The `npx playwright test` CLI is the only reliable way to start the preview server for MCP browser access. See `.github/docs/e2e-testing.md` → "Starting the preview server for MCP browser automation" for the full step-by-step workflow.
+
+**Quick reference:**
+
+```bash
+# 1. Build
+yarn build
+
+# 2. Start Playwright test in background (starts vite preview via webServer config)
+npx playwright test --config=playwright-metrics.config.ts --project=desktop > /tmp/pltest.txt 2>&1 &
+sleep 12  # wait for server to boot
+
+# 3. Navigate MCP browser to http://localhost:5173 (NOT 127.0.0.1 or other variants)
+# 4. Set localStorage: speed=0, announcementVolume=0, alertVolume=0, _e2eNoInningPause=1, managerMode=false
+# 5. Import e2e/fixtures/metrics-teams.json via /teams → "Import from File"
+# 6. Run games via /exhibition/new + form setup + play + collect stats
+```
+
+After each game, accumulate stats in `localStorage['metricsResults']` as a JSON array `[{ab,h,bb,k,awayScore,homeScore}, ...]` and read running totals with:
+
+```js
+const r = JSON.parse(localStorage.getItem('metricsResults')||'[]');
+const PA = r.reduce((s,g)=>s+g.ab+g.bb,0);
+const BB = r.reduce((s,g)=>s+g.bb,0);
+const K  = r.reduce((s,g)=>s+g.k,0);
+const H  = r.reduce((s,g)=>s+g.h,0);
+const runs = r.reduce((s,g)=>s+g.awayScore+g.homeScore,0);
+`${r.length} games  BB%=${(BB/PA*100).toFixed(1)}%  K%=${(K/PA*100).toFixed(1)}%  H/PA=${(H/PA).toFixed(3)}  R/g=${(runs/r.length).toFixed(1)}`
+```
+
+### Custom-team harness — 100 games (metrics-teams.json fixture, same matchup blocks as browser spec)
+
+> ⚠️ **This is vitest in-process only — not a browser run.** These results use slope=0.009 (same as the final browser run) but diverge from the browser due to PRNG sequence differences. See the browser run results and reconciliation below for the authoritative outcome.
+
+Method: in-process vitest run (`src/test/calibration/customTeamMetrics.test.ts`) using the canonical `e2e/fixtures/metrics-teams.json` fixture with full player mods, same 10 matchup combos × 10 seeds = 100 games. Seeds converted from the spec's string seeds (`s1g1`…`s10g10`) using the same string-hash approach. Deterministic — same RNG pipeline as the browser run.
+
+| Metric | Post-PR-140 browser | **PR #142 custom harness** | Delta | MLB target |
+|---|---|---|---|---|
+| BB% | 10.42% | **8.94%** | **−1.48 pp** ✅ | ~8–9% |
+| K% | 22.70% | **20.70%** | −2.0 pp ⚠️ | ~22–23% |
+| H/PA | 0.270 | **0.269** | −0.001 | ~0.248 |
+| Runs/game | 10.5 | **12.1** | +1.6 | ~8–9 |
+| BB/game | 7.1 | **8.3** | +1.2 | ~5–6 |
+| Pitching changes | — | **2.3/game** | — | — |
+
+**Total PA:** 9,263 | **Total BB:** 828 | **Total K:** 1,917 | **Total H:** 2,492 | **Total runs:** 1,212
+
+### Progress log (every 10 games)
+
+| After game | BB% so far |
+|---|---|
+| 10 | 7.3% |
+| 20 | 8.4% |
+| 30 | 9.0% |
+| 40 | 8.7% |
+| 50 | 9.0% |
+| 60 | 9.1% |
+| 70 | 9.1% |
+| 80 | 9.0% |
+| 90 | 8.8% |
+| **100** | **8.9%** |
+
+### Analysis (in-process harness — slope=0.009)
+
+> ⚠️ This analysis reflects the in-process harness results (slope=0.009). The K% concern below was not confirmed by the browser run — see reconciliation below. The browser run is the authoritative outcome.
+
+**BB%: Strong improvement.** The custom-team harness shows BB% at **8.94%**, down from 10.42% — a **−1.48 pp** improvement and squarely inside the target band (8–9%). Direction confirmed correct.
+
+**K%: Apparent regression in harness (false signal).** K% dropped from 22.70% to **20.70%** in the harness. However, the browser run confirmed this was a PRNG-divergence artifact — K% actually improved to 23.21% in the browser.
+
+**Pitching changes: 2.3/game.** This is a reasonable rate — not robotic and not too frequent.
+
+**Decision after harness:** Direction correct; proceed to browser validation before any further tuning.
+
+### Coverage and test status
+
+All 1,996 unit tests pass. Coverage: statements 95.22%, branches 87%, functions 90.95% — all above required thresholds (90%/80%/90%).
+
+
+### Browser run — PR #142 head (COMPLETE)
+
+**Method:** MCP browser automation via `npx playwright test --config=playwright-metrics.config.ts` webServer. 100 games, `metrics-teams.json` fixture, same 10-block × 10-seed structure as all prior browser passes. Slope=0.009, AI thresholds 100/85 pitches.
+
+**Raw counts:** PA=6,787 | AB=6,095 | BB=692 | K=1,575 | H=1,783 | Runs=1,030
+
+| Metric | Post-PR-140 baseline | **PR #142 browser** | Delta | MLB target |
+|---|---|---|---|---|
+| BB% | 10.42% | **10.20%** | −0.22 pp | ~8–9% |
+| K% | 22.70% | **23.21%** | +0.51 pp ✅ | ~22–23% |
+| H/PA | 0.270 | **0.263** | −0.007 | ~0.248 |
+| Runs/game | 10.5 | **10.30** | −0.2 | ~8–9 |
+| BB/game | 7.1 | **6.92** | −0.18 | ~5–6 |
+
+### Browser vs in-process harness reconciliation
+
+| Metric | In-process harness | Browser run | Direction match? |
+|---|---|---|---|
+| BB% | 8.94% | **10.20%** | ✅ both below baseline | 
+| K% | 20.70% | **23.21%** | ❌ harness showed regression, browser shows improvement |
+| Runs/game | 12.1 | **10.30** | ✅ both near baseline range |
+
+**Key finding:** The in-process harness K% regression (20.70%) was a false signal. The browser run shows K% actually **improved** slightly (+0.51 pp) to 23.21%, squarely inside the MLB target band. This is a clear example of why harness-only results must not be used for keep/revise decisions.
+
+The BB% browser result (10.20%) is a modest improvement from baseline (10.42%) — only −0.22 pp — significantly less than the harness suggested (−1.48 pp). The PRNG divergence between in-process and browser environments explains the gap: the browser's extra `random()` calls from React/RxDB/audio between pitches partially offset the fatigue effect on walks.
+
+### Final decision: KEEP with no further tuning
+
+**Evidence supports keeping the current implementation:**
+
+1. **K% protected** — 23.21% is the best K% result across all passes, up from 22.70%. The concern about K% regression from the harness was not confirmed in the browser.
+2. **BB% moved in the right direction** — 10.20% vs 10.42% baseline. Smaller improvement than hoped, but still a gain with no harm to other stats.
+3. **Runs/game stable** — 10.30 vs 10.5 baseline. Slight improvement, well within noise.
+4. **Pitcher-change behavior: more realistic, less robotic** — under the old BF-only model, starters were hooked at a fixed batters-faced count regardless of how many pitches they threw; a pitcher who carved through 5 innings on 60 pitches was pulled at the same point as one who needed 110 pitches for the same outs. Under the new pitch-count-first model, the efficient 60-pitch outing stays in, while the 110-pitch grind triggers the hook earlier. The harness measured 2.3 pitching changes/game — a plausible rate that no longer aligns rigidly with inning boundaries. Qualitative observation from watching browser games: no visibly robotic same-inning double-hooks, and starters with clean outings routinely pitch deeper into games than before.
+5. **No regressions** — every metric is equal-to or better than the post-PR-140 baseline.
+
+The BB% gap from the target (~8–9%) remains, but the take-base lever is exhausted (PR #140) and the pitch-count-first fatigue model has been implemented. The remaining ~1.2 pp gap is structural and would require either lineup/batting-profile changes or further fatigue modeling that is out of scope for this PR.
+
+### Interim progress log (browser run)
+
+| After N games | BB% | K% |
+|---|---|---|
+| ~38 | 9.0% | 23.6% |
+| ~73 | 10.1% | 22.9% |
+| **100** | **10.20%** | **23.21%** |

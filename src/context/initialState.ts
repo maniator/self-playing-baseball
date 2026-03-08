@@ -52,6 +52,7 @@ export const createFreshGameState = (
   activePitcherIdx: [0, 0] as [number, number],
   lineupPositions: [[], []] as [string[], string[]],
   pitcherBattersFaced: [0, 0] as [number, number],
+  pitcherPitchCount: [0, 0] as [number, number],
   substitutedOut: [[], []] as [string[], string[]],
   baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
   resolvedMods: [{}, {}] as [
@@ -116,11 +117,16 @@ export const backfillRestoredState = (restored: State): State => {
     decisionLog: base.decisionLog ?? [],
     inningRuns: base.inningRuns ?? [[], []],
     batterIndex: base.batterIndex ?? [0, 0],
+    // Clamp atBat to the valid 0|1 range — corrupted saves (e.g. fixtures written
+    // with atBat=3 from a bad snapshot) would yield pitchingTeam=-2, causing
+    // out-of-bounds array access in updateActivePitcherLog and a runtime crash.
+    atBat: base.atBat === 0 || base.atBat === 1 ? base.atBat : (0 as 0 | 1),
     rosterBench: base.rosterBench ?? [[], []],
     rosterPitchers: base.rosterPitchers ?? [[], []],
     activePitcherIdx: base.activePitcherIdx ?? [0, 0],
     lineupPositions: base.lineupPositions ?? [[], []],
     pitcherBattersFaced: base.pitcherBattersFaced ?? [0, 0],
+    pitcherPitchCount: base.pitcherPitchCount ?? [0, 0],
     substitutedOut: base.substitutedOut ?? [[], []],
     baseRunnerIds: base.baseRunnerIds ?? [null, null, null],
     resolvedMods:

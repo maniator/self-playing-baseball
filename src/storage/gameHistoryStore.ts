@@ -442,6 +442,8 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.pitcherGameStats.bulkInsert(
         pitchersToInsert.map((p) => ({
           ...p,
+          // Backfill pitchesThrown for older bundles that pre-date the v1 schema field.
+          pitchesThrown: (p as { pitchesThrown?: number }).pitchesThrown ?? 0,
           createdAt: p.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
