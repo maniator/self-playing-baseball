@@ -8,30 +8,30 @@
  * This is the deterministic in-process equivalent of metrics-baseline.spec.ts.
  */
 import { customTeamToPlayerOverrides } from "@feat/customTeams/adapters/customTeamAdapter";
-import { readFileSync } from "fs";
-import { join } from "path";
-import { describe, expect, it } from "vitest";
-
-import { Hit } from "@constants/hitTypes";
-import { selectPitchType } from "@constants/pitchTypes";
+import { selectPitchType } from "@feat/gameplay/constants/pitchTypes";
 import {
   makeAiPitchingDecision,
   makeAiStrategyDecision,
   makeAiTacticalDecision,
-} from "@context/aiManager";
-import type { GameAction, LogAction, State } from "@context/index";
-import { createFreshGameState } from "@context/initialState";
+} from "@feat/gameplay/context/aiManager";
+import type { GameAction, LogAction, State } from "@feat/gameplay/context/index";
+import { createFreshGameState } from "@feat/gameplay/context/initialState";
 import {
   computeFatigueFactor,
   computeSwingRate,
   resolveBattedBallType,
   resolveSwingOutcome,
-} from "@context/pitchSimulation";
-import reducerFactory, { detectDecision } from "@context/reducer";
-import { ZERO_MODS } from "@context/resolvePlayerMods";
+} from "@feat/gameplay/context/pitchSimulation";
+import reducerFactory, { detectDecision } from "@feat/gameplay/context/reducer";
+import { ZERO_MODS } from "@feat/gameplay/context/resolvePlayerMods";
+import getRandomInt from "@feat/gameplay/utils/getRandomInt";
+import { Hit } from "@shared/constants/hitTypes";
+import { restoreRng } from "@shared/utils/rng";
+import { readFileSync } from "fs";
+import { join } from "path";
+import { describe, expect, it } from "vitest";
+
 import type { CustomTeamDoc } from "@storage/types";
-import getRandomInt from "@utils/getRandomInt";
-import { restoreRng } from "@utils/rng";
 
 // ── Fixture loading ────────────────────────────────────────────────────────
 

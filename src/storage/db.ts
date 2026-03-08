@@ -7,6 +7,7 @@ import {
 } from "@feat/careerStats/storage/schema";
 import { customTeamsCollectionConfig } from "@feat/customTeams/storage/schema";
 import { eventsCollectionConfig, savesCollectionConfig } from "@feat/saves/storage/schema";
+import { appLog } from "@shared/utils/logger";
 import {
   addRxPlugin,
   createRxDatabase,
@@ -18,8 +19,6 @@ import {
 } from "rxdb";
 import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
-
-import { appLog } from "@utils/logger";
 
 import type {
   CustomTeamDoc,
