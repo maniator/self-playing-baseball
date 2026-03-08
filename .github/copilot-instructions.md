@@ -25,17 +25,81 @@ This file is the quick-reference index. For deeper detail, see:
 
 All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
-| Alias | Resolves to |
-|---|---|
-| `@components/*` | `src/components/*` |
-| `@context/*` | `src/context/*` |
-| `@hooks/*` | `src/hooks/*` |
-| `@utils/*` | `src/utils/*` |
-| `@constants/*` | `src/constants/*` |
-| `@storage/*` | `src/storage/*` |
-| `@test/*` | `src/test/*` |
+| Alias | Resolves to | Notes |
+|---|---|---|
+| `@feat/*` | `src/features/*` | **Preferred** for all feature code |
+| `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
+| `@storage/*` | `src/storage/*` | Persistence infra (DB wiring, shared types, utilities) |
+| `@components/*` | `src/components/*` | Legacy transitional — prefer `@feat/` for new code |
+| `@context/*` | `src/context/*` | Game simulation engine |
+| `@hooks/*` | `src/hooks/*` | Legacy transitional — prefer `@feat/` for new hooks |
+| `@utils/*` | `src/utils/*` | Pure utilities (rng, logger, mediaQueries, announce) |
+| `@constants/*` | `src/constants/*` | Enums and constants |
+| `@test/*` | `src/test/*` | Test helpers |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
+
+---
+
+## Feature-First Directory Structure
+
+The app uses a **feature-first** layout under `src/features/`. New code for a specific domain belongs in its feature directory, not in the legacy horizontal folders.
+
+```
+src/
+  features/
+    exhibition/          ← /exhibition/new route + setup UI
+      pages/ExhibitionSetupPage/
+      components/StarterPitcherSelector/
+    help/                ← /help route + in-game modal
+      pages/HelpPage/
+      components/HelpContent/
+      components/InstructionsModal/
+    saves/               ← /saves route + save persistence
+      pages/SavesPage/
+      storage/saveStore.ts
+      storage/schema.ts
+    careerStats/         ← /stats + /players/:key routes
+      pages/CareerStatsPage/
+      pages/PlayerCareerPage/
+      storage/gameHistoryStore.ts
+      storage/schema.ts
+    customTeams/         ← team builder, adapters, generation
+      adapters/customTeamAdapter.ts
+      generation/generateDefaultTeam.ts
+      storage/schema.ts    ← customTeams RxDB schema + migrations
+      statBudget.ts
+  shared/                ← only code used by 2+ unrelated features
+  storage/               ← DB wiring + shared infra (never feature logic)
+    db.ts                ← thin wiring: imports schemas from features
+    types.ts             ← shared domain types
+    hash.ts, generateId.ts, saveIO.ts
+```
+
+### Feature ownership rules
+
+| Code type | Where it lives |
+|---|---|
+| Page component + hook + styles for one route | `src/features/<domain>/pages/<PageName>/` |
+| UI component owned by one feature | `src/features/<domain>/components/<Name>/` |
+| Domain adapter / resolver | `src/features/<domain>/adapters/` |
+| RxDB schema + migration strategies for a collection | `src/features/<domain>/storage/schema.ts` |
+| Store API (query/mutation functions) for one feature | `src/features/<domain>/storage/<name>Store.ts` |
+| Code used by 2+ unrelated features | `src/shared/` |
+| DB wiring, shared types, file I/O utilities | `src/storage/` |
+| Game simulation engine | `src/context/` (future: `src/features/gameplay/`) |
+
+### Legacy transitional folders
+
+`src/components/`, `src/hooks/`, and `src/pages/` are **legacy transitional** folders — they still hold code not yet migrated. Do **not** add new feature-specific code to them. New routes, components, and hooks go in `src/features/<domain>/` from the start.
+
+The following are **intentionally deferred** to a future pass (gameplay/shell migration):
+- `src/components/` — AppShell, Game, GameControls, HomeScreen, RootLayout, and all gameplay UI (Announcements, Ball, DecisionPanel, Diamond, HitLog, LineScore, PlayerStatsPanel, TeamTabBar)
+- `src/hooks/` — `useHomeScreenMusic`, `useVolumeControls` (consumed exclusively by AppShell/HomeScreen)
+- `src/pages/GamePage/` — the `/game` route page
+- The `@components/*` and `@hooks/*` aliases remain active until this gameplay/shell migration is complete.
+
+`src/context/` holds the game simulation engine; migrating it to `src/features/gameplay/` is planned as a future pass.
 
 ---
 
@@ -150,10 +214,14 @@ Validate changes by:
 |---|---|
 | Pure utility function (formatting, file I/O, math) | `src/utils/` or `src/storage/` (e.g. `saveIO.ts`) |
 | Domain adapter / resolver (label resolution, ID mapping) | `src/features/<domain>/adapters/` |
-| React hook (state management, side effects) | `src/hooks/` |
-| Styled-component definitions used by ≥ 2 pages/screens | `src/components/<SharedName>/styles.ts` |
-| JSX content block rendered in ≥ 2 surfaces (modal + page) | `src/components/<SharedName>/index.tsx` |
-| Page-level layout chrome (`PageContainer`, `BackBtn`, etc.) | `src/components/PageLayout/styles.ts` |
+| React hook owned by one feature | `src/features/<domain>/hooks/` or alongside the page that uses it |
+| React hook reused across 2+ unrelated features | `src/hooks/` (transitional) or `src/shared/hooks/` |
+| Styled-component definitions for one feature | `src/features/<domain>/components/<Name>/styles.ts` |
+| Styled-component definitions used by 2+ unrelated features | `src/shared/components/<SharedName>/styles.ts` |
+| JSX content block owned by one feature | `src/features/<domain>/components/<Name>/index.tsx` |
+| JSX content block used by 2+ unrelated features | `src/shared/components/<Name>/index.tsx` |
+| Page-level layout chrome (`PageContainer`, `BackBtn`, etc.) | `src/shared/components/PageLayout/styles.ts` |
+| RxDB schema + migrations for a collection | `src/features/<domain>/storage/schema.ts` |
 
 ### Existing shared modules (extend these, do not re-implement)
 
@@ -162,11 +230,14 @@ Validate changes by:
 | `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename`, `teamsFilename`, `playerFilename` |
 | `@storage/hash` | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed |
 | `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
-| `@storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
-| `@components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` (used by SavesPage, HelpPage, ManageTeamsScreen) |
-| `@components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |
-| `@components/SaveSlotList` | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage) |
-| `@features/customTeams/adapters/customTeamAdapter` | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc. |
+| `@storage/types` | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc. |
+| `@feat/customTeams/storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
+| `@feat/customTeams/adapters/customTeamAdapter` | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc. |
+| `@feat/saves/storage/saveStore` | `SaveStore` singleton — `createSave`, `appendEvents`, `updateProgress`, `listSaves`, `deleteSave`, `exportRxdbSave`, `importRxdbSave` |
+| `@feat/careerStats/storage/gameHistoryStore` | `GameHistoryStore` singleton — career batting/pitching aggregates |
+| `@feat/help/components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |
+| `@shared/components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` — shared page chrome |
+| `@feat/saves/components/SaveSlotList` | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage) |
 | `@test/testHelpers` | `makeState`, `makeContextValue`, `makeLogs`, `mockRandom` |
 
 ### Rules
@@ -209,13 +280,13 @@ Validate changes by:
   ```
   Exported options interfaces live alongside the function they describe in the same file. Existing functions with positional params are not required to be refactored unless they are being modified as part of the current task.
 - **ESLint enforces import order** — run `yarn lint:fix` after adding imports to auto-sort them.
-- **`@storage/*` alias** — always import from `@storage/saveStore`, `@storage/db`, `@storage/types`; never use relative paths across directories.
+- **`@storage/*` alias** — always import from `@storage/db`, `@storage/types`, `@storage/hash`, `@storage/generateId`, `@storage/saveIO`; never use relative paths across directories. Note: `saveStore` has moved to `@feat/saves/storage/saveStore`; `customTeamStore` to `@feat/customTeams/storage/customTeamStore`; `gameHistoryStore` to `@feat/careerStats/storage/gameHistoryStore`.
 - **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.
 - **`_createTestDb` requires `fake-indexeddb/auto`** — import it at the top of any test file that calls `_createTestDb`. It is a dev-only dependency.
-- **`useSaveStore` requires `<RxDatabaseProvider>`** in the tree. Mock the hook in component tests with `vi.mock("@hooks/useSaveStore", ...)`.
+- **`useSaveStore` requires `<RxDatabaseProvider>`** in the tree. Mock the hook in component tests with `vi.mock("@feat/saves/hooks/useSaveStore", ...)`.
 - **RxDB schema changes MUST bump `version` and add a migration strategy** — any change to a collection's `properties`, `required`, or `indexes` at the same version number causes a DB6 schema hash mismatch for every existing user, blocking app startup. Always: (1) increment `version`, (2) add a `migrationStrategies` entry that never throws, (3) add an upgrade-path unit test. See `### Schema versioning & migration` in `docs/rxdb-persistence.md`.
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
-- **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden.
+- **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `src/features/help/components/InstructionsModal/styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden. Import `InstructionsModal` via `@feat/help/components/InstructionsModal`.
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
 - **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX. For non-trivial conditional rendering blocks, extract them into a named sub-component (e.g. `StarterPitcherSelector` in `ExhibitionSetupPage/`) to keep them independently testable.
 - **`SavesModal` no longer has `autoOpen`/`openSavesRequestCount`/`onRequestClose`/`closeLabel` props** — these were removed when "Load Saved Game" became a dedicated `/saves` route. The modal now always closes with a simple `close()`. Do not re-add these props.

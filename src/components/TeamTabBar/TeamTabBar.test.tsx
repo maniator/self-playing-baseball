@@ -1,13 +1,12 @@
 import * as React from "react";
 
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
-import { useCustomTeams } from "@hooks/useCustomTeams";
-
 import TeamTabBar from ".";
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(),
 }));
 

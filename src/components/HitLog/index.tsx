@@ -1,11 +1,11 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import styled from "styled-components";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { mq } from "@utils/mediaQueries";
 
 const EVENT_LABEL: Record<Hit, string> = {

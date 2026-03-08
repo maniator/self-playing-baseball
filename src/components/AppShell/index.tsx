@@ -3,47 +3,13 @@ import * as React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
 import VolumeControls from "@components/GameControls/VolumeControls";
-import type { PlayerOverrides } from "@components/NewGameDialog";
 import { useHomeScreenMusic } from "@hooks/useHomeScreenMusic";
 import { useVolumeControls } from "@hooks/useVolumeControls";
-import type { SaveDoc } from "@storage/types";
+import type { AppShellOutletContext, ExhibitionGameSetup, SaveDoc } from "@storage/types";
 
 import { AppVolumeBar } from "./styles";
 
-export type AppShellOutletContext = {
-  onStartGame: (setup: ExhibitionGameSetup) => void;
-  /** Called from the saves page when the user picks a save to load. */
-  onLoadSave: (slot: SaveDoc) => void;
-  /** Called by GamePage when a game session starts, to update hasActiveSession. */
-  onGameSessionStarted: () => void;
-  // Navigation callbacks consumed by route-level page components
-  onNewGame: () => void;
-  onLoadSaves: () => void;
-  onManageTeams: () => void;
-  onResumeCurrent: () => void;
-  onHelp: () => void;
-  onCareerStats: () => void;
-  onBackToHome: () => void;
-  hasActiveSession: boolean;
-};
-
-/** Shape for a game setup originating from the /exhibition/new page. */
-export type ExhibitionGameSetup = {
-  homeTeam: string;
-  awayTeam: string;
-  /** Human-readable display name for the home team. */
-  homeTeamLabel: string;
-  /** Human-readable display name for the away team. */
-  awayTeamLabel: string;
-  managedTeam: 0 | 1 | null;
-  playerOverrides: PlayerOverrides;
-};
-
-/** Shape of the React Router location state used when navigating to /game. */
-export type GameLocationState = {
-  pendingGameSetup: ExhibitionGameSetup | null;
-  pendingLoadSave: SaveDoc | null;
-} | null;
+export type { AppShellOutletContext, ExhibitionGameSetup, GameLocationState } from "@storage/types";
 
 const AppShell: React.FunctionComponent = () => {
   const navigate = useNavigate();

@@ -3,11 +3,11 @@ import * as React from "react";
 import {
   customTeamToAbbreviation,
   resolveTeamLabel,
-} from "@features/customTeams/adapters/customTeamAdapter";
+} from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import { Hit } from "@constants/hitTypes";
 import { useGameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import {
   BsoGroup,

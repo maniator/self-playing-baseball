@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { ContextValue } from "@context/index";
 import { GameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { makeContextValue } from "@test/testHelpers";
 
 import GameControls from ".";
@@ -25,7 +25,7 @@ vi.mock("@utils/announce", () => ({
   play7thInningStretch: vi.fn(),
 }));
 
-vi.mock("@hooks/useSaveStore", () => ({
+vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => ({
     saves: [],
     createSave: vi.fn().mockResolvedValue("save_1"),
@@ -37,7 +37,7 @@ vi.mock("@hooks/useSaveStore", () => ({
   })),
 }));
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(),
 }));
 

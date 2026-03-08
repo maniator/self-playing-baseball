@@ -2,13 +2,13 @@ import * as React from "react";
 
 import { useLocation, useNavigate, useOutletContext } from "react-router";
 
+import Game from "@components/Game";
 import type {
   AppShellOutletContext,
   ExhibitionGameSetup,
   GameLocationState,
-} from "@components/AppShell";
-import Game from "@components/Game";
-import type { SaveDoc } from "@storage/types";
+  SaveDoc,
+} from "@storage/types";
 
 const GamePage: React.FunctionComponent = () => {
   const ctx = useOutletContext<AppShellOutletContext>();

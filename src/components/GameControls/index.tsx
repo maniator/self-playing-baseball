@@ -1,9 +1,9 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@features/customTeams/adapters/customTeamAdapter";
+import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import { Strategy } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { SaveDoc } from "@storage/types";
 
 import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
@@ -13,8 +13,8 @@ import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
 const DecisionPanel = React.lazy(() => import("@components/DecisionPanel"));
-const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
-const SavesModal = React.lazy(() => import("@components/SavesModal"));
+const InstructionsModal = React.lazy(() => import("@feat/help/components/InstructionsModal"));
+const SavesModal = React.lazy(() => import("@feat/saves/components/SavesModal"));
 
 type Props = {
   onNewGame?: () => void;

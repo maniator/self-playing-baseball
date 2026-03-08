@@ -16,7 +16,8 @@
       "@constants/*": ["src/constants/*"],
       "@storage/*": ["src/storage/*"],
       "@test/*": ["src/test/*"],
-      "@features/*": ["src/features/*"]
+      "@feat/*": ["src/features/*"],
+      "@shared/*": ["src/shared/*"]
     }
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],

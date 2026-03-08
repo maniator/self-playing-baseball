@@ -11,13 +11,13 @@ Local-only IndexedDB persistence via **RxDB v17** (`rxdb@17.0.0-beta.7`). No rep
 **Provider setup** (`src/components/Game/index.tsx`):  
 `Game` initializes the database via `getDb()`, then wraps the entire tree with `<RxDatabaseProvider database={db}>`. Until the DB promise resolves the tree renders `null`.
 
-**`useSaveStore` hook** (`src/hooks/useSaveStore.ts`):  
-Uses `useLiveRxQuery` from `rxdb/plugins/react` to subscribe to the `saves` collection reactively. Exposes stable `useCallback` wrappers for all write operations. Always import from `@hooks/useSaveStore`; **never** call `SaveStore` methods directly in UI components.
+**`useSaveStore` hook** (`src/features/saves/hooks/useSaveStore.ts`):  
+Uses `useLiveRxQuery` from `rxdb/plugins/react` to subscribe to the `saves` collection reactively. Exposes stable `useCallback` wrappers for all write operations. Always import from `@feat/saves/hooks/useSaveStore`; **never** call `SaveStore` methods directly in UI components.
 
 `useSaveStore` **requires `<RxDatabaseProvider>`** in the tree. In component tests mock the entire hook:
 
 ```ts
-vi.mock("@hooks/useSaveStore", () => ({
+vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => ({ saves: [], createSave: vi.fn(), ... })),
 }));
 ```

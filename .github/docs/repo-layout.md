@@ -87,39 +87,15 @@
     │   ├── mediaQueries.ts         # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
     │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
     │   └── saves.ts                # currentSeedStr() — returns current seed as base-36 string
-    ├── storage/                    # RxDB local-only persistence (IndexedDB, no sync)
-    │   ├── db.ts                   # Lazy-singleton BallgameDb; collections: saves, events, customTeams,
-    │   │                           #   players, games, playerGameStats, pitcherGameStats;
-    │   │                           #   exports getDb(), savesCollection(), eventsCollection(), _createTestDb()
-    │   │                           #   customTeams schema: v0→v1 (abbreviation + team fingerprint fields),
-    │   │                           #   v1→v2 (player fingerprint backfill migration — strictly additive)
-    │   ├── saveStore.ts            # SaveStore singleton + makeSaveStore() factory:
-    │   │                           #   createSave, appendEvents (serialized queue + in-memory idx counter),
-    │   │                           #   updateProgress (with stateSnapshot), listSaves, deleteSave,
-    │   │                           #   exportRxdbSave, importRxdbSave (FNV-1a integrity bundle)
-    │   ├── customTeamStore.ts      # CustomTeamStore singleton + makeCustomTeamStore() factory:
-    │   │                           #   createCustomTeam (throws on duplicate name), updateCustomTeam,
-    │   │                           #   deleteCustomTeam, listCustomTeams, exportPlayer,
-    │   │                           #   importCustomTeams (with allowDuplicatePlayers option)
-    │   ├── customTeamExportImport.ts  # Pure encode/decode helpers (no DB access):
-    │   │                              #   buildTeamFingerprint, buildPlayerSig,
-    │   │                              #   exportCustomTeams, exportCustomPlayer,
-    │   │                              #   importCustomTeams (parses + validates bundle),
-    │   │                              #   parseExportedCustomPlayer (validates sig),
-    │   │                              #   TEAMS_EXPORT_KEY, PLAYER_EXPORT_KEY
+    ├── storage/                    # Shared persistence infra (DB wiring + thin re-exports; no feature logic)
+    │   ├── db.ts                   # Lazy-singleton BallgameDb; adds all collections via schemas imported from features/;
+    │   │                           #   exports getDb(), _createTestDb()
     │   ├── hash.ts                 # fnv1a(str): string — FNV-1a 32-bit hash, 8 hex chars
     │   ├── generateId.ts           # nanoid-based ID generators: generateTeamId(), generatePlayerId(), generateSaveId(), generateSeed()
     │   ├── saveIO.ts               # formatSaveDate, downloadJson, readFileAsText, saveFilename,
     │   │                           #   teamsFilename, playerFilename, slugify (internal)
-    │   ├── saveInspector.ts        # Read-only helpers for inspecting save bundles
-    │   └── types.ts                # SaveDoc, EventDoc, GameSaveSetup, ScoreSnapshot,
-    │                               #   InningSnapshot, StateSnapshot, GameSetup, GameEvent,
-    │                               #   ProgressSummary, RxdbExportedSave,
-    │                               #   TeamPlayer (with playerSeed?: string, fingerprint?: string),
-    │                               #   TeamPlayerBatting, TeamPlayerPitching,
-    │                               #   CustomTeamDoc (with teamSeed?: string, fingerprint?: string),
-    │                               #   TeamRoster, CreateCustomTeamInput, UpdateCustomTeamInput,
-    │                               #   ExportedCustomTeams, ExportedCustomPlayer
+    │   └── types.ts                # Central re-export hub — feature-owned types live in their feature's
+    │                               #   storage/types.ts; all @storage/types imports remain valid through re-exports
     ├── context/                    # All game state, reducer, and types
     │   ├── index.tsx               # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
     │   │                           #   Exports: LogAction, GameAction, Strategy, DecisionType, OnePitchModifier
@@ -132,36 +108,16 @@
     │   ├── buntAttempt.ts          # buntAttempt — fielder's choice, sacrifice bunt, bunt single, pop-out
     │   ├── playerActions.ts        # playerStrike, playerBall, playerWait, stealAttempt (re-exports buntAttempt)
     │   └── reducer.ts              # Reducer factory; exports detectDecision(), re-exports stratMod
-    ├── hooks/                      # All custom React hooks
-    │   ├── useGameRefs.ts          # Tracks skipDecision state to prevent re-offering same decision
-    │   ├── useGameAudio.ts         # Victory fanfare + 7th-inning stretch audio playback
-    │   ├── usePitchDispatch.ts     # Pitch handler — receives currentState object, returns handlePitch callback
-    │   ├── useAutoPlayScheduler.ts # Speech-gated setTimeout scheduler; receives inning/atBat as direct values; pauses on manager decisions
-    │   ├── usePlayerControls.ts    # All UI event handlers (volume, mute, manager mode, share replay)
-    │   ├── useReplayDecisions.ts   # Reads ?decisions= from URL and replays manager choices
-    │   ├── useRxdbGameSync.ts      # Drains actionBufferRef → appendEvents on pitchKey advance;
-    │   │                           #   calls updateProgress (with full stateSnapshot) on half-inning / game-over
-    │   ├── useSaveStore.ts         # useLiveRxQuery wrapper for reactive saves list + stable write callbacks
-    │   ├── useSaveSlotActions.ts   # Stable callbacks: handleLoad, handleExport, handleDelete for save slots
-    │   ├── useCustomTeams.ts       # useLiveRxQuery wrapper for the customTeams RxDB collection
-    │   ├── useImportCustomTeams.ts # Shared import logic: file upload, paste JSON, clipboard paste,
-    │   │                           #   in-flight state, errors, duplicate-player confirmation flow
-    │   │                           #   Exposes: pendingDuplicateImport, confirmDuplicateImport(), cancelDuplicateImport()
-    │   ├── useImportSave.ts        # Save import from file or paste (used by SavesModal + SavesPage)
-    │   └── useShareReplay.ts       # Clipboard copy of replay URL
-    ├── components/                 # All UI components
+    ├── hooks/                      # ⚠ Intentionally deferred — only code consumed exclusively by deferred gameplay/shell components
+    │   ├── useHomeScreenMusic.ts   # Background music playback on the Home screen
+    │   └── useVolumeControls.ts    # Volume/mute state for music (consumed by AppShell + HomeScreen)
+    ├── components/                 # ⚠ Intentionally deferred — gameplay shell; will migrate to src/features/gameplay/ in a future pass
     │   ├── AppShell/
     │   │   └── index.tsx           # Pure layout component: renders <Outlet context={outletContext} />; provides AppShellOutletContext
     │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave, onGameSessionStarted, onNewGame, onLoadSaves, onManageTeams, onResumeCurrent, onHelp, onBackToHome, hasActiveSession }
     │   ├── HomeScreen/
     │   │   ├── index.tsx           # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
     │   │   └── styles.ts           # Styled components for home screen
-    │   ├── ManageTeamsScreen/
-    │   │   ├── index.tsx           # Route-aware screen: list view at /teams, editor at /teams/:id/edit and /teams/new
-    │   │   │                       #   Import/export UI: per-team export button, export-all button, file input for import,
-    │   │   │                       #   success/error banners, duplicate-player confirmation banner
-    │   │   ├── TeamListItem.tsx    # Single team row (edit/delete/export buttons)
-    │   │   └── styles.ts           # Styled components for manage teams screen
     │   ├── Announcements/index.tsx # Play-by-play log with heading + empty-state placeholder
     │   ├── Ball/
     │   │   ├── constants.ts        # hitDistances: pixel travel distance per Hit type
@@ -179,82 +135,127 @@
     │   ├── Game/
     │   │   ├── index.tsx           # Owns actionBufferRef; wraps tree with RxDatabaseProvider + GameProviderWrapper
     │   │   ├── ErrorBoundary.tsx   # React error boundary — catches render errors, clears stale localStorage keys
-    │   │   ├── GameInner.tsx       # Top-level layout: NewGameDialog, LineScore, GameControls, two-column body
+    │   │   ├── GameInner.tsx       # Top-level layout: ExhibitionSetupPage (dialog), LineScore, GameControls, two-column body
     │   │   │                       #   Calls useSaveStore().createSave() on handleStart; hosts useRxdbGameSync
     │   │   └── styles.ts           # Styled components for game layout
     │   ├── GameControls/
     │   │   ├── index.tsx           # GameControls component — renders controls using useGameControls hook
-    │   │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms)
-    │   │   ├── styles.ts           # Styled components for controls layout
+    │   │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms), SPEED_INSTANT (0)
+    │   │   ├── styles.ts           # Styled components for controls layout; exports HelpButton, Button
     │   │   ├── useGameControls.ts  # Hook: wires all game-controls hooks + localStorage state into a single value
     │   │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
     │   │   ├── ManagerModeStyles.ts     # Styled components for manager mode controls
     │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
     │   ├── HitLog/index.tsx        # Hit log component
-    │   ├── InstructionsModal/
-    │   │   ├── index.tsx           # Full-screen scrollable <dialog>; 7 collapsible <details> sections; ✕ close button
-    │   │   └── styles.ts           # Styled components for modal
     │   ├── LineScore/
     │   │   ├── index.tsx           # Score/inning/strikes/balls/outs + FINAL banner when gameOver
     │   │   └── styles.ts           # Styled components for line score
-    │   ├── NewGameDialog/
-    │   │   ├── constants.ts        # DEFAULT_HOME_TEAM ("Yankees"), DEFAULT_AWAY_TEAM ("Mets")
-    │   │   ├── index.tsx           # Modal dialog for starting a new game: team name inputs + managed-team radio selection
-    │   │   └── styles.ts           # Styled components for the new game dialog
     │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table
-    │   ├── CustomTeamEditor/
-    │   │   ├── index.tsx           # Full team editor: all sections use drag-and-drop (SortablePlayerRow)
-    │   │   │                       #   Lineup + bench share one DndContext → cross-section drag transfers players
-    │   │   │                       #   Pitchers have their own DndContext (isolated — no cross-section)
-    │   │   │                       #   Per-player ↓ Export button; ↑ Import Player/Pitcher button per section
-    │   │   │                       #   Inline duplicate-player confirmation banner (PlayerDuplicateBanner)
-    │   │   ├── SortablePlayerRow.tsx   # Drag-and-drop player row using useSortable — used by all sections
-    │   │   ├── PlayerRow.tsx           # Legacy up/down row component (preserved but no longer used in index.tsx)
-    │   │   ├── PlayerStatFields.tsx    # Shared stat sliders (contact/power/speed + pitcher stats)
-    │   │   ├── editorState.ts      # EditorState, EditorAction, editorReducer, validateEditorState
-    │   │   │                       #   Actions: SET_FIELD, UPDATE_PLAYER, ADD_PLAYER, REMOVE_PLAYER,
-    │   │   │                       #   REORDER, TRANSFER_PLAYER (cross-section lineup↔bench), MOVE_UP,
-    │   │   │                       #   MOVE_DOWN, APPLY_DRAFT, SET_ERROR
-    │   │   │                       #   TRANSFER_PLAYER: { fromSection, toSection, playerId, toIndex }
-    │   │   │                       #   Exported: editorPlayerToTeamPlayer (for player export flow)
-    │   │   ├── playerConstants.ts  # DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS,
-    │   │   │                       #   BATTER_POSITION_OPTIONS, PITCHER_POSITION_OPTIONS, HANDEDNESS_OPTIONS
-    │   │   ├── statBudget.ts       # HITTER_STAT_CAP (150), PITCHER_STAT_CAP (160),
-    │   │   │                       #   hitterStatTotal, pitcherStatTotal, hitterRemaining, pitcherRemaining
-    │   │   └── styles.ts           # Styled components; includes ImportPlayerBtn, PlayerDuplicateBanner,
-    │   │                           #   PlayerDuplicateActions for the import-player flow
-    │   └── SavesModal/
-    │       ├── index.tsx           # Save management overlay: list, create, load, delete, export, import
-    │       ├── styles.ts           # Styled components for saves modal
-    │       └── useSavesModal.ts    # Hook: calls useSaveStore for all save CRUD operations
-    ├── features/
-    │   └── customTeams/
-    │       ├── adapters/
-    │       │   └── customTeamAdapter.ts  # customTeamToDisplayName, customTeamToGameId,
-    │       │                             #   customTeamToPlayerOverrides, customTeamToLineupOrder,
-    │       │                             #   customTeamToPitcherRoster, customTeamToBenchRoster,
-    │       │                             #   resolveTeamLabel (resolves `custom:<id>` or raw team name)
-    │       └── generation/
-    │           └── generateDefaultTeam.ts  # generateDefaultCustomTeamDraft(seed) — deterministic random team
-    └── pages/
-        ├── ExhibitionSetupPage/
-        │   ├── index.tsx           # Full-page Exhibition Setup — primary New Game entry point (/exhibition/new)
-        │   │                       #   Defaults to Custom Teams tab; uses useExhibitionSetup hook
-        │   │                       #   No IIFEs in JSX: computed variables derive managedSpPitchers/managedStarterIdx before return
-        │   │                       #   Starter pitcher selector extracted to StarterPitcherSelector.tsx
-        │   ├── StarterPitcherSelector.tsx  # Dropdown for managed-team starting pitcher — independently testable
-        │   ├── styles.ts           # Styled components for the exhibition setup page
-        │   └── useExhibitionSetup.ts  # Hook: orchestrates team selection, custom team logic, starter pitcher, form submit
-        ├── HelpPage/
-        │   ├── index.tsx           # Standalone How to Play page at /help; browser back returns to previous page
-        │   └── styles.ts           # Styled components for help page
-        └── SavesPage/
-            ├── index.tsx           # Exhibition Saves page at /saves; loads from SaveStore directly (no RxDatabaseProvider needed)
-            │                       #   Load action navigates to /game via React Router location.state (GameLocationState)
-            └── styles.ts           # Styled components for saves page
+    │   ├── RootLayout/index.tsx    # Top-level layout wrapper with ErrorBoundary
+    │   └── TeamTabBar/index.tsx    # Tab bar for switching between home/away team stats
+    ├── features/                   # Feature-first domain code (preferred destination for new code)
+    │   ├── exhibition/             # /exhibition/new route — New Game setup
+    │   │   ├── pages/ExhibitionSetupPage/
+    │   │   │   ├── index.tsx           # Full-page Exhibition Setup — primary New Game entry point (/exhibition/new)
+    │   │   │   │                       #   Defaults to Custom Teams tab; uses useExhibitionSetup hook
+    │   │   │   ├── styles.ts           # Styled components for the exhibition setup page
+    │   │   │   └── useExhibitionSetup.ts  # Hook: team selection, custom team logic, starter pitcher, form submit
+    │   │   ├── components/StarterPitcherSelector/
+    │   │   │   └── index.tsx       # Dropdown for managed-team starting pitcher — independently testable
+    │   │   ├── components/CustomTeamMatchup/
+    │   │   │   └── index.tsx       # Custom team matchup selector (home/away + managed-team tabs)
+    │   │   └── styles.ts           # Shared styled components for exhibition (CustomTeamMatchup tab styles)
+    │   ├── help/                   # /help route + in-game modal
+    │   │   ├── pages/HelpPage/
+    │   │   │   ├── index.tsx           # Standalone How to Play page at /help
+    │   │   │   └── styles.ts           # Styled components for help page
+    │   │   ├── components/HelpContent/
+    │   │   │   ├── index.tsx           # All help sections JSX (reused by HelpPage + InstructionsModal)
+    │   │   │   └── styles.ts           # Section + list styled components for help content
+    │   │   └── components/InstructionsModal/
+    │   │       ├── index.tsx           # Full-screen scrollable <dialog>; collapsible <details> sections; ✕ close button
+    │   │       └── styles.ts           # Styled components for modal; HelpButton re-exported from GameControls/styles
+    │   ├── saves/                  # /saves route + save persistence
+    │   │   ├── pages/SavesPage/
+    │   │   │   ├── index.tsx           # Exhibition Saves page at /saves
+    │   │   │   └── styles.ts           # Styled components for saves page
+    │   │   ├── components/SavesModal/
+    │   │   │   ├── index.tsx           # Save management overlay: list, create, load, delete, export, import
+    │   │   │   ├── styles.ts           # Styled components for saves modal
+    │   │   │   └── useSavesModal.ts    # Hook: calls useSaveStore for all save CRUD operations
+    │   │   ├── components/SaveSlotList/
+    │   │   │   ├── index.tsx           # Save row list UI + Load/Export/Delete buttons
+    │   │   │   └── styles.ts           # Styled components for save slot list
+    │   │   ├── hooks/
+    │   │   │   ├── useImportSave.ts    # Save import from file or paste (used by SavesModal + SavesPage)
+    │   │   │   ├── useRxdbGameSync.ts  # Drains actionBufferRef → appendEvents on pitchKey advance
+    │   │   │   ├── useSaveSlotActions.ts  # Stable callbacks: handleLoad, handleExport, handleDelete
+    │   │   │   └── useSaveStore.ts     # useLiveRxQuery wrapper for reactive saves list + stable write callbacks
+    │   │   └── storage/
+    │   │       ├── saveStore.ts        # SaveStore singleton + makeSaveStore() factory
+    │   │       ├── schema.ts           # savesSchema (v1) + eventsSchema (v0)
+    │   │       └── types.ts            # SaveDoc, EventDoc, GameSaveSetup, RxdbExportedSave, GameLocationState, …
+    │   ├── careerStats/            # /stats + /players/:key routes
+    │   │   ├── pages/CareerStatsPage/
+    │   │   │   └── index.tsx           # Career batting/pitching leaderboards
+    │   │   ├── pages/PlayerCareerPage/
+    │   │   │   └── index.tsx           # Per-player career stats (batting + pitching tabs)
+    │   │   ├── hooks/
+    │   │   │   └── useGameHistorySync.ts  # Writes completed game stats to RxDB on game-over
+    │   │   ├── storage/
+    │   │   │   ├── gameHistoryStore.ts    # GameHistoryStore singleton — career batting/pitching aggregates
+    │   │   │   ├── schema.ts             # players, games, playerGameStats, pitcherGameStats schemas (v0)
+    │   │   │   └── types.ts              # GameDoc, PlayerGameStatDoc, TeamCareerSummary, …
+    │   │   └── styles.ts               # Shared styled components for career stats pages
+    │   ├── customTeams/            # /teams + /teams/:id/edit routes — team builder
+    │   │   ├── pages/ManageTeamsScreen/
+    │   │   │   ├── index.tsx           # Route-aware screen: list view at /teams, editor at /teams/:id/edit and /teams/new
+    │   │   │   ├── TeamListItem.tsx    # Single team row (edit/delete/export buttons)
+    │   │   │   └── styles.ts           # Styled components for manage teams screen
+    │   │   ├── components/CustomTeamEditor/
+    │   │   │   ├── index.tsx           # Full team editor: all sections use drag-and-drop (SortablePlayerRow)
+    │   │   │   │                       #   Lineup + bench share one DndContext; pitchers have their own DndContext
+    │   │   │   ├── SortablePlayerRow.tsx   # Drag-and-drop player row using useSortable
+    │   │   │   ├── PlayerStatFields.tsx    # Shared stat sliders (contact/power/speed + pitcher stats)
+    │   │   │   ├── editorState.ts      # EditorState, EditorAction, editorReducer, validateEditorState
+    │   │   │   │                       #   TRANSFER_PLAYER: { fromSection, toSection, playerId, toIndex }
+    │   │   │   ├── playerConstants.ts  # DEFAULT_LINEUP_POSITIONS, BATTER_POSITION_OPTIONS, PITCHER_POSITION_OPTIONS
+    │   │   │   ├── statBudget.ts       # HITTER_STAT_CAP (150), PITCHER_STAT_CAP (160), hitterStatTotal, pitcherStatTotal
+    │   │   │   └── styles.ts           # Styled components; includes ImportPlayerBtn, PlayerDuplicateBanner
+    │   │   ├── adapters/
+    │   │   │   └── customTeamAdapter.ts  # customTeamToDisplayName, customTeamToGameId,
+    │   │   │                             #   customTeamToPlayerOverrides, resolveTeamLabel, etc.
+    │   │   ├── generation/
+    │   │   │   └── generateDefaultTeam.ts  # generateDefaultCustomTeamDraft(seed) — deterministic random team
+    │   │   ├── hooks/
+    │   │   │   └── useImportCustomTeams.ts  # Shared import logic: file upload, paste JSON, clipboard paste,
+    │   │   │                                #   duplicate-player confirmation flow
+    │   │   └── storage/
+    │   │       ├── customTeamStore.ts      # CustomTeamStore singleton + makeCustomTeamStore() factory
+    │   │       ├── customTeamExportImport.ts  # buildTeamFingerprint, buildPlayerSig, exportCustomTeams, importCustomTeams
+    │   │       ├── schema.ts               # customTeamsSchema v3 (v0→v1→v2→v3 migrations)
+    │   │       └── types.ts                # CustomTeamDoc, TeamPlayer, CreateCustomTeamInput, …
+    │   └── gameplay/               # Gameplay hooks + SubstitutionPanel (GameControls/AppShell/Game deferred to future pass)
+    │       ├── components/SubstitutionPanel/
+    │       │   └── index.tsx       # Pinch hitter substitution UI
+    │       └── hooks/
+    │           ├── useAutoPlayScheduler.ts  # Speech-gated setTimeout scheduler; pauses on manager decisions
+    │           ├── useGameAudio.ts     # Victory fanfare + 7th-inning stretch audio playback
+    │           ├── useGameRefs.ts      # Tracks skipDecision state to prevent re-offering same decision
+    │           ├── usePitchDispatch.ts # Pitch handler — returns handlePitch callback
+    │           ├── usePlayerControls.ts  # All UI event handlers (volume, mute, manager mode, share replay)
+    │           ├── useReplayDecisions.ts  # Reads ?decisions= from URL and replays manager choices
+    │           └── useShareReplay.ts   # Clipboard copy of replay URL
+    ├── shared/                     # Genuinely cross-feature utilities (2+ unrelated features)
+    │   ├── components/PageLayout/
+    │   │   └── styles.ts           # PageContainer, PageHeader, BackBtn — shared page chrome
+    │   └── hooks/
+    │       └── useCustomTeams.ts   # useLiveRxQuery wrapper for the customTeams RxDB collection
+    └── pages/                      # ⚠ Intentionally deferred — only GamePage remains
+        └── GamePage/index.tsx      # /game route — renders <Game /> component
 ```
 
-Tests are **co-located** next to their source files (e.g. `src/context/strategy.test.ts`, `src/hooks/useGameAudio.test.ts`, `src/components/Ball/Ball.test.tsx`). The only test files that do NOT live next to a source file are the shared helpers in `src/test/`.
+Tests are **co-located** next to their source files (e.g. `src/context/strategy.test.ts`, `src/features/gameplay/hooks/useGameAudio.test.ts`, `src/components/Ball/Ball.test.tsx`). The only test files that do NOT live next to a source file are the shared helpers in `src/test/`.
 
 ---
 
@@ -262,14 +263,16 @@ Tests are **co-located** next to their source files (e.g. `src/context/strategy.
 
 All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
-| Alias | Resolves to |
-|---|---|
-| `@components/*` | `src/components/*` |
-| `@context/*` | `src/context/*` |
-| `@hooks/*` | `src/hooks/*` |
-| `@utils/*` | `src/utils/*` |
-| `@constants/*` | `src/constants/*` |
-| `@storage/*` | `src/storage/*` |
-| `@test/*` | `src/test/*` |
+| Alias | Resolves to | Notes |
+|---|---|---|
+| `@feat/*` | `src/features/*` | **Preferred** for all feature code |
+| `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
+| `@storage/*` | `src/storage/*` | Shared persistence infra (DB wiring, thin type re-exports) |
+| `@components/*` | `src/components/*` | Legacy transitional — deferred gameplay/shell code |
+| `@context/*` | `src/context/*` | Game simulation engine (deferred to future pass) |
+| `@hooks/*` | `src/hooks/*` | Legacy transitional — deferred (useHomeScreenMusic, useVolumeControls only) |
+| `@utils/*` | `src/utils/*` | Pure utilities (rng, logger, mediaQueries, announce) |
+| `@constants/*` | `src/constants/*` | Enums and constants |
+| `@test/*` | `src/test/*` | Test helpers |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).

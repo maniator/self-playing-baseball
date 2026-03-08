@@ -1,16 +1,16 @@
 import * as React from "react";
 
+import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
+import { useAutoPlayScheduler } from "@feat/gameplay/hooks/useAutoPlayScheduler";
+import { useGameAudio } from "@feat/gameplay/hooks/useGameAudio";
+import { useGameRefs } from "@feat/gameplay/hooks/useGameRefs";
+import { usePitchDispatch } from "@feat/gameplay/hooks/usePitchDispatch";
+import { usePlayerControls } from "@feat/gameplay/hooks/usePlayerControls";
+import { useReplayDecisions } from "@feat/gameplay/hooks/useReplayDecisions";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocalStorage } from "usehooks-ts";
 
-import type { PitchingRole } from "@components/SubstitutionPanel";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
-import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
-import { useCustomTeams } from "@hooks/useCustomTeams";
-import { useGameAudio } from "@hooks/useGameAudio";
-import { useGameRefs } from "@hooks/useGameRefs";
-import { usePitchDispatch } from "@hooks/usePitchDispatch";
-import { usePlayerControls } from "@hooks/usePlayerControls";
-import { useReplayDecisions } from "@hooks/useReplayDecisions";
 import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
 
 import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";

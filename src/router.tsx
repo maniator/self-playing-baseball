@@ -1,19 +1,19 @@
 import * as React from "react";
 
+import ManageTeamsScreen from "@feat/customTeams/pages/ManageTeamsScreen";
 import { createBrowserRouter, Navigate, redirect, useOutletContext } from "react-router";
 
-import type { AppShellOutletContext } from "@components/AppShell";
 import AppShell from "@components/AppShell";
 import HomeScreen from "@components/HomeScreen";
-import ManageTeamsScreen from "@components/ManageTeamsScreen";
 import RootLayout from "@components/RootLayout";
+import type { AppShellOutletContext } from "@storage/types";
 
-const CareerStatsPage = React.lazy(() => import("./pages/CareerStatsPage"));
-const ExhibitionSetupPage = React.lazy(() => import("./pages/ExhibitionSetupPage"));
+const CareerStatsPage = React.lazy(() => import("@feat/careerStats/pages/CareerStatsPage"));
+const ExhibitionSetupPage = React.lazy(() => import("@feat/exhibition/pages/ExhibitionSetupPage"));
 const GamePage = React.lazy(() => import("./pages/GamePage"));
-const HelpPage = React.lazy(() => import("./pages/HelpPage"));
-const PlayerCareerPage = React.lazy(() => import("./pages/PlayerCareerPage"));
-const SavesPage = React.lazy(() => import("./pages/SavesPage"));
+const HelpPage = React.lazy(() => import("@feat/help/pages/HelpPage"));
+const PlayerCareerPage = React.lazy(() => import("@feat/careerStats/pages/PlayerCareerPage"));
+const SavesPage = React.lazy(() => import("@feat/saves/pages/SavesPage"));
 
 /** Route element for `/` — reads navigation callbacks from AppShell outlet context. */
 function HomeRoute() {

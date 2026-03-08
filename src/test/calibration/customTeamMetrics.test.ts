@@ -7,7 +7,7 @@
  *
  * This is the deterministic in-process equivalent of metrics-baseline.spec.ts.
  */
-import { customTeamToPlayerOverrides } from "@features/customTeams/adapters/customTeamAdapter";
+import { customTeamToPlayerOverrides } from "@feat/customTeams/adapters/customTeamAdapter";
 import { readFileSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
