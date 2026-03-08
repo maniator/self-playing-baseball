@@ -57,7 +57,7 @@ describe("playerWait — computeWaitOutcome threshold clamping", () => {
     const state = buildStateWithPitcher(-20, -20);
     vi.spyOn(rngModule, "random").mockReturnValue(0.5);
     const { log } = makeLogs();
-    // "patient" strategy has stratMod walk = 1.4; combined with low controlFactor should be high
+    // "patient" strategy has stratMod walk = 1.2; combined with low controlFactor should be high
     // but must not overflow
     expect(() => playerWait(state, log, "patient", "take")).not.toThrow();
   });
@@ -69,5 +69,23 @@ describe("playerWait — computeWaitOutcome threshold clamping", () => {
     const { log, logs } = makeLogs();
     playerWait(state, log);
     expect(logs.some((l) => /strike/i.test(l))).toBe(true);
+  });
+
+  it("take modifier: base walk chance is ~58% for balanced strategy vs. fastball (580/1000)", () => {
+    // With balanced strategy, no pitcher overrides, fastball (zoneMod=1.0):
+    //   adjustedWalkChance = Math.round(580 * 1.0 / (1.0 * 1.0)) = 580
+    // So RNG roll 0.579 → 579 < 580 → ball
+    //    RNG roll 0.580 → 580 >= 580 → strike
+    const state = makeState({ atBat: 0 });
+
+    vi.spyOn(rngModule, "random").mockReturnValue(0.579);
+    const { log: log1, logs: logs1 } = makeLogs();
+    playerWait(state, log1, "balanced", "take", "fastball");
+    expect(logs1.some((l) => /ball/i.test(l))).toBe(true);
+
+    vi.spyOn(rngModule, "random").mockReturnValue(0.580);
+    const { log: log2, logs: logs2 } = makeLogs();
+    playerWait(state, log2, "balanced", "take", "fastball");
+    expect(logs2.some((l) => /strike/i.test(l))).toBe(true);
   });
 });

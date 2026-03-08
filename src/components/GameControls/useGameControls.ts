@@ -13,10 +13,10 @@ import { usePlayerControls } from "@hooks/usePlayerControls";
 import { useReplayDecisions } from "@hooks/useReplayDecisions";
 import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
 
-import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
+import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 
 const VALID_STRATEGIES: Strategy[] = ["balanced", "aggressive", "patient", "contact", "power"];
-const VALID_SPEEDS = [SPEED_SLOW, SPEED_NORMAL, SPEED_FAST];
+const VALID_SPEEDS = [SPEED_SLOW, SPEED_NORMAL, SPEED_FAST, SPEED_INSTANT];
 
 /** Wires all game-controls hooks and localStorage state into a single value. */
 export const useGameControls = ({
@@ -122,7 +122,7 @@ export const useGameControls = ({
     setAlertVolume(safeAlertVolume);
   }, [safeAlertVolume]);
   React.useEffect(() => {
-    setSpeechRate(safeSpeed);
+    if (safeSpeed > 0) setSpeechRate(safeSpeed);
   }, [safeSpeed]);
 
   const playerControls = usePlayerControls({

@@ -178,4 +178,18 @@ describe("GameControls", () => {
     expect(selects.length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Yankees")).toBeInTheDocument();
   });
+
+  it("speed selector includes Instant option", () => {
+    renderWithContext(<GameControls />);
+    const select = screen.getByTestId("speed-select");
+    const options = Array.from((select as HTMLSelectElement).options).map((o) => o.text);
+    expect(options).toContain("Instant");
+  });
+
+  it("can select Instant speed mode", () => {
+    renderWithContext(<GameControls />);
+    const select = screen.getByRole("combobox");
+    fireEvent.change(select, { target: { value: "0" } }); // SPEED_INSTANT = 0
+    expect((select as HTMLSelectElement).value).toBe("0");
+  });
 });

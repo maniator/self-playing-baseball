@@ -6,7 +6,7 @@ import { Strategy } from "@context/index";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { SaveDoc } from "@storage/types";
 
-import { SPEED_FAST, SPEED_NORMAL, SPEED_SLOW } from "./constants";
+import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
 import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
 import { useGameControls } from "./useGameControls";
@@ -116,6 +116,7 @@ const GameControls: React.FunctionComponent<Props> = ({
               <option value={SPEED_SLOW}>Slow</option>
               <option value={SPEED_NORMAL}>Normal</option>
               <option value={SPEED_FAST}>Fast</option>
+              <option value={SPEED_INSTANT}>Instant</option>
             </Select>
           </ToggleLabel>
           <VolumeControls
