@@ -825,7 +825,57 @@ Run on PR #142 branch head (`91c12ed`):
 
 *Stock-team harness uses all-balanced players (uniform mods) so BB% is always lower than custom-team games. Movement in the right direction.*
 
+### Why the vitest in-process harness is NOT a substitute for the browser run
+
+The project has two ways to run 100-game metrics:
+
+| | Vitest in-process harness | Playwright browser run |
+|---|---|---|
+| **File** | `src/test/calibration/customTeamMetrics.test.ts` | `e2e/tests/metrics-baseline.spec.ts` |
+| **Speed** | ~10–30 seconds | ~10–20 minutes |
+| **Environment** | Node.js only — no browser, no RxDB, no React | Full Chrome, RxDB, React 19, service worker |
+| **RNG sequence** | Pure game logic only | Extra `random()` calls from React renders, audio setup, and TTS between pitches shift the PRNG sequence |
+| **Per-game scores** | Deterministic for a seed | Different from in-process for the same seed (shifted PRNG) |
+| **PA source** | Game state directly | DOM batting-stats table read after tab-click wait |
+| **Authoritative?** | ❌ Directional signal only | ✅ Ground truth — apple-to-apple against all prior browser baselines |
+
+**Rule:** Never claim a metrics target is hit based on harness numbers alone. The harness BB% is typically **~1–2 pp lower** than the browser run because fewer total `random()` calls per PA hit slightly different outcomes. Always confirm with a browser run before updating the PR summary.
+
+### How to run the browser metrics spec via Playwright MCP
+
+The `npx playwright test` CLI is the only reliable way to start the preview server for MCP browser access. See `.github/docs/e2e-testing.md` → "Starting the preview server for MCP browser automation" for the full step-by-step workflow.
+
+**Quick reference:**
+
+```bash
+# 1. Build
+yarn build
+
+# 2. Start Playwright test in background (starts vite preview via webServer config)
+npx playwright test --config=playwright-metrics.config.ts --project=desktop > /tmp/pltest.txt 2>&1 &
+sleep 12  # wait for server to boot
+
+# 3. Navigate MCP browser to http://localhost:5173 (NOT 127.0.0.1 or other variants)
+# 4. Set localStorage: speed=0, announcementVolume=0, alertVolume=0, _e2eNoInningPause=1, managerMode=false
+# 5. Import e2e/fixtures/metrics-teams.json via /teams → "Import from File"
+# 6. Run games via /exhibition/new + form setup + play + collect stats
+```
+
+After each game, accumulate stats in `localStorage['metricsResults']` as a JSON array `[{ab,h,bb,k,awayScore,homeScore}, ...]` and read running totals with:
+
+```js
+const r = JSON.parse(localStorage.getItem('metricsResults')||'[]');
+const PA = r.reduce((s,g)=>s+g.ab+g.bb,0);
+const BB = r.reduce((s,g)=>s+g.bb,0);
+const K  = r.reduce((s,g)=>s+g.k,0);
+const H  = r.reduce((s,g)=>s+g.h,0);
+const runs = r.reduce((s,g)=>s+g.awayScore+g.homeScore,0);
+`${r.length} games  BB%=${(BB/PA*100).toFixed(1)}%  K%=${(K/PA*100).toFixed(1)}%  H/PA=${(H/PA).toFixed(3)}  R/g=${(runs/r.length).toFixed(1)}`
+```
+
 ### Custom-team harness — 100 games (metrics-teams.json fixture, same matchup blocks as browser spec)
+
+> ⚠️ **This is vitest in-process only — not a browser run.** See the "Why the vitest in-process harness is NOT a substitute for the browser run" section above. Browser validation is still pending.
 
 Method: in-process vitest run (`src/test/calibration/customTeamMetrics.test.ts`) using the canonical `e2e/fixtures/metrics-teams.json` fixture with full player mods, same 10 matchup combos × 10 seeds = 100 games. Seeds converted from the spec's string seeds (`s1g1`…`s10g10`) using the same string-hash approach. Deterministic — same RNG pipeline as the browser run.
 
@@ -879,3 +929,17 @@ Method: in-process vitest run (`src/test/calibration/customTeamMetrics.test.ts`)
 
 All 1,996 unit tests pass. Coverage: statements 95.22%, branches 87%, functions 90.95% — all above required thresholds (90%/80%/90%).
 
+
+### Browser run — PR #142 head (in progress)
+
+> Status: **IN PROGRESS** — MCP browser run for PR #142 head (slope=0.009, AI thresholds 100/85 pitches). Results will replace this section when complete.
+
+Running via MCP browser automation (`npx playwright test --config=playwright-metrics.config.ts` webServer approach). 100 games, `metrics-teams.json` fixture, same 10-block × 10-seed structure as all prior browser passes.
+
+| Metric | Post-PR-140 baseline | PR #142 browser | Delta |
+|---|---|---|---|
+| BB% | 10.42% | — | — |
+| K% | 22.70% | — | — |
+| H/PA | 0.270 | — | — |
+| Runs/game | 10.5 | — | — |
+| BB/game | 7.1 | — | — |
