@@ -1,8 +1,8 @@
 import * as React from "react";
 
+import HelpContent from "@feat/help/components/HelpContent";
 import { useNavigate } from "react-router";
 
-import HelpContent from "../../components/HelpContent";
 import { BackBtn, PageContainer, PageHeader, PageTitle } from "./styles";
 
 /**
