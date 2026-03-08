@@ -56,9 +56,6 @@ const MATCHUP_BLOCKS = [
   { away: "Nashville Comets", home: "Denver Raiders", seedPrefix: "s10" },
 ] as const;
 
-/** Total games = 10 blocks × 10 seeds each = 100 games. */
-const NUM_GAMES = MATCHUP_BLOCKS.length * GAMES_PER_BLOCK;
-
 /**
  * Waits for the FINAL banner to appear.
  *

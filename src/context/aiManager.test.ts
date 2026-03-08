@@ -85,6 +85,9 @@ describe("makeAiPitchingDecision", () => {
   const alwaysPull = () => vi.spyOn(rng, "random").mockReturnValue(0);
 
   it("returns none when pitcher is not fatigued", () => {
+    // Mock random() so any future refactoring that reaches the probabilistic
+    // pull path does not make this test non-deterministic.
+    alwaysPull();
     const state = makeState({
       pitcherBattersFaced: [5, 5],
       rosterPitchers: [
