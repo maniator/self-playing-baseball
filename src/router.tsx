@@ -13,7 +13,7 @@ const ExhibitionSetupPage = React.lazy(() => import("@feat/exhibition/pages/Exhi
 const GamePage = React.lazy(() => import("./pages/GamePage"));
 const HelpPage = React.lazy(() => import("@feat/help/pages/HelpPage"));
 const PlayerCareerPage = React.lazy(() => import("./pages/PlayerCareerPage"));
-const SavesPage = React.lazy(() => import("./pages/SavesPage"));
+const SavesPage = React.lazy(() => import("@feat/saves/pages/SavesPage"));
 
 /** Route element for `/` — reads navigation callbacks from AppShell outlet context. */
 function HomeRoute() {
