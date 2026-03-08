@@ -278,28 +278,27 @@ describe("Calibration harness — aggregate simulation balance", () => {
     console.log(`Runs/game:       ${runsPerGame.toFixed(1)}`);
     console.log(`Avg starter BF:  ${avgStarterBF.toFixed(1)}`);
 
-    // Post-tuning regression bounds — tightened after walk-rate and pitcher-hook
-    // fixes were applied (commit 22e0e23).  Browser baseline post-tuning measured
-    // BB%=12.5%, K%=20.6%, runs/game=11.2 across 100 games with 5 custom teams.
-    // The deterministic harness uses stock teams (balanced mods) which produces
-    // slightly different absolute values, so bounds are kept a few points wide to
-    // allow for team-composition variance while still catching regressions.
+    // Post-tuning pass-2 regression bounds (commit c48bac3).
+    // Browser apples-to-apples baseline (same 5 teams, same 100 seeds):
+    //   BB%=12.1%, K%=22.0%, runs/game=10.6
+    // Deterministic harness uses stock teams which differ slightly in absolute values,
+    // so bounds stay a few points wide to allow for team-composition variance.
     expect(totalPA, "should have processed some plate appearances").toBeGreaterThan(0);
-    expect(bbPct, "BB% should be between 6% and 20% (post-tuning target ~8–13%)").toBeGreaterThan(
+    expect(bbPct, "BB% should be between 6% and 18% (post-pass-2 target ~9–13%)").toBeGreaterThan(
       6,
     );
-    expect(bbPct, "BB% should be between 6% and 20% (post-tuning target ~8–13%)").toBeLessThan(20);
-    expect(kPct, "K% should be between 14% and 28% (post-tuning target ~18–23%)").toBeGreaterThan(
-      14,
+    expect(bbPct, "BB% should be between 6% and 18% (post-pass-2 target ~9–13%)").toBeLessThan(18);
+    expect(kPct, "K% should be between 16% and 30% (post-pass-2 target ~20–24%)").toBeGreaterThan(
+      16,
     );
-    expect(kPct, "K% should be between 14% and 28% (post-tuning target ~18–23%)").toBeLessThan(28);
+    expect(kPct, "K% should be between 16% and 30% (post-pass-2 target ~20–24%)").toBeLessThan(30);
     expect(
       runsPerGame,
-      "runs/game should be between 7 and 16 (post-tuning target ~9–12)",
+      "runs/game should be between 7 and 15 (post-pass-2 target ~9–12)",
     ).toBeGreaterThan(7);
     expect(
       runsPerGame,
-      "runs/game should be between 7 and 16 (post-tuning target ~9–12)",
-    ).toBeLessThan(16);
+      "runs/game should be between 7 and 15 (post-pass-2 target ~9–12)",
+    ).toBeLessThan(15);
   }, 120_000); // 120s timeout for 100 full-game simulations
 });

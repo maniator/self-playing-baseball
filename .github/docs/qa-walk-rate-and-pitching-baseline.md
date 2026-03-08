@@ -336,3 +336,72 @@ Based on the baseline, the following changes were applied (commit `22e0e23`):
 **Conclusion:** Tuning is directionally correct. Walk rate halved relative to the pre-fix direction
 and runs/game dropped substantially. A second tuning pass targeting BB% further toward 8–9% and
 runs/game toward 9–10 is the natural next step.
+
+---
+
+## 10. Tuning Pass 2 Applied (commit `c48bac3`)
+
+Additional changes applied after the pass-1 baseline:
+
+1. **Reduced "take" base further**: `580 → 520` in `computeWaitOutcome`
+2. **Reduced `patient` walk modifier further**: `1.2 → 1.1` in `stratMod` table
+3. **Reduced `balanced` walk modifier**: `1.0 → 0.95` (baseline pull-down across all batters)
+4. **Increased `patient` swing rate further**: `0.82 → 0.87` in `SWING_RATE_MODS`
+5. **Probabilistic pitcher hook**: high-fatigue hook now fires at 60% probability at the threshold,
+   scaling toward 100% as fatigue grows further; medium-fatigue hook fires at 40% flat (context
+   conditions still required). Breaks fixed-BF robotic feel.
+
+---
+
+## 11. Post-Pass-2 Browser Baseline (apples-to-apples)
+
+**Same setup as pass 1:** same 5 teams (Charlotte Bears, Denver Raiders, San Antonio Giants,
+Portland Foxes, Nashville Comets), same 10 matchup combos (5 teams × home/away), same 10 seeds
+(s1g1–s10g100) = 100 games total. Delta is attributable purely to tuning changes.
+
+**Pass 2 browser aggregate results (100 games, same teams + seeds, 0 errors):**
+
+| Metric | Pass 1 (base) | Pass 2 | MLB Target | Δ pass1→2 |
+|---|---|---|---|---|
+| Total PA | 6,965 | 6,911 | N/A | -54 |
+| Total BB | 874 | 839 | N/A | -35 |
+| Total K | 1,432 | 1,519 | N/A | +87 |
+| Total H | 1,863 | 1,806 | N/A | -57 |
+| BB% | 12.5% | **12.1%** | ~8–9% | -0.4 pp |
+| K% | 20.6% | **22.0%** | ~22–23% | **+1.4 pp** ✅ |
+| H/PA | 0.267 | 0.261 | ~0.248 | -0.006 |
+| BB/game | 8.7 | **8.4** | ~5–6 | -0.3 |
+| Runs/game | 11.2 | **10.6** | ~8–9 | **-0.6** |
+| PA/game | 69.7 | 69.1 | ~80–85 | -0.6 |
+
+**Interpretation:**
+- K% hit **22.0%** — now squarely in the MLB target range (~22–23%). ✅
+- BB% moved from 12.5% → 12.1%: marginal improvement only (-0.4 pp). The take base and patient
+  walk mod reductions are having diminishing returns; the baseline `balanced` walk mod reduction
+  (0.95) provided the small gain. Walk rate still ~1.35× MLB baseline; another pass is warranted.
+- H/PA improved slightly (0.261 vs 0.267), trending toward the ~0.248 MLB target.
+- Runs/game at 10.6: further progress; still above the ~8–9 target. Primarily BB-driven now that
+  H/PA is closer to baseline — further walk reduction will directly lower run totals.
+- PA/game (69.1) remains below the expected ~82 MLB average. Fewer walks shorten low-PA innings.
+  This metric will self-correct as walk rates continue to fall.
+
+**Conclusion:** K% is now on target. BB% is improving but still elevated; another pass reducing
+the take base and balanced/aggressive walk modifiers further is the next step. Runs/game at 10.6
+is on a clear downward path.
+
+---
+
+## 12. Known Issues for Future Investigation
+
+**RxDB console errors during Instant-mode batch runs:**
+During all 100-game browser batch runs, `useRxdbGameSync` logs repeated errors of the form:
+```
+useRxdbGameSync: failed to update progress (game over) saveId=save_...
+useRxdbGameSync: failed to update progress (half-inning)
+```
+These appear to be caused by rapid game-over / navigation transitions in Instant mode
+(SPEED_INSTANT = 0) outpacing the async RxDB write flush before the component unmounts.
+The errors were observed across all passes and do not affect game simulation correctness (scores,
+stats, and seeding all remain valid), but saves/history persistence for Instant-mode games may be
+incomplete. A future task should investigate whether to add a write-flush-before-navigation guard
+in `useRxdbGameSync` or suppress the errors when navigation is intentional.
