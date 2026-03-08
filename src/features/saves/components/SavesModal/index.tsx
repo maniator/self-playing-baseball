@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import SaveSlotList from "@components/SaveSlotList";
+import SaveSlotList from "@feat/saves/components/SaveSlotList";
+
 import type { Strategy } from "@context/index";
 import type { SaveDoc } from "@storage/types";
 

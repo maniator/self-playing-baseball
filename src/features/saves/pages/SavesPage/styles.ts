@@ -2,7 +2,6 @@ import styled from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
-export { BackBtn, PageContainer, PageHeader } from "@components/PageLayout/styles";
 export {
   ActionBtn,
   SaveActions,
@@ -11,7 +10,8 @@ export {
   SaveInfo,
   SaveList,
   SaveName,
-} from "@components/SaveSlotList/styles";
+} from "@feat/saves/components/SaveSlotList/styles";
+export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayout/styles";
 
 export const PageTitle = styled.h1`
   color: white;

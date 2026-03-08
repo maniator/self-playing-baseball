@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 import { mq } from "@utils/mediaQueries";
 
-export { BackBtn } from "@components/PageLayout/styles";
+export { BackBtn } from "@shared/components/PageLayout/styles";
 
 export const ScreenContainer = styled.div`
   display: flex;

@@ -6,9 +6,8 @@
  */
 import * as React from "react";
 
+import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
 import { useNavigate, useParams } from "react-router";
-
-import { BackBtn, PageHeader } from "@components/PageLayout/styles";
 
 import PlayerCareerBattingTab from "./PlayerCareerBattingTab";
 import PlayerCareerPitchingTab from "./PlayerCareerPitchingTab";
