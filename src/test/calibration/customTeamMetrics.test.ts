@@ -58,9 +58,7 @@ const FIXTURE_TEAMS: FixtureTeam[] = fixtureRaw.payload.teams;
 type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 function clampMod(offset: number): ModPreset {
   const presets: ModPreset[] = [-20, -10, -5, 0, 5, 10, 20];
-  return presets.reduce((best, p) =>
-    Math.abs(p - offset) < Math.abs(best - offset) ? p : best,
-  );
+  return presets.reduce((best, p) => (Math.abs(p - offset) < Math.abs(best - offset) ? p : best));
 }
 
 /** Mirror of customTeamAdapter.customTeamToPlayerOverrides */
@@ -131,10 +129,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   };
 
   const gameReducer = reducerFactory(dispatchLog);
-  let state: State = createFreshGameState([
-    `custom:${awayTeam.id}`,
-    `custom:${homeTeam.id}`,
-  ]);
+  let state: State = createFreshGameState([`custom:${awayTeam.id}`, `custom:${homeTeam.id}`]);
 
   const dispatch = (action: GameAction): void => {
     state = gameReducer(state, action);
@@ -154,10 +149,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
         awayTeam.roster.lineup.map((p) => p.id),
         homeTeam.roster.lineup.map((p) => p.id),
       ],
-      rosterBench: [
-        awayTeam.roster.bench.map((p) => p.id),
-        homeTeam.roster.bench.map((p) => p.id),
-      ],
+      rosterBench: [awayTeam.roster.bench.map((p) => p.id), homeTeam.roster.bench.map((p) => p.id)],
       rosterPitchers: [
         awayTeam.roster.pitchers.map((p) => p.id),
         homeTeam.roster.pitchers.map((p) => p.id),
@@ -213,9 +205,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
           ) {
             dispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
           }
-          if (
-            ["steal_attempt", "bunt_attempt", "intentional_walk"].includes(aiAction.actionType)
-          ) {
+          if (["steal_attempt", "bunt_attempt", "intentional_walk"].includes(aiAction.actionType)) {
             continue;
           }
         } else {
@@ -361,16 +351,28 @@ describe("Custom-team metrics harness — 100 games (metrics-teams.json fixture)
     console.log(`║  Teams:             metrics-teams.json fixture        ║`);
     console.log("╠══════════════════════════════════════════════════════╣");
     console.log(`║  Total PA:          ${String(totalPA).padEnd(33)}║`);
-    console.log(`║  BB%:               ${bbPct.toFixed(2)}%${" ".repeat(32 - bbPct.toFixed(2).length)}║`);
-    console.log(`║  K%:                ${kPct.toFixed(2)}%${" ".repeat(32 - kPct.toFixed(2).length)}║`);
-    console.log(`║  H/PA:              ${hPerPA.toFixed(3)}${" ".repeat(34 - hPerPA.toFixed(3).length)}║`);
-    console.log(`║  BB/game:           ${bbPerGame.toFixed(1)}${" ".repeat(34 - bbPerGame.toFixed(1).length)}║`);
-    console.log(`║  Runs/game (mean):  ${runsPerGame.toFixed(1)}${" ".repeat(34 - runsPerGame.toFixed(1).length)}║`);
+    console.log(
+      `║  BB%:               ${bbPct.toFixed(2)}%${" ".repeat(32 - bbPct.toFixed(2).length)}║`,
+    );
+    console.log(
+      `║  K%:                ${kPct.toFixed(2)}%${" ".repeat(32 - kPct.toFixed(2).length)}║`,
+    );
+    console.log(
+      `║  H/PA:              ${hPerPA.toFixed(3)}${" ".repeat(34 - hPerPA.toFixed(3).length)}║`,
+    );
+    console.log(
+      `║  BB/game:           ${bbPerGame.toFixed(1)}${" ".repeat(34 - bbPerGame.toFixed(1).length)}║`,
+    );
+    console.log(
+      `║  Runs/game (mean):  ${runsPerGame.toFixed(1)}${" ".repeat(34 - runsPerGame.toFixed(1).length)}║`,
+    );
     console.log(`║  Runs/game (median):${String(medianRuns).padEnd(35)}║`);
     console.log(`║  Total BB:          ${String(totalBB).padEnd(33)}║`);
     console.log(`║  Total K:           ${String(totalK).padEnd(33)}║`);
     console.log(`║  Total H:           ${String(totalH).padEnd(33)}║`);
-    console.log(`║  Pitching changes:  ${avgPitchingChanges.toFixed(1)}/game${" ".repeat(29 - avgPitchingChanges.toFixed(1).length)}║`);
+    console.log(
+      `║  Pitching changes:  ${avgPitchingChanges.toFixed(1)}/game${" ".repeat(29 - avgPitchingChanges.toFixed(1).length)}║`,
+    );
     console.log("╚══════════════════════════════════════════════════════╝");
 
     // Sanity bounds only — do not gate on specific tuning targets
