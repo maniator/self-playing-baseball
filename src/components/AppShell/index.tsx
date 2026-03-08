@@ -3,9 +3,9 @@ import * as React from "react";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
 import VolumeControls from "@components/GameControls/VolumeControls";
-import type { PlayerOverrides } from "@components/NewGameDialog";
 import { useHomeScreenMusic } from "@hooks/useHomeScreenMusic";
 import { useVolumeControls } from "@hooks/useVolumeControls";
+import type { PlayerOverrides } from "@storage/types";
 import type { SaveDoc } from "@storage/types";
 
 import { AppVolumeBar } from "./styles";

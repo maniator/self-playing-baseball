@@ -11,9 +11,16 @@ import {
 } from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";
-import { getSpEligiblePitchers } from "@components/NewGameDialog";
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import { generateFreshSeed, reinitSeed } from "@utils/rng";
+
+/** Returns SP-eligible pitchers from a roster, preserving their original index. */
+const getSpEligiblePitchers = (
+  pitchers: { id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP" }[],
+): Array<{ id: string; name: string; pitchingRole?: "SP" | "RP" | "SP/RP"; idx: number }> =>
+  pitchers
+    .map((p, i) => ({ ...p, idx: i }))
+    .filter((p) => !p.pitchingRole || p.pitchingRole === "SP" || p.pitchingRole === "SP/RP");
 
 type ManagedTeam = 0 | 1 | null;
 

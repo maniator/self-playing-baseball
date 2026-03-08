@@ -1,4 +1,4 @@
-import type { State, Strategy } from "@context/index";
+import type { State, Strategy, TeamCustomPlayerOverrides } from "@context/index";
 
 /** Persisted save-header document (one per save game). */
 export interface SaveDoc {
@@ -523,3 +523,19 @@ export interface PitchingLeader {
   value: number;
   gamesPlayed: number;
 }
+
+export type PlayerOverrides = {
+  away: TeamCustomPlayerOverrides;
+  home: TeamCustomPlayerOverrides;
+  awayOrder: string[];
+  homeOrder: string[];
+  awayBench?: string[];
+  homeBench?: string[];
+  awayPitchers?: string[];
+  homePitchers?: string[];
+  /**
+   * Starting pitcher index into awayPitchers/homePitchers for each team.
+   * null = use index 0 (default). Only meaningful for managed custom-team games.
+   */
+  startingPitcherIdx?: [number | null, number | null];
+};

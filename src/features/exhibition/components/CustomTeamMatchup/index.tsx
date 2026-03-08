@@ -4,7 +4,7 @@ import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAd
 
 import type { CustomTeamDoc } from "@storage/types";
 
-import { FieldGroup, FieldLabel, SectionLabel, Select } from "./styles";
+import { FieldGroup, FieldLabel, SectionLabel, Select } from "../../styles";
 
 type Props = {
   teams: CustomTeamDoc[];

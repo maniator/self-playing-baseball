@@ -4,7 +4,8 @@ import StarterPitcherSelector from "@feat/exhibition/components/StarterPitcherSe
 import { useNavigate, useOutletContext } from "react-router";
 
 import type { AppShellOutletContext } from "@components/AppShell";
-import CustomTeamMatchup from "@components/NewGameDialog/CustomTeamMatchup";
+
+import CustomTeamMatchup from "../../components/CustomTeamMatchup";
 import {
   FieldGroup,
   FieldLabel,
@@ -14,8 +15,7 @@ import {
   SectionLabel,
   SeedHint,
   TeamValidationError,
-} from "@components/NewGameDialog/styles";
-
+} from "../../styles";
 import { BackBtn, PageContainer, PageHeader, PageTitle } from "./styles";
 import { useExhibitionSetup } from "./useExhibitionSetup";
 

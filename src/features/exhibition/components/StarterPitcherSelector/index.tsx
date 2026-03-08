@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { FieldGroup, FieldLabel, Select } from "@components/NewGameDialog/styles";
+import { FieldGroup, FieldLabel, Select } from "../../styles";
 
 export type SpPitcher = {
   id: string;
