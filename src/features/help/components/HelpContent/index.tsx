@@ -1,12 +1,6 @@
 import * as React from "react";
 
-import {
-  Li,
-  List,
-  SectionBody,
-  SectionDetails,
-  SectionSummary,
-} from "@components/InstructionsModal/styles";
+import { Li, List, SectionBody, SectionDetails, SectionSummary } from "../InstructionsModal/styles";
 
 interface SectionProps {
   title: string;

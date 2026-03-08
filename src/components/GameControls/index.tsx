@@ -13,7 +13,7 @@ import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
 const DecisionPanel = React.lazy(() => import("@components/DecisionPanel"));
-const InstructionsModal = React.lazy(() => import("@components/InstructionsModal"));
+const InstructionsModal = React.lazy(() => import("@feat/help/components/InstructionsModal"));
 const SavesModal = React.lazy(() => import("@components/SavesModal"));
 
 type Props = {

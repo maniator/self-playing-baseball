@@ -1,7 +1,6 @@
 import * as React from "react";
 
-import HelpContent from "@components/HelpContent";
-
+import HelpContent from "../HelpContent";
 import {
   CloseButton,
   CloseXButton,
