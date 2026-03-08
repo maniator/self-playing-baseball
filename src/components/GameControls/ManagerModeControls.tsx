@@ -1,10 +1,11 @@
 import * as React from "react";
 
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+
 import type { PitchingRole } from "@components/SubstitutionPanel";
 import SubstitutionPanel from "@components/SubstitutionPanel";
 import { useGameContext } from "@context/index";
 import { Strategy } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 
 import { NotifBadge, Select, SubButton, ToggleLabel } from "./ManagerModeStyles";
 

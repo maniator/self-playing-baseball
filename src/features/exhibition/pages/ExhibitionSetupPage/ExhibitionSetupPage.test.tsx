@@ -11,7 +11,7 @@ vi.mock("@utils/rng", () => ({
   generateFreshSeed: vi.fn(() => 0xdeadbeef),
 }));
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({
     teams: [],
     loading: false,
@@ -52,7 +52,7 @@ describe("ExhibitionSetupPage", () => {
     vi.clearAllMocks();
     // Reset useCustomTeams to empty-teams default so each test is hermetic.
     // (vi.clearAllMocks does NOT reset mockReturnValue overrides.)
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [] as any,
       loading: false,
@@ -107,7 +107,7 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("custom teams happy path: calls onStartGame with correct custom team payload", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const mockPlayer = (id: string, name: string, position: string) => ({
       id,
       name,
@@ -182,7 +182,7 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("custom teams: clicking managed-Away radio shows the StarterPitcherSelector", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const mockPlayer = (id: string) => ({
       id,
       name: `Player ${id}`,
@@ -225,7 +225,7 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("shows 'create more teams' error when exactly one custom team exists", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
         {
@@ -257,7 +257,7 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("self-matchup is blocked — shows validation error when home and away teams are the same", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const makeValidTeam = (id: string, name: string) => ({
       id,
       name,
@@ -359,7 +359,7 @@ describe("ExhibitionSetupPage", () => {
   });
 
   it("managed team with no SP-eligible pitchers shows validation error", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const POSITIONS = ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"];
     const makeTeamRpOnly = (id: string, name: string) => ({
       id,

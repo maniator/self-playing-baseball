@@ -1,8 +1,10 @@
 import * as React from "react";
 
+import { useGameHistorySync } from "@feat/careerStats/hooks/useGameHistorySync";
 import { resolveRestoreLabels } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useRxdbGameSync } from "@feat/saves/hooks/useRxdbGameSync";
 import { useSaveStore } from "@feat/saves/hooks/useSaveStore";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
@@ -15,8 +17,6 @@ import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
-import { useGameHistorySync } from "@hooks/useGameHistorySync";
 import type { PlayerOverrides } from "@storage/types";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";

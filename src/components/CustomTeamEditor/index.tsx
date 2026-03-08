@@ -1,8 +1,8 @@
 import * as React from "react";
 
 import { closestCenter, DndContext } from "@dnd-kit/core";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { CustomTeamDoc } from "@storage/types";
 
 import {

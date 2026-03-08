@@ -81,7 +81,7 @@ vi.mock("@storage/db", async (importOriginal) => {
   return { ...actual, getDb: vi.fn().mockResolvedValue({}) };
 });
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({
     teams: [],
     loading: false,
@@ -387,7 +387,7 @@ describe("GameInner — custom team label resolution", () => {
   };
 
   beforeEach(async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     // Two teams required so the self-matchup validation (away ≠ home) passes.
     const CUSTOM_TEAM_DOC_2 = {
       ...CUSTOM_TEAM_DOC,

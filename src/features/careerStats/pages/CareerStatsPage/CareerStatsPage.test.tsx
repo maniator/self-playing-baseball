@@ -13,7 +13,7 @@ vi.mock("@storage/db", () => ({
   }),
 }));
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({ teams: [], loading: false })),
 }));
 
@@ -56,8 +56,8 @@ vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
 }));
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { CustomTeamDoc } from "@storage/types";
 
 import CareerStatsPage from "./index";

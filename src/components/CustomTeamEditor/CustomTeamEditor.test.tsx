@@ -22,7 +22,7 @@ const dndCallbacks = vi.hoisted(() => [] as Array<(e: unknown) => void>);
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({
     teams: [],
     loading: false,
@@ -150,7 +150,7 @@ describe("CustomTeamEditor — create mode", () => {
   });
 
   it("calls createTeam and onSave on successful save after generate defaults", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const mockCreate = vi.fn().mockResolvedValue("ct_created");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [],
@@ -308,7 +308,7 @@ describe("CustomTeamEditor — edit mode", () => {
   });
 
   it("calls updateTeam and onSave on successful save in edit mode", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     const mockUpdate = vi.fn().mockResolvedValue(undefined);
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [],
@@ -726,7 +726,7 @@ describe("CustomTeamEditor — soft fingerprint duplicate banner (create mode)",
     vi.clearAllMocks();
     // Arrange: provide a team with a player that has the same stats/name
     // so buildPlayerSig produces a matching fingerprint.
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
         {

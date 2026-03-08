@@ -2,10 +2,10 @@ import * as React from "react";
 
 import type { ImportCustomTeamsResult } from "@feat/customTeams/storage/customTeamExportImport";
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocation, useNavigate, useParams } from "react-router";
 
 import CustomTeamEditor from "@components/CustomTeamEditor";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
 import { downloadJson, teamsFilename } from "@storage/saveIO";
 

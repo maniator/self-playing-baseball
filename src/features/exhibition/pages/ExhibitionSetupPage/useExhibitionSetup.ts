@@ -9,9 +9,9 @@ import {
   customTeamToPlayerOverrides,
   validateCustomTeamForGame,
 } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { generateFreshSeed, reinitSeed } from "@utils/rng";
 
 /** Returns SP-eligible pitchers from a roster, preserving their original index. */

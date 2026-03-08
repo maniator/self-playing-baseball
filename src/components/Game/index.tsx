@@ -1,12 +1,12 @@
 import * as React from "react";
 
 import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
 import type { ExhibitionGameSetup } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
 import type { SaveDoc } from "@storage/types";

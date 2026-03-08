@@ -14,7 +14,7 @@ import { makeContextValue } from "@test/testHelpers";
 
 import HitLog from ".";
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn().mockReturnValue({
     teams: [
       {

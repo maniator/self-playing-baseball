@@ -12,10 +12,10 @@ import {
   MIN_OUTS_FOR_ERA_LEADER,
 } from "@feat/careerStats/storage/gameHistoryStore";
 import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useNavigate } from "react-router";
 
 import { BackBtn, PageHeader } from "@components/PageLayout/styles";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { getDb } from "@storage/db";
 import type {
   BattingLeader,

@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({ teams: [], loading: false })),
 }));
 
@@ -238,7 +238,7 @@ describe("PlayerCareerPage", () => {
   });
 
   it("shows Prev/Next buttons when ?team= param matches a known custom team", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
         {
@@ -302,7 +302,7 @@ describe("PlayerCareerPage", () => {
 
   it("clicking Next navigates to the next player in the roster", async () => {
     const user = userEvent.setup();
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
         {
@@ -424,7 +424,7 @@ describe("PlayerCareerPage", () => {
   // ── Bug regression: player name must not show raw globalPlayerId ─────────────
 
   it("shows player name from roster when player has no game stats (Bug 1 regression)", async () => {
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [
         {
@@ -482,7 +482,7 @@ describe("PlayerCareerPage", () => {
 
   it("shows 'Unknown Player' when player has no stats and is not found in any roster", async () => {
     // No custom teams loaded — player is completely unknown.
-    const { useCustomTeams } = await import("@hooks/useCustomTeams");
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
     vi.mocked(useCustomTeams).mockReturnValue({
       teams: [],
       loading: false,

@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocalStorage } from "usehooks-ts";
 
 import type { PitchingRole } from "@components/SubstitutionPanel";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { useAutoPlayScheduler } from "@hooks/useAutoPlayScheduler";
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import { useGameAudio } from "@hooks/useGameAudio";
 import { useGameRefs } from "@hooks/useGameRefs";
 import { usePitchDispatch } from "@hooks/usePitchDispatch";

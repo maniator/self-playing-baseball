@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@hooks/useCustomTeams", () => ({
+vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({
     teams: [],
     loading: false,
@@ -60,8 +60,8 @@ vi.mock("@hooks/useImportCustomTeams", () => ({
 
 import type { ImportCustomTeamsResult } from "@feat/customTeams/storage/customTeamExportImport";
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { UseImportCustomTeamsReturn } from "@hooks/useImportCustomTeams";
 import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
 import { downloadJson } from "@storage/saveIO";
