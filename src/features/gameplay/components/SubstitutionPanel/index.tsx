@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import type { TeamCustomPlayerOverrides } from "@context/index";
+import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 
 import {
   ActionButton,

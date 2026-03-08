@@ -1,0 +1,126 @@
+import { mq } from "@shared/utils/mediaQueries";
+import styled from "styled-components";
+
+export const HomeContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 32px 24px calc(32px + 80px);
+  gap: 16px;
+`;
+
+export const HomeLogo = styled.div`
+  font-size: 3rem;
+
+  ${mq.mobile} {
+    font-size: 2.5rem;
+  }
+`;
+
+export const HomeTitle = styled.h1`
+  color: white;
+  font-size: 2.2rem;
+  margin: 0;
+  text-align: center;
+
+  ${mq.mobile} {
+    font-size: 1.8rem;
+  }
+`;
+
+export const HomeSubtitle = styled.p`
+  color: #888;
+  font-size: 0.95rem;
+  margin: 0;
+  text-align: center;
+`;
+
+export const MenuGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(100%, 300px);
+  margin-top: 16px;
+`;
+
+export const PrimaryBtn = styled.button`
+  background: #1a3a2a;
+  color: #6effc0;
+  border: 1px solid #3a7a5a;
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 52px;
+  text-align: center;
+
+  &:hover {
+    background: #254f38;
+  }
+
+  &:active {
+    background: #0e2418;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+  }
+`;
+
+export const SecondaryBtn = styled.button`
+  background: transparent;
+  color: #aaccff;
+  border: 1px solid #4a6090;
+  border-radius: 6px;
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 48px;
+  text-align: center;
+
+  &:hover {
+    background: #0d1b2e;
+    border-color: #88bbee;
+    color: #cce0ff;
+  }
+
+  &:active {
+    background: #071020;
+  }
+
+  &:focus-visible {
+    outline: 2px solid aquamarine;
+    outline-offset: 2px;
+  }
+`;
+
+/** Non-interactive teaser box for upcoming League mode. */
+export const LeagueTeaserBox = styled.div`
+  margin-top: 8px;
+  padding: 12px 20px;
+  background: #0d1b2e;
+  border: 1px solid #2a3a5a;
+  border-radius: 8px;
+  width: min(100%, 300px);
+  text-align: center;
+`;
+
+export const LeagueTeaserTitle = styled.p`
+  color: #f0c040;
+  font-size: 0.88rem;
+  font-weight: 600;
+  margin: 0 0 4px;
+`;
+
+export const LeagueTeaserSub = styled.p`
+  color: #aaa;
+  font-size: 0.78rem;
+  margin: 0;
+  line-height: 1.4;
+`;
