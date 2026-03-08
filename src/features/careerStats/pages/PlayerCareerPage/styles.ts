@@ -12,7 +12,7 @@ export {
   Td,
   Th,
   TotalsRow,
-} from "@components/CareerStats/styles";
+} from "../../styles";
 
 /** Full-height page container for the player career page. */
 export const PlayerCareerContainer = styled.div`

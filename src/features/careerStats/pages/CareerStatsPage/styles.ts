@@ -11,7 +11,7 @@ export {
   TableWrapper,
   Td,
   Th,
-} from "@components/CareerStats/styles";
+} from "../../styles";
 
 /** Wider page container for the career stats tables (up to 900px). */
 export const CareerContainer = styled.div`
