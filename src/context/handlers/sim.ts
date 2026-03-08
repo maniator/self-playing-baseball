@@ -84,7 +84,7 @@ export const handleSimAction = (
     case "intentional_walk": {
       const fieldingTeam = state.teamLabels[(1 - (state.atBat as number)) as 0 | 1];
       log(`${fieldingTeam} manager issues an intentional walk.`);
-      // Count as a pitch — the pitcher is throwing to the batter (4 intentional balls).
+      // Count as a single pitch event — the engine models the full IBB sequence as one pitch.
       const stateWithPitch = incrementPitchCount(state);
       const result = checkWalkoff(
         hitBall(

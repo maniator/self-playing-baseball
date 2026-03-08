@@ -7,6 +7,7 @@
  *
  * This is the deterministic in-process equivalent of metrics-baseline.spec.ts.
  */
+import { customTeamToPlayerOverrides } from "@features/customTeams/adapters/customTeamAdapter";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import { describe, expect, it } from "vitest";
@@ -28,6 +29,7 @@ import {
 } from "@context/pitchSimulation";
 import reducerFactory, { detectDecision } from "@context/reducer";
 import { ZERO_MODS } from "@context/resolvePlayerMods";
+import type { CustomTeamDoc } from "@storage/types";
 import getRandomInt from "@utils/getRandomInt";
 import { restoreRng } from "@utils/rng";
 
@@ -38,6 +40,7 @@ type TeamPlayer = {
   name: string;
   role: string;
   position?: string;
+  pitchingRole?: string;
   batting: { contact: number; power: number; speed: number };
   pitching?: { velocity: number; control: number; movement: number };
 };
@@ -53,31 +56,6 @@ const fixtureRaw = JSON.parse(readFileSync(FIXTURE_PATH, "utf-8")) as {
   payload: { teams: FixtureTeam[] };
 };
 const FIXTURE_TEAMS: FixtureTeam[] = fixtureRaw.payload.teams;
-
-/** Mirror of customTeamAdapter.clampMod */
-type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
-function clampMod(offset: number): ModPreset {
-  const presets: ModPreset[] = [-20, -10, -5, 0, 5, 10, 20];
-  return presets.reduce((best, p) => (Math.abs(p - offset) < Math.abs(best - offset) ? p : best));
-}
-
-/** Mirror of customTeamAdapter.customTeamToPlayerOverrides */
-function teamToOverrides(team: FixtureTeam): Record<string, Record<string, number>> {
-  const overrides: Record<string, Record<string, number>> = {};
-  for (const p of [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers]) {
-    overrides[p.id] = {
-      contactMod: clampMod(p.batting.contact - 60),
-      powerMod: clampMod(p.batting.power - 60),
-      speedMod: clampMod(p.batting.speed - 60),
-      ...(p.pitching && {
-        velocityMod: clampMod(p.pitching.velocity - 60),
-        controlMod: clampMod(p.pitching.control - 60),
-        movementMod: clampMod(p.pitching.movement - 60),
-      }),
-    };
-  }
-  return overrides;
-}
 
 // ── Matchup blocks — exact mirror of metrics-baseline.spec.ts ─────────────
 
@@ -141,10 +119,10 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
     payload: {
       teams: [`custom:${awayTeam.id}`, `custom:${homeTeam.id}`],
       teamLabels: [awayTeam.name, homeTeam.name],
-      playerOverrides: [teamToOverrides(awayTeam), teamToOverrides(homeTeam)] as [
-        Record<string, Record<string, number>>,
-        Record<string, Record<string, number>>,
-      ],
+      playerOverrides: [
+        customTeamToPlayerOverrides(awayTeam as unknown as CustomTeamDoc),
+        customTeamToPlayerOverrides(homeTeam as unknown as CustomTeamDoc),
+      ] as [Record<string, Record<string, number>>, Record<string, Record<string, number>>],
       lineupOrder: [
         awayTeam.roster.lineup.map((p) => p.id),
         homeTeam.roster.lineup.map((p) => p.id),
@@ -157,8 +135,17 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
     },
   });
 
-  // Build pitcher roles for AI (all are generic "pitcher" role in fixture → treated as no-role)
-  const pitcherRoles: [Record<string, string>, Record<string, string>] = [{}, {}];
+  // Build pitcher roles for AI from fixture `pitchingRole` (SP/RP/SP/RP per pitcher)
+  const pitcherRoles: [Record<string, string>, Record<string, string>] = [
+    awayTeam.roster.pitchers.reduce<Record<string, string>>((acc, pitcher) => {
+      if (pitcher.pitchingRole) acc[pitcher.id] = pitcher.pitchingRole;
+      return acc;
+    }, {}),
+    homeTeam.roster.pitchers.reduce<Record<string, string>>((acc, pitcher) => {
+      if (pitcher.pitchingRole) acc[pitcher.id] = pitcher.pitchingRole;
+      return acc;
+    }, {}),
+  ];
 
   let maxTicks = 50000;
   let pitchingChanges = 0;
@@ -284,7 +271,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
     else if ([Hit.Single, Hit.Double, Hit.Triple, Hit.Homerun].includes(entry.event as Hit)) h++;
   }
   const k = state.strikeoutLog.length;
-  const ab = bb + h + state.outLog.length;
+  const ab = h + state.outLog.length;
 
   return { ab, bb, k, h, runs: state.score[0] + state.score[1], pitchingChanges };
 }

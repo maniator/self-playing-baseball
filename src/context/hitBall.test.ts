@@ -292,7 +292,7 @@ describe("stat mods in hitBall", () => {
     const freshResult = hitBall(Hit.Single, freshState, () => {});
     expect(freshResult.outs).toBe(1);
 
-    // Tired: roll=0.8 → 800 < 975 → hit
+    // Tired: roll=0.8 → 800 < 919 → hit
     vi.spyOn(rngModule, "random").mockReturnValue(0.8);
     const tiredResult = hitBall(Hit.Single, tiredState, () => {});
     expect(tiredResult.baseLayout[0]).toBe(1);
