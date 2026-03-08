@@ -1,5 +1,5 @@
-import { LogAction } from "@context/index";
-import { buildReplayUrl } from "@utils/rng";
+import { LogAction } from "@feat/gameplay/context/index";
+import { buildReplayUrl } from "@shared/utils/rng";
 
 interface ShareSeedArgs {
   dispatchLog: (action: LogAction) => void;

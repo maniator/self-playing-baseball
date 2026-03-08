@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { LogAction } from "@context/index";
-import { play7thInningStretch, playVictoryFanfare } from "@utils/announce";
+import { LogAction } from "@feat/gameplay/context/index";
+import { play7thInningStretch, playVictoryFanfare } from "@feat/gameplay/utils/announce";
 
 /**
  * Plays audio for special game moments: 7th inning stretch and victory fanfare.

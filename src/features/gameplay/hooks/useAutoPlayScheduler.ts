@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import { DecisionType } from "@context/index";
-import { isSpeechPending } from "@utils/announce";
-import { appLog } from "@utils/logger";
+import { DecisionType } from "@feat/gameplay/context/index";
+import { isSpeechPending } from "@feat/gameplay/utils/announce";
+import { appLog } from "@shared/utils/logger";
 
 /**
  * Speech-gated scheduler — runs while the game is in progress.

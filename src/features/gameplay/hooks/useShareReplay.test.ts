@@ -1,7 +1,6 @@
+import * as rngModule from "@shared/utils/rng";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import * as rngModule from "@utils/rng";
 
 import { useShareReplay } from "./useShareReplay";
 

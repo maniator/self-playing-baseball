@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { LogAction } from "@context/index";
-import { appLog } from "@utils/logger";
+import { LogAction } from "@feat/gameplay/context/index";
+import { appLog } from "@shared/utils/logger";
 
 import { useShareReplay } from "./useShareReplay";
 
