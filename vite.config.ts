@@ -41,11 +41,6 @@ export default defineConfig(({ mode }) => ({
   },
   resolve: {
     alias: {
-      "@components": path.resolve(__dirname, "src/components"),
-      "@context": path.resolve(__dirname, "src/context"),
-      "@hooks": path.resolve(__dirname, "src/hooks"),
-      "@utils": path.resolve(__dirname, "src/utils"),
-      "@constants": path.resolve(__dirname, "src/constants"),
       "@storage": path.resolve(__dirname, "src/storage"),
       "@test": path.resolve(__dirname, "src/test"),
       "@feat": path.resolve(__dirname, "src/features"),

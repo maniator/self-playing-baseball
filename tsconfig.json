@@ -9,11 +9,6 @@
     "types": ["vitest/globals"],
     "baseUrl": ".",
     "paths": {
-      "@components/*": ["src/components/*"],
-      "@context/*": ["src/context/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "@utils/*": ["src/utils/*"],
-      "@constants/*": ["src/constants/*"],
       "@storage/*": ["src/storage/*"],
       "@test/*": ["src/test/*"],
       "@feat/*": ["src/features/*"],
