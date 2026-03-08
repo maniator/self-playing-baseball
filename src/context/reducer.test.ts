@@ -645,8 +645,9 @@ describe("hit – pop_up always produces an out", () => {
 // Lines 262-267: "take" modifier in playerWait → ball path
 describe("wait – take modifier", () => {
   it("take modifier with high random → ball (walk odds up)", () => {
-    // random < walkChance → ball path; walkChance ≈ 750 for balanced, so 0.3 → ball
-    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.3).mockReturnValue(0.9);
+    // random < walkChance → ball path; walkChance ≈ 220 * 0.85 ≈ 187 for balanced (take base 220),
+    // so 0.1 (→ 100 < 187) → ball
+    vi.spyOn(rngModule, "random").mockReturnValueOnce(0.1).mockReturnValue(0.9);
     const { state, logs } = dispatchAction(
       makeState({ balls: 0, onePitchModifier: "take" }),
       "wait",
@@ -657,7 +658,7 @@ describe("wait – take modifier", () => {
   });
 
   it("take modifier with low random → called strike", () => {
-    // random >= walkChance → strike; walkChance ≈ 750 for balanced, so 0.99 → strike
+    // random >= walkChance → strike; walkChance ≈ 187 for balanced (take base 220), so 0.99 → strike
     vi.spyOn(rngModule, "random").mockReturnValue(0.99);
     const { state, logs } = dispatchAction(
       makeState({ strikes: 0, onePitchModifier: "take" }),
