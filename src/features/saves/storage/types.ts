@@ -1,4 +1,4 @@
-import type { State, Strategy } from "@context/index";
+import type { State, Strategy } from "@feat/gameplay/context/index";
 
 /** Typed setup stored on the save header for deterministic game restore. */
 export interface GameSaveSetup {

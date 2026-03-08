@@ -1,6 +1,5 @@
+import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
-
-import { mq } from "@utils/mediaQueries";
 
 export const EditorContainer = styled.div`
   display: flex;

@@ -7,11 +7,11 @@
 import * as React from "react";
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+import { computeERA, computeWHIP } from "@feat/careerStats/utils/computePitcherGameStats";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useNavigate, useSearchParams } from "react-router";
 
 import type { PitcherGameStatDoc, PlayerGameStatDoc, TeamPlayer } from "@storage/types";
-import { computeERA, computeWHIP } from "@utils/stats/computePitcherGameStats";
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 

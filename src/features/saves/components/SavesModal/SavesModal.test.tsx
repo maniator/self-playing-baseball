@@ -1,10 +1,10 @@
 import * as React from "react";
 
+import type { Strategy } from "@feat/gameplay/context/index";
+import { GameContext } from "@feat/gameplay/context/index";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Strategy } from "@context/index";
-import { GameContext } from "@context/index";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { makeContextValue, makeState } from "@test/testHelpers";
 
@@ -61,13 +61,13 @@ vi.mock("@feat/saves/hooks/useSaveStore", () => ({
   useSaveStore: vi.fn(() => makeMockStore()),
 }));
 
-vi.mock("@utils/rng", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@utils/rng")>();
+vi.mock("@shared/utils/rng", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@shared/utils/rng")>();
   return { ...actual, getRngState: vi.fn().mockReturnValue(42) };
 });
 
-vi.mock("@utils/saves", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@utils/saves")>();
+vi.mock("@shared/utils/saves", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@shared/utils/saves")>();
   return { ...actual, currentSeedStr: vi.fn().mockReturnValue("abc") };
 });
 

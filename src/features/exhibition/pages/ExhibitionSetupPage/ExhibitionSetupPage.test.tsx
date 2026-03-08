@@ -5,7 +5,7 @@ import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("@utils/rng", () => ({
+vi.mock("@shared/utils/rng", () => ({
   getSeed: vi.fn(() => 0xdeadbeef),
   reinitSeed: vi.fn(),
   generateFreshSeed: vi.fn(() => 0xdeadbeef),
@@ -33,7 +33,7 @@ vi.mock("react-router", async (importOriginal) => {
   };
 });
 
-import * as rngModule from "@utils/rng";
+import * as rngModule from "@shared/utils/rng";
 
 import ExhibitionSetupPage from "./index";
 

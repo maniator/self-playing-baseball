@@ -1,6 +1,5 @@
+import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
-
-import { mq } from "@utils/mediaQueries";
 
 export const SaveList = styled.ul`
   list-style: none;

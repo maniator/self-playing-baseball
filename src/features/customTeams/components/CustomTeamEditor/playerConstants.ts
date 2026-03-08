@@ -3,7 +3,7 @@
  * Reuses the canonical position set from src/utils/roster.ts
  * (BATTING_POSITIONS, POSITION_NAMES) as the single source of truth.
  */
-import { BATTING_POSITIONS } from "@utils/roster";
+import { BATTING_POSITIONS } from "@shared/utils/roster";
 
 /** Allowed batting positions for lineup/bench players. */
 export const BATTER_POSITION_OPTIONS = [

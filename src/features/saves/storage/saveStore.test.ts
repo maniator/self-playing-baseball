@@ -1,8 +1,8 @@
 import { makeSaveStore } from "@feat/saves/storage/saveStore";
+import { Hit } from "@shared/constants/hitTypes";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import { _createTestDb, type BallgameDb } from "@storage/db";
 import { fnv1a } from "@storage/hash";
 import type { GameSetup } from "@storage/types";

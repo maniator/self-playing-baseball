@@ -1,10 +1,10 @@
 /** Pitching tab panel for the PlayerCareerPage. */
 import * as React from "react";
 
+import { formatIP } from "@feat/careerStats/utils/computePitcherGameStats";
 import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 
 import type { CustomTeamDoc, PitcherGameStatDoc } from "@storage/types";
-import { formatIP } from "@utils/stats/computePitcherGameStats";
 
 import { EmptyState, SectionLabel, StatsTable, TableWrapper, Td, Th, TotalsRow } from "./styles";
 import type { PitchingTotals } from "./usePlayerCareerData";

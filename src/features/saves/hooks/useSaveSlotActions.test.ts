@@ -44,7 +44,7 @@ describe("useSaveSlotActions", () => {
   });
 
   it("handleDelete: uses appLog.error when onError is not provided", async () => {
-    const { appLog } = await import("@utils/logger");
+    const { appLog } = await import("@shared/utils/logger");
     const spy = vi.spyOn(appLog, "error").mockImplementation(() => {});
     const err = new Error("oops");
     const deleteSave = vi.fn().mockRejectedValue(err);

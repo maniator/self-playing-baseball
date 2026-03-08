@@ -1,8 +1,7 @@
+import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
 
-import { mq } from "@utils/mediaQueries";
-
-export { HelpButton } from "@components/GameControls/styles";
+export { HelpButton } from "@feat/gameplay/components/GameControls/styles";
 
 export const Dialog = styled.dialog`
   background: #0d1b2e;

@@ -1,6 +1,7 @@
+import { appLog } from "@shared/utils/logger";
+
 import { downloadJson, saveFilename } from "@storage/saveIO";
 import type { SaveDoc } from "@storage/types";
-import { appLog } from "@utils/logger";
 
 interface Params {
   /** Async function that deletes a save by ID. */

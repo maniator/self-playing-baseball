@@ -1,11 +1,11 @@
 import * as React from "react";
 
+import type { ContextValue, GameAction } from "@feat/gameplay/context/index";
+import { GameContext } from "@feat/gameplay/context/index";
 import * as saveStoreModule from "@feat/saves/storage/saveStore";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { ContextValue, GameAction } from "@context/index";
-import { GameContext } from "@context/index";
 import { makeContextValue } from "@test/testHelpers";
 
 import { useRxdbGameSync } from "./useRxdbGameSync";
@@ -17,8 +17,8 @@ vi.mock("@feat/saves/storage/saveStore", () => ({
   },
 }));
 
-vi.mock("@utils/rng", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@utils/rng")>();
+vi.mock("@shared/utils/rng", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@shared/utils/rng")>();
   return { ...actual, getRngState: vi.fn().mockReturnValue(42) };
 });
 

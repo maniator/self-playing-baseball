@@ -1,6 +1,7 @@
-import type { TeamCustomPlayerOverrides } from "@context/index";
+import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
+import { BATTING_POSITIONS } from "@shared/utils/roster";
+
 import type { CustomTeamDoc } from "@storage/types";
-import { BATTING_POSITIONS } from "@utils/roster";
 
 /**
  * Returns a stable game-session ID for a custom team.
