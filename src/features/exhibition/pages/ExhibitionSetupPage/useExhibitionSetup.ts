@@ -11,7 +11,7 @@ import {
 } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { ExhibitionGameSetup } from "@components/AppShell";
+import type { ExhibitionGameSetup } from "@storage/types";
 import { generateFreshSeed, reinitSeed } from "@utils/rng";
 
 /** Returns SP-eligible pitchers from a roster, preserving their original index. */

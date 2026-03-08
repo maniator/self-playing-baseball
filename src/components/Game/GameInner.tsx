@@ -8,7 +8,6 @@ import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocalStorage } from "usehooks-ts";
 
 import Announcements from "@components/Announcements";
-import type { ExhibitionGameSetup } from "@components/AppShell";
 import Diamond from "@components/Diamond";
 import GameControls from "@components/GameControls";
 import HitLog from "@components/HitLog";
@@ -17,6 +16,7 @@ import PlayerStatsPanel from "@components/PlayerStatsPanel";
 import TeamTabBar from "@components/TeamTabBar";
 import type { GameAction, Strategy } from "@context/index";
 import { useGameContext } from "@context/index";
+import type { ExhibitionGameSetup } from "@storage/types";
 import type { PlayerOverrides } from "@storage/types";
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";

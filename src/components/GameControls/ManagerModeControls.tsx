@@ -1,9 +1,9 @@
 import * as React from "react";
 
+import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
+import SubstitutionPanel from "@feat/gameplay/components/SubstitutionPanel";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { PitchingRole } from "@components/SubstitutionPanel";
-import SubstitutionPanel from "@components/SubstitutionPanel";
 import { useGameContext } from "@context/index";
 import { Strategy } from "@context/index";
 

@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import type { PitchingRole } from "@components/SubstitutionPanel";
+import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
+
 import { selectPitchType } from "@constants/pitchTypes";
 import {
   makeAiPitchingDecision,

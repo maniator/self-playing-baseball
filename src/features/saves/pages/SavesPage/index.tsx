@@ -7,8 +7,8 @@ import { useSaveSlotActions } from "@feat/saves/hooks/useSaveSlotActions";
 import { SaveStore } from "@feat/saves/storage/saveStore";
 import { useNavigate, useOutletContext } from "react-router";
 
-import type { AppShellOutletContext } from "@components/AppShell";
 import { customTeamsCollection } from "@storage/db";
+import type { AppShellOutletContext } from "@storage/types";
 import type { CustomTeamDoc, SaveDoc } from "@storage/types";
 
 import {

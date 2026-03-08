@@ -4,11 +4,11 @@ import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamA
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
 
-import type { ExhibitionGameSetup } from "@components/AppShell";
 import type { GameAction } from "@context/index";
 import { GameProviderWrapper } from "@context/index";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
+import type { ExhibitionGameSetup } from "@storage/types";
 import type { SaveDoc } from "@storage/types";
 import { appLog } from "@utils/logger";
 

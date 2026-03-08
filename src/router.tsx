@@ -3,10 +3,10 @@ import * as React from "react";
 import ManageTeamsScreen from "@feat/customTeams/pages/ManageTeamsScreen";
 import { createBrowserRouter, Navigate, redirect, useOutletContext } from "react-router";
 
-import type { AppShellOutletContext } from "@components/AppShell";
 import AppShell from "@components/AppShell";
 import HomeScreen from "@components/HomeScreen";
 import RootLayout from "@components/RootLayout";
+import type { AppShellOutletContext } from "@storage/types";
 
 const CareerStatsPage = React.lazy(() => import("@feat/careerStats/pages/CareerStatsPage"));
 const ExhibitionSetupPage = React.lazy(() => import("@feat/exhibition/pages/ExhibitionSetupPage"));

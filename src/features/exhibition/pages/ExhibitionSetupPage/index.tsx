@@ -3,7 +3,7 @@ import * as React from "react";
 import StarterPitcherSelector from "@feat/exhibition/components/StarterPitcherSelector";
 import { useNavigate, useOutletContext } from "react-router";
 
-import type { AppShellOutletContext } from "@components/AppShell";
+import type { AppShellOutletContext } from "@storage/types";
 
 import CustomTeamMatchup from "../../components/CustomTeamMatchup";
 import {

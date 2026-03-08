@@ -1,5 +1,6 @@
 import * as React from "react";
 
+import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
 import { useAutoPlayScheduler } from "@feat/gameplay/hooks/useAutoPlayScheduler";
 import { useGameAudio } from "@feat/gameplay/hooks/useGameAudio";
 import { useGameRefs } from "@feat/gameplay/hooks/useGameRefs";
@@ -9,7 +10,6 @@ import { useReplayDecisions } from "@feat/gameplay/hooks/useReplayDecisions";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { useLocalStorage } from "usehooks-ts";
 
-import type { PitchingRole } from "@components/SubstitutionPanel";
 import { ContextValue, Strategy, useGameContext } from "@context/index";
 import { setAlertVolume, setAnnouncementVolume, setSpeechRate } from "@utils/announce";
 
