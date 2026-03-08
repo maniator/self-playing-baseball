@@ -1,7 +1,11 @@
 import * as React from "react";
 
-import { buildPlayerSig, parseExportedCustomPlayer } from "@storage/customTeamExportImport";
-import { CustomTeamStore } from "@storage/customTeamStore";
+import {
+  buildPlayerSig,
+  parseExportedCustomPlayer,
+} from "@feat/customTeams/storage/customTeamExportImport";
+import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
+
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import type { EditorAction, EditorPlayer } from "./editorState";

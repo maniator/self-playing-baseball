@@ -1,6 +1,6 @@
-import { generatePlayerId, generateTeamId } from "./generateId";
-import { fnv1a } from "./hash";
-import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "./types";
+import { generatePlayerId, generateTeamId } from "@storage/generateId";
+import { fnv1a } from "@storage/hash";
+import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "@storage/types";
 
 export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 /** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */

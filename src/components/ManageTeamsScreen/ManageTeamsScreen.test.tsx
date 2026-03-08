@@ -24,7 +24,7 @@ vi.mock("@components/CustomTeamEditor", () => ({
   ),
 }));
 
-vi.mock("@storage/customTeamStore", () => ({
+vi.mock("@feat/customTeams/storage/customTeamStore", () => ({
   CustomTeamStore: {
     exportCustomTeams: vi.fn(() =>
       Promise.resolve(
@@ -58,11 +58,12 @@ vi.mock("@hooks/useImportCustomTeams", () => ({
   })),
 }));
 
+import type { ImportCustomTeamsResult } from "@feat/customTeams/storage/customTeamExportImport";
+import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
+
 import { useCustomTeams } from "@hooks/useCustomTeams";
 import type { UseImportCustomTeamsReturn } from "@hooks/useImportCustomTeams";
 import { useImportCustomTeams } from "@hooks/useImportCustomTeams";
-import type { ImportCustomTeamsResult } from "@storage/customTeamExportImport";
-import { CustomTeamStore } from "@storage/customTeamStore";
 import { downloadJson } from "@storage/saveIO";
 import type { CustomTeamDoc } from "@storage/types";
 

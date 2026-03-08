@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 
+import { fnv1a } from "@storage/hash";
+import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+
 import {
   buildPlayerSig,
   buildTeamFingerprint,
@@ -12,8 +15,6 @@ import {
   stripTeamPlayerSigs,
   TEAMS_EXPORT_KEY,
 } from "./customTeamExportImport";
-import { fnv1a } from "./hash";
-import type { CustomTeamDoc, TeamPlayer } from "./types";
 
 // ── Fixtures ────────────────────────────────────────────────────────────────
 

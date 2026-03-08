@@ -12,7 +12,8 @@ vi.mock("@storage/saveIO", () => ({
 import type {
   ImportCustomTeamsOptions,
   ImportCustomTeamsResult,
-} from "@storage/customTeamExportImport";
+} from "@feat/customTeams/storage/customTeamExportImport";
+
 import { readFileAsText } from "@storage/saveIO";
 
 import { useImportCustomTeams } from "./useImportCustomTeams";

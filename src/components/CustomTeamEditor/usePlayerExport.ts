@@ -1,6 +1,7 @@
 import * as React from "react";
 
-import { exportCustomPlayer } from "@storage/customTeamExportImport";
+import { exportCustomPlayer } from "@feat/customTeams/storage/customTeamExportImport";
+
 import { downloadJson, playerFilename } from "@storage/saveIO";
 
 import { type EditorPlayer, editorPlayerToTeamPlayer } from "./editorState";

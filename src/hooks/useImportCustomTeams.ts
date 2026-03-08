@@ -3,7 +3,8 @@ import * as React from "react";
 import type {
   ImportCustomTeamsOptions,
   ImportCustomTeamsResult,
-} from "@storage/customTeamExportImport";
+} from "@feat/customTeams/storage/customTeamExportImport";
+
 import { readFileAsText } from "@storage/saveIO";
 
 interface UseImportCustomTeamsOptions {

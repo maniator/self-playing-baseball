@@ -1,11 +1,11 @@
 import * as React from "react";
 
 import type { DragEndEvent } from "@dnd-kit/core";
+import { exportCustomPlayer } from "@feat/customTeams/storage/customTeamExportImport";
+import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { exportCustomPlayer } from "@storage/customTeamExportImport";
-import { CustomTeamStore } from "@storage/customTeamStore";
 import { downloadJson } from "@storage/saveIO";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
@@ -40,7 +40,7 @@ vi.mock("@storage/saveIO", async (importOriginal) => {
 
 // Stub CustomTeamStore so unit tests don't hit IndexedDB.
 // Individual tests override importPlayer as needed.
-vi.mock("@storage/customTeamStore", () => ({
+vi.mock("@feat/customTeams/storage/customTeamStore", () => ({
   CustomTeamStore: {
     importPlayer: vi.fn().mockResolvedValue({ status: "success", finalLocalId: "mock-player-id" }),
   },

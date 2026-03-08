@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CustomTeamDoc } from "@storage/types";
 
 // Mock the CustomTeamStore so tests run without IndexedDB.
-vi.mock("@storage/customTeamStore", () => {
+vi.mock("@feat/customTeams/storage/customTeamStore", () => {
   const mockStore = {
     listCustomTeams: vi.fn(),
     createCustomTeam: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock("@storage/customTeamStore", () => {
   return { CustomTeamStore: mockStore };
 });
 
-import { CustomTeamStore } from "@storage/customTeamStore";
+import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 
 import { useCustomTeams } from "./useCustomTeams";
 

@@ -1,10 +1,10 @@
 import * as React from "react";
 
+import { exportCustomPlayer } from "@feat/customTeams/storage/customTeamExportImport";
+import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { exportCustomPlayer } from "@storage/customTeamExportImport";
-import { CustomTeamStore } from "@storage/customTeamStore";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 import type { EditorAction, EditorPlayer } from "./editorState";
@@ -13,7 +13,7 @@ import { useImportPlayerFile } from "./useImportPlayerFile";
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
-vi.mock("@storage/customTeamStore", () => ({
+vi.mock("@feat/customTeams/storage/customTeamStore", () => ({
   CustomTeamStore: {
     importPlayer: vi.fn().mockResolvedValue({ status: "success", finalLocalId: "mock-player-id" }),
   },
