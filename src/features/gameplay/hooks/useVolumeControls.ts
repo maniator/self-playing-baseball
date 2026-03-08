@@ -1,8 +1,7 @@
 import * as React from "react";
 
+import { setAlertVolume, setAnnouncementVolume } from "@feat/gameplay/utils/announce";
 import { useLocalStorage } from "usehooks-ts";
-
-import { setAlertVolume, setAnnouncementVolume } from "@utils/announce";
 
 /**
  * Manages and persists announcement + music (alert) volume.

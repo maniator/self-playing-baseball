@@ -5,7 +5,7 @@ import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 // Mock the heavy Game component — GamePage is a thin routing adapter
-vi.mock("@components/Game", () => ({
+vi.mock("@feat/gameplay/components/Game", () => ({
   default: (props: Record<string, unknown>) => (
     <div data-testid="game-mock">
       <button
@@ -26,7 +26,7 @@ vi.mock("@components/Game", () => ({
   ),
 }));
 
-import type { AppShellOutletContext } from "@components/AppShell";
+import type { AppShellOutletContext } from "@feat/gameplay/components/AppShell";
 
 import GamePage from "./index";
 

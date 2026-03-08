@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { startHomeScreenMusic, stopHomeScreenMusic } from "@utils/announce";
+import { startHomeScreenMusic, stopHomeScreenMusic } from "@feat/gameplay/utils/announce";
 
 /**
  * Starts the looping home-screen background music when the component mounts

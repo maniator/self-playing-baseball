@@ -1,7 +1,6 @@
+import * as announceModule from "@feat/gameplay/utils/announce";
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import * as announceModule from "@utils/announce";
 
 import { useHomeScreenMusic } from "./useHomeScreenMusic";
 

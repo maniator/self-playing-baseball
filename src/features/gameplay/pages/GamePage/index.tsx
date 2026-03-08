@@ -1,8 +1,8 @@
 import * as React from "react";
 
+import Game from "@feat/gameplay/components/Game";
 import { useLocation, useNavigate, useOutletContext } from "react-router";
 
-import Game from "@components/Game";
 import type {
   AppShellOutletContext,
   ExhibitionGameSetup,
