@@ -1,9 +1,10 @@
 /**
  * Unit tests for aiManager — AI manager decision engine for unmanaged teams.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeState } from "@test/testHelpers";
+import * as rng from "@utils/rng";
 
 import {
   AI_FATIGUE_THRESHOLD_HIGH,
@@ -78,6 +79,11 @@ describe("findBestReliever", () => {
 });
 
 describe("makeAiPitchingDecision", () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  // Pin random() to 0 so the probabilistic pull always fires in fatigue tests.
+  const alwaysPull = () => vi.spyOn(rng, "random").mockReturnValue(0);
+
   it("returns none when pitcher is not fatigued", () => {
     const state = makeState({
       pitcherBattersFaced: [5, 5],
@@ -93,6 +99,7 @@ describe("makeAiPitchingDecision", () => {
   });
 
   it("returns pitching_change when fatigue is high", () => {
+    alwaysPull();
     const state = makeState({
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
       rosterPitchers: [[], ["sp1", "rp1"]],
@@ -109,6 +116,7 @@ describe("makeAiPitchingDecision", () => {
   });
 
   it("returns pitching_change in late innings at medium fatigue", () => {
+    alwaysPull();
     const state = makeState({
       inning: 7, // inning >= 7 now required for medium fatigue hook (context-aware)
       pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_MEDIUM],
@@ -139,6 +147,7 @@ describe("makeAiPitchingDecision", () => {
   });
 
   it("returns pitching_change at medium fatigue in tight early game", () => {
+    alwaysPull();
     // Close game (score ±2) should trigger hook even in early innings.
     const state = makeState({
       inning: 3,
@@ -150,6 +159,18 @@ describe("makeAiPitchingDecision", () => {
     });
     const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
     expect(decision.kind).toBe("pitching_change");
+  });
+
+  it("probabilistic skip: returns none when random() exceeds pull probability", () => {
+    vi.spyOn(rng, "random").mockReturnValue(1); // above any probability → never pull
+    const state = makeState({
+      pitcherBattersFaced: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      rosterPitchers: [[], ["sp1", "rp1"]],
+      activePitcherIdx: [0, 0],
+      substitutedOut: [[], []],
+    });
+    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rp1: "RP" });
+    expect(decision.kind).toBe("none");
   });
 
   it("returns none when all relievers are used (no-reentry)", () => {

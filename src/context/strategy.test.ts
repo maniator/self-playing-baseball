@@ -8,8 +8,13 @@ describe("stratMod — all strategies × all stats", () => {
   const stats = ["walk", "strikeout", "homerun", "contact", "steal", "advance"] as const;
   const strategies = ["balanced", "aggressive", "patient", "contact", "power"] as const;
 
-  it("balanced returns 1.0 for every stat", () => {
-    stats.forEach((s) => expect(stratMod("balanced", s)).toBe(1.0));
+  it("balanced walk is slightly below 1.0 (0.95)", () => {
+    expect(stratMod("balanced", "walk")).toBe(0.95);
+  });
+
+  it("balanced returns 1.0 for non-walk stats", () => {
+    const nonWalkStats = ["strikeout", "homerun", "contact", "steal", "advance"] as const;
+    nonWalkStats.forEach((s) => expect(stratMod("balanced", s)).toBe(1.0));
   });
 
   it("aggressive boosts homerun, steal, advance; reduces walk", () => {
@@ -44,7 +49,7 @@ describe("stratMod — all strategies × all stats", () => {
 
   it("exact values: aggressive steal = 1.3", () =>
     expect(stratMod("aggressive", "steal")).toBe(1.3));
-  it("exact values: patient walk = 1.2", () => expect(stratMod("patient", "walk")).toBe(1.2));
+  it("exact values: patient walk = 1.1", () => expect(stratMod("patient", "walk")).toBe(1.1));
   it("exact values: power homerun = 1.6", () => expect(stratMod("power", "homerun")).toBe(1.6));
   it("exact values: contact strikeout = 0.7", () =>
     expect(stratMod("contact", "strikeout")).toBe(0.7));

@@ -154,7 +154,7 @@ const computeWaitOutcome = (
   if (modifier === "take") {
     const adjustedWalkChance = Math.min(
       999,
-      Math.max(0, Math.round((580 * stratMod(strategy, "walk")) / (zoneMod * controlFactor))),
+      Math.max(0, Math.round((520 * stratMod(strategy, "walk")) / (zoneMod * controlFactor))),
     );
     return random < adjustedWalkChance ? "ball" : "strike";
   }

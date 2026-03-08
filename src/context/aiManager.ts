@@ -6,9 +6,12 @@
  *
  * Design:
  * - Pure functions — testable without mocking side effects.
- * - Deterministic given the same inputs (no random calls inside).
+ * - Deterministic given the same inputs (pitching-change decisions use random()
+ *   to add natural variance to pull timing so hooks feel less robotic).
  * - Only handles actions available in the current game state.
  */
+
+import { random } from "@utils/rng";
 
 import type { DecisionType, State, Strategy } from "./index";
 import { computeFatigueFactor } from "./pitchSimulation";
@@ -171,6 +174,14 @@ export function makeAiPitchingDecision(
     fatigueFactor >= AI_FATIGUE_FACTOR_MEDIUM && (state.inning >= 7 || isTightGame || hasRunnersOn);
 
   if (!isHighFatigue && !isMediumFatigue) return { kind: "none" };
+
+  // Probabilistic pull — breaks fixed-BF robotic hook feel.
+  // High fatigue: 60% at threshold, scaling toward 100% as fatigue grows further.
+  // Medium fatigue (context conditions already met): flat 40%.
+  const pullProbability = isHighFatigue
+    ? Math.min(1, 0.6 + (fatigueFactor - AI_FATIGUE_FACTOR_HIGH) * 2.5)
+    : 0.4;
+  if (random() > pullProbability) return { kind: "none" };
 
   // Find the best available reliever.
   const relieverIdx = findBestReliever(

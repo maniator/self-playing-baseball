@@ -14,7 +14,7 @@ import type { OnePitchModifier, Strategy } from "../index";
 const SWING_RATE_MODS: Record<Strategy, number> = {
   balanced: 1.0,
   aggressive: 1.15,
-  patient: 0.82,
+  patient: 0.87,
   contact: 1.05,
   power: 0.95,
 };
