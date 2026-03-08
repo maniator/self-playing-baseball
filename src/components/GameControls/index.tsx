@@ -14,7 +14,7 @@ import VolumeControls from "./VolumeControls";
 
 const DecisionPanel = React.lazy(() => import("@components/DecisionPanel"));
 const InstructionsModal = React.lazy(() => import("@feat/help/components/InstructionsModal"));
-const SavesModal = React.lazy(() => import("@components/SavesModal"));
+const SavesModal = React.lazy(() => import("@feat/saves/components/SavesModal"));
 
 type Props = {
   onNewGame?: () => void;
