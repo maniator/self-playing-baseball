@@ -58,8 +58,13 @@ export const makeState = (overrides: Partial<State> = {}): State => {
     activePitcherIdx: [0, 0] as [number, number],
     lineupPositions: [[], []] as [string[], string[]],
     pitcherBattersFaced: [0, 0] as [number, number],
+    pitcherPitchCount: [0, 0] as [number, number],
     substitutedOut: [[], []] as [string[], string[]],
     baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
+    pitcherGameLog: [[], []] as [
+      import("@context/index").PitcherLogEntry[],
+      import("@context/index").PitcherLogEntry[],
+    ],
     ...overrides,
     // Derived fields that must be computed after overrides:
     teams,
@@ -105,8 +110,13 @@ export const makeContextValue = (overrides: Partial<ContextValue> = {}): Context
     activePitcherIdx: [0, 0] as [number, number],
     lineupPositions: [[], []] as [string[], string[]],
     pitcherBattersFaced: [0, 0] as [number, number],
+    pitcherPitchCount: [0, 0] as [number, number],
     substitutedOut: [[], []] as [string[], string[]],
     baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
+    pitcherGameLog: [[], []] as [
+      import("@context/index").PitcherLogEntry[],
+      import("@context/index").PitcherLogEntry[],
+    ],
     resolvedMods: emptyResolvedMods,
     ...overrides,
     // Derived fields that must be computed after overrides:

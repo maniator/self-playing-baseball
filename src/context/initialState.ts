@@ -52,6 +52,7 @@ export const createFreshGameState = (
   activePitcherIdx: [0, 0] as [number, number],
   lineupPositions: [[], []] as [string[], string[]],
   pitcherBattersFaced: [0, 0] as [number, number],
+  pitcherPitchCount: [0, 0] as [number, number],
   substitutedOut: [[], []] as [string[], string[]],
   baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
   resolvedMods: [{}, {}] as [
@@ -121,6 +122,7 @@ export const backfillRestoredState = (restored: State): State => {
     activePitcherIdx: base.activePitcherIdx ?? [0, 0],
     lineupPositions: base.lineupPositions ?? [[], []],
     pitcherBattersFaced: base.pitcherBattersFaced ?? [0, 0],
+    pitcherPitchCount: base.pitcherPitchCount ?? [0, 0],
     substitutedOut: base.substitutedOut ?? [[], []],
     baseRunnerIds: base.baseRunnerIds ?? [null, null, null],
     resolvedMods:

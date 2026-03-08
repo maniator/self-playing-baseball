@@ -2,7 +2,29 @@ import { checkGameOver, nextHalfInning } from "./gameOver";
 import type { State, Strategy, StrikeoutEntry } from "./index";
 import { updateActivePitcherLog } from "./pitcherLog";
 
-/** Rotate the batting-order position (0–8 cycling) for the team currently at bat. */
+/**
+ * Increments the pitching team's pitch count.
+ * Called once per pitch actually thrown to a batter:
+ * balls, called/swinging strikes, fouls (whether count advances or stays),
+ * balls in play, and intentional walk throws all count.
+ * Steal attempts do NOT count — they are baserunning events, not pitches to the batter.
+ */
+export const incrementPitchCount = (state: State): State => {
+  const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+  const cur = state.pitcherPitchCount ?? ([0, 0] as [number, number]);
+  const newPitchCount: [number, number] = [cur[0], cur[1]];
+  newPitchCount[pitchingTeam] = newPitchCount[pitchingTeam] + 1;
+  return {
+    ...state,
+    pitcherPitchCount: newPitchCount,
+    pitcherGameLog: updateActivePitcherLog(
+      state.pitcherGameLog ?? [[], []],
+      pitchingTeam,
+      (entry) => ({ ...entry, pitchesThrown: (entry.pitchesThrown ?? 0) + 1 }),
+    ),
+  };
+};
+
 export const nextBatter = (state: State): State => {
   const newBatterIndex: [number, number] = [state.batterIndex[0], state.batterIndex[1]];
   newBatterIndex[state.atBat as 0 | 1] = (newBatterIndex[state.atBat as 0 | 1] + 1) % 9;

@@ -57,21 +57,19 @@ export interface AiNoneDecision {
 
 export type AiDecision = AiPitchingChangeDecision | AiTacticalDecision | AiNoneDecision;
 
-/** Batters-faced reference thresholds used to derive fatigue-factor limits below. */
-export const AI_FATIGUE_THRESHOLD_HIGH = 18;
-export const AI_FATIGUE_THRESHOLD_MEDIUM = 12;
+/** Pitch-count reference thresholds used to derive fatigue-factor limits below. */
+export const AI_FATIGUE_THRESHOLD_HIGH = 100;
+export const AI_FATIGUE_THRESHOLD_MEDIUM = 85;
 
 /**
  * Fatigue-factor limits for AI pitching-change decisions.
- * Derived from the reference thresholds at default stamina (staminaMod = 0) so
- * that default-stamina behavior stays identical while high/low stamina pitchers
- * are pulled later/earlier respectively.
+ * Derived from the reference thresholds at default stamina (staminaMod = 0, battersFaced = 0):
  *
- * computeFatigueFactor(18, 0) ≈ 1.225  →  AI_FATIGUE_FACTOR_HIGH
- * computeFatigueFactor(12, 0) ≈ 1.075  →  AI_FATIGUE_FACTOR_MEDIUM
+ * computeFatigueFactor(100, 0, 0) = 1.0 + 0.012*(100-75) = 1.30  →  AI_FATIGUE_FACTOR_HIGH
+ * computeFatigueFactor(85,  0, 0) = 1.0 + 0.012*(85-75)  = 1.12  →  AI_FATIGUE_FACTOR_MEDIUM
  */
-export const AI_FATIGUE_FACTOR_HIGH = 1.225;
-export const AI_FATIGUE_FACTOR_MEDIUM = 1.075;
+export const AI_FATIGUE_FACTOR_HIGH = 1.3;
+export const AI_FATIGUE_FACTOR_MEDIUM = 1.12;
 
 /** Steal success % above which the AI sends the runner. */
 const AI_STEAL_THRESHOLD = 0.62;
@@ -149,6 +147,7 @@ export function makeAiPitchingDecision(
   pitchingTeamIdx: 0 | 1,
   pitcherRoles: Record<string, string> = {},
 ): AiDecision {
+  const pitchCount = (state.pitcherPitchCount ?? [0, 0])[pitchingTeamIdx];
   const battersFaced = (state.pitcherBattersFaced ?? [0, 0])[pitchingTeamIdx];
   const activePitcherIdx = (state.activePitcherIdx ?? [0, 0])[pitchingTeamIdx];
   const rosterPitchers = (state.rosterPitchers ?? [[], []])[pitchingTeamIdx];
@@ -160,7 +159,7 @@ export function makeAiPitchingDecision(
   const staminaMod = activePitcherId
     ? (state.resolvedMods?.[pitchingTeamIdx]?.[activePitcherId]?.staminaMod ?? 0)
     : 0;
-  const fatigueFactor = computeFatigueFactor(battersFaced, staminaMod);
+  const fatigueFactor = computeFatigueFactor(pitchCount, battersFaced, staminaMod);
 
   const isHighFatigue = fatigueFactor >= AI_FATIGUE_FACTOR_HIGH;
 

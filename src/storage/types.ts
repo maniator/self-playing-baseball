@@ -417,6 +417,8 @@ export interface PitcherGameStatDoc {
   outsPitched: number;
   /** Total batters faced. */
   battersFaced: number;
+  /** Total pitches thrown to batters (balls, strikes, fouls, balls in play, IBBs). */
+  pitchesThrown: number;
   /** Hits allowed by this pitcher. */
   hitsAllowed: number;
   /** Walks (and intentional walks) allowed. */

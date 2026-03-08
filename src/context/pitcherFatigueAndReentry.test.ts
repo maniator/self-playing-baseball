@@ -1,5 +1,5 @@
 /**
- * Tests for pitcher fatigue tracking (pitcherBattersFaced) and
+ * Tests for pitcher fatigue tracking (pitcherBattersFaced, pitcherPitchCount) and
  * no-reentry enforcement (substitutedOut).
  */
 import { describe, expect, it } from "vitest";
@@ -9,7 +9,7 @@ import { makeLogs, makeState } from "@test/testHelpers";
 
 import { handleDecisionsAction } from "./handlers/decisions";
 import { hitBall } from "./hitBall";
-import { incrementPitcherFatigue } from "./playerOut";
+import { incrementPitchCount, incrementPitcherFatigue } from "./playerOut";
 
 describe("incrementPitcherFatigue", () => {
   it("increments the pitching team (opponent of atBat) counter", () => {
@@ -26,6 +26,31 @@ describe("incrementPitcherFatigue", () => {
     // atBat=1 means team 1 is batting, team 0 is pitching — increment team 0
     expect(next.pitcherBattersFaced[0]).toBe(3);
     expect(next.pitcherBattersFaced[1]).toBe(5);
+  });
+});
+
+describe("incrementPitchCount", () => {
+  it("increments the pitching team pitch count (opponent of atBat)", () => {
+    const state = makeState({ atBat: 0, pitcherPitchCount: [10, 20] });
+    const next = incrementPitchCount(state);
+    // atBat=0 means team 0 is batting, team 1 is pitching — increment team 1
+    expect(next.pitcherPitchCount[0]).toBe(10);
+    expect(next.pitcherPitchCount[1]).toBe(21);
+  });
+
+  it("increments away team pitch count when home team is batting", () => {
+    const state = makeState({ atBat: 1, pitcherPitchCount: [5, 15] });
+    const next = incrementPitchCount(state);
+    // atBat=1 means team 1 is batting, team 0 is pitching — increment team 0
+    expect(next.pitcherPitchCount[0]).toBe(6);
+    expect(next.pitcherPitchCount[1]).toBe(15);
+  });
+
+  it("handles missing pitcherPitchCount gracefully (backward compat)", () => {
+    const state = makeState({ atBat: 0 });
+    delete (state as unknown as Record<string, unknown>)["pitcherPitchCount"];
+    const next = incrementPitchCount(state as typeof state);
+    expect(next.pitcherPitchCount[1]).toBe(1);
   });
 });
 
@@ -139,6 +164,7 @@ describe("no-reentry enforcement in make_substitution", () => {
       substitutedOut: [[], []],
       playerOverrides: [{ sp1: { nickname: "SP One" }, rp1: { nickname: "RP One" } }, {}],
       pitcherBattersFaced: [8, 0],
+      pitcherPitchCount: [92, 0],
     });
 
     const result = handleDecisionsAction(
@@ -156,5 +182,7 @@ describe("no-reentry enforcement in make_substitution", () => {
     expect(result!.activePitcherIdx[0]).toBe(1);
     // pitcherBattersFaced should reset to 0 for team 0
     expect(result!.pitcherBattersFaced[0]).toBe(0);
+    // pitcherPitchCount should also reset to 0 for team 0
+    expect(result!.pitcherPitchCount[0]).toBe(0);
   });
 });

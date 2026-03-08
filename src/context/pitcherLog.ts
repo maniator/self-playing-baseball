@@ -30,6 +30,7 @@ export const createPitcherLogEntry = (
   scoreOnEntry: [...state.score] as [number, number],
   outsPitched: 0,
   battersFaced: 0,
+  pitchesThrown: 0,
   hitsAllowed: 0,
   walksAllowed: 0,
   strikeoutsRecorded: 0,

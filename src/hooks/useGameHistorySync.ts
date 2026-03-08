@@ -210,6 +210,7 @@ export const useGameHistorySync = (
         nameAtGameTime,
         outsPitched: result.outsPitched,
         battersFaced: result.battersFaced,
+        pitchesThrown: result.pitchesThrown,
         hitsAllowed: result.hitsAllowed,
         walksAllowed: result.walksAllowed,
         strikeoutsRecorded: result.strikeoutsRecorded,

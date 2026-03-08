@@ -17,6 +17,7 @@ export type PitcherGameResult = {
   pitcherId: string;
   outsPitched: number;
   battersFaced: number;
+  pitchesThrown: number;
   hitsAllowed: number;
   walksAllowed: number;
   strikeoutsRecorded: number;
@@ -98,6 +99,7 @@ export const computePitcherGameStats = (
         const existing = byPitcher[entry.pitcherId];
         existing.outsPitched += entry.outsPitched;
         existing.battersFaced += entry.battersFaced;
+        existing.pitchesThrown += entry.pitchesThrown ?? 0;
         existing.hitsAllowed += entry.hitsAllowed;
         existing.walksAllowed += entry.walksAllowed;
         existing.strikeoutsRecorded += entry.strikeoutsRecorded;
@@ -114,6 +116,7 @@ export const computePitcherGameStats = (
           pitcherId: entry.pitcherId,
           outsPitched: entry.outsPitched,
           battersFaced: entry.battersFaced,
+          pitchesThrown: entry.pitchesThrown ?? 0,
           hitsAllowed: entry.hitsAllowed,
           walksAllowed: entry.walksAllowed,
           strikeoutsRecorded: entry.strikeoutsRecorded,

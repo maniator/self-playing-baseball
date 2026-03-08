@@ -7,7 +7,7 @@ import { hitBall } from "./hitBall";
 import { OnePitchModifier, State, Strategy } from "./index";
 import { updateActivePitcherLog } from "./pitcherLog";
 import { computeFatigueFactor } from "./pitchSimulation";
-import { playerOut } from "./playerOut";
+import { incrementPitchCount, playerOut } from "./playerOut";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
@@ -20,8 +20,10 @@ export const playerStrike = (
   foul = false,
   pitchType?: PitchType,
 ): State => {
-  const newStrikes = state.strikes + 1;
-  const pitchKey = (state.pitchKey ?? 0) + 1;
+  // Count this pitch before processing its outcome.
+  const stateWithPitch = incrementPitchCount(state);
+  const newStrikes = stateWithPitch.strikes + 1;
+  const pitchKey = (stateWithPitch.pitchKey ?? 0) + 1;
   const msg = (text: string) =>
     pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
@@ -32,11 +34,11 @@ export const playerStrike = (
         : msg("called strike three! He's out!"),
     );
     // Track strikeout for the active pitcher before recording the out.
-    const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+    const pitchingTeam = (1 - (stateWithPitch.atBat as number)) as 0 | 1;
     const stateWithK = {
-      ...state,
+      ...stateWithPitch,
       pitcherGameLog: updateActivePitcherLog(
-        state.pitcherGameLog ?? [[], []],
+        stateWithPitch.pitcherGameLog ?? [[], []],
         pitchingTeam,
         (entry) => ({ ...entry, strikeoutsRecorded: entry.strikeoutsRecorded + 1 }),
       ),
@@ -53,7 +55,7 @@ export const playerStrike = (
   }
 
   return {
-    ...state,
+    ...stateWithPitch,
     strikes: newStrikes,
     pendingDecision: null,
     onePitchModifier: null,
@@ -67,19 +69,21 @@ export const playerBall = (
   log: (msg: string) => void,
   pitchType?: PitchType,
 ): State => {
-  const newBalls = state.balls + 1;
-  const pitchKey = (state.pitchKey ?? 0) + 1;
+  // Count this pitch before processing its outcome.
+  const stateWithPitch = incrementPitchCount(state);
+  const newBalls = stateWithPitch.balls + 1;
+  const pitchKey = (stateWithPitch.pitchKey ?? 0) + 1;
   const msg = (text: string) =>
     pitchType ? `${pitchName(pitchType)} — ${text}` : `${text[0].toUpperCase()}${text.slice(1)}`;
 
   if (newBalls === 4) {
     log(msg("ball four — take your base!"));
-    return hitBall(Hit.Walk, { ...state, pitchKey }, log);
+    return hitBall(Hit.Walk, { ...stateWithPitch, pitchKey }, log);
   }
 
   log(msg(`ball ${newBalls}.`));
   return {
-    ...state,
+    ...stateWithPitch,
     balls: newBalls,
     pendingDecision: null,
     onePitchModifier: null,
@@ -185,7 +189,12 @@ export const playerWait = (
 
   // Fatigue reduces effective control: a tired pitcher misses the zone more often.
   const pitcherBattersFaced = (state.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
-  const fatigueFactor = computeFatigueFactor(pitcherBattersFaced, pitcherMods.staminaMod);
+  const pitcherPitchCount = (state.pitcherPitchCount ?? [0, 0])[pitchingTeam];
+  const fatigueFactor = computeFatigueFactor(
+    pitcherPitchCount,
+    pitcherBattersFaced,
+    pitcherMods.staminaMod,
+  );
   const fatigueControlPenalty = Math.round((fatigueFactor - 1) * 20);
   const effectiveControlMod = pitcherControlMod - fatigueControlPenalty;
 
