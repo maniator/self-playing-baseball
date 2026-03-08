@@ -5,8 +5,8 @@
  * strategy, contact skill, pitch type, and any active one-pitch modifier.
  */
 
-import type { PitchType } from "@constants/pitchTypes";
-import { pitchSwingRateMod } from "@constants/pitchTypes";
+import type { PitchType } from "@feat/gameplay/constants/pitchTypes";
+import { pitchSwingRateMod } from "@feat/gameplay/constants/pitchTypes";
 
 import type { OnePitchModifier, Strategy } from "../index";
 

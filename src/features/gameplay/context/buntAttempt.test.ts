@@ -1,8 +1,8 @@
+import * as rngModule from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import * as rngModule from "@utils/rng";
+import { makeLogs, makeState } from "@test/testHelpers";
 
-import { makeLogs, makeState } from "../test/testHelpers";
 import { buntAttempt } from "./buntAttempt";
 
 afterEach(() => vi.restoreAllMocks());

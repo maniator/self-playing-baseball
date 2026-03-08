@@ -1,6 +1,5 @@
+import { Hit } from "@shared/constants/hitTypes";
 import { describe, expect, it } from "vitest";
-
-import { Hit } from "@constants/hitTypes";
 
 import { advanceRunners } from "./advanceRunners";
 

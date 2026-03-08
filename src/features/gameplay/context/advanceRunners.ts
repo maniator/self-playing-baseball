@@ -1,4 +1,4 @@
-import { Hit } from "@constants/hitTypes";
+import { Hit } from "@shared/constants/hitTypes";
 
 /**
  * Advance runners using explicit, correct baseball rules.

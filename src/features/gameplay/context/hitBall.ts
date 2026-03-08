@@ -1,5 +1,5 @@
-import { Hit } from "@constants/hitTypes";
-import getRandomInt from "@utils/getRandomInt";
+import getRandomInt from "@feat/gameplay/utils/getRandomInt";
+import { Hit } from "@shared/constants/hitTypes";
 
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";

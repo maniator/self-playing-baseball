@@ -1,6 +1,6 @@
+import { Hit } from "@shared/constants/hitTypes";
 import { describe, expect, it } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
 
 import type { PlayLogEntry, ResolvedPlayerMods, TeamCustomPlayerOverrides } from "./index";

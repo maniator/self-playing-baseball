@@ -1,8 +1,8 @@
+import { Hit } from "@shared/constants/hitTypes";
+import * as rngModule from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import { makeLogs, makeState, mockRandom } from "@test/testHelpers";
-import * as rngModule from "@utils/rng";
 
 import { handleBallInPlay, hitBall } from "./hitBall";
 import type { ModPreset, TeamCustomPlayerOverrides } from "./index";

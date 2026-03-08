@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { Hit } from "@constants/hitTypes";
-import { announce } from "@utils/announce";
+import { announce } from "@feat/gameplay/utils/announce";
+import { Hit } from "@shared/constants/hitTypes";
 
 import { createFreshGameState } from "./initialState";
 import reducer from "./reducer";

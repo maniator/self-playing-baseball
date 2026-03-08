@@ -11,7 +11,7 @@
  * - Only handles actions available in the current game state.
  */
 
-import { random } from "@utils/rng";
+import { random } from "@shared/utils/rng";
 
 import type { DecisionType, State, Strategy } from "./index";
 import { computeFatigueFactor } from "./pitchSimulation";

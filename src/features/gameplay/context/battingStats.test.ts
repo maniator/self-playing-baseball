@@ -16,20 +16,20 @@
  *      non-AB plate appearances modelled in this simulator).
  */
 
-import { afterEach, describe, expect, it } from "vitest";
-
-import { Hit } from "@constants/hitTypes";
-import { selectPitchType } from "@constants/pitchTypes";
-import type { GameAction, LogAction, State } from "@context/index";
+import { selectPitchType } from "@feat/gameplay/constants/pitchTypes";
+import type { GameAction, LogAction, State } from "@feat/gameplay/context/index";
 import {
   computeSwingRate,
   resolveBattedBallType,
   resolveSwingOutcome,
-} from "@context/pitchSimulation";
+} from "@feat/gameplay/context/pitchSimulation";
+import getRandomInt from "@feat/gameplay/utils/getRandomInt";
+import { Hit } from "@shared/constants/hitTypes";
+import { restoreRng } from "@shared/utils/rng";
+import { generateRoster } from "@shared/utils/roster";
+import { afterEach, describe, expect, it } from "vitest";
+
 import { makeState } from "@test/testHelpers";
-import getRandomInt from "@utils/getRandomInt";
-import { restoreRng } from "@utils/rng";
-import { generateRoster } from "@utils/roster";
 
 import reducerFactory from "./reducer";
 

@@ -1,4 +1,4 @@
-import { appLog } from "@utils/logger";
+import { appLog } from "@shared/utils/logger";
 
 import type { State } from "./index";
 

@@ -1,6 +1,6 @@
-import { Hit } from "@constants/hitTypes";
-import type { PitchType } from "@constants/pitchTypes";
-import { pitchName } from "@constants/pitchTypes";
+import type { PitchType } from "@feat/gameplay/constants/pitchTypes";
+import { pitchName } from "@feat/gameplay/constants/pitchTypes";
+import { Hit } from "@shared/constants/hitTypes";
 
 import { checkWalkoff } from "../gameOver";
 import { handleBallInPlay, hitBall } from "../hitBall";

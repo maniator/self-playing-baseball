@@ -4,12 +4,17 @@
  * are faithfully preserved in state throughout the entire simulation.
  */
 
+import type {
+  GameAction,
+  LogAction,
+  State,
+  TeamCustomPlayerOverrides,
+} from "@feat/gameplay/context/index";
+import { restoreRng } from "@shared/utils/rng";
+import { generateRoster } from "@shared/utils/roster";
 import { afterEach, describe, expect, it } from "vitest";
 
-import type { GameAction, LogAction, State, TeamCustomPlayerOverrides } from "@context/index";
 import { makeState } from "@test/testHelpers";
-import { restoreRng } from "@utils/rng";
-import { generateRoster } from "@utils/roster";
 
 import reducerFactory from "./reducer";
 

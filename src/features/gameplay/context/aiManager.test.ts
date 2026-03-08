@@ -1,10 +1,10 @@
 /**
  * Unit tests for aiManager — AI manager decision engine for unmanaged teams.
  */
+import * as rng from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeState } from "@test/testHelpers";
-import * as rng from "@utils/rng";
 
 import {
   AI_FATIGUE_THRESHOLD_HIGH,

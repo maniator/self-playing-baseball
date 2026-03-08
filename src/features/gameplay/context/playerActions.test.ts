@@ -2,10 +2,10 @@
  * Tests for src/context/playerActions.ts — focused on computeWaitOutcome threshold clamping.
  */
 
+import * as rngModule from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { makeLogs, makeState } from "@test/testHelpers";
-import * as rngModule from "@utils/rng";
 
 import type { ModPreset } from "./index";
 import type { TeamCustomPlayerOverrides } from "./index";

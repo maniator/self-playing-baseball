@@ -2,11 +2,11 @@
  * Tests for src/Context/reducer.ts
  */
 
+import { Hit } from "@shared/constants/hitTypes";
+import * as rngModule from "@shared/utils/rng";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import { makeState } from "@test/testHelpers";
-import * as rngModule from "@utils/rng";
 
 import { advanceRunners } from "./advanceRunners";
 import type { DecisionType, LogAction, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
