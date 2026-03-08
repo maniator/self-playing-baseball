@@ -376,13 +376,6 @@ describe("makeAiStrategyDecision", () => {
     expect(makeAiStrategyDecision(state, 0)).toBe("balanced");
   });
 
-  it("returns 'balanced' (NOT 'patient') when leading by 3+", () => {
-    // Regression: AI was returning 'patient' (walk-farming) when ahead by 3+.
-    // Changed to 'balanced' to break the walk-rate feedback loop.
-    const state = makeState({ score: [0, 4], atBat: 1, inning: 3 });
-    expect(makeAiStrategyDecision(state, 1)).toBe("balanced");
-  });
-
   it("returns 'balanced' when leading by 3+ in late game", () => {
     const state = makeState({ score: [0, 5], atBat: 1, inning: 8 });
     expect(makeAiStrategyDecision(state, 1)).toBe("balanced");

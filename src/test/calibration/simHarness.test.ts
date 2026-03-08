@@ -267,20 +267,20 @@ describe("Calibration harness — aggregate simulation balance", () => {
     console.log(`Runs/game: ${runsPerGame.toFixed(1)}  (target: 7–16)`);
     console.log(`Avg starter BF: ${avgStarterBF.toFixed(1)}  (target: 15–24)`);
 
-    // Assertions — generous ranges to allow simulation variance.
-    expect(bbPct, `BB% ${bbPct.toFixed(1)}% should be between 6% and 14%`).toBeGreaterThan(6);
-    expect(bbPct, `BB% ${bbPct.toFixed(1)}% should be between 6% and 14%`).toBeLessThan(14);
+    // Assertions — strict inequality (exclusive bounds) to allow simulation variance.
+    expect(bbPct, `BB% ${bbPct.toFixed(1)}% should be greater than 6% and less than 14%`).toBeGreaterThan(6);
+    expect(bbPct, `BB% ${bbPct.toFixed(1)}% should be greater than 6% and less than 14%`).toBeLessThan(14);
 
-    expect(kPct, `K% ${kPct.toFixed(1)}% should be between 14% and 28%`).toBeGreaterThan(14);
-    expect(kPct, `K% ${kPct.toFixed(1)}% should be between 14% and 28%`).toBeLessThan(28);
+    expect(kPct, `K% ${kPct.toFixed(1)}% should be greater than 14% and less than 28%`).toBeGreaterThan(14);
+    expect(kPct, `K% ${kPct.toFixed(1)}% should be greater than 14% and less than 28%`).toBeLessThan(28);
 
     expect(
       runsPerGame,
-      `Runs/game ${runsPerGame.toFixed(1)} should be between 7 and 16`,
+      `Runs/game ${runsPerGame.toFixed(1)} should be greater than 7 and less than 16`,
     ).toBeGreaterThan(7);
     expect(
       runsPerGame,
-      `Runs/game ${runsPerGame.toFixed(1)} should be between 7 and 16`,
+      `Runs/game ${runsPerGame.toFixed(1)} should be greater than 7 and less than 16`,
     ).toBeLessThan(16);
   }, 120_000); // 120s timeout for 100 full-game simulations
 });
