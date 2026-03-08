@@ -4,10 +4,9 @@ import "./index.scss";
 import * as React from "react";
 import { createRoot } from "react-dom/client";
 
+import { appLog } from "@shared/utils/logger";
+import { initSeedFromUrl } from "@shared/utils/rng";
 import { RouterProvider } from "react-router";
-
-import { appLog } from "@utils/logger";
-import { initSeedFromUrl } from "@utils/rng";
 
 import { router } from "./router";
 
