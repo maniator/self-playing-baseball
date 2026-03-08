@@ -532,7 +532,7 @@ Practical implication for comparisons:
 
 ```bash
 yarn build
-# Navigate to http://127.0.0.1:4173 (not localhost) in the MCP browser
+# Navigate to http://127.0.0.1:4173 (not localhost) — required for MCP Playwright automation; see docs/e2e-testing.md §"Metrics baseline: server startup"
 # See e2e-testing.md § "Simulation Metrics Baseline" for full server setup
 yarn test:e2e --project=desktop --grep "metrics-baseline"
 ```
@@ -632,3 +632,46 @@ If pass 6 brings BB% to ~10.0–10.3%, a pass 7 of `0.85 → 0.80` may be needed
 ### On the K% question (18% target)
 
 K% at 22.4% is **already on target** (MLB average is ~22–23%). Reducing to 18% would push below MLB average — pitching would feel too easy and offense too clean. The correct target is to keep K% in the 20–24% band while closing the BB% gap. Endorsing 22% as the correct K% target.
+
+---
+
+## Section 19 — Pass 6 results + take-base root cause diagnosis
+
+**Code change:** `balanced` walk mod `0.90 → 0.85` (commit `591cc65`)
+
+### Browser run — 100 games, `metrics-teams.json` fixture
+
+| Metric | Pass 4 | Pass 5 (no Δ) | **Pass 6** | Delta vs P4 | MLB Target |
+|---|---|---|---|---|---|
+| BB% | 10.89% | 10.96% | **11.00%** | +0.11 pp | ~8–9% |
+| K% | 22.34% ✅ | 22.44% ✅ | **22.33%** ✅ | −0.01 pp | ~22–23% |
+| Runs/game | 9.73 | 10.64 | **10.78** | +1.05 | ~8–9 |
+| BB/game | ~7.6 | 7.51 | **~7.5** | ~−0.1 | ~5–6 |
+
+**Pass 6 produced no meaningful improvement** — results are effectively identical to pass 4.
+
+### Root cause: strategy mods have been exhausted; remaining inflation is in `computeWaitOutcome` base probability
+
+All strategy walk mods have been reduced to their logical floor:
+- `patient`: 1.0 (neutral) — but AI never selects this anyway
+- `balanced`: 0.85 — the AI default; further reduction risks making `balanced` feel like `aggressive`
+- `aggressive`: 0.72 — already strongly anti-walk
+
+The remaining ~2 pp BB% gap above the 8–9% MLB target is now attributable to the **base take probability** in `computeWaitOutcome` and/or the **zone modifier** for pitches at the edge of the strike zone. These are the same levers that were effective in passes 1–3 (750 → 470).
+
+### Next lever: `computeWaitOutcome` base take probability
+
+Current: **470**. Prior trajectory: 750 → 580 → 520 → 470.
+
+Each 50-point reduction in passes 1–3 yielded roughly 0.8–1.2 pp BB% improvement. Recommended next step:
+
+**Pass 7:** `computeWaitOutcome` take base: **470 → 420**
+
+If this produces ~0.8–1.0 pp improvement: BB% would land in the 10.0–10.2% range.  
+A pass 8 of 420 → 370 may then be needed to reach the 9% target.
+
+**Note on runs/game:** Runs are climbing slightly across passes 5–6 (9.73 → 10.64 → 10.78) despite same seeds and code. This is within measurement noise for 100 games but worth monitoring. K% remains stable at ~22%, suggesting the ecology is intact.
+
+### On the K%=18% question
+
+K% at 22.3% is on target for MLB average (~22–23%). Reducing to 18% would push below MLB baseline and is **not recommended** as a goal. The current K% represents realistic pitching difficulty. Further walk reductions via take-base tuning should not materially affect K%.
