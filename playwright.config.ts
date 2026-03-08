@@ -33,32 +33,52 @@ export default defineConfig({
     // ── All other tests ────────────────────────────────────────────────────
     {
       name: "desktop",
-      testIgnore: "**/determinism.spec.ts",
+      testIgnore: ["**/determinism.spec.ts", "**/metrics-baseline.spec.ts"],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
       name: "tablet",
-      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/batting-stats.spec.ts",
+        "**/metrics-baseline.spec.ts",
+      ],
       use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
     {
       name: "iphone-15-pro-max",
-      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/batting-stats.spec.ts",
+        "**/metrics-baseline.spec.ts",
+      ],
       use: { ...devices["iPhone 15 Pro Max"] },
     },
     {
       name: "iphone-15",
-      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/batting-stats.spec.ts",
+        "**/metrics-baseline.spec.ts",
+      ],
       use: { ...devices["iPhone 15"] },
     },
     {
       name: "pixel-7",
-      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/batting-stats.spec.ts",
+        "**/metrics-baseline.spec.ts",
+      ],
       use: { ...devices["Pixel 7"] },
     },
     {
       name: "pixel-5",
-      testIgnore: ["**/determinism.spec.ts", "**/batting-stats.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/batting-stats.spec.ts",
+        "**/metrics-baseline.spec.ts",
+      ],
       use: { ...devices["Pixel 5"] },
     },
   ],
