@@ -292,9 +292,8 @@ describe("Calibration harness — aggregate simulation balance", () => {
       runsPerGame,
       "runs/game should be between 6 and 15 (pass-3 target ~8–12)",
     ).toBeGreaterThan(6);
-    expect(
-      runsPerGame,
-      "runs/game should be between 6 and 15 (pass-3 target ~8–12)",
-    ).toBeLessThan(15);
+    expect(runsPerGame, "runs/game should be between 6 and 15 (pass-3 target ~8–12)").toBeLessThan(
+      15,
+    );
   }, 120_000); // 120s timeout for 100 full-game simulations
 });

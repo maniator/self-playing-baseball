@@ -49,7 +49,7 @@ describe("stratMod — all strategies × all stats", () => {
 
   it("exact values: aggressive steal = 1.3", () =>
     expect(stratMod("aggressive", "steal")).toBe(1.3));
-  it("exact values: patient walk = 1.1", () => expect(stratMod("patient", "walk")).toBe(1.1));
+  it("exact values: patient walk = 1.05", () => expect(stratMod("patient", "walk")).toBe(1.05));
   it("exact values: power homerun = 1.6", () => expect(stratMod("power", "homerun")).toBe(1.6));
   it("exact values: contact strikeout = 0.7", () =>
     expect(stratMod("contact", "strikeout")).toBe(0.7));
