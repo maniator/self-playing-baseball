@@ -58,9 +58,9 @@ export const pitchStrikeZoneMod = (pitch: PitchType): number => {
     case "fastball":
       return 1.0;
     case "curveball":
-      return 0.85;
+      return 0.91;
     case "slider":
-      return 0.75;
+      return 0.83;
     case "changeup":
       return 0.9;
   }
