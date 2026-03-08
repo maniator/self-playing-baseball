@@ -278,32 +278,32 @@ describe("Calibration harness — aggregate simulation balance", () => {
     console.log(`Runs/game:       ${runsPerGame.toFixed(1)}`);
     console.log(`Avg starter BF:  ${avgStarterBF.toFixed(1)}`);
 
-    // Post-tuning pass-7 regression bounds (take base 470→420).
+    // Post-tuning pass-8 regression bounds (take base 420→370).
     // Harness uses stock teams (all-balanced, uniform mods) → lower BB% than custom-team browser runs.
-    // Pass-7 harness readings: BB%=5.4%, K%=25.4%, runs/game=11.9.
+    // Pass-8 harness readings: BB%=5.4%, K%=25.3%, runs/game=12.0 (stock-team floor — same as pass 7).
     // Upper bounds guard against regression to pre-fix state (BB%=15.3%).
     expect(totalPA, "should have processed some plate appearances").toBeGreaterThan(0);
     expect(
       bbPct,
-      "BB% should be between 3% and 10% (pass-7 stock-team baseline ~5%)",
+      "BB% should be between 3% and 10% (pass-8 stock-team baseline ~5%)",
     ).toBeGreaterThan(3);
-    expect(bbPct, "BB% should be between 3% and 10% (pass-7 stock-team baseline ~5%)").toBeLessThan(
+    expect(bbPct, "BB% should be between 3% and 10% (pass-8 stock-team baseline ~5%)").toBeLessThan(
       10,
     );
     expect(
       kPct,
-      "K% should be between 20% and 32% (pass-7 stock-team baseline ~25%)",
+      "K% should be between 20% and 32% (pass-8 stock-team baseline ~25%)",
     ).toBeGreaterThan(20);
-    expect(kPct, "K% should be between 20% and 32% (pass-7 stock-team baseline ~25%)").toBeLessThan(
+    expect(kPct, "K% should be between 20% and 32% (pass-8 stock-team baseline ~25%)").toBeLessThan(
       32,
     );
     expect(
       runsPerGame,
-      "runs/game should be between 7 and 15 (pass-7 stock-team baseline ~12)",
+      "runs/game should be between 7 and 15 (pass-8 stock-team baseline ~12)",
     ).toBeGreaterThan(7);
     expect(
       runsPerGame,
-      "runs/game should be between 7 and 15 (pass-7 stock-team baseline ~12)",
+      "runs/game should be between 7 and 15 (pass-8 stock-team baseline ~12)",
     ).toBeLessThan(15);
   }, 120_000); // 120s timeout for 100 full-game simulations
 });

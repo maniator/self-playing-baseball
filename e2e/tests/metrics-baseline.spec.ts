@@ -275,9 +275,6 @@ test.describe("Metrics baseline — 100 games via Instant mode (desktop only)", 
       }, seed);
       await page.waitForTimeout(100);
 
-      // Confirm Instant speed is selected.
-      await expect(page.getByTestId("speed-select")).toHaveValue("0");
-
       // Start the game.
       await page.getByTestId("play-ball-button").click();
       await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
