@@ -33,7 +33,7 @@ export default defineConfig({
     // ── All other tests ────────────────────────────────────────────────────
     {
       name: "desktop",
-      testIgnore: ["**/determinism.spec.ts", "**/metrics-baseline.spec.ts"],
+      testIgnore: ["**/determinism.spec.ts", "**/metrics-baseline.spec.ts", "**/take-screenshots.spec.ts"],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
@@ -42,6 +42,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
@@ -51,6 +52,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPhone 15 Pro Max"] },
     },
@@ -60,6 +62,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPhone 15"] },
     },
@@ -69,6 +72,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["Pixel 7"] },
     },
@@ -78,6 +82,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["Pixel 5"] },
     },
