@@ -85,7 +85,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Export any team or individual player to a portable signed JSON file; import files back on any device.
   - Duplicate player detection on import — shows a confirmation prompt before overwriting.
   - FNV-1a content fingerprints on every player and team for identity tracking across imports.
-- **Seeded randomness** — every game is fully deterministic from its seed, so results are perfectly repeatable.
+- **Seeded randomness** — every game is fully deterministic from its seed and team/roster configuration, so results are perfectly repeatable when the same seed and teams are used.
 - **Manager Mode** — pick a team and a strategy (Balanced / Aggressive / Patient / Contact / Power) and make real decisions at key moments:
   - Steal attempt
   - Sacrifice bunt
