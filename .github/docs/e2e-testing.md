@@ -499,7 +499,12 @@ For a quick summary filtered to actionable errors only (excludes known noise lik
 
 ```js
 // Evaluate this on any page after the batch to see filtered errors
-const KNOWN_NOISE = ['ERR_BLOCKED_BY_CLIENT', 'RxDB Open Core RxStorage', 'AudioContext'];
+const KNOWN_NOISE = [
+  'ERR_BLOCKED_BY_CLIENT',
+  'RxDB Open Core RxStorage',
+  'AudioContext',
+  'useRxdbGameSync: failed to update progress',
+];
 const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors') || '[]');
 const filtered = msgs.filter(m => !KNOWN_NOISE.some(n => m.includes(n)));
 filtered.length
@@ -527,10 +532,10 @@ The recommended approach is the **single-tab batch-loop evaluate**: a single `pl
 ```js
 // Single batch-loop evaluate: runs N games on the current tab in one MCP call.
 // ⬇ Edit these three values before calling:
-const away = 'Portland Nashville Comets'; // away team name (must match imported team)
-const home = 'Tampa San Antonio Giants';  // home team name (must match imported team)
-const prefix = 's1';                      // seed prefix, e.g. 's1' → s1g1, s1g2, …
-async () => {
+const away = 'Portland Nashville Comets'; // away team name (must match imported team, e.g. 'Boston Charlotte Bears')
+const home = 'Indianapolis Portland Foxes'; // home team name (must match imported team, e.g. 'Denver Denver Raiders')
+const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s1g2, …
+(async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
   function collectGame() {
@@ -587,7 +592,7 @@ async () => {
   }
   localStorage.setItem('metricsResults',JSON.stringify(arr));
   return {total:arr.length,thisRun:results};
-}
+})();
 ```
 
 **Recommended workflow for 100 games across 10 matchups:**

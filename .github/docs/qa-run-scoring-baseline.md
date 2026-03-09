@@ -9,7 +9,7 @@
 | Field | Value |
 |---|---|
 | Branch | `copilot/tune-ai-managed-run-scoring` |
-| Base commit | Post-PR-142 master |
+| Base commit | `master` (post-PR-142) |
 | Harness | `src/test/calibration/simHarness.test.ts` (stock teams, 100 seeds) |
 | Custom harness | `src/test/calibration/customTeamMetrics.test.ts` (metrics-teams.json, 100 games) |
 | Browser spec | `e2e/tests/metrics-baseline.spec.ts` (metrics-teams.json, 200 games) |

@@ -364,6 +364,7 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
     const knownNoise = [
       "ERR_BLOCKED_BY_CLIENT", // GTM blocked by adblock — always present, harmless
       "RxDB Open Core RxStorage", // RxDB premium upsell banner — expected noise
+      "useRxdbGameSync: failed to update progress", // expected local-only sync noise during Instant-mode runs
     ];
     const filteredErrors = consoleErrors.filter((m) => !knownNoise.some((n) => m.includes(n)));
     const filteredWarnings = consoleWarnings.filter((m) => !knownNoise.some((n) => m.includes(n)));
