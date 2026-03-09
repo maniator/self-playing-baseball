@@ -488,7 +488,7 @@ const BB = r.reduce((s,g) => s+g.bb, 0);
 const K  = r.reduce((s,g) => s+g.k,  0);
 const H  = r.reduce((s,g) => s+g.h,  0);
 const runs = r.reduce((s,g) => s+g.awayScore+g.homeScore, 0);
-`${r.length} games | BB%=${(BB/PA*100).toFixed(1)}% | K%=${(K/PA*100).toFixed(1)}% | H/PA=${(H/PA).toFixed(3)} | R/game=${(runs/r.length).toFixed(1)} | BB/game=${(BB/r.length).toFixed(1)}`;
+`${r.length} games | BB%=${(BB/PA*100).toFixed(1)}% | K%=${(K/PA*100).toFixed(1)}% | H/PA=${(H / PA).toFixed(3)} | R/game=${(runs/r.length).toFixed(1)} | BB/game=${(BB/r.length).toFixed(1)}`;
 ```
 
 #### Reading console errors and warnings

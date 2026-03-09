@@ -404,5 +404,13 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
     expect(totalK, "should have recorded some strikeouts").toBeGreaterThan(0);
     expect(Number(runsPerGame), "runs/game sanity").toBeGreaterThan(0);
     expect(Number(bbPct), "BB% sanity — below 40%").toBeLessThan(40);
+
+    // Fail the run if there were actionable (non-noise) console errors or
+    // uncaught page exceptions — so metrics numbers are never accepted from a
+    // broken app state.
+    expect(
+      filteredErrors,
+      "unexpected console errors / pageerrors during metrics run (see box above)",
+    ).toHaveLength(0);
   });
 });
