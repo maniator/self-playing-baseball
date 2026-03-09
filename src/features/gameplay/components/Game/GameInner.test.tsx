@@ -47,6 +47,7 @@ vi.mock("@shared/utils/rng", async (importOriginal) => {
     getSeed: vi.fn().mockReturnValue(12345),
     restoreRng: vi.fn(),
     restoreSeed: vi.fn(),
+    reinitSeed: vi.fn(),
   };
 });
 
@@ -792,9 +793,9 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
     expect(onGameSessionStarted).toHaveBeenCalled();
   });
 
-  it("calls restoreSeed/restoreRng and dispatches restore_game when a save is loaded from the modal", async () => {
+  it("calls reinitSeed and dispatches restore_game when a legacy save (rngState: null) is loaded from the modal", async () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
-    const slot = makeModalSaveSlot(); // seed: "modalseed"
+    const slot = makeModalSaveSlot(); // seed: "modalseed", rngState: null
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [slot],
       createSave: vi.fn().mockResolvedValue("save_1"),
@@ -825,7 +826,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
 
     await vi.waitFor(() => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "restore_game" }));
-      expect(rngModule.restoreSeed).toHaveBeenCalledWith("modalseed");
+      expect(rngModule.reinitSeed).toHaveBeenCalledWith("modalseed");
     });
   });
 });

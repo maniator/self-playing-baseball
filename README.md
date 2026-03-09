@@ -155,7 +155,7 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 | Spec | What it covers |
 |---|---|
 | `smoke.spec.ts` | App loads, New Game dialog visible, Play Ball starts autoplay |
-| `determinism.spec.ts` | Same `?seed=` → identical play-by-play (uses isolated IndexedDB contexts) |
+| `determinism.spec.ts` | Same seed (via seed input field) → identical play-by-play (uses isolated IndexedDB contexts) |
 | `save-load.spec.ts` | Save game, load game, autoplay resumes after load |
 | `import.spec.ts` | Import fixture JSON, save appears in list with Load button |
 | `responsive-smoke.spec.ts` | Scoreboard + field + log visible & non-zero sized on all viewports |
