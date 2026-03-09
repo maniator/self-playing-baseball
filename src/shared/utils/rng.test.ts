@@ -224,3 +224,61 @@ describe("rng.ts — reinitSeed", () => {
     expect(seq1).toEqual(seq2);
   });
 });
+
+// ---------------------------------------------------------------------------
+// restoreSeed — seed-only restore (used by game-load / auto-resume paths)
+// ---------------------------------------------------------------------------
+
+describe("rng.ts — restoreSeed", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("restoreSeed updates getSeed() to the parsed seed without changing PRNG state", async () => {
+    const rng = await import("./rng");
+    // Initialize PRNG so we have a known state.
+    rng.reinitSeed("start");
+    const rngStateBefore = rng.getRngState();
+    // Restore seed from a save's base-36 string.
+    rng.restoreSeed("deadbeef");
+    // getSeed() must now reflect the restored seed.
+    const expectedSeed = parseInt("deadbeef", 36) >>> 0;
+    expect(rng.getSeed()).toBe(expectedSeed);
+    // PRNG internal state must be unchanged — restoreSeed must NOT call reinitSeed.
+    expect(rng.getRngState()).toBe(rngStateBefore);
+  });
+
+  it("restoreSeed with a decimal string sets the seed correctly", async () => {
+    const rng = await import("./rng");
+    rng.reinitSeed("initial");
+    rng.restoreSeed("12345");
+    expect(rng.getSeed()).toBe(12345);
+  });
+
+  it("restoreSeed with an empty string is a no-op (seed unchanged)", async () => {
+    const rng = await import("./rng");
+    const before = rng.reinitSeed("abc");
+    rng.restoreSeed("");
+    expect(rng.getSeed()).toBe(before);
+  });
+
+  it("restoreSeed followed by restoreRng gives correct getSeed() and PRNG position", async () => {
+    const rng = await import("./rng");
+    rng.reinitSeed("game1");
+    const savedSeed = rng.getSeed()!.toString(36);
+    // Capture state before producing sequence.
+    const savedState = rng.getRngState()!;
+    const seq1 = Array.from({ length: 5 }, () => rng.random());
+
+    // Simulate a page reload — new random startup seed.
+    rng.reinitSeed("unrelated");
+
+    // Restore from save: seed first, then exact PRNG position.
+    rng.restoreSeed(savedSeed);
+    rng.restoreRng(savedState);
+
+    expect(rng.getSeed()).toBe(parseInt(savedSeed, 36) >>> 0);
+    const seq2 = Array.from({ length: 5 }, () => rng.random());
+    expect(seq2).toEqual(seq1);
+  });
+});

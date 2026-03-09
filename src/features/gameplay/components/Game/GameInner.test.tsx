@@ -46,6 +46,7 @@ vi.mock("@shared/utils/rng", async (importOriginal) => {
     ...actual,
     getSeed: vi.fn().mockReturnValue(12345),
     restoreRng: vi.fn(),
+    restoreSeed: vi.fn(),
   };
 });
 
@@ -165,6 +166,7 @@ describe("GameInner — auto-save resume", () => {
       importRxdbSave: vi.fn().mockResolvedValue(undefined),
     });
     vi.mocked(rngModule.restoreRng).mockClear();
+    vi.mocked(rngModule.restoreSeed).mockClear();
     vi.mocked(rngModule.getSeed).mockReturnValue(SEED_NUM);
   });
 
@@ -189,6 +191,7 @@ describe("GameInner — auto-save resume", () => {
     });
     // Auto-restore fires onGameSessionStarted without any dialog interaction
     expect(onGameSessionStarted).toHaveBeenCalled();
+    expect(rngModule.restoreSeed).toHaveBeenCalledWith(SEED_STR);
     expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
   });
 
@@ -233,6 +236,7 @@ describe("GameInner — auto-save resume", () => {
         </GameProviderWrapper>,
       );
     });
+    expect(rngModule.restoreSeed).toHaveBeenCalledWith(SEED_STR);
     expect(rngModule.restoreRng).toHaveBeenCalledWith(42);
   });
 
@@ -642,6 +646,7 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
       importRxdbSave: vi.fn().mockResolvedValue(undefined),
     });
     vi.mocked(rngModule.restoreRng).mockClear();
+    vi.mocked(rngModule.restoreSeed).mockClear();
 
     const onGameSessionStarted = vi.fn();
     await act(async () => {
@@ -654,8 +659,9 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
 
     // New game session must have started via handleStart
     expect(onGameSessionStarted).toHaveBeenCalled();
-    // restoreRng is only called by the auto-resume (restore_game) path — must NOT fire
+    // restoreRng/restoreSeed are only called by the auto-resume (restore_game) path — must NOT fire
     expect(rngModule.restoreRng).not.toHaveBeenCalled();
+    expect(rngModule.restoreSeed).not.toHaveBeenCalled();
   });
 });
 
@@ -786,7 +792,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
     expect(onGameSessionStarted).toHaveBeenCalled();
   });
 
-  it("updates URL seed and dispatches restore_game when a save is loaded from the modal", async () => {
+  it("calls restoreSeed/restoreRng and dispatches restore_game when a save is loaded from the modal", async () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const slot = makeModalSaveSlot(); // seed: "modalseed"
     vi.mocked(useSaveStore).mockReturnValue({
@@ -800,7 +806,6 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
     });
 
     const dispatch = vi.fn();
-    const spy = vi.spyOn(window.history, "replaceState");
     await act(async () => {
       render(
         <GameContext.Provider value={makeContextValue({ dispatch })}>
@@ -820,8 +825,7 @@ describe("GameInner — modal save load (onLoadSave / handleModalLoad)", () => {
 
     await vi.waitFor(() => {
       expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "restore_game" }));
-      expect(spy.mock.calls.some(([, , url]) => String(url).includes("modalseed"))).toBe(true);
+      expect(rngModule.restoreSeed).toHaveBeenCalledWith("modalseed");
     });
-    spy.mockRestore();
   });
 });

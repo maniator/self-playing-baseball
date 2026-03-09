@@ -114,6 +114,17 @@ export const restoreRng = (state: number): void => {
 };
 
 /**
+ * Sets the stored seed from a save's seed string (base-36 or decimal) without
+ * touching the PRNG state.  Always call `restoreRng(snap.rngState)` immediately
+ * after so that `getSeed()` / `currentSeedStr()` / `findMatchedSave` all reflect
+ * the restored game's identity rather than the random startup seed.
+ */
+export const restoreSeed = (seedStr: string): void => {
+  const parsed = parseSeed(seedStr);
+  if (parsed !== null) seed = parsed;
+};
+
+/**
  * Re-initializes the PRNG from a caller-supplied seed string (base-36 or
  * decimal).  Unlike `initSeed`, this can be called at any time —
  * e.g. when the user submits the New Game form (the seed field is

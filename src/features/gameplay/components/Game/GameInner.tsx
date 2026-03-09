@@ -15,7 +15,7 @@ import { useRxdbGameSync } from "@feat/saves/hooks/useRxdbGameSync";
 import { useSaveStore } from "@feat/saves/hooks/useSaveStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { appLog } from "@shared/utils/logger";
-import { getSeed, restoreRng } from "@shared/utils/rng";
+import { getSeed, restoreRng, restoreSeed } from "@shared/utils/rng";
 import { currentSeedStr } from "@shared/utils/saves";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -120,6 +120,7 @@ const GameInner: React.FunctionComponent<Props> = ({
     prevRxAutoSaveRef.current = rxAutoSave;
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
+    restoreSeed(rxAutoSave.seed);
     if (snap.rngState !== null) restoreRng(snap.rngState);
     dispatch({
       type: "restore_game",
@@ -271,6 +272,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       return;
     }
 
+    restoreSeed(pendingLoadSave.seed);
     if (snap.rngState !== null) restoreRng(snap.rngState);
     dispatch({
       type: "restore_game",
@@ -319,6 +321,7 @@ const GameInner: React.FunctionComponent<Props> = ({
       // Prevent the auto-resume effect from re-running while we restore.
       restoredRef.current = true;
 
+      restoreSeed(slot.seed);
       if (snap.rngState !== null) restoreRng(snap.rngState);
       dispatch({
         type: "restore_game",
@@ -332,13 +335,6 @@ const GameInner: React.FunctionComponent<Props> = ({
       setManagerMode(setup.managerMode);
       setManagedTeam(setup.managedTeam ?? 0);
       setStrategy(setup.strategy);
-
-      // Sync the URL seed so sharing/reloading lands on the same game.
-      if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-        const url = new URL(window.location.href);
-        url.searchParams.set("seed", slot.seed);
-        window.history.replaceState(null, "", url.toString());
-      }
 
       rxSaveIdRef.current = slot.id;
       // If the loaded save was already FINAL, mark it so history sync skips re-commit.
