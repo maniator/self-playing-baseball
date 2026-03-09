@@ -85,8 +85,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Export any team or individual player to a portable signed JSON file; import files back on any device.
   - Duplicate player detection on import — shows a confirmation prompt before overwriting.
   - FNV-1a content fingerprints on every player and team for identity tracking across imports.
-- **Seeded randomness** — every game is fully deterministic from its seed, so results are perfectly repeatable.
-- **Share replay** — copies a URL containing the seed so anyone can watch the exact same game unfold.
+- **Seeded randomness** — every autoplay game is fully deterministic from its seed and team/roster configuration. In Manager Mode, manager decisions are also required to reproduce the same outcome exactly.
 - **Manager Mode** — pick a team and a strategy (Balanced / Aggressive / Patient / Contact / Power) and make real decisions at key moments:
   - Steal attempt
   - Sacrifice bunt
@@ -156,7 +155,7 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 | Spec | What it covers |
 |---|---|
 | `smoke.spec.ts` | App loads, New Game dialog visible, Play Ball starts autoplay |
-| `determinism.spec.ts` | Same `?seed=` → identical play-by-play (uses isolated IndexedDB contexts) |
+| `determinism.spec.ts` | Same seed (via seed input field) → identical play-by-play (uses isolated IndexedDB contexts) |
 | `save-load.spec.ts` | Save game, load game, autoplay resumes after load |
 | `import.spec.ts` | Import fixture JSON, save appears in list with Load button |
 | `responsive-smoke.spec.ts` | Scoreboard + field + log visible & non-zero sized on all viewports |
@@ -171,7 +170,7 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 - `data-testid` attributes on all critical elements enable stable locators.
 - Each play-by-play log entry has a hidden `data-log-index` attribute (`0` = oldest event), used by `captureGameSignature` to build a stable determinism signature that does not shift as autoplay prepends new entries.
 - The webServer is `vite preview` (production build), not `yarn dev`, to avoid the RxDB dev-mode plugin hanging in headless Chromium.
-- Seeds can be set either via URL parameter (`?seed=`) at startup (`initSeedFromUrl` — one-shot) OR via the seed input field in the New Game dialog at runtime (`reinitSeed` — callable any time, updates the URL too). E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
+- Seeds are set via the seed input field on the New Game form, which calls `reinitSeed(seedStr)` on submit. E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
 
 
 ## Tech stack

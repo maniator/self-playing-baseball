@@ -5,12 +5,12 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 
 import { appLog } from "@shared/utils/logger";
-import { initSeedFromUrl } from "@shared/utils/rng";
+import { initSeed } from "@shared/utils/rng";
 import { RouterProvider } from "react-router";
 
 import { router } from "./router";
 
-initSeedFromUrl({ writeToUrl: true });
+initSeed();
 
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker

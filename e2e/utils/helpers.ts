@@ -208,8 +208,6 @@ export interface GameConfig {
  *
  * If `options.seed` is given it is typed into the seed input field so that
  * `reinitSeed` fires with the correct value when Play Ball is clicked.
- * This replaces the older approach of navigating to `/?seed=<value>` before
- * calling this helper.
  */
 export async function configureNewGame(page: Page, options: GameConfig = {}): Promise<void> {
   await waitForNewGameDialog(page);

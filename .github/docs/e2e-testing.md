@@ -25,7 +25,7 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 ### Key design decisions
 
 - **`vite preview` webServer** — E2E tests run against the production build (`dist/`), not `yarn dev`. This avoids the RxDB `RxDBDevModePlugin` dynamic import hanging the DB initialisation in headless Chromium.
-- **Seed in URL before mount** — `initSeedFromUrl` is a one-shot init called before the React tree mounts. Seeds can also be set at runtime via the seed input field in the New Game dialog, which calls `reinitSeed(seedStr)` on submit and updates `?seed=` in the URL. E2E tests use `configureNewGame(page, { seed: "..." })` to fill the input field — no `/?seed=` URL navigation needed.
+- **Seeded games** — seeds are set via the seed input field in the New Game form, which calls `reinitSeed(seedStr)` on submit. The seed is not written to the URL. E2E tests use `configureNewGame(page, { seed: "..." })` to fill the input field.
 - **`data-log-index` on log entries** — each play-by-play `<Log>` element has `data-log-index={log.length - 1 - arrayIndex}` (0 = oldest event). `captureGameSignature` reads indices 0–4 to get a stable deterministic signature regardless of how many new entries autoplay has prepended.
 - **Fresh context per determinism run** — `browser.newContext()` gives each game run its own IndexedDB, preventing the auto-save from the first run from restoring mid-game state in the second run and breaking seed reproducibility.
 

@@ -124,7 +124,7 @@ const HelpContent: React.FunctionComponent = () => (
       </List>
     </Section>
 
-    <Section title="Saves &amp; Sharing">
+    <Section title="Saves">
       <List>
         <Li>
           Click <strong>💾 Saves</strong> to save, load, export, or import a game. Saves are stored
@@ -133,10 +133,6 @@ const HelpContent: React.FunctionComponent = () => (
         <Li>
           <strong>Export save</strong> downloads a JSON file you can back up or share.{" "}
           <strong>Import save</strong> restores it.
-        </Li>
-        <Li>
-          Click <strong>Share seed</strong> to copy a link. Anyone with it sees the same pitches —
-          Manager decisions are yours to replay.
         </Li>
       </List>
     </Section>

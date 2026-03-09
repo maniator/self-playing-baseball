@@ -15,7 +15,7 @@ import { useRxdbGameSync } from "@feat/saves/hooks/useRxdbGameSync";
 import { useSaveStore } from "@feat/saves/hooks/useSaveStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { appLog } from "@shared/utils/logger";
-import { getSeed, restoreRng } from "@shared/utils/rng";
+import { getSeed, reinitSeed, restoreRng, restoreSeed } from "@shared/utils/rng";
 import { currentSeedStr } from "@shared/utils/saves";
 import { useLocalStorage } from "usehooks-ts";
 
@@ -120,7 +120,12 @@ const GameInner: React.FunctionComponent<Props> = ({
     prevRxAutoSaveRef.current = rxAutoSave;
     const { stateSnapshot: snap, setup } = rxAutoSave;
     if (!snap) return;
-    if (snap.rngState !== null) restoreRng(snap.rngState);
+    if (snap.rngState !== null) {
+      restoreSeed(rxAutoSave.seed);
+      restoreRng(snap.rngState);
+    } else {
+      reinitSeed(rxAutoSave.seed);
+    }
     dispatch({
       type: "restore_game",
       payload: {
@@ -271,7 +276,12 @@ const GameInner: React.FunctionComponent<Props> = ({
       return;
     }
 
-    if (snap.rngState !== null) restoreRng(snap.rngState);
+    if (snap.rngState !== null) {
+      restoreSeed(pendingLoadSave.seed);
+      restoreRng(snap.rngState);
+    } else {
+      reinitSeed(pendingLoadSave.seed);
+    }
     dispatch({
       type: "restore_game",
       payload: {
@@ -319,7 +329,12 @@ const GameInner: React.FunctionComponent<Props> = ({
       // Prevent the auto-resume effect from re-running while we restore.
       restoredRef.current = true;
 
-      if (snap.rngState !== null) restoreRng(snap.rngState);
+      if (snap.rngState !== null) {
+        restoreSeed(slot.seed);
+        restoreRng(snap.rngState);
+      } else {
+        reinitSeed(slot.seed);
+      }
       dispatch({
         type: "restore_game",
         payload: {
@@ -332,13 +347,6 @@ const GameInner: React.FunctionComponent<Props> = ({
       setManagerMode(setup.managerMode);
       setManagedTeam(setup.managedTeam ?? 0);
       setStrategy(setup.strategy);
-
-      // Sync the URL seed so sharing/reloading lands on the same game.
-      if (typeof window !== "undefined" && typeof window.history?.replaceState === "function") {
-        const url = new URL(window.location.href);
-        url.searchParams.set("seed", slot.seed);
-        window.history.replaceState(null, "", url.toString());
-      }
 
       rxSaveIdRef.current = slot.id;
       // If the loaded save was already FINAL, mark it so history sync skips re-commit.

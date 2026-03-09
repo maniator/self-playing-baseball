@@ -7,7 +7,6 @@ import { useGameAudio } from "@feat/gameplay/hooks/useGameAudio";
 import { useGameRefs } from "@feat/gameplay/hooks/useGameRefs";
 import { usePitchDispatch } from "@feat/gameplay/hooks/usePitchDispatch";
 import { usePlayerControls } from "@feat/gameplay/hooks/usePlayerControls";
-import { useReplayDecisions } from "@feat/gameplay/hooks/useReplayDecisions";
 import {
   setAlertVolume,
   setAnnouncementVolume,
@@ -28,8 +27,7 @@ export const useGameControls = ({
   gameStarted?: boolean;
 } = {}) => {
   const { dispatch, dispatchLog, log: _log, ...currentState }: ContextValue = useGameContext();
-  const { strikes, balls, pendingDecision, teams, inning, atBat, gameOver, pitchKey } =
-    currentState;
+  const { strikes, balls, pendingDecision, teams, inning, atBat, gameOver } = currentState;
 
   const [speed, setSpeed] = useLocalStorage("speed", SPEED_NORMAL);
   const [announcementVolume, setAnnouncementVolumeState] = useLocalStorage("announcementVolume", 1);
@@ -116,7 +114,6 @@ export const useGameControls = ({
     inning,
     atBat,
   });
-  useReplayDecisions(dispatch, pendingDecision, pitchKey, safeStrategy);
 
   React.useEffect(() => {
     setAnnouncementVolume(safeAnnouncementVolume);
@@ -134,7 +131,6 @@ export const useGameControls = ({
     setAnnouncementVolumeState,
     alertVolume: safeAlertVolume,
     setAlertVolumeState,
-    dispatchLog,
   });
 
   return {

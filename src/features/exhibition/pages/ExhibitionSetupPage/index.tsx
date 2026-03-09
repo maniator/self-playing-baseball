@@ -126,9 +126,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
             autoComplete="off"
             spellCheck={false}
           />
-          <SeedHint>
-            Leave blank for a random game. Share the URL after starting to replay.
-          </SeedHint>
+          <SeedHint>Leave blank for a random game.</SeedHint>
         </FieldGroup>
 
         <PlayBallButton type="submit" data-testid="play-ball-button">

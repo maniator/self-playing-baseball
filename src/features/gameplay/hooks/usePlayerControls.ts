@@ -1,9 +1,6 @@
 import * as React from "react";
 
-import { LogAction } from "@feat/gameplay/context/index";
 import { appLog } from "@shared/utils/logger";
-
-import { useShareReplay } from "./useShareReplay";
 
 interface PlayerControlsArgs {
   setManagerMode: (v: boolean) => void;
@@ -11,7 +8,6 @@ interface PlayerControlsArgs {
   setAnnouncementVolumeState: (v: number) => void;
   alertVolume: number;
   setAlertVolumeState: (v: number) => void;
-  dispatchLog: (action: LogAction) => void;
 }
 
 export const usePlayerControls = ({
@@ -20,10 +16,7 @@ export const usePlayerControls = ({
   setAnnouncementVolumeState,
   alertVolume,
   setAlertVolumeState,
-  dispatchLog,
 }: PlayerControlsArgs) => {
-  const { handleShareReplay } = useShareReplay({ dispatchLog });
-
   const [notifPermission, setNotifPermission] = React.useState<
     NotificationPermission | "unavailable"
   >(() => {
@@ -105,6 +98,5 @@ export const usePlayerControls = ({
     handleAlertVolumeChange,
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
-    handleShareReplay,
   };
 };

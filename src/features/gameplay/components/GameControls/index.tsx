@@ -49,7 +49,6 @@ const GameControls: React.FunctionComponent<Props> = ({
     handleAlertVolumeChange,
     handleToggleAnnouncementMute,
     handleToggleAlertMute,
-    handleShareReplay,
     currentSaveId,
     setCurrentSaveId,
   } = useGameControls({ gameStarted });
@@ -91,9 +90,6 @@ const GameControls: React.FunctionComponent<Props> = ({
             gameStarted={gameStarted}
           />
         </React.Suspense>
-        <Button $variant="share" onClick={handleShareReplay}>
-          Share seed
-        </Button>
         <React.Suspense
           fallback={
             <HelpButton disabled aria-label="How to play">

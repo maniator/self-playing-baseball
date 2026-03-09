@@ -72,7 +72,7 @@
 └── src/
     ├── index.html                  # HTML entry point for Vite (script has type="module", image hrefs are absolute /…)
     ├── index.scss                  # Global styles + mobile media queries
-    ├── index.tsx                   # React entry: initSeedFromUrl, registers /sw.js, createRoot
+    ├── index.tsx                   # React entry: initSeed, registers /sw.js, createRoot
     ├── router.tsx                  # createBrowserRouter + RouterProvider; defines full route tree (/, /exhibition/new, /game, /teams, /teams/:id/edit, /saves, /help)
     ├── sw.ts                       # Service worker: uses self.__WB_MANIFEST (injected by vite-plugin-pwa), caches bundles, handles notificationclick
     ├── storage/                    # Shared persistence infra (DB wiring + thin re-exports; no feature logic)
@@ -233,9 +233,7 @@
     │       │   ├── useGameRefs.ts      # Tracks skipDecision state to prevent re-offering same decision
     │       │   ├── useHomeScreenMusic.ts  # Background music playback on the Home screen
     │       │   ├── usePitchDispatch.ts # Pitch handler — returns handlePitch callback
-    │       │   ├── usePlayerControls.ts  # All UI event handlers (volume, mute, manager mode, share replay)
-    │       │   ├── useReplayDecisions.ts  # Reads ?decisions= from URL and replays manager choices
-    │       │   ├── useShareReplay.ts   # Clipboard copy of replay URL
+    │       │   ├── usePlayerControls.ts  # All UI event handlers (volume, mute, manager mode)
     │       │   └── useVolumeControls.ts  # Volume/mute state for music (consumed by AppShell + HomeScreen)
     │       ├── pages/
     │       │   └── GamePage/index.tsx  # /game route — renders <Game /> component
@@ -256,7 +254,7 @@
     │   └── utils/
     │       ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │       ├── mediaQueries.ts     # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
-    │       ├── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
+    │       ├── rng.ts              # Seeded PRNG (mulberry32): initSeed, reinitSeed, random, getSeed, getRngState, restoreRng, restoreSeed, generateFreshSeed
     │       ├── roster.ts           # Roster helpers used by gameplay, customTeams, and careerStats
     │       ├── saves.ts            # currentSeedStr() — returns current seed as base-36 string
     │       └── stats/
