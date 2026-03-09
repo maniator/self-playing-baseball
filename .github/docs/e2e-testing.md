@@ -64,7 +64,7 @@ All stable test selectors added to the app:
 
 **Custom Team Editor (inside `/teams/new` and `/teams/:id/edit`):** `custom-team-lineup-section`, `custom-team-bench-section`, `custom-team-pitchers-section`, `custom-team-name-input`, `custom-team-abbreviation-input`, `custom-team-city-input`, `custom-team-regenerate-defaults-button`, `custom-team-save-button`, `custom-team-cancel-button`, `custom-team-add-lineup-player-button`, `custom-team-add-bench-player-button`, `custom-team-add-pitcher-button`, `custom-team-player-position-select`, `custom-team-player-handedness-select`, `custom-team-editor-error-summary`, `custom-team-save-error-hint`, `export-player-button`, `import-lineup-player-input`, `import-bench-player-input`, `import-pitchers-player-input`, `player-import-lineup-duplicate-banner`, `player-import-lineup-confirm-button`, `player-import-bench-duplicate-banner`, `player-import-bench-confirm-button`, `player-import-pitchers-duplicate-banner`, `player-import-pitchers-confirm-button`, `lineup-bench-dnd-container`
 
-**In-game controls (GameControls / SavesModal):** `saves-button`, `saves-modal`, `saves-modal-close-button`, `save-game-button`, `import-save-textarea`, `import-save-button`, `back-to-home-button`
+**In-game controls (GameControls / SavesModal):** `saves-button`, `saves-modal`, `saves-modal-close-button`, `save-game-button`, `import-save-textarea`, `import-save-button`, `back-to-home-button`, `new-game-button` (visible only after FINAL)
 
 **Game view:** `new-game-dialog`, `scoreboard`, `field-view`, `play-by-play-log`, `log-panel`, `hit-log`, `manager-mode-toggle`, `manager-decision-panel`, `db-reset-notice`
 
@@ -287,11 +287,13 @@ npx vite preview --port 5173 --host ::1         # binds [::1]:5173
 
 This is the **fastest way for an agent to collect 200+ browser game metrics**. Instant-mode games finish in ~3–10 seconds each; running 10 tabs in parallel cuts total wall-clock time by ~10×.
 
+> **MCP tool-call overhead is the real timing bottleneck.** Each `playwright-browser_*` call takes ~2–3 seconds regardless of how fast the game simulation runs. With ~4 calls per game and 200 games ÷ 10 parallel tabs, expect **30–60 minutes** of wall-clock time for a full 200-game round via MCP (not the "6–20 minutes" that applies only to the raw simulation time). Use the combined collect+start snippet below to cut calls from 4 to 2 per game and halve the total time.
+
 #### One-time setup per session
 
 1. Build the app and start the Playwright webServer (see above).
 2. Navigate the MCP browser to `http://localhost:5173`.
-3. Set localStorage for Instant mode + no-manager:
+3. Set localStorage for Instant mode + no-manager — **this applies to all tabs on the same origin**:
    ```js
    localStorage.setItem("speed", "0");              // SPEED_INSTANT
    localStorage.setItem("announcementVolume", "0"); // mute TTS
@@ -299,6 +301,7 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
    localStorage.setItem("_e2eNoInningPause", "1");  // skip half-inning pause
    localStorage.setItem("managerMode", "false");    // fully unmanaged
    ```
+   > **Speed note:** There is no speed selector on the `/exhibition/new` form. Speed is read from `localStorage.speed` by the game when it starts. The `"speed": "0"` set here (SPEED_INSTANT) is shared across all same-origin tabs in Chromium — you only need to set it once. Do **not** try to inject a speed `<select>` on the new-game form; no such element exists. If you are unsure whether Instant mode is active, confirm via the game controls dropdown on any running game tab — it will show "Instant" selected.
 4. Navigate to `/teams` and import `e2e/fixtures/metrics-teams.json` via the **Import from File** button. Teams persist in RxDB for the entire Chrome session — this only needs to be done once.
 5. Clear any previous results and console error log:
    ```js
@@ -320,8 +323,10 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
 // (use playwright-browser_wait_for to wait for "Play Ball" to appear)
 
 // ── 2. Set teams + seed via JS injection ──────────────────────────────────
+// Speed does NOT need to be set here — it is already Instant via localStorage.
 // (use playwright-browser_evaluate with the snippet below)
-(function(away, home, seed) {
+(async function(away, home, seed) {
+  await new Promise(r => { const c = () => document.querySelector('[data-testid="new-game-custom-away-team-select"]') ? r() : setTimeout(c, 100); c(); });
   function setSelect(testId, label) {
     const el = document.querySelector(`[data-testid="${testId}"]`);
     const opt = [...el.options].find(o => o.text.includes(label));
@@ -340,12 +345,12 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
   setSelect('new-game-custom-away-team-select', away);
   setSelect('new-game-custom-home-team-select', home);
   setSeed(seed);
+  await new Promise(r => setTimeout(r, 300));
+  document.querySelector('[data-testid="play-ball-button"]').click();
+  return `${away} @ ${home} seed=${seed} started`;
 })('Charlotte Bears', 'Denver Raiders', 's1g1');
 
-// ── 3. Click Play Ball ────────────────────────────────────────────────────
-// (use playwright-browser_click on the play-ball-button testId)
-
-// ── 4. Wait for FINAL ─────────────────────────────────────────────────────
+// ── 3. Wait for FINAL ─────────────────────────────────────────────────────
 // (use playwright-browser_wait_for with text="FINAL", timeout ~30s)
 
 // ── 5. Collect stats and accumulate in localStorage ───────────────────────
@@ -391,6 +396,84 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
   return { count: results.length, lastResult: result };
 })();
 ```
+
+#### Combined collect + start next game (preferred — halves MCP tool-call count)
+
+Instead of 4 tool calls per game (switch tab → collect evaluate → navigate → inject+start evaluate), use a single `playwright-browser_evaluate` that collects stats **and** clicks "New Game" then injects the next matchup — reducing to 2 calls per game (switch tab → combined evaluate):
+
+```js
+// After a game reaches FINAL, use this single evaluate to collect AND start the next game.
+// This halves MCP tool-call overhead vs the separate collect → navigate → inject flow.
+(async function(nextAway, nextHome, nextSeed) {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  // ── Collect stats from completed game ─────────────────────────────────────
+  const thisGame = document.querySelector('[data-testid="stats-tab-this-game"]');
+  if (thisGame) { thisGame.click(); await sleep(150); }
+  function readTable() {
+    let ab = 0, h = 0, bb = 0, k = 0;
+    for (const row of document.querySelectorAll('table tbody tr')) {
+      if (row.closest('[data-testid="scoreboard"]')) continue;
+      const cells = [...row.querySelectorAll('td')];
+      if (cells.length < 6) continue;
+      const n = i => { const t = cells[i]?.textContent?.trim(); return (t && t !== '–') ? parseInt(t, 10) || 0 : 0; };
+      ab += n(2); h += n(3); bb += n(4); k += n(5);
+    }
+    return { ab, h, bb, k };
+  }
+  const tabs = document.querySelectorAll('[role="tab"]');
+  tabs[0].click(); await sleep(200);
+  const awayStats = readTable();
+  tabs[1].click(); await sleep(200);
+  const homeStats = readTable();
+  const sb = document.querySelector('[data-testid="scoreboard"]');
+  const hdrs = [...(sb?.querySelectorAll('thead tr th,thead tr td') || [])];
+  const rIdx = hdrs.findIndex(c => c.textContent?.trim() === 'R');
+  const scores = [...(sb?.querySelectorAll('tbody tr') || [])]
+    .filter(r => r.querySelectorAll('td').length > 3).slice(0, 2)
+    .map(row => { const cells = [...row.querySelectorAll('td')]; return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || '0') || 0 : 0; });
+  const result = { ab: awayStats.ab + homeStats.ab, h: awayStats.h + homeStats.h, bb: awayStats.bb + homeStats.bb, k: awayStats.k + homeStats.k, awayScore: scores[0] ?? 0, homeScore: scores[1] ?? 0 };
+  const results = JSON.parse(localStorage.getItem('metricsResults') || '[]');
+  results.push(result);
+  localStorage.setItem('metricsResults', JSON.stringify(results));
+
+  // ── Navigate to new game form and start next game ─────────────────────────
+  // "New Game" button appears after FINAL — click it to navigate (SPA push-state).
+  const newGameBtn = document.querySelector('[data-testid="new-game-button"]');
+  if (newGameBtn) {
+    newGameBtn.click();
+  } else {
+    // Fallback: push state directly into React Router
+    window.history.pushState({}, '', '/exhibition/new');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }
+  await sleep(500);
+  // Wait for the form to be ready
+  await new Promise(r => { const c = () => document.querySelector('[data-testid="new-game-custom-away-team-select"]') ? r() : setTimeout(c, 100); c(); });
+  function setSelect(testId, label) {
+    const el = document.querySelector(`[data-testid="${testId}"]`);
+    const opt = [...el.options].find(o => o.text.includes(label));
+    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
+    ns.call(el, opt.value); el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  function setSeed(val) {
+    const el = document.querySelector('[data-testid="seed-input"]');
+    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    ns.call(el, val);
+    const fk = Object.keys(el).find(k => k.startsWith('__reactFiber'));
+    if (fk) el[fk]?.memoizedProps?.onChange?.({ target: el });
+    else el.dispatchEvent(new Event('input', { bubbles: true }));
+  }
+  setSelect('new-game-custom-away-team-select', nextAway);
+  setSelect('new-game-custom-home-team-select', nextHome);
+  setSeed(nextSeed);
+  await sleep(300);
+  document.querySelector('[data-testid="play-ball-button"]').click();
+  return { collected: result.awayScore + '-' + result.homeScore, started: `${nextAway} @ ${nextHome} ${nextSeed}`, total: results.length };
+})('Charlotte Bears', 'Denver Raiders', 's1g2');
+```
+
+> **Why this works:** After FINAL the app shows a "New Game" button that navigates to `/exhibition/new` via React Router's SPA push-state (no full page reload). The evaluate continues executing in the same JavaScript context, so you can collect stats and start the next game within a single tool call. If the "New Game" button's `data-testid` is not found, the snippet falls back to `history.pushState`.
 
 #### Reading aggregate results
 
@@ -441,10 +524,16 @@ Because Instant mode (`SPEED_INSTANT=0`) bypasses all setTimeout-based throttlin
 2. On each tab, navigate to `/exhibition/new`, set the matchup + seed g1, and click Play Ball.
 3. While the games run in background, **immediately move to the next tab** to start its game.
 4. By the time you reach tab 9, tab 0 is already at FINAL (or close to it).
-5. Rotate back to tab 0: collect stats, then immediately start seed g2 on that tab.
+5. Rotate back to tab 0: use the **combined collect+start** evaluate (see above) to collect stats and start seed g2 in a single call.
 6. Continue rotating until all 20 seeds per block are done (200 games total).
 
-Timing: ~3–10 seconds per game in Instant mode × 200 games ÷ 10 parallel tabs ≈ **6–20 minutes** for a full 200-game round.
+**Timing breakdown:**
+- Raw simulation time: ~3–10 seconds per game in Instant mode × 200 games ÷ 10 parallel tabs = **~6–20 minutes** of simulation
+- MCP tool-call overhead: ~2–3 seconds per `playwright-browser_*` call × ~2 calls/game (with combined collect+start) × 200 games ÷ 10 parallel tabs = **~13–20 minutes** of overhead
+- **Realistic total with combined snippet: ~20–40 minutes** for 200 games
+- Without the combined snippet (4 calls/game): ~40–60 minutes — use the combined snippet
+
+The game simulation itself is never the bottleneck in Instant mode. The bottleneck is always MCP tool-call round-trip time.
 
 ### Playwright spec runner: reference implementation for automated runs
 

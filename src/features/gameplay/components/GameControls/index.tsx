@@ -69,7 +69,7 @@ const GameControls: React.FunctionComponent<Props> = ({
           </Button>
         )}
         {gameOver && onNewGame && (
-          <Button $variant="new" onClick={onNewGame}>
+          <Button $variant="new" onClick={onNewGame} data-testid="new-game-button">
             New Game
           </Button>
         )}
