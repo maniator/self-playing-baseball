@@ -136,7 +136,7 @@ The hard contact rate (`hardBase = 25`) means 25% of contact events are hard. In
 
 **Hypothesis:** Reducing line-drive and hard-grounder hit rates, plus reducing the hard-contact rate, will bring H/PA from ~0.30 to ~0.25–0.26 and runs/game from ~12.3 to ~10–10.5 (harness), corresponding to ~8.2–8.7 browser runs/game.
 
-**Changes planned:**
+**Changes applied:**
 1. `hitBall.ts` (`handleBallInPlay`): line_drive out threshold 150 → 200 (15% → 20% out rate)
 2. `hitBall.ts` (`handleBallInPlay`): hard_grounder out threshold 400 → 500 (40% → 50% out rate)
 3. `battedBall.ts` (`resolveContactQuality`): `hardBase` 25 → 20 (hard contact rate 25% → 20%)
@@ -157,27 +157,29 @@ Only if Round 1 leaves runs/game still clearly above 10.5 (harness) / 8.5 (brows
 
 ## Section 5 — Round 1 Results (post-change)
 
-*(To be filled in after Round 1 changes are applied and harness is rerun)*
-
 ### 5a — Stock-Team Harness (post-Round-1)
 
 | Metric | Baseline | Round 1 | Delta |
 |---|---|---|---|
-| BB% | 4.9% | TBD | — |
-| K% | 26.5% | TBD | — |
-| H/PA | 0.305 | TBD | — |
-| HR/PA | 0.025 | TBD | — |
-| Runs/game | 11.2 | TBD | — |
+| BB% | 4.9% | **4.9%** | 0 |
+| K% | 26.5% | **27.1%** | +0.6pp |
+| H/PA | 0.305 | **0.275** | **-0.030** |
+| HR/PA | 0.025 | **0.021** | -0.004 |
+| Runs/game | 11.2 | **8.7** | **-2.5** |
 
 ### 5b — Custom-Team Harness (post-Round-1)
 
 | Metric | Baseline | Round 1 | Delta |
 |---|---|---|---|
-| BB% | 10.44% | TBD | — |
-| K% | 22.32% | TBD | — |
-| H/PA | 0.299 | TBD | — |
-| BB/game | 8.9 | TBD | — |
-| Runs/game (mean) | 12.3 | TBD | — |
+| BB% | 10.44% | **10.17%** | -0.3pp |
+| K% | 22.32% | **22.80%** | +0.5pp |
+| H/PA | 0.299 | **0.266** | **-0.033** |
+| BB/game | 8.9 | **8.3** | -0.6 |
+| Runs/game (mean) | 12.3 | **9.1** | **-3.2** |
+
+Harness verdict: ✅ Both harnesses moved strongly in the correct direction. H/PA is now well below the
+previous ~0.30 floor. K% nudged up slightly but remains within the acceptable 20–25% range for
+custom teams. Moving to browser validation.
 
 ### 5c — Browser Run (post-Round-1, 200 games)
 
