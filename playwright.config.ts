@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
+const takeScreenshots = !!process.env.PLAYWRIGHT_SCREENSHOTS;
 
 export default defineConfig({
   testDir: "./e2e/tests",
@@ -30,10 +31,28 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
 
+    // ── Screenshots (on-demand only) ──────────────────────────────────────
+    // Run manually to regenerate docs/screenshots/:
+    //   PLAYWRIGHT_SCREENSHOTS=1 npx playwright test --project=screenshots
+    // Excluded from normal local runs and CI unless the env var is set.
+    ...(takeScreenshots
+      ? [
+          {
+            name: "screenshots",
+            testMatch: "**/take-screenshots.spec.ts",
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+          },
+        ]
+      : []),
+
     // ── All other tests ────────────────────────────────────────────────────
     {
       name: "desktop",
-      testIgnore: ["**/determinism.spec.ts", "**/metrics-baseline.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
+      ],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
@@ -42,6 +61,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
     },
@@ -51,6 +71,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPhone 15 Pro Max"] },
     },
@@ -60,6 +81,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["iPhone 15"] },
     },
@@ -69,6 +91,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["Pixel 7"] },
     },
@@ -78,6 +101,7 @@ export default defineConfig({
         "**/determinism.spec.ts",
         "**/batting-stats.spec.ts",
         "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
       ],
       use: { ...devices["Pixel 5"] },
     },

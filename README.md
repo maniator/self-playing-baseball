@@ -10,29 +10,59 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 
 ## Screenshots
 
-### Game start
+### Home screen
 
 | Desktop | Mobile |
 |---|---|
-| ![Game start — desktop](https://github.com/user-attachments/assets/d44a3ab9-5017-49da-8c63-ac3080cddd5d) | ![Game start — mobile](https://github.com/user-attachments/assets/874cdfd3-733f-4e14-845d-3767495aae0b) |
+| ![Home screen — desktop](docs/screenshots/home-desktop.png) | ![Home screen — mobile](docs/screenshots/home-mobile.png) |
 
-### Mid-game with play-by-play
-
-| Desktop | Mobile |
-|---|---|
-| ![Mid-game — desktop](https://github.com/user-attachments/assets/c73981e7-f3ca-4377-bf1b-fcac24c0ea15) | ![Mid-game — mobile](https://github.com/user-attachments/assets/36df5932-4d87-4758-b506-91936e9c6840) |
-
-### How to play
+### New Game setup
 
 | Desktop | Mobile |
 |---|---|
-| ![How to play — desktop](https://github.com/user-attachments/assets/8a6cec1c-a2f0-463f-9133-1e39fb51696c) | ![How to play — mobile](https://github.com/user-attachments/assets/1fb7b753-ca6e-4e12-b585-ee2dfcf4fd6b) |
+| ![New Game setup — desktop](docs/screenshots/new-game-desktop.png) | ![New Game setup — mobile](docs/screenshots/new-game-mobile.png) |
+
+### In-game view
+
+| Desktop | Mobile |
+|---|---|
+| ![In-game — desktop](docs/screenshots/in-game-desktop.png) | ![In-game — mobile](docs/screenshots/in-game-mobile.png) |
 
 ### Manager Mode decision panel
 
 | Desktop | Mobile |
 |---|---|
 | ![Manager Mode decision panel — desktop](https://github.com/user-attachments/assets/b05ae75e-7c32-46fc-a4ef-8f85d794ff83) | ![Manager Mode decision panel — mobile](https://github.com/user-attachments/assets/31eda8a1-c1cb-4c5d-b029-dbaf9f09463e) |
+
+### How to play
+
+| Desktop | Mobile |
+|---|---|
+| ![How to play — desktop](docs/screenshots/how-to-play-desktop.png) | ![How to play — mobile](docs/screenshots/how-to-play-mobile.png) |
+
+### Saves
+
+| Desktop | Mobile |
+|---|---|
+| ![Saves — desktop](docs/screenshots/saves-desktop.png) | ![Saves — mobile](docs/screenshots/saves-mobile.png) |
+
+### Career Stats
+
+| Desktop | Mobile |
+|---|---|
+| ![Career Stats — desktop](docs/screenshots/career-stats-desktop.png) | ![Career Stats — mobile](docs/screenshots/career-stats-mobile.png) |
+
+### Manage Teams
+
+| Desktop | Mobile |
+|---|---|
+| ![Manage Teams — desktop](docs/screenshots/manage-teams-desktop.png) | ![Manage Teams — mobile](docs/screenshots/manage-teams-mobile.png) |
+
+### Team Editor
+
+| Desktop | Mobile |
+|---|---|
+| ![Team Editor — desktop](docs/screenshots/team-editor-desktop.png) | ![Team Editor — mobile](docs/screenshots/team-editor-mobile.png) |
 
 ---
 
@@ -66,8 +96,9 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Count-based swing/take choices
 - **Browser notifications** — optional notifications alert you when a Manager decision is ready, even when the tab is in the background.
 - **10-second auto-skip** — decisions auto-skip with a countdown bar if you don't act in time.
+- **Career Stats** — a dedicated stats page tracking every team's win/loss record, run differential, batting leaders (HR, AVG, RBI), and pitching leaders (ERA, SV, K) across all completed games. Drill into any player for a full career batting and pitching breakdown.
 - **RxDB persistence** — saves, game events, and custom team data are all stored locally in IndexedDB via [RxDB](https://rxdb.info). No server required. Auto-save resumes your last game on reload.
-- **Save management** — save named game slots, load previous games, export as JSON for backup/sharing, and import from a file.
+- **Save management** — a dedicated saves page for naming and managing game slots, loading previous games, exporting saves as JSON for backup/sharing, and importing from a file.
 - **Volume controls** — independent sliders and mute buttons for voice announcements and alert chimes.
 
 ---
