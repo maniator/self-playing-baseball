@@ -227,7 +227,7 @@ Validate changes by:
 | `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
 | `@storage/types` | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc. |
 | `@shared/utils/logger` | `createLogger(tag)` + `appLog` singleton — shared colored console logger |
-| `@shared/utils/rng` | `initSeed`, `reinitSeed`, `random`, `getSeed`, `getRngState`, `restoreRng`, `generateFreshSeed` |
+| `@shared/utils/rng` | `initSeed`, `reinitSeed`, `random`, `getSeed`, `getRngState`, `restoreRng`, `restoreSeed`, `generateFreshSeed` |
 | `@shared/utils/mediaQueries` | `mq.mobile`, `mq.desktop`, `mq.tablet`, `mq.notMobile` breakpoint helpers |
 | `@shared/utils/roster` | Roster helpers used by gameplay, customTeams, and careerStats |
 | `@shared/utils/saves` | `currentSeedStr()` — current seed as base-36 string |

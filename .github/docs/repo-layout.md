@@ -254,7 +254,7 @@
     │   └── utils/
     │       ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
     │       ├── mediaQueries.ts     # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
-    │       ├── rng.ts              # Seeded PRNG (mulberry32): initSeed, reinitSeed, random, getSeed, getRngState, restoreRng, generateFreshSeed
+    │       ├── rng.ts              # Seeded PRNG (mulberry32): initSeed, reinitSeed, random, getSeed, getRngState, restoreRng, restoreSeed, generateFreshSeed
     │       ├── roster.ts           # Roster helpers used by gameplay, customTeams, and careerStats
     │       ├── saves.ts            # currentSeedStr() — returns current seed as base-36 string
     │       └── stats/
