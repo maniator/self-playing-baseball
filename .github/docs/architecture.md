@@ -25,7 +25,7 @@ The app uses **React Router v7** (`react-router` package — not `react-router-d
 
 ---
 
-Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
+Auto-play is implemented in `src/features/gameplay/hooks/useAutoPlayScheduler.ts`:
 
 - Speech-gated `setTimeout` scheduler (`tick`) that calls `handlePitch()`. Receives `inning` and `atBat` as direct values for proper React dependency tracking.
 - **Route-aware pause** — `GamePage` unmounts when the user navigates away from `/game`, which cancels the scheduler's cleanup function. No `isRouteActive` flag needed — the component lifecycle handles it.
@@ -43,7 +43,7 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 ## Manager Mode & Decision System
 
-- **Decision detection** (`detectDecision` from `context/reducer.ts`) — evaluated before each pitch in `usePitchDispatch`. Returns one of: `steal`, `bunt`, `count30`, `count02`, `ibb`, `ibb_or_steal`, `pinch_hitter`, `defensive_shift`, or `null`.
+- **Decision detection** (`detectDecision` from `src/features/gameplay/context/reducer.ts`) — evaluated before each pitch in `usePitchDispatch`. Returns one of: `steal`, `bunt`, `count30`, `count02`, `ibb`, `ibb_or_steal`, `pinch_hitter`, `defensive_shift`, or `null`.
 - `DecisionPanel/index.tsx` renders the panel, plays a chime, shows a browser notification via service worker, and runs a 10-second countdown bar.
 
 ---
@@ -52,13 +52,13 @@ Auto-play is implemented in `src/hooks/useAutoPlayScheduler.ts`:
 
 `src/sw.ts` is a **module service worker** registered at `/sw.js` with `{ type: "module" }`. It uses `self.__WB_MANIFEST` (the precache list injected at build time by `vite-plugin-pwa`'s `injectManifest` strategy), implements network-first + cache fallback, and listens for `notificationclick` events, posting `{ type: 'NOTIFICATION_ACTION', action, payload }` to the page.
 
-**Logging**: imports `createLogger` from `@utils/logger` and creates its own `log` singleton tagged with a version derived from the manifest content hashes.
+**Logging**: imports `createLogger` from `@shared/utils/logger` and creates its own `log` singleton tagged with a version derived from the manifest content hashes.
 
 **Service worker must NOT initialize or use RxDB** — RxDB is window-only.
 
 ---
 
-## Shared Logger (`src/utils/logger.ts`)
+## Shared Logger (`src/shared/utils/logger.ts`)
 
 - **`appLog`** — singleton for the main-app context. Import this directly; do not call `createLogger("app")` again.
 - **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)` where `version` is derived from `self.__WB_MANIFEST` content hashes.
