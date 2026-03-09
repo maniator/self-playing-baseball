@@ -204,7 +204,9 @@ Before/after comparison and decision: TBD
 
 - All browser runs use `metrics-teams.json` fixture (same 5 teams, same 10 matchup combos).
 - Harness and browser runs both use the same fixture to enable apple-to-apple comparison.
-- The harness-to-browser gap is approximately +1.2 runs/game (browser R/game 10.12 vs custom harness 12.3 — note: this is smaller than the PR #142 gap of −1.8, suggesting the harness has changed more than the browser since then).
+- The harness-to-browser gap is approximately +1.2 runs/game (browser R/game 10.12 vs custom harness 12.3).
+  - Note: historically this was −1.8 runs/game in PR #142 where the browser showed *lower* scoring than the harness. The sign reversal suggests the harness has drifted more than the browser since PR #142.
+  - Use the current measured values, not the PR #142 delta, for Round 1 planning.
 - Use harness for iteration speed; use browser results as the final authority.
 - Never use harness-only results to declare success.
 - **MCP batch-loop approach:** Using a single `playwright-browser_evaluate` call that loops over multiple games (start→waitForFinal→collect→start next) is far more efficient than the documented per-game approach. 108 games were collected in ~20 MCP tool calls (~50–60s total wall-clock). See the "single-tab batch loop" section in `e2e-testing.md` for the full snippet.

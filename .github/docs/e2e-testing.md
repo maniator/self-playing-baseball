@@ -526,7 +526,10 @@ The recommended approach is the **single-tab batch-loop evaluate**: a single `pl
 
 ```js
 // Single batch-loop evaluate: runs N games on the current tab in one MCP call.
-// Replace AWAY, HOME, PREFIX, and the game range as needed.
+// ⬇ Edit these three values before calling:
+const away = 'Portland Nashville Comets'; // away team name (must match imported team)
+const home = 'Tampa San Antonio Giants';  // home team name (must match imported team)
+const prefix = 's1';                      // seed prefix, e.g. 's1' → s1g1, s1g2, …
 async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -559,7 +562,7 @@ async () => {
 
   const arr=JSON.parse(localStorage.getItem('metricsResults')||'[]');
   const results=[];
-  const away='Portland Nashville Comets', home='Tampa San Antonio Giants', prefix='s1';
+  // ⬇ away, home, prefix are defined above — change them before calling
 
   // Optionally collect an already-FINAL game first
   if(document.body.textContent.includes('FINAL')){
