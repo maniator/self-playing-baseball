@@ -6,23 +6,11 @@
  * Output is written to docs/screenshots/.
  */
 
-import {
-  type Browser,
-  type BrowserContext,
-  chromium,
-  devices,
-  type Page,
-  test,
-} from "@playwright/test";
+import { type BrowserContext, devices, type Page, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
-import {
-  loadFixture,
-  resetAppState,
-  startGameViaPlayBall,
-  waitForLogLines,
-} from "../utils/helpers";
+import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
 
 // Output directory for screenshots
 const SCREENSHOTS_DIR = path.join(process.cwd(), "docs", "screenshots");
@@ -32,31 +20,18 @@ if (!fs.existsSync(SCREENSHOTS_DIR)) {
   fs.mkdirSync(SCREENSHOTS_DIR, { recursive: true });
 }
 
-// Helper to disable CSS animations/transitions for stable screenshots
-async function disableAnimations(page: Page): Promise<void> {
-  await page.addStyleTag({
-    content: `
-      *, *::before, *::after {
-        animation-duration: 0s !important;
-        animation-delay: 0s !important;
-        transition-duration: 0s !important;
-        transition-delay: 0s !important;
-      }
-    `,
-  });
-}
-
 // Helper to take a screenshot and save it
 async function captureScreenshot(page: Page, filename: string): Promise<void> {
-  await disableAnimations(page);
   const outputPath = path.join(SCREENSHOTS_DIR, filename);
   await page.screenshot({ path: outputPath, fullPage: false });
   console.log(`✅ Saved: ${filename}`);
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// The test uses a single "browser" fixture so we can control viewport manually
-// and capture at both desktop and mobile sizes from within one test run.
+// Each test creates fresh BrowserContext instances (one per viewport) via the
+// Playwright `browser` fixture so IndexedDB/localStorage are fully isolated
+// between screenshots.  The baseURL comes from the active Playwright project
+// config so the spec works with any configured server without hardcoding.
 // ──────────────────────────────────────────────────────────────────────────────
 
 const VIEWPORTS = {
@@ -71,12 +46,11 @@ type ViewportName = keyof typeof VIEWPORTS;
 test.describe.configure({ mode: "serial" });
 
 test.describe("Documentation Screenshots", () => {
-  let browser: Browser;
   let contexts: Map<ViewportName, BrowserContext>;
   let pages: Map<ViewportName, Page>;
 
-  test.beforeAll(async () => {
-    browser = await chromium.launch({ headless: true });
+  test.beforeEach(async ({ browser }, testInfo) => {
+    const baseURL = testInfo.project.use.baseURL ?? "http://localhost:5173";
     contexts = new Map();
     pages = new Map();
 
@@ -87,8 +61,18 @@ test.describe("Documentation Screenshots", () => {
       const ctx = await browser.newContext({
         viewport,
         ...(name === "mobile" ? { userAgent: devices["iPhone 15 Pro Max"].userAgent } : {}),
-        baseURL: "http://localhost:5173",
+        baseURL,
         locale: "en-US",
+      });
+      // Disable CSS animations/transitions on every navigation in this context
+      // so screenshots are stable (no mid-transition frames captured).
+      await ctx.addInitScript(() => {
+        document.addEventListener("DOMContentLoaded", () => {
+          const style = document.createElement("style");
+          style.textContent =
+            "*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }";
+          document.head.appendChild(style);
+        });
       });
       const pg = await ctx.newPage();
       contexts.set(name, ctx);
@@ -96,11 +80,10 @@ test.describe("Documentation Screenshots", () => {
     }
   });
 
-  test.afterAll(async () => {
+  test.afterEach(async () => {
     for (const ctx of contexts.values()) {
       await ctx.close();
     }
-    await browser.close();
   });
 
   // Helper to run for both viewports
@@ -163,7 +146,7 @@ test.describe("Documentation Screenshots", () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
       await page.goto("/help", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await page.waitForSelector("[data-testid='help-page']", { state: "visible" });
       await captureScreenshot(page, `how-to-play-${viewport}.png`);
     });
   });
@@ -173,7 +156,7 @@ test.describe("Documentation Screenshots", () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
       await page.goto("/saves", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await page.waitForSelector("[data-testid='saves-page']", { state: "visible" });
       await captureScreenshot(page, `saves-${viewport}.png`);
     });
   });
@@ -183,7 +166,7 @@ test.describe("Documentation Screenshots", () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
       await page.goto("/stats", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await page.waitForSelector("[data-testid='career-stats-page']", { state: "visible" });
       await captureScreenshot(page, `career-stats-${viewport}.png`);
     });
   });
@@ -193,7 +176,7 @@ test.describe("Documentation Screenshots", () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
       await page.goto("/teams", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await page.waitForSelector("[data-testid='manage-teams-screen']", { state: "visible" });
       await captureScreenshot(page, `manage-teams-${viewport}.png`);
     });
   });
@@ -203,12 +186,9 @@ test.describe("Documentation Screenshots", () => {
     await forBothViewports(async (page, viewport) => {
       await resetAppState(page);
       await page.goto("/teams/new", { waitUntil: "domcontentloaded" });
-      await page.waitForLoadState("networkidle");
+      await page.waitForSelector("[data-testid='custom-team-name-input']", { state: "visible" });
       // Fill in a team name so the form is more illustrative
-      const teamNameInput = page.getByTestId("team-name-input");
-      if (await teamNameInput.isVisible({ timeout: 3_000 }).catch(() => false)) {
-        await teamNameInput.fill("Demo Stars");
-      }
+      await page.getByTestId("custom-team-name-input").fill("Demo Stars");
       await captureScreenshot(page, `team-editor-${viewport}.png`);
     });
   });
