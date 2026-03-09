@@ -33,7 +33,11 @@ export default defineConfig({
     // ── All other tests ────────────────────────────────────────────────────
     {
       name: "desktop",
-      testIgnore: ["**/determinism.spec.ts", "**/metrics-baseline.spec.ts", "**/take-screenshots.spec.ts"],
+      testIgnore: [
+        "**/determinism.spec.ts",
+        "**/metrics-baseline.spec.ts",
+        "**/take-screenshots.spec.ts",
+      ],
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
