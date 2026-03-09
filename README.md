@@ -86,7 +86,6 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
   - Duplicate player detection on import — shows a confirmation prompt before overwriting.
   - FNV-1a content fingerprints on every player and team for identity tracking across imports.
 - **Seeded randomness** — every game is fully deterministic from its seed, so results are perfectly repeatable.
-- **Share replay** — copies a URL containing the seed so anyone can watch the exact same game unfold.
 - **Manager Mode** — pick a team and a strategy (Balanced / Aggressive / Patient / Contact / Power) and make real decisions at key moments:
   - Steal attempt
   - Sacrifice bunt
@@ -171,7 +170,7 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 - `data-testid` attributes on all critical elements enable stable locators.
 - Each play-by-play log entry has a hidden `data-log-index` attribute (`0` = oldest event), used by `captureGameSignature` to build a stable determinism signature that does not shift as autoplay prepends new entries.
 - The webServer is `vite preview` (production build), not `yarn dev`, to avoid the RxDB dev-mode plugin hanging in headless Chromium.
-- Seeds can be set either via URL parameter (`?seed=`) at startup (`initSeedFromUrl` — one-shot) OR via the seed input field in the New Game dialog at runtime (`reinitSeed` — callable any time, updates the URL too). E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
+- Seeds are set via the seed input field on the New Game form, which calls `reinitSeed(seedStr)` on submit. E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
 
 
 ## Tech stack

@@ -56,7 +56,7 @@ describe("HelpPage", () => {
     expect(screen.getByText("Game Flow")).toBeInTheDocument();
     // Manager Mode appears as a section header and in body text — use getAllBy
     expect(screen.getAllByText(/manager mode/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/saves.*sharing/i)).toBeInTheDocument();
+    expect(screen.getByText("Saves")).toBeInTheDocument();
   });
 
   it("renders all 8 accordion sections", () => {
@@ -73,7 +73,7 @@ describe("HelpPage", () => {
     expect(rawSummaries).toContain("Game Flow");
     expect(rawSummaries).toContain("Manager Mode");
     expect(rawSummaries).toContain("Hit types");
-    expect(rawSummaries).toContain("Saves & Sharing");
+    expect(rawSummaries).toContain("Saves");
   });
 
   it("each section has a summary (accordion toggle) and non-empty body content", () => {

@@ -12,8 +12,6 @@ const makeArgs = (overrides: Record<string, any> = {}) => ({
   setAnnouncementVolumeState: vi.fn(),
   alertVolume: 1,
   setAlertVolumeState: vi.fn(),
-  decisionLog: [],
-  dispatchLog: vi.fn(),
   ...overrides,
 });
 

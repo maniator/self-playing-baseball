@@ -14,17 +14,12 @@ export const Controls = styled.div`
   }
 `;
 
-type ButtonVariant = "default" | "share" | "new" | "saves" | "home";
+type ButtonVariant = "default" | "new" | "saves" | "home";
 
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
     background: aquamarine;
     color: darkblue;
-    border: none;
-  `,
-  share: css`
-    background: #2f3f69;
-    color: #fff;
     border: none;
   `,
   new: css`

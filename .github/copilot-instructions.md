@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. The game auto-plays continuously through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, adjust autoplay speed (slow/normal/fast), share a deterministic replay link, or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
+**Ballgame** is a **self-playing baseball simulator** built as a React/TypeScript PWA with a **React Router data-router** route-first architecture. The game auto-plays continuously through innings, tracking strikes, balls, outs, bases, and score. Users navigate to `/exhibition/new` to start a game, adjust autoplay speed (slow/normal/fast), or turn on **Manager Mode** to make strategic decisions that influence the simulation. The app is installable on Android and desktop via a Web App Manifest.
 
 **Repository size:** ~130 source files. **Language:** TypeScript. **Framework:** React 19 (hooks-based). **Styling:** styled-components v6 + SASS. **Bundler:** Vite v7. **Package manager:** Yarn Berry v4. **Persistence:** RxDB v17 (IndexedDB, local-only — no sync).
 
@@ -112,14 +112,14 @@ src/
 
 ---
 
-## Seeded Randomness & Replay Sharing
+## Seeded Randomness
 
 All randomness is routed through `src/shared/utils/rng.ts` (mulberry32 PRNG):
 
-- **`initSeedFromUrl({ writeToUrl? })`** — reads `?seed=` from the URL; if absent, generates from `Math.random() ^ Date.now()`. Called once in `src/index.tsx` before the React tree mounts.
+- **`initSeed()`** — generates a fresh random seed and initializes the PRNG. Called once in `src/index.tsx` before the React tree mounts. Idempotent — subsequent calls are no-ops.
 - **`random()`** — returns a deterministic float in `[0, 1)` from the seeded PRNG.
-- **`buildReplayUrl()`** — returns the current URL with `?seed=<base36>` set.
 - **`getSeed()`** — returns the current seed value (or null if not yet initialized).
+- **`reinitSeed(seedStr)`** — re-initializes the PRNG from a caller-supplied seed string (base-36 or decimal). Called when the user submits the New Game form. Does **not** write to the URL.
 
 ---
 
@@ -227,7 +227,7 @@ Validate changes by:
 | `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
 | `@storage/types` | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc. |
 | `@shared/utils/logger` | `createLogger(tag)` + `appLog` singleton — shared colored console logger |
-| `@shared/utils/rng` | `initSeedFromUrl`, `random`, `buildReplayUrl`, `getSeed`, `getRngState`, `restoreRng` |
+| `@shared/utils/rng` | `initSeed`, `reinitSeed`, `random`, `getSeed`, `getRngState`, `restoreRng`, `generateFreshSeed` |
 | `@shared/utils/mediaQueries` | `mq.mobile`, `mq.desktop`, `mq.tablet`, `mq.notMobile` breakpoint helpers |
 | `@shared/utils/roster` | Roster helpers used by gameplay, customTeams, and careerStats |
 | `@shared/utils/saves` | `currentSeedStr()` — current seed as base-36 string |
@@ -299,7 +299,7 @@ Validate changes by:
 - **`useImportCustomTeams` is the shared hook for all custom-team import flows** — always use it rather than calling `importCustomTeams` directly in components. It handles file upload, paste JSON, clipboard paste, in-flight state, errors, and the two-step duplicate-player confirmation flow. The hook exposes `pendingDuplicateImport`, `confirmDuplicateImport()`, and `cancelDuplicateImport()`.
 - **FNV-1a hash is in `@storage/hash`** — import `fnv1a` from there. Never reimplement it in components or store modules.
 - **`generateId.ts` is the only source of new DB IDs** — always call `generateTeamId()`, `generatePlayerId()`, `generateSaveId()` from `@storage/generateId`. Never use `Date.now()` or `Math.random()` directly for IDs.
-- **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
+- **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. The field is pre-populated with a fresh random seed via `generateFreshSeed()`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG. The seed is **not** written to the URL. E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
 - **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@shared/utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.
 - **NewGameDialog mobile compaction** — `NewGameDialog/styles.ts` uses `${mq.mobile}` blocks on every styled component (Dialog, Title, FieldGroup, FieldLabel, Input, Select, SectionLabel, RadioLabel, ResumeButton, Divider, PlayBallButton, SeedHint) to reduce padding/margins so the modal fits without scrolling on phone viewports. `PlayerCustomizationPanel.styles.ts` does the same for `PanelSection`. The Dialog's `max-height` uses `min(96dvh, 820px)` on mobile (vs `90dvh` on desktop) to reclaim browser-chrome space. Never revert these to desktop-only values.
 - **Viewport-safe modal sizing** — always use `dvh` (dynamic viewport height) units, not bare `vh`, for modal `max-height`. `100vh` on mobile browsers can exceed the visible area because it ignores browser chrome (address bar, navigation bar). `dvh` tracks the actual visible viewport. The `responsive-smoke.spec.ts` E2E test verifies the Play Ball button bottom edge is within `viewport.height` on all projects.

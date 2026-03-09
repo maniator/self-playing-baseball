@@ -3,7 +3,7 @@ import * as React from "react";
 import type { ContextValue } from "@feat/gameplay/context/index";
 import { GameContext } from "@feat/gameplay/context/index";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { makeContextValue } from "@test/testHelpers";
@@ -63,11 +63,6 @@ describe("GameControls", () => {
     expect(screen.queryByRole("button", { name: /batter up/i })).not.toBeInTheDocument();
   });
 
-  it("shows Share seed button", () => {
-    renderWithContext(<GameControls />);
-    expect(screen.getByRole("button", { name: /share seed/i })).toBeInTheDocument();
-  });
-
   it("shows Manager Mode checkbox when gameStarted=true", () => {
     renderWithContext(<GameControls gameStarted />, makeContextValue());
     expect(screen.getByRole("checkbox", { name: /manager mode/i })).toBeInTheDocument();
@@ -118,21 +113,6 @@ describe("GameControls", () => {
     const slider = screen.getByRole("slider", { name: /music volume/i });
     fireEvent.change(slider, { target: { value: "0.3" } });
     expect((slider as HTMLInputElement).value).toBe("0.3");
-  });
-
-  it("Share seed button copies URL to clipboard", async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    Object.defineProperty(navigator, "clipboard", {
-      value: { writeText },
-      writable: true,
-      configurable: true,
-    });
-    const dispatchLog = vi.fn();
-    renderWithContext(<GameControls />, makeContextValue({ dispatchLog }));
-    await act(async () => {
-      fireEvent.click(screen.getByRole("button", { name: /share seed/i }));
-    });
-    expect(writeText).toHaveBeenCalled();
   });
 
   it("renders team and strategy selectors in manager mode", () => {
