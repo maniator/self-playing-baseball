@@ -1,13 +1,12 @@
-import { vi } from "vitest";
-
 import type {
   ContextValue,
   ResolvedPlayerMods,
   State,
   TeamCustomPlayerOverrides,
-} from "@context/index";
-import { buildResolvedMods } from "@context/resolvePlayerMods";
-import * as rngModule from "@utils/rng";
+} from "@feat/gameplay/context/index";
+import { buildResolvedMods } from "@feat/gameplay/context/resolvePlayerMods";
+import * as rngModule from "@shared/utils/rng";
+import { vi } from "vitest";
 
 const emptyOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides] = [
   Object.freeze({}) as TeamCustomPlayerOverrides,
@@ -62,8 +61,8 @@ export const makeState = (overrides: Partial<State> = {}): State => {
     substitutedOut: [[], []] as [string[], string[]],
     baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
     pitcherGameLog: [[], []] as [
-      import("@context/index").PitcherLogEntry[],
-      import("@context/index").PitcherLogEntry[],
+      import("@feat/gameplay/context/index").PitcherLogEntry[],
+      import("@feat/gameplay/context/index").PitcherLogEntry[],
     ],
     ...overrides,
     // Derived fields that must be computed after overrides:
@@ -114,8 +113,8 @@ export const makeContextValue = (overrides: Partial<ContextValue> = {}): Context
     substitutedOut: [[], []] as [string[], string[]],
     baseRunnerIds: [null, null, null] as [string | null, string | null, string | null],
     pitcherGameLog: [[], []] as [
-      import("@context/index").PitcherLogEntry[],
-      import("@context/index").PitcherLogEntry[],
+      import("@feat/gameplay/context/index").PitcherLogEntry[],
+      import("@feat/gameplay/context/index").PitcherLogEntry[],
     ],
     resolvedMods: emptyResolvedMods,
     ...overrides,

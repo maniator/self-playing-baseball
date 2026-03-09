@@ -11,6 +11,7 @@ import {
   MIN_AB_FOR_AVG_LEADER,
   MIN_OUTS_FOR_ERA_LEADER,
 } from "@feat/careerStats/storage/gameHistoryStore";
+import { computeERA, computeWHIP, formatIP } from "@feat/careerStats/utils/computePitcherGameStats";
 import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
@@ -23,7 +24,6 @@ import type {
   PlayerGameStatDoc,
   TeamCareerSummary,
 } from "@storage/types";
-import { computeERA, computeWHIP, formatIP } from "@utils/stats/computePitcherGameStats";
 
 import {
   CareerContainer,

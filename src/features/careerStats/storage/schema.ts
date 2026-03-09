@@ -1,8 +1,8 @@
+import { appLog } from "@shared/utils/logger";
 import type { RxJsonSchema } from "rxdb";
 
 import { fnv1a } from "@storage/hash";
 import type { GameDoc, PitcherGameStatDoc, PlayerDoc, PlayerGameStatDoc } from "@storage/types";
-import { appLog } from "@utils/logger";
 
 const playersSchema: RxJsonSchema<PlayerDoc> = {
   // Version 2: scopes the primary key to `${teamId}:${player.id}` to prevent cross-team

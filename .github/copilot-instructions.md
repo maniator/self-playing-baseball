@@ -30,11 +30,6 @@ All cross-directory imports use aliases (configured in `tsconfig.json` and `vite
 | `@feat/*` | `src/features/*` | **Preferred** for all feature code |
 | `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
 | `@storage/*` | `src/storage/*` | Persistence infra (DB wiring, shared types, utilities) |
-| `@components/*` | `src/components/*` | Legacy transitional — prefer `@feat/` for new code |
-| `@context/*` | `src/context/*` | Game simulation engine |
-| `@hooks/*` | `src/hooks/*` | Legacy transitional — prefer `@feat/` for new hooks |
-| `@utils/*` | `src/utils/*` | Pure utilities (rng, logger, mediaQueries, announce) |
-| `@constants/*` | `src/constants/*` | Enums and constants |
 | `@test/*` | `src/test/*` | Test helpers |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
@@ -43,7 +38,7 @@ Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 
 ## Feature-First Directory Structure
 
-The app uses a **feature-first** layout under `src/features/`. New code for a specific domain belongs in its feature directory, not in the legacy horizontal folders.
+The app uses a **feature-first** layout under `src/features/`. New code for a specific domain belongs in its feature directory.
 
 ```
 src/
@@ -64,12 +59,23 @@ src/
       pages/PlayerCareerPage/
       storage/gameHistoryStore.ts
       storage/schema.ts
+      utils/             ← careerStats-only stat helpers
     customTeams/         ← team builder, adapters, generation
       adapters/customTeamAdapter.ts
       generation/generateDefaultTeam.ts
       storage/schema.ts    ← customTeams RxDB schema + migrations
       statBudget.ts
+    gameplay/            ← simulation engine, shell UI, gameplay hooks + pages
+      components/        ← AppShell, Game, GameControls, HomeScreen, RootLayout, all gameplay UI
+      constants/         ← pitchTypes (gameplay-only enum)
+      context/           ← simulation engine (State, reducer, strategy, handlers…)
+      hooks/             ← useAutoPlayScheduler, usePitchDispatch, useHomeScreenMusic, etc.
+      pages/GamePage/    ← /game route
+      utils/             ← announce, audio, tts, homeMusic, getRandomInt (gameplay-only)
   shared/                ← only code used by 2+ unrelated features
+    constants/hitTypes.ts
+    utils/logger.ts, mediaQueries.ts, rng.ts, roster.ts, saves.ts
+    utils/stats/computeBattingStatsFromLogs.ts
   storage/               ← DB wiring + shared infra (never feature logic)
     db.ts                ← thin wiring: imports schemas from features
     types.ts             ← shared domain types
@@ -85,41 +91,30 @@ src/
 | Domain adapter / resolver | `src/features/<domain>/adapters/` |
 | RxDB schema + migration strategies for a collection | `src/features/<domain>/storage/schema.ts` |
 | Store API (query/mutation functions) for one feature | `src/features/<domain>/storage/<name>Store.ts` |
+| Utility used only by one feature | `src/features/<domain>/utils/` |
 | Code used by 2+ unrelated features | `src/shared/` |
 | DB wiring, shared types, file I/O utilities | `src/storage/` |
-| Game simulation engine | `src/context/` (future: `src/features/gameplay/`) |
-
-### Legacy transitional folders
-
-`src/components/`, `src/hooks/`, and `src/pages/` are **legacy transitional** folders — they still hold code not yet migrated. Do **not** add new feature-specific code to them. New routes, components, and hooks go in `src/features/<domain>/` from the start.
-
-The following are **intentionally deferred** to a future pass (gameplay/shell migration):
-- `src/components/` — AppShell, Game, GameControls, HomeScreen, RootLayout, and all gameplay UI (Announcements, Ball, DecisionPanel, Diamond, HitLog, LineScore, PlayerStatsPanel, TeamTabBar)
-- `src/hooks/` — `useHomeScreenMusic`, `useVolumeControls` (consumed exclusively by AppShell/HomeScreen)
-- `src/pages/GamePage/` — the `/game` route page
-- The `@components/*` and `@hooks/*` aliases remain active until this gameplay/shell migration is complete.
-
-`src/context/` holds the game simulation engine; migrating it to `src/features/gameplay/` is planned as a future pass.
+| Game simulation engine | `src/features/gameplay/context/` |
 
 ---
 
 ## Key Architectural Notes
 
-- All game state lives in `context/index.tsx` (`State` interface) and is mutated by `context/reducer.ts`.
-- `components/GameControls/useGameControls.ts` is the single hook that wires all game-controls hooks and `localStorage` state together. `components/GameControls/index.tsx` consumes this hook and renders the controls UI. All underlying pitch/audio/replay logic lives in focused hooks under `src/hooks/`.
-- `GameContext` is typed `createContext<ContextValue | undefined>(undefined)`. Always consume it via the `useGameContext()` hook exported from `@context/index` — **never** call `React.useContext(GameContext)` directly in components.
+- All game state lives in `src/features/gameplay/context/index.tsx` (`State` interface) and is mutated by `src/features/gameplay/context/reducer.ts`.
+- `src/features/gameplay/components/GameControls/useGameControls.ts` is the single hook that wires all game-controls hooks and `localStorage` state together. `GameControls/index.tsx` consumes this hook and renders the controls UI. All underlying pitch/audio/replay logic lives in focused hooks under `src/features/gameplay/hooks/`.
+- `GameContext` is typed `createContext<ContextValue | undefined>(undefined)`. Always consume it via the `useGameContext()` hook exported from `@feat/gameplay/context/index` — **never** call `React.useContext(GameContext)` directly in components.
 - **`ContextValue` extends `State`** and adds `dispatch: React.Dispatch<GameAction>`, `dispatchLog: React.Dispatch<LogAction>`, and `log: string[]` (play-by-play, most recent first). All three are provided by `GameProviderWrapper`.
-- **`LogAction`** = `{ type: "log"; payload: string }`. **`GameAction`** = `{ type: string; payload?: unknown }`. Both are exported from `@context/index`.
-- **`GameProviderWrapper`** accepts an optional `onDispatch?: (action: GameAction) => void` prop. `components/Game/index.tsx` uses this to buffer every dispatched action into `actionBufferRef` for RxDB sync.
+- **`LogAction`** = `{ type: "log"; payload: string }`. **`GameAction`** = `{ type: string; payload?: unknown }`. Both are exported from `@feat/gameplay/context/index`.
+- **`GameProviderWrapper`** accepts an optional `onDispatch?: (action: GameAction) => void` prop. `src/features/gameplay/components/Game/index.tsx` uses this to buffer every dispatched action into `actionBufferRef` for RxDB sync.
 - Reducer action types: `nextInning`, `hit`, `setTeams`, `strike`, `foul`, `wait`, `steal_attempt`, `bunt_attempt`, `intentional_walk`, `set_one_pitch_modifier`, `set_pending_decision`, `skip_decision`, `reset`, `clear_suppress_decision`, `set_pinch_hitter_strategy`, `set_defensive_shift`, `restore_game`.
-- `detectDecision(state, strategy, managerMode)` is exported from `context/reducer.ts` and called in `usePitchDispatch` to detect decision points before each pitch.
+- `detectDecision(state, strategy, managerMode)` is exported from `src/features/gameplay/context/reducer.ts` and called in `usePitchDispatch` to detect decision points before each pitch.
 - **Context module dependency order (no cycles):** `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`
 
 ---
 
 ## Seeded Randomness & Replay Sharing
 
-All randomness is routed through `src/utils/rng.ts` (mulberry32 PRNG):
+All randomness is routed through `src/shared/utils/rng.ts` (mulberry32 PRNG):
 
 - **`initSeedFromUrl({ writeToUrl? })`** — reads `?seed=` from the URL; if absent, generates from `Math.random() ^ Date.now()`. Called once in `src/index.tsx` before the React tree mounts.
 - **`random()`** — returns a deterministic float in `[0, 1)` from the seeded PRNG.
@@ -134,14 +129,14 @@ The project uses **ESLint v9** (flat config) + **Prettier v3**.
 
 - **`eslint.config.mjs`** — flat config with TypeScript, React, React Hooks, `simple-import-sort`, and Prettier rules.
 - **`.prettierrc`** — double quotes, trailing commas, `printWidth: 100`, LF line endings.
-- `no-console` is turned **off** only for `src/utils/logger.ts` (it IS the logging abstraction).
+- `no-console` is turned **off** only for `src/shared/utils/logger.ts` (it IS the logging abstraction).
 - `@typescript-eslint/no-explicit-any` and `@typescript-eslint/no-unused-vars` are turned off for test files (`**/*.test.{ts,tsx}` and `src/test/**`).
 
 **Import ordering** is enforced by `eslint-plugin-simple-import-sort` with these groups:
 1. Side-effect imports (e.g. CSS)
 2. React packages (`react`, `react-dom`, `react/*`)
 3. Other external packages
-4. Internal aliases (`@components`, `@context`, `@hooks`, `@utils`, `@constants`, `@storage`, `@test`)
+4. Internal aliases (`@feat`, `@shared`, `@storage`, `@test`)
 5. Relative imports (`./`)
 
 **Scripts:**
@@ -212,10 +207,10 @@ Validate changes by:
 
 | What is duplicated? | Where to put the shared version |
 |---|---|
-| Pure utility function (formatting, file I/O, math) | `src/utils/` or `src/storage/` (e.g. `saveIO.ts`) |
+| Pure utility function (formatting, file I/O, math) | `src/shared/utils/` or `src/storage/` (e.g. `saveIO.ts`); if only one feature uses it, `src/features/<domain>/utils/` |
 | Domain adapter / resolver (label resolution, ID mapping) | `src/features/<domain>/adapters/` |
 | React hook owned by one feature | `src/features/<domain>/hooks/` or alongside the page that uses it |
-| React hook reused across 2+ unrelated features | `src/hooks/` (transitional) or `src/shared/hooks/` |
+| React hook reused across 2+ unrelated features | `src/shared/hooks/` |
 | Styled-component definitions for one feature | `src/features/<domain>/components/<Name>/styles.ts` |
 | Styled-component definitions used by 2+ unrelated features | `src/shared/components/<SharedName>/styles.ts` |
 | JSX content block owned by one feature | `src/features/<domain>/components/<Name>/index.tsx` |
@@ -231,6 +226,16 @@ Validate changes by:
 | `@storage/hash` | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed |
 | `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
 | `@storage/types` | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc. |
+| `@shared/utils/logger` | `createLogger(tag)` + `appLog` singleton — shared colored console logger |
+| `@shared/utils/rng` | `initSeedFromUrl`, `random`, `buildReplayUrl`, `getSeed`, `getRngState`, `restoreRng` |
+| `@shared/utils/mediaQueries` | `mq.mobile`, `mq.desktop`, `mq.tablet`, `mq.notMobile` breakpoint helpers |
+| `@shared/utils/roster` | Roster helpers used by gameplay, customTeams, and careerStats |
+| `@shared/utils/saves` | `currentSeedStr()` — current seed as base-36 string |
+| `@shared/utils/stats/computeBattingStatsFromLogs` | Batting stat aggregation (gameplay + careerStats) |
+| `@shared/constants/hitTypes` | `HitType` enum: Single, Double, Triple, Homerun, Walk |
+| `@feat/gameplay/utils/announce` | Barrel re-export: `audio` + `homeMusic` + `tts` audio/speech utilities |
+| `@feat/gameplay/constants/pitchTypes` | `PitchType` enum + `selectPitchType`, `pitchName` helpers |
+| `@feat/careerStats/utils/computePitcherGameStats` | Per-pitcher stats (IP, ERA, WHIP, SV/HLD/BS) |
 | `@feat/customTeams/storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
 | `@feat/customTeams/adapters/customTeamAdapter` | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc. |
 | `@feat/saves/storage/saveStore` | `SaveStore` singleton — `createSave`, `appendEvents`, `updateProgress`, `listSaves`, `deleteSave`, `exportRxdbSave`, `importRxdbSave` |
@@ -256,7 +261,7 @@ Validate changes by:
 - **Static assets live in `public/`** (not `src/`): `public/images/`, `public/manifest.webmanifest`, `public/og-image.png`. Vite copies them verbatim to `dist/` at their original paths — no content hashing. HTML references these with absolute paths (`/images/…`, `/manifest.webmanifest`).
 - **Service worker is a module worker:** `src/sw.ts` is built by `vite-plugin-pwa` (`injectManifest` strategy, `rollupFormat: "es"`), output as `dist/sw.js`, and registered via `navigator.serviceWorker.register("/sw.js", { type: "module" })`.
 - **`self.__WB_MANIFEST`** is the precache list injected into `sw.ts` at build time by `vite-plugin-pwa`. It is declared locally in `sw.ts` — do not import from any external package.
-- **Lazy-loaded components:** `InstructionsModal`, `SavesModal`, and `DecisionPanel` are loaded via `React.lazy()` in `GameControls/index.tsx` and wrapped in `<React.Suspense fallback={null}>`. Do not convert them back to static imports.
+- **Lazy-loaded components:** `InstructionsModal`, `SavesModal`, and `DecisionPanel` are loaded via `React.lazy()` in `src/features/gameplay/components/GameControls/index.tsx` and wrapped in `<React.Suspense fallback={null}>`. Do not convert them back to static imports.
 - **React 19:** Entry point uses `createRoot` from `react-dom/client`.
 - **React import style:** Files use `import * as React from "react"` (not the default import).
 - **Styled-components v6:** Custom props **must** be typed via generics, e.g. `styled.div<{ $active: boolean }>`. Use `$propName` (transient props) for non-HTML props.
@@ -264,8 +269,8 @@ Validate changes by:
 - **Node version:** Node 24.x (see `.nvmrc`).
 - **`browserslist`** is set in `package.json` (`> 0.5%, last 2 versions, not dead`).
 - **`webkitAudioContext`** — use `(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext` for the Safari fallback in `audio.ts`.
-- **Never import GameContext directly** — always use the `useGameContext()` hook from `@context/index`.
-- **`announce.ts` is a barrel re-export** — always import from `@utils/announce`; never import directly from `tts.ts` or `audio.ts`.
+- **Never import GameContext directly** — always use the `useGameContext()` hook from `@feat/gameplay/context/index`.
+- **`announce.ts` is a barrel re-export** — always import from `@feat/gameplay/utils/announce`; never import directly from `tts.ts` or `audio.ts`.
 - **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`. No module may import from a module later in this chain.
 - **`Function` type is banned** — use explicit function signatures: `(action: GameAction) => void` for dispatch, `(action: LogAction) => void` for dispatchLog.
 - **Options-hash convention for new functions** — any new function with more than two non-`state`/`log` parameters must use an options object as its final argument instead of positional params. Define a named `interface` (or `type`) for it, give every field a clear name, and provide defaults via destructuring. This avoids callers passing magic `0` / `false` sentinels to skip optional params. Example:
@@ -295,7 +300,7 @@ Validate changes by:
 - **FNV-1a hash is in `@storage/hash`** — import `fnv1a` from there. Never reimplement it in components or store modules.
 - **`generateId.ts` is the only source of new DB IDs** — always call `generateTeamId()`, `generatePlayerId()`, `generateSaveId()` from `@storage/generateId`. Never use `Date.now()` or `Math.random()` directly for IDs.
 - **Seed input is on ExhibitionSetupPage** — the seed is settable via `data-testid="seed-input"` on `/exhibition/new`. On form submit, `reinitSeed(seedStr)` in `rng.ts` re-initializes the PRNG and updates `?seed=` in the URL. Seeds can be set either via URL parameter at startup (`initSeedFromUrl` — one-shot) OR via the seed input field at runtime (`reinitSeed` — callable any time). E2E tests fill this field via `configureNewGame(page, { seed: "..." })` — no URL navigation needed.
-- **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.
+- **Always use `mq` helpers in styled-components** — never write raw `@media` strings inline. Import `mq` from `@shared/utils/mediaQueries` and interpolate: `${mq.mobile} { … }`, `${mq.desktop} { … }`, `${mq.tablet} { … }`, `${mq.notMobile} { … }`. This keeps all breakpoints in sync with the SCSS variables in `index.scss`. Breakpoints: mobile ≤ 768 px, desktop ≥ 1024 px.
 - **NewGameDialog mobile compaction** — `NewGameDialog/styles.ts` uses `${mq.mobile}` blocks on every styled component (Dialog, Title, FieldGroup, FieldLabel, Input, Select, SectionLabel, RadioLabel, ResumeButton, Divider, PlayBallButton, SeedHint) to reduce padding/margins so the modal fits without scrolling on phone viewports. `PlayerCustomizationPanel.styles.ts` does the same for `PanelSection`. The Dialog's `max-height` uses `min(96dvh, 820px)` on mobile (vs `90dvh` on desktop) to reclaim browser-chrome space. Never revert these to desktop-only values.
 - **Viewport-safe modal sizing** — always use `dvh` (dynamic viewport height) units, not bare `vh`, for modal `max-height`. `100vh` on mobile browsers can exceed the visible area because it ignores browser chrome (address bar, navigation bar). `dvh` tracks the actual visible viewport. The `responsive-smoke.spec.ts` E2E test verifies the Play Ball button bottom edge is within `viewport.height` on all projects.
 - **`ResumeLabel` span in NewGameDialog** — the "Resume: " prefix inside `ResumeButton` is wrapped in `<ResumeLabel>` (exported from `NewGameDialog/styles.ts`). `ResumeLabel` uses `display: none` inside `${mq.mobile}` so on phone viewports the button shows "▶ {saveName}" (shorter) while desktop still shows "▶ Resume: {saveName}". Do not remove this span or inline the text directly into `ResumeButton`.

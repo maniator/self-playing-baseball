@@ -1,23 +1,22 @@
 import * as React from "react";
 
 import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
-
-import { selectPitchType } from "@constants/pitchTypes";
+import { selectPitchType } from "@feat/gameplay/constants/pitchTypes";
 import {
   makeAiPitchingDecision,
   makeAiStrategyDecision,
   makeAiTacticalDecision,
-} from "@context/aiManager";
-import { GameAction, LogAction, State, Strategy } from "@context/index";
+} from "@feat/gameplay/context/aiManager";
+import { GameAction, LogAction, State, Strategy } from "@feat/gameplay/context/index";
 import {
   computeFatigueFactor,
   computeSwingRate,
   resolveBattedBallType,
   resolveSwingOutcome,
-} from "@context/pitchSimulation";
-import { detectDecision } from "@context/reducer";
-import { ZERO_MODS } from "@context/resolvePlayerMods";
-import getRandomInt from "@utils/getRandomInt";
+} from "@feat/gameplay/context/pitchSimulation";
+import { detectDecision } from "@feat/gameplay/context/reducer";
+import { ZERO_MODS } from "@feat/gameplay/context/resolvePlayerMods";
+import getRandomInt from "@feat/gameplay/utils/getRandomInt";
 
 /**
  * Builds and returns the pitch handler callback.

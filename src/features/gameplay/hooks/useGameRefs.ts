@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { DecisionType } from "@context/index";
+import { DecisionType } from "@feat/gameplay/context/index";
 
 export interface UseGameRefsOptions {
   strikes: number;

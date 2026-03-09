@@ -2,9 +2,8 @@
  * Shared styled-components for full-page route screens (SavesPage, HelpPage,
  * ManageTeamsScreen, etc.).  Import these instead of redefining them per-page.
  */
+import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
-
-import { mq } from "@utils/mediaQueries";
 
 /** Full-height scrollable page wrapper used by all route-level screens. */
 export const PageContainer = styled.div`

@@ -10,9 +10,9 @@ import {
   validateCustomTeamForGame,
 } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { generateFreshSeed, reinitSeed } from "@shared/utils/rng";
 
 import type { ExhibitionGameSetup } from "@storage/types";
-import { generateFreshSeed, reinitSeed } from "@utils/rng";
 
 /** Returns SP-eligible pitchers from a roster, preserving their original index. */
 const getSpEligiblePitchers = (

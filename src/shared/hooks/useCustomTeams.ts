@@ -1,9 +1,9 @@
 import * as React from "react";
 
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
+import { appLog } from "@shared/utils/logger";
 
 import type { CreateCustomTeamInput, CustomTeamDoc, UpdateCustomTeamInput } from "@storage/types";
-import { appLog } from "@utils/logger";
 
 export interface CustomTeamsHook {
   teams: CustomTeamDoc[];

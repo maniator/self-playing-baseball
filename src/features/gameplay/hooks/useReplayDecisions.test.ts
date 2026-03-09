@@ -1,8 +1,7 @@
+import type { DecisionType } from "@feat/gameplay/context/index";
+import * as rngModule from "@shared/utils/rng";
 import { renderHook } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-
-import type { DecisionType } from "@context/index";
-import * as rngModule from "@utils/rng";
 
 import { useReplayDecisions } from "./useReplayDecisions";
 

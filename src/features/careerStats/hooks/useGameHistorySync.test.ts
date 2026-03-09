@@ -1,9 +1,9 @@
 import * as React from "react";
 
+import { Hit } from "@shared/constants/hitTypes";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { Hit } from "@constants/hitTypes";
 import { makeContextValue } from "@test/testHelpers";
 
 // Mocks must use inline vi.fn() — no top-level variables before vi.mock().
@@ -12,17 +12,16 @@ vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   GameHistoryStore: { commitCompletedGame: vi.fn() },
 }));
 
-vi.mock("@context/index", () => ({ useGameContext: vi.fn() }));
+vi.mock("@feat/gameplay/context/index", () => ({ useGameContext: vi.fn() }));
 
-vi.mock("@utils/rng", () => ({
+vi.mock("@shared/utils/rng", () => ({
   getSeed: vi.fn().mockReturnValue(12345),
   getRngState: vi.fn().mockReturnValue(null),
 }));
 
 // Import the hook and mocked modules after vi.mock declarations.
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
-
-import { useGameContext } from "@context/index";
+import { useGameContext } from "@feat/gameplay/context/index";
 
 import { useGameHistorySync } from "./useGameHistorySync";
 

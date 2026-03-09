@@ -1,3 +1,5 @@
+import { appLog } from "@shared/utils/logger";
+
 import { type BallgameDb, getDb } from "@storage/db";
 import { generatePlayerId, generateSeed, generateTeamId } from "@storage/generateId";
 import { fnv1a } from "@storage/hash";
@@ -10,7 +12,6 @@ import type {
   TeamRoster,
   UpdateCustomTeamInput,
 } from "@storage/types";
-import { appLog } from "@utils/logger";
 
 import {
   buildPlayerSig,

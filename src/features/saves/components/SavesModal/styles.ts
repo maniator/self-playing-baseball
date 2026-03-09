@@ -1,6 +1,6 @@
 import styled from "styled-components";
 
-export { Button as SavesButton } from "@components/GameControls/styles";
+export { Button as SavesButton } from "@feat/gameplay/components/GameControls/styles";
 
 export const Dialog = styled.dialog`
   background: #0d1b2e;

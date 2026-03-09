@@ -1,7 +1,7 @@
 import * as React from "react";
 
-import { DecisionType, GameAction, Strategy } from "@context/index";
-import { getDecisionsFromUrl } from "@utils/rng";
+import { DecisionType, GameAction, Strategy } from "@feat/gameplay/context/index";
+import { getDecisionsFromUrl } from "@shared/utils/rng";
 
 /**
  * Parses a serialized decision entry (produced by the reducer's decisionLog)

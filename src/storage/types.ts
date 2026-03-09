@@ -38,9 +38,8 @@ export type {
 } from "@feat/saves/storage/types";
 
 // Cross-feature / app-shell types (genuinely shared)
+import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import type { SaveDoc } from "@feat/saves/storage/types";
-
-import type { TeamCustomPlayerOverrides } from "@context/index";
 
 export type PlayerOverrides = {
   away: TeamCustomPlayerOverrides;

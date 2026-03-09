@@ -75,18 +75,6 @@
     ├── index.tsx                   # React entry: initSeedFromUrl, registers /sw.js, createRoot
     ├── router.tsx                  # createBrowserRouter + RouterProvider; defines full route tree (/, /exhibition/new, /game, /teams, /teams/:id/edit, /saves, /help)
     ├── sw.ts                       # Service worker: uses self.__WB_MANIFEST (injected by vite-plugin-pwa), caches bundles, handles notificationclick
-    ├── constants/
-    │   ├── hitTypes.ts             # Hit enum: Single, Double, Triple, Homerun, Walk
-    │   └── pitchTypes.ts           # PitchType enum + selectPitchType, pitchName helpers
-    ├── utils/                      # Pure utilities (no React)
-    │   ├── announce.ts             # Barrel re-export: re-exports everything from tts.ts and audio.ts
-    │   ├── audio.ts                # Web Audio API: playDecisionChime, playVictoryFanfare, play7thInningStretch
-    │   ├── tts.ts                  # Web Speech API: announce, cancelAnnouncements, setSpeechRate, isSpeechPending
-    │   ├── getRandomInt.ts         # Random number helper — delegates to rng.ts random()
-    │   ├── logger.ts               # Shared colored console logger; exports createLogger(tag) + appLog singleton
-    │   ├── mediaQueries.ts         # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
-    │   ├── rng.ts                  # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
-    │   └── saves.ts                # currentSeedStr() — returns current seed as base-36 string
     ├── storage/                    # Shared persistence infra (DB wiring + thin re-exports; no feature logic)
     │   ├── db.ts                   # Lazy-singleton BallgameDb; adds all collections via schemas imported from features/;
     │   │                           #   exports getDb(), _createTestDb()
@@ -96,63 +84,6 @@
     │   │                           #   teamsFilename, playerFilename, slugify (internal)
     │   └── types.ts                # Central re-export hub — feature-owned types live in their feature's
     │                               #   storage/types.ts; all @storage/types imports remain valid through re-exports
-    ├── context/                    # All game state, reducer, and types
-    │   ├── index.tsx               # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
-    │   │                           #   Exports: LogAction, GameAction, Strategy, DecisionType, OnePitchModifier
-    │   │                           #   GameProviderWrapper accepts optional onDispatch?: (action: GameAction) => void
-    │   ├── strategy.ts             # stratMod(strategy, stat) — probability multipliers per strategy
-    │   ├── advanceRunners.ts       # advanceRunners(type, baseLayout) — pure base-advancement logic
-    │   ├── gameOver.ts             # checkGameOver, checkWalkoff, nextHalfInning
-    │   ├── playerOut.ts            # playerOut — handles out count, 3-out half-inning transitions
-    │   ├── hitBall.ts              # hitBall — pop-out check, callout log, run scoring
-    │   ├── buntAttempt.ts          # buntAttempt — fielder's choice, sacrifice bunt, bunt single, pop-out
-    │   ├── playerActions.ts        # playerStrike, playerBall, playerWait, stealAttempt (re-exports buntAttempt)
-    │   └── reducer.ts              # Reducer factory; exports detectDecision(), re-exports stratMod
-    ├── hooks/                      # ⚠ Intentionally deferred — only code consumed exclusively by deferred gameplay/shell components
-    │   ├── useHomeScreenMusic.ts   # Background music playback on the Home screen
-    │   └── useVolumeControls.ts    # Volume/mute state for music (consumed by AppShell + HomeScreen)
-    ├── components/                 # ⚠ Intentionally deferred — gameplay shell; will migrate to src/features/gameplay/ in a future pass
-    │   ├── AppShell/
-    │   │   └── index.tsx           # Pure layout component: renders <Outlet context={outletContext} />; provides AppShellOutletContext
-    │   │                           #   AppShellOutletContext: { onStartGame, onLoadSave, onGameSessionStarted, onNewGame, onLoadSaves, onManageTeams, onResumeCurrent, onHelp, onBackToHome, hasActiveSession }
-    │   ├── HomeScreen/
-    │   │   ├── index.tsx           # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
-    │   │   └── styles.ts           # Styled components for home screen
-    │   ├── Announcements/index.tsx # Play-by-play log with heading + empty-state placeholder
-    │   ├── Ball/
-    │   │   ├── constants.ts        # hitDistances: pixel travel distance per Hit type
-    │   │   └── index.tsx           # Ball animation component; key={pitchKey} restarts CSS animation
-    │   ├── DecisionPanel/
-    │   │   ├── constants.ts        # DECISION_TIMEOUT_SEC (10), NOTIF_TAG ("manager-decision")
-    │   │   ├── DecisionButtonStyles.ts  # Styled-component button variants for decision actions
-    │   │   ├── DecisionButtons.tsx # Decision action button groups per decision kind
-    │   │   ├── notificationHelpers.ts   # showManagerNotification, closeManagerNotification
-    │   │   ├── styles.ts           # Styled components for DecisionPanel layout
-    │   │   └── index.tsx           # Manager decision UI: prompt, buttons, 10s countdown bar
-    │   ├── Diamond/
-    │   │   ├── index.tsx           # Baseball diamond — self-contained with FieldWrapper container
-    │   │   └── styles.ts           # Styled components for diamond layout
-    │   ├── Game/
-    │   │   ├── index.tsx           # Owns actionBufferRef; wraps tree with RxDatabaseProvider + GameProviderWrapper
-    │   │   ├── ErrorBoundary.tsx   # React error boundary — catches render errors, clears stale localStorage keys
-    │   │   ├── GameInner.tsx       # Top-level layout: ExhibitionSetupPage (dialog), LineScore, GameControls, two-column body
-    │   │   │                       #   Calls useSaveStore().createSave() on handleStart; hosts useRxdbGameSync
-    │   │   └── styles.ts           # Styled components for game layout
-    │   ├── GameControls/
-    │   │   ├── index.tsx           # GameControls component — renders controls using useGameControls hook
-    │   │   ├── constants.ts        # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms), SPEED_INSTANT (0)
-    │   │   ├── styles.ts           # Styled components for controls layout; exports HelpButton, Button
-    │   │   ├── useGameControls.ts  # Hook: wires all game-controls hooks + localStorage state into a single value
-    │   │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
-    │   │   ├── ManagerModeStyles.ts     # Styled components for manager mode controls
-    │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
-    │   ├── HitLog/index.tsx        # Hit log component
-    │   ├── LineScore/
-    │   │   ├── index.tsx           # Score/inning/strikes/balls/outs + FINAL banner when gameOver
-    │   │   └── styles.ts           # Styled components for line score
-    │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table
-    │   ├── RootLayout/index.tsx    # Top-level layout wrapper with ErrorBoundary
-    │   └── TeamTabBar/index.tsx    # Tab bar for switching between home/away team stats
     ├── features/                   # Feature-first domain code (preferred destination for new code)
     │   ├── exhibition/             # /exhibition/new route — New Game setup
     │   │   ├── pages/ExhibitionSetupPage/
@@ -206,6 +137,9 @@
     │   │   │   ├── gameHistoryStore.ts    # GameHistoryStore singleton — career batting/pitching aggregates
     │   │   │   ├── schema.ts             # players, games, playerGameStats, pitcherGameStats schemas (v0)
     │   │   │   └── types.ts              # GameDoc, PlayerGameStatDoc, TeamCareerSummary, …
+    │   │   ├── utils/
+    │   │   │   ├── computePitcherGameStats.ts  # Per-pitcher stats (IP, ERA, WHIP, SV/HLD/BS)
+    │   │   │   └── computeSaveHoldBS.ts        # SV/HLD/BS determination logic
     │   │   └── styles.ts               # Shared styled components for career stats pages
     │   ├── customTeams/            # /teams + /teams/:id/edit routes — team builder
     │   │   ├── pages/ManageTeamsScreen/
@@ -235,27 +169,101 @@
     │   │       ├── customTeamExportImport.ts  # buildTeamFingerprint, buildPlayerSig, exportCustomTeams, importCustomTeams
     │   │       ├── schema.ts               # customTeamsSchema v3 (v0→v1→v2→v3 migrations)
     │   │       └── types.ts                # CustomTeamDoc, TeamPlayer, CreateCustomTeamInput, …
-    │   └── gameplay/               # Gameplay hooks + SubstitutionPanel (GameControls/AppShell/Game deferred to future pass)
-    │       ├── components/SubstitutionPanel/
-    │       │   └── index.tsx       # Pinch hitter substitution UI
-    │       └── hooks/
-    │           ├── useAutoPlayScheduler.ts  # Speech-gated setTimeout scheduler; pauses on manager decisions
-    │           ├── useGameAudio.ts     # Victory fanfare + 7th-inning stretch audio playback
-    │           ├── useGameRefs.ts      # Tracks skipDecision state to prevent re-offering same decision
-    │           ├── usePitchDispatch.ts # Pitch handler — returns handlePitch callback
-    │           ├── usePlayerControls.ts  # All UI event handlers (volume, mute, manager mode, share replay)
-    │           ├── useReplayDecisions.ts  # Reads ?decisions= from URL and replays manager choices
-    │           └── useShareReplay.ts   # Clipboard copy of replay URL
+    │   └── gameplay/               # Gameplay simulation engine, shell components, hooks, and pages
+    │       ├── components/
+    │       │   ├── AppShell/
+    │       │   │   └── index.tsx       # Pure layout component: renders <Outlet context={outletContext} />; provides AppShellOutletContext
+    │       │   │                       #   AppShellOutletContext: { onStartGame, onLoadSave, onGameSessionStarted, onNewGame, onLoadSaves, onManageTeams, onResumeCurrent, onHelp, onBackToHome, hasActiveSession }
+    │       │   ├── HomeScreen/
+    │       │   │   ├── index.tsx       # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
+    │       │   │   └── styles.ts       # Styled components for home screen
+    │       │   ├── Announcements/index.tsx  # Play-by-play log with heading + empty-state placeholder
+    │       │   ├── Ball/
+    │       │   │   ├── constants.ts    # hitDistances: pixel travel distance per Hit type
+    │       │   │   └── index.tsx       # Ball animation component; key={pitchKey} restarts CSS animation
+    │       │   ├── DecisionPanel/
+    │       │   │   ├── constants.ts    # DECISION_TIMEOUT_SEC (10), NOTIF_TAG ("manager-decision")
+    │       │   │   ├── DecisionButtonStyles.ts  # Styled-component button variants
+    │       │   │   ├── DecisionButtons.tsx      # Decision action button groups per decision kind
+    │       │   │   ├── notificationHelpers.ts   # showManagerNotification, closeManagerNotification
+    │       │   │   ├── styles.ts       # Styled components for DecisionPanel layout
+    │       │   │   └── index.tsx       # Manager decision UI: prompt, buttons, 10s countdown bar
+    │       │   ├── Diamond/
+    │       │   │   ├── index.tsx       # Baseball diamond — self-contained with FieldWrapper container
+    │       │   │   └── styles.ts       # Styled components for diamond layout
+    │       │   ├── Game/
+    │       │   │   ├── index.tsx       # Owns actionBufferRef; wraps tree with RxDatabaseProvider + GameProviderWrapper
+    │       │   │   ├── ErrorBoundary.tsx  # React error boundary — catches render errors, clears stale localStorage keys
+    │       │   │   ├── GameInner.tsx   # Top-level layout: ExhibitionSetupPage (dialog), LineScore, GameControls, two-column body
+    │       │   │   └── styles.ts       # Styled components for game layout
+    │       │   ├── GameControls/
+    │       │   │   ├── index.tsx       # GameControls component — renders controls using useGameControls hook
+    │       │   │   ├── constants.ts    # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms), SPEED_INSTANT (0)
+    │       │   │   ├── styles.ts       # Styled components for controls layout; exports HelpButton, Button
+    │       │   │   ├── useGameControls.ts  # Hook: wires all game-controls hooks + localStorage state
+    │       │   │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
+    │       │   │   ├── ManagerModeStyles.ts     # Styled components for manager mode controls
+    │       │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
+    │       │   ├── HitLog/index.tsx    # Hit log component
+    │       │   ├── LineScore/
+    │       │   │   ├── index.tsx       # Score/inning/strikes/balls/outs + FINAL banner when gameOver
+    │       │   │   └── styles.ts       # Styled components for line score
+    │       │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table
+    │       │   ├── RootLayout/index.tsx  # Top-level layout wrapper with ErrorBoundary
+    │       │   ├── SubstitutionPanel/index.tsx  # Pinch hitter substitution UI
+    │       │   └── TeamTabBar/index.tsx  # Tab bar for switching between home/away team stats
+    │       ├── constants/
+    │       │   └── pitchTypes.ts       # PitchType enum + selectPitchType, pitchName helpers
+    │       ├── context/                # Simulation engine — strict cycle-free dependency order
+    │       │   ├── index.tsx           # GameContext, useGameContext(), State, ContextValue, GameProviderWrapper
+    │       │   │                       #   Exports: LogAction, GameAction, Strategy, DecisionType, OnePitchModifier
+    │       │   ├── strategy.ts         # stratMod(strategy, stat) — probability multipliers per strategy
+    │       │   ├── advanceRunners.ts   # advanceRunners(type, baseLayout) — pure base-advancement logic
+    │       │   ├── gameOver.ts         # checkGameOver, checkWalkoff, nextHalfInning
+    │       │   ├── playerOut.ts        # playerOut — handles out count, 3-out half-inning transitions
+    │       │   ├── hitBall.ts          # hitBall — pop-out check, callout log, run scoring
+    │       │   ├── buntAttempt.ts      # buntAttempt — fielder's choice, sacrifice bunt, bunt single, pop-out
+    │       │   ├── playerActions.ts    # playerStrike, playerBall, playerWait, stealAttempt
+    │       │   ├── reducer.ts          # Reducer factory; exports detectDecision(), re-exports stratMod
+    │       │   ├── handlers/           # Action-specific reducer handlers (decisions, lifecycle, setup, sim)
+    │       │   └── pitchSimulation/    # Pitch simulation modules (battedBall, fatigue, swingDecision, swingOutcome)
+    │       ├── hooks/
+    │       │   ├── useAutoPlayScheduler.ts  # Speech-gated setTimeout scheduler; pauses on manager decisions
+    │       │   ├── useGameAudio.ts     # Victory fanfare + 7th-inning stretch audio playback
+    │       │   ├── useGameRefs.ts      # Tracks skipDecision state to prevent re-offering same decision
+    │       │   ├── useHomeScreenMusic.ts  # Background music playback on the Home screen
+    │       │   ├── usePitchDispatch.ts # Pitch handler — returns handlePitch callback
+    │       │   ├── usePlayerControls.ts  # All UI event handlers (volume, mute, manager mode, share replay)
+    │       │   ├── useReplayDecisions.ts  # Reads ?decisions= from URL and replays manager choices
+    │       │   ├── useShareReplay.ts   # Clipboard copy of replay URL
+    │       │   └── useVolumeControls.ts  # Volume/mute state for music (consumed by AppShell + HomeScreen)
+    │       ├── pages/
+    │       │   └── GamePage/index.tsx  # /game route — renders <Game /> component
+    │       └── utils/
+    │           ├── announce.ts         # Barrel re-export: audio + homeMusic + tts
+    │           ├── audio.ts            # Web Audio API: playDecisionChime, playVictoryFanfare, play7thInningStretch
+    │           ├── getRandomInt.ts     # Random number helper — delegates to rng.ts random()
+    │           ├── homeMusic.ts        # Home screen looping background music
+    │           ├── homeMusicNotes.ts   # Musical note sequences for home screen
+    │           └── tts.ts              # Web Speech API: announce, cancelAnnouncements, setSpeechRate, isSpeechPending
     ├── shared/                     # Genuinely cross-feature utilities (2+ unrelated features)
     │   ├── components/PageLayout/
     │   │   └── styles.ts           # PageContainer, PageHeader, BackBtn — shared page chrome
-    │   └── hooks/
-    │       └── useCustomTeams.ts   # useLiveRxQuery wrapper for the customTeams RxDB collection
-    └── pages/                      # ⚠ Intentionally deferred — only GamePage remains
-        └── GamePage/index.tsx      # /game route — renders <Game /> component
+    │   ├── constants/
+    │   │   └── hitTypes.ts         # Hit enum: Single, Double, Triple, Homerun, Walk
+    │   ├── hooks/
+    │   │   └── useCustomTeams.ts   # useLiveRxQuery wrapper for the customTeams RxDB collection
+    │   └── utils/
+    │       ├── logger.ts           # Shared colored console logger; exports createLogger(tag) + appLog singleton
+    │       ├── mediaQueries.ts     # Breakpoints + mq helpers: mq.mobile, mq.desktop, mq.tablet, mq.notMobile
+    │       ├── rng.ts              # Seeded PRNG (mulberry32): initSeedFromUrl, random, buildReplayUrl, getSeed, getRngState, restoreRng
+    │       ├── roster.ts           # Roster helpers used by gameplay, customTeams, and careerStats
+    │       ├── saves.ts            # currentSeedStr() — returns current seed as base-36 string
+    │       └── stats/
+    │           └── computeBattingStatsFromLogs.ts  # Batting stat aggregation (used by gameplay + careerStats)
 ```
 
-Tests are **co-located** next to their source files (e.g. `src/context/strategy.test.ts`, `src/features/gameplay/hooks/useGameAudio.test.ts`, `src/components/Ball/Ball.test.tsx`). The only test files that do NOT live next to a source file are the shared helpers in `src/test/`.
+Tests are **co-located** next to their source files (e.g. `src/features/gameplay/context/strategy.test.ts`, `src/features/gameplay/hooks/useGameAudio.test.ts`, `src/features/gameplay/components/Ball/Ball.test.tsx`). The only test files that do NOT live next to a source file are the shared helpers in `src/test/`.
 
 ---
 
@@ -268,11 +276,6 @@ All cross-directory imports use aliases (configured in `tsconfig.json` and `vite
 | `@feat/*` | `src/features/*` | **Preferred** for all feature code |
 | `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
 | `@storage/*` | `src/storage/*` | Shared persistence infra (DB wiring, thin type re-exports) |
-| `@components/*` | `src/components/*` | Legacy transitional — deferred gameplay/shell code |
-| `@context/*` | `src/context/*` | Game simulation engine (deferred to future pass) |
-| `@hooks/*` | `src/hooks/*` | Legacy transitional — deferred (useHomeScreenMusic, useVolumeControls only) |
-| `@utils/*` | `src/utils/*` | Pure utilities (rng, logger, mediaQueries, announce) |
-| `@constants/*` | `src/constants/*` | Enums and constants |
 | `@test/*` | `src/test/*` | Test helpers |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).

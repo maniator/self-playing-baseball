@@ -1,8 +1,7 @@
+import * as announceModule from "@feat/gameplay/utils/announce";
+import * as loggerModule from "@shared/utils/logger";
 import { renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-
-import * as announceModule from "@utils/announce";
-import * as loggerModule from "@utils/logger";
 
 import { useAutoPlayScheduler } from "./useAutoPlayScheduler";
 
