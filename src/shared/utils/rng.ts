@@ -116,7 +116,8 @@ export const restoreRng = (state: number): void => {
 /**
  * Re-initializes the PRNG from a caller-supplied seed string (base-36 or
  * decimal).  Unlike `initSeed`, this can be called at any time —
- * e.g. when the user types a seed in the New Game form.
+ * e.g. when the user submits the New Game form (the seed field is
+ * pre-populated via `generateFreshSeed()` but may be edited by the user).
  *
  * If `seedStr` is blank or unparseable a fresh random seed is generated.
  *
