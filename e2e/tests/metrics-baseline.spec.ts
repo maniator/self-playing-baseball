@@ -226,6 +226,11 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
       if (msg.type() === "error") consoleErrors.push(`[E] ${msg.text()}`);
       else if (msg.type() === "warning") consoleWarnings.push(`[W] ${msg.text()}`);
     });
+    // Also capture uncaught JS exceptions — these are emitted via 'pageerror',
+    // not 'console', so they would otherwise be missed.
+    page.on("pageerror", (err) => {
+      consoleErrors.push(`[PAGEERROR] ${err.message}`);
+    });
 
     await resetAppState(page);
     await importTeamsFixture(page, "metrics-teams.json");

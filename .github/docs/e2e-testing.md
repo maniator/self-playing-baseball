@@ -532,8 +532,8 @@ The recommended approach is the **single-tab batch-loop evaluate**: a single `pl
 ```js
 // Single batch-loop evaluate: runs N games on the current tab in one MCP call.
 // ⬇ Edit these three values before calling:
-const away = 'Portland Nashville Comets'; // away team name (must match imported team, e.g. 'Boston Charlotte Bears')
-const home = 'Indianapolis Portland Foxes'; // home team name (must match imported team, e.g. 'Denver Denver Raiders')
+const away = 'Charlotte Bears';  // away team name — must exactly match an imported team name
+const home = 'Denver Raiders';   // home team name — valid names: Charlotte Bears, Denver Raiders, San Antonio Giants, Portland Foxes, Nashville Comets
 const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s1g2, …
 (async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -595,11 +595,14 @@ const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s
 })();
 ```
 
-**Recommended workflow for 100 games across 10 matchups:**
+**Quick smoke check (100 games, ~50–60 s):** Open 10 tabs, run the snippet above on each (10 games/tab × 10 tabs = 100 games). Useful for direction-checking, not for policy-compliant tuning rounds.
 
+**Minimum tuning round (200 games, ~90–120 s):** Change `g<=10` to `g<=20` in the loop above to collect 20 games per tab. Run across 10 tabs for 200 games total. **200 games is the minimum required before drawing any tuning conclusions.**
+
+**Workflow (applies to both):**
 1. Open 10 browser tabs (one per matchup block) — they only need to be on any valid app page.
-2. On each tab, run the batch-loop evaluate above with the appropriate `away`, `home`, and `prefix` for that matchup block (10 games per block).
-3. After all 10 tabs complete (10 evaluate calls + 10 tab-switch calls = ~20 MCP tool calls total), collect aggregate results with the summary snippet below.
+2. On each tab, run the batch-loop evaluate with the appropriate `away`, `home`, and `prefix` for that matchup block.
+3. After all tabs complete, collect aggregate results with the summary snippet below.
 
 **Timing breakdown (verified from actual 108-game run on 2026-03-09):**
 - Simulation time per game: **<100ms** (essentially zero in Instant mode on active tab)
@@ -634,7 +637,7 @@ The project has three ways to measure simulation metrics at scale:
 | | Stock-team harness | Custom-team harness | Browser run (MCP or spec) |
 |---|---|---|---|
 | **File** | `src/test/calibration/simHarness.test.ts` | `src/test/calibration/customTeamMetrics.test.ts` | MCP browser / `metrics-baseline.spec.ts` |
-| **Speed** | ~5 s | ~30 s | ~6–25 min |
+| **Speed** | ~5 s | ~30 s | ~2 min (MCP batch-loop) / ~20–25 min (spec) |
 | **Teams** | All-balanced stock players | `metrics-teams.json` fixture | `metrics-teams.json` fixture |
 | **Environment** | Node.js only | Node.js only | Full Chrome + RxDB + React |
 | **RNG sequence** | Pure game logic | Pure game logic | Extra `random()` calls from React, RxDB, audio, TTS |
