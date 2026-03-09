@@ -217,19 +217,18 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
       localStorage.setItem("managerMode", "false"); // fully unmanaged
     });
 
-    await resetAppState(page);
-    await importTeamsFixture(page, "metrics-teams.json");
-
     // ── Console error/warning capture ──────────────────────────────────────
-    // Record all browser console errors and warnings so they appear in the
-    // run summary alongside the metrics.  Common sources: RxDB sync failures
-    // during Instant-mode navigation races ("failed to update progress").
+    // Register before resetAppState/importTeamsFixture so initial app load,
+    // DB init, and fixture import errors are included in the final summary.
     const consoleErrors: string[] = [];
     const consoleWarnings: string[] = [];
     page.on("console", (msg) => {
       if (msg.type() === "error") consoleErrors.push(`[E] ${msg.text()}`);
       else if (msg.type() === "warning") consoleWarnings.push(`[W] ${msg.text()}`);
     });
+
+    await resetAppState(page);
+    await importTeamsFixture(page, "metrics-teams.json");
 
     // ── Build game list ─────────────────────────────────────────────────────
     // 10 matchup combos × GAMES_PER_BLOCK seeds each = 200 games total.

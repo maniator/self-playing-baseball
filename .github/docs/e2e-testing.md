@@ -214,7 +214,7 @@ There are **three complementary ways** to collect aggregate simulation metrics. 
 | Method | Speed | Sample size | Environment | Authoritative? | Best for |
 |---|---|---|---|---|---|
 | Vitest in-process harness | ~30 s | 100 games | Node.js only | ❌ Directional | Rapid iteration inside an agent session |
-| **MCP browser (agent method)** | **~10–15 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds** |
+| **MCP browser (agent method)** | **~2 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds** |
 | Playwright spec runner | ~20–25 min | 200 games | Full Chrome + RxDB | ✅ Ground truth | CI / human-driven full runs |
 
 > **For agents (Copilot sessions): use the MCP browser batch-loop method.**
