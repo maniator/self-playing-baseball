@@ -207,32 +207,44 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 
 ---
 
-## Simulation Metrics Baseline (`e2e/tests/metrics-baseline.spec.ts`)
+## Simulation Metrics Baseline
 
-The metrics-baseline spec runs 100 full games via Instant mode (`SPEED_INSTANT=0`) and prints aggregate stats (BB%, K%, H/PA, runs/game) for before/after tuning comparisons. It is **excluded from the normal CI suite** and must be run manually.
+There are **three complementary ways** to collect aggregate simulation metrics. The right choice depends on the context:
 
-### How to run
+| Method | Speed | Sample size | Environment | Authoritative? | Best for |
+|---|---|---|---|---|---|
+| Vitest in-process harness | ~30 s | 100 games | Node.js only | ❌ Directional | Rapid iteration inside an agent session |
+| **MCP browser (agent method)** | **~10–15 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds** |
+| Playwright spec runner | ~20–25 min | 200 games | Full Chrome + RxDB | ✅ Ground truth | CI / human-driven full runs |
 
-```bash
-# Build first, then run only the metrics spec on desktop Chromium
-yarn build
-yarn test:e2e --project=desktop --grep "metrics-baseline"
-```
+> **For agents (Copilot sessions): use the MCP browser method.**
+> The Playwright spec (`e2e/tests/metrics-baseline.spec.ts`) is a **reference implementation** that documents the full automated flow. For agent-driven tuning it is faster and more interactive to run games directly through the MCP browser using parallel tabs and JS injection — you get results in real time, can interleave with code changes, and finish 200 games in roughly half the wall-clock time of the sequential spec runner.
 
 ### Canonical team fixture
 
-All 100 games use the **5 teams committed to `e2e/fixtures/metrics-teams.json`**:
+All browser metric runs use the **5 teams committed to `e2e/fixtures/metrics-teams.json`**:
 - Charlotte Bears (CHB)
 - Denver Raiders (DRD)
 - San Antonio Giants (SAG)
 - Portland Foxes (PTF)
 - Nashville Comets (NSC)
 
-**This fixture is the single source of truth for all future passes.** Never recreate teams by clicking "Generate Random" across sessions — each run produces different random rosters, making cross-pass comparisons meaningless. Instead:
-1. Import from the fixture file at the start of the spec (done automatically via `importTeamsFixture(page, "metrics-teams.json")`)
-2. If teams must be regenerated: create 5 new teams, **Export All Teams** from the app, save the JSON over `e2e/fixtures/metrics-teams.json`, and commit **before** running any pass
+**This fixture is the single source of truth for all tuning passes.** Never recreate teams by clicking "Generate Random" — each run produces different random rosters, making cross-pass comparisons meaningless. The 10 canonical matchup combos are:
 
-> ⚠️ **Pass 1–3 used different teams (lost across sessions).** Pass 4 is the first pass using the committed `metrics-teams.json` fixture. All passes from pass 4 onward use the same rosters and are directly comparable.
+```
+s1:  Charlotte Bears  @ Denver Raiders
+s2:  Denver Raiders   @ Charlotte Bears
+s3:  San Antonio Giants @ Portland Foxes
+s4:  Portland Foxes   @ Nashville Comets
+s5:  Nashville Comets @ San Antonio Giants
+s6:  Charlotte Bears  @ San Antonio Giants
+s7:  Denver Raiders   @ Portland Foxes
+s8:  San Antonio Giants @ Nashville Comets
+s9:  Portland Foxes   @ Charlotte Bears
+s10: Nashville Comets @ Denver Raiders
+```
+
+Seeds are strings: `s1g1`, `s1g2`, … `s1g20` for matchup block s1 with 20 seeds (200 games total = 10 matchups × 20 seeds).
 
 ### Starting the preview server for MCP browser automation
 
@@ -255,12 +267,7 @@ sleep 12 && ss -tlnp | grep 5173
 curl -s -o /dev/null -w "HTTP %{http_code}" http://localhost:5173/
 ```
 
-Once the server is up, navigate the MCP browser with:
-
-```
-// ✅ Works — Playwright-managed server on localhost:5173
-page.goto("http://localhost:5173/exhibition/new")
-```
+Once the server is up, navigate the MCP browser to `http://localhost:5173`.
 
 **What does NOT work (manually started servers are unreachable from MCP Chrome):**
 
@@ -274,144 +281,164 @@ npx vite preview --port 5173 --host ::1         # binds [::1]:5173
 
 **Root cause:** The MCP browser (`mcp-server-playwright`) controls the Chrome process (PID visible via `pgrep -f "chrome.*playwright"`). When `npx playwright test` runs it connects to the same Chrome process and registers `localhost:5173` with Chrome's networking stack via the webServer handshake. A manually-started server never goes through that handshake, so Chrome's network service rejects connections to it regardless of bind address.
 
-**Important:** The background Playwright test will eventually time out (25-minute timeout for 100 games) and kill its vite preview server. If the server goes away mid-session, restart the test with the same command above.
+**Important:** The background Playwright test will eventually time out (60-minute timeout) and kill its vite preview server. If the server goes away mid-session, restart it with the same command above.
 
-### Running the 100-game metrics spec via MCP browser automation
+### Agent method: MCP browser with parallel tabs (preferred for tuning rounds)
 
-Rather than waiting for the `playwright test` command to complete, you can use the MCP browser to run games manually and collect aggregate stats. This gives you real-time results you can read game-by-game.
+This is the **fastest way for an agent to collect 200+ browser game metrics**. Instant-mode games finish in ~3–10 seconds each; running 10 tabs in parallel cuts total wall-clock time by ~10×.
 
-**One-time setup per session:**
+#### One-time setup per session
 
-1. Start the server (see above — `npx playwright test ... &` approach)
-2. Navigate MCP browser to `http://localhost:5173`
-3. Set localStorage for Instant mode:
+1. Build the app and start the Playwright webServer (see above).
+2. Navigate the MCP browser to `http://localhost:5173`.
+3. Set localStorage for Instant mode + no-manager:
    ```js
-   localStorage.setItem("speed", "0");
-   localStorage.setItem("announcementVolume", "0");
-   localStorage.setItem("alertVolume", "0");
-   localStorage.setItem("_e2eNoInningPause", "1");
-   localStorage.setItem("managerMode", "false");
+   localStorage.setItem("speed", "0");              // SPEED_INSTANT
+   localStorage.setItem("announcementVolume", "0"); // mute TTS
+   localStorage.setItem("alertVolume", "0");        // mute alerts
+   localStorage.setItem("_e2eNoInningPause", "1");  // skip half-inning pause
+   localStorage.setItem("managerMode", "false");    // fully unmanaged
    ```
-4. Navigate to `/teams` and import `e2e/fixtures/metrics-teams.json` via the **Import from File** button — the teams persist in RxDB across navigations in the same Chrome session so this only needs to be done once per fresh Chrome profile
+4. Navigate to `/teams` and import `e2e/fixtures/metrics-teams.json` via the **Import from File** button. Teams persist in RxDB for the entire Chrome session — this only needs to be done once.
+5. Clear any previous results: `localStorage.removeItem("metricsResults")`.
 
-**Running games and collecting stats:**
+#### Running a single game and collecting stats
 
-The teams persist in RxDB, so after setup you only need ~4 MCP tool calls per game:
+```js
+// ── 1. Navigate to the new game form ──────────────────────────────────────
+// (use playwright-browser_navigate to go to http://localhost:5173/exhibition/new)
+// (use playwright-browser_wait_for to wait for "Play Ball" to appear)
 
-```
-// 1. Navigate to new game form
-page.goto("http://localhost:5173/exhibition/new") + waitFor("Play Ball")
-
-// 2. Set teams + seed in one evaluate (no navigation, so context is preserved)
-page.evaluate(() => {
-  function setSelectByLabel(testId, label) {
+// ── 2. Set teams + seed via JS injection ──────────────────────────────────
+// (use playwright-browser_evaluate with the snippet below)
+(function(away, home, seed) {
+  function setSelect(testId, label) {
     const el = document.querySelector(`[data-testid="${testId}"]`);
     const opt = [...el.options].find(o => o.text.includes(label));
-    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set;
+    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
     ns.call(el, opt.value);
-    el.dispatchEvent(new Event('change', {bubbles:true}));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
   }
   function setSeed(val) {
     const el = document.querySelector('[data-testid="seed-input"]');
-    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set;
+    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
     ns.call(el, val);
     const fk = Object.keys(el).find(k => k.startsWith('__reactFiber'));
-    if (fk) el[fk]?.memoizedProps?.onChange?.({target: el});
-    else el.dispatchEvent(new Event('input', {bubbles:true}));
+    if (fk) el[fk]?.memoizedProps?.onChange?.({ target: el });
+    else el.dispatchEvent(new Event('input', { bubbles: true }));
   }
-  setSelectByLabel('new-game-custom-away-team-select', 'Charlotte Bears');
-  setSelectByLabel('new-game-custom-home-team-select', 'Denver Raiders');
-  setSeed('s1g1');
-})
+  setSelect('new-game-custom-away-team-select', away);
+  setSelect('new-game-custom-home-team-select', home);
+  setSeed(seed);
+})('Charlotte Bears', 'Denver Raiders', 's1g1');
 
-// 3. Click play (navigates to /game — context is destroyed here, that's expected)
-page.click('[data-testid="play-ball-button"]')
+// ── 3. Click Play Ball ────────────────────────────────────────────────────
+// (use playwright-browser_click on the play-ball-button testId)
 
-// 4. Wait for FINAL (Instant mode games complete in ~3–10 seconds)
-page.waitFor("FINAL")
+// ── 4. Wait for FINAL ─────────────────────────────────────────────────────
+// (use playwright-browser_wait_for with text="FINAL", timeout ~30s)
 
-// 5. Collect stats from both team tabs and store in localStorage
-page.evaluate(async () => {
+// ── 5. Collect stats and accumulate in localStorage ───────────────────────
+// (use playwright-browser_evaluate with the snippet below)
+(async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));
+  // Ensure "This game" tab is active
+  const thisGame = document.querySelector('[data-testid="stats-tab-this-game"]');
+  if (thisGame) { thisGame.click(); await sleep(150); }
   function readTable() {
-    let ab=0, h=0, bb=0, k=0;
+    let ab = 0, h = 0, bb = 0, k = 0;
     for (const row of document.querySelectorAll('table tbody tr')) {
       if (row.closest('[data-testid="scoreboard"]')) continue;
       const cells = [...row.querySelectorAll('td')];
       if (cells.length < 6) continue;
-      const n = i => { const t = cells[i]?.textContent?.trim(); return (t && t !== '–') ? parseInt(t,10)||0 : 0; };
-      ab+=n(2); h+=n(3); bb+=n(4); k+=n(5);
+      const n = i => { const t = cells[i]?.textContent?.trim(); return (t && t !== '–') ? parseInt(t, 10) || 0 : 0; };
+      ab += n(2); h += n(3); bb += n(4); k += n(5);
     }
-    return {ab, h, bb, k};
+    return { ab, h, bb, k };
   }
   const tabs = document.querySelectorAll('[role="tab"]');
   tabs[0].click(); await sleep(200);
   const away = readTable();
   tabs[1].click(); await sleep(200);
   const home = readTable();
-  // read scores from scoreboard R column
   const sb = document.querySelector('[data-testid="scoreboard"]');
-  const rIdx = [...(sb?.querySelectorAll('thead tr th,thead tr td')||[])].findIndex(c => c.textContent?.trim() === 'R');
-  const scores = [...(sb?.querySelectorAll('tbody tr')||[])]
-    .filter(r => r.querySelectorAll('td').length > 3).slice(0,2)
-    .map(row => { const cells=[...row.querySelectorAll('td')]; return rIdx>=0 ? parseInt(cells[rIdx]?.textContent?.trim()||'0')||0 : 0; });
-  const result = { ab: away.ab+home.ab, h: away.h+home.h, bb: away.bb+home.bb, k: away.k+home.k,
-                   awayScore: scores[0]??0, homeScore: scores[1]??0 };
-  const results = JSON.parse(localStorage.getItem('metricsResults')||'[]');
+  const hdrs = [...(sb?.querySelectorAll('thead tr th,thead tr td') || [])];
+  const rIdx = hdrs.findIndex(c => c.textContent?.trim() === 'R');
+  const scores = [...(sb?.querySelectorAll('tbody tr') || [])]
+    .filter(r => r.querySelectorAll('td').length > 3).slice(0, 2)
+    .map(row => {
+      const cells = [...row.querySelectorAll('td')];
+      return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || '0') || 0 : 0;
+    });
+  const result = {
+    ab: away.ab + home.ab, h: away.h + home.h,
+    bb: away.bb + home.bb, k: away.k + home.k,
+    awayScore: scores[0] ?? 0, homeScore: scores[1] ?? 0,
+  };
+  const results = JSON.parse(localStorage.getItem('metricsResults') || '[]');
   results.push(result);
   localStorage.setItem('metricsResults', JSON.stringify(results));
-  return { count: results.length, result };
-})
+  return { count: results.length, lastResult: result };
+})();
 ```
 
-**Efficiency tip — 10 parallel browser tabs:**
+#### Reading aggregate results
 
-Background tabs continue running games in Instant mode because `_e2eNoInningPause` is set and `SPEED_INSTANT` bypasses all `setTimeout`-based throttling. Open 10 tabs, start a game on each tab (covering the 10 matchup blocks for seed g1), then rotate through them collecting stats and immediately starting the next seed. By the time you finish setting up tab 9, tab 0 is already at FINAL.
-
-```
-Tab 0: Charlotte Bears @ Denver Raiders  → s1g1
-Tab 1: Denver Raiders @ Charlotte Bears  → s2g1
-Tab 2: San Antonio Giants @ Portland Foxes → s3g1
-...
-Tab 9: Nashville Comets @ Denver Raiders → s10g1
-```
-
-After collecting from all 10, restart g2 on each tab and repeat for seeds g1–g10.
-
-**Reading aggregate results after N games:**
+After any number of games, evaluate this snippet to see running totals:
 
 ```js
-const results = JSON.parse(localStorage.getItem('metricsResults') || '[]');
-const totalAB = results.reduce((s,r) => s+r.ab, 0);
-const totalBB = results.reduce((s,r) => s+r.bb, 0);
-const totalK  = results.reduce((s,r) => s+r.k,  0);
-const totalH  = results.reduce((s,r) => s+r.h,  0);
-const totalRuns = results.reduce((s,r) => s+r.awayScore+r.homeScore, 0);
-const PA = totalAB + totalBB;
-console.log(`Games: ${results.length}  BB%: ${(totalBB/PA*100).toFixed(1)}%  K%: ${(totalK/PA*100).toFixed(1)}%  H/PA: ${(totalH/PA).toFixed(3)}  R/game: ${(totalRuns/results.length).toFixed(1)}`);
+const r = JSON.parse(localStorage.getItem('metricsResults') || '[]');
+const PA = r.reduce((s,g) => s+g.ab+g.bb, 0);
+const BB = r.reduce((s,g) => s+g.bb, 0);
+const K  = r.reduce((s,g) => s+g.k,  0);
+const H  = r.reduce((s,g) => s+g.h,  0);
+const runs = r.reduce((s,g) => s+g.awayScore+g.homeScore, 0);
+`${r.length} games | BB%=${(BB/PA*100).toFixed(1)}% | K%=${(K/PA*100).toFixed(1)}% | H/PA=${(H/PA).toFixed(3)} | R/game=${(runs/r.length).toFixed(1)} | BB/game=${(BB/r.length).toFixed(1)}`;
 ```
 
-**Important caveat:** The MCP browser run and the CLI `playwright test` run use the same game logic but produce slightly different per-game outcomes. See the [Vitest in-process harness vs Playwright browser run](#vitest-in-process-harness-vs-playwright-browser-run) section in the QA baseline doc for details on why the numbers differ.
+#### Efficiency: running 10 matchup blocks in parallel
 
-### Vitest in-process harness vs Playwright browser run
+Because Instant mode (`SPEED_INSTANT=0`) bypasses all setTimeout-based throttling and `_e2eNoInningPause` skips half-inning pauses, background browser tabs **continue running their game to completion** even while you are interacting with another tab. This allows you to pipeline game runs across all 10 matchup blocks simultaneously:
 
-The project has two ways to measure simulation metrics at scale:
+1. Open 10 browser tabs (one per matchup block).
+2. On each tab, navigate to `/exhibition/new`, set the matchup + seed g1, and click Play Ball.
+3. While the games run in background, **immediately move to the next tab** to start its game.
+4. By the time you reach tab 9, tab 0 is already at FINAL (or close to it).
+5. Rotate back to tab 0: collect stats, then immediately start seed g2 on that tab.
+6. Continue rotating until all 20 seeds per block are done (200 games total).
 
-| | Vitest in-process harness | Playwright browser run |
-|---|---|---|
-| **File** | `src/test/calibration/customTeamMetrics.test.ts` | `e2e/tests/metrics-baseline.spec.ts` |
-| **Run command** | `yarn test --reporter=verbose src/test/calibration/customTeamMetrics.test.ts` | `npx playwright test --config=playwright-metrics.config.ts` |
-| **Speed** | ~10–30 seconds for 100 games | ~10–20 minutes for 100 games |
-| **Environment** | Node.js, no browser, no RxDB, no React | Full browser, RxDB, React, service worker |
-| **RNG sequence** | Pure game logic only — no extra `random()` calls | Extra `random()` calls from React renders, audio setup, TTS, and service worker activity between pitches |
-| **PA source** | Game state directly (exact) | DOM batting-stats table (read after tab switching) |
-| **Per-game scores** | Deterministic for a given seed | Different from in-process for the same seed (shifted PRNG sequence) |
-| **Use for** | Fast directional signal — is the change moving BB% the right way? | Required final validation before merging any sim-balance change |
-| **Authoritative?** | ❌ Directional only | ✅ Ground truth for metrics comparisons |
+Timing: ~3–10 seconds per game in Instant mode × 200 games ÷ 10 parallel tabs ≈ **6–20 minutes** for a full 200-game round.
 
-**Key rule:** Never claim a metrics improvement based solely on the in-process harness. The harness provides a fast feedback loop (seconds vs. minutes), but the browser run is the only valid apple-to-apple comparison against the PR-140 browser baseline. If the harness and browser results move in opposite directions, the browser result is correct.
+### Playwright spec runner: reference implementation for automated runs
 
-The harness BB% is typically **lower** than the browser BB% by ~1–2 pp because:
-- Fewer total `random()` calls per PA means the PRNG sequence hits slightly different outcomes
-- The browser's RxDB writes and React reconciliation add random() calls between pitches, slightly altering PA results
-- The harness does not simulate navigation/reload overhead that could affect RxDB state
+`e2e/tests/metrics-baseline.spec.ts` is the **canonical automated implementation** of the above MCP workflow. It is:
+- A faithful, self-contained reference showing exactly what a correct 200-game metrics run looks like
+- Useful for running metrics in CI or in a human terminal session without MCP
+- Configured via `playwright-metrics.config.ts` (60-minute timeout, desktop Chromium)
+- **Not the fastest option for agent sessions** — it runs games sequentially (one at a time), taking ~20–25 minutes for 200 games vs. ~6–20 minutes with parallel MCP tabs
+
+```bash
+# Build first, then run the spec
+yarn build
+npx playwright test --config=playwright-metrics.config.ts --project=desktop
+```
+
+The spec runs `GAMES_PER_BLOCK` games per matchup block. `GAMES_PER_BLOCK = 20` gives 200 games (the minimum per tuning-round policy). Change it to `30` for a 300-game final validation run.
+
+### Vitest in-process harness vs browser run
+
+The project has three ways to measure simulation metrics at scale:
+
+| | Stock-team harness | Custom-team harness | Browser run (MCP or spec) |
+|---|---|---|---|
+| **File** | `src/test/calibration/simHarness.test.ts` | `src/test/calibration/customTeamMetrics.test.ts` | MCP browser / `metrics-baseline.spec.ts` |
+| **Speed** | ~5 s | ~30 s | ~6–25 min |
+| **Teams** | All-balanced stock players | `metrics-teams.json` fixture | `metrics-teams.json` fixture |
+| **Environment** | Node.js only | Node.js only | Full Chrome + RxDB + React |
+| **RNG sequence** | Pure game logic | Pure game logic | Extra `random()` calls from React, RxDB, audio, TTS |
+| **Authoritative?** | ❌ Directional only | ❌ Directional only | ✅ Ground truth |
+| **Use for** | Fastest iteration signal | Better fixture match | Required final validation |
+
+**Key rule:** Never claim a tuning success based solely on the in-process harness. The harness provides a fast directional signal (seconds), but the browser run is the only valid apple-to-apple comparison against prior browser baselines. The harness BB% is typically **~1–2 pp lower** than browser BB% due to PRNG sequence differences.
+
+If the harness and browser results move in opposite directions, the browser result is correct.

@@ -1,11 +1,13 @@
 /**
  * Simulation metrics baseline capture.
  *
- * Runs 100 full games via the browser using Instant speed mode (SPEED_INSTANT=0)
+ * Runs 200 full games via the browser using Instant speed mode (SPEED_INSTANT=0)
  * and collects aggregate statistics for before/after tuning comparisons.
+ * 200 games is the minimum required for each meaningful tuning round per the
+ * run-scoring calibration policy; 300 games for final validation.
  *
  * Intended to run on desktop Chromium only.  Excluded from the normal CI suite
- * because it is intentionally slow (~5–10 min); invoke manually or via the
+ * because it is intentionally slow (~20–25 min); invoke manually or via the
  * `e2e-test-runner` agent when a before/after metrics capture is needed.
  *
  * How to run:
@@ -30,14 +32,18 @@ import { expect, test } from "@playwright/test";
 
 import { importTeamsFixture, resetAppState, waitForNewGameDialog } from "../utils/helpers";
 
-/** Number of games per matchup block (10 blocks × 10 = 100 total). */
-const GAMES_PER_BLOCK = 10;
+/**
+ * Number of games per matchup block.
+ * 10 blocks × 20 = 200 games (minimum per tuning round policy).
+ * Increase to 30 for 300-game final validation runs.
+ */
+const GAMES_PER_BLOCK = 20;
 
 /**
  * Matchup definitions — 10 combos across the 5 canonical metrics teams.
  * These teams are imported from `e2e/fixtures/metrics-teams.json`, which is
  * the committed fixture that guarantees identical rosters across all tuning
- * passes.  10 combos × 10 seeds each = 100 games total.
+ * passes.  10 combos × 20 seeds each = 200 games total.
  *
  * To regenerate the fixture teams: create 5 teams via Manage Teams → Generate
  * Random, export via "Export All Teams", save to `e2e/fixtures/metrics-teams.json`,
@@ -191,10 +197,10 @@ async function extractGameStats(page: import("@playwright/test").Page): Promise<
   };
 }
 
-test.describe("Metrics baseline — 100 games via Instant mode (desktop only)", () => {
-  test.setTimeout(25 * 60 * 1000); // 25 minutes for 100 games
+test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", () => {
+  test.setTimeout(60 * 60 * 1000); // 60 minutes for 200 games
 
-  test("collect aggregate metrics across 100 seeded Instant-mode games", async ({
+  test("collect aggregate metrics across 200 seeded Instant-mode games", async ({
     page,
   }, testInfo) => {
     // Desktop Chromium only — other projects would multiply CI time.

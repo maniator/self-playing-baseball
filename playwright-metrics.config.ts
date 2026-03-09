@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: false,
   retries: 0,
   workers: 1,
-  timeout: 900_000,
+  timeout: 3_600_000, // 60 minutes — supports 200-game runs (20 per block × 10 blocks)
   reporter: "list",
   use: {
     baseURL: "http://localhost:5173",
