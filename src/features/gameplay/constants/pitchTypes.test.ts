@@ -1,5 +1,5 @@
 /**
- * Tests for src/constants/pitchTypes.ts
+ * Tests for src/features/gameplay/constants/pitchTypes.ts
  */
 import { describe, expect, it } from "vitest";
 
