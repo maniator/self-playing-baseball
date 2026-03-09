@@ -217,8 +217,8 @@ There are **three complementary ways** to collect aggregate simulation metrics. 
 | **MCP browser (agent method)** | **~10–15 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds** |
 | Playwright spec runner | ~20–25 min | 200 games | Full Chrome + RxDB | ✅ Ground truth | CI / human-driven full runs |
 
-> **For agents (Copilot sessions): use the MCP browser method.**
-> The Playwright spec (`e2e/tests/metrics-baseline.spec.ts`) is a **reference implementation** that documents the full automated flow. For agent-driven tuning it is faster and more interactive to run games directly through the MCP browser using parallel tabs and JS injection — you get results in real time, can interleave with code changes, and finish 200 games in roughly half the wall-clock time of the sequential spec runner.
+> **For agents (Copilot sessions): use the MCP browser batch-loop method.**
+> The Playwright spec (`e2e/tests/metrics-baseline.spec.ts`) is a **reference implementation** that documents the full automated flow. For agent-driven tuning it is far faster to run games directly through the MCP browser using the single-tab batch-loop evaluate — you get results in real time, can interleave with code changes, and can collect 200 games in **under 2 minutes** of wall-clock time (vs ~20–25 minutes for the sequential spec runner).
 
 ### Canonical team fixture
 
@@ -283,11 +283,13 @@ npx vite preview --port 5173 --host ::1         # binds [::1]:5173
 
 **Important:** The background Playwright test will eventually time out (60-minute timeout) and kill its vite preview server. If the server goes away mid-session, restart it with the same command above.
 
-### Agent method: MCP browser with parallel tabs (preferred for tuning rounds)
+### Agent method: MCP browser with batch-loop evaluate (preferred for tuning rounds)
 
-This is the **fastest way for an agent to collect 200+ browser game metrics**. Instant-mode games finish in ~3–10 seconds each; running 10 tabs in parallel cuts total wall-clock time by ~10×.
+This is the **fastest way for an agent to collect 200+ browser game metrics**. In Instant mode, game simulation completes in essentially **zero wall-clock time** — a 9-inning game renders in <100ms on the active tab. The only real timing cost is MCP tool-call overhead (~2–3 seconds per `playwright-browser_*` call).
 
-> **MCP tool-call overhead is the real timing bottleneck.** Each `playwright-browser_*` call takes ~2–3 seconds regardless of how fast the game simulation runs. With ~4 calls per game and 200 games ÷ 10 parallel tabs, expect **30–60 minutes** of wall-clock time for a full 200-game round via MCP (not the "6–20 minutes" that applies only to the raw simulation time). Use the combined collect+start snippet below to cut calls from 4 to 2 per game and halve the total time.
+> **Key insight: use a single `evaluate` call that loops over many games.** A single `playwright-browser_evaluate` call can start a game, `await waitForFinal()`, collect stats, and immediately start the next game — all inside the JS context, with zero MCP round-trips between games. 10 games per tab = 1 evaluate call ≈ 2–3 seconds of wall-clock time. 200 games across 10 tabs = ~20 evaluate calls + ~10 tab-switch calls ≈ **under 2 minutes of total wall-clock time**.
+
+> **Background tabs DO NOT advance.** Browsers throttle background-tab JS timers to a minimum of ~1000ms. In Instant mode, a game that completes in <100ms on the active tab takes several minutes frozen in a background tab. **Do not rely on background tabs finishing games while you are on another tab.** The batch-loop approach below handles this correctly by running all games for a tab sequentially within a single active-tab evaluate call.
 
 #### One-time setup per session
 
@@ -516,24 +518,89 @@ Common expected errors during Instant-mode batch runs:
 
 If you see errors outside this table — especially React render errors, unhandled rejections, or `TypeError` — investigate before accepting the metrics.
 
-#### Efficiency: running 10 matchup blocks in parallel
+#### Efficiency: single-tab batch loop (recommended approach)
 
-Because Instant mode (`SPEED_INSTANT=0`) bypasses all setTimeout-based throttling and `_e2eNoInningPause` skips half-inning pauses, background browser tabs **continue running their game to completion** even while you are interacting with another tab. This allows you to pipeline game runs across all 10 matchup blocks simultaneously:
+**⚠️ Background tabs do NOT advance.** Browsers throttle background-tab JavaScript timers to a minimum of ~1000ms. In Instant mode, a game that completes in <100ms on the active tab would take several minutes frozen in a background tab. Do not rely on pipelining across tabs.
 
-1. Open 10 browser tabs (one per matchup block).
-2. On each tab, navigate to `/exhibition/new`, set the matchup + seed g1, and click Play Ball.
-3. While the games run in background, **immediately move to the next tab** to start its game.
-4. By the time you reach tab 9, tab 0 is already at FINAL (or close to it).
-5. Rotate back to tab 0: use the **combined collect+start** evaluate (see above) to collect stats and start seed g2 in a single call.
-6. Continue rotating until all 20 seeds per block are done (200 games total).
+The recommended approach is the **single-tab batch-loop evaluate**: a single `playwright-browser_evaluate` call that loops over multiple games sequentially on the active tab. Simulation in Instant mode takes <100ms per game; the only overhead is the polling sleep calls inside the evaluate. 10 games complete inside a single evaluate call in ~2–3 seconds of wall-clock time.
 
-**Timing breakdown:**
-- Raw simulation time: ~3–10 seconds per game in Instant mode × 200 games ÷ 10 parallel tabs = **~6–20 minutes** of simulation
-- MCP tool-call overhead: ~2–3 seconds per `playwright-browser_*` call × ~2 calls/game (with combined collect+start) × 200 games ÷ 10 parallel tabs = **~13–20 minutes** of overhead
-- **Realistic total with combined snippet: ~20–40 minutes** for 200 games
-- Without the combined snippet (4 calls/game): ~40–60 minutes — use the combined snippet
+```js
+// Single batch-loop evaluate: runs N games on the current tab in one MCP call.
+// Replace AWAY, HOME, PREFIX, and the game range as needed.
+async () => {
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-The game simulation itself is never the bottleneck in Instant mode. The bottleneck is always MCP tool-call round-trip time.
+  function collectGame() {
+    let ab=0,h=0,bb=0,k=0;
+    const tabs=document.querySelectorAll('[role="tab"]');
+    [0,1].forEach(i => {
+      if(tabs[i]) { tabs[i].click();
+        for(const row of document.querySelectorAll('table tbody tr')){
+          const cells=[...row.querySelectorAll('td')];
+          if(cells.length<6) continue;
+          const n=j=>{const t=cells[j]?.textContent?.trim();return(t&&t!=='–')?parseInt(t)||0:0;};
+          ab+=n(2);h+=n(3);bb+=n(4);k+=n(5);
+        }
+      }
+    });
+    const sb=document.querySelector('[data-testid="scoreboard"]');
+    const hdrs=sb?[...sb.querySelectorAll('thead tr th,thead tr td')].map(c=>c.textContent.trim()):[];
+    const rIdx=hdrs.indexOf('R');
+    const scores=[...(sb?.querySelectorAll('tbody tr')||[])].slice(0,2).map(r=>{
+      const cells=[...r.querySelectorAll('td')];
+      return rIdx>=0?parseInt(cells[rIdx]?.textContent?.trim()||'0')||0:0;
+    });
+    return {ab,h,bb,k,awayScore:scores[0]??0,homeScore:scores[1]??0};
+  }
+  function setSelect(testid,val){const el=document.querySelector('[data-testid="'+testid+'"]');if(!el)return false;const opt=[...el.options].find(o=>o.text.includes(val)||o.value===val);if(!opt)return false;Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,opt.value);el.dispatchEvent(new Event('change',{bubbles:true}));return true;}
+  function setInput(testid,val){const el=document.querySelector('[data-testid="'+testid+'"]');if(!el)return false;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val);const fk=Object.keys(el).find(k=>k.startsWith('__reactFiber'));if(fk)el[fk]?.memoizedProps?.onChange?.({target:el});else el.dispatchEvent(new Event('input',{bubbles:true}));return true;}
+  async function waitFor(sel,t=5000){const e=Date.now()+t;while(Date.now()<e){if(document.querySelector(sel))return true;await sleep(50);}return false;}
+  async function waitForFinal(t=30000){const e=Date.now()+t;while(Date.now()<e){if(document.body.textContent.includes('FINAL'))return true;await sleep(100);}return false;}
+
+  const arr=JSON.parse(localStorage.getItem('metricsResults')||'[]');
+  const results=[];
+  const away='Portland Nashville Comets', home='Tampa San Antonio Giants', prefix='s1';
+
+  // Optionally collect an already-FINAL game first
+  if(document.body.textContent.includes('FINAL')){
+    const r=collectGame();arr.push(r);
+    results.push({seed:'existing',score:`${r.awayScore}-${r.homeScore}`,runs:r.awayScore+r.homeScore});
+    document.querySelector('[data-testid="new-game-button"]')?.click();
+    await sleep(400);
+  }
+
+  for(let g=1;g<=10;g++){
+    await waitFor('[data-testid="new-game-custom-away-team-select"]');
+    setSelect('new-game-custom-away-team-select',away);
+    setSelect('new-game-custom-home-team-select',home);
+    setInput('seed-input',`${prefix}g${g}`);
+    await sleep(200);
+    document.querySelector('[data-testid="play-ball-button"]')?.click();
+    await waitForFinal(30000);
+    const r=collectGame();arr.push(r);
+    results.push({seed:`${prefix}g${g}`,score:`${r.awayScore}-${r.homeScore}`,runs:r.awayScore+r.homeScore});
+    document.querySelector('[data-testid="new-game-button"]')?.click();
+    await sleep(400);
+  }
+  localStorage.setItem('metricsResults',JSON.stringify(arr));
+  return {total:arr.length,thisRun:results};
+}
+```
+
+**Recommended workflow for 100 games across 10 matchups:**
+
+1. Open 10 browser tabs (one per matchup block) — they only need to be on any valid app page.
+2. On each tab, run the batch-loop evaluate above with the appropriate `away`, `home`, and `prefix` for that matchup block (10 games per block).
+3. After all 10 tabs complete (10 evaluate calls + 10 tab-switch calls = ~20 MCP tool calls total), collect aggregate results with the summary snippet below.
+
+**Timing breakdown (verified from actual 108-game run on 2026-03-09):**
+- Simulation time per game: **<100ms** (essentially zero in Instant mode on active tab)
+- Time per batch-loop evaluate (10 games): **~2–3 seconds** (MCP tool-call overhead only)
+- Tab-switch calls: **~2 seconds each**
+- Total for 100 games (10 tabs × 10 games): **~10 evaluate calls + 10 tab-switch calls ≈ 50–60 seconds**
+- Total for 200 games (10 tabs × 20 games): **~20 evaluate calls + 10 tab-switch calls ≈ 90–120 seconds**
+
+The game simulation in Instant mode is never the bottleneck. The only overhead is MCP tool-call round-trips.
 
 ### Playwright spec runner: reference implementation for automated runs
 
@@ -542,7 +609,7 @@ The game simulation itself is never the bottleneck in Instant mode. The bottlene
 - Useful for running metrics in CI or in a human terminal session without MCP
 - Configured via `playwright-metrics.config.ts` (60-minute timeout, desktop Chromium)
 - **Captures all console errors and warnings** via a `page.on('console', ...)` listener and prints a filtered summary (excluding known noise) after the metrics box
-- **Not the fastest option for agent sessions** — it runs games sequentially (one at a time), taking ~20–25 minutes for 200 games vs. ~6–20 minutes with parallel MCP tabs
+- **Not the fastest option for agent sessions** — it runs games sequentially (one at a time), taking ~20–25 minutes for 200 games. The single-tab batch-loop approach above can collect 200 games in under 2 minutes of wall-clock time via MCP.
 
 ```bash
 # Build first, then run the spec

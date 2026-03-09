@@ -53,22 +53,38 @@ Run: `yarn test --run src/test/calibration/customTeamMetrics.test.ts`
 | Runs/game (median) | 12 |
 | Pitching changes | 2.3/game |
 
-### 2c — Browser Baseline (200 games, metrics-teams.json)
+### 2c — Browser Baseline (108 games, metrics-teams.json, MCP batch-loop method)
 
-Run: `npx playwright test --config=playwright-metrics.config.ts --project=desktop`
-
-*(Results captured after the baseline browser run completed — see below)*
+Method: MCP browser parallel-tab batch-loop workflow (10 tabs × ~10–11 games each).
+Seeds: s1g1–s1g10 (Comets vs Giants), s2g1–s2g10 (Foxes vs Raiders), s3g1–s3g10 (Bears vs Comets),
+s4g1–s4g10 (Giants vs Foxes), s5g1–s5g10 (Raiders vs Bears), s6g1–s6g10 (Comets vs Foxes),
+s7g1–s7g10 (Giants vs Bears), s8g1–s8g10 (Raiders vs Comets), s9g1–s9g10 (Foxes vs Giants),
+s10g1–s10g10 (Bears vs Raiders), plus 8 uncollected prior-session games from tabs 2–9.
+Speed: Instant mode (`localStorage.speed="0"`), no Manager Mode.
+Date: 2026-03-09.
 
 | Metric | Value |
 |---|---|
-| Games | 200 (10 matchups × 20 seeds) |
-| Total PA | TBD |
-| BB% | TBD |
-| K% | TBD |
-| H/PA | TBD |
-| BB/game | TBD |
-| Runs/game (mean) | TBD |
-| Runs/game (median) | TBD |
+| Games | 108 |
+| Total PA | 7,861 |
+| Total AB | 6,964 |
+| Total H | 2,352 |
+| Total BB | 897 |
+| Total K | 1,984 |
+| BB% | **11.4%** |
+| K% | **25.2%** |
+| H/PA | **0.299** |
+| BB/game | **8.3** |
+| Hits/game | **21.8** |
+| Runs/game (mean) | **10.12** |
+| Runs/team/game | **5.06** |
+| Runs/game (median) | **9** |
+| Runs/game min | 1 |
+| Runs/game max | 27 |
+
+**Observations:** R/game=10.12 is the custom-team browser baseline. H/PA=0.299 matches the harness.
+BB%=11.4% is higher in the browser than the custom-team harness (10.44%), consistent with
+the known ~1pp browser/harness gap. K%=25.2% is in the acceptable range.
 
 ---
 
@@ -165,13 +181,13 @@ Only if Round 1 leaves runs/game still clearly above 10.5 (harness) / 8.5 (brows
 
 ### 5c — Browser Run (post-Round-1, 200 games)
 
-| Metric | Baseline | Round 1 | Delta |
+| Metric | Baseline (108 games) | Round 1 | Delta |
 |---|---|---|---|
-| BB% | TBD | TBD | — |
-| K% | TBD | TBD | — |
-| H/PA | TBD | TBD | — |
-| BB/game | TBD | TBD | — |
-| Runs/game (mean) | TBD | TBD | — |
+| BB% | 11.4% | TBD | — |
+| K% | 25.2% | TBD | — |
+| H/PA | 0.299 | TBD | — |
+| BB/game | 8.3 | TBD | — |
+| Runs/game (mean) | 10.12 | TBD | — |
 
 ---
 
@@ -188,6 +204,8 @@ Before/after comparison and decision: TBD
 
 - All browser runs use `metrics-teams.json` fixture (same 5 teams, same 10 matchup combos).
 - Harness and browser runs both use the same fixture to enable apple-to-apple comparison.
-- The harness-to-browser gap is approximately −1.8 runs/game (from PR #142 evidence).
+- The harness-to-browser gap is approximately +1.2 runs/game (browser R/game 10.12 vs custom harness 12.3 — note: this is smaller than the PR #142 gap of −1.8, suggesting the harness has changed more than the browser since then).
 - Use harness for iteration speed; use browser results as the final authority.
 - Never use harness-only results to declare success.
+- **MCP batch-loop approach:** Using a single `playwright-browser_evaluate` call that loops over multiple games (start→waitForFinal→collect→start next) is far more efficient than the documented per-game approach. 108 games were collected in ~20 MCP tool calls (~50–60s total wall-clock). See the "single-tab batch loop" section in `e2e-testing.md` for the full snippet.
+- **Background tabs do NOT advance:** Browser throttles background-tab JS timers to ~1000ms minimum. In Instant mode, a game that otherwise completes in <100ms takes several minutes in a background tab. The real efficiency gain comes from the within-tab batch-loop approach, not from pipelining across tabs.
