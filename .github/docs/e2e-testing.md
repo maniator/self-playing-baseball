@@ -355,7 +355,7 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
 // ── 3. Wait for FINAL ─────────────────────────────────────────────────────
 // (use playwright-browser_wait_for with text="FINAL", timeout ~30s)
 
-// ── 5. Collect stats and accumulate in localStorage ───────────────────────
+// ── 4. Collect stats and accumulate in localStorage ───────────────────────
 // (use playwright-browser_evaluate with the snippet below)
 (async () => {
   const sleep = ms => new Promise(r => setTimeout(r, ms));

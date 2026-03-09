@@ -377,16 +377,17 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
       console.log("╔══════════════════════════════════════════════════════╗");
       console.log("║  CONSOLE ERRORS / WARNINGS (filtered)                ║");
       console.log("╠══════════════════════════════════════════════════════╣");
+      const COL = 52; // inner content width (after 2-space prefix, before trailing ║)
       for (const msg of filteredErrors.slice(0, 20)) {
-        const truncated = msg.length > 54 ? msg.slice(0, 51) + "..." : msg;
-        console.log(`║  ${truncated.padEnd(52)}║`);
+        const truncated = msg.length > COL ? msg.slice(0, COL - 3) + "..." : msg;
+        console.log(`║  ${truncated.padEnd(COL)}║`);
       }
       if (filteredErrors.length > 20) {
         console.log(`║  ... and ${filteredErrors.length - 20} more errors${"".padEnd(28)}║`);
       }
       for (const msg of filteredWarnings.slice(0, 10)) {
-        const truncated = msg.length > 54 ? msg.slice(0, 51) + "..." : msg;
-        console.log(`║  ${truncated.padEnd(52)}║`);
+        const truncated = msg.length > COL ? msg.slice(0, COL - 3) + "..." : msg;
+        console.log(`║  ${truncated.padEnd(COL)}║`);
       }
       if (filteredWarnings.length > 10) {
         console.log(`║  ... and ${filteredWarnings.length - 10} more warnings${"".padEnd(26)}║`);
