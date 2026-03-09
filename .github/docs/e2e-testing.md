@@ -300,7 +300,17 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
    localStorage.setItem("managerMode", "false");    // fully unmanaged
    ```
 4. Navigate to `/teams` and import `e2e/fixtures/metrics-teams.json` via the **Import from File** button. Teams persist in RxDB for the entire Chrome session — this only needs to be done once.
-5. Clear any previous results: `localStorage.removeItem("metricsResults")`.
+5. Clear any previous results and console error log:
+   ```js
+   localStorage.removeItem("metricsResults");
+   localStorage.removeItem("metricsConsoleErrors");
+   // Install a persistent console-error capture shim on the current page.
+   // Re-run this after each navigation (it survives within a page context only).
+   const _orig = { error: console.error, warn: console.warn };
+   console.error = (...a) => { _orig.error(...a); const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[E] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
+   console.warn  = (...a) => { _orig.warn(...a);  const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[W] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
+   ```
+   > **Note:** The shim captures errors from the current page context only. When you navigate between pages the shim is reset — reinstall it after each page load, or use `playwright-browser_console_messages` at the end to see all accumulated messages for the session.
 
 #### Running a single game and collecting stats
 
@@ -396,6 +406,33 @@ const runs = r.reduce((s,g) => s+g.awayScore+g.homeScore, 0);
 `${r.length} games | BB%=${(BB/PA*100).toFixed(1)}% | K%=${(K/PA*100).toFixed(1)}% | H/PA=${(H/PA).toFixed(3)} | R/game=${(runs/r.length).toFixed(1)} | BB/game=${(BB/r.length).toFixed(1)}`;
 ```
 
+#### Reading console errors and warnings
+
+After a batch of games, use the **`playwright-browser_console_messages`** tool to retrieve all console messages accumulated since the browser session started. This is the most reliable way to see errors across page navigations.
+
+For a quick summary filtered to actionable errors only (excludes known noise like the RxDB premium banner and blocked GTM):
+
+```js
+// Evaluate this on any page after the batch to see filtered errors
+const KNOWN_NOISE = ['ERR_BLOCKED_BY_CLIENT', 'RxDB Open Core RxStorage', 'AudioContext'];
+const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors') || '[]');
+const filtered = msgs.filter(m => !KNOWN_NOISE.some(n => m.includes(n)));
+filtered.length
+  ? filtered.slice(0, 20).join('\n')
+  : 'No unexpected errors';
+```
+
+Common expected errors during Instant-mode batch runs:
+
+| Error | Cause | Impact |
+|---|---|---|
+| `useRxdbGameSync: failed to update progress (game over)` | Rapid navigation races RxDB write chain | None — cosmetic only |
+| `useRxdbGameSync: failed to update progress (half-inning)` | Same as above | None — cosmetic only |
+| `ERR_BLOCKED_BY_CLIENT` (GTM) | Ad-blocker in browser | None |
+| RxDB premium upsell banner | Expected on every RxDB init | None |
+
+If you see errors outside this table — especially React render errors, unhandled rejections, or `TypeError` — investigate before accepting the metrics.
+
 #### Efficiency: running 10 matchup blocks in parallel
 
 Because Instant mode (`SPEED_INSTANT=0`) bypasses all setTimeout-based throttling and `_e2eNoInningPause` skips half-inning pauses, background browser tabs **continue running their game to completion** even while you are interacting with another tab. This allows you to pipeline game runs across all 10 matchup blocks simultaneously:
@@ -415,6 +452,7 @@ Timing: ~3–10 seconds per game in Instant mode × 200 games ÷ 10 parallel tab
 - A faithful, self-contained reference showing exactly what a correct 200-game metrics run looks like
 - Useful for running metrics in CI or in a human terminal session without MCP
 - Configured via `playwright-metrics.config.ts` (60-minute timeout, desktop Chromium)
+- **Captures all console errors and warnings** via a `page.on('console', ...)` listener and prints a filtered summary (excluding known noise) after the metrics box
 - **Not the fastest option for agent sessions** — it runs games sequentially (one at a time), taking ~20–25 minutes for 200 games vs. ~6–20 minutes with parallel MCP tabs
 
 ```bash

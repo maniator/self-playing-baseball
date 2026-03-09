@@ -220,8 +220,19 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
     await resetAppState(page);
     await importTeamsFixture(page, "metrics-teams.json");
 
+    // ── Console error/warning capture ──────────────────────────────────────
+    // Record all browser console errors and warnings so they appear in the
+    // run summary alongside the metrics.  Common sources: RxDB sync failures
+    // during Instant-mode navigation races ("failed to update progress").
+    const consoleErrors: string[] = [];
+    const consoleWarnings: string[] = [];
+    page.on("console", (msg) => {
+      if (msg.type() === "error") consoleErrors.push(`[E] ${msg.text()}`);
+      else if (msg.type() === "warning") consoleWarnings.push(`[W] ${msg.text()}`);
+    });
+
     // ── Build game list ─────────────────────────────────────────────────────
-    // 10 matchup combos × 10 seeds each = 100 games.
+    // 10 matchup combos × GAMES_PER_BLOCK seeds each = 200 games total.
     const games: Array<{ away: string; home: string; seed: string }> = [];
     for (const block of MATCHUP_BLOCKS) {
       for (let g = 1; g <= GAMES_PER_BLOCK; g++) {
@@ -349,6 +360,37 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
     console.log(`║  Total H:           ${String(totalH).padEnd(33)}║`);
     console.log("╚══════════════════════════════════════════════════════╝");
     console.log("\n");
+
+    // ── Console errors/warnings summary ─────────────────────────────────────
+    const knownNoise = [
+      "ERR_BLOCKED_BY_CLIENT", // GTM blocked by adblock — always present, harmless
+      "RxDB Open Core RxStorage", // RxDB premium upsell banner — expected noise
+    ];
+    const filteredErrors = consoleErrors.filter((m) => !knownNoise.some((n) => m.includes(n)));
+    const filteredWarnings = consoleWarnings.filter((m) => !knownNoise.some((n) => m.includes(n)));
+    if (filteredErrors.length > 0 || filteredWarnings.length > 0) {
+      console.log("╔══════════════════════════════════════════════════════╗");
+      console.log("║  CONSOLE ERRORS / WARNINGS (filtered)                ║");
+      console.log("╠══════════════════════════════════════════════════════╣");
+      for (const msg of filteredErrors.slice(0, 20)) {
+        const truncated = msg.length > 54 ? msg.slice(0, 51) + "..." : msg;
+        console.log(`║  ${truncated.padEnd(52)}║`);
+      }
+      if (filteredErrors.length > 20) {
+        console.log(`║  ... and ${filteredErrors.length - 20} more errors${"".padEnd(28)}║`);
+      }
+      for (const msg of filteredWarnings.slice(0, 10)) {
+        const truncated = msg.length > 54 ? msg.slice(0, 51) + "..." : msg;
+        console.log(`║  ${truncated.padEnd(52)}║`);
+      }
+      if (filteredWarnings.length > 10) {
+        console.log(`║  ... and ${filteredWarnings.length - 10} more warnings${"".padEnd(26)}║`);
+      }
+      console.log("╚══════════════════════════════════════════════════════╝");
+      console.log("\n");
+    } else {
+      console.log("ℹ️  No unexpected console errors or warnings.\n");
+    }
 
     // Wide sanity bounds — passes in both pre- and post-tuning states.
     // Tighten after post-tuning baseline is captured.
