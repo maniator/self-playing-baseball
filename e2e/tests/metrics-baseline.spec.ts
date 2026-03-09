@@ -383,14 +383,16 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
         console.log(`║  ${truncated.padEnd(COL)}║`);
       }
       if (filteredErrors.length > 20) {
-        console.log(`║  ... and ${filteredErrors.length - 20} more errors${"".padEnd(28)}║`);
+        const errorsSummary = `... and ${filteredErrors.length - 20} more errors`;
+        console.log(`║  ${errorsSummary.padEnd(COL)}║`);
       }
       for (const msg of filteredWarnings.slice(0, 10)) {
         const truncated = msg.length > COL ? msg.slice(0, COL - 3) + "..." : msg;
         console.log(`║  ${truncated.padEnd(COL)}║`);
       }
       if (filteredWarnings.length > 10) {
-        console.log(`║  ... and ${filteredWarnings.length - 10} more warnings${"".padEnd(26)}║`);
+        const warningsSummary = `... and ${filteredWarnings.length - 10} more warnings`;
+        console.log(`║  ${warningsSummary.padEnd(COL)}║`);
       }
       console.log("╚══════════════════════════════════════════════════════╝");
       console.log("\n");
