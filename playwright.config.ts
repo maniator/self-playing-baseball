@@ -1,6 +1,7 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const isCI = !!process.env.CI;
+const takeScreenshots = !!process.env.PLAYWRIGHT_SCREENSHOTS;
 
 export default defineConfig({
   testDir: "./e2e/tests",
@@ -30,11 +31,11 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
 
-    // ── Screenshots (on-demand, non-CI only) ──────────────────────────────
+    // ── Screenshots (on-demand only) ──────────────────────────────────────
     // Run manually to regenerate docs/screenshots/:
-    //   npx playwright test e2e/tests/take-screenshots.spec.ts --project=screenshots
-    // Excluded from CI via the conditional spread below.
-    ...(!isCI
+    //   PLAYWRIGHT_SCREENSHOTS=1 npx playwright test --project=screenshots
+    // Excluded from normal local runs and CI unless the env var is set.
+    ...(takeScreenshots
       ? [
           {
             name: "screenshots",

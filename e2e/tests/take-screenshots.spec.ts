@@ -1,7 +1,7 @@
 /**
  * Screenshot capture script for documentation purposes.
  * Captures desktop (1280x800) and mobile (390x844) viewports for key app pages.
- * Run with: npx playwright test e2e/tests/take-screenshots.spec.ts --project=screenshots
+ * Run with: PLAYWRIGHT_SCREENSHOTS=1 npx playwright test e2e/tests/take-screenshots.spec.ts --project=screenshots
  *
  * Output is written to docs/screenshots/.
  */
