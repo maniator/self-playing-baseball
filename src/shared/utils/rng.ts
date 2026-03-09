@@ -12,15 +12,6 @@ const mulberry32 = (a: number) => (): number => {
   return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
 };
 
-const parseSeed = (seedString: string): number | null => {
-  const trimmed = seedString.trim();
-  if (!trimmed) return null;
-  const radix = /[a-z]/i.test(trimmed) ? 36 : 10;
-  const parsed = parseInt(trimmed, radix);
-  if (!Number.isFinite(parsed)) return null;
-  return parsed >>> 0;
-};
-
 const generateSeed = (): number => {
   if (typeof crypto !== "undefined" && typeof crypto.getRandomValues === "function") {
     const buf = new Uint32Array(1);
@@ -114,19 +105,22 @@ export const restoreRng = (state: number): void => {
 };
 
 /**
- * Sets the stored seed from a save's seed string (base-36 or decimal) without
+ * Sets the stored seed from a save's seed string (base-36) without
  * touching the PRNG state.  Always call `restoreRng(snap.rngState)` immediately
  * after so that `getSeed()` / `currentSeedStr()` / `findMatchedSave` all reflect
  * the restored game's identity rather than the random startup seed.
  */
 export const restoreSeed = (seedStr: string): void => {
-  const parsed = parseSeed(seedStr);
-  if (parsed !== null) seed = parsed;
+  const trimmed = seedStr.trim();
+  if (!trimmed) return;
+  const n = parseInt(trimmed, 36);
+  if (!Number.isFinite(n)) return;
+  seed = n >>> 0;
 };
 
 /**
- * Re-initializes the PRNG from a caller-supplied seed string (base-36 or
- * decimal).  Unlike `initSeed`, this can be called at any time —
+ * Re-initializes the PRNG from a caller-supplied seed string (base-36).
+ * Unlike `initSeed`, this can be called at any time —
  * e.g. when the user submits the New Game form (the seed field is
  * pre-populated via `generateFreshSeed()` but may be edited by the user).
  *
@@ -135,8 +129,9 @@ export const restoreSeed = (seedStr: string): void => {
  * Returns the numeric seed that was actually applied.
  */
 export const reinitSeed = (seedStr: string): number => {
-  const parsed = parseSeed(seedStr);
-  const nextSeed = parsed ?? generateSeed();
+  const trimmed = seedStr.trim();
+  const n = trimmed ? parseInt(trimmed, 36) : NaN;
+  const nextSeed = Number.isFinite(n) ? n >>> 0 : generateSeed();
   seed = nextSeed;
   rng = mulberry32(seed);
   rngInternalA = seed;

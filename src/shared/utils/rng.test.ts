@@ -248,11 +248,12 @@ describe("rng.ts — restoreSeed", () => {
     expect(rng.getRngState()).toBe(rngStateBefore);
   });
 
-  it("restoreSeed with a decimal string sets the seed correctly", async () => {
+  it("restoreSeed with a digit-only string parses as base-36", async () => {
     const rng = await import("./rng");
     rng.reinitSeed("initial");
     rng.restoreSeed("12345");
-    expect(rng.getSeed()).toBe(12345);
+    // digit-only strings are always parsed as base-36 (same as all save seeds)
+    expect(rng.getSeed()).toBe(parseInt("12345", 36) >>> 0);
   });
 
   it("restoreSeed with an empty string is a no-op (seed unchanged)", async () => {
