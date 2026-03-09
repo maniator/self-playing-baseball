@@ -1,7 +1,7 @@
 /**
  * Screenshot capture script for documentation purposes.
  * Captures desktop (1280x800) and mobile (390x844) viewports for key app pages.
- * Run with: npx playwright test e2e/tests/take-screenshots.spec.ts --project=desktop
+ * Run with: npx playwright test e2e/tests/take-screenshots.spec.ts --project=screenshots
  *
  * Output is written to docs/screenshots/.
  */
@@ -41,13 +41,13 @@ const VIEWPORTS = {
 
 type ViewportName = keyof typeof VIEWPORTS;
 
-// We only need the "desktop" project to run (we control viewports ourselves).
+// We only need the "screenshots" project to run (we control viewports ourselves).
 // Use test.describe.configure to run tests serially so screenshots don't race.
 test.describe.configure({ mode: "serial" });
 
 test.describe("Documentation Screenshots", () => {
-  let contexts: Map<ViewportName, BrowserContext>;
-  let pages: Map<ViewportName, Page>;
+  let contexts: Map<ViewportName, BrowserContext> = new Map();
+  let pages: Map<ViewportName, Page> = new Map();
 
   test.beforeEach(async ({ browser }, testInfo) => {
     const baseURL = testInfo.project.use.baseURL ?? "http://localhost:5173";

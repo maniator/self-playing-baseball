@@ -30,6 +30,20 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
 
+    // ── Screenshots (on-demand, non-CI only) ──────────────────────────────
+    // Run manually to regenerate docs/screenshots/:
+    //   npx playwright test e2e/tests/take-screenshots.spec.ts --project=screenshots
+    // Excluded from CI via the conditional spread below.
+    ...(!isCI
+      ? [
+          {
+            name: "screenshots",
+            testMatch: "**/take-screenshots.spec.ts",
+            use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+          },
+        ]
+      : []),
+
     // ── All other tests ────────────────────────────────────────────────────
     {
       name: "desktop",
