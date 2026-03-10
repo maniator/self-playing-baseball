@@ -11,7 +11,9 @@ export const AppVolumeBar = styled.div`
   justify-content: center;
   gap: ${({ theme }) => theme.spacing.lg};
   flex-wrap: wrap;
-  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg} calc(${({ theme }) => theme.spacing.s10} + env(safe-area-inset-bottom)) ${({ theme }) => theme.spacing.lg};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg}
+    calc(${({ theme }) => theme.spacing.s10} + env(safe-area-inset-bottom))
+    ${({ theme }) => theme.spacing.lg};
   background: ${({ theme }) => theme.colors.overlayLight};
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);

@@ -75,11 +75,11 @@ export const TeamSelect = styled.select`
 /** Page header title. */
 export const PageTitle = styled.h1`
   color: ${({ theme }) => theme.colors.accentPrimary};
-  font-size: 1.4rem;
+  font-size: ${({ theme }) => theme.fontSizes.h2};
   margin: 0 0 ${({ theme }) => theme.spacing.xl};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;
 

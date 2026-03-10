@@ -14,24 +14,24 @@ export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayou
 
 export const PageTitle = styled.h1`
   color: ${({ theme }) => theme.colors.textPrimary};
-  font-size: 1.6rem;
+  font-size: ${({ theme }) => theme.fontSizes.h1};
   margin: 0 0 ${({ theme }) => theme.spacing.xl};
 
   ${mq.mobile} {
-    font-size: 1.3rem;
+    font-size: ${({ theme }) => theme.fontSizes.xxl};
   }
 `;
 
 export const EmptyState = styled.p`
   color: ${({ theme }) => theme.colors.textHint};
-  font-size: 0.95rem;
+  font-size: ${({ theme }) => theme.fontSizes.body};
   text-align: center;
-  margin: 40px 0;
+  margin: ${({ theme }) => theme.spacing.s40} 0;
 `;
 
 export const LoadingState = styled.p`
   color: ${({ theme }) => theme.colors.textHint};
-  font-size: 0.95rem;
+  font-size: ${({ theme }) => theme.fontSizes.body};
   margin: ${({ theme }) => theme.spacing.xxl} 0;
 `;
 
@@ -46,9 +46,9 @@ export const ImportSection = styled.div`
 
 export const ImportSectionTitle = styled.h2`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  font-size: 0.85rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.tight};
   text-transform: uppercase;
   margin: 0 0 ${({ theme }) => theme.spacing.sm};
 `;

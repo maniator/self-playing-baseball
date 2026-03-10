@@ -6,8 +6,9 @@ export const Dialog = styled.dialog`
   background: ${({ theme }) => theme.colors.bgSurface};
   color: ${({ theme }) => theme.colors.textDialog};
   border: 2px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 14px;
-  padding: ${({ theme }) => theme.spacing.xxl} 28px ${({ theme }) => theme.spacing.xl};
+  border-radius: ${({ theme }) => theme.radii.dialog};
+  padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.s28}
+    ${({ theme }) => theme.spacing.xl};
   max-width: min(520px, 94vw);
   width: 100%;
   font-family: inherit;
@@ -19,7 +20,7 @@ export const Dialog = styled.dialog`
 `;
 
 export const DialogTitle = styled.h2`
-  margin: 0 0 14px;
+  margin: 0 0 ${({ theme }) => theme.spacing.s14};
   font-size: ${({ theme }) => theme.fontSizes.xl};
   color: ${({ theme }) => theme.colors.accentPrimary};
 `;
@@ -33,11 +34,11 @@ export const SlotList = styled.ul`
 export const SlotItem = styled.li`
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px ${({ theme }) => theme.spacing.sm};
+  gap: ${({ theme }) => theme.spacing.s6};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm};
   border-radius: ${({ theme }) => theme.radii.lg};
   background: ${({ theme }) => theme.colors.bgNavSection};
-  margin-bottom: 6px;
+  margin-bottom: ${({ theme }) => theme.spacing.s6};
 `;
 
 export const SlotName = styled.span`
@@ -60,7 +61,7 @@ export const SmallButton = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textLink};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: 3px ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.sm};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
@@ -81,10 +82,10 @@ export const DangerButton = styled(SmallButton)`
 `;
 
 export const SectionHeading = styled.h3`
-  margin: ${({ theme }) => theme.spacing.md} 0 6px;
+  margin: ${({ theme }) => theme.spacing.md} 0 ${({ theme }) => theme.spacing.s6};
   font-size: ${({ theme }) => theme.fontSizes.label};
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wider};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
 `;
 
@@ -109,10 +110,10 @@ export const ErrorMsg = styled.p`
 
 export const Row = styled.div`
   display: flex;
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.s6};
   align-items: center;
   flex-wrap: wrap;
-  margin-top: 6px;
+  margin-top: ${({ theme }) => theme.spacing.s6};
 `;
 
 export const CloseButton = styled.button`
@@ -121,8 +122,8 @@ export const CloseButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
-  border-radius: 20px;
-  padding: 7px 22px;
+  border-radius: ${({ theme }) => theme.radii.pill};
+  padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s22};
   font-family: inherit;
   font-size: ${({ theme }) => theme.fontSizes.md};
   font-weight: 600;

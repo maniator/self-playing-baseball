@@ -122,7 +122,8 @@ export const TeamActions = styled.div`
 
 export const ActionBtn = styled.button<{ $danger?: boolean }>`
   background: transparent;
-  color: ${({ $danger, theme }) => ($danger ? theme.colors.dangerText : theme.colors.textSecondaryLink)};
+  color: ${({ $danger, theme }) =>
+    $danger ? theme.colors.dangerText : theme.colors.textSecondaryLink};
   border: 1px solid
     ${({ $danger, theme }) => ($danger ? theme.colors.borderDanger : theme.colors.borderForm)};
   border-radius: ${({ theme }) => theme.radii.md};
@@ -133,8 +134,10 @@ export const ActionBtn = styled.button<{ $danger?: boolean }>`
   min-height: 32px;
 
   &:hover {
-    background: ${({ $danger, theme }) => ($danger ? theme.colors.dangerHoverBg : theme.colors.bgSurface)};
-    border-color: ${({ $danger, theme }) => ($danger ? theme.colors.dangerHoverBorder : theme.colors.textSecondaryLink)};
+    background: ${({ $danger, theme }) =>
+      $danger ? theme.colors.dangerHoverBg : theme.colors.bgSurface};
+    border-color: ${({ $danger, theme }) =>
+      $danger ? theme.colors.dangerHoverBorder : theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {

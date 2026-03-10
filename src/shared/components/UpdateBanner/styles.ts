@@ -10,7 +10,7 @@ export const Banner = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   color: ${({ theme }) => theme.colors.textBody};
   border-top: 2px solid ${({ theme }) => theme.colors.borderForm};
-  padding: 10px ${({ theme }) => theme.spacing.lg};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -42,12 +42,12 @@ export const ReloadButton = styled.button`
   border: none;
   color: ${({ theme }) => theme.colors.bgVoid};
   cursor: pointer;
-  padding: 5px ${({ theme }) => theme.spacing.s14};
+  padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.s14};
   border-radius: ${({ theme }) => theme.radii.sm};
   font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
   font-weight: bold;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
     background: ${({ theme }) => theme.colors.buttonNewBgHover};
@@ -59,11 +59,11 @@ export const DismissButton = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textBody};
   cursor: pointer;
-  padding: ${({ theme }) => theme.spacing.xs} 10px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
   border-radius: ${({ theme }) => theme.radii.sm};
-  font-size: 0.875rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.textSecondaryLink};

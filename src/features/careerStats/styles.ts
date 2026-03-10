@@ -19,11 +19,11 @@ export const TabBtn = styled.button<{ $active: boolean }>`
     ${({ $active, theme }) => ($active ? theme.colors.borderGreen : theme.colors.borderSubtle)};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
-  font-size: 0.9rem;
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
   font-family: inherit;
   font-weight: ${({ $active }) => ($active ? "600" : "400")};
   cursor: pointer;
-  min-height: 36px;
+  min-height: ${({ theme }) => theme.sizes.btnMd};
 
   &:hover {
     background: ${({ $active, theme }) =>
@@ -99,7 +99,7 @@ export const SectionLabel = styled.h2`
   color: ${({ theme }) => theme.colors.textSubdued};
   font-size: ${({ theme }) => theme.fontSizes.sm};
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.widest};
   margin: 0 0 ${({ theme }) => theme.spacing.sm};
   font-weight: 600;
 `;
@@ -123,6 +123,6 @@ export const PlayerLink = styled.button`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: ${({ theme }) => theme.radii.xxs};
   }
 `;

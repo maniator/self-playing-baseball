@@ -4,7 +4,8 @@ export const Panel = styled.div`
   background: ${({ theme }) => theme.colors.bgDecisionOverlay};
   border: 2px solid ${({ theme }) => theme.colors.accentPrimary};
   border-radius: ${({ theme }) => theme.radii.xl};
-  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.s18} ${({ theme }) => theme.spacing.s10};
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.s18}
+    ${({ theme }) => theme.spacing.s10};
   margin-top: ${({ theme }) => theme.spacing.s10};
   display: flex;
   flex-wrap: wrap;

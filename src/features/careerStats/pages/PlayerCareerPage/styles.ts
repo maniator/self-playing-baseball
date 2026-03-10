@@ -39,11 +39,11 @@ export const PlayerCareerContainer = styled.div`
 /** Player name heading. */
 export const PlayerName = styled.h1`
   color: ${({ theme }) => theme.colors.textPrimary};
-  font-size: 1.4rem;
-  margin: 0 0 4px;
+  font-size: ${({ theme }) => theme.fontSizes.h2};
+  margin: 0 0 ${({ theme }) => theme.spacing.xs};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;
 
@@ -66,7 +66,7 @@ export const NavBtn = styled.button`
   background: ${({ theme }) => theme.colors.bgSurfaceAlt};
   border: 1px solid ${({ theme }) => theme.colors.borderLog};
   color: ${({ theme }) => theme.colors.textLight};
-  padding: 6px 14px;
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.s14};
   border-radius: ${({ theme }) => theme.radii.sm};
   cursor: pointer;
   font-size: ${({ theme }) => theme.fontSizes.base};

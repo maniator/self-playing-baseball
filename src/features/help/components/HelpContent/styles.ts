@@ -4,7 +4,7 @@ import styled from "styled-components";
 export const SectionDetails = styled.details`
   border: 1px solid ${({ theme }) => theme.colors.borderFormAlpha35};
   border-radius: ${({ theme }) => theme.radii.lg};
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
   overflow: hidden;
 
   &[open] > summary {
@@ -17,11 +17,11 @@ export const SectionSummary = styled.summary`
   align-items: center;
   justify-content: space-between;
   gap: ${({ theme }) => theme.spacing.sm};
-  padding: 10px 14px;
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14};
   font-size: ${({ theme }) => theme.fontSizes.base};
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wider};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   cursor: pointer;
   user-select: none;
@@ -49,12 +49,13 @@ export const SectionSummary = styled.summary`
 `;
 
 export const SectionBody = styled.div`
-  padding: 10px 14px ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14}
+    ${({ theme }) => theme.spacing.md};
 `;
 
 export const List = styled.ul`
   margin: 0;
-  padding-left: 18px;
+  padding-left: ${({ theme }) => theme.spacing.s18};
   color: ${({ theme }) => theme.colors.textBody};
 `;
 

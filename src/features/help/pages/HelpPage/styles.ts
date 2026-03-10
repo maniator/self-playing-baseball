@@ -5,10 +5,10 @@ export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayou
 
 export const PageTitle = styled.h1`
   color: ${({ theme }) => theme.colors.accentPrimary};
-  font-size: 1.4rem;
-  margin: 0 0 16px;
+  font-size: ${({ theme }) => theme.fontSizes.h2};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;

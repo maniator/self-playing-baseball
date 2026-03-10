@@ -7,7 +7,7 @@ export const Dialog = styled.dialog`
   background: ${({ theme }) => theme.colors.bgSurface};
   color: ${({ theme }) => theme.colors.textDialog};
   border: 2px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 14px;
+  border-radius: ${({ theme }) => theme.radii.dialog};
   padding: 0;
   max-width: min(680px, 96vw);
   width: 100%;
@@ -59,8 +59,8 @@ export const CloseXButton = styled.button`
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  width: 28px;
-  height: 28px;
+  width: ${({ theme }) => theme.spacing.s28};
+  height: ${({ theme }) => theme.spacing.s28};
   font-size: ${({ theme }) => theme.fontSizes.display};
   font-family: inherit;
   cursor: pointer;
@@ -90,7 +90,7 @@ export const CloseButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
-  border-radius: 20px;
+  border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
   font-size: ${({ theme }) => theme.fontSizes.md};

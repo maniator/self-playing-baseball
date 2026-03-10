@@ -17,7 +17,7 @@ export const EditorContainer = styled.div`
 
 export const EditorTitle = styled.h2`
   color: ${({ theme }) => theme.colors.accentPrimary};
-  font-size: 1.3rem;
+  font-size: ${({ theme }) => theme.fontSizes.xxl};
   margin: 0 0 ${({ theme }) => theme.spacing.xl};
 `;
 
@@ -27,18 +27,18 @@ export const FormSection = styled.section`
 
 export const SectionHeading = styled.h3`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  font-size: 0.8rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  margin: 0 0 10px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wider};
+  margin: 0 0 ${({ theme }) => theme.spacing.s10};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
-  padding-bottom: 6px;
+  padding-bottom: ${({ theme }) => theme.spacing.s6};
 `;
 
 export const FieldRow = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing.md};
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
   flex-wrap: wrap;
 
   ${mq.mobile} {
@@ -57,7 +57,7 @@ export const FieldGroup = styled.div<{ $flex?: number }>`
 export const FieldLabel = styled.label`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wide};
   color: ${({ theme }) => theme.colors.textHint};
 `;
 
@@ -66,7 +66,7 @@ export const TextInput = styled.input`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 7px 10px;
+  padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s10};
   font-family: inherit;
   font-size: ${({ theme }) => theme.fontSizes.md};
   width: 100%;
@@ -98,7 +98,7 @@ export const StatRow = styled.div`
 export const StatLabel = styled.label`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textHint};
-  width: 56px;
+  width: ${({ theme }) => theme.spacing.s40};
   flex-shrink: 0;
 `;
 
@@ -111,7 +111,7 @@ export const StatInput = styled.input`
 export const StatValue = styled.span`
   font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textLink};
-  width: 28px;
+  width: ${({ theme }) => theme.spacing.s28};
   text-align: right;
   flex-shrink: 0;
 `;
@@ -120,7 +120,7 @@ export const PlayerCard = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderCard};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: 10px ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
   margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
@@ -140,7 +140,7 @@ export const SmallIconBtn = styled.button`
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 28px;
+  min-height: ${({ theme }) => theme.spacing.s28};
   flex-shrink: 0;
 
   &:hover {
@@ -207,11 +207,11 @@ export const SelectInput = styled.select`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 6px ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm};
   font-family: inherit;
   font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:focus {
     outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
@@ -228,8 +228,8 @@ export const SelectInput = styled.select`
 export const TeamInfoGrid = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
-  margin-bottom: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const TeamInfoSecondRow = styled.div`
@@ -247,7 +247,7 @@ export const TeamInfoSecondRow = styled.div`
 export const PlayerMeta = styled.div`
   display: flex;
   gap: ${({ theme }) => theme.spacing.sm};
-  margin-bottom: 6px;
+  margin-bottom: ${({ theme }) => theme.spacing.s6};
   flex-wrap: wrap;
 `;
 
@@ -269,13 +269,13 @@ export const SaveBtn = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
-  border-radius: 20px;
-  padding: 10px 28px;
+  border-radius: ${({ theme }) => theme.radii.pill};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s28};
   font-size: ${({ theme }) => theme.fontSizes.lg};
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
-  min-height: 44px;
+  min-height: ${({ theme }) => theme.sizes.btnLg};
 
   &:hover {
     background: ${({ theme }) => theme.colors.accentGreenBright};

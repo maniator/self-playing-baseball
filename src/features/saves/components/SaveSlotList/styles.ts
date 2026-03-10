@@ -7,14 +7,14 @@ export const SaveList = styled.ul`
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const SaveCard = styled.li`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 10px;
-  padding: 14px ${({ theme }) => theme.spacing.lg};
+  border-radius: ${({ theme }) => theme.radii.card};
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -33,7 +33,7 @@ export const SaveInfo = styled.div`
 
 export const SaveName = styled.div`
   color: ${({ theme }) => theme.colors.textPrimary};
-  font-size: 1rem;
+  font-size: ${({ theme }) => theme.fontSizes.bodyLg};
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -73,11 +73,11 @@ export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "d
           ? theme.colors.borderDanger
           : theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 6px ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.md};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
     background: ${({ $variant, theme }) =>

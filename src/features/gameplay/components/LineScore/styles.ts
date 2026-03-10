@@ -103,7 +103,8 @@ export const BsoRow = styled.div`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.s14};
-  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xs};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm}
+    ${({ theme }) => theme.spacing.xs};
   background: ${({ theme }) => theme.colors.bgGame};
   font-family: ${({ theme }) => theme.fonts.score};
   font-size: ${({ theme }) => theme.fontSizes.sm};
