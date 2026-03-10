@@ -104,8 +104,9 @@ export const useGameHistorySync = (
     const state = gameStateRef.current;
     const currentCustomTeams = customTeamsRef.current;
 
-    // gameInstanceId is always present in modern game state. Fall back to saveId
-    // only for pre-gameInstanceId saves (legacy). If BOTH are absent, bail out.
+    // gameInstanceId is always present in modern game state (set in createFreshGameState
+    // via generateGameInstanceId). Legacy saves (pre-gameInstanceId schema) will not have
+    // it in the stateSnapshot, so fall back to saveId for those. If both are absent bail out.
     const gameId = state.gameInstanceId ?? saveId;
     if (!gameId) return;
 

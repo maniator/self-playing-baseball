@@ -56,6 +56,10 @@ const GamePage: React.FunctionComponent = () => {
 
   const blocker = useBlocker(isCommitting);
 
+  // When a navigation attempt occurs while isCommitting is true, the blocker
+  // captures it and enters "blocked" state. The blocker predicate alone won't
+  // auto-proceed — we must call blocker.proceed() once the commit finishes so
+  // the deferred navigation can continue.
   React.useEffect(() => {
     if (blocker.state === "blocked" && !isCommitting) {
       blocker.proceed?.();
