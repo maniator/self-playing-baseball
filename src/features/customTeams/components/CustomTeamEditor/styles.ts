@@ -8,21 +8,21 @@ export const EditorContainer = styled.div`
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
-  padding: 24px;
+  padding: ${({ theme }) => theme.spacing.xxl};
 
   ${mq.mobile} {
-    padding: 16px;
+    padding: ${({ theme }) => theme.spacing.lg};
   }
 `;
 
 export const EditorTitle = styled.h2`
   color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: 1.3rem;
-  margin: 0 0 20px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 `;
 
 export const FormSection = styled.section`
-  margin-bottom: 20px;
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
 export const SectionHeading = styled.h3`
@@ -37,25 +37,25 @@ export const SectionHeading = styled.h3`
 
 export const FieldRow = styled.div`
   display: flex;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
   margin-bottom: 10px;
   flex-wrap: wrap;
 
   ${mq.mobile} {
-    gap: 8px;
+    gap: ${({ theme }) => theme.spacing.sm};
   }
 `;
 
 export const FieldGroup = styled.div<{ $flex?: number }>`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: ${({ theme }) => theme.spacing.xs};
   flex: ${({ $flex }) => $flex ?? 1};
   min-width: 120px;
 `;
 
 export const FieldLabel = styled.label`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   text-transform: uppercase;
   letter-spacing: 0.6px;
   color: ${({ theme }) => theme.colors.textHint};
@@ -65,10 +65,10 @@ export const TextInput = styled.input`
   background: ${({ theme }) => theme.colors.bgInput};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 7px 10px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   width: 100%;
 
   &:focus {
@@ -84,19 +84,19 @@ export const TextInput = styled.input`
 export const StatsGrid = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: 4px;
+  gap: ${({ theme }) => theme.spacing.xs};
+  margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const StatRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   width: 100%;
 `;
 
 export const StatLabel = styled.label`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textHint};
   width: 56px;
   flex-shrink: 0;
@@ -109,7 +109,7 @@ export const StatInput = styled.input`
 `;
 
 export const StatValue = styled.span`
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textLink};
   width: 28px;
   text-align: right;
@@ -120,24 +120,24 @@ export const PlayerCard = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderCard};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: 10px 12px;
-  margin-bottom: 8px;
+  padding: 10px ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const PlayerHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const SmallIconBtn = styled.button`
   background: transparent;
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  border-radius: 4px;
-  padding: 4px 8px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   min-height: 28px;
@@ -173,13 +173,13 @@ export const AddPlayerBtn = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.accentGreen};
   border: 1px dashed ${({ theme }) => theme.colors.borderGreen};
-  border-radius: 6px;
-  padding: 8px 16px;
-  font-size: 13px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
   width: 100%;
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.spacing.xs};
 
   &:hover {
     background: ${({ theme }) => theme.colors.bgSurface};
@@ -195,21 +195,21 @@ export const AddPlayerBtn = styled.button`
 export const ErrorMsg = styled.p`
   color: ${({ theme }) => theme.colors.warnText};
   font-size: ${({ theme }) => theme.fontSizes.base};
-  margin: 0 0 12px;
+  margin: 0 0 ${({ theme }) => theme.spacing.md};
   background: ${({ theme }) => theme.colors.errorBg};
   border: 1px solid ${({ theme }) => theme.colors.borderDanger};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 8px 12px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
 `;
 
 export const SelectInput = styled.select`
   background: ${({ theme }) => theme.colors.bgInput};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 6px;
-  padding: 6px 8px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 6px ${({ theme }) => theme.spacing.sm};
   font-family: inherit;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
   min-height: 32px;
 
@@ -235,18 +235,18 @@ export const TeamInfoGrid = styled.div`
 export const TeamInfoSecondRow = styled.div`
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
 
   ${mq.desktop} {
     grid-template-columns: 150px 1fr;
-    gap: 12px;
+    gap: ${({ theme }) => theme.spacing.md};
   }
 `;
 
 /** Row for position + handedness selects, below the name input. */
 export const PlayerMeta = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   margin-bottom: 6px;
   flex-wrap: wrap;
 `;
@@ -254,14 +254,14 @@ export const PlayerMeta = styled.div`
 export const MetaGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: ${({ theme }) => theme.spacing.xxs};
   min-width: 0;
 `;
 
 export const ButtonRow = styled.div`
   display: flex;
-  gap: 12px;
-  margin-top: 24px;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-top: ${({ theme }) => theme.spacing.xxl};
   flex-wrap: wrap;
 `;
 
@@ -314,9 +314,9 @@ export const GenerateBtn = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 7px 14px;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
   min-height: 36px;
@@ -337,22 +337,22 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
   align-items: center;
   gap: 6px;
   margin-top: 6px;
-  font-size: 12px;
-  color: ${({ $overCap, theme }) => ($overCap ? "#ff8888" : theme.colors.textHint)};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ $overCap, theme }) => ($overCap ? theme.colors.warnText : theme.colors.textHint)};
 `;
 
 export const ReadOnlyInput = styled(TextInput)`
   opacity: 0.7;
   cursor: default;
-  background: rgba(255, 255, 255, 0.04);
-  color: #8899bb;
+  background: ${({ theme }) => theme.colors.bgSubtle};
+  color: ${({ theme }) => theme.colors.textReadOnly};
   border-color: ${({ theme }) => theme.colors.borderPanel};
 `;
 
 export const IdentityLockHint = styled.p`
-  font-size: 11px;
-  color: #5577aa;
-  margin: 2px 0 8px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textBlueMid};
+  margin: ${({ theme }) => theme.spacing.xxs} 0 ${({ theme }) => theme.spacing.sm};
   font-style: italic;
 `;
 
@@ -370,18 +370,18 @@ export const ImportPlayerBtn = styled(AddPlayerBtn)`
 
 /** Warning banner shown when an imported player matches an existing one. */
 export const PlayerDuplicateBanner = styled.div`
-  background: #1a1a00;
-  border: 1px solid #886600;
-  border-radius: 6px;
-  padding: 10px 12px;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #ffdd88;
+  background: ${({ theme }) => theme.colors.bgWarnDeep};
+  border: 1px solid ${({ theme }) => theme.colors.borderWarn};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 10px ${({ theme }) => theme.spacing.md};
+  margin-top: ${({ theme }) => theme.spacing.xs};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textWarnGold};
 `;
 
 export const PlayerDuplicateActions = styled.div`
   display: flex;
-  gap: 8px;
-  margin-top: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-top: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
 `;
