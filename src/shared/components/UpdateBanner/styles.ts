@@ -7,9 +7,9 @@ export const Banner = styled.div`
   left: 0;
   right: 0;
   z-index: 9998;
-  background: #0d1b2e;
-  color: #cce0ff;
-  border-top: 2px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textBody};
+  border-top: 2px solid ${({ theme }) => theme.colors.borderForm};
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -38,7 +38,7 @@ export const Actions = styled.div`
 `;
 
 export const ReloadButton = styled.button`
-  background: #22c55e;
+  background: ${({ theme }) => theme.colors.buttonNewBg};
   border: none;
   color: #000;
   cursor: pointer;
@@ -50,14 +50,14 @@ export const ReloadButton = styled.button`
   min-height: 32px;
 
   &:hover {
-    background: #16a34a;
+    background: ${({ theme }) => theme.colors.buttonNewBgHover};
   }
 `;
 
 export const DismissButton = styled.button`
   background: none;
-  border: 1px solid #4a6090;
-  color: #cce0ff;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textBody};
   cursor: pointer;
   padding: 4px 10px;
   border-radius: 4px;
@@ -66,7 +66,7 @@ export const DismissButton = styled.button`
   min-height: 32px;
 
   &:hover {
-    border-color: #88bbee;
-    color: #fff;
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;

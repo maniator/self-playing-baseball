@@ -23,7 +23,7 @@ const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
     border: none;
   `,
   new: css`
-    background: #22c55e;
+    background: ${({ theme }) => theme.colors.buttonNewBg};
     color: ${({ theme }) => theme.colors.textPrimary};
     border: none;
     font-weight: bold;
@@ -38,12 +38,12 @@ const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   `,
   home: css`
     background: transparent;
-    color: #aaa;
-    border: 1px solid #444;
+    color: ${({ theme }) => theme.colors.textMuted};
+    border: 1px solid ${({ theme }) => theme.colors.borderMid};
     &:hover {
-      background: #111;
-      border-color: #666;
-      color: #ddd;
+      background: ${({ theme }) => theme.colors.bgDropdown};
+      border-color: ${({ theme }) => theme.colors.textDimmer};
+      color: ${({ theme }) => theme.colors.textDropdown};
     }
   `,
 };
@@ -71,7 +71,7 @@ export const AutoPlayGroup = styled.div`
   flex-wrap: wrap;
   gap: 8px;
   align-items: center;
-  background: rgba(47, 63, 105, 0.5);
+  background: ${({ theme }) => theme.colors.navGroupBg};
   border-radius: 10px;
   padding: 8px 12px;
 
@@ -112,13 +112,13 @@ export const BatterUpButton = styled(Button)`
 `;
 
 export const HelpButton = styled.button`
-  background: rgba(47, 63, 105, 0.7);
+  background: ${({ theme }) => theme.colors.helpButtonBg};
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 50%;
   width: 25px;
   height: 25px;
-  font-size: 15px;
+  font-size: ${({ theme }) => theme.fontSizes.lg};
   font-family: inherit;
   cursor: pointer;
   line-height: 1;
@@ -126,7 +126,7 @@ export const HelpButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(74, 96, 144, 0.9);
+    background: ${({ theme }) => theme.colors.helpButtonBgHover};
     color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;

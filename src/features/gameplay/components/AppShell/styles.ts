@@ -12,7 +12,7 @@ export const AppVolumeBar = styled.div`
   gap: 16px;
   flex-wrap: wrap;
   padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
-  background: rgba(0, 0, 0, 0.6);
+  background: ${({ theme }) => theme.colors.overlayLight};
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 `;

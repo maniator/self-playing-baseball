@@ -38,7 +38,7 @@ export const FieldWrapper = styled.div`
 export const OutfieldDiv = styled.div`
   height: 300px;
   width: 300px;
-  background: #aac32b;
+  background: ${({ theme }) => theme.colors.fieldGrass};
   border-radius: 100% 0 0 0;
   position: absolute;
   /* Center the field horizontally so it doesn't hug one edge in wide containers */
@@ -73,7 +73,7 @@ export const OutfieldDiv = styled.div`
 `;
 
 export const DiamondDiv = styled.div`
-  background: #886c36;
+  background: ${({ theme }) => theme.colors.fieldDirt};
   height: 150px;
   width: 150px;
   position: absolute;
@@ -96,7 +96,7 @@ export const DiamondDiv = styled.div`
 export const Mound = styled.div`
   height: 100px;
   width: 100px;
-  background: #aac32b;
+  background: ${({ theme }) => theme.colors.fieldGrass};
   position: absolute;
   left: calc(50% - 50px);
   top: calc(50% - 50px);
@@ -108,7 +108,7 @@ export const Mound = styled.div`
     height: 50px;
     width: 50px;
     border-radius: 100%;
-    background: #886c36;
+    background: ${({ theme }) => theme.colors.fieldDirt};
     left: calc(50% - 25px);
     top: calc(50% - 25px);
   }

@@ -109,12 +109,12 @@ export const DbResetNotice = styled.div`
 export const LogPanel = styled.div`
   min-width: 0;
   overflow-y: auto;
-  border-top: 1px solid #2a2a2a;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderGameSection};
   padding-top: 8px;
 
   ${mq.desktop} {
     border-top: none;
-    border-left: 1px solid #2a2a2a;
+    border-left: 1px solid ${({ theme }) => theme.colors.borderGameSection};
     padding-left: 16px;
     padding-top: 0;
   }

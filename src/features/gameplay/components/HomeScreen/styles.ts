@@ -12,7 +12,7 @@ export const HomeContainer = styled.div`
 `;
 
 export const HomeLogo = styled.div`
-  font-size: 3rem;
+  font-size: ${({ theme }) => theme.fontSizes.logo};
 
   ${mq.mobile} {
     font-size: 2.5rem;
@@ -20,8 +20,8 @@ export const HomeLogo = styled.div`
 `;
 
 export const HomeTitle = styled.h1`
-  color: white;
-  font-size: 2.2rem;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.title};
   margin: 0;
   text-align: center;
 
@@ -31,7 +31,7 @@ export const HomeTitle = styled.h1`
 `;
 
 export const HomeSubtitle = styled.p`
-  color: #888;
+  color: ${({ theme }) => theme.colors.textSubdued};
   font-size: 0.95rem;
   margin: 0;
   text-align: center;
@@ -91,7 +91,7 @@ export const SecondaryBtn = styled.button`
   }
 
   &:active {
-    background: #071020;
+    background: ${({ theme }) => theme.colors.bgGameDeep};
   }
 
   &:focus-visible {
@@ -112,14 +112,14 @@ export const LeagueTeaserBox = styled.div`
 `;
 
 export const LeagueTeaserTitle = styled.p`
-  color: #f0c040;
+  color: ${({ theme }) => theme.colors.textGold};
   font-size: 0.88rem;
   font-weight: 600;
   margin: 0 0 4px;
 `;
 
 export const LeagueTeaserSub = styled.p`
-  color: #aaa;
+  color: ${({ theme }) => theme.colors.textMuted};
   font-size: 0.78rem;
   margin: 0;
   line-height: 1.4;
