@@ -16,7 +16,7 @@ export const HomeLogo = styled.div`
   font-size: ${({ theme }) => theme.fontSizes.logo};
 
   ${mq.mobile} {
-    font-size: 2.5rem;
+    font-size: ${({ theme }) => theme.fontSizes.displayMd};
   }
 `;
 
@@ -27,13 +27,13 @@ export const HomeTitle = styled.h1`
   text-align: center;
 
   ${mq.mobile} {
-    font-size: 1.8rem;
+    font-size: ${({ theme }) => theme.fontSizes.displaySm};
   }
 `;
 
 export const HomeSubtitle = styled.p`
   color: ${({ theme }) => theme.colors.textSubdued};
-  font-size: 0.95rem;
+  font-size: ${({ theme }) => theme.fontSizes.body};
   margin: 0;
   text-align: center;
 `;
@@ -41,7 +41,7 @@ export const HomeSubtitle = styled.p`
 export const MenuGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
 `;
