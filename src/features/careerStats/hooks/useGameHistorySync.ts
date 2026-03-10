@@ -248,15 +248,19 @@ export const useGameHistorySync = (
 
   // Reset the committed flag when a new save is loaded (rxSaveIdRef changes).
   // This ensures a new game session can be committed even within the same
-  // browser tab.
+  // browser tab.  Guard against the SPEED_INSTANT race: if a commit started via
+  // gameInstanceId is still in-flight when saveId transitions null → "save_*",
+  // don't clear inFlightRef or isCommitting — the commit must finish first.
   const prevSaveIdRef = React.useRef<string | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run-every-render ref-tracking effect; setIsCommitting is a stable setter
   React.useEffect(() => {
     const current = rxSaveIdRef.current;
     if (current !== prevSaveIdRef.current) {
       prevSaveIdRef.current = current;
       committedRef.current = false;
-      inFlightRef.current = false;
-      setIsCommitting(false);
+      if (!inFlightRef.current) {
+        setIsCommitting(false);
+      }
     }
   });
 

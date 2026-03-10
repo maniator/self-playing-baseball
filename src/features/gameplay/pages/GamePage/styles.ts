@@ -1,3 +1,4 @@
+import { FixedBottomBanner } from "@shared/components/FixedBottomBanner/styles";
 import styled from "styled-components";
 
 /**
@@ -6,18 +7,7 @@ import styled from "styled-components";
  * attempt and the commit completing, then disappears as the navigation
  * auto-proceeds.
  */
-export const SavingBanner = styled.div`
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 9997;
-  background: #0d1b2e;
-  color: #cce0ff;
-  border-top: 2px solid #4a6090;
-  padding: 10px 16px;
-  /* Add safe-area-inset-bottom so the banner clears the home indicator on iPhone. */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+export const SavingBanner = styled(FixedBottomBanner)`
+  z-index: 9999;
   text-align: center;
-  font-size: 0.875rem;
 `;
