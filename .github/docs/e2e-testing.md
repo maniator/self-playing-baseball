@@ -287,7 +287,7 @@ npx vite preview --port 5173 --host ::1         # binds [::1]:5173
 
 This is the **fastest way for an agent to collect 200+ browser game metrics**. In Instant mode, game simulation completes in essentially **zero wall-clock time** — a 9-inning game renders in <100ms on the active tab. The only real timing cost is MCP tool-call overhead (~2–3 seconds per `playwright-browser_*` call).
 
-> **Key insight: use a single `evaluate` call that loops over many games.** A single `playwright-browser_evaluate` call can start a game, `await waitForFinal()`, collect stats, and immediately start the next game — all inside the JS context, with zero MCP round-trips between games. 10 games per tab = 1 evaluate call ≈ 2–3 seconds of wall-clock time. 200 games across 10 tabs = ~20 evaluate calls + ~10 tab-switch calls ≈ **under 2 minutes of total wall-clock time**.
+> **Key insight: use a single `evaluate` call that loops over many games.** A single `playwright-browser_evaluate` call can start a game, `await waitForFinal()`, collect stats, and immediately start the next game — all inside the JS context, with zero MCP round-trips between games. 10 games per tab = 1 evaluate call ≈ 2–3 seconds of wall-clock time. For a 200-game run, change the loop to `g<=20` (20 games per tab, one evaluate call per tab across 10 tabs) = ~10 evaluate calls + ~10 tab-switch calls ≈ **under 2 minutes of total wall-clock time**.
 
 > **Background tabs DO NOT advance.** Browsers throttle background-tab JS timers to a minimum of ~1000ms. In Instant mode, a game that completes in <100ms on the active tab takes several minutes frozen in a background tab. **Do not rely on background tabs finishing games while you are on another tab.** The batch-loop approach below handles this correctly by running all games for a tab sequentially within a single active-tab evaluate call.
 
@@ -610,8 +610,8 @@ const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s
 - Simulation time per game: **<100ms** (essentially zero in Instant mode on active tab)
 - Time per batch-loop evaluate (10 games): **~2–3 seconds** (MCP tool-call overhead only)
 - Tab-switch calls: **~2 seconds each**
-- Total for 100 games (10 tabs × 10 games): **~10 evaluate calls + 10 tab-switch calls ≈ 50–60 seconds**
-- Total for 200 games (10 tabs × 20 games): **~20 evaluate calls + 10 tab-switch calls ≈ 90–120 seconds**
+- Total for 100 games (10 tabs × 10 games, loop `g<=10`): **~10 evaluate calls + 10 tab-switch calls ≈ 50–60 seconds**
+- Total for 200 games (10 tabs × 20 games, loop `g<=20`): **~10 evaluate calls + 10 tab-switch calls ≈ 90–120 seconds**
 
 The game simulation in Instant mode is never the bottleneck. The only overhead is MCP tool-call round-trips.
 
