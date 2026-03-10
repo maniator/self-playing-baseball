@@ -14,13 +14,13 @@ export const Dialog = styled.dialog`
   font-size: 14px;
 
   &::backdrop {
-    background: rgba(0, 0, 0, 0.65);
+    background: ${({ theme }) => theme.colors.overlayMedDark};
   }
 `;
 
 export const DialogTitle = styled.h2`
   margin: 0 0 14px;
-  font-size: 17px;
+  font-size: ${({ theme }) => theme.fontSizes.xl};
   color: ${({ theme }) => theme.colors.accentPrimary};
 `;
 
@@ -35,14 +35,14 @@ export const SlotItem = styled.li`
   align-items: center;
   gap: 6px;
   padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(47, 63, 105, 0.35);
+  border-radius: ${({ theme }) => theme.radii.lg};
+  background: ${({ theme }) => theme.colors.bgNavSection};
   margin-bottom: 6px;
 `;
 
 export const SlotName = styled.span`
   flex: 1;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   color: ${({ theme }) => theme.colors.textBody};
   overflow: hidden;
   text-overflow: ellipsis;
@@ -50,8 +50,8 @@ export const SlotName = styled.span`
 `;
 
 export const SlotDate = styled.span`
-  font-size: 11px;
-  color: #7a9abf;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textModalLink};
   flex-shrink: 0;
 `;
 
@@ -61,28 +61,28 @@ export const SmallButton = styled.button`
   color: ${({ theme }) => theme.colors.textLink};
   border-radius: 8px;
   padding: 3px 8px;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(74, 96, 144, 0.4);
+    background: ${({ theme }) => theme.colors.bgFormAlpha40};
   }
 `;
 
 export const DangerButton = styled(SmallButton)`
-  border-color: #7a3030;
-  color: #ff8080;
+  border-color: ${({ theme }) => theme.colors.borderSavesDanger};
+  color: ${({ theme }) => theme.colors.textError};
 
   &:hover {
-    background: rgba(120, 48, 48, 0.4);
+    background: ${({ theme }) => theme.colors.bgSavesDangerHover};
   }
 `;
 
 export const SectionHeading = styled.h3`
   margin: 12px 0 6px;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
@@ -90,12 +90,12 @@ export const SectionHeading = styled.h3`
 
 export const ImportArea = styled.textarea`
   width: 100%;
-  background: #0a1520;
+  background: ${({ theme }) => theme.colors.bgImport};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.radii.lg};
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   padding: 6px 8px;
   resize: vertical;
   box-sizing: border-box;
@@ -103,7 +103,7 @@ export const ImportArea = styled.textarea`
 
 export const ErrorMsg = styled.p`
   color: ${({ theme }) => theme.colors.redDanger};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   margin: 4px 0 0;
 `;
 
@@ -130,13 +130,13 @@ export const CloseButton = styled.button`
 `;
 
 export const EmptyMsg = styled.p`
-  color: #7a9abf;
-  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textModalLink};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   margin: 0 0 12px;
 `;
 
 export const FileInput = styled.input`
   font-family: inherit;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textLink};
 `;

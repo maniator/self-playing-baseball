@@ -32,7 +32,7 @@ export const SaveInfo = styled.div`
 `;
 
 export const SaveName = styled.div`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1rem;
   font-weight: 600;
   white-space: nowrap;
@@ -42,7 +42,7 @@ export const SaveName = styled.div`
 
 export const SaveDate = styled.div`
   color: ${({ theme }) => theme.colors.textHint};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   margin-top: 2px;
 `;
 
@@ -57,37 +57,35 @@ export const SaveActions = styled.div`
   }
 `;
 
-const VARIANT_COLOR: Record<string, string> = {
-  primary: "#6effc0",
-  danger: "#ff7777",
-  secondary: "#88bbee",
-};
-
-const VARIANT_BORDER: Record<string, string> = {
-  primary: "#3a7a5a",
-  danger: "#883333",
-  secondary: "#4a6090",
-};
-
-const VARIANT_HOVER_BG: Record<string, string> = {
-  primary: "#1a3a2a",
-  danger: "#2a0000",
-  secondary: "#0d1b2e",
-};
-
 export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
   background: transparent;
-  color: ${({ $variant }) => VARIANT_COLOR[$variant ?? "secondary"]};
-  border: 1px solid ${({ $variant }) => VARIANT_BORDER[$variant ?? "secondary"]};
-  border-radius: 6px;
+  color: ${({ $variant, theme }) =>
+    $variant === "primary"
+      ? theme.colors.accentGreen
+      : $variant === "danger"
+        ? theme.colors.dangerText
+        : theme.colors.textSecondaryLink};
+  border: 1px solid
+    ${({ $variant, theme }) =>
+      $variant === "primary"
+        ? theme.colors.borderGreen
+        : $variant === "danger"
+          ? theme.colors.borderDanger
+          : theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 6px 12px;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   min-height: 32px;
 
   &:hover {
-    background: ${({ $variant }) => VARIANT_HOVER_BG[$variant ?? "secondary"]};
+    background: ${({ $variant, theme }) =>
+      $variant === "primary"
+        ? theme.colors.greenBg
+        : $variant === "danger"
+          ? theme.colors.dangerHoverBg
+          : theme.colors.bgSurface};
   }
 
   &:focus-visible {

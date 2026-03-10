@@ -13,7 +13,7 @@ export {
 export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayout/styles";
 
 export const PageTitle = styled.h1`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1.6rem;
   margin: 0 0 20px;
 
@@ -36,7 +36,7 @@ export const LoadingState = styled.p`
 `;
 
 export const ImportSection = styled.div`
-  border-top: 1px solid rgba(74, 96, 144, 0.3);
+  border-top: 1px solid ${({ theme }) => theme.colors.borderFormAlpha30};
   padding-top: 20px;
   margin-top: 8px;
   display: flex;
