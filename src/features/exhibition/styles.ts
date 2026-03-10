@@ -6,16 +6,16 @@ export const Dialog = styled.dialog`
   color: ${({ theme }) => theme.colors.textDialog};
   border: 2px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 14px;
-  padding: 18px 32px 14px;
+  padding: 18px ${({ theme }) => theme.spacing.xxxl} 14px;
   max-width: min(420px, 92vw);
   width: 100%;
   max-height: min(90dvh, 820px);
   overflow-y: auto;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
 
   &::backdrop {
-    background: rgba(0, 0, 0, 0.75);
+    background: ${({ theme }) => theme.colors.overlayDark};
   }
 
   ${mq.mobile} {
@@ -26,34 +26,34 @@ export const Dialog = styled.dialog`
 `;
 
 export const Title = styled.h2`
-  margin: 0 0 16px;
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
   font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
   color: ${({ theme }) => theme.colors.accentPrimary};
 
   ${mq.mobile} {
-    margin: 0 0 8px;
+    margin: 0 0 ${({ theme }) => theme.spacing.sm};
     font-size: ${({ theme }) => theme.fontSizes.display};
   }
 `;
 
 export const FieldGroup = styled.div`
-  margin-bottom: 8px;
+  margin-bottom: ${({ theme }) => theme.spacing.sm};
 
   ${mq.mobile} {
-    margin-bottom: 4px;
+    margin-bottom: ${({ theme }) => theme.spacing.xs};
   }
 `;
 
 export const FieldLabel = styled.label`
   display: block;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   margin-bottom: 6px;
 
   ${mq.mobile} {
-    margin-bottom: 4px;
+    margin-bottom: ${({ theme }) => theme.spacing.xs};
     letter-spacing: 0.5px;
   }
 `;
@@ -62,10 +62,10 @@ export const Input = styled.input`
   background: ${({ theme }) => theme.colors.bgInput};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.sm} 10px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   width: 100%;
 
   ${mq.mobile} {
@@ -77,10 +77,10 @@ export const Select = styled.select`
   background: ${({ theme }) => theme.colors.bgInput};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 8px;
-  padding: 8px 10px;
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.sm} 10px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   width: 100%;
   cursor: pointer;
 
@@ -90,14 +90,14 @@ export const Select = styled.select`
 `;
 
 export const SectionLabel = styled.p`
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
 
   ${mq.mobile} {
-    margin: 0 0 4px;
+    margin: 0 0 ${({ theme }) => theme.spacing.xs};
     letter-spacing: 0.5px;
   }
 `;
@@ -105,10 +105,10 @@ export const SectionLabel = styled.p`
 export const RadioLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 4px 0;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.xs} 0;
   cursor: pointer;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   color: ${({ theme }) => theme.colors.textBody};
 
   & input[type="radio"] {
@@ -118,7 +118,7 @@ export const RadioLabel = styled.label`
 
   ${mq.mobile} {
     padding: 2px 0;
-    font-size: 12px;
+    font-size: ${({ theme }) => theme.fontSizes.label};
   }
 `;
 
@@ -129,31 +129,31 @@ export const ResumeButton = styled.button`
   color: ${({ theme }) => theme.colors.accentGreen};
   border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: 20px;
-  padding: 10px 24px;
+  padding: 10px ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 
   &:hover {
     background: ${({ theme }) => theme.colors.greenHover};
   }
 
   ${mq.mobile} {
-    padding: 7px 16px;
-    font-size: 13px;
+    padding: 7px ${({ theme }) => theme.spacing.lg};
+    font-size: ${({ theme }) => theme.fontSizes.base};
   }
 `;
 
 export const Divider = styled.p`
   text-align: center;
   color: ${({ theme }) => theme.colors.borderForm};
-  font-size: 12px;
-  margin: 12px 0 16px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  margin: ${({ theme }) => theme.spacing.md} 0 ${({ theme }) => theme.spacing.lg};
 
   ${mq.mobile} {
-    margin: 6px 0 8px;
+    margin: 6px 0 ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -164,12 +164,12 @@ export const PlayBallButton = styled.button`
   color: darkblue;
   border: none;
   border-radius: 20px;
-  padding: 10px 24px;
+  padding: 10px ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
-  font-size: 15px;
+  font-size: ${({ theme }) => theme.fontSizes.lg};
   font-weight: 700;
   cursor: pointer;
-  margin-top: 8px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
 
   ${mq.mobile} {
     margin-top: 6px;
@@ -177,12 +177,12 @@ export const PlayBallButton = styled.button`
 `;
 
 export const SeedHint = styled.p`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textHint};
   margin: 5px 0 0;
 
   ${mq.mobile} {
-    font-size: 10px;
+    font-size: ${({ theme }) => theme.fontSizes.xs};
     line-height: 1.3;
     margin-top: 3px;
   }
@@ -198,7 +198,7 @@ export const BackHomeButton = styled.button`
   background: none;
   border: none;
   color: ${({ theme }) => theme.colors.textHint};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   padding: 0 0 10px;
@@ -222,7 +222,7 @@ export const BackHomeButton = styled.button`
 export const TabRow = styled.div`
   display: flex;
   gap: 0;
-  margin-bottom: 16px;
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
   border-bottom: 2px solid ${({ theme }) => theme.colors.borderCard};
 
   ${mq.mobile} {
@@ -237,9 +237,9 @@ export const Tab = styled.button<{ $active: boolean }>`
     ${({ $active, theme }) => ($active ? theme.colors.accentPrimary : "transparent")};
   color: ${({ $active, theme }) => ($active ? theme.colors.accentPrimary : theme.colors.textHint)};
   font-family: inherit;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-weight: ${({ $active }) => ($active ? "600" : "400")};
-  padding: 6px 14px 8px;
+  padding: 6px 14px ${({ theme }) => theme.spacing.sm};
   cursor: pointer;
   margin-bottom: -2px;
 
