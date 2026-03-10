@@ -4,6 +4,13 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
+// Provide a controllable useBlocker mock so individual tests can override it.
+const mockUseBlocker = vi.fn(() => ({
+  state: "unblocked" as const,
+  proceed: undefined,
+  reset: undefined,
+}));
+
 // Mock useBlocker and useBeforeUnload — these require a data router which is
 // not available in MemoryRouter. The GamePage routing logic is what we're
 // testing here, not navigation-blocking behaviour.
@@ -11,7 +18,7 @@ vi.mock("react-router", async (importOriginal) => {
   const original = await importOriginal<typeof import("react-router")>();
   return {
     ...original,
-    useBlocker: vi.fn(() => ({ state: "unblocked", proceed: undefined, reset: undefined })),
+    useBlocker: (...args: unknown[]) => mockUseBlocker(...args),
     useBeforeUnload: vi.fn(),
   };
 });
@@ -92,5 +99,24 @@ describe("GamePage", () => {
   it("onConsumePendingLoad clears pendingLoadRef without throwing", () => {
     renderGamePage();
     screen.getByTestId("consume-load").click();
+  });
+
+  describe("SavingBanner", () => {
+    it("is NOT rendered when blocker state is 'unblocked'", () => {
+      mockUseBlocker.mockReturnValueOnce({
+        state: "unblocked",
+        proceed: undefined,
+        reset: undefined,
+      });
+      renderGamePage();
+      expect(screen.queryByTestId("saving-stats-banner")).not.toBeInTheDocument();
+    });
+
+    it("is rendered when blocker state is 'blocked'", () => {
+      mockUseBlocker.mockReturnValueOnce({ state: "blocked", proceed: vi.fn(), reset: vi.fn() });
+      renderGamePage();
+      expect(screen.getByTestId("saving-stats-banner")).toBeInTheDocument();
+      expect(screen.getByTestId("saving-stats-banner")).toHaveTextContent("Saving stats");
+    });
   });
 });
