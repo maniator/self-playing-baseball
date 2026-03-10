@@ -7,6 +7,7 @@ import { useGameAudio } from "@feat/gameplay/hooks/useGameAudio";
 import { useGameRefs } from "@feat/gameplay/hooks/useGameRefs";
 import { usePitchDispatch } from "@feat/gameplay/hooks/usePitchDispatch";
 import { usePlayerControls } from "@feat/gameplay/hooks/usePlayerControls";
+import { useWakeLock } from "@feat/gameplay/hooks/useWakeLock";
 import {
   setAlertVolume,
   setAnnouncementVolume,
@@ -114,6 +115,8 @@ export const useGameControls = ({
     inning,
     atBat,
   });
+
+  useWakeLock(gameStarted && !gameOver);
 
   React.useEffect(() => {
     setAnnouncementVolume(safeAnnouncementVolume);
