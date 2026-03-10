@@ -174,7 +174,7 @@ export const RangeInput = styled.input`
   vertical-align: middle;
 `;
 
-// ── ManagerModeStyles ────────────────────────────────────────────────────────
+// ── Manager mode controls ─────────────────────────────────────────────────────
 
 export const NotifBadge = styled.span<{ $ok: boolean }>`
   font-size: ${({ theme }) => theme.fontSizes.sm};

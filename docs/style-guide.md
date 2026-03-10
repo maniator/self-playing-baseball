@@ -65,7 +65,8 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 | `#fff` / `#ffffff` | `textPrimary` | Primary content, headings, active cell text | Global (`* { color: #fff }` in `index.scss`) |
 | `#cce0ff` | `textBody` | Body text in dialogs, list items | `HelpContent/styles.ts`, modal styles |
 | `#e0f0ff` | `textDialog` | Dialog surface text color | `InstructionsModal/styles.ts`, `SavesModal/styles.ts` |
-| `#888` / `#aaa` | — | Sub-labels, empty states, inactive tabs (component-specific, not in theme) | `careerStats/styles.ts`, `HomeScreen/styles.ts` |
+| `#888` | `textSubdued` | Sub-labels, section header labels, hit-log headings | `HitLog/styles.ts`, `Announcements/styles.ts`, `PlayerStatsPanel/styles.ts` |
+| `#aaa` | `textMuted` | Toggle hover, inactive tabs | `HitLog/styles.ts`, `PlayerStatsPanel/styles.ts` |
 | `#666` | `textDimmer` | Very quiet secondary text | `careerStats/styles.ts` |
 | `#6680aa` | `textHint` | Back buttons, save dates, field labels | `PageLayout/styles.ts`, `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
 | `#aaccff` | `textLink` | Secondary interactive text, close button text | `HomeScreen/styles.ts`, dialog close buttons |
@@ -80,6 +81,7 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 | `aquamarine` | `accentPrimary` | Primary CTA background (Batter Up!, Play Ball!), focus rings, dialog titles, decision panel border | `GameControls/styles.ts`, `DecisionPanel/styles.ts`, `CustomTeamEditor/styles.ts`, everywhere `focus-visible` is set |
 | `#6effc0` | `accentGreen` | Primary button text, leader stat values, active tab text | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `CareerStatsPage/styles.ts` |
 | `#f5c842` | `accentGold` / `bsoStrike` | Line-score accent column (`R` total), BSO strike indicator | `LineScore/styles.ts`, `HomeScreen/styles.ts` |
+| `darkblue` | `btnTextDark` | High-contrast dark text on aquamarine/green CTA buttons | `GameControls/styles.ts`, `SavesModal/styles.ts`, `DecisionPanel/styles.ts`, `InstructionsModal/styles.ts` |
 
 ### Status & interactive state colors
 

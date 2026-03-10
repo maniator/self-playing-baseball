@@ -53,7 +53,7 @@ export const CountdownLabel = styled.span`
   text-align: right;
 `;
 
-// ── DecisionButtonStyles ─────────────────────────────────────────────────────
+// ── Decision button variants ─────────────────────────────────────────────────
 
 export const ActionButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};

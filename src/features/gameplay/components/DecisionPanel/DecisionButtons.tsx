@@ -2,7 +2,7 @@ import * as React from "react";
 
 import type { DecisionType, PinchHitterCandidate, Strategy } from "@feat/gameplay/context/index";
 
-import { ActionButton, Odds, Prompt, SkipButton } from "./DecisionButtonStyles";
+import { ActionButton, Odds, Prompt, SkipButton } from "./styles";
 
 type Props = {
   pendingDecision: DecisionType;

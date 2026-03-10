@@ -177,16 +177,18 @@
     │       │   ├── HomeScreen/
     │       │   │   ├── index.tsx       # Home screen: New Game / Load Saved Game / Manage Teams / Help buttons
     │       │   │   └── styles.ts       # Styled components for home screen
-    │       │   ├── Announcements/index.tsx  # Play-by-play log with heading + empty-state placeholder
+    │       │   ├── Announcements/
+    │       │   │   ├── styles.ts       # Styled components for play-by-play log
+    │       │   │   └── index.tsx       # Play-by-play log with heading + empty-state placeholder
     │       │   ├── Ball/
     │       │   │   ├── constants.ts    # hitDistances: pixel travel distance per Hit type
+    │       │   │   ├── styles.ts       # Baseball keyframes + Baseball styled-component
     │       │   │   └── index.tsx       # Ball animation component; key={pitchKey} restarts CSS animation
     │       │   ├── DecisionPanel/
     │       │   │   ├── constants.ts    # DECISION_TIMEOUT_SEC (10), NOTIF_TAG ("manager-decision")
-    │       │   │   ├── DecisionButtonStyles.ts  # Styled-component button variants
     │       │   │   ├── DecisionButtons.tsx      # Decision action button groups per decision kind
     │       │   │   ├── notificationHelpers.ts   # showManagerNotification, closeManagerNotification
-    │       │   │   ├── styles.ts       # Styled components for DecisionPanel layout
+    │       │   │   ├── styles.ts       # Styled components for DecisionPanel layout + button variants (ActionButton, SkipButton, Prompt, Odds)
     │       │   │   └── index.tsx       # Manager decision UI: prompt, buttons, 10s countdown bar
     │       │   ├── Diamond/
     │       │   │   ├── index.tsx       # Baseball diamond — self-contained with FieldWrapper container
@@ -199,19 +201,25 @@
     │       │   ├── GameControls/
     │       │   │   ├── index.tsx       # GameControls component — renders controls using useGameControls hook
     │       │   │   ├── constants.ts    # SPEED_SLOW (1200ms), SPEED_NORMAL (700ms), SPEED_FAST (350ms), SPEED_INSTANT (0)
-    │       │   │   ├── styles.ts       # Styled components for controls layout; exports HelpButton, Button
+    │       │   │   ├── styles.ts       # All styled components: controls layout, HelpButton, Button, VolumeControls, ManagerMode
     │       │   │   ├── useGameControls.ts  # Hook: wires all game-controls hooks + localStorage state
     │       │   │   ├── ManagerModeControls.tsx  # Manager Mode checkbox, team/strategy selectors, notif badge
-    │       │   │   ├── ManagerModeStyles.ts     # Styled components for manager mode controls
     │       │   │   └── VolumeControls.tsx  # Announcement + alert volume sliders with mute toggles
-    │       │   ├── HitLog/index.tsx    # Hit log component
+    │       │   ├── HitLog/
+    │       │   │   ├── styles.ts       # Styled components for hit log
+    │       │   │   └── index.tsx       # Hit log component
     │       │   ├── LineScore/
     │       │   │   ├── index.tsx       # Score/inning/strikes/balls/outs + FINAL banner when gameOver
     │       │   │   └── styles.ts       # Styled components for line score
-    │       │   ├── PlayerStatsPanel/index.tsx  # Live batting stats table
+    │       │   ├── PlayerStatsPanel/
+    │       │   │   ├── styles.ts       # Styled components for stats table + player detail panel
+    │       │   │   ├── PlayerDetails.tsx  # Expanded per-batter stats (AVG/OBP/SLG/OPS + counting stats)
+    │       │   │   └── index.tsx       # Live batting stats table
     │       │   ├── RootLayout/index.tsx  # Top-level layout wrapper with ErrorBoundary
     │       │   ├── SubstitutionPanel/index.tsx  # Pinch hitter substitution UI
-    │       │   └── TeamTabBar/index.tsx  # Tab bar for switching between home/away team stats
+    │       │   └── TeamTabBar/
+    │       │       ├── styles.ts       # Styled components for team tab bar
+    │       │       └── index.tsx       # Tab bar for switching between home/away team stats
     │       ├── constants/
     │       │   └── pitchTypes.ts       # PitchType enum + selectPitchType, pitchName helpers
     │       ├── context/                # Simulation engine — strict cycle-free dependency order
