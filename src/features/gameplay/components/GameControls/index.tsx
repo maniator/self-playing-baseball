@@ -67,7 +67,12 @@ const GameControls: React.FunctionComponent<Props> = ({
     <>
       <Controls>
         {onBackToHome && (
-          <Button $variant="home" onClick={onBackToHome} data-testid="back-to-home-button">
+          <Button
+            $variant="home"
+            onClick={onBackToHome}
+            disabled={isCommitting}
+            data-testid="back-to-home-button"
+          >
             ← Home
           </Button>
         )}

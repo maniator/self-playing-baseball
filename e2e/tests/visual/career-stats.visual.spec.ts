@@ -74,12 +74,20 @@ test.describe("Visual — seeded history data", () => {
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    // Wait for the e2e_home_team option to be in the DOM before selecting — the
+    // one-shot loadTeamIds effect may still be in-flight when the page mounts on
+    // slow mobile WebKit, so the option might not exist yet at selectOption time.
+    await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
+      timeout: 15_000,
+    });
     await teamSelect.selectOption("e2e_home_team");
-    // Wait for the team summary section to appear — it renders once the RxDB
-    // queries resolve and gamesPlayed > 0.  Avoids the strict-mode violation from
-    // getByText("J. Slugger") which now matches both leader cards AND table rows.
-    // Use a generous 30 s timeout for cold tablet WebKit viewports.
-    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+    // Wait for J. Slugger (a batter specific to e2e_home_team) rather than
+    // team-summary-section, which can appear for ANY team (including the
+    // auto-selected sample-save team) and would resolve immediately for the wrong
+    // team, causing the subsequent 5 s batting-tab check to time out.
+    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
+      timeout: 30_000,
+    });
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
@@ -152,8 +160,13 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
+      timeout: 15_000,
+    });
     await teamSelect.selectOption("e2e_summary_team");
-    await expect(page.getByTestId("team-summary-section")).toBeVisible({ timeout: 30_000 });
+    // Use a data-specific guard (W/L = "2-1") instead of team-summary-section,
+    // which renders for any team and can resolve immediately for the wrong team.
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 30_000 });
   }
 
   test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {

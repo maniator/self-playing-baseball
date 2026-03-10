@@ -16,6 +16,8 @@ import type {
   SaveDoc,
 } from "@storage/types";
 
+import { SavingBanner } from "./styles";
+
 const GamePage: React.FunctionComponent = () => {
   const ctx = useOutletContext<AppShellOutletContext>();
   const location = useLocation();
@@ -79,16 +81,23 @@ const GamePage: React.FunctionComponent = () => {
   );
 
   return (
-    <Game
-      onBackToHome={ctx.onBackToHome}
-      onNewGame={handleNewGame}
-      onGameSessionStarted={ctx.onGameSessionStarted}
-      pendingGameSetup={pendingSetupRef.current}
-      onConsumeGameSetup={handleConsumeSetup}
-      pendingLoadSave={pendingLoadRef.current}
-      onConsumePendingLoad={handleConsumeLoad}
-      onSavingStateChange={setIsCommitting}
-    />
+    <>
+      <Game
+        onBackToHome={ctx.onBackToHome}
+        onNewGame={handleNewGame}
+        onGameSessionStarted={ctx.onGameSessionStarted}
+        pendingGameSetup={pendingSetupRef.current}
+        onConsumeGameSetup={handleConsumeSetup}
+        pendingLoadSave={pendingLoadRef.current}
+        onConsumePendingLoad={handleConsumeLoad}
+        onSavingStateChange={setIsCommitting}
+      />
+      {blocker.state === "blocked" && (
+        <SavingBanner role="status" aria-live="polite" data-testid="saving-stats-banner">
+          💾 Saving stats… Navigation will continue automatically.
+        </SavingBanner>
+      )}
+    </>
   );
 };
 

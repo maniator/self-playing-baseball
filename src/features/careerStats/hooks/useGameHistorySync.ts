@@ -250,6 +250,7 @@ export const useGameHistorySync = (
   // This ensures a new game session can be committed even within the same
   // browser tab.
   const prevSaveIdRef = React.useRef<string | null>(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run-every-render ref-tracking effect; setIsCommitting is a stable setter
   React.useEffect(() => {
     const current = rxSaveIdRef.current;
     if (current !== prevSaveIdRef.current) {
