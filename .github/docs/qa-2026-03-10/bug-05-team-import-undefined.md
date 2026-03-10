@@ -13,7 +13,7 @@
 
 When a user imports an invalid or unrecognized custom teams file, the error message contains the raw JavaScript token `"undefined"`:
 
-> *"Invalid teams file (unsupported format version: undefined). Make sure to export using the Ballgame app."*
+> *"Invalid teams file (unsupported format version: undefined). Make sure to export using the Ballgame app (Export All Teams or Export on a single team)."*
 
 The word "undefined" is a technical JavaScript artifact that means nothing to a non-developer user. The message should either omit the version value entirely when it is absent, or replace it with a plain-language description like "unrecognized" or "missing".
 
@@ -22,10 +22,10 @@ The word "undefined" is a technical JavaScript artifact that means nothing to a 
 ## Reproduction steps
 
 1. Navigate to **Manage Teams** (`/teams`).
-2. Paste any JSON that is not a valid Ballgame teams export (e.g. `{"foo": "bar"}`) into the import textarea.
+2. Paste a JSON object that has the correct `type` field but no `formatVersion` (e.g. `{"type": "customTeams"}`) into the import textarea. (Pasting `{"foo": "bar"}` will hit the earlier `type` check instead and produce a different error.)
 3. Click **↑ Import from Text**.
 4. **Expected:** A clear, jargon-free error message with no raw code tokens.
-5. **Actual:** Error reads `"…unsupported format version: undefined…"`.
+5. **Actual:** Error reads `"Invalid teams file (unsupported format version: undefined). Make sure to export using the Ballgame app (Export All Teams or Export on a single team)."`.
 
 ---
 
@@ -37,7 +37,7 @@ The word "undefined" is a technical JavaScript artifact that means nothing to a 
 if (obj["formatVersion"] !== 1)
   throw new Error(
     `Invalid teams file (unsupported format version: ${obj["formatVersion"]}). ` +
-      "Make sure to export using the Ballgame app."
+      `Make sure to export using the Ballgame app (Export All Teams or Export on a single team).`,
   );
 ```
 
@@ -59,7 +59,10 @@ const versionLabel =
   typeof obj["formatVersion"] === "number"
     ? String(obj["formatVersion"])
     : "unrecognized";
-throw new Error(`Unsupported custom teams format version: ${versionLabel}`);
+throw new Error(
+  `Invalid teams file (unsupported format version: ${versionLabel}). ` +
+    `Make sure to export using the Ballgame app (Export All Teams or Export on a single team).`,
+);
 ```
 
 Or simplify the message to remove the version value entirely when it is absent:
