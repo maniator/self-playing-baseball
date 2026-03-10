@@ -4,6 +4,18 @@ import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
+// Mock useBlocker and useBeforeUnload — these require a data router which is
+// not available in MemoryRouter. The GamePage routing logic is what we're
+// testing here, not navigation-blocking behaviour.
+vi.mock("react-router", async (importOriginal) => {
+  const original = await importOriginal<typeof import("react-router")>();
+  return {
+    ...original,
+    useBlocker: vi.fn(() => ({ state: "unblocked", proceed: undefined, reset: undefined })),
+    useBeforeUnload: vi.fn(),
+  };
+});
+
 // Mock the heavy Game component — GamePage is a thin routing adapter
 vi.mock("@feat/gameplay/components/Game", () => ({
   default: (props: Record<string, unknown>) => (

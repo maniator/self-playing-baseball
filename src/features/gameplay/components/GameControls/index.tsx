@@ -22,6 +22,8 @@ type Props = {
   onLoadSave?: (slot: SaveDoc) => void;
   /** Routes back to the Home screen. When provided a "← Home" button is shown. */
   onBackToHome?: () => void;
+  /** When true, shows a disabled "Saving…" button instead of "New Game". */
+  isCommitting?: boolean;
 };
 
 const GameControls: React.FunctionComponent<Props> = ({
@@ -29,6 +31,7 @@ const GameControls: React.FunctionComponent<Props> = ({
   gameStarted = false,
   onLoadSave,
   onBackToHome,
+  isCommitting = false,
 }) => {
   const {
     speed,
@@ -68,11 +71,17 @@ const GameControls: React.FunctionComponent<Props> = ({
             ← Home
           </Button>
         )}
-        {gameOver && onNewGame && (
-          <Button $variant="new" onClick={onNewGame} data-testid="new-game-button">
-            New Game
-          </Button>
-        )}
+        {gameOver &&
+          onNewGame &&
+          (isCommitting ? (
+            <Button $variant="new" disabled data-testid="new-game-button">
+              Saving…
+            </Button>
+          ) : (
+            <Button $variant="new" onClick={onNewGame} data-testid="new-game-button">
+              New Game
+            </Button>
+          ))}
         <React.Suspense
           fallback={
             <Button $variant="saves" disabled aria-label="Open saves panel">

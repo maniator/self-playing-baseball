@@ -1,7 +1,13 @@
 import * as React from "react";
 
 import Game from "@feat/gameplay/components/Game";
-import { useLocation, useNavigate, useOutletContext } from "react-router";
+import {
+  useBeforeUnload,
+  useBlocker,
+  useLocation,
+  useNavigate,
+  useOutletContext,
+} from "react-router";
 
 import type {
   AppShellOutletContext,
@@ -46,6 +52,28 @@ const GamePage: React.FunctionComponent = () => {
     navigate("/exhibition/new");
   }, [navigate]);
 
+  const [isCommitting, setIsCommitting] = React.useState(false);
+
+  const blocker = useBlocker(isCommitting);
+
+  React.useEffect(() => {
+    if (blocker.state === "blocked" && !isCommitting) {
+      blocker.proceed?.();
+    }
+  }, [blocker, isCommitting]);
+
+  useBeforeUnload(
+    React.useCallback(
+      (event) => {
+        if (isCommitting) {
+          event.preventDefault();
+          event.returnValue = "";
+        }
+      },
+      [isCommitting],
+    ),
+  );
+
   return (
     <Game
       onBackToHome={ctx.onBackToHome}
@@ -55,6 +83,7 @@ const GamePage: React.FunctionComponent = () => {
       onConsumeGameSetup={handleConsumeSetup}
       pendingLoadSave={pendingLoadRef.current}
       onConsumePendingLoad={handleConsumeLoad}
+      onSavingStateChange={setIsCommitting}
     />
   );
 };
