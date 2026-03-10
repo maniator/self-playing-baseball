@@ -4,16 +4,16 @@ import styled from "styled-components";
 export { HelpButton } from "@feat/gameplay/components/GameControls/styles";
 
 export const Dialog = styled.dialog`
-  background: #0d1b2e;
-  color: #e0f0ff;
-  border: 2px solid #4a6090;
-  border-radius: 14px;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textDialog};
+  border: 2px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.dialog};
   padding: 0;
   max-width: min(680px, 96vw);
   width: 100%;
   height: min(700px, 90vh);
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   line-height: 1.6;
   overflow: hidden;
 
@@ -23,7 +23,7 @@ export const Dialog = styled.dialog`
   }
 
   &::backdrop {
-    background: rgba(0, 0, 0, 0.75);
+    background: ${({ theme }) => theme.colors.overlayDark};
   }
 
   ${mq.mobile} {
@@ -42,25 +42,26 @@ export const DialogHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(74, 96, 144, 0.4);
+  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.xxl}
+    ${({ theme }) => theme.spacing.lg};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderFormAlpha40};
   flex-shrink: 0;
 `;
 
 export const DialogTitle = styled.h2`
   margin: 0;
-  font-size: 18px;
-  color: aquamarine;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
+  color: ${({ theme }) => theme.colors.accentPrimary};
 `;
 
 export const CloseXButton = styled.button`
   background: transparent;
-  color: #aaccff;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  width: 28px;
-  height: 28px;
-  font-size: 16px;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  width: ${({ theme }) => theme.spacing.s28};
+  height: ${({ theme }) => theme.spacing.s28};
+  font-size: ${({ theme }) => theme.fontSizes.display};
   font-family: inherit;
   cursor: pointer;
   display: flex;
@@ -71,27 +72,28 @@ export const CloseXButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(74, 96, 144, 0.6);
-    color: #fff;
+    background: ${({ theme }) => theme.colors.bgFormAlpha60};
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;
 
 export const ScrollBody = styled.div`
   overflow-y: auto;
-  padding: 8px 24px 20px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl}
+    ${({ theme }) => theme.spacing.xl};
   flex: 1 1 0;
 `;
 
 export const CloseButton = styled.button`
   display: block;
-  margin: 16px auto 0;
-  background: aquamarine;
-  color: darkblue;
+  margin: ${({ theme }) => theme.spacing.lg} auto 0;
+  background: ${({ theme }) => theme.colors.accentPrimary};
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
-  border-radius: 20px;
-  padding: 8px 24px;
+  border-radius: ${({ theme }) => theme.radii.pill};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-weight: 600;
   cursor: pointer;
 `;

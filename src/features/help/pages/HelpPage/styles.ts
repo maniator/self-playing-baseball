@@ -4,11 +4,11 @@ import styled from "styled-components";
 export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayout/styles";
 
 export const PageTitle = styled.h1`
-  color: aquamarine;
-  font-size: 1.4rem;
-  margin: 0 0 16px;
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.h2};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;

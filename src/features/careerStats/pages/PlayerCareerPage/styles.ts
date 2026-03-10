@@ -18,15 +18,19 @@ export const PlayerCareerContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(
+    ${({ theme }) => theme.spacing.xxl} + ${({ theme }) => theme.sizes.bottomBar}
+  );
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.lg} + ${({ theme }) => theme.sizes.bottomBar}
+    );
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -38,41 +42,41 @@ export const PlayerCareerContainer = styled.div`
 
 /** Player name heading. */
 export const PlayerName = styled.h1`
-  color: white;
-  font-size: 1.4rem;
-  margin: 0 0 4px;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.h2};
+  margin: 0 0 ${({ theme }) => theme.spacing.xs};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;
 
 /** Sub-label below the player name (role info). */
 export const PlayerRoleLabel = styled.p`
-  color: #888;
-  font-size: 13px;
-  margin: 0 0 20px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 `;
 
 /** Prev/Next navigation row. */
 export const NavRow = styled.div`
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
 
 /** Prev/Next button. */
 export const NavBtn = styled.button`
-  background: #1a1a2e;
-  border: 1px solid #333;
-  color: #ccc;
-  padding: 6px 14px;
-  border-radius: 4px;
+  background: ${({ theme }) => theme.colors.bgSurfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.borderLog};
+  color: ${({ theme }) => theme.colors.textLight};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.s14};
+  border-radius: ${({ theme }) => theme.radii.sm};
   cursor: pointer;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   &:hover:not(:disabled) {
-    background: #25254a;
-    color: #fff;
+    background: ${({ theme }) => theme.colors.bgPaginationHover};
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
   &:disabled {
     opacity: 0.35;

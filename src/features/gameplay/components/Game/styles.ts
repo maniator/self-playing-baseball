@@ -9,25 +9,25 @@ import styled from "styled-components";
 const MOBILE_LOG_HEIGHT = "33vh";
 
 export const GameDiv = styled.main`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   display: flex;
   flex-direction: column;
   width: min(95vw, 1600px);
-  border: 1px solid #884e4e;
-  padding: 24px;
+  border: 1px solid ${({ theme }) => theme.colors.borderGameError};
+  padding: ${({ theme }) => theme.spacing.xxl};
   margin: 0 auto;
 
   ${mq.tablet} {
     height: 100dvh;
     overflow: hidden;
-    padding: 16px;
+    padding: ${({ theme }) => theme.spacing.lg};
   }
 
   ${mq.mobile} {
     height: 100dvh;
     overflow: hidden;
     overflow-anchor: none;
-    padding: 12px 16px;
+    padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
     padding-bottom: calc(${MOBILE_LOG_HEIGHT} + env(safe-area-inset-bottom));
   }
 `;
@@ -35,29 +35,29 @@ export const GameDiv = styled.main`
 export const GameBody = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
   align-items: stretch;
-  margin-top: 14px;
+  margin-top: ${({ theme }) => theme.spacing.s14};
 
   ${mq.desktop} {
     display: grid;
     grid-template-columns: 2.2fr 1fr;
-    gap: 20px;
+    gap: ${({ theme }) => theme.spacing.xl};
     align-items: stretch;
   }
 
   ${mq.tablet} {
     flex: 1;
     min-height: 0;
-    margin-top: 10px;
-    gap: 12px;
+    margin-top: ${({ theme }) => theme.spacing.s10};
+    gap: ${({ theme }) => theme.spacing.md};
   }
 
   ${mq.mobile} {
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: ${({ theme }) => theme.spacing.sm};
     gap: 0;
   }
 `;
@@ -74,9 +74,9 @@ export const FieldPanel = styled.div`
 `;
 
 export const LoadingScreen = styled.p`
-  color: #aaa;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-align: center;
-  margin: 48px auto;
+  margin: ${({ theme }) => theme.spacing.s48} auto;
   font-family: monospace;
 `;
 
@@ -86,36 +86,36 @@ export const DbResetNotice = styled.div`
   left: 0;
   right: 0;
   z-index: 9999;
-  background: #7a3200;
-  color: #fff;
-  padding: 10px 16px;
+  background: ${({ theme }) => theme.colors.goldWarn};
+  color: ${({ theme }) => theme.colors.textPrimary};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  font-size: 0.9rem;
+  gap: ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
 
   button {
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #fff;
+    border: 1px solid ${({ theme }) => theme.colors.borderWhiteAlpha};
+    color: ${({ theme }) => theme.colors.textPrimary};
     cursor: pointer;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 1rem;
+    padding: ${({ theme }) => theme.spacing.xxs} ${({ theme }) => theme.spacing.sm};
+    border-radius: ${({ theme }) => theme.radii.sm};
+    font-size: ${({ theme }) => theme.fontSizes.bodyLg};
   }
 `;
 
 export const LogPanel = styled.div`
   min-width: 0;
   overflow-y: auto;
-  border-top: 1px solid #2a2a2a;
-  padding-top: 8px;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderGameSection};
+  padding-top: ${({ theme }) => theme.spacing.sm};
 
   ${mq.desktop} {
     border-top: none;
-    border-left: 1px solid #2a2a2a;
-    padding-left: 16px;
+    border-left: 1px solid ${({ theme }) => theme.colors.borderGameSection};
+    padding-left: ${({ theme }) => theme.spacing.lg};
     padding-top: 0;
   }
 
@@ -132,12 +132,12 @@ export const LogPanel = styled.div`
     width: 100%;
     height: ${MOBILE_LOG_HEIGHT};
     overflow-y: auto;
-    background: #000;
-    border-top: 1px solid #333;
+    background: ${({ theme }) => theme.colors.bgVoid};
+    border-top: 1px solid ${({ theme }) => theme.colors.borderLog};
     border-left: none;
-    padding: 8px 16px;
+    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 -6px 12px ${({ theme }) => theme.colors.shadowDark};
     z-index: 10;
   }
 `;

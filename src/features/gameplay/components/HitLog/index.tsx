@@ -4,8 +4,8 @@ import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useGameContext } from "@feat/gameplay/context/index";
 import { Hit } from "@shared/constants/hitTypes";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
-import { mq } from "@shared/utils/mediaQueries";
-import styled from "styled-components";
+
+import { Area, EmptyState, Entry, HeadingRow, Label, Runs, Toggle } from "./styles";
 
 const EVENT_LABEL: Record<Hit, string> = {
   [Hit.Single]: "1B",
@@ -16,72 +16,6 @@ const EVENT_LABEL: Record<Hit, string> = {
 };
 
 const HALF_ARROW = ["▲", "▼"] as const;
-
-const HeadingRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #888;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #333;
-  position: sticky;
-  top: 0;
-  background: #000;
-  z-index: 1;
-`;
-
-const Toggle = styled.button`
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0 2px;
-  &:hover {
-    color: #aaa;
-  }
-`;
-
-const Area = styled.div`
-  overflow-y: auto;
-  max-height: 200px;
-  ${mq.mobile} {
-    max-height: none;
-  }
-`;
-
-const Entry = styled.div`
-  font-size: 12px;
-  padding: 3px 5px;
-  color: #ccc;
-  display: flex;
-  gap: 6px;
-  align-items: baseline;
-  ${mq.notMobile} {
-    font-size: 13px;
-  }
-`;
-
-const Label = styled.span<{ $hr?: boolean }>`
-  font-weight: bold;
-  color: ${({ $hr }) => ($hr ? "#f5c842" : "#8abadf")};
-  min-width: 22px;
-`;
-
-const Runs = styled.span`
-  color: #e07070;
-  font-size: 11px;
-`;
-
-const EmptyState = styled.div`
-  color: #555;
-  font-size: 12px;
-  padding: 6px 5px;
-`;
 
 const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
   const { playLog, teams } = useGameContext();

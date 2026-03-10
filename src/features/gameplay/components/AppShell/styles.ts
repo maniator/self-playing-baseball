@@ -9,10 +9,12 @@ export const AppVolumeBar = styled.div`
   z-index: 20;
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: ${({ theme }) => theme.spacing.lg};
   flex-wrap: wrap;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom)) 16px;
-  background: rgba(0, 0, 0, 0.6);
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg}
+    calc(${({ theme }) => theme.spacing.s10} + env(safe-area-inset-bottom))
+    ${({ theme }) => theme.spacing.lg};
+  background: ${({ theme }) => theme.colors.overlayLight};
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
 `;

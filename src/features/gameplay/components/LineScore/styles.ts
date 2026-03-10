@@ -3,42 +3,43 @@ import styled from "styled-components";
 
 export const Wrapper = styled.div`
   overflow-x: auto;
-  margin: 8px 0 0;
+  margin: ${({ theme }) => theme.spacing.sm} 0 0;
 
   ${mq.mobile} {
     order: -1;
-    background: #000;
-    margin: 0 0 4px;
-    padding-bottom: 4px;
+    background: ${({ theme }) => theme.colors.bgVoid};
+    margin: 0 0 ${({ theme }) => theme.spacing.xs};
+    padding-bottom: ${({ theme }) => theme.spacing.xs};
   }
 `;
 
 export const Table = styled.table`
   border-collapse: collapse;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 13px;
-  background: #0a1628;
-  color: #e8d5a3;
+  font-family: ${({ theme }) => theme.fonts.score};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  background: ${({ theme }) => theme.colors.bgGame};
+  color: ${({ theme }) => theme.colors.textScore};
   width: 100%;
 
   ${mq.notMobile} {
-    font-size: 14px;
+    font-size: ${({ theme }) => theme.fontSizes.md};
   }
 `;
 
 export const Th = styled.th<{ $accent?: boolean }>`
-  padding: 3px 6px;
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.s6};
   text-align: center;
-  color: ${({ $accent }) => ($accent ? "#f5c842" : "#8abadf")};
-  border-bottom: 1px solid #1e3a5f;
+  color: ${({ $accent, theme }) =>
+    $accent ? theme.colors.accentGold : theme.colors.textScoreHeader};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   font-weight: normal;
-  font-size: 11px;
-  letter-spacing: 0.5px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.normal};
   white-space: nowrap;
 
   ${mq.notMobile} {
-    font-size: 13px;
-    padding: 3px 8px;
+    font-size: ${({ theme }) => theme.fontSizes.base};
+    padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -56,37 +57,44 @@ export const TeamTh = styled(Th)`
 `;
 
 export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boolean }>`
-  padding: 4px 6px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s6};
   text-align: center;
   font-weight: ${({ $accent }) => ($accent ? "bold" : "normal")};
-  color: ${({ $active, $accent, $dim }) =>
-    $active ? "#ffffff" : $accent ? "#f5c842" : $dim ? "#3d5a7a" : "#e8d5a3"};
-  border-right: ${({ $accent }) => ($accent ? "none" : "1px solid #0f2540")};
+  color: ${({ $active, $accent, $dim, theme }) =>
+    $active
+      ? theme.colors.textPrimary
+      : $accent
+        ? theme.colors.accentGold
+        : $dim
+          ? theme.colors.textScoreDim
+          : theme.colors.textScore};
+  border-right: ${({ $accent, theme }) =>
+    $accent ? "none" : `1px solid ${theme.colors.borderLineScoreCell}`};
   white-space: nowrap;
 
   ${mq.notMobile} {
-    padding: 5px 8px;
+    padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.sm};
   }
 `;
 
 export const TeamTd = styled(Td)`
   text-align: left;
-  font-size: 12px;
-  border-right: 1px solid #1e3a5f;
-  padding-right: 8px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  border-right: 1px solid ${({ theme }) => theme.colors.borderLineScore};
+  padding-right: ${({ theme }) => theme.spacing.sm};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 90px;
 
   ${mq.notMobile} {
-    font-size: 13px;
+    font-size: ${({ theme }) => theme.fontSizes.base};
     max-width: 140px;
   }
 `;
 
 export const DividerTd = styled.td`
-  border-left: 1px solid #1e3a5f;
+  border-left: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   padding: 0;
   width: 4px;
 `;
@@ -94,23 +102,24 @@ export const DividerTd = styled.td`
 export const BsoRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 8px 4px;
-  background: #0a1628;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 11px;
-  color: #8abadf;
-  letter-spacing: 0.5px;
+  gap: ${({ theme }) => theme.spacing.s14};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm}
+    ${({ theme }) => theme.spacing.xs};
+  background: ${({ theme }) => theme.colors.bgGame};
+  font-family: ${({ theme }) => theme.fonts.score};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textScoreHeader};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.normal};
 
   ${mq.notMobile} {
-    font-size: 12px;
+    font-size: ${({ theme }) => theme.fontSizes.label};
   }
 `;
 
 export const BsoGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: ${({ theme }) => theme.spacing.s5};
 `;
 
 export const Dot = styled.span<{ $on: boolean; $color: string }>`
@@ -118,28 +127,28 @@ export const Dot = styled.span<{ $on: boolean; $color: string }>`
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: ${({ $on, $color }) => ($on ? $color : "#1e3a5f")};
-  border: 1px solid ${({ $on, $color }) => ($on ? $color : "#2e4a6f")};
+  background: ${({ $on, $color, theme }) => ($on ? $color : theme.colors.borderLineScore)};
+  border: 1px solid ${({ $on, $color, theme }) => ($on ? $color : theme.colors.borderLineScoreOff)};
 `;
 
 export const ExtraInningsBanner = styled.div`
-  background: #0f4880;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.blueDark};
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-weight: bold;
-  font-size: 11px;
-  padding: 2px 8px;
-  letter-spacing: 1px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  padding: ${({ theme }) => theme.spacing.xxs} ${({ theme }) => theme.spacing.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.widest};
   margin-left: auto;
 `;
 
 export const GameOverBanner = styled.div`
-  background: #b30000;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.redBg};
+  color: ${({ theme }) => theme.colors.textPrimary};
   text-align: center;
   font-weight: bold;
-  font-size: 12px;
-  padding: 3px 8px;
-  letter-spacing: 1px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.widest};
 `;
 
 /**

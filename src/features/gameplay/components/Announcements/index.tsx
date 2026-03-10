@@ -1,67 +1,8 @@
 import * as React from "react";
 
 import { useGameContext } from "@feat/gameplay/context/index";
-import { mq } from "@shared/utils/mediaQueries";
-import styled from "styled-components";
 
-const HeadingRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #888;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #333;
-  position: sticky;
-  top: 0;
-  background: #000;
-  z-index: 1;
-`;
-
-const Toggle = styled.button`
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0 2px;
-  &:hover {
-    color: #aaa;
-  }
-`;
-
-const AnnouncementsArea = styled.div`
-  overflow-y: auto;
-  padding-right: 8px;
-  max-height: 300px;
-  min-height: 60px;
-  ${mq.mobile} {
-    min-height: auto;
-    max-height: none;
-  }
-`;
-
-const EmptyState = styled.div`
-  color: #555;
-  font-size: 12px;
-  padding: 6px 5px;
-`;
-
-const Log = styled.div`
-  font-size: 12px;
-  padding: 3px 5px;
-  color: #ccc;
-  ${mq.notMobile} {
-    font-size: 13px;
-  }
-  ${mq.mobile} {
-    font-size: 11px;
-  }
-`;
+import { AnnouncementsArea, EmptyState, HeadingRow, Log, Toggle } from "./styles";
 
 /** Pixels from the top edge within which auto-scroll to newest entry fires. */
 const SCROLL_THRESHOLD = 60;

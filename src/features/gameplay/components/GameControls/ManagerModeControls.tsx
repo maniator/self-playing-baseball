@@ -6,7 +6,7 @@ import { useGameContext } from "@feat/gameplay/context/index";
 import { Strategy } from "@feat/gameplay/context/index";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import { NotifBadge, Select, SubButton, ToggleLabel } from "./ManagerModeStyles";
+import { NotifBadge, Select, SubButton, ToggleLabel } from "./styles";
 
 type Props = {
   managerMode: boolean;

@@ -17,15 +17,19 @@ export const CareerContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(
+    ${({ theme }) => theme.spacing.xxl} + ${({ theme }) => theme.sizes.bottomBar}
+  );
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.lg} + ${({ theme }) => theme.sizes.bottomBar}
+    );
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -39,63 +43,186 @@ export const CareerContainer = styled.div`
 export const TeamSelectorRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
   flex-wrap: wrap;
 `;
 
 export const TeamSelectLabel = styled.label`
-  color: #888;
-  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   white-space: nowrap;
 `;
 
 export const TeamSelect = styled.select`
-  background: #0d1b2e;
-  color: #cce0ff;
-  border: 1px solid #2a3a5a;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 14px;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textBody};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-family: inherit;
   cursor: pointer;
   min-width: 200px;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 
   option {
-    background: #0a0a1a;
-    color: #cce0ff;
+    background: ${({ theme }) => theme.colors.bgDeep};
+    color: ${({ theme }) => theme.colors.textBody};
   }
 `;
 
 /** Page header title. */
 export const PageTitle = styled.h1`
-  color: aquamarine;
-  font-size: 1.4rem;
-  margin: 0 0 20px;
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.h2};
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 
   ${mq.mobile} {
-    font-size: 1.2rem;
+    font-size: ${({ theme }) => theme.fontSizes.h3};
   }
 `;
 
-export {
-  LeaderCard,
-  LeaderCardPlaceholder,
-  LeaderCardsRow,
-  LeaderName,
-  LeaderPlaceholderText,
-  LeadersGroupLabel,
-  LeaderStatLabel,
-  LeaderValue,
-  SummaryCell,
-  SummaryCellLabel,
-  SummaryCellValue,
-  SummaryGrid,
-  SummaryHeading,
-  TeamSummarySection,
-} from "./teamSummaryStyles";
+// ── Team Summary panel ────────────────────────────────────────────────────────
+
+/** Container for the team summary + leaders section (above tabs). */
+export const TeamSummarySection = styled.div`
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.md};
+`;
+
+export const SummaryHeading = styled.h2`
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
+  margin: 0;
+`;
+
+/** Grid of stat cells for the team summary. */
+export const SummaryGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: ${({ theme }) => theme.spacing.sm};
+
+  ${mq.mobile} {
+    grid-template-columns: repeat(2, 1fr);
+  }
+`;
+
+/** A single stat cell in the summary grid. */
+export const SummaryCell = styled.div`
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xxs};
+`;
+
+export const SummaryCellLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+`;
+
+export const SummaryCellValue = styled.span`
+  color: ${({ theme }) => theme.colors.textBody};
+  font-size: ${({ theme }) => theme.fontSizes.display};
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+`;
+
+// ── Leader cards ─────────────────────────────────────────────────────────────
+
+/** Label above a group of leader cards. */
+export const LeadersGroupLabel = styled.h3`
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
+`;
+
+export const LeaderCardsRow = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: ${({ theme }) => theme.spacing.sm};
+
+  ${mq.mobile} {
+    grid-template-columns: repeat(1, 1fr);
+  }
+`;
+
+export const LeaderCard = styled.button`
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: ${({ theme }) => theme.spacing.xxs};
+  transition: border-color 0.15s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.colors.borderForm};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
+`;
+
+export const LeaderCardPlaceholder = styled.div`
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px dashed ${({ theme }) => theme.colors.borderPanel};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+export const LeaderStatLabel = styled.span`
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  font-weight: 600;
+`;
+
+export const LeaderName = styled.span`
+  color: ${({ theme }) => theme.colors.textLink};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+export const LeaderValue = styled.span`
+  color: ${({ theme }) => theme.colors.accentGreen};
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+`;
+
+export const LeaderPlaceholderText = styled.span`
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+`;

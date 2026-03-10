@@ -4,13 +4,13 @@ import styled, { css } from "styled-components";
 export const Controls = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
   align-items: center;
-  padding: 8px 0;
+  padding: ${({ theme }) => theme.spacing.sm} 0;
 
   ${mq.mobile} {
-    gap: 6px;
-    padding: 4px 0;
+    gap: ${({ theme }) => theme.spacing.s6};
+    padding: ${({ theme }) => theme.spacing.xs} 0;
   }
 `;
 
@@ -18,107 +18,107 @@ type ButtonVariant = "default" | "new" | "saves" | "home";
 
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
-    background: aquamarine;
-    color: darkblue;
+    background: ${({ theme }) => theme.colors.accentPrimary};
+    color: ${({ theme }) => theme.colors.btnTextDark};
     border: none;
   `,
   new: css`
-    background: #22c55e;
-    color: #fff;
+    background: ${({ theme }) => theme.colors.buttonNewBg};
+    color: ${({ theme }) => theme.colors.textPrimary};
     border: none;
     font-weight: bold;
   `,
   saves: css`
-    background: #1a3a2a;
-    color: #6effc0;
-    border: 1px solid #3a7a5a;
+    background: ${({ theme }) => theme.colors.greenBg};
+    color: ${({ theme }) => theme.colors.accentGreen};
+    border: 1px solid ${({ theme }) => theme.colors.borderGreen};
     &:hover {
-      background: #254f38;
+      background: ${({ theme }) => theme.colors.greenHover};
     }
   `,
   home: css`
     background: transparent;
-    color: #aaa;
-    border: 1px solid #444;
+    color: ${({ theme }) => theme.colors.textMuted};
+    border: 1px solid ${({ theme }) => theme.colors.borderMid};
     &:hover {
-      background: #111;
-      border-color: #666;
-      color: #ddd;
+      background: ${({ theme }) => theme.colors.bgDropdown};
+      border-color: ${({ theme }) => theme.colors.textDimmer};
+      color: ${({ theme }) => theme.colors.textDropdown};
     }
   `,
 };
 
 export const Button = styled.button<{ $variant?: ButtonVariant }>`
-  padding: 12px 18px;
-  border-radius: 30px;
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s18};
+  border-radius: ${({ theme }) => theme.radii.pill};
   cursor: pointer;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   ${({ $variant = "default" }) => variantStyles[$variant]}
 
   ${mq.desktop} {
-    font-size: 15px;
+    font-size: ${({ theme }) => theme.fontSizes.lg};
   }
 
   ${mq.mobile} {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+    font-size: ${({ theme }) => theme.fontSizes.base};
   }
 `;
 
 export const AutoPlayGroup = styled.div`
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
-  background: rgba(47, 63, 105, 0.5);
-  border-radius: 10px;
-  padding: 8px 12px;
+  background: ${({ theme }) => theme.colors.navGroupBg};
+  border-radius: ${({ theme }) => theme.radii.card};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
-    padding: 5px 8px;
-    gap: 6px;
+    padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.sm};
+    gap: ${({ theme }) => theme.spacing.s6};
   }
 `;
 
 export const ToggleLabel = styled.label`
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: ${({ theme }) => theme.spacing.s6};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
 
   & input[type="checkbox"] {
-    accent-color: aquamarine;
+    accent-color: ${({ theme }) => theme.colors.accentPrimary};
     cursor: pointer;
-    width: 14px;
-    height: 14px;
+    width: ${({ theme }) => theme.sizes.iconSm};
+    height: ${({ theme }) => theme.sizes.iconSm};
   }
 
   ${mq.notMobile} {
-    font-size: 14px;
+    font-size: ${({ theme }) => theme.fontSizes.md};
   }
 `;
 
 export const BatterUpButton = styled(Button)`
-  font-size: 18px;
-  padding: 16px 28px;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
+  padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.s28};
   font-weight: bold;
 
   ${mq.desktop} {
-    font-size: 20px;
-    padding: 18px 32px;
+    font-size: ${({ theme }) => theme.fontSizes.f20};
+    padding: ${({ theme }) => theme.spacing.s18} ${({ theme }) => theme.spacing.xxxl};
   }
 `;
 
 export const HelpButton = styled.button`
-  background: rgba(47, 63, 105, 0.7);
-  color: #aaccff;
-  border: 1px solid #4a6090;
+  background: ${({ theme }) => theme.colors.helpButtonBg};
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 50%;
-  width: 25px;
-  height: 25px;
-  font-size: 15px;
+  width: ${({ theme }) => theme.sizes.icon};
+  height: ${({ theme }) => theme.sizes.icon};
+  font-size: ${({ theme }) => theme.fontSizes.lg};
   font-family: inherit;
   cursor: pointer;
   line-height: 1;
@@ -126,18 +126,82 @@ export const HelpButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(74, 96, 144, 0.9);
-    color: #fff;
+    background: ${({ theme }) => theme.colors.helpButtonBgHover};
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;
 
 export const Select = styled.select`
-  background: #1a2440;
-  border: 1px solid #4a6090;
-  color: #fff;
-  border-radius: 8px;
-  padding: 3px 6px;
+  background: ${({ theme }) => theme.colors.bgInputSm};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.s6};
   cursor: pointer;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
+`;
+
+// ── VolumeControls ───────────────────────────────────────────────────────────
+
+export const VolumeRow = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.s5};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textBodyAlt};
+  cursor: default;
+`;
+
+export const VolumeIcon = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  line-height: 1;
+  color: inherit;
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+
+export const RangeInput = styled.input`
+  accent-color: ${({ theme }) => theme.colors.accentPrimary};
+  cursor: pointer;
+  width: 72px;
+  height: ${({ theme }) => theme.sizes.progressBar};
+  vertical-align: middle;
+`;
+
+// ── Manager mode controls ─────────────────────────────────────────────────────
+
+export const NotifBadge = styled.span<{ $ok: boolean }>`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ $ok, theme }) => ($ok ? theme.colors.statusOkGreen : theme.colors.statusWarnYellow)};
+  cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
+  white-space: nowrap;
+`;
+
+export const SubButton = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  font-family: inherit;
+  cursor: pointer;
+  min-height: ${({ theme }) => theme.sizes.inputSm};
+  flex-shrink: 0;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
 `;

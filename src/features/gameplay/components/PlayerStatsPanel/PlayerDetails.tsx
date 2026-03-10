@@ -1,6 +1,17 @@
 import * as React from "react";
 
-import styled from "styled-components";
+import {
+  DetailContainer,
+  DetailEmptyState,
+  DetailHeadingRow,
+  DetailPlayerName,
+  DetailSubLabel,
+  DetailToggle,
+  StatCell,
+  StatLabel,
+  StatsGrid,
+  StatValue,
+} from "./styles";
 
 export type BatterStat = {
   atBats: number;
@@ -25,83 +36,6 @@ interface Props {
   stats: BatterStat | null;
   onClear: () => void;
 }
-
-const Container = styled.div`
-  margin-top: 12px;
-  padding: 10px;
-  background: #0d1117;
-  border: 1px solid #222;
-  border-radius: 4px;
-`;
-
-const HeadingRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #888;
-  margin-bottom: 8px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #333;
-`;
-
-const Toggle = styled.button`
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0 2px;
-  &:hover {
-    color: #aaa;
-  }
-`;
-
-const EmptyState = styled.div`
-  color: #444;
-  font-size: 11px;
-  padding: 8px 0;
-  text-align: center;
-`;
-
-const PlayerName = styled.div`
-  color: #6ab0e0;
-  font-weight: 700;
-  font-size: 12px;
-  margin-bottom: 2px;
-`;
-
-const SubLabel = styled.div`
-  color: #555;
-  font-size: 10px;
-  margin-bottom: 10px;
-`;
-
-const StatsGrid = styled.div<{ $cols: number }>`
-  display: grid;
-  grid-template-columns: repeat(${({ $cols }) => $cols}, 1fr);
-  gap: 6px;
-  margin-bottom: 8px;
-`;
-
-const StatCell = styled.div`
-  text-align: center;
-`;
-
-const StatLabel = styled.div`
-  color: #555;
-  font-size: 10px;
-  text-transform: uppercase;
-  margin-bottom: 2px;
-`;
-
-const StatValue = styled.div`
-  color: #e0f0ff;
-  font-size: 12px;
-  font-weight: 600;
-`;
 
 /**
  * Format rate stats in .000 style (e.g., 0.350 → ".350", 1.100 → "1.100").
@@ -128,12 +62,14 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
   // Show empty state if no slot or no stats
   if (slot == null || stats == null) {
     return (
-      <Container>
-        <HeadingRow>
+      <DetailContainer>
+        <DetailHeadingRow>
           <span>Player Details</span>
-        </HeadingRow>
-        <EmptyState>Select a batter in Batting Stats to view expanded stats.</EmptyState>
-      </Container>
+        </DetailHeadingRow>
+        <DetailEmptyState>
+          Select a batter in Batting Stats to view expanded stats.
+        </DetailEmptyState>
+      </DetailContainer>
     );
   }
 
@@ -147,18 +83,18 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
   const ops = obp + slg;
 
   return (
-    <Container>
-      <HeadingRow>
+    <DetailContainer>
+      <DetailHeadingRow>
         <span>Player Details</span>
-        <Toggle onClick={onClear} aria-label="Clear player selection">
+        <DetailToggle onClick={onClear} aria-label="Clear player selection">
           ✕
-        </Toggle>
-      </HeadingRow>
+        </DetailToggle>
+      </DetailHeadingRow>
 
-      <PlayerName>{name}</PlayerName>
-      <SubLabel>
+      <DetailPlayerName>{name}</DetailPlayerName>
+      <DetailSubLabel>
         {teamName} · {position ? `${position} · ` : ""}#{slot} in lineup · This game
-      </SubLabel>
+      </DetailSubLabel>
 
       {/* Counting stats */}
       <StatsGrid $cols={5}>
@@ -223,7 +159,7 @@ const PlayerDetails: React.FunctionComponent<Props> = ({
           <StatValue>{fmtRate(ops)}</StatValue>
         </StatCell>
       </StatsGrid>
-    </Container>
+    </DetailContainer>
   );
 };
 

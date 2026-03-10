@@ -10,12 +10,12 @@ export const FixedBottomBanner = styled.div`
   bottom: 0;
   left: 0;
   right: 0;
-  background: #0d1b2e;
-  color: #cce0ff;
-  border-top: 2px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textBody};
+  border-top: 2px solid ${({ theme }) => theme.colors.borderForm};
   /* Fallback for browsers without env() support */
-  padding: 10px 16px;
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   /* Override bottom padding to include safe-area so the banner clears the home indicator */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom));
-  font-size: 0.875rem;
+  padding-bottom: calc(${({ theme }) => theme.spacing.s10} + env(safe-area-inset-bottom));
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
 `;

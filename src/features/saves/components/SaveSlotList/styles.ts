@@ -1,28 +1,44 @@
+import type { AppTheme } from "@shared/theme";
 import { mq } from "@shared/utils/mediaQueries";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+
+type ActionBtnVariant = "primary" | "secondary" | "danger";
+
+const actionBtnVariants: Record<
+  ActionBtnVariant,
+  {
+    color: keyof AppTheme["colors"];
+    border: keyof AppTheme["colors"];
+    hoverBg: keyof AppTheme["colors"];
+  }
+> = {
+  primary: { color: "accentGreen", border: "borderGreen", hoverBg: "greenBg" },
+  secondary: { color: "textSecondaryLink", border: "borderForm", hoverBg: "bgSurface" },
+  danger: { color: "dangerText", border: "borderDanger", hoverBg: "dangerHoverBg" },
+};
 
 export const SaveList = styled.ul`
   list-style: none;
-  margin: 0 0 24px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xxl};
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const SaveCard = styled.li`
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
-  border-radius: 10px;
-  padding: 14px 16px;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.card};
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -32,8 +48,8 @@ export const SaveInfo = styled.div`
 `;
 
 export const SaveName = styled.div`
-  color: white;
-  font-size: 1rem;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.bodyLg};
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -41,14 +57,14 @@ export const SaveName = styled.div`
 `;
 
 export const SaveDate = styled.div`
-  color: #6680aa;
-  font-size: 12px;
-  margin-top: 2px;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  margin-top: ${({ theme }) => theme.spacing.xxs};
 `;
 
 export const SaveActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
 
   ${mq.mobile} {
@@ -57,41 +73,27 @@ export const SaveActions = styled.div`
   }
 `;
 
-const VARIANT_COLOR: Record<string, string> = {
-  primary: "#6effc0",
-  danger: "#ff7777",
-  secondary: "#88bbee",
-};
-
-const VARIANT_BORDER: Record<string, string> = {
-  primary: "#3a7a5a",
-  danger: "#883333",
-  secondary: "#4a6090",
-};
-
-const VARIANT_HOVER_BG: Record<string, string> = {
-  primary: "#1a3a2a",
-  danger: "#2a0000",
-  secondary: "#0d1b2e",
-};
-
-export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
+export const ActionBtn = styled.button<{ $variant?: ActionBtnVariant }>`
   background: transparent;
-  color: ${({ $variant }) => VARIANT_COLOR[$variant ?? "secondary"]};
-  border: 1px solid ${({ $variant }) => VARIANT_BORDER[$variant ?? "secondary"]};
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  ${({ $variant = "secondary", theme }) => {
+    const v = actionBtnVariants[$variant];
+    return css`
+      color: ${theme.colors[v.color]};
+      border: 1px solid ${theme.colors[v.border]};
+      &:hover {
+        background: ${theme.colors[v.hoverBg]};
+      }
+    `;
+  }}
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 32px;
-
-  &:hover {
-    background: ${({ $variant }) => VARIANT_HOVER_BG[$variant ?? "secondary"]};
-  }
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;

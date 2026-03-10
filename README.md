@@ -173,6 +173,23 @@ yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 - Seeds are set via the seed input field on the New Game form, which calls `reinitSeed(seedStr)` on submit. E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
 
 
+## UI Style Guide
+
+The visual design of Ballgame follows a strict dark-theme system documented in **[`docs/style-guide.md`](docs/style-guide.md)**.  
+Consult it before adding or changing any UI element — it covers:
+
+- **Color palette** — every background, border, text, accent, and status color with hex values
+- **Typography** — font families, the full type scale, weights, and letter-spacing rules
+- **Breakpoints** — `mobile ≤ 768px`, `tablet 769–1023px`, `desktop ≥ 1024px` via `mq.*` helpers
+- **Buttons** — primary (green), secondary (blue outline), game-controls variants, CTA, action, back, and icon buttons
+- **Form elements** — text inputs, selects, radios, checkboxes, labels, sliders, and file inputs
+- **Modals & dialogs** — chrome, titles, close buttons, backdrops, and mobile full-screen behavior
+- **Cards & panels** — save cards, summary stat cells, leader cards, substitution panel, decision panel
+- **Tables** — stats tables, line score table, BSO indicator row
+- **Status & feedback** — validation errors, empty states, banners, loading states
+
+---
+
 ## Tech stack
 
 | Layer | Technology |

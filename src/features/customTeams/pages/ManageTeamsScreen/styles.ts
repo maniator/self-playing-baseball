@@ -7,16 +7,20 @@ export const ScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(
+    ${({ theme }) => theme.spacing.xxl} + ${({ theme }) => theme.sizes.bottomBar}
+  );
   gap: 0;
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.lg} + ${({ theme }) => theme.sizes.bottomBar}
+    );
     /* On mobile body has overflow:hidden (game styles). Provide own scroll. */
     height: 100dvh;
     overflow-y: auto;
@@ -27,52 +31,52 @@ export const ScreenContainer = styled.div`
 export const ScreenHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const ScreenTitle = styled.h1`
-  color: white;
-  font-size: 1.6rem;
-  margin: 0 0 16px;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.h1};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 
   ${mq.mobile} {
-    font-size: 1.3rem;
+    font-size: ${({ theme }) => theme.fontSizes.xxl};
   }
 `;
 
 export const InfoBanner = styled.p`
-  color: #88bbee;
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  margin: 0 0 16px;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 `;
 
 export const CreateBtn = styled.button`
-  background: #1a3a2a;
-  color: #6effc0;
-  border: 1px solid #3a7a5a;
-  border-radius: 8px;
-  padding: 12px 20px;
-  font-size: 0.95rem;
+  background: ${({ theme }) => theme.colors.greenBg};
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  min-height: 44px;
+  min-height: ${({ theme }) => theme.sizes.btnLg};
   align-self: center;
   width: min(100%, 340px);
-  margin-top: 8px;
-  margin-bottom: 20px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 
   &:hover {
-    background: #254f38;
+    background: ${({ theme }) => theme.colors.greenHover};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -83,18 +87,18 @@ export const TeamList = styled.ul`
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const TeamListItemCard = styled.li`
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
-  border-radius: 10px;
-  padding: 14px 16px;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.card};
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 export const TeamInfo = styled.div`
@@ -103,50 +107,54 @@ export const TeamInfo = styled.div`
 `;
 
 export const TeamName = styled.div`
-  color: white;
-  font-size: 1rem;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.bodyLg};
   font-weight: 600;
 `;
 
 export const TeamMeta = styled.div`
-  color: #6680aa;
-  font-size: 12px;
-  margin-top: 2px;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  margin-top: ${({ theme }) => theme.spacing.xxs};
 `;
 
 export const TeamActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
 `;
 
 export const ActionBtn = styled.button<{ $danger?: boolean }>`
   background: transparent;
-  color: ${({ $danger }) => ($danger ? "#ff7777" : "#88bbee")};
-  border: 1px solid ${({ $danger }) => ($danger ? "#883333" : "#4a6090")};
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  color: ${({ $danger, theme }) =>
+    $danger ? theme.colors.dangerText : theme.colors.textSecondaryLink};
+  border: 1px solid
+    ${({ $danger, theme }) => ($danger ? theme.colors.borderDanger : theme.colors.borderForm)};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
-    background: ${({ $danger }) => ($danger ? "#2a0000" : "#0d1b2e")};
-    border-color: ${({ $danger }) => ($danger ? "#cc4444" : "#88bbee")};
+    background: ${({ $danger, theme }) =>
+      $danger ? theme.colors.dangerHoverBg : theme.colors.bgSurface};
+    border-color: ${({ $danger, theme }) =>
+      $danger ? theme.colors.dangerHoverBorder : theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const EmptyState = styled.p`
-  color: #6680aa;
-  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   text-align: center;
-  margin: 40px 0;
+  margin: ${({ theme }) => theme.spacing.s40} 0;
 `;
 
 /** Wrapper for the inline editor view — provides its own scroll on mobile. */
@@ -157,7 +165,7 @@ export const EditorShell = styled.div`
   margin: 0 auto;
   width: 100%;
   min-height: 100dvh;
-  padding-bottom: 80px;
+  padding-bottom: ${({ theme }) => theme.sizes.bottomBar};
 
   ${mq.mobile} {
     height: 100dvh;
@@ -169,63 +177,63 @@ export const EditorShell = styled.div`
 export const EditorShellHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 24px 24px 0;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.xxl} 0;
 
   ${mq.mobile} {
-    padding: 16px 16px 0;
+    padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.lg} 0;
   }
 `;
 
 export const EditorLoading = styled.p`
-  color: #6680aa;
-  font-size: 0.95rem;
-  padding: 24px;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.body};
+  padding: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const NotFoundMsg = styled.p`
-  color: #ff9977;
-  font-size: 0.95rem;
-  padding: 24px;
+  color: ${({ theme }) => theme.colors.textWarnOrange};
+  font-size: ${({ theme }) => theme.fontSizes.body};
+  padding: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const TeamListLink = styled.button`
   background: transparent;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   border: none;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
   padding: 0;
   text-decoration: underline;
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 `;
 
 export const ImportExportSection = styled.div`
-  border-top: 1px solid #4a6090;
-  margin-top: 24px;
-  padding-top: 20px;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderForm};
+  margin-top: ${({ theme }) => theme.spacing.xxl};
+  padding-top: ${({ theme }) => theme.spacing.xl};
 `;
 
 export const ImportExportTitle = styled.p`
   text-transform: uppercase;
-  color: #6680aa;
-  font-size: 11px;
-  letter-spacing: 0.05em;
-  margin: 0 0 8px;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.tight};
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
 `;
 
 export const SuccessMessage = styled.p`
-  color: #6effc0;
-  background: #0d2016;
-  border: 1px solid #3a7a5a;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
-  margin-top: 8px;
+  color: ${({ theme }) => theme.colors.accentGreen};
+  background: ${({ theme }) => theme.colors.successBg};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin-top: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const FileInput = styled.input`
@@ -234,25 +242,25 @@ export const FileInput = styled.input`
 
 export const ImportExportRow = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
   align-items: center;
 `;
 
 export const ImportExportBtn = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  padding: 8px 14px;
-  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.s14};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 36px;
+  min-height: ${({ theme }) => theme.sizes.btnMd};
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:disabled {
@@ -261,37 +269,37 @@ export const ImportExportBtn = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const ErrorMessage = styled.p`
-  color: #ff9977;
-  font-size: 13px;
-  margin-top: 8px;
+  color: ${({ theme }) => theme.colors.textWarnOrange};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin-top: ${({ theme }) => theme.spacing.sm};
 `;
 
 export const PasteTextarea = styled.textarea`
   width: 100%;
-  min-height: 72px;
-  background: #0a1525;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  color: #cce0ff;
+  min-height: ${({ theme }) => theme.sizes.pasteTextarea};
+  background: ${({ theme }) => theme.colors.bgImport};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
-  font-size: 11px;
-  padding: 8px 10px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.s10};
   resize: vertical;
   box-sizing: border-box;
-  margin-top: 10px;
+  margin-top: ${({ theme }) => theme.spacing.s10};
 
   &::placeholder {
-    color: #3a5070;
+    color: ${({ theme }) => theme.colors.textDimBlue};
   }
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-color: transparent;
   }
@@ -299,38 +307,44 @@ export const PasteTextarea = styled.textarea`
 
 export const PasteActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
   align-items: center;
-  margin-top: 6px;
+  margin-top: ${({ theme }) => theme.spacing.s6};
 `;
 
 /** Banner shown when a team import is blocked due to duplicate players. */
 export const DuplicateConfirmBanner = styled.div`
-  background: #1a1a00;
-  border: 1px solid #886600;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 10px;
-  font-size: 13px;
-  color: #ffdd88;
+  background: ${({ theme }) => theme.colors.bgWarnDeep};
+  border: 1px solid ${({ theme }) => theme.colors.borderWarn};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s14};
+  margin-top: ${({ theme }) => theme.spacing.s10};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  color: ${({ theme }) => theme.colors.textWarnGold};
 `;
 
 export const DuplicateConfirmTitle = styled.p`
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
   font-weight: 600;
-  color: #ffcc44;
+  color: ${({ theme }) => theme.colors.textWarnBright};
 `;
 
 export const DuplicateConfirmList = styled.ul`
-  margin: 0 0 10px;
-  padding-left: 18px;
-  color: #ffdd88;
+  margin: 0 0 ${({ theme }) => theme.spacing.s10};
+  padding-left: ${({ theme }) => theme.spacing.lg};
+  color: ${({ theme }) => theme.colors.textWarnGold};
 `;
 
 export const DuplicateConfirmActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
-  margin-top: 8px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+`;
+
+export const DuplicateConfirmNote = styled.p`
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textTeamInfo};
 `;

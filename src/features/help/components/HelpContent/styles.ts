@@ -2,13 +2,13 @@ import styled from "styled-components";
 
 /** Collapsible section wrapper used by HelpContent accordion entries. */
 export const SectionDetails = styled.details`
-  border: 1px solid rgba(74, 96, 144, 0.35);
-  border-radius: 8px;
-  margin-bottom: 10px;
+  border: 1px solid ${({ theme }) => theme.colors.borderFormAlpha35};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
   overflow: hidden;
 
   &[open] > summary {
-    border-bottom: 1px solid rgba(74, 96, 144, 0.35);
+    border-bottom: 1px solid ${({ theme }) => theme.colors.borderFormAlpha35};
   }
 `;
 
@@ -16,13 +16,13 @@ export const SectionSummary = styled.summary`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 10px 14px;
-  font-size: 13px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: #88bbee;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wider};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   cursor: pointer;
   user-select: none;
   list-style: none;
@@ -33,8 +33,8 @@ export const SectionSummary = styled.summary`
 
   &::after {
     content: "▸";
-    font-size: 11px;
-    color: #4a6090;
+    font-size: ${({ theme }) => theme.fontSizes.sm};
+    color: ${({ theme }) => theme.colors.borderForm};
     flex-shrink: 0;
     transition: transform 0.15s;
   }
@@ -44,20 +44,21 @@ export const SectionSummary = styled.summary`
   }
 
   &:hover {
-    background: rgba(74, 96, 144, 0.15);
+    background: ${({ theme }) => theme.colors.bgFormAlpha15};
   }
 `;
 
 export const SectionBody = styled.div`
-  padding: 10px 14px 12px;
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14}
+    ${({ theme }) => theme.spacing.md};
 `;
 
 export const List = styled.ul`
   margin: 0;
-  padding-left: 18px;
-  color: #cce0ff;
+  padding-left: ${({ theme }) => theme.spacing.s18};
+  color: ${({ theme }) => theme.colors.textBody};
 `;
 
 export const Li = styled.li`
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;

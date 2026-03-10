@@ -11,91 +11,17 @@ import {
   computeBattingStatsFromLogs,
   emptyBatterStat,
 } from "@shared/utils/stats/computeBattingStatsFromLogs";
-import styled from "styled-components";
 
 import PlayerDetails, { type BatterStat } from "./PlayerDetails";
-
-const HeadingRow = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 12px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #888;
-  margin-bottom: 6px;
-  padding-bottom: 4px;
-  border-bottom: 1px solid #333;
-`;
-
-const Toggle = styled.button`
-  background: none;
-  border: none;
-  color: #555;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0 2px;
-  &:hover {
-    color: #aaa;
-  }
-`;
-
-const ModeToggle = styled.button<{ $active?: boolean }>`
-  background: none;
-  border: 1px solid ${({ $active }) => ($active ? "#6ab0e0" : "#333")};
-  color: ${({ $active }) => ($active ? "#6ab0e0" : "#555")};
-  font-size: 10px;
-  cursor: pointer;
-  padding: 1px 6px;
-  border-radius: 3px;
-  margin-left: 4px;
-  &:hover {
-    color: #aaa;
-    border-color: #aaa;
-  }
-`;
-
-const Table = styled.table`
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 11px;
-`;
-
-const Th = styled.th`
-  color: #555;
-  font-weight: 600;
-  text-align: right;
-  padding: 2px 4px;
-  border-bottom: 1px solid #222;
-  &:first-child {
-    text-align: left;
-    width: auto;
-  }
-`;
-
-const Td = styled.td<{ $highlight?: boolean }>`
-  text-align: right;
-  padding: 2px 4px;
-  color: ${({ $highlight }) => ($highlight ? "#e0f0ff" : "#888")};
-  &:first-child {
-    text-align: left;
-    color: #6ab0e0;
-    font-weight: 700;
-  }
-`;
-
-const Tr = styled.tr<{ $selected?: boolean }>`
-  cursor: pointer;
-  background: ${({ $selected }) => ($selected ? "rgba(106,176,224,0.12)" : "transparent")};
-  &:hover {
-    background: ${({ $selected }) =>
-      $selected ? "rgba(106,176,224,0.18)" : "rgba(255,255,255,0.04)"};
-  }
-  &:focus-visible {
-    outline: 1px solid #6ab0e0;
-    outline-offset: -1px;
-  }
-`;
+import {
+  ModeToggle,
+  PanelHeadingRow,
+  PanelToggle,
+  StatsTable,
+  StatsTableTd,
+  StatsTableTh,
+  StatsTableTr,
+} from "./styles";
 
 /**
  * RBI rule (simplified simulator):
@@ -315,7 +241,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
 
   return (
     <div data-testid="player-stats-panel">
-      <HeadingRow>
+      <PanelHeadingRow>
         <span>Batting Stats</span>
         <span>
           <ModeToggle
@@ -336,33 +262,33 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
           >
             Career
           </ModeToggle>
-          <Toggle
+          <PanelToggle
             onClick={() => setCollapsed((c) => !c)}
             aria-label={collapsed ? "Expand batting stats" : "Collapse batting stats"}
           >
             {collapsed ? "▶ show" : "▼ hide"}
-          </Toggle>
+          </PanelToggle>
         </span>
-      </HeadingRow>
+      </PanelHeadingRow>
       {!collapsed && (
         <>
-          <Table data-testid="batting-stats-table">
+          <StatsTable data-testid="batting-stats-table">
             <thead>
               <tr>
-                <Th>#</Th>
-                <Th>Pos</Th>
-                <Th>AB</Th>
-                <Th>H</Th>
-                <Th>BB</Th>
-                <Th>K</Th>
-                <Th>RBI</Th>
+                <StatsTableTh>#</StatsTableTh>
+                <StatsTableTh>Pos</StatsTableTh>
+                <StatsTableTh>AB</StatsTableTh>
+                <StatsTableTh>H</StatsTableTh>
+                <StatsTableTh>BB</StatsTableTh>
+                <StatsTableTh>K</StatsTableTh>
+                <StatsTableTh>RBI</StatsTableTh>
               </tr>
             </thead>
             <tbody>
               {Array.from({ length: 9 }, (_, i) => i + 1).map((num) => {
                 const s = getSlotStats(num);
                 return (
-                  <Tr
+                  <StatsTableTr
                     key={num}
                     $selected={selectedSlot === num}
                     onClick={() => handleRowSelect(num)}
@@ -374,18 +300,18 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
                     aria-selected={selectedSlot === num}
                     data-testid={`batter-row-${num}`}
                   >
-                    <Td>{slotNames[num - 1] ?? num}</Td>
-                    <Td>{slotPositions[num - 1] || "–"}</Td>
-                    <Td $highlight={s.atBats > 0}>{s.atBats || "–"}</Td>
-                    <Td $highlight={s.hits > 0}>{s.hits || "–"}</Td>
-                    <Td $highlight={s.walks > 0}>{s.walks || "–"}</Td>
-                    <Td $highlight={s.strikeouts > 0}>{s.strikeouts || "–"}</Td>
-                    <Td $highlight={s.rbi > 0}>{s.rbi || "–"}</Td>
-                  </Tr>
+                    <StatsTableTd>{slotNames[num - 1] ?? num}</StatsTableTd>
+                    <StatsTableTd>{slotPositions[num - 1] || "–"}</StatsTableTd>
+                    <StatsTableTd $highlight={s.atBats > 0}>{s.atBats || "–"}</StatsTableTd>
+                    <StatsTableTd $highlight={s.hits > 0}>{s.hits || "–"}</StatsTableTd>
+                    <StatsTableTd $highlight={s.walks > 0}>{s.walks || "–"}</StatsTableTd>
+                    <StatsTableTd $highlight={s.strikeouts > 0}>{s.strikeouts || "–"}</StatsTableTd>
+                    <StatsTableTd $highlight={s.rbi > 0}>{s.rbi || "–"}</StatsTableTd>
+                  </StatsTableTr>
                 );
               })}
             </tbody>
-          </Table>
+          </StatsTable>
           <PlayerDetails
             slot={selectedSlot}
             name={selectedName}

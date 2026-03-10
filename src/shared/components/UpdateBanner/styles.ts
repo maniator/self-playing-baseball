@@ -7,12 +7,12 @@ export const Banner = styled(FixedBottomBanner)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -24,41 +24,41 @@ export const Message = styled.p`
 
 export const Actions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
   flex-shrink: 0;
 `;
 
 export const ReloadButton = styled.button`
-  background: #22c55e;
+  background: ${({ theme }) => theme.colors.buttonNewBg};
   border: none;
-  color: #000;
+  color: ${({ theme }) => theme.colors.bgVoid};
   cursor: pointer;
-  padding: 5px 14px;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.s14};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
   font-weight: bold;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
-    background: #16a34a;
+    background: ${({ theme }) => theme.colors.buttonNewBgHover};
   }
 `;
 
 export const DismissButton = styled.button`
   background: none;
-  border: 1px solid #4a6090;
-  color: #cce0ff;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textBody};
   cursor: pointer;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
-  min-height: 32px;
+  min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
-    border-color: #88bbee;
-    color: #fff;
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;

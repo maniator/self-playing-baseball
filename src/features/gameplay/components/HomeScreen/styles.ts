@@ -7,32 +7,33 @@ export const HomeContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  padding: 32px 24px calc(32px + 80px);
-  gap: 16px;
+  padding: ${({ theme }) => theme.spacing.xxxl} ${({ theme }) => theme.spacing.xxl}
+    calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
+  gap: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const HomeLogo = styled.div`
-  font-size: 3rem;
+  font-size: ${({ theme }) => theme.fontSizes.logo};
 
   ${mq.mobile} {
-    font-size: 2.5rem;
+    font-size: ${({ theme }) => theme.fontSizes.displayMd};
   }
 `;
 
 export const HomeTitle = styled.h1`
-  color: white;
-  font-size: 2.2rem;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.title};
   margin: 0;
   text-align: center;
 
   ${mq.mobile} {
-    font-size: 1.8rem;
+    font-size: ${({ theme }) => theme.fontSizes.displaySm};
   }
 `;
 
 export const HomeSubtitle = styled.p`
-  color: #888;
-  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   margin: 0;
   text-align: center;
 `;
@@ -40,87 +41,87 @@ export const HomeSubtitle = styled.p`
 export const MenuGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
-  margin-top: 16px;
+  margin-top: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const PrimaryBtn = styled.button`
-  background: #1a3a2a;
-  color: #6effc0;
-  border: 1px solid #3a7a5a;
-  border-radius: 6px;
-  padding: 16px 20px;
-  font-size: 1.05rem;
+  background: ${({ theme }) => theme.colors.greenBg};
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.bodyXl};
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  min-height: 52px;
+  min-height: ${({ theme }) => theme.sizes.btnXxl};
   text-align: center;
 
   &:hover {
-    background: #254f38;
+    background: ${({ theme }) => theme.colors.greenHover};
   }
 
   &:active {
-    background: #0e2418;
+    background: ${({ theme }) => theme.colors.greenActive};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const SecondaryBtn = styled.button`
   background: transparent;
-  color: #aaccff;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  padding: 14px 20px;
-  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   font-family: inherit;
   cursor: pointer;
-  min-height: 48px;
+  min-height: ${({ theme }) => theme.sizes.btnXl};
   text-align: center;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
-    color: #cce0ff;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+    color: ${({ theme }) => theme.colors.textBody};
   }
 
   &:active {
-    background: #071020;
+    background: ${({ theme }) => theme.colors.bgGameDeep};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 /** Non-interactive teaser box for upcoming League mode. */
 export const LeagueTeaserBox = styled.div`
-  margin-top: 8px;
-  padding: 12px 20px;
-  background: #0d1b2e;
-  border: 1px solid #2a3a5a;
-  border-radius: 8px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
+  border-radius: ${({ theme }) => theme.radii.lg};
   width: min(100%, 300px);
   text-align: center;
 `;
 
 export const LeagueTeaserTitle = styled.p`
-  color: #f0c040;
-  font-size: 0.88rem;
+  color: ${({ theme }) => theme.colors.textGold};
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
   font-weight: 600;
-  margin: 0 0 4px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xs};
 `;
 
 export const LeagueTeaserSub = styled.p`
-  color: #aaa;
-  font-size: 0.78rem;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   margin: 0;
   line-height: 1.4;
 `;

@@ -13,65 +13,65 @@ export {
 export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayout/styles";
 
 export const PageTitle = styled.h1`
-  color: white;
-  font-size: 1.6rem;
-  margin: 0 0 20px;
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.h1};
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 
   ${mq.mobile} {
-    font-size: 1.3rem;
+    font-size: ${({ theme }) => theme.fontSizes.xxl};
   }
 `;
 
 export const EmptyState = styled.p`
-  color: #6680aa;
-  font-size: 0.95rem;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   text-align: center;
-  margin: 40px 0;
+  margin: ${({ theme }) => theme.spacing.s40} 0;
 `;
 
 export const LoadingState = styled.p`
-  color: #6680aa;
-  font-size: 0.95rem;
-  margin: 24px 0;
+  color: ${({ theme }) => theme.colors.textHint};
+  font-size: ${({ theme }) => theme.fontSizes.body};
+  margin: ${({ theme }) => theme.spacing.xxl} 0;
 `;
 
 export const ImportSection = styled.div`
-  border-top: 1px solid rgba(74, 96, 144, 0.3);
-  padding-top: 20px;
-  margin-top: 8px;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderFormAlpha30};
+  padding-top: ${({ theme }) => theme.spacing.xl};
+  margin-top: ${({ theme }) => theme.spacing.sm};
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const ImportSectionTitle = styled.h2`
-  color: #88bbee;
-  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.tight};
   text-transform: uppercase;
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
 `;
 
 export const PasteTextarea = styled.textarea`
   width: 100%;
-  min-height: 80px;
-  background: #0a1525;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  color: #cce0ff;
+  min-height: ${({ theme }) => theme.sizes.pasteTextarea};
+  background: ${({ theme }) => theme.colors.bgImport};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
-  font-size: 11px;
-  padding: 8px 10px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.s10};
   resize: vertical;
   box-sizing: border-box;
 
   &::placeholder {
-    color: #3a5070;
+    color: ${({ theme }) => theme.colors.textDimBlue};
   }
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-color: transparent;
   }
@@ -79,7 +79,7 @@ export const PasteTextarea = styled.textarea`
 
 export const PasteActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
   align-items: center;
 `;
@@ -87,40 +87,40 @@ export const PasteActions = styled.div`
 export const ImportLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #88bbee;
-  font-size: 13px;
+  gap: ${({ theme }) => theme.spacing.s10};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
 `;
 
 export const FileInput = styled.input`
   font-family: inherit;
-  font-size: 12px;
-  color: #88bbee;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
 
   &::file-selector-button {
     background: transparent;
-    color: #88bbee;
-    border: 1px solid #4a6090;
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
+    color: ${({ theme }) => theme.colors.textSecondaryLink};
+    border: 1px solid ${({ theme }) => theme.colors.borderForm};
+    border-radius: ${({ theme }) => theme.radii.md};
+    padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
+    font-size: ${({ theme }) => theme.fontSizes.label};
     font-family: inherit;
     cursor: pointer;
-    margin-right: 8px;
+    margin-right: ${({ theme }) => theme.spacing.sm};
 
     &:hover {
-      background: #0d1b2e;
+      background: ${({ theme }) => theme.colors.bgSurface};
     }
   }
 `;
 
 export const ErrorMessage = styled.p`
-  color: #ff7777;
-  background: rgba(80, 0, 0, 0.3);
-  border: 1px solid #883333;
-  border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
-  margin-top: 10px;
+  color: ${({ theme }) => theme.colors.dangerText};
+  background: ${({ theme }) => theme.colors.errorBgTransparent};
+  border: 1px solid ${({ theme }) => theme.colors.borderDanger};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin-top: ${({ theme }) => theme.spacing.s10};
 `;

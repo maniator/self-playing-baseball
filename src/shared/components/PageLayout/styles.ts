@@ -10,15 +10,19 @@ export const PageContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(
+    ${({ theme }) => theme.spacing.xxl} + ${({ theme }) => theme.sizes.bottomBar}
+  );
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.lg} + ${({ theme }) => theme.sizes.bottomBar}
+    );
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -33,28 +37,28 @@ export const PageContainer = styled.div`
 export const PageHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 20px;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 `;
 
 /** Consistent back-navigation button used across all route-level screens. */
 export const BackBtn = styled.button`
   background: transparent;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   border: none;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
-  padding: 4px 0;
-  min-height: 36px;
+  padding: ${({ theme }) => theme.spacing.xs} 0;
+  min-height: ${({ theme }) => theme.sizes.btnMd};
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
-    border-radius: 3px;
+    border-radius: ${({ theme }) => theme.radii.sm};
   }
 `;

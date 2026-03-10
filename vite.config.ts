@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: "jsdom",
     globals: true,
-    setupFiles: ["./test/setup.ts"],
+    setupFiles: ["./test/react-global.ts", "./test/setup.ts"],
     coverage: {
       provider: "v8",
       // Patterns are relative to the vitest root, which is "src/" (set by

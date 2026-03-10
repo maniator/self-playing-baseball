@@ -334,4 +334,66 @@ describe("ManageTeamsScreen — Import/Export section", () => {
     expect(screen.getByTestId("import-teams-error")).toBeInTheDocument();
     expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
   });
+
+  it("shows duplicate confirm banner when pendingDuplicateImport is set", () => {
+    const confirmDuplicateImport = vi.fn();
+    const cancelDuplicateImport = vi.fn();
+    vi.mocked(useImportCustomTeams).mockReturnValueOnce({
+      importError: null,
+      importing: false,
+      handleFileImport: vi.fn(),
+      pendingDuplicateImport: {
+        warnings: ["Player A", "Player B"],
+        confirm: confirmDuplicateImport,
+        cancel: cancelDuplicateImport,
+      },
+      confirmDuplicateImport,
+      cancelDuplicateImport,
+    } as unknown as UseImportCustomTeamsReturn);
+    renderAt("/teams");
+    expect(screen.getByTestId("teams-duplicate-banner")).toBeInTheDocument();
+    expect(screen.getByText("Player A")).toBeInTheDocument();
+    expect(screen.getByText("Player B")).toBeInTheDocument();
+    expect(screen.getByText(/may already be in your collection/i)).toBeInTheDocument();
+  });
+
+  it("calls confirmDuplicateImport when Import Anyway is clicked", () => {
+    const confirmDuplicateImport = vi.fn();
+    const cancelDuplicateImport = vi.fn();
+    vi.mocked(useImportCustomTeams).mockReturnValueOnce({
+      importError: null,
+      importing: false,
+      handleFileImport: vi.fn(),
+      pendingDuplicateImport: {
+        warnings: ["Player X"],
+        confirm: confirmDuplicateImport,
+        cancel: cancelDuplicateImport,
+      },
+      confirmDuplicateImport,
+      cancelDuplicateImport,
+    } as unknown as UseImportCustomTeamsReturn);
+    renderAt("/teams");
+    fireEvent.click(screen.getByTestId("teams-duplicate-confirm-button"));
+    expect(confirmDuplicateImport).toHaveBeenCalled();
+  });
+
+  it("calls cancelDuplicateImport when Cancel is clicked in the duplicate banner", () => {
+    const confirmDuplicateImport = vi.fn();
+    const cancelDuplicateImport = vi.fn();
+    vi.mocked(useImportCustomTeams).mockReturnValueOnce({
+      importError: null,
+      importing: false,
+      handleFileImport: vi.fn(),
+      pendingDuplicateImport: {
+        warnings: ["Player Y"],
+        confirm: confirmDuplicateImport,
+        cancel: cancelDuplicateImport,
+      },
+      confirmDuplicateImport,
+      cancelDuplicateImport,
+    } as unknown as UseImportCustomTeamsReturn);
+    renderAt("/teams");
+    fireEvent.click(screen.getByTestId("teams-duplicate-cancel-button"));
+    expect(cancelDuplicateImport).toHaveBeenCalled();
+  });
 });

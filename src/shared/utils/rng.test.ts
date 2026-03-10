@@ -283,3 +283,57 @@ describe("rng.ts — restoreSeed", () => {
     expect(seq2).toEqual(seq1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// generateFreshSeed — fresh-seed generation without affecting PRNG state
+// ---------------------------------------------------------------------------
+
+describe("rng.ts — generateFreshSeed", () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
+  it("returns a number", async () => {
+    const rng = await import("./rng");
+    const s = rng.generateFreshSeed();
+    expect(typeof s).toBe("number");
+  });
+
+  it("does not return the same value on consecutive calls (uniqueness guarantee)", async () => {
+    const rng = await import("./rng");
+    const s1 = rng.generateFreshSeed();
+    const s2 = rng.generateFreshSeed();
+    expect(s1).not.toBe(s2);
+  });
+
+  it("returns different values from PRNG seed (independent of PRNG state)", async () => {
+    const rng = await import("./rng");
+    rng.reinitSeed("fixed");
+    const prngseed = rng.getSeed();
+    // generateFreshSeed must not change the PRNG seed.
+    rng.generateFreshSeed();
+    expect(rng.getSeed()).toBe(prngseed);
+  });
+
+  it("does not advance the PRNG sequence (random() results unchanged)", async () => {
+    const rng = await import("./rng");
+    rng.reinitSeed("testseq");
+    // Capture the next 5 random values before calling generateFreshSeed.
+    rng.reinitSeed("testseq");
+    const withoutFresh = Array.from({ length: 5 }, () => rng.random());
+    rng.reinitSeed("testseq");
+    rng.generateFreshSeed();
+    const withFresh = Array.from({ length: 5 }, () => rng.random());
+    expect(withFresh).toEqual(withoutFresh);
+  });
+
+  it("returns a 32-bit unsigned integer", async () => {
+    const rng = await import("./rng");
+    for (let i = 0; i < 10; i++) {
+      const s = rng.generateFreshSeed();
+      expect(s).toBeGreaterThanOrEqual(0);
+      expect(s).toBeLessThanOrEqual(0xffffffff);
+      expect(Number.isInteger(s)).toBe(true);
+    }
+  });
+});

@@ -2,16 +2,16 @@ import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
 
 export const Panel = styled.div`
-  background: #0d1b2e;
-  border: 1px solid #2a3f60;
-  border-radius: 8px;
-  padding: 12px 14px;
-  margin-top: 8px;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderCard};
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s14};
+  margin-top: ${({ theme }) => theme.spacing.sm};
   width: 100%;
   max-width: 480px;
 
   ${mq.mobile} {
-    padding: 10px 12px;
+    padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
     max-width: 100%;
   }
 `;
@@ -20,40 +20,40 @@ export const PanelHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const PanelTitle = styled.h4`
-  color: aquamarine;
-  font-size: 0.85rem;
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   margin: 0;
   font-weight: 600;
 `;
 
 export const CloseButton = styled.button`
   background: transparent;
-  border: 1px solid #4a6090;
-  color: #88bbee;
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 12px;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: 2px ${({ theme }) => theme.spacing.sm};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   line-height: 1.4;
 
   &:hover {
-    background: #1a2e4a;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgInput};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const Section = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
 
   &:last-child {
     margin-bottom: 0;
@@ -61,49 +61,49 @@ export const Section = styled.div`
 `;
 
 export const SectionTitle = styled.h5`
-  color: #88bbee;
-  font-size: 0.7rem;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  font-size: ${({ theme }) => theme.fontSizes.tiny};
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin: 0 0 6px;
-  border-bottom: 1px solid #1e3050;
-  padding-bottom: 4px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wide};
+  margin: 0 0 ${({ theme }) => theme.spacing.s6};
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
+  padding-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const Row = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.s6};
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const SelectField = styled.select`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
-  border-radius: 6px;
-  padding: 4px 8px;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
   font-family: inherit;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   cursor: pointer;
   min-height: 30px;
   flex: 1;
   min-width: 100px;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 1px;
   }
 `;
 
 export const ActionButton = styled.button`
-  background: aquamarine;
-  color: darkblue;
+  background: ${({ theme }) => theme.colors.accentPrimary};
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 5px ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -111,7 +111,7 @@ export const ActionButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: #5fffbb;
+    background: ${({ theme }) => theme.colors.accentGreenBright};
   }
 
   &:disabled {
@@ -120,48 +120,52 @@ export const ActionButton = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid white;
+    outline: 2px solid ${({ theme }) => theme.colors.textPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const EmptyNote = styled.p`
-  font-size: 11px;
-  color: #6680aa;
-  margin: 2px 0 4px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textHint};
+  margin: 2px 0 ${({ theme }) => theme.spacing.xs};
   font-style: italic;
 `;
 
 export const FatigueBar = styled.div``;
 
 export const FatigueLabel = styled.span<{ $level: "low" | "medium" | "high" }>`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   font-weight: 600;
-  padding: 1px 6px;
-  border-radius: 4px;
-  color: ${({ $level }) =>
-    $level === "high" ? "#ff6b6b" : $level === "medium" ? "#ffd06b" : "#a0b4d0"};
+  padding: 1px ${({ theme }) => theme.spacing.s6};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  color: ${({ $level, theme }) =>
+    $level === "high"
+      ? theme.colors.textFatigueHigh
+      : $level === "medium"
+        ? theme.colors.textFatigueMed
+        : theme.colors.textFaint};
 `;
 
 export const SubButton = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 30px;
+  min-height: ${({ theme }) => theme.sizes.inputSm};
   flex-shrink: 0;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
