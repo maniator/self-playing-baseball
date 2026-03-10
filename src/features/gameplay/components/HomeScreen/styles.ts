@@ -46,9 +46,9 @@ export const MenuGroup = styled.div`
 `;
 
 export const PrimaryBtn = styled.button`
-  background: #1a3a2a;
-  color: #6effc0;
-  border: 1px solid #3a7a5a;
+  background: ${({ theme }) => theme.colors.greenBg};
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: 6px;
   padding: 16px 20px;
   font-size: 1.05rem;
@@ -59,23 +59,23 @@ export const PrimaryBtn = styled.button`
   text-align: center;
 
   &:hover {
-    background: #254f38;
+    background: ${({ theme }) => theme.colors.greenHover};
   }
 
   &:active {
-    background: #0e2418;
+    background: ${({ theme }) => theme.colors.greenActive};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const SecondaryBtn = styled.button`
   background: transparent;
-  color: #aaccff;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   padding: 14px 20px;
   font-size: 0.95rem;
@@ -85,9 +85,9 @@ export const SecondaryBtn = styled.button`
   text-align: center;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
-    color: #cce0ff;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+    color: ${({ theme }) => theme.colors.textBody};
   }
 
   &:active {
@@ -95,7 +95,7 @@ export const SecondaryBtn = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -104,8 +104,8 @@ export const SecondaryBtn = styled.button`
 export const LeagueTeaserBox = styled.div`
   margin-top: 8px;
   padding: 12px 20px;
-  background: #0d1b2e;
-  border: 1px solid #2a3a5a;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
   border-radius: 8px;
   width: min(100%, 300px);
   text-align: center;

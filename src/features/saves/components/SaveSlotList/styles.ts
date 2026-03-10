@@ -11,8 +11,8 @@ export const SaveList = styled.ul`
 `;
 
 export const SaveCard = styled.li`
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;
@@ -41,7 +41,7 @@ export const SaveName = styled.div`
 `;
 
 export const SaveDate = styled.div`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 12px;
   margin-top: 2px;
 `;
@@ -91,7 +91,7 @@ export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "d
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;

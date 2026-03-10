@@ -76,7 +76,7 @@ const Th = styled.th`
 const Td = styled.td<{ $highlight?: boolean }>`
   text-align: right;
   padding: 2px 4px;
-  color: ${({ $highlight }) => ($highlight ? "#e0f0ff" : "#888")};
+  color: ${({ $highlight, theme }) => ($highlight ? theme.colors.textDialog : "#888")};
   &:first-child {
     text-align: left;
     color: #6ab0e0;

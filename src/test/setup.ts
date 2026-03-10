@@ -2,8 +2,39 @@ import "@testing-library/jest-dom";
 
 import * as React from "react";
 
+import { theme } from "@shared/theme";
+import { ThemeProvider } from "styled-components";
+
 // styled-components v6 references React at module load time; make it globally available.
 (globalThis as typeof globalThis & { React: unknown }).React = React;
+
+// Wrap every @testing-library/react render with ThemeProvider so that
+// styled-components interpolations that reference `theme.*` resolve correctly.
+vi.mock("@testing-library/react", async (importActual) => {
+  const actual = await importActual<typeof import("@testing-library/react")>();
+
+  const ThemeWrapper: React.FunctionComponent<{ children: React.ReactNode }> = ({ children }) =>
+    React.createElement(ThemeProvider, { theme }, children);
+
+  return {
+    ...actual,
+    render: (
+      ui: React.ReactNode,
+      options?: Parameters<typeof actual.render>[1],
+    ): ReturnType<typeof actual.render> => {
+      const OriginalWrapper = options?.wrapper;
+      const CombinedWrapper: React.FunctionComponent<{ children: React.ReactNode }> = ({
+        children,
+      }) =>
+        React.createElement(
+          ThemeWrapper,
+          null,
+          OriginalWrapper ? React.createElement(OriginalWrapper, null, children) : children,
+        );
+      return actual.render(ui, { ...options, wrapper: CombinedWrapper });
+    },
+  };
+});
 
 // ---------------------------------------------------------------------------
 // Mock window.speechSynthesis so announce.ts can be imported without errors.

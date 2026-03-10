@@ -33,8 +33,8 @@ export const SummaryGrid = styled.div`
 
 /** A single stat cell in the summary grid. */
 export const SummaryCell = styled.div`
-  background: #0d1b2e;
-  border: 1px solid #2a3a5a;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
   border-radius: 6px;
   padding: 10px 12px;
   display: flex;
@@ -51,7 +51,7 @@ export const SummaryCellLabel = styled.span`
 `;
 
 export const SummaryCellValue = styled.span`
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
   font-size: 16px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -80,8 +80,8 @@ export const LeaderCardsRow = styled.div`
 `;
 
 export const LeaderCard = styled.button`
-  background: #0d1b2e;
-  border: 1px solid #2a3a5a;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
   border-radius: 6px;
   padding: 10px 12px;
   text-align: left;
@@ -93,18 +93,18 @@ export const LeaderCard = styled.button`
   transition: border-color 0.15s;
 
   &:hover {
-    border-color: #4a6090;
+    border-color: ${({ theme }) => theme.colors.borderForm};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const LeaderCardPlaceholder = styled.div`
-  background: #0d1b2e;
-  border: 1px dashed #2a3a5a;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px dashed ${({ theme }) => theme.colors.borderPanel};
   border-radius: 6px;
   padding: 10px 12px;
   display: flex;
@@ -121,7 +121,7 @@ export const LeaderStatLabel = styled.span`
 `;
 
 export const LeaderName = styled.span`
-  color: #aaccff;
+  color: ${({ theme }) => theme.colors.textLink};
   font-size: 13px;
   font-weight: 600;
   white-space: nowrap;
@@ -130,7 +130,7 @@ export const LeaderName = styled.span`
 `;
 
 export const LeaderValue = styled.span`
-  color: #6effc0;
+  color: ${({ theme }) => theme.colors.accentGreen};
   font-size: 18px;
   font-weight: 700;
   font-variant-numeric: tabular-nums;

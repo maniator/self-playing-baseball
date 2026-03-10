@@ -2,7 +2,7 @@ import styled from "styled-components";
 
 export const Panel = styled.div`
   background: rgba(0, 30, 60, 0.92);
-  border: 2px solid aquamarine;
+  border: 2px solid ${({ theme }) => theme.colors.accentPrimary};
   border-radius: 12px;
   padding: 14px 18px 10px;
   margin-top: 10px;
@@ -32,7 +32,8 @@ export const CountdownTrack = styled.div`
 export const CountdownFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
-  background: ${({ $pct }) => ($pct > 50 ? "#44cc88" : $pct > 25 ? "#ffaa33" : "#ff4444")};
+  background: ${({ $pct, theme }) =>
+    $pct > 50 ? theme.colors.bsoBall : $pct > 25 ? "#ffaa33" : "#ff4444"};
   border-radius: 2px;
   transition:
     width 0.95s linear,

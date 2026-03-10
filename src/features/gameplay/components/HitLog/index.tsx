@@ -30,7 +30,7 @@ const HeadingRow = styled.div`
   border-bottom: 1px solid #333;
   position: sticky;
   top: 0;
-  background: #000;
+  background: ${({ theme }) => theme.colors.bgVoid};
   z-index: 1;
 `;
 
@@ -68,7 +68,7 @@ const Entry = styled.div`
 
 const Label = styled.span<{ $hr?: boolean }>`
   font-weight: bold;
-  color: ${({ $hr }) => ($hr ? "#f5c842" : "#8abadf")};
+  color: ${({ $hr, theme }) => ($hr ? theme.colors.accentGold : theme.colors.textScoreHeader)};
   min-width: 22px;
 `;
 

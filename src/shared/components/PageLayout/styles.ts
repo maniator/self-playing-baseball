@@ -40,7 +40,7 @@ export const PageHeader = styled.div`
 /** Consistent back-navigation button used across all route-level screens. */
 export const BackBtn = styled.button`
   background: transparent;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   border: none;
   font-size: 13px;
   font-family: inherit;
@@ -49,11 +49,11 @@ export const BackBtn = styled.button`
   min-height: 36px;
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-radius: 3px;
   }

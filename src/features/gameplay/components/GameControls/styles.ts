@@ -18,22 +18,22 @@ type ButtonVariant = "default" | "new" | "saves" | "home";
 
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
-    background: aquamarine;
+    background: ${({ theme }) => theme.colors.accentPrimary};
     color: darkblue;
     border: none;
   `,
   new: css`
     background: #22c55e;
-    color: #fff;
+    color: ${({ theme }) => theme.colors.textPrimary};
     border: none;
     font-weight: bold;
   `,
   saves: css`
-    background: #1a3a2a;
-    color: #6effc0;
-    border: 1px solid #3a7a5a;
+    background: ${({ theme }) => theme.colors.greenBg};
+    color: ${({ theme }) => theme.colors.accentGreen};
+    border: 1px solid ${({ theme }) => theme.colors.borderGreen};
     &:hover {
-      background: #254f38;
+      background: ${({ theme }) => theme.colors.greenHover};
     }
   `,
   home: css`
@@ -89,7 +89,7 @@ export const ToggleLabel = styled.label`
   cursor: pointer;
 
   & input[type="checkbox"] {
-    accent-color: aquamarine;
+    accent-color: ${({ theme }) => theme.colors.accentPrimary};
     cursor: pointer;
     width: 14px;
     height: 14px;
@@ -113,8 +113,8 @@ export const BatterUpButton = styled(Button)`
 
 export const HelpButton = styled.button`
   background: rgba(47, 63, 105, 0.7);
-  color: #aaccff;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 50%;
   width: 25px;
   height: 25px;
@@ -127,14 +127,14 @@ export const HelpButton = styled.button`
 
   &:hover {
     background: rgba(74, 96, 144, 0.9);
-    color: #fff;
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;
 
 export const Select = styled.select`
-  background: #1a2440;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInputSm};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 8px;
   padding: 3px 6px;
   cursor: pointer;

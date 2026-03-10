@@ -29,73 +29,83 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 
 > **How colors work in this codebase**
 >
-> The app does **not** use CSS custom properties (`var(--…)`) for color or typography tokens. All colors are **hardcoded hex values written directly in styled-components template literals** and repeated across `styles.ts` files. The only CSS custom properties that exist are `--desktop-field` and `--mobile-field` in `Diamond/styles.ts`, which are layout-only sizing variables for the baseball field graphic.
+> All design tokens are defined as a typed theme object (`AppTheme`) in **`src/shared/theme.ts`** and injected via a top-level `ThemeProvider` in `src/index.tsx`. Styled-components access them through the interpolation pattern `${({ theme }) => theme.colors.<key>}`. The theme is fully type-checked via `src/styled.d.ts`.
 >
-> The values below are the canonical values each color should have wherever it appears. When adding new styled-components, copy the correct hex from this guide — do not invent new shades.
+> The table below lists each token's hex value, its **theme key** (e.g. `theme.colors.bgSurface`), and its canonical role. When adding new styled-components, use the theme key — do not copy raw hex values into new style files.
+>
+> The only CSS custom properties in use are `--desktop-field` and `--mobile-field` in `Diamond/styles.ts`, which are layout-only sizing variables for the baseball field graphic.
 
 ### Backgrounds
 
-| Hex | Role | Example files |
-|---|---|---|
-| `#000` / `black` | Page / body background | `src/index.scss` |
-| `#0d1b2e` | Panels, cards, dialogs, save cards | `HomeScreen/styles.ts`, `SaveSlotList/styles.ts`, `SubstitutionPanel/styles.ts`, `InstructionsModal/styles.ts` |
-| `#1a2e4a` | Text inputs, textareas | `CustomTeamEditor/styles.ts`, `SubstitutionPanel/styles.ts` |
-| `#1a2440` | Small inline selects (game controls) | `GameControls/styles.ts` |
-| `#0a1628` | Line-score table, BSO bar | `LineScore/styles.ts` |
-| `#0a0a1a` / `#0a1520` | Import textareas, deep-nested areas | `ManageTeamsScreen/styles.ts`, `exhibition/styles.ts` |
+| Hex | Theme key | Role | Example files |
+|---|---|---|---|
+| `#000` / `black` | `bgVoid` | Page / body background | `src/index.scss`, `theme.colors.bgVoid` |
+| `#0d1b2e` | `bgSurface` | Panels, cards, dialogs, save cards | `HomeScreen/styles.ts`, `SaveSlotList/styles.ts`, `SubstitutionPanel/styles.ts`, `InstructionsModal/styles.ts` |
+| `#1a2e4a` | `bgInput` | Text inputs, textareas | `CustomTeamEditor/styles.ts`, `SubstitutionPanel/styles.ts` |
+| `#1a2440` | `bgInputSm` | Small inline selects (game controls) | `GameControls/styles.ts` |
+| `#0a1628` | `bgGame` | Line-score table, BSO bar | `LineScore/styles.ts` |
+| `#0a0a1a` | `bgDeep` | Import textareas, deep-nested areas | `ManageTeamsScreen/styles.ts`, `exhibition/styles.ts` |
 
 ### Borders
 
-| Hex | Role | Example files |
-|---|---|---|
-| `#2a3a5a` | Cards, summary cells, leader cards | `teamSummaryStyles.ts`, `careerStats/styles.ts` |
-| `#4a6090` | Form inputs, selects, dialog chrome, close buttons | Across nearly every `styles.ts` |
-| `#2a2a3a` | Stats tables, inactive tab borders | `careerStats/styles.ts` |
-| `#1e3050` | Section headings underline, game grid dividers | `CustomTeamEditor/styles.ts`, `SubstitutionPanel/styles.ts` |
-| `#3a7a5a` | Primary (green) button borders, active tab borders | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `careerStats/styles.ts` |
-| `#883333` | Danger button borders, validation error borders | `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
+| Hex | Theme key | Role | Example files |
+|---|---|---|---|
+| `#2a3a5a` | `borderPanel` | Cards, summary cells, leader cards | `teamSummaryStyles.ts`, `careerStats/styles.ts` |
+| `#4a6090` | `borderForm` | Form inputs, selects, dialog chrome, close buttons | Across nearly every `styles.ts` |
+| `#2a2a3a` | `borderSubtle` | Stats tables, inactive tab borders | `careerStats/styles.ts` |
+| `#1e3050` | `borderDark` | Section headings underline, game grid dividers | `CustomTeamEditor/styles.ts`, `SubstitutionPanel/styles.ts` |
+| `#3a7a5a` | `borderGreen` | Primary (green) button borders, active tab borders | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `careerStats/styles.ts` |
+| `#883333` | `borderDanger` | Danger button borders, validation error borders | `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
 
 ### Text
 
-| Hex | Role | Example files |
-|---|---|---|
-| `#fff` / `#ffffff` | Primary content, headings, active cell text | Global (`* { color: #fff }` in `index.scss`) |
-| `#cce0ff` | Body text in dialogs, list items | `HelpContent/styles.ts`, modal styles |
-| `#e0f0ff` | Dialog surface text color | `InstructionsModal/styles.ts`, `SavesModal/styles.ts` |
-| `#888` / `#aaa` | Sub-labels, empty states, inactive tabs | `careerStats/styles.ts`, `HomeScreen/styles.ts` |
-| `#666` | Very quiet secondary text | `careerStats/styles.ts` |
-| `#6680aa` | Back buttons, save dates, field labels | `PageLayout/styles.ts`, `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
-| `#aaccff` | Secondary interactive text, close button text | `HomeScreen/styles.ts`, dialog close buttons |
-| `#88bbee` | Section sub-headers, small action buttons | `SubstitutionPanel/styles.ts`, `CustomTeamEditor/styles.ts` |
-| `#e8d5a3` | Line-score table cells (warm off-white) | `LineScore/styles.ts` |
-| `#8abadf` | Line-score column headers | `LineScore/styles.ts` |
+| Hex | Theme key | Role | Example files |
+|---|---|---|---|
+| `#fff` / `#ffffff` | `textPrimary` | Primary content, headings, active cell text | Global (`* { color: #fff }` in `index.scss`) |
+| `#cce0ff` | `textBody` | Body text in dialogs, list items | `HelpContent/styles.ts`, modal styles |
+| `#e0f0ff` | `textDialog` | Dialog surface text color | `InstructionsModal/styles.ts`, `SavesModal/styles.ts` |
+| `#888` / `#aaa` | — | Sub-labels, empty states, inactive tabs (component-specific, not in theme) | `careerStats/styles.ts`, `HomeScreen/styles.ts` |
+| `#666` | `textDimmer` | Very quiet secondary text | `careerStats/styles.ts` |
+| `#6680aa` | `textHint` | Back buttons, save dates, field labels | `PageLayout/styles.ts`, `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
+| `#aaccff` | `textLink` | Secondary interactive text, close button text | `HomeScreen/styles.ts`, dialog close buttons |
+| `#88bbee` | `textSecondaryLink` | Section sub-headers, small action buttons | `SubstitutionPanel/styles.ts`, `CustomTeamEditor/styles.ts` |
+| `#e8d5a3` | `textScore` | Line-score table cells (warm off-white) | `LineScore/styles.ts` |
+| `#8abadf` | `textScoreHeader` | Line-score column headers | `LineScore/styles.ts` |
 
 ### Accent colors
 
-| Hex / Named | Role | Example files |
-|---|---|---|
-| `aquamarine` | Primary CTA background (Batter Up!, Play Ball!), focus rings, `aquamarine` dialog titles, decision panel border | `GameControls/styles.ts`, `DecisionPanel/styles.ts`, `CustomTeamEditor/styles.ts`, everywhere `focus-visible` is set |
-| `#6effc0` | Primary button text, leader stat values, active tab text | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `teamSummaryStyles.ts` |
-| `#f0c040` / `#f5c842` | Line-score accent column (`R` total), teaser box title | `LineScore/styles.ts`, `HomeScreen/styles.ts` |
+| Hex / Named | Theme key | Role | Example files |
+|---|---|---|---|
+| `aquamarine` | `accentPrimary` | Primary CTA background (Batter Up!, Play Ball!), focus rings, dialog titles, decision panel border | `GameControls/styles.ts`, `DecisionPanel/styles.ts`, `CustomTeamEditor/styles.ts`, everywhere `focus-visible` is set |
+| `#6effc0` | `accentGreen` | Primary button text, leader stat values, active tab text | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `teamSummaryStyles.ts` |
+| `#f5c842` | `accentGold` / `bsoStrike` | Line-score accent column (`R` total), BSO strike indicator | `LineScore/styles.ts`, `HomeScreen/styles.ts` |
 
 ### Status & interactive state colors
 
-| Hex | Role | Example files |
+| Hex | Theme key | Role | Example files |
+|---|---|---|---|
+| `#1a3a2a` | `greenBg` | Primary button background, active tab background | `HomeScreen/styles.ts`, `careerStats/styles.ts` |
+| `#254f38` | `greenHover` | Primary button hover | `HomeScreen/styles.ts`, `careerStats/styles.ts` |
+| `#0e2418` | `greenActive` | Primary button active/press | `HomeScreen/styles.ts` |
+| `#ff7070` | `redDanger` / `bsoOut` | Danger text, validation error messages, BSO out indicator | `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
+| `#b30000` | `redBg` | Game-over banner background | `LineScore/styles.ts` |
+| `rgba(120, 48, 48, 0.4)` | — | Danger button hover overlay (component-specific) | `SaveSlotList/styles.ts` |
+| `#0f4880` | `blueDark` | Extra-innings banner background | `LineScore/styles.ts` |
+| `#7a3200` | `goldWarn` | Database reset notice background | `Game/ErrorBoundary.tsx` |
+
+### BSO indicators
+
+| Hex | Theme key | Role |
 |---|---|---|
-| `#1a3a2a` | Primary button background, active tab background | `HomeScreen/styles.ts`, `careerStats/styles.ts` |
-| `#254f38` | Primary button hover | `HomeScreen/styles.ts`, `careerStats/styles.ts` |
-| `#0e2418` | Primary button active/press | `HomeScreen/styles.ts` |
-| `#ff7070` / `#ff8080` | Danger text, validation error messages | `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
-| `#b30000` | Game-over banner background | `LineScore/styles.ts` |
-| `rgba(120, 48, 48, 0.4)` | Danger button hover overlay | `SaveSlotList/styles.ts` |
-| `#0f4880` | Extra-innings banner background | `LineScore/styles.ts` |
-| `#7a3200` | Database reset notice background | `Game/ErrorBoundary.tsx` |
+| `#44cc88` | `bsoBall` | Ball indicator dot (lit) |
+| `#f5c842` | `bsoStrike` | Strike indicator dot (lit) |
+| `#ff7070` | `bsoOut` | Out indicator dot (lit) |
 
 ### Countdown (time-sensitive progress bars)
 
 | Threshold | Color |
 |---|---|
-| > 50 % | `#44cc88` (green) |
+| > 50 % | `#44cc88` (`theme.colors.bsoBall`, green) |
 | 25–50 % | `#ffaa33` (orange) |
 | < 25 % | `#ff4444` (red) |
 

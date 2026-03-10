@@ -2,9 +2,9 @@ import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
 
 export const Dialog = styled.dialog`
-  background: #0d1b2e;
-  color: #e0f0ff;
-  border: 2px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textDialog};
+  border: 2px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 14px;
   padding: 18px 32px 14px;
   max-width: min(420px, 92vw);
@@ -28,7 +28,7 @@ export const Dialog = styled.dialog`
 export const Title = styled.h2`
   margin: 0 0 16px;
   font-size: 18px;
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
 
   ${mq.mobile} {
     margin: 0 0 8px;
@@ -49,7 +49,7 @@ export const FieldLabel = styled.label`
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   margin-bottom: 6px;
 
   ${mq.mobile} {
@@ -59,9 +59,9 @@ export const FieldLabel = styled.label`
 `;
 
 export const Input = styled.input`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 8px;
   padding: 8px 10px;
   font-family: inherit;
@@ -74,9 +74,9 @@ export const Input = styled.input`
 `;
 
 export const Select = styled.select`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 8px;
   padding: 8px 10px;
   font-family: inherit;
@@ -93,7 +93,7 @@ export const SectionLabel = styled.p`
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   margin: 0 0 8px;
 
   ${mq.mobile} {
@@ -109,10 +109,10 @@ export const RadioLabel = styled.label`
   padding: 4px 0;
   cursor: pointer;
   font-size: 13px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
 
   & input[type="radio"] {
-    accent-color: aquamarine;
+    accent-color: ${({ theme }) => theme.colors.accentPrimary};
     cursor: pointer;
   }
 
@@ -125,9 +125,9 @@ export const RadioLabel = styled.label`
 export const ResumeButton = styled.button`
   display: block;
   width: 100%;
-  background: #1a3a2a;
-  color: #6effc0;
-  border: 1px solid #3a7a5a;
+  background: ${({ theme }) => theme.colors.greenBg};
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: 20px;
   padding: 10px 24px;
   font-family: inherit;
@@ -137,7 +137,7 @@ export const ResumeButton = styled.button`
   margin-bottom: 4px;
 
   &:hover {
-    background: #254f38;
+    background: ${({ theme }) => theme.colors.greenHover};
   }
 
   ${mq.mobile} {
@@ -148,7 +148,7 @@ export const ResumeButton = styled.button`
 
 export const Divider = styled.p`
   text-align: center;
-  color: #4a6090;
+  color: ${({ theme }) => theme.colors.borderForm};
   font-size: 12px;
   margin: 12px 0 16px;
 
@@ -160,7 +160,7 @@ export const Divider = styled.p`
 export const PlayBallButton = styled.button`
   display: block;
   width: 100%;
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;
@@ -178,7 +178,7 @@ export const PlayBallButton = styled.button`
 
 export const SeedHint = styled.p`
   font-size: 11px;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   margin: 5px 0 0;
 
   ${mq.mobile} {
@@ -197,7 +197,7 @@ export const ResumeLabel = styled.span`
 export const BackHomeButton = styled.button`
   background: none;
   border: none;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 12px;
   font-family: inherit;
   cursor: pointer;
@@ -205,11 +205,11 @@ export const BackHomeButton = styled.button`
   display: block;
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-radius: 3px;
   }
@@ -233,8 +233,9 @@ export const TabRow = styled.div`
 export const Tab = styled.button<{ $active: boolean }>`
   background: none;
   border: none;
-  border-bottom: 2px solid ${({ $active }) => ($active ? "aquamarine" : "transparent")};
-  color: ${({ $active }) => ($active ? "aquamarine" : "#6680aa")};
+  border-bottom: 2px solid
+    ${({ $active, theme }) => ($active ? theme.colors.accentPrimary : "transparent")};
+  color: ${({ $active, theme }) => ($active ? theme.colors.accentPrimary : theme.colors.textHint)};
   font-family: inherit;
   font-size: 13px;
   font-weight: ${({ $active }) => ($active ? "600" : "400")};
@@ -243,11 +244,11 @@ export const Tab = styled.button<{ $active: boolean }>`
   margin-bottom: -2px;
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-radius: 3px 3px 0 0;
   }

@@ -16,7 +16,7 @@ export const EditorContainer = styled.div`
 `;
 
 export const EditorTitle = styled.h2`
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: 1.3rem;
   margin: 0 0 20px;
 `;
@@ -26,12 +26,12 @@ export const FormSection = styled.section`
 `;
 
 export const SectionHeading = styled.h3`
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   font-size: 0.8rem;
   text-transform: uppercase;
   letter-spacing: 0.8px;
   margin: 0 0 10px;
-  border-bottom: 1px solid #1e3050;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
   padding-bottom: 6px;
 `;
 
@@ -58,13 +58,13 @@ export const FieldLabel = styled.label`
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.6px;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
 `;
 
 export const TextInput = styled.input`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 6px;
   padding: 7px 10px;
   font-family: inherit;
@@ -72,7 +72,7 @@ export const TextInput = styled.input`
   width: 100%;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 1px;
   }
 
@@ -97,27 +97,27 @@ export const StatRow = styled.div`
 
 export const StatLabel = styled.label`
   font-size: 11px;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   width: 56px;
   flex-shrink: 0;
 `;
 
 export const StatInput = styled.input`
   flex: 1;
-  accent-color: aquamarine;
+  accent-color: ${({ theme }) => theme.colors.accentPrimary};
   cursor: pointer;
 `;
 
 export const StatValue = styled.span`
   font-size: 12px;
-  color: #aaccff;
+  color: ${({ theme }) => theme.colors.textLink};
   width: 28px;
   text-align: right;
   flex-shrink: 0;
 `;
 
 export const PlayerCard = styled.div`
-  background: #0d1b2e;
+  background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid #2a3f60;
   border-radius: 8px;
   padding: 10px 12px;
@@ -133,8 +133,8 @@ export const PlayerHeader = styled.div`
 
 export const SmallIconBtn = styled.button`
   background: transparent;
-  border: 1px solid #4a6090;
-  color: #88bbee;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   border-radius: 4px;
   padding: 4px 8px;
   font-size: 12px;
@@ -144,12 +144,12 @@ export const SmallIconBtn = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 
@@ -161,7 +161,7 @@ export const SmallIconBtn = styled.button`
 
 export const RemoveBtn = styled(SmallIconBtn)`
   color: #ff7777;
-  border-color: #883333;
+  border-color: ${({ theme }) => theme.colors.borderDanger};
 
   &:hover {
     background: #2a0000;
@@ -171,8 +171,8 @@ export const RemoveBtn = styled(SmallIconBtn)`
 
 export const AddPlayerBtn = styled.button`
   background: transparent;
-  color: #6effc0;
-  border: 1px dashed #3a7a5a;
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px dashed ${({ theme }) => theme.colors.borderGreen};
   border-radius: 6px;
   padding: 8px 16px;
   font-size: 13px;
@@ -182,12 +182,12 @@ export const AddPlayerBtn = styled.button`
   margin-top: 4px;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #6effc0;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.accentGreen};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -197,15 +197,15 @@ export const ErrorMsg = styled.p`
   font-size: 13px;
   margin: 0 0 12px;
   background: #1a0000;
-  border: 1px solid #883333;
+  border: 1px solid ${({ theme }) => theme.colors.borderDanger};
   border-radius: 6px;
   padding: 8px 12px;
 `;
 
 export const SelectInput = styled.select`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 6px;
   padding: 6px 8px;
   font-family: inherit;
@@ -214,12 +214,12 @@ export const SelectInput = styled.select`
   min-height: 32px;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 1px;
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 1px;
   }
 `;
@@ -266,7 +266,7 @@ export const ButtonRow = styled.div`
 `;
 
 export const SaveBtn = styled.button`
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;
@@ -305,15 +305,15 @@ export const CancelBtn = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const GenerateBtn = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   padding: 7px 14px;
   font-size: 13px;
@@ -322,12 +322,12 @@ export const GenerateBtn = styled.button`
   min-height: 36px;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -338,7 +338,7 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
   gap: 6px;
   margin-top: 6px;
   font-size: 12px;
-  color: ${({ $overCap }) => ($overCap ? "#ff8888" : "#6680aa")};
+  color: ${({ $overCap, theme }) => ($overCap ? "#ff8888" : theme.colors.textHint)};
 `;
 
 export const ReadOnlyInput = styled(TextInput)`
@@ -346,7 +346,7 @@ export const ReadOnlyInput = styled(TextInput)`
   cursor: default;
   background: rgba(255, 255, 255, 0.04);
   color: #8899bb;
-  border-color: #2a3a5a;
+  border-color: ${({ theme }) => theme.colors.borderPanel};
 `;
 
 export const IdentityLockHint = styled.p`
@@ -358,13 +358,13 @@ export const IdentityLockHint = styled.p`
 
 /** Import-player button — ghost blue style, mirrors AddPlayerBtn. */
 export const ImportPlayerBtn = styled(AddPlayerBtn)`
-  color: #88bbee;
-  border-color: #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border-color: ${({ theme }) => theme.colors.borderForm};
   margin-top: 4px;
 
   &:hover {
-    border-color: #88bbee;
-    color: #aaccff;
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+    color: ${({ theme }) => theme.colors.textLink};
   }
 `;
 

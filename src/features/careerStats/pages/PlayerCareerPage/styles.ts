@@ -72,7 +72,7 @@ export const NavBtn = styled.button`
   font-size: 13px;
   &:hover:not(:disabled) {
     background: #25254a;
-    color: #fff;
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
   &:disabled {
     opacity: 0.35;

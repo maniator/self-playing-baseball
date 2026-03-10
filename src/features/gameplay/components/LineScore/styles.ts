@@ -7,7 +7,7 @@ export const Wrapper = styled.div`
 
   ${mq.mobile} {
     order: -1;
-    background: #000;
+    background: ${({ theme }) => theme.colors.bgVoid};
     margin: 0 0 4px;
     padding-bottom: 4px;
   }
@@ -17,8 +17,8 @@ export const Table = styled.table`
   border-collapse: collapse;
   font-family: "Courier New", Courier, monospace;
   font-size: 13px;
-  background: #0a1628;
-  color: #e8d5a3;
+  background: ${({ theme }) => theme.colors.bgGame};
+  color: ${({ theme }) => theme.colors.textScore};
   width: 100%;
 
   ${mq.notMobile} {
@@ -29,7 +29,8 @@ export const Table = styled.table`
 export const Th = styled.th<{ $accent?: boolean }>`
   padding: 3px 6px;
   text-align: center;
-  color: ${({ $accent }) => ($accent ? "#f5c842" : "#8abadf")};
+  color: ${({ $accent, theme }) =>
+    $accent ? theme.colors.accentGold : theme.colors.textScoreHeader};
   border-bottom: 1px solid #1e3a5f;
   font-weight: normal;
   font-size: 11px;
@@ -59,8 +60,14 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
   padding: 4px 6px;
   text-align: center;
   font-weight: ${({ $accent }) => ($accent ? "bold" : "normal")};
-  color: ${({ $active, $accent, $dim }) =>
-    $active ? "#ffffff" : $accent ? "#f5c842" : $dim ? "#3d5a7a" : "#e8d5a3"};
+  color: ${({ $active, $accent, $dim, theme }) =>
+    $active
+      ? theme.colors.textPrimary
+      : $accent
+        ? theme.colors.accentGold
+        : $dim
+          ? "#3d5a7a"
+          : theme.colors.textScore};
   border-right: ${({ $accent }) => ($accent ? "none" : "1px solid #0f2540")};
   white-space: nowrap;
 
@@ -96,10 +103,10 @@ export const BsoRow = styled.div`
   align-items: center;
   gap: 14px;
   padding: 6px 8px 4px;
-  background: #0a1628;
+  background: ${({ theme }) => theme.colors.bgGame};
   font-family: "Courier New", Courier, monospace;
   font-size: 11px;
-  color: #8abadf;
+  color: ${({ theme }) => theme.colors.textScoreHeader};
   letter-spacing: 0.5px;
 
   ${mq.notMobile} {
@@ -123,8 +130,8 @@ export const Dot = styled.span<{ $on: boolean; $color: string }>`
 `;
 
 export const ExtraInningsBanner = styled.div`
-  background: #0f4880;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.blueDark};
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-weight: bold;
   font-size: 11px;
   padding: 2px 8px;
@@ -133,8 +140,8 @@ export const ExtraInningsBanner = styled.div`
 `;
 
 export const GameOverBanner = styled.div`
-  background: #b30000;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.redBg};
+  color: ${({ theme }) => theme.colors.textPrimary};
   text-align: center;
   font-weight: bold;
   font-size: 12px;

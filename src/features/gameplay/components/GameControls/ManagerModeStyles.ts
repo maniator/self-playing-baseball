@@ -8,7 +8,7 @@ export const ToggleLabel = styled.label`
   cursor: pointer;
 
   & input[type="checkbox"] {
-    accent-color: aquamarine;
+    accent-color: ${({ theme }) => theme.colors.accentPrimary};
     cursor: pointer;
     width: 14px;
     height: 14px;
@@ -16,9 +16,9 @@ export const ToggleLabel = styled.label`
 `;
 
 export const Select = styled.select`
-  background: #1a2440;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInputSm};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 8px;
   padding: 3px 6px;
   cursor: pointer;
@@ -35,8 +35,8 @@ export const NotifBadge = styled.span<{ $ok: boolean }>`
 
 export const SubButton = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
@@ -46,12 +46,12 @@ export const SubButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;

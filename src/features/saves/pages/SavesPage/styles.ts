@@ -23,14 +23,14 @@ export const PageTitle = styled.h1`
 `;
 
 export const EmptyState = styled.p`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
   text-align: center;
   margin: 40px 0;
 `;
 
 export const LoadingState = styled.p`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
   margin: 24px 0;
 `;
@@ -45,7 +45,7 @@ export const ImportSection = styled.div`
 `;
 
 export const ImportSectionTitle = styled.h2`
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   font-size: 0.85rem;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -57,9 +57,9 @@ export const PasteTextarea = styled.textarea`
   width: 100%;
   min-height: 80px;
   background: #0a1525;
-  border: 1px solid #4a6090;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: 11px;
   padding: 8px 10px;
@@ -71,7 +71,7 @@ export const PasteTextarea = styled.textarea`
   }
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-color: transparent;
   }
@@ -88,7 +88,7 @@ export const ImportLabel = styled.label`
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   font-size: 13px;
   cursor: pointer;
 `;
@@ -96,12 +96,12 @@ export const ImportLabel = styled.label`
 export const FileInput = styled.input`
   font-family: inherit;
   font-size: 12px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
 
   &::file-selector-button {
     background: transparent;
-    color: #88bbee;
-    border: 1px solid #4a6090;
+    color: ${({ theme }) => theme.colors.textSecondaryLink};
+    border: 1px solid ${({ theme }) => theme.colors.borderForm};
     border-radius: 6px;
     padding: 4px 10px;
     font-size: 12px;
@@ -110,7 +110,7 @@ export const FileInput = styled.input`
     margin-right: 8px;
 
     &:hover {
-      background: #0d1b2e;
+      background: ${({ theme }) => theme.colors.bgSurface};
     }
   }
 `;
@@ -118,7 +118,7 @@ export const FileInput = styled.input`
 export const ErrorMessage = styled.p`
   color: #ff7777;
   background: rgba(80, 0, 0, 0.3);
-  border: 1px solid #883333;
+  border: 1px solid ${({ theme }) => theme.colors.borderDanger};
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 13px;

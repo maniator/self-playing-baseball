@@ -3,9 +3,9 @@ import styled from "styled-components";
 export { Button as SavesButton } from "@feat/gameplay/components/GameControls/styles";
 
 export const Dialog = styled.dialog`
-  background: #0d1b2e;
-  color: #e0f0ff;
-  border: 2px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textDialog};
+  border: 2px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 14px;
   padding: 24px 28px 20px;
   max-width: min(520px, 94vw);
@@ -21,7 +21,7 @@ export const Dialog = styled.dialog`
 export const DialogTitle = styled.h2`
   margin: 0 0 14px;
   font-size: 17px;
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
 `;
 
 export const SlotList = styled.ul`
@@ -43,7 +43,7 @@ export const SlotItem = styled.li`
 export const SlotName = styled.span`
   flex: 1;
   font-size: 13px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -57,8 +57,8 @@ export const SlotDate = styled.span`
 
 export const SmallButton = styled.button`
   background: transparent;
-  border: 1px solid #4a6090;
-  color: #aaccff;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textLink};
   border-radius: 8px;
   padding: 3px 8px;
   font-size: 12px;
@@ -85,15 +85,15 @@ export const SectionHeading = styled.h3`
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
 `;
 
 export const ImportArea = styled.textarea`
   width: 100%;
   background: #0a1520;
-  border: 1px solid #4a6090;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 8px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: 12px;
   padding: 6px 8px;
@@ -102,7 +102,7 @@ export const ImportArea = styled.textarea`
 `;
 
 export const ErrorMsg = styled.p`
-  color: #ff7070;
+  color: ${({ theme }) => theme.colors.redDanger};
   font-size: 12px;
   margin: 4px 0 0;
 `;
@@ -118,7 +118,7 @@ export const Row = styled.div`
 export const CloseButton = styled.button`
   display: block;
   margin: 16px auto 0;
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;
@@ -138,5 +138,5 @@ export const EmptyMsg = styled.p`
 export const FileInput = styled.input`
   font-family: inherit;
   font-size: 12px;
-  color: #aaccff;
+  color: ${({ theme }) => theme.colors.textLink};
 `;

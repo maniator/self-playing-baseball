@@ -42,9 +42,9 @@ export const ScreenTitle = styled.h1`
 `;
 
 export const InfoBanner = styled.p`
-  color: #88bbee;
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 13px;
@@ -52,9 +52,9 @@ export const InfoBanner = styled.p`
 `;
 
 export const CreateBtn = styled.button`
-  background: #1a3a2a;
-  color: #6effc0;
-  border: 1px solid #3a7a5a;
+  background: ${({ theme }) => theme.colors.greenBg};
+  color: ${({ theme }) => theme.colors.accentGreen};
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: 8px;
   padding: 12px 20px;
   font-size: 0.95rem;
@@ -68,11 +68,11 @@ export const CreateBtn = styled.button`
   margin-bottom: 20px;
 
   &:hover {
-    background: #254f38;
+    background: ${({ theme }) => theme.colors.greenHover};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -87,8 +87,8 @@ export const TeamList = styled.ul`
 `;
 
 export const TeamListItemCard = styled.li`
-  background: #0d1b2e;
-  border: 1px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 10px;
   padding: 14px 16px;
   display: flex;
@@ -109,7 +109,7 @@ export const TeamName = styled.div`
 `;
 
 export const TeamMeta = styled.div`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 12px;
   margin-top: 2px;
 `;
@@ -122,8 +122,9 @@ export const TeamActions = styled.div`
 
 export const ActionBtn = styled.button<{ $danger?: boolean }>`
   background: transparent;
-  color: ${({ $danger }) => ($danger ? "#ff7777" : "#88bbee")};
-  border: 1px solid ${({ $danger }) => ($danger ? "#883333" : "#4a6090")};
+  color: ${({ $danger, theme }) => ($danger ? "#ff7777" : theme.colors.textSecondaryLink)};
+  border: 1px solid
+    ${({ $danger, theme }) => ($danger ? theme.colors.borderDanger : theme.colors.borderForm)};
   border-radius: 6px;
   padding: 6px 12px;
   font-size: 12px;
@@ -132,18 +133,18 @@ export const ActionBtn = styled.button<{ $danger?: boolean }>`
   min-height: 32px;
 
   &:hover {
-    background: ${({ $danger }) => ($danger ? "#2a0000" : "#0d1b2e")};
-    border-color: ${({ $danger }) => ($danger ? "#cc4444" : "#88bbee")};
+    background: ${({ $danger, theme }) => ($danger ? "#2a0000" : theme.colors.bgSurface)};
+    border-color: ${({ $danger, theme }) => ($danger ? "#cc4444" : theme.colors.textSecondaryLink)};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const EmptyState = styled.p`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
   text-align: center;
   margin: 40px 0;
@@ -178,7 +179,7 @@ export const EditorShellHeader = styled.div`
 `;
 
 export const EditorLoading = styled.p`
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
   padding: 24px;
 `;
@@ -191,7 +192,7 @@ export const NotFoundMsg = styled.p`
 
 export const TeamListLink = styled.button`
   background: transparent;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   border: none;
   font-size: 13px;
   font-family: inherit;
@@ -200,28 +201,28 @@ export const TeamListLink = styled.button`
   text-decoration: underline;
 
   &:hover {
-    color: #aaccff;
+    color: ${({ theme }) => theme.colors.textLink};
   }
 `;
 
 export const ImportExportSection = styled.div`
-  border-top: 1px solid #4a6090;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderForm};
   margin-top: 24px;
   padding-top: 20px;
 `;
 
 export const ImportExportTitle = styled.p`
   text-transform: uppercase;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   font-size: 11px;
   letter-spacing: 0.05em;
   margin: 0 0 8px;
 `;
 
 export const SuccessMessage = styled.p`
-  color: #6effc0;
+  color: ${({ theme }) => theme.colors.accentGreen};
   background: #0d2016;
-  border: 1px solid #3a7a5a;
+  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: 8px;
   padding: 10px 14px;
   font-size: 13px;
@@ -241,8 +242,8 @@ export const ImportExportRow = styled.div`
 
 export const ImportExportBtn = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   padding: 8px 14px;
   font-size: 12px;
@@ -251,8 +252,8 @@ export const ImportExportBtn = styled.button`
   min-height: 36px;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:disabled {
@@ -261,7 +262,7 @@ export const ImportExportBtn = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -276,9 +277,9 @@ export const PasteTextarea = styled.textarea`
   width: 100%;
   min-height: 72px;
   background: #0a1525;
-  border: 1px solid #4a6090;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: 11px;
   padding: 8px 10px;
@@ -291,7 +292,7 @@ export const PasteTextarea = styled.textarea`
   }
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
     border-color: transparent;
   }

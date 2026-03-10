@@ -23,7 +23,7 @@ const makeHitAnim = (dist: number) => keyframes`
 const Baseball = styled.div<{ $isHit: boolean; $dist: number }>`
   display: block;
   position: absolute;
-  background: #ffffff;
+  background: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 100%;
   width: 10px;
   height: 10px;

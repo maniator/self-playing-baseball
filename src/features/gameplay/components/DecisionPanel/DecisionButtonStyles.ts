@@ -1,7 +1,7 @@
 import styled from "styled-components";
 
 export const ActionButton = styled.button`
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   padding: 7px 14px;
   border-radius: 20px;

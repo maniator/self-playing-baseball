@@ -4,7 +4,7 @@ import styled from "styled-components";
 export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayout/styles";
 
 export const PageTitle = styled.h1`
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: 1.5rem;
   margin: 0 0 20px;
 

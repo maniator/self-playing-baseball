@@ -2,7 +2,7 @@ import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
 
 export const Panel = styled.div`
-  background: #0d1b2e;
+  background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid #2a3f60;
   border-radius: 8px;
   padding: 12px 14px;
@@ -24,7 +24,7 @@ export const PanelHeader = styled.div`
 `;
 
 export const PanelTitle = styled.h4`
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: 0.85rem;
   margin: 0;
   font-weight: 600;
@@ -32,8 +32,8 @@ export const PanelTitle = styled.h4`
 
 export const CloseButton = styled.button`
   background: transparent;
-  border: 1px solid #4a6090;
-  color: #88bbee;
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   border-radius: 4px;
   padding: 2px 8px;
   font-size: 12px;
@@ -42,12 +42,12 @@ export const CloseButton = styled.button`
   line-height: 1.4;
 
   &:hover {
-    background: #1a2e4a;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgInput};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;
@@ -61,12 +61,12 @@ export const Section = styled.div`
 `;
 
 export const SectionTitle = styled.h5`
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.6px;
   margin: 0 0 6px;
-  border-bottom: 1px solid #1e3050;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
   padding-bottom: 4px;
 `;
 
@@ -79,9 +79,9 @@ export const Row = styled.div`
 `;
 
 export const SelectField = styled.select`
-  background: #1a2e4a;
-  border: 1px solid #4a6090;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.bgInput};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: 6px;
   padding: 4px 8px;
   font-family: inherit;
@@ -92,13 +92,13 @@ export const SelectField = styled.select`
   min-width: 100px;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 1px;
   }
 `;
 
 export const ActionButton = styled.button`
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 6px;
@@ -127,7 +127,7 @@ export const ActionButton = styled.button`
 
 export const EmptyNote = styled.p`
   font-size: 11px;
-  color: #6680aa;
+  color: ${({ theme }) => theme.colors.textHint};
   margin: 2px 0 4px;
   font-style: italic;
 `;
@@ -145,8 +145,8 @@ export const FatigueLabel = styled.span<{ $level: "low" | "medium" | "high" }>`
 
 export const SubButton = styled.button`
   background: transparent;
-  color: #88bbee;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   padding: 4px 10px;
   font-size: 12px;
@@ -156,12 +156,12 @@ export const SubButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: #0d1b2e;
-    border-color: #88bbee;
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
   }
 
   &:focus-visible {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 `;

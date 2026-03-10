@@ -4,9 +4,9 @@ import styled from "styled-components";
 export { HelpButton } from "@feat/gameplay/components/GameControls/styles";
 
 export const Dialog = styled.dialog`
-  background: #0d1b2e;
-  color: #e0f0ff;
-  border: 2px solid #4a6090;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textDialog};
+  border: 2px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 14px;
   padding: 0;
   max-width: min(680px, 96vw);
@@ -50,13 +50,13 @@ export const DialogHeader = styled.div`
 export const DialogTitle = styled.h2`
   margin: 0;
   font-size: 18px;
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
 `;
 
 export const CloseXButton = styled.button`
   background: transparent;
-  color: #aaccff;
-  border: 1px solid #4a6090;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 6px;
   width: 28px;
   height: 28px;
@@ -72,7 +72,7 @@ export const CloseXButton = styled.button`
 
   &:hover {
     background: rgba(74, 96, 144, 0.6);
-    color: #fff;
+    color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;
 
@@ -85,7 +85,7 @@ export const ScrollBody = styled.div`
 export const CloseButton = styled.button`
   display: block;
   margin: 16px auto 0;
-  background: aquamarine;
+  background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;

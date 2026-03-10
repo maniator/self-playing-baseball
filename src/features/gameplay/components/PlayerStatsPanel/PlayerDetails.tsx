@@ -98,7 +98,7 @@ const StatLabel = styled.div`
 `;
 
 const StatValue = styled.div`
-  color: #e0f0ff;
+  color: ${({ theme }) => theme.colors.textDialog};
   font-size: 12px;
   font-weight: 600;
 `;

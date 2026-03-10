@@ -25,7 +25,7 @@ const VolumeIcon = styled.button`
 `;
 
 const RangeInput = styled.input`
-  accent-color: aquamarine;
+  accent-color: ${({ theme }) => theme.colors.accentPrimary};
   cursor: pointer;
   width: 72px;
   height: 4px;

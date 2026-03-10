@@ -86,8 +86,8 @@ export const DbResetNotice = styled.div`
   left: 0;
   right: 0;
   z-index: 9999;
-  background: #7a3200;
-  color: #fff;
+  background: ${({ theme }) => theme.colors.goldWarn};
+  color: ${({ theme }) => theme.colors.textPrimary};
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -98,7 +98,7 @@ export const DbResetNotice = styled.div`
   button {
     background: none;
     border: 1px solid rgba(255, 255, 255, 0.4);
-    color: #fff;
+    color: ${({ theme }) => theme.colors.textPrimary};
     cursor: pointer;
     padding: 2px 8px;
     border-radius: 4px;
@@ -132,7 +132,7 @@ export const LogPanel = styled.div`
     width: 100%;
     height: ${MOBILE_LOG_HEIGHT};
     overflow-y: auto;
-    background: #000;
+    background: ${({ theme }) => theme.colors.bgVoid};
     border-top: 1px solid #333;
     border-left: none;
     padding: 8px 16px;

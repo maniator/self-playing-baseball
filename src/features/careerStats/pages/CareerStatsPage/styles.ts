@@ -51,9 +51,9 @@ export const TeamSelectLabel = styled.label`
 `;
 
 export const TeamSelect = styled.select`
-  background: #0d1b2e;
-  color: #cce0ff;
-  border: 1px solid #2a3a5a;
+  background: ${({ theme }) => theme.colors.bgSurface};
+  color: ${({ theme }) => theme.colors.textBody};
+  border: 1px solid ${({ theme }) => theme.colors.borderPanel};
   border-radius: 6px;
   padding: 8px 12px;
   font-size: 14px;
@@ -62,19 +62,19 @@ export const TeamSelect = styled.select`
   min-width: 200px;
 
   &:focus {
-    outline: 2px solid aquamarine;
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
 
   option {
-    background: #0a0a1a;
-    color: #cce0ff;
+    background: ${({ theme }) => theme.colors.bgDeep};
+    color: ${({ theme }) => theme.colors.textBody};
   }
 `;
 
 /** Page header title. */
 export const PageTitle = styled.h1`
-  color: aquamarine;
+  color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: 1.4rem;
   margin: 0 0 20px;
 

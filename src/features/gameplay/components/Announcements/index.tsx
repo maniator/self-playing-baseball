@@ -18,7 +18,7 @@ const HeadingRow = styled.div`
   border-bottom: 1px solid #333;
   position: sticky;
   top: 0;
-  background: #000;
+  background: ${({ theme }) => theme.colors.bgVoid};
   z-index: 1;
 `;
 

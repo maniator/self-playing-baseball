@@ -22,7 +22,7 @@ export const SectionSummary = styled.summary`
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
-  color: #88bbee;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
   cursor: pointer;
   user-select: none;
   list-style: none;
@@ -34,7 +34,7 @@ export const SectionSummary = styled.summary`
   &::after {
     content: "▸";
     font-size: 11px;
-    color: #4a6090;
+    color: ${({ theme }) => theme.colors.borderForm};
     flex-shrink: 0;
     transition: transform 0.15s;
   }
@@ -55,7 +55,7 @@ export const SectionBody = styled.div`
 export const List = styled.ul`
   margin: 0;
   padding-left: 18px;
-  color: #cce0ff;
+  color: ${({ theme }) => theme.colors.textBody};
 `;
 
 export const Li = styled.li`
