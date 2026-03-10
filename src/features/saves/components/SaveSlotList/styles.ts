@@ -1,5 +1,21 @@
+import type { AppTheme } from "@shared/theme";
 import { mq } from "@shared/utils/mediaQueries";
-import styled from "styled-components";
+import styled, { css } from "styled-components";
+
+type ActionBtnVariant = "primary" | "secondary" | "danger";
+
+const actionBtnVariants: Record<
+  ActionBtnVariant,
+  {
+    color: keyof AppTheme["colors"];
+    border: keyof AppTheme["colors"];
+    hoverBg: keyof AppTheme["colors"];
+  }
+> = {
+  primary: { color: "accentGreen", border: "borderGreen", hoverBg: "greenBg" },
+  secondary: { color: "textSecondaryLink", border: "borderForm", hoverBg: "bgSurface" },
+  danger: { color: "dangerText", border: "borderDanger", hoverBg: "dangerHoverBg" },
+};
 
 export const SaveList = styled.ul`
   list-style: none;
@@ -57,36 +73,24 @@ export const SaveActions = styled.div`
   }
 `;
 
-export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "danger" }>`
+export const ActionBtn = styled.button<{ $variant?: ActionBtnVariant }>`
   background: transparent;
-  color: ${({ $variant, theme }) =>
-    $variant === "primary"
-      ? theme.colors.accentGreen
-      : $variant === "danger"
-        ? theme.colors.dangerText
-        : theme.colors.textSecondaryLink};
-  border: 1px solid
-    ${({ $variant, theme }) =>
-      $variant === "primary"
-        ? theme.colors.borderGreen
-        : $variant === "danger"
-          ? theme.colors.borderDanger
-          : theme.colors.borderForm};
+  ${({ $variant = "secondary", theme }) => {
+    const v = actionBtnVariants[$variant];
+    return css`
+      color: ${theme.colors[v.color]};
+      border: 1px solid ${theme.colors[v.border]};
+      &:hover {
+        background: ${theme.colors[v.hoverBg]};
+      }
+    `;
+  }}
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.md};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   min-height: ${({ theme }) => theme.sizes.inputMd};
-
-  &:hover {
-    background: ${({ $variant, theme }) =>
-      $variant === "primary"
-        ? theme.colors.greenBg
-        : $variant === "danger"
-          ? theme.colors.dangerHoverBg
-          : theme.colors.bgSurface};
-  }
 
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};

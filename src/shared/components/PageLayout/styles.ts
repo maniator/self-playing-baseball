@@ -11,14 +11,18 @@ export const PageContainer = styled.div`
   flex-direction: column;
   min-height: 100dvh;
   padding: ${({ theme }) => theme.spacing.xxl};
-  padding-bottom: calc(${({ theme }) => theme.spacing.xxl} + 80px);
+  padding-bottom: calc(
+    ${({ theme }) => theme.spacing.xxl} + ${({ theme }) => theme.sizes.bottomBar}
+  );
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
     padding: ${({ theme }) => theme.spacing.lg};
-    padding-bottom: calc(${({ theme }) => theme.spacing.lg} + 80px);
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.lg} + ${({ theme }) => theme.sizes.bottomBar}
+    );
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -46,7 +50,7 @@ export const BackBtn = styled.button`
   font-family: inherit;
   cursor: pointer;
   padding: ${({ theme }) => theme.spacing.xs} 0;
-  min-height: ${({ theme }) => theme.spacing.s40};
+  min-height: ${({ theme }) => theme.sizes.btnMd};
 
   &:hover {
     color: ${({ theme }) => theme.colors.textLink};

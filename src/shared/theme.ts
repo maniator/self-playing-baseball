@@ -242,6 +242,10 @@ export const theme = {
     iconSm: "14px",
     progressBar: "4px",
     countdownLabel: "52px",
+    /** Bottom-safe-area offset used in page/home containers to clear the nav bar. */
+    bottomBar: "80px",
+    /** Minimum height for the import/export paste textarea. */
+    pasteTextarea: "80px",
   },
 } as const;
 

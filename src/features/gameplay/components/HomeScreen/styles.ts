@@ -8,7 +8,7 @@ export const HomeContainer = styled.div`
   justify-content: center;
   min-height: 100dvh;
   padding: ${({ theme }) => theme.spacing.xxxl} ${({ theme }) => theme.spacing.xxl}
-    calc(${({ theme }) => theme.spacing.xxxl} + 80px);
+    calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
 `;
 

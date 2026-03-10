@@ -55,14 +55,14 @@ export const ImportSectionTitle = styled.h2`
 
 export const PasteTextarea = styled.textarea`
   width: 100%;
-  min-height: 80px;
+  min-height: ${({ theme }) => theme.sizes.pasteTextarea};
   background: ${({ theme }) => theme.colors.bgImport};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  padding: ${({ theme }) => theme.spacing.sm} 10px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.s10};
   resize: vertical;
   box-sizing: border-box;
 
