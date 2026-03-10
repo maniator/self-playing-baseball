@@ -311,7 +311,9 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
    localStorage.removeItem("metricsConsoleErrors");
    // Install a persistent console-error capture shim on the current page.
    // Re-run this after each navigation (it survives within a page context only).
-   const _orig = { error: console.error, warn: console.warn };
+   // Restore any previous shim first to avoid double-wrapping on re-run.
+   if (window.__metricsOrig) { console.error = window.__metricsOrig.error; console.warn = window.__metricsOrig.warn; }
+   const _orig = window.__metricsOrig = { error: console.error, warn: console.warn };
    console.error = (...a) => { _orig.error(...a); const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[E] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
    console.warn  = (...a) => { _orig.warn(...a);  const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[W] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
    ```
