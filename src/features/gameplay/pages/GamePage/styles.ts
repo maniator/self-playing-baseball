@@ -16,6 +16,8 @@ export const SavingBanner = styled.div`
   color: #cce0ff;
   border-top: 2px solid #4a6090;
   padding: 10px 16px;
+  /* Add safe-area-inset-bottom so the banner clears the home indicator on iPhone. */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   text-align: center;
   font-size: 0.875rem;
 `;
