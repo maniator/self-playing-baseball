@@ -51,7 +51,7 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 
 | Hex | Theme key | Role | Example files |
 |---|---|---|---|
-| `#2a3a5a` | `borderPanel` | Cards, summary cells, leader cards | `teamSummaryStyles.ts`, `careerStats/styles.ts` |
+| `#2a3a5a` | `borderPanel` | Cards, summary cells, leader cards | `careerStats/styles.ts`, `CareerStatsPage/styles.ts` |
 | `#4a6090` | `borderForm` | Form inputs, selects, dialog chrome, close buttons | Across nearly every `styles.ts` |
 | `#2a2a3a` | `borderSubtle` | Stats tables, inactive tab borders | `careerStats/styles.ts` |
 | `#1e3050` | `borderDark` | Section headings underline, game grid dividers | `CustomTeamEditor/styles.ts`, `SubstitutionPanel/styles.ts` |
@@ -78,7 +78,7 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 | Hex / Named | Theme key | Role | Example files |
 |---|---|---|---|
 | `aquamarine` | `accentPrimary` | Primary CTA background (Batter Up!, Play Ball!), focus rings, dialog titles, decision panel border | `GameControls/styles.ts`, `DecisionPanel/styles.ts`, `CustomTeamEditor/styles.ts`, everywhere `focus-visible` is set |
-| `#6effc0` | `accentGreen` | Primary button text, leader stat values, active tab text | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `teamSummaryStyles.ts` |
+| `#6effc0` | `accentGreen` | Primary button text, leader stat values, active tab text | `HomeScreen/styles.ts`, `GameControls/styles.ts`, `CareerStatsPage/styles.ts` |
 | `#f5c842` | `accentGold` / `bsoStrike` | Line-score accent column (`R` total), BSO strike indicator | `LineScore/styles.ts`, `HomeScreen/styles.ts` |
 
 ### Status & interactive state colors
@@ -668,7 +668,7 @@ On mobile the action buttons drop to a second row (`flex-wrap: wrap`).
 
 ### 8.2 Summary stat cells (career stats)
 
-**Source file:** `src/features/careerStats/pages/CareerStatsPage/teamSummaryStyles.ts` → `SummaryCell`
+**Source file:** `src/features/careerStats/pages/CareerStatsPage/styles.ts` → `SummaryCell`
 
 | Property | Value |
 |---|---|
@@ -686,7 +686,7 @@ Mobile layout: `repeat(2, 1fr)`.
 
 ### 8.3 Leader cards (career stats)
 
-**Source file:** `src/features/careerStats/pages/CareerStatsPage/teamSummaryStyles.ts` → `LeaderCard`
+**Source file:** `src/features/careerStats/pages/CareerStatsPage/styles.ts` → `LeaderCard`
 
 Interactive card that navigates to a player career page.
 
@@ -1121,7 +1121,7 @@ margin-bottom: ${({ theme }) => theme.spacing.s10};
 | Decision panel & countdown bar | `src/features/gameplay/components/DecisionPanel/styles.ts` |
 | Line score & BSO row | `src/features/gameplay/components/LineScore/styles.ts` |
 | Substitution panel | `src/features/gameplay/components/SubstitutionPanel/styles.ts` |
-| Career stats tables, tabs, summary cells | `src/features/careerStats/styles.ts` + `teamSummaryStyles.ts` |
+| Career stats tables, tabs, summary cells | `src/features/careerStats/styles.ts`, `src/features/careerStats/pages/CareerStatsPage/styles.ts` |
 | Save slot cards & action buttons | `src/features/saves/components/SaveSlotList/styles.ts` |
 | Saves modal | `src/features/saves/components/SavesModal/styles.ts` |
 | Instructions modal | `src/features/help/components/InstructionsModal/styles.ts` |
