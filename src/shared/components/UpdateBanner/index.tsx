@@ -13,7 +13,7 @@ interface Props {
  * the same direct window.location.reload() pattern used by ErrorBoundary.
  */
 const UpdateBanner: React.FunctionComponent<Props> = ({ onDismiss }) => (
-  <Banner role="alert" aria-live="polite" data-testid="update-banner">
+  <Banner role="alert" data-testid="update-banner">
     <Message>
       ⚠️ A new version of Ballgame is available. Running an outdated version may cause unexpected
       game behavior — reload now to update.
