@@ -30,28 +30,28 @@ describe("generateDefaultCustomTeamDraft", () => {
     expect(draft.roster.pitchers).toHaveLength(5);
   });
 
-  it("batter batting stats are in [20, 50]", () => {
+  it("batter batting stats are in [20, 100]", () => {
     const draft = generateDefaultCustomTeamDraft("testbatters");
     const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
     for (const p of allBatters) {
       expect(p.batting.contact).toBeGreaterThanOrEqual(20);
-      expect(p.batting.contact).toBeLessThanOrEqual(50);
+      expect(p.batting.contact).toBeLessThanOrEqual(100);
       expect(p.batting.power).toBeGreaterThanOrEqual(20);
-      expect(p.batting.power).toBeLessThanOrEqual(50);
+      expect(p.batting.power).toBeLessThanOrEqual(100);
       expect(p.batting.speed).toBeGreaterThanOrEqual(20);
-      expect(p.batting.speed).toBeLessThanOrEqual(50);
+      expect(p.batting.speed).toBeLessThanOrEqual(100);
     }
   });
 
-  it("pitcher batting stats are in [20, 50]", () => {
+  it("pitcher batting stats are in [20, 100]", () => {
     const draft = generateDefaultCustomTeamDraft("testpitchers");
     for (const p of draft.roster.pitchers) {
       expect(p.batting.contact).toBeGreaterThanOrEqual(20);
-      expect(p.batting.contact).toBeLessThanOrEqual(50);
+      expect(p.batting.contact).toBeLessThanOrEqual(100);
       expect(p.batting.power).toBeGreaterThanOrEqual(20);
-      expect(p.batting.power).toBeLessThanOrEqual(50);
+      expect(p.batting.power).toBeLessThanOrEqual(100);
       expect(p.batting.speed).toBeGreaterThanOrEqual(20);
-      expect(p.batting.speed).toBeLessThanOrEqual(50);
+      expect(p.batting.speed).toBeLessThanOrEqual(100);
     }
   });
 
@@ -70,11 +70,11 @@ describe("generateDefaultCustomTeamDraft", () => {
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();
       expect(p.pitching!.velocity).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.velocity).toBeLessThanOrEqual(53);
+      expect(p.pitching!.velocity).toBeLessThanOrEqual(100);
       expect(p.pitching!.control).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.control).toBeLessThanOrEqual(53);
+      expect(p.pitching!.control).toBeLessThanOrEqual(100);
       expect(p.pitching!.movement).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.movement).toBeLessThanOrEqual(53);
+      expect(p.pitching!.movement).toBeLessThanOrEqual(100);
     }
   });
 
@@ -98,6 +98,52 @@ describe("generateDefaultCustomTeamDraft", () => {
       );
       expect(total).toBeLessThanOrEqual(PITCHER_STAT_CAP);
     }
+  });
+
+  it("hitter stat totals reach near the full cap (budget is actually used)", () => {
+    // Across many seeds, at least one batter should have a total above the old per-stat max
+    // of 3 × 50 = 150 — which is the cap itself — so verify totals are well above the old
+    // average of ~105 (3 × 35). We expect the mean to be near 150.
+    // Threshold of 130 allows for variance from the Dirichlet(2,2,2) split and
+    // occasional clamping (when one portion exceeds maxEach=80), while clearly
+    // distinguishing from the old average of ~105.
+    const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
+    const totals = seeds.flatMap((s) => {
+      const draft = generateDefaultCustomTeamDraft(s);
+      return [...draft.roster.lineup, ...draft.roster.bench].map((p) =>
+        hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed),
+      );
+    });
+    const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
+    // Mean should be well above the old average (~105); full-budget split centres around 150.
+    expect(mean).toBeGreaterThan(130);
+  });
+
+  it("pitcher stat totals reach near the full pitcher cap (budget is actually used)", () => {
+    // PITCHER_STAT_CAP is 160; old average was ~117 (3 × 39). Threshold of 140 clearly
+    // distinguishes the new full-budget distribution from the old narrow one.
+    const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
+    const totals = seeds.flatMap((s) =>
+      generateDefaultCustomTeamDraft(s).roster.pitchers.map((p) =>
+        pitcherStatTotal(p.pitching!.velocity, p.pitching!.control, p.pitching!.movement),
+      ),
+    );
+    const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
+    expect(mean).toBeGreaterThan(140);
+  });
+
+  it("individual batter stats span above 50 across many seeds", () => {
+    // Verify the full range is used — the old cap was 50 per stat; the new approach allows up to 100.
+    const seeds = Array.from({ length: 50 }, (_, i) => i + 1);
+    const allStats = seeds.flatMap((s) => {
+      const draft = generateDefaultCustomTeamDraft(s);
+      return [...draft.roster.lineup, ...draft.roster.bench].flatMap((p) => [
+        p.batting.contact,
+        p.batting.power,
+        p.batting.speed,
+      ]);
+    });
+    expect(Math.max(...allStats)).toBeGreaterThan(50);
   });
 
   it("lineup players have positions from the standard batting position set", () => {

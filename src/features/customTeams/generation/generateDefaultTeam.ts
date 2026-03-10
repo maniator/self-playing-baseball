@@ -44,8 +44,32 @@ const seedToNumber = (seed: string | number): number => {
   return seed.split("").reduce((acc, c) => ((acc << 5) - acc + c.charCodeAt(0)) | 0, 0) >>> 0;
 };
 
-const randInt = (rng: () => number, min: number, max: number): number =>
-  Math.floor(rng() * (max - min + 1)) + min;
+/**
+ * Splits `budget` extra points into 3 naturally distributed portions using
+ * a Dirichlet(2,2,2) distribution: each weight is the sum of 2 uniform draws,
+ * then all three are normalised to `budget`. This centres the split around
+ * budget/3 per portion (like rolling 2 dice each) so individual stats rarely
+ * dominate while still spanning the full cap range.
+ * Each portion is capped at `maxEach`; total returned may be slightly < budget
+ * when a portion is clamped.
+ */
+const splitBudgetNatural = (
+  rng: () => number,
+  budget: number,
+  maxEach: number,
+): [number, number, number] => {
+  const wa = rng() + rng();
+  const wb = rng() + rng();
+  const wc = rng() + rng();
+  const wTotal = wa + wb + wc;
+  const p1 = Math.min(Math.floor((wa / wTotal) * budget), maxEach);
+  const p2 = Math.min(Math.floor((wb / wTotal) * budget), maxEach);
+  // p3 picks up the remaining budget so the full allocation is used.
+  // p3 ≥ 0 is guaranteed: floor(wa/w·B) + floor(wb/w·B) ≤ floor((wa+wb)/w·B) ≤ B.
+  // The Math.min clamp ensures p3 ≤ maxEach even if p1/p2 were small.
+  const p3 = Math.min(budget - p1 - p2, maxEach);
+  return [p1, p2, p3];
+};
 
 const pickFrom = <T>(rng: () => number, arr: ReadonlyArray<T>): T =>
   arr[Math.floor(rng() * arr.length)];
@@ -89,6 +113,18 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     return name;
   };
 
+  /** Generate batting stats using the full HITTER_STAT_CAP budget, distributed naturally. */
+  const randBatterStats = (): { contact: number; power: number; speed: number } => {
+    const [ec, ep, es] = splitBudgetNatural(rng, HITTER_STAT_CAP - 3 * 20, 100 - 20);
+    return { contact: 20 + ec, power: 20 + ep, speed: 20 + es };
+  };
+
+  /** Generate pitching stats using the full PITCHER_STAT_CAP budget, distributed naturally. */
+  const randPitcherPitchingStats = (): { velocity: number; control: number; movement: number } => {
+    const [ev, ec, em] = splitBudgetNatural(rng, PITCHER_STAT_CAP - 3 * 25, 100 - 25);
+    return { velocity: 25 + ev, control: 25 + ec, movement: 25 + em };
+  };
+
   // Shuffle batting positions so the batting order varies per seed.
   // All 9 required positions (including DH) are still present, just in a random order.
   const shuffledPositions = shuffle(rng, [...BATTING_POSITIONS]);
@@ -99,12 +135,8 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
-    // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
-    batting: {
-      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-    },
+    // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+    batting: randBatterStats(),
   }));
 
   // Shuffle a copy of all batting positions for bench assignments so bench composition varies per seed.
@@ -115,12 +147,8 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: benchPositionPool[i % benchPositionPool.length],
     handedness: pickHandedness(),
-    // Each stat is bounded so max sum = 3 × maxPerStat ≤ HITTER_STAT_CAP.
-    batting: {
-      contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-    },
+    // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+    batting: randBatterStats(),
   }));
 
   // Shuffle bullpen roles: always 1 SP starter, then 4 relievers with varied SP/RP composition.
@@ -134,17 +162,10 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
       position: i === 0 ? "SP" : "RP",
       pitchingRole,
       handedness: pickHandedness(),
-      batting: {
-        contact: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-        power: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-        speed: randInt(rng, 20, Math.floor(HITTER_STAT_CAP / 3)),
-      },
-      // Each stat is bounded so max sum = 3 × maxPerStat ≤ PITCHER_STAT_CAP − 1.
-      pitching: {
-        velocity: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-        control: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-        movement: randInt(rng, 25, Math.floor((PITCHER_STAT_CAP - 1) / 3)),
-      },
+      // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+      batting: randBatterStats(),
+      // Distribute the full pitcher budget naturally: each stat ≥ 25, total = PITCHER_STAT_CAP.
+      pitching: randPitcherPitchingStats(),
     };
   });
 
