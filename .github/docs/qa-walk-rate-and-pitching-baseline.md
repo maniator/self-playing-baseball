@@ -854,7 +854,7 @@ The project has two ways to run 100-game metrics:
 
 ### How to run the browser metrics spec via Playwright MCP
 
-The `npx playwright test` CLI is the only reliable way to start the preview server for MCP browser access. See `.github/docs/e2e-testing.md` → "Starting the preview server for MCP browser automation" for the full step-by-step workflow.
+The `npx playwright test` CLI is the only reliable way to start the preview server for MCP browser access. See `docs/e2e-testing.md` → "Starting the preview server for MCP browser automation" for the full step-by-step workflow.
 
 **Quick reference:**
 

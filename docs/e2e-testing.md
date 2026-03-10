@@ -1,6 +1,6 @@
 # E2E Testing
 
-> Part of the Ballgame Copilot reference docs. See [copilot-instructions.md](../copilot-instructions.md) for the index.
+> Part of the Ballgame reference docs. See the [docs index](README.md) or [`.github/copilot-instructions.md`](../.github/copilot-instructions.md) (Copilot-specific).
 
 ## E2E Tests (`e2e/`)
 
