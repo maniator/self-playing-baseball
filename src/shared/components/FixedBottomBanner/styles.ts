@@ -16,6 +16,6 @@ export const FixedBottomBanner = styled.div`
   /* Fallback for browsers without env() support */
   padding: 10px 16px;
   /* Override bottom padding to include safe-area so the banner clears the home indicator */
-  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(10px + env(safe-area-inset-bottom));
   font-size: 0.875rem;
 `;
