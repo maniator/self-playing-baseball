@@ -3,7 +3,7 @@ import styled from "styled-components";
 
 export const SaveList = styled.ul`
   list-style: none;
-  margin: 0 0 24px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xxl};
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -14,15 +14,15 @@ export const SaveCard = styled.li`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 14px ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
     flex-wrap: wrap;
-    gap: 8px;
+    gap: ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -43,12 +43,12 @@ export const SaveName = styled.div`
 export const SaveDate = styled.div`
   color: ${({ theme }) => theme.colors.textHint};
   font-size: ${({ theme }) => theme.fontSizes.label};
-  margin-top: 2px;
+  margin-top: ${({ theme }) => theme.spacing.xxs};
 `;
 
 export const SaveActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
 
   ${mq.mobile} {
@@ -73,7 +73,7 @@ export const ActionBtn = styled.button<{ $variant?: "primary" | "secondary" | "d
           ? theme.colors.borderDanger
           : theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 6px 12px;
+  padding: 6px ${({ theme }) => theme.spacing.md};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;

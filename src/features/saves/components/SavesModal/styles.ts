@@ -7,11 +7,11 @@ export const Dialog = styled.dialog`
   color: ${({ theme }) => theme.colors.textDialog};
   border: 2px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 14px;
-  padding: 24px 28px 20px;
+  padding: ${({ theme }) => theme.spacing.xxl} 28px ${({ theme }) => theme.spacing.xl};
   max-width: min(520px, 94vw);
   width: 100%;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
 
   &::backdrop {
     background: ${({ theme }) => theme.colors.overlayMedDark};
@@ -26,7 +26,7 @@ export const DialogTitle = styled.h2`
 
 export const SlotList = styled.ul`
   list-style: none;
-  margin: 0 0 16px;
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
   padding: 0;
 `;
 
@@ -34,7 +34,7 @@ export const SlotItem = styled.li`
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 8px;
+  padding: 6px ${({ theme }) => theme.spacing.sm};
   border-radius: ${({ theme }) => theme.radii.lg};
   background: ${({ theme }) => theme.colors.bgNavSection};
   margin-bottom: 6px;
@@ -59,8 +59,8 @@ export const SmallButton = styled.button`
   background: transparent;
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textLink};
-  border-radius: 8px;
-  padding: 3px 8px;
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: 3px ${({ theme }) => theme.spacing.sm};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
@@ -81,7 +81,7 @@ export const DangerButton = styled(SmallButton)`
 `;
 
 export const SectionHeading = styled.h3`
-  margin: 12px 0 6px;
+  margin: ${({ theme }) => theme.spacing.md} 0 6px;
   font-size: ${({ theme }) => theme.fontSizes.label};
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -96,7 +96,7 @@ export const ImportArea = styled.textarea`
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: ${({ theme }) => theme.fontSizes.label};
-  padding: 6px 8px;
+  padding: 6px ${({ theme }) => theme.spacing.sm};
   resize: vertical;
   box-sizing: border-box;
 `;
@@ -104,7 +104,7 @@ export const ImportArea = styled.textarea`
 export const ErrorMsg = styled.p`
   color: ${({ theme }) => theme.colors.redDanger};
   font-size: ${({ theme }) => theme.fontSizes.label};
-  margin: 4px 0 0;
+  margin: ${({ theme }) => theme.spacing.xs} 0 0;
 `;
 
 export const Row = styled.div`
@@ -117,14 +117,14 @@ export const Row = styled.div`
 
 export const CloseButton = styled.button`
   display: block;
-  margin: 16px auto 0;
+  margin: ${({ theme }) => theme.spacing.lg} auto 0;
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;
   padding: 7px 22px;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-weight: 600;
   cursor: pointer;
 `;
@@ -132,7 +132,7 @@ export const CloseButton = styled.button`
 export const EmptyMsg = styled.p`
   color: ${({ theme }) => theme.colors.textModalLink};
   font-size: ${({ theme }) => theme.fontSizes.base};
-  margin: 0 0 12px;
+  margin: 0 0 ${({ theme }) => theme.spacing.md};
 `;
 
 export const FileInput = styled.input`
