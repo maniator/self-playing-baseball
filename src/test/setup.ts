@@ -5,9 +5,6 @@ import * as React from "react";
 import { theme } from "@shared/theme";
 import { ThemeProvider } from "styled-components";
 
-// styled-components v6 references React at module load time; make it globally available.
-(globalThis as typeof globalThis & { React: unknown }).React = React;
-
 // Wrap every @testing-library/react render with ThemeProvider so that
 // styled-components interpolations that reference `theme.*` resolve correctly.
 vi.mock("@testing-library/react", async (importActual) => {
