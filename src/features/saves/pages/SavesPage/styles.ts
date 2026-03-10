@@ -15,7 +15,7 @@ export { BackBtn, PageContainer, PageHeader } from "@shared/components/PageLayou
 export const PageTitle = styled.h1`
   color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1.6rem;
-  margin: 0 0 20px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 
   ${mq.mobile} {
     font-size: 1.3rem;
@@ -32,16 +32,16 @@ export const EmptyState = styled.p`
 export const LoadingState = styled.p`
   color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
-  margin: 24px 0;
+  margin: ${({ theme }) => theme.spacing.xxl} 0;
 `;
 
 export const ImportSection = styled.div`
   border-top: 1px solid ${({ theme }) => theme.colors.borderFormAlpha30};
-  padding-top: 20px;
-  margin-top: 8px;
+  padding-top: ${({ theme }) => theme.spacing.xl};
+  margin-top: ${({ theme }) => theme.spacing.sm};
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const ImportSectionTitle = styled.h2`
@@ -50,7 +50,7 @@ export const ImportSectionTitle = styled.h2`
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
 `;
 
 export const PasteTextarea = styled.textarea`
@@ -62,7 +62,7 @@ export const PasteTextarea = styled.textarea`
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  padding: 8px 10px;
+  padding: ${({ theme }) => theme.spacing.sm} 10px;
   resize: vertical;
   box-sizing: border-box;
 
@@ -79,7 +79,7 @@ export const PasteTextarea = styled.textarea`
 
 export const PasteActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-wrap: wrap;
   align-items: center;
 `;
@@ -89,25 +89,25 @@ export const ImportLabel = styled.label`
   align-items: center;
   gap: 10px;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
 `;
 
 export const FileInput = styled.input`
   font-family: inherit;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
 
   &::file-selector-button {
     background: transparent;
     color: ${({ theme }) => theme.colors.textSecondaryLink};
     border: 1px solid ${({ theme }) => theme.colors.borderForm};
-    border-radius: 6px;
-    padding: 4px 10px;
-    font-size: 12px;
+    border-radius: ${({ theme }) => theme.radii.md};
+    padding: ${({ theme }) => theme.spacing.xs} 10px;
+    font-size: ${({ theme }) => theme.fontSizes.label};
     font-family: inherit;
     cursor: pointer;
-    margin-right: 8px;
+    margin-right: ${({ theme }) => theme.spacing.sm};
 
     &:hover {
       background: ${({ theme }) => theme.colors.bgSurface};
@@ -120,7 +120,7 @@ export const ErrorMessage = styled.p`
   background: ${({ theme }) => theme.colors.errorBgTransparent};
   border: 1px solid ${({ theme }) => theme.colors.borderDanger};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 8px 12px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   font-size: ${({ theme }) => theme.fontSizes.base};
   margin-top: 10px;
 `;

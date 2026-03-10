@@ -7,8 +7,8 @@ import styled from "styled-components";
 /** Row of tab buttons. */
 export const TabBar = styled.div`
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
 
 /** Individual tab button — active state controlled via $active transient prop. */
@@ -17,8 +17,8 @@ export const TabBtn = styled.button<{ $active: boolean }>`
   color: ${({ $active, theme }) => ($active ? theme.colors.accentGreen : theme.colors.textSubdued)};
   border: 1px solid
     ${({ $active, theme }) => ($active ? theme.colors.borderGreen : theme.colors.borderSubtle)};
-  border-radius: 6px;
-  padding: 8px 20px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
   font-size: 0.9rem;
   font-family: inherit;
   font-weight: ${({ $active }) => ($active ? "600" : "400")};
@@ -55,7 +55,7 @@ export const StatsTable = styled.table`
 /** Table header cell. */
 export const Th = styled.th<{ $sortable?: boolean }>`
   text-align: left;
-  padding: 8px;
+  padding: ${({ theme }) => theme.spacing.sm};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderSubtle};
   font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textSubdued};
@@ -68,7 +68,7 @@ export const Th = styled.th<{ $sortable?: boolean }>`
 
 /** Table data cell. */
 export const Td = styled.td`
-  padding: 8px;
+  padding: ${({ theme }) => theme.spacing.sm};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderTableRow};
   font-size: ${({ theme }) => theme.fontSizes.base};
   color: ${({ theme }) => theme.colors.textLight};
@@ -97,10 +97,10 @@ export const TotalsRow = styled.tr`
 /** Section label above a table (used by PlayerCareerPage). */
 export const SectionLabel = styled.h2`
   color: ${({ theme }) => theme.colors.textSubdued};
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
   font-weight: 600;
 `;
 
@@ -109,7 +109,7 @@ export const PlayerLink = styled.button`
   background: transparent;
   border: none;
   color: ${({ theme }) => theme.colors.textLink};
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
   padding: 0;
