@@ -8,20 +8,32 @@ type ReleaseListener = () => void;
 
 const makeMockSentinel = (overrides: Partial<WakeLockSentinel> = {}): WakeLockSentinel => {
   const listeners: ReleaseListener[] = [];
-  return {
+  const sentinel: any = {
     released: false,
     type: "screen",
-    release: vi.fn().mockResolvedValue(undefined),
+    // Models the real WakeLockSentinel: sets released, fires listeners (once), clears them.
+    release: vi.fn().mockImplementation(async () => {
+      if (sentinel.released) return;
+      sentinel.released = true;
+      listeners.forEach((fn) => fn());
+      listeners.length = 0;
+    }),
     addEventListener: vi.fn((event: string, handler: ReleaseListener) => {
       if (event === "release") listeners.push(handler);
     }),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn().mockReturnValue(true),
     onrelease: null,
-    // Helper to simulate the OS dropping the lock
-    fireRelease: () => listeners.forEach((fn) => fn()),
+    // Helper to simulate the OS/browser dropping the lock (same semantics as release()).
+    fireRelease: () => {
+      if (sentinel.released) return;
+      sentinel.released = true;
+      listeners.forEach((fn) => fn());
+      listeners.length = 0;
+    },
     ...overrides,
-  } as unknown as WakeLockSentinel;
+  };
+  return sentinel as WakeLockSentinel;
 };
 
 const installWakeLock = (sentinel: WakeLockSentinel) => {
@@ -186,7 +198,6 @@ describe("useWakeLock", () => {
 
     // Simulate OS releasing the lock (sentinel release event fires, page still visible)
     await act(async () => {
-      (sentinel as any).released = true;
       Object.defineProperty(document, "visibilityState", {
         configurable: true,
         value: "visible",
@@ -207,7 +218,6 @@ describe("useWakeLock", () => {
 
     // Simulate OS releasing the lock but page is hidden (normal tab-switch flow)
     await act(async () => {
-      (sentinel as any).released = true;
       Object.defineProperty(document, "visibilityState", {
         configurable: true,
         value: "hidden",
@@ -258,7 +268,6 @@ describe("useWakeLock", () => {
     });
 
     await act(async () => {
-      (sentinel as any).released = true;
       Object.defineProperty(document, "visibilityState", {
         configurable: true,
         value: "visible",
