@@ -37,7 +37,7 @@ export const GameBody = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.spacing.md};
   align-items: stretch;
-  margin-top: 14px;
+  margin-top: ${({ theme }) => theme.spacing.s14};
 
   ${mq.desktop} {
     display: grid;
@@ -49,7 +49,7 @@ export const GameBody = styled.div`
   ${mq.tablet} {
     flex: 1;
     min-height: 0;
-    margin-top: 10px;
+    margin-top: ${({ theme }) => theme.spacing.s10};
     gap: ${({ theme }) => theme.spacing.md};
   }
 
@@ -76,7 +76,7 @@ export const FieldPanel = styled.div`
 export const LoadingScreen = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
   text-align: center;
-  margin: 48px auto;
+  margin: ${({ theme }) => theme.spacing.s48} auto;
   font-family: monospace;
 `;
 
@@ -88,21 +88,21 @@ export const DbResetNotice = styled.div`
   z-index: 9999;
   background: ${({ theme }) => theme.colors.goldWarn};
   color: ${({ theme }) => theme.colors.textPrimary};
-  padding: 10px ${({ theme }) => theme.spacing.lg};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: ${({ theme }) => theme.spacing.md};
-  font-size: 0.9rem;
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
 
   button {
     background: none;
     border: 1px solid ${({ theme }) => theme.colors.borderWhiteAlpha};
     color: ${({ theme }) => theme.colors.textPrimary};
     cursor: pointer;
-    padding: 2px ${({ theme }) => theme.spacing.sm};
+    padding: ${({ theme }) => theme.spacing.xxs} ${({ theme }) => theme.spacing.sm};
     border-radius: ${({ theme }) => theme.radii.sm};
-    font-size: 1rem;
+    font-size: ${({ theme }) => theme.fontSizes.bodyLg};
   }
 `;
 

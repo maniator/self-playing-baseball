@@ -52,11 +52,11 @@ export const PrimaryBtn = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.borderGreen};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
-  font-size: 1.05rem;
+  font-size: ${({ theme }) => theme.fontSizes.bodyXl};
   font-weight: 600;
   font-family: inherit;
   cursor: pointer;
-  min-height: 52px;
+  min-height: ${({ theme }) => theme.sizes.btnXxl};
   text-align: center;
 
   &:hover {
@@ -78,11 +78,11 @@ export const SecondaryBtn = styled.button`
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 14px ${({ theme }) => theme.spacing.xl};
-  font-size: 0.95rem;
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.body};
   font-family: inherit;
   cursor: pointer;
-  min-height: 48px;
+  min-height: ${({ theme }) => theme.sizes.btnXl};
   text-align: center;
 
   &:hover {
@@ -114,14 +114,14 @@ export const LeagueTeaserBox = styled.div`
 
 export const LeagueTeaserTitle = styled.p`
   color: ${({ theme }) => theme.colors.textGold};
-  font-size: 0.88rem;
+  font-size: ${({ theme }) => theme.fontSizes.subLg};
   font-weight: 600;
   margin: 0 0 ${({ theme }) => theme.spacing.xs};
 `;
 
 export const LeagueTeaserSub = styled.p`
   color: ${({ theme }) => theme.colors.textMuted};
-  font-size: 0.78rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   margin: 0;
   line-height: 1.4;
 `;

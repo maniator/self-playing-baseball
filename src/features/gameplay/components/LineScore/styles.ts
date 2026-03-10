@@ -3,13 +3,13 @@ import styled from "styled-components";
 
 export const Wrapper = styled.div`
   overflow-x: auto;
-  margin: 8px 0 0;
+  margin: ${({ theme }) => theme.spacing.sm} 0 0;
 
   ${mq.mobile} {
     order: -1;
     background: ${({ theme }) => theme.colors.bgVoid};
-    margin: 0 0 4px;
-    padding-bottom: 4px;
+    margin: 0 0 ${({ theme }) => theme.spacing.xs};
+    padding-bottom: ${({ theme }) => theme.spacing.xs};
   }
 `;
 
@@ -27,19 +27,19 @@ export const Table = styled.table`
 `;
 
 export const Th = styled.th<{ $accent?: boolean }>`
-  padding: 3px 6px;
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.s6};
   text-align: center;
   color: ${({ $accent, theme }) =>
     $accent ? theme.colors.accentGold : theme.colors.textScoreHeader};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   font-weight: normal;
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  letter-spacing: 0.5px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.normal};
   white-space: nowrap;
 
   ${mq.notMobile} {
     font-size: ${({ theme }) => theme.fontSizes.base};
-    padding: 3px 8px;
+    padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -57,7 +57,7 @@ export const TeamTh = styled(Th)`
 `;
 
 export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boolean }>`
-  padding: 4px 6px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s6};
   text-align: center;
   font-weight: ${({ $accent }) => ($accent ? "bold" : "normal")};
   color: ${({ $active, $accent, $dim, theme }) =>
@@ -73,7 +73,7 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
   white-space: nowrap;
 
   ${mq.notMobile} {
-    padding: 5px 8px;
+    padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -81,7 +81,7 @@ export const TeamTd = styled(Td)`
   text-align: left;
   font-size: ${({ theme }) => theme.fontSizes.label};
   border-right: 1px solid ${({ theme }) => theme.colors.borderLineScore};
-  padding-right: 8px;
+  padding-right: ${({ theme }) => theme.spacing.sm};
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -102,13 +102,13 @@ export const DividerTd = styled.td`
 export const BsoRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 6px 8px 4px;
+  gap: ${({ theme }) => theme.spacing.s14};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xs};
   background: ${({ theme }) => theme.colors.bgGame};
   font-family: ${({ theme }) => theme.fonts.score};
   font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textScoreHeader};
-  letter-spacing: 0.5px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.normal};
 
   ${mq.notMobile} {
     font-size: ${({ theme }) => theme.fontSizes.label};
@@ -118,7 +118,7 @@ export const BsoRow = styled.div`
 export const BsoGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: ${({ theme }) => theme.spacing.s5};
 `;
 
 export const Dot = styled.span<{ $on: boolean; $color: string }>`
@@ -135,8 +135,8 @@ export const ExtraInningsBanner = styled.div`
   color: ${({ theme }) => theme.colors.textPrimary};
   font-weight: bold;
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  padding: 2px 8px;
-  letter-spacing: 1px;
+  padding: ${({ theme }) => theme.spacing.xxs} ${({ theme }) => theme.spacing.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.widest};
   margin-left: auto;
 `;
 
@@ -146,8 +146,8 @@ export const GameOverBanner = styled.div`
   text-align: center;
   font-weight: bold;
   font-size: ${({ theme }) => theme.fontSizes.label};
-  padding: 3px 8px;
-  letter-spacing: 1px;
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.sm};
+  letter-spacing: ${({ theme }) => theme.letterSpacing.widest};
 `;
 
 /**

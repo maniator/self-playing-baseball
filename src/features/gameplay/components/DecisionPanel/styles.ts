@@ -4,11 +4,11 @@ export const Panel = styled.div`
   background: ${({ theme }) => theme.colors.bgDecisionOverlay};
   border: 2px solid ${({ theme }) => theme.colors.accentPrimary};
   border-radius: ${({ theme }) => theme.radii.xl};
-  padding: 14px 18px 10px;
-  margin-top: 10px;
+  padding: ${({ theme }) => theme.spacing.s14} ${({ theme }) => theme.spacing.s18} ${({ theme }) => theme.spacing.s10};
+  margin-top: ${({ theme }) => theme.spacing.s10};
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
   align-items: center;
   font-size: ${({ theme }) => theme.fontSizes.md};
 `;
@@ -23,9 +23,9 @@ export const CountdownRow = styled.div`
 
 export const CountdownTrack = styled.div`
   flex: 1;
-  height: 4px;
+  height: ${({ theme }) => theme.sizes.progressBar};
   background: ${({ theme }) => theme.colors.bgDecisionSection};
-  border-radius: 2px;
+  border-radius: ${({ theme }) => theme.radii.xxs};
   overflow: hidden;
 `;
 
@@ -38,7 +38,7 @@ export const CountdownFill = styled.div<{ $pct: number }>`
       : $pct > 25
         ? theme.colors.countdownWarn
         : theme.colors.countdownDanger};
-  border-radius: 2px;
+  border-radius: ${({ theme }) => theme.radii.xxs};
   transition:
     width 0.95s linear,
     background 0.5s ease;
@@ -48,6 +48,6 @@ export const CountdownLabel = styled.span`
   color: ${({ theme }) => theme.colors.textSubdued};
   font-size: ${({ theme }) => theme.fontSizes.sm};
   white-space: nowrap;
-  min-width: 52px;
+  min-width: ${({ theme }) => theme.sizes.countdownLabel};
   text-align: right;
 `;

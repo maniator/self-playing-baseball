@@ -5,13 +5,13 @@ export const Panel = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderCard};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: ${({ theme }) => theme.spacing.md} 14px;
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s14};
   margin-top: ${({ theme }) => theme.spacing.sm};
   width: 100%;
   max-width: 480px;
 
   ${mq.mobile} {
-    padding: 10px ${({ theme }) => theme.spacing.md};
+    padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.md};
     max-width: 100%;
   }
 `;
@@ -20,12 +20,12 @@ export const PanelHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
 `;
 
 export const PanelTitle = styled.h4`
   color: ${({ theme }) => theme.colors.accentPrimary};
-  font-size: 0.85rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   margin: 0;
   font-weight: 600;
 `;
@@ -53,7 +53,7 @@ export const CloseButton = styled.button`
 `;
 
 export const Section = styled.div`
-  margin-bottom: 10px;
+  margin-bottom: ${({ theme }) => theme.spacing.s10};
 
   &:last-child {
     margin-bottom: 0;
@@ -62,10 +62,10 @@ export const Section = styled.div`
 
 export const SectionTitle = styled.h5`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  font-size: 0.7rem;
+  font-size: ${({ theme }) => theme.fontSizes.tiny};
   text-transform: uppercase;
-  letter-spacing: 0.6px;
-  margin: 0 0 6px;
+  letter-spacing: ${({ theme }) => theme.letterSpacing.wide};
+  margin: 0 0 ${({ theme }) => theme.spacing.s6};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
   padding-bottom: ${({ theme }) => theme.spacing.xs};
 `;
@@ -73,7 +73,7 @@ export const SectionTitle = styled.h5`
 export const Row = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.s6};
   flex-wrap: wrap;
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
@@ -137,7 +137,7 @@ export const FatigueBar = styled.div``;
 export const FatigueLabel = styled.span<{ $level: "low" | "medium" | "high" }>`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   font-weight: 600;
-  padding: 1px 6px;
+  padding: 1px ${({ theme }) => theme.spacing.s6};
   border-radius: ${({ theme }) => theme.radii.sm};
   color: ${({ $level, theme }) =>
     $level === "high"
@@ -152,11 +152,11 @@ export const SubButton = styled.button`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: ${({ theme }) => theme.spacing.xs} 10px;
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
   font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
-  min-height: 30px;
+  min-height: ${({ theme }) => theme.sizes.inputSm};
   flex-shrink: 0;
 
   &:hover {

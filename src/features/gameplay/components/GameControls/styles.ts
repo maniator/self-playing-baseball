@@ -4,12 +4,12 @@ import styled, { css } from "styled-components";
 export const Controls = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
   align-items: center;
   padding: ${({ theme }) => theme.spacing.sm} 0;
 
   ${mq.mobile} {
-    gap: 6px;
+    gap: ${({ theme }) => theme.spacing.s6};
     padding: ${({ theme }) => theme.spacing.xs} 0;
   }
 `;
@@ -49,8 +49,8 @@ const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
 };
 
 export const Button = styled.button<{ $variant?: ButtonVariant }>`
-  padding: ${({ theme }) => theme.spacing.md} 18px;
-  border-radius: 30px;
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s18};
+  border-radius: ${({ theme }) => theme.radii.pill};
   cursor: pointer;
   font-family: inherit;
   font-size: ${({ theme }) => theme.fontSizes.md};
@@ -72,27 +72,27 @@ export const AutoPlayGroup = styled.div`
   gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
   background: ${({ theme }) => theme.colors.navGroupBg};
-  border-radius: 10px;
+  border-radius: ${({ theme }) => theme.radii.card};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
-    padding: 5px ${({ theme }) => theme.spacing.sm};
-    gap: 6px;
+    padding: ${({ theme }) => theme.spacing.s5} ${({ theme }) => theme.spacing.sm};
+    gap: ${({ theme }) => theme.spacing.s6};
   }
 `;
 
 export const ToggleLabel = styled.label`
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: ${({ theme }) => theme.spacing.s6};
   font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
 
   & input[type="checkbox"] {
     accent-color: ${({ theme }) => theme.colors.accentPrimary};
     cursor: pointer;
-    width: 14px;
-    height: 14px;
+    width: ${({ theme }) => theme.sizes.iconSm};
+    height: ${({ theme }) => theme.sizes.iconSm};
   }
 
   ${mq.notMobile} {
@@ -102,12 +102,12 @@ export const ToggleLabel = styled.label`
 
 export const BatterUpButton = styled(Button)`
   font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
-  padding: ${({ theme }) => theme.spacing.lg} 28px;
+  padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.s28};
   font-weight: bold;
 
   ${mq.desktop} {
-    font-size: 20px;
-    padding: 18px ${({ theme }) => theme.spacing.xxxl};
+    font-size: ${({ theme }) => theme.fontSizes.f20};
+    padding: ${({ theme }) => theme.spacing.s18} ${({ theme }) => theme.spacing.xxxl};
   }
 `;
 
@@ -116,8 +116,8 @@ export const HelpButton = styled.button`
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 50%;
-  width: 25px;
-  height: 25px;
+  width: ${({ theme }) => theme.sizes.icon};
+  height: ${({ theme }) => theme.sizes.icon};
   font-size: ${({ theme }) => theme.fontSizes.lg};
   font-family: inherit;
   cursor: pointer;
@@ -136,7 +136,7 @@ export const Select = styled.select`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: 3px 6px;
+  padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.s6};
   cursor: pointer;
   font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
