@@ -23,6 +23,13 @@ async function runGameInFreshContext(
   baseURL = "http://localhost:5173",
 ): Promise<string> {
   const context = await browser.newContext({ baseURL });
+  // Use fast autoplay speed and suppress inning pauses + announcements so the
+  // 5 log lines we need appear in seconds rather than tens of seconds on CI.
+  await context.addInitScript(() => {
+    localStorage.setItem("speed", "150"); // SPEED_FAST
+    localStorage.setItem("_e2eNoInningPause", "1");
+    localStorage.setItem("announcementVolume", "0");
+  });
   const page = await context.newPage();
   try {
     await page.goto("/");
@@ -37,19 +44,21 @@ async function runGameInFreshContext(
       page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
     ).not.toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
-    // Wait for 5 lines with a generous 60 s budget — on CI runners autoplay
-    // can be slower. We only need 5 lines because captureGameSignature reads
+    // Wait for 5 lines with a generous 30 s budget — at SPEED_FAST (150 ms/pitch)
+    // the first 5 log lines appear within a few seconds on CI runners.
+    // We only need 5 lines because captureGameSignature reads
     // data-log-index 0–4 which are stable oldest entries.
-    return await captureGameSignature(page, 5, 60_000);
+    return await captureGameSignature(page, 5, 30_000);
   } finally {
     await context.close();
   }
 }
 
 test.describe("Determinism", () => {
-  // Each test runs two sequential fresh contexts.  Allow 3 minutes total so
-  // even slow CI runners have enough headroom (2 × ~60 s + startup overhead).
-  test.setTimeout(200_000);
+  // Each test runs two sequential fresh contexts.  Allow 2 minutes total:
+  // at SPEED_FAST each context needs at most ~30 s for 5 log lines plus
+  // startup/import overhead, well within this budget.
+  test.setTimeout(120_000);
 
   test("same seed produces same play-by-play sequence", async ({ browser, baseURL }) => {
     const sig1 = await runGameInFreshContext(browser, FIXED_SEED, baseURL ?? undefined);

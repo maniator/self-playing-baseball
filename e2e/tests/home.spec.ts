@@ -187,3 +187,24 @@ test.describe("Home Screen", () => {
     await expect(page.getByTestId("home-screen")).not.toBeVisible();
   });
 });
+
+test.describe("Home page League teaser", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("Home page shows 'League play coming soon' teaser", async ({ page }) => {
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("league-play-teaser")).toBeVisible();
+    await expect(page.getByTestId("league-play-teaser")).toContainText(/league play coming soon/i);
+  });
+
+  test("League teaser is not a clickable link", async ({ page }) => {
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    const teaser = page.getByTestId("league-play-teaser");
+    await expect(teaser).toBeVisible();
+    // The teaser box is not a button or anchor — it's a non-interactive element
+    const tagName = await teaser.evaluate((el) => el.tagName.toLowerCase());
+    expect(["div", "section", "aside", "p", "span"]).toContain(tagName);
+  });
+});
