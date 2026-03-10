@@ -148,7 +148,11 @@ export const Mound = styled.div`
 
 export const BaseDiv = styled.div<{ $playerOnBase?: boolean; $isHome?: boolean; $base: number }>`
   background: ${({ $playerOnBase, $isHome, theme }) =>
-    $playerOnBase ? "#3f4f7e" : $isHome ? theme.colors.textPrimary : "#ff21b1"};
+    $playerOnBase
+      ? theme.colors.baseOccupied
+      : $isHome
+        ? theme.colors.textPrimary
+        : theme.colors.baseAway};
   height: 10px;
   width: 10px;
   position: absolute;

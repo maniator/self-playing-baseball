@@ -22,7 +22,7 @@ const HeadingRow = styled.div`
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
-  color: #888;
+  color: ${({ theme }) => theme.colors.textSubdued};
   margin-bottom: 6px;
   padding-bottom: 4px;
   border-bottom: 1px solid #333;
@@ -76,7 +76,8 @@ const Th = styled.th`
 const Td = styled.td<{ $highlight?: boolean }>`
   text-align: right;
   padding: 2px 4px;
-  color: ${({ $highlight, theme }) => ($highlight ? theme.colors.textDialog : "#888")};
+  color: ${({ $highlight, theme }) =>
+    $highlight ? theme.colors.textDialog : theme.colors.textSubdued};
   &:first-child {
     text-align: left;
     color: #6ab0e0;

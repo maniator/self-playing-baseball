@@ -14,7 +14,7 @@ export const TabBar = styled.div`
 /** Individual tab button — active state controlled via $active transient prop. */
 export const TabBtn = styled.button<{ $active: boolean }>`
   background: ${({ $active, theme }) => ($active ? theme.colors.greenBg : "transparent")};
-  color: ${({ $active, theme }) => ($active ? theme.colors.accentGreen : "#888")};
+  color: ${({ $active, theme }) => ($active ? theme.colors.accentGreen : theme.colors.textSubdued)};
   border: 1px solid
     ${({ $active, theme }) => ($active ? theme.colors.borderGreen : theme.colors.borderSubtle)};
   border-radius: 6px;
@@ -58,7 +58,7 @@ export const Th = styled.th<{ $sortable?: boolean }>`
   padding: 8px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderSubtle};
   font-size: 12px;
-  color: #888;
+  color: ${({ theme }) => theme.colors.textSubdued};
   font-weight: 600;
   white-space: nowrap;
   ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none; &:hover { color: #ccc; }`}
@@ -94,7 +94,7 @@ export const TotalsRow = styled.tr`
 
 /** Section label above a table (used by PlayerCareerPage). */
 export const SectionLabel = styled.h2`
-  color: #888;
+  color: ${({ theme }) => theme.colors.textSubdued};
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 1px;

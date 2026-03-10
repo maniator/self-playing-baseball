@@ -33,7 +33,11 @@ export const CountdownFill = styled.div<{ $pct: number }>`
   height: 100%;
   width: ${({ $pct }) => $pct}%;
   background: ${({ $pct, theme }) =>
-    $pct > 50 ? theme.colors.bsoBall : $pct > 25 ? "#ffaa33" : "#ff4444"};
+    $pct > 50
+      ? theme.colors.bsoBall
+      : $pct > 25
+        ? theme.colors.countdownWarn
+        : theme.colors.countdownDanger};
   border-radius: 2px;
   transition:
     width 0.95s linear,
@@ -41,7 +45,7 @@ export const CountdownFill = styled.div<{ $pct: number }>`
 `;
 
 export const CountdownLabel = styled.span`
-  color: #888;
+  color: ${({ theme }) => theme.colors.textSubdued};
   font-size: 11px;
   white-space: nowrap;
   min-width: 52px;

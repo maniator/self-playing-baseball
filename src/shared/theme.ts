@@ -46,6 +46,17 @@ export const theme = {
     bsoBall: "#44cc88",
     bsoStrike: "#f5c842",
     bsoOut: "#ff7070",
+
+    // Countdown bar states
+    countdownWarn: "#ffaa33",
+    countdownDanger: "#ff4444",
+
+    // Diamond / field indicators
+    baseOccupied: "#3f4f7e",
+    baseAway: "#ff21b1",
+
+    // Subdued text (between textMuted and textDimmer)
+    textSubdued: "#888888",
   },
   fonts: {
     sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
