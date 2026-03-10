@@ -7,16 +7,16 @@ export const ScreenContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(${({ theme }) => theme.spacing.xxl} + 80px);
   gap: 0;
   max-width: 680px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(${({ theme }) => theme.spacing.lg} + 80px);
     /* On mobile body has overflow:hidden (game styles). Provide own scroll. */
     height: 100dvh;
     overflow-y: auto;
@@ -27,14 +27,14 @@ export const ScreenContainer = styled.div`
 export const ScreenHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: ${({ theme }) => theme.spacing.md};
+  margin-bottom: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const ScreenTitle = styled.h1`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1.6rem;
-  margin: 0 0 16px;
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 
   ${mq.mobile} {
     font-size: 1.3rem;
@@ -45,18 +45,18 @@ export const InfoBanner = styled.p`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.radii.lg};
   padding: 10px 14px;
-  font-size: 13px;
-  margin: 0 0 16px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  margin: 0 0 ${({ theme }) => theme.spacing.lg};
 `;
 
 export const CreateBtn = styled.button`
   background: ${({ theme }) => theme.colors.greenBg};
   color: ${({ theme }) => theme.colors.accentGreen};
   border: 1px solid ${({ theme }) => theme.colors.borderGreen};
-  border-radius: 8px;
-  padding: 12px 20px;
+  border-radius: ${({ theme }) => theme.radii.lg};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
   font-size: 0.95rem;
   font-weight: 600;
   font-family: inherit;
@@ -64,8 +64,8 @@ export const CreateBtn = styled.button`
   min-height: 44px;
   align-self: center;
   width: min(100%, 340px);
-  margin-top: 8px;
-  margin-bottom: 20px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
 
   &:hover {
     background: ${({ theme }) => theme.colors.greenHover};
@@ -90,11 +90,11 @@ export const TeamListItemCard = styled.li`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: 10px;
-  padding: 14px 16px;
+  padding: 14px ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 export const TeamInfo = styled.div`
@@ -103,38 +103,38 @@ export const TeamInfo = styled.div`
 `;
 
 export const TeamName = styled.div`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1rem;
   font-weight: 600;
 `;
 
 export const TeamMeta = styled.div`
   color: ${({ theme }) => theme.colors.textHint};
-  font-size: 12px;
-  margin-top: 2px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  margin-top: ${({ theme }) => theme.spacing.xxs};
 `;
 
 export const TeamActions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   flex-shrink: 0;
 `;
 
 export const ActionBtn = styled.button<{ $danger?: boolean }>`
   background: transparent;
-  color: ${({ $danger, theme }) => ($danger ? "#ff7777" : theme.colors.textSecondaryLink)};
+  color: ${({ $danger, theme }) => ($danger ? theme.colors.dangerText : theme.colors.textSecondaryLink)};
   border: 1px solid
     ${({ $danger, theme }) => ($danger ? theme.colors.borderDanger : theme.colors.borderForm)};
-  border-radius: 6px;
-  padding: 6px 12px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 6px ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   min-height: 32px;
 
   &:hover {
-    background: ${({ $danger, theme }) => ($danger ? "#2a0000" : theme.colors.bgSurface)};
-    border-color: ${({ $danger, theme }) => ($danger ? "#cc4444" : theme.colors.textSecondaryLink)};
+    background: ${({ $danger, theme }) => ($danger ? theme.colors.dangerHoverBg : theme.colors.bgSurface)};
+    border-color: ${({ $danger, theme }) => ($danger ? theme.colors.dangerHoverBorder : theme.colors.textSecondaryLink)};
   }
 
   &:focus-visible {
@@ -170,24 +170,24 @@ export const EditorShell = styled.div`
 export const EditorShellHeader = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 24px 24px 0;
+  gap: ${({ theme }) => theme.spacing.md};
+  padding: ${({ theme }) => theme.spacing.xxl} ${({ theme }) => theme.spacing.xxl} 0;
 
   ${mq.mobile} {
-    padding: 16px 16px 0;
+    padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.lg} 0;
   }
 `;
 
 export const EditorLoading = styled.p`
   color: ${({ theme }) => theme.colors.textHint};
   font-size: 0.95rem;
-  padding: 24px;
+  padding: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const NotFoundMsg = styled.p`
-  color: #ff9977;
+  color: ${({ theme }) => theme.colors.textWarnOrange};
   font-size: 0.95rem;
-  padding: 24px;
+  padding: ${({ theme }) => theme.spacing.xxl};
 `;
 
 export const TeamListLink = styled.button`
