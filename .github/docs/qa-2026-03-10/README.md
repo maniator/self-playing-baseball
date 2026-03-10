@@ -16,10 +16,10 @@ Work top-to-bottom. Each wave can begin once the wave above it is merged.
 
 | Priority | Bug(s) | Severity | Rationale | Parallel-safe? |
 |---|---|---|---|---|
-| **1 — Fix first** | [Bug J](bug-j-orphan-save-raw-team-id.md) + [Bug A](bug-a-hit-log-player-names.md) | High + Medium | Bug J is the only High-severity bug and causes corrupted-looking UI for any user who has deleted a team. Bug A (hit log player names) touches the same rendering area and must ship in the same PR to avoid a second conflicting change to `HitLog/index.tsx`. | No — must be one PR together |
+| **1 — Fix first** | [Bug J](bug-j-orphan-save-raw-team-id.md) + [Bug A](bug-a-hit-log-player-names.md) | High + Medium | Bug J is the only High-severity bug and causes corrupted-looking UI for any user who has deleted a team. Bug A (hit log player names) touches the same rendering area; shipping both together avoids a second overlapping change to `HitLog/index.tsx`. | ⚠️ Recommended as one PR (see Group 2 below) |
 | **2 — Fix second** | [Bug 3](bug-03-rxdb-game-sync-error.md) | Medium | Fires on every completed game and on 4 other common triggers. Console error pollution obscures genuine errors and may mask future regressions. Self-contained change; no dependency on wave 1. | Yes — can run in parallel with wave 3 |
 | **2 — Fix second** | [Bug C](bug-c-resume-button-after-final.md) | Medium | Actively misleads users into "resuming" a finished game — a common post-game flow. Self-contained change to `AppShell`. | Yes — can run in parallel with wave 3 |
-| **3 — Fix third** | [Bug F](bug-f-save-import-undefined.md) + [Bug 5](bug-05-team-import-undefined.md) | Medium + Low | Both leak `"undefined"` in import error messages and touch adjacent files. Ship in the same PR for consistent import UX. No dependency on waves 1 or 2. | Yes — can run in parallel with wave 2 |
+| **3 — Fix third** | [Bug F](bug-f-save-import-undefined.md) + [Bug 5](bug-05-team-import-undefined.md) | Medium + Low | Both leak `"undefined"` in import error messages and touch adjacent files. Ship in the same PR for consistent import UX. **Note:** Bug F touches `saveStore.ts`, which Bug 3 (wave 2) also touches. Do not run Group 3 in parallel with Bug 3. | ⚠️ Do not run in parallel with Bug 3 (wave 2) |
 | **4 — Fix fourth** | [Bug G](bug-g-back-button-navigation.md) | Low | Simple one-line navigation fix. No conflicts with any other bug. Safe to do at any point after wave 1. | Yes — can run alongside wave 3 |
 | **4 — Fix fourth** | [Bug B](bug-b-save-delete-no-confirm.md) | Low | One-line `confirm()` guard. Self-contained, no file overlap with anything else. | Yes — can run alongside wave 3 |
 | **5 — Fix fifth** | [Bug D](bug-d-instant-speed-help.md) + [Bug E](bug-e-starter-pitcher-help.md) + [Bug H](bug-h-help-music-emoji.md) + [Bug I](bug-i-help-stat-edit-copy.md) | Low × 4 | All four are copy-only edits to `HelpContent/index.tsx`. Ship in one PR. No functional risk. Can start any time but low priority — documentation drift does not break any user flow. | No — must be one PR together; safe to start any time |
@@ -45,12 +45,12 @@ Opening four PRs against this file is guaranteed to produce merge conflicts. Do 
 | [Bug I](bug-i-help-stat-edit-copy.md) | Correct stat-edit copy in Custom Teams section |
 
 ### Group 2 — Game display names (Bugs A + J)
-**Must ship together.** Both touch how player and team names are resolved in the game display layer:
+**Recommended to ship together.** Both touch how player and team names are resolved in the game display layer:
 - `src/features/gameplay/components/HitLog/index.tsx`
 - `src/features/gameplay/context/index.tsx` (extending `PlayLogEntry`)
 - Team name fallback resolution (used by both HitLog and the team tab)
 
-Doing Bug J alone would still leave player names as `#N`. Doing Bug A alone would not fix the team ID leak. Ship as one PR.
+Doing Bug J alone would still leave player names as `#N`. Doing Bug A alone would not fix the team ID leak. Shipping as one PR is strongly recommended, but the changes do not have a hard technical dependency on each other if splitting is necessary.
 
 | Bug | Change |
 |---|---|
@@ -76,12 +76,12 @@ These combinations are explicitly safe to work on at the same time without risk 
 | Group 2 (Bugs A + J) — wave 1 | Bug 3 — wave 2 | ✅ Yes — no shared files |
 | Group 2 (Bugs A + J) — wave 1 | Bug C — wave 2 | ✅ Yes — no shared files |
 | Bug 3 — wave 2 | Bug C — wave 2 | ✅ Yes — no shared files |
-| Bug 3 — wave 2 | Group 3 (Bugs 5 + F) — wave 3 | ✅ Yes — no shared files |
+| Bug 3 — wave 2 | Group 3 (Bugs 5 + F) — wave 3 | ❌ No — Bug 3 and Bug F both touch `saveStore.ts` |
 | Bug C — wave 2 | Group 3 (Bugs 5 + F) — wave 3 | ✅ Yes — no shared files |
 | Bug G — wave 4 | Bug B — wave 4 | ✅ Yes — no shared files |
 | Group 1 (Help copy) — wave 5 | Any wave 2–4 item | ✅ Yes — `HelpContent` not touched by any other bug |
 
-**Maximum parallel throughput:** Waves 2 and 3 can run simultaneously (4 bugs across 2 PRs), then wave 4 (2 more PRs), then wave 5, then wave 6.
+**Maximum parallel throughput:** Waves 2 and 3 cannot fully overlap — Bug C (wave 2) can run alongside Group 3 (wave 3), but Bug 3 (wave 2) must finish before Group 3 starts. Wave 4 (Bugs G and B) can then run in parallel. Wave 5 (Help copy) is safe to do at any time.
 
 ---
 
@@ -89,9 +89,9 @@ These combinations are explicitly safe to work on at the same time without risk 
 
 | Combination | Reason |
 |---|---|
-| Bug A and Bug J in separate PRs | Both require changes to `HitLog/index.tsx` and the `PlayLogEntry` type — guaranteed conflict |
+| Bug A and Bug J in separate PRs | Both touch `HitLog/index.tsx` and the `PlayLogEntry` type — likely to conflict; shipping together is strongly recommended |
 | Any two bugs from Group 1 in separate PRs | All four edit the same lines of `HelpContent/index.tsx` — guaranteed conflict |
-| Bug 3 and any change to `useRxdbGameSync.ts` or `saveStore.ts` | Bug 3 touches both; Bug F also touches `saveStore.ts` — coordinate carefully if running in parallel |
+| Bug 3 (wave 2) and Group 3 / Bug F (wave 3) in parallel | Bug 3 touches `saveStore.ts`; Bug F (Group 3) also touches `saveStore.ts` — merge conflict likely. Start Group 3 only after Bug 3 is merged |
 
 ---
 
