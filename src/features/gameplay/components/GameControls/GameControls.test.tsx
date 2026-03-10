@@ -172,4 +172,39 @@ describe("GameControls", () => {
     fireEvent.change(select, { target: { value: "0" } }); // SPEED_INSTANT = 0
     expect((select as HTMLSelectElement).value).toBe("0");
   });
+
+  describe("isCommitting prop", () => {
+    it("Home button is disabled when isCommitting=true", () => {
+      renderWithContext(<GameControls onBackToHome={vi.fn()} isCommitting />, makeContextValue());
+      expect(screen.getByTestId("back-to-home-button")).toBeDisabled();
+    });
+
+    it("Home button is enabled when isCommitting=false", () => {
+      renderWithContext(
+        <GameControls onBackToHome={vi.fn()} isCommitting={false} />,
+        makeContextValue(),
+      );
+      expect(screen.getByTestId("back-to-home-button")).not.toBeDisabled();
+    });
+
+    it("New Game button renders disabled with 'Saving…' label when gameOver=true and isCommitting=true", () => {
+      renderWithContext(
+        <GameControls onNewGame={vi.fn()} isCommitting />,
+        makeContextValue({ gameOver: true }),
+      );
+      const btn = screen.getByTestId("new-game-button");
+      expect(btn).toBeDisabled();
+      expect(btn).toHaveTextContent("Saving…");
+    });
+
+    it("New Game button renders enabled with 'New Game' label when gameOver=true and isCommitting=false", () => {
+      renderWithContext(
+        <GameControls onNewGame={vi.fn()} isCommitting={false} />,
+        makeContextValue({ gameOver: true }),
+      );
+      const btn = screen.getByTestId("new-game-button");
+      expect(btn).not.toBeDisabled();
+      expect(btn).toHaveTextContent("New Game");
+    });
+  });
 });

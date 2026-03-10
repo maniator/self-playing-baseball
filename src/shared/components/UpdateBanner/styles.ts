@@ -1,21 +1,13 @@
+import { FixedBottomBanner } from "@shared/components/FixedBottomBanner/styles";
 import { mq } from "@shared/utils/mediaQueries";
 import styled from "styled-components";
 
-export const Banner = styled.div`
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+export const Banner = styled(FixedBottomBanner)`
   z-index: 9998;
-  background: ${({ theme }) => theme.colors.bgSurface};
-  color: ${({ theme }) => theme.colors.textBody};
-  border-top: 2px solid ${({ theme }) => theme.colors.borderForm};
-  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: ${({ theme }) => theme.spacing.md};
-  font-size: ${({ theme }) => theme.fontSizes.sub};
+  gap: 12px;
 
   ${mq.mobile} {
     flex-direction: column;

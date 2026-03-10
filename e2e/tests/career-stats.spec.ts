@@ -128,6 +128,15 @@ test.describe("Career Stats with seeded history", () => {
     // The seeded team ID is "e2e_home_team" (non-custom → appears as raw ID in selector).
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    // Wait for the e2e_home_team option to appear in the dropdown before selecting
+    // it.  On slow CI/mobile WebKit runners the one-shot loadTeamIds effect that
+    // populates teamsWithHistory can still be in-flight when the page first
+    // renders, so the option may not yet be present when we call selectOption.
+    // selectOption throws if the option doesn't exist, which would cause the
+    // test to fail at that call rather than at the data-ready guard below.
+    await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
+      timeout: 15_000,
+    });
     await teamSelect.selectOption("e2e_home_team");
     // Wait for the batting stats to finish loading before returning.
     // The async RxDB query fires when the team changes, but seedAndOpen returns

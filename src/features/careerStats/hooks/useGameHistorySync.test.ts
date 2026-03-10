@@ -168,7 +168,7 @@ describe("useGameHistorySync", () => {
   });
 
   describe("missing saveId guard", () => {
-    it("does NOT commit when rxSaveIdRef.current is null", async () => {
+    it("does NOT commit when rxSaveIdRef.current is null AND state has no gameInstanceId", async () => {
       vi.mocked(GameHistoryStore.commitCompletedGame).mockResolvedValue(undefined);
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
       renderHook(() => useGameHistorySync(makeRef(null), false, []));
@@ -176,6 +176,27 @@ describe("useGameHistorySync", () => {
         await Promise.resolve();
       });
       expect(GameHistoryStore.commitCompletedGame).not.toHaveBeenCalled();
+    });
+
+    it("DOES commit using gameInstanceId when rxSaveIdRef.current is null but state has gameInstanceId", async () => {
+      // This covers the SPEED_INSTANT race: createSave() hasn't resolved yet (saveId is
+      // still null) but the game has already ended.  The fix ensures we use
+      // state.gameInstanceId as the primary key so career stats are never dropped.
+      vi.mocked(GameHistoryStore.commitCompletedGame).mockResolvedValue(undefined);
+      vi.mocked(useGameContext).mockReturnValue(
+        makeContextValue({ gameOver: true, gameInstanceId: "game_instant_race" }),
+      );
+      renderHook(() => useGameHistorySync(makeRef(null), false, []));
+      await act(async () => {
+        await Promise.resolve();
+      });
+      expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalledTimes(1);
+      expect(GameHistoryStore.commitCompletedGame).toHaveBeenCalledWith(
+        "game_instant_race",
+        expect.objectContaining({ homeTeamId: expect.any(String) }),
+        expect.any(Array),
+        expect.any(Array),
+      );
     });
   });
 

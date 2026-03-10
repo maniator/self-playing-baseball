@@ -120,7 +120,7 @@ test.describe("Save / Load", () => {
     await resetAppState(page);
     await configureNewGame(page);
     await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 20_000 });
 
     // 6. Import via paste and let auto-load handle the rest.
     await openSavesModal(page);

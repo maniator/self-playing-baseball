@@ -29,6 +29,8 @@ type Props = {
   pendingLoadSave?: SaveDoc | null;
   /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
+  /** Called when the career stats commit state changes (saving/done). */
+  onSavingStateChange?: (saving: boolean) => void;
 };
 
 const Game: React.FunctionComponent<Props> = ({
@@ -39,6 +41,7 @@ const Game: React.FunctionComponent<Props> = ({
   onConsumeGameSetup,
   pendingLoadSave,
   onConsumePendingLoad,
+  onSavingStateChange,
 }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
@@ -108,6 +111,7 @@ const Game: React.FunctionComponent<Props> = ({
           onConsumeGameSetup={onConsumeGameSetup}
           pendingLoadSave={pendingLoadSave}
           onConsumePendingLoad={onConsumePendingLoad}
+          onSavingStateChange={onSavingStateChange}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>
