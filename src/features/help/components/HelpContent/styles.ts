@@ -2,13 +2,13 @@ import styled from "styled-components";
 
 /** Collapsible section wrapper used by HelpContent accordion entries. */
 export const SectionDetails = styled.details`
-  border: 1px solid rgba(74, 96, 144, 0.35);
-  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.borderFormAlpha35};
+  border-radius: ${({ theme }) => theme.radii.lg};
   margin-bottom: 10px;
   overflow: hidden;
 
   &[open] > summary {
-    border-bottom: 1px solid rgba(74, 96, 144, 0.35);
+    border-bottom: 1px solid ${({ theme }) => theme.colors.borderFormAlpha35};
   }
 `;
 
@@ -44,7 +44,7 @@ export const SectionSummary = styled.summary`
   }
 
   &:hover {
-    background: rgba(74, 96, 144, 0.15);
+    background: ${({ theme }) => theme.colors.bgFormAlpha15};
   }
 `;
 

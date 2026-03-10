@@ -43,13 +43,13 @@ export const DialogHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px 16px;
-  border-bottom: 1px solid rgba(74, 96, 144, 0.4);
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderFormAlpha40};
   flex-shrink: 0;
 `;
 
 export const DialogTitle = styled.h2`
   margin: 0;
-  font-size: 18px;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
   color: ${({ theme }) => theme.colors.accentPrimary};
 `;
 
@@ -71,7 +71,7 @@ export const CloseXButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: rgba(74, 96, 144, 0.6);
+    background: ${({ theme }) => theme.colors.bgFormAlpha60};
     color: ${({ theme }) => theme.colors.textPrimary};
   }
 `;

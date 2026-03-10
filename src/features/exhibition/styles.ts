@@ -27,12 +27,12 @@ export const Dialog = styled.dialog`
 
 export const Title = styled.h2`
   margin: 0 0 16px;
-  font-size: 18px;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
   color: ${({ theme }) => theme.colors.accentPrimary};
 
   ${mq.mobile} {
     margin: 0 0 8px;
-    font-size: 16px;
+    font-size: ${({ theme }) => theme.fontSizes.display};
   }
 `;
 
@@ -223,7 +223,7 @@ export const TabRow = styled.div`
   display: flex;
   gap: 0;
   margin-bottom: 16px;
-  border-bottom: 2px solid #2a3f60;
+  border-bottom: 2px solid ${({ theme }) => theme.colors.borderCard};
 
   ${mq.mobile} {
     margin-bottom: 10px;
@@ -255,11 +255,11 @@ export const Tab = styled.button<{ $active: boolean }>`
 `;
 
 export const TeamValidationError = styled.p`
-  background: rgba(220, 40, 40, 0.15);
-  border: 1px solid rgba(220, 40, 40, 0.4);
-  border-radius: 6px;
-  color: #ff8080;
-  font-size: 12px;
+  background: ${({ theme }) => theme.colors.bgExhibitionError};
+  border: 1px solid ${({ theme }) => theme.colors.borderExhibitionError};
+  border-radius: ${({ theme }) => theme.radii.md};
+  color: ${({ theme }) => theme.colors.textError};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   margin: 6px 0 0;
   padding: 7px 10px;
   line-height: 1.4;
