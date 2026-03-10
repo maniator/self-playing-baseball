@@ -43,13 +43,17 @@
     <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
     <link rel="apple-touch-icon" href="/images/baseball-180.png">
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-EBR970J2BS"></script>
     <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-EBR970J2BS');
+      if (window.location.hostname === 'blipit.net') {
+        const s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-EBR970J2BS';
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-EBR970J2BS');
+      }
     </script>
 </head>
 <body>
