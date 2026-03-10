@@ -55,6 +55,10 @@ const seedToNumber = (seed: string | number): number => {
  * flooring or clamping is redistributed using the largest-remainder method
  * (ties broken with `rng`) so the split stays symmetric and the portions
  * always sum to exactly `budget`.
+ *
+ * **Precondition:** `budget <= 3 * maxEach`. If this is violated the total
+ * capacity across all three portions is insufficient to absorb the full
+ * budget and the portions will sum to less than `budget`.
  */
 const splitBudgetNatural = (
   rng: () => number,
@@ -64,6 +68,13 @@ const splitBudgetNatural = (
   // Guard: non-positive or invalid budget yields all-zeros.
   if (budget <= 0 || !Number.isFinite(budget)) {
     return [0, 0, 0];
+  }
+
+  if (budget > 3 * maxEach) {
+    throw new Error(
+      `splitBudgetNatural: budget (${budget}) exceeds 3 * maxEach (${3 * maxEach}). ` +
+        "Portions cannot sum to budget when total capacity is insufficient.",
+    );
   }
 
   const wa = rng() + rng();
