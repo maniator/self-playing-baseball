@@ -77,7 +77,7 @@ export const TextInput = styled.input`
   }
 
   &[aria-invalid="true"] {
-    border-color: #ff7777;
+    border-color: ${({ theme }) => theme.colors.dangerText};
   }
 `;
 
@@ -118,8 +118,8 @@ export const StatValue = styled.span`
 
 export const PlayerCard = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
-  border: 1px solid #2a3f60;
-  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.borderCard};
+  border-radius: ${({ theme }) => theme.radii.lg};
   padding: 10px 12px;
   margin-bottom: 8px;
 `;
@@ -160,12 +160,12 @@ export const SmallIconBtn = styled.button`
 `;
 
 export const RemoveBtn = styled(SmallIconBtn)`
-  color: #ff7777;
+  color: ${({ theme }) => theme.colors.dangerText};
   border-color: ${({ theme }) => theme.colors.borderDanger};
 
   &:hover {
-    background: #2a0000;
-    border-color: #cc4444;
+    background: ${({ theme }) => theme.colors.dangerHoverBg};
+    border-color: ${({ theme }) => theme.colors.dangerHoverBorder};
   }
 `;
 
@@ -193,12 +193,12 @@ export const AddPlayerBtn = styled.button`
 `;
 
 export const ErrorMsg = styled.p`
-  color: #ff8888;
-  font-size: 13px;
+  color: ${({ theme }) => theme.colors.warnText};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   margin: 0 0 12px;
-  background: #1a0000;
+  background: ${({ theme }) => theme.colors.errorBg};
   border: 1px solid ${({ theme }) => theme.colors.borderDanger};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 8px 12px;
 `;
 
@@ -271,37 +271,37 @@ export const SaveBtn = styled.button`
   border: none;
   border-radius: 20px;
   padding: 10px 28px;
-  font-size: 15px;
+  font-size: ${({ theme }) => theme.fontSizes.lg};
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
   min-height: 44px;
 
   &:hover {
-    background: #5fffbb;
+    background: ${({ theme }) => theme.colors.accentGreenBright};
   }
 
   &:focus-visible {
-    outline: 2px solid white;
+    outline: 2px solid ${({ theme }) => theme.colors.textPrimary};
     outline-offset: 2px;
   }
 `;
 
 export const CancelBtn = styled.button`
   background: transparent;
-  color: #bbb;
-  border: 1px solid #444;
+  color: ${({ theme }) => theme.colors.textSemiLight};
+  border: 1px solid ${({ theme }) => theme.colors.borderMid};
   border-radius: 20px;
   padding: 10px 24px;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-family: inherit;
   cursor: pointer;
   min-height: 44px;
 
   &:hover {
-    background: #111;
-    border-color: #666;
-    color: #ddd;
+    background: ${({ theme }) => theme.colors.bgDropdown};
+    border-color: ${({ theme }) => theme.colors.textDimmer};
+    color: ${({ theme }) => theme.colors.textDropdown};
   }
 
   &:focus-visible {
