@@ -55,7 +55,7 @@ Doing Bug J alone would still leave player names as `#N`. Doing Bug A alone woul
 | Bug | Change |
 |---|---|
 | [Bug A](bug-a-hit-log-player-names.md) | Add `batterName` to `PlayLogEntry`; render name instead of `#N` |
-| [Bug J](bug-j-orphan-save-raw-team-id.md) | Use saved team name labels as fallback when team doc is deleted |
+| [Bug J](bug-j-orphan-save-raw-team-id.md) | Use team labels from the saved game state (`stateSnapshot.state.teamLabels`) as fallback when the team doc is deleted |
 
 ### Group 3 — Import error messages (Bugs 5 + F)
 **Should ship together.** Both fix the same category of error (raw `"undefined"` leaking into user-facing import error messages) in adjacent files. Shipping separately is safe from a conflict standpoint but produces an inconsistent half-fixed state visible to users.

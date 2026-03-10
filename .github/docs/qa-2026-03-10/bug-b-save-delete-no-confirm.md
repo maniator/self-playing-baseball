@@ -36,9 +36,13 @@ For comparison:
 `src/features/saves/components/SaveSlotList/index.tsx` line ~52:
 
 ```tsx
-<button onClick={() => onDelete(s.id)} data-testid="delete-save-button">
+<ActionBtn
+  type="button"
+  onClick={() => onDelete(s.id)}
+  data-testid="delete-save-button"
+>
   ✕
-</button>
+</ActionBtn>
 ```
 
 The handler calls `onDelete(s.id)` directly with no guard, unlike the team delete flow which wraps the call in `window.confirm()`.
@@ -52,7 +56,8 @@ The handler calls `onDelete(s.id)` directly with no guard, unlike the team delet
 Wrap the delete call in a `window.confirm()` guard, matching the pattern used for team deletion:
 
 ```tsx
-<button
+<ActionBtn
+  type="button"
   onClick={() => {
     if (window.confirm("Delete this save? This cannot be undone.")) {
       onDelete(s.id);
@@ -61,7 +66,7 @@ Wrap the delete call in a `window.confirm()` guard, matching the pattern used fo
   data-testid="delete-save-button"
 >
   ✕
-</button>
+</ActionBtn>
 ```
 
 This is intentionally the minimal fix that restores consistency. A custom in-page confirmation modal could be used instead if a no-`window.confirm` policy is adopted later.

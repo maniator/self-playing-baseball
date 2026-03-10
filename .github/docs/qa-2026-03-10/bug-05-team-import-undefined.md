@@ -31,13 +31,17 @@ The word "undefined" is a technical JavaScript artifact that means nothing to a 
 
 ## Root cause
 
-`src/features/customTeams/storage/customTeamExportImport.ts` line ~550:
+`src/features/customTeams/storage/customTeamExportImport.ts` — `parseExportedCustomTeams()`, around line 210:
 
 ```ts
-throw new Error(`Unsupported custom teams format version: ${obj["formatVersion"] as number}`);
+if (obj["formatVersion"] !== 1)
+  throw new Error(
+    `Invalid teams file (unsupported format version: ${obj["formatVersion"]}). ` +
+      "Make sure to export using the Ballgame app."
+  );
 ```
 
-When the parsed object has no `formatVersion` field, `obj["formatVersion"]` evaluates to `undefined`, which JavaScript coerces to the string `"undefined"` inside the template literal. The same pattern exists for `gameHistoryStore.ts` line ~360.
+When the parsed object has no `formatVersion` field, `obj["formatVersion"]` evaluates to `undefined`, which JavaScript coerces to the string `"undefined"` inside the template literal.
 
 ---
 

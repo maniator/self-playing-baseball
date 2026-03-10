@@ -56,11 +56,11 @@ The save's `state.teams` array stores the raw `"custom:ct_Ld6X1"` team ID at sav
 
 ## Fix plan
 
-The save header (`RxdbExportedSave.header`) stores `awayTeamLabel` and `homeTeamLabel` — the resolved display names at save time. These values should be used as the fallback when `resolveTeamLabel()` cannot find the team doc.
+The save snapshot (`SaveDoc.stateSnapshot`) already contains the resolved team display names at save time via `stateSnapshot.state.teamLabels`. These labels (or, if missing, a label derived from the save `name` as a final fallback) should be used when `resolveTeamLabel()` cannot find the team doc.
 
 **Option A — Pass saved team names to the game as fallback labels (preferred)**
 
-When a game is loaded from a save, store the `header.awayTeamLabel` / `header.homeTeamLabel` in game state as fallback display names. `HitLog`, the team tab renderer, and any other UI that calls `resolveTeamLabel()` should use these fallbacks when the live doc is absent.
+When a game is loaded from a save, read the team labels from `stateSnapshot.state.teamLabels` (or derive them from the save `name` as a final fallback) and store them in game state as fallback display names. `HitLog`, the team tab renderer, and any other UI that calls `resolveTeamLabel()` should use these fallbacks when the live doc is absent.
 
 **Option B — Embed team names in `PlayLogEntry`**
 

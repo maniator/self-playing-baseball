@@ -11,7 +11,7 @@
 
 ## Summary
 
-When a user navigates to the career page of a bench or reserve player who has never entered a game, the page heading shows the raw internal player ID (e.g. `pl_d29e3bad`) instead of the player's name. This occurs because the name-resolution code falls back to a roster lookup only when the `team=` query parameter is present in the URL. If the user arrives via a direct URL without that parameter, the fallback fails and the heading shows the raw key.
+When a user navigates to the career page of a bench or reserve player who has never entered a game, the page heading shows `"Unknown Player"` instead of the player's name. This occurs because the name-resolution code falls back to a roster lookup only when the `team=` query parameter is present in the URL. If the user arrives via a direct URL without that parameter, the fallback fails and the heading shows the generic "Unknown Player" label rather than the real player name.
 
 ---
 
@@ -21,8 +21,8 @@ When a user navigates to the career page of a bench or reserve player who has ne
 2. Play a game using that team. Do **not** substitute the bench player in.
 3. Navigate to `/stats` → switch to the team → no bench player row will appear (zero plate appearances).
 4. Directly navigate to `/players/<globalPlayerId>` **without** the `?team=custom:<teamId>` query param.
-6. **Expected:** Page heading shows the player's real name (e.g. "Victor Sanchez").
-7. **Actual:** Page heading shows the raw global player ID (e.g. `pl_d29e3bad`).
+5. **Expected:** Page heading shows the player's real name (e.g. "Victor Sanchez").
+6. **Actual:** Page heading shows `"Unknown Player"` rather than the player's name.
 
 ---
 
@@ -70,7 +70,7 @@ The existing `teamContext`-based path (lines 160–173) remains unchanged and ta
 
 ## Acceptance criteria
 
-- [ ] Navigating to `/players/<id>` without a `?team=` param for a bench player who has never appeared in a game shows the player's real name in the page heading.
+- [ ] Navigating to `/players/<id>` without a `?team=` param for a bench player who has never appeared in a game shows the player's real name in the page heading (not `"Unknown Player"`).
 - [ ] Behavior is unchanged when `team=` is present in the URL.
 - [ ] Behavior is unchanged when `battingRows` or `pitchingRows` are populated (game-history path remains authoritative).
 - [ ] If the player ID does not match any current roster, the page still renders gracefully (shows "Unknown Player", not a crash).
