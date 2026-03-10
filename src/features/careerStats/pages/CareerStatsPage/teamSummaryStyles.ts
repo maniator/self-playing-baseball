@@ -5,10 +5,10 @@ import styled from "styled-components";
 
 /** Container for the team summary + leaders section (above tabs). */
 export const TeamSummarySection = styled.div`
-  margin-bottom: 20px;
+  margin-bottom: ${({ theme }) => theme.spacing.xl};
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 `;
 
 export const SummaryHeading = styled.h2`
@@ -24,7 +24,7 @@ export const SummaryHeading = styled.h2`
 export const SummaryGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
 
   ${mq.mobile} {
     grid-template-columns: repeat(2, 1fr);
@@ -35,11 +35,11 @@ export const SummaryGrid = styled.div`
 export const SummaryCell = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderPanel};
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 10px ${({ theme }) => theme.spacing.md};
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: ${({ theme }) => theme.spacing.xxs};
 `;
 
 export const SummaryCellLabel = styled.span`
@@ -66,13 +66,13 @@ export const LeadersGroupLabel = styled.h3`
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
-  margin: 0 0 8px;
+  margin: 0 0 ${({ theme }) => theme.spacing.sm};
 `;
 
 export const LeaderCardsRow = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
 
   ${mq.mobile} {
     grid-template-columns: repeat(1, 1fr);
@@ -82,14 +82,14 @@ export const LeaderCardsRow = styled.div`
 export const LeaderCard = styled.button`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderPanel};
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 10px ${({ theme }) => theme.spacing.md};
   text-align: left;
   cursor: pointer;
   font-family: inherit;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: ${({ theme }) => theme.spacing.xxs};
   transition: border-color 0.15s;
 
   &:hover {
@@ -105,8 +105,8 @@ export const LeaderCard = styled.button`
 export const LeaderCardPlaceholder = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px dashed ${({ theme }) => theme.colors.borderPanel};
-  border-radius: 6px;
-  padding: 10px 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 10px ${({ theme }) => theme.spacing.md};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -122,7 +122,7 @@ export const LeaderStatLabel = styled.span`
 
 export const LeaderName = styled.span`
   color: ${({ theme }) => theme.colors.textLink};
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;

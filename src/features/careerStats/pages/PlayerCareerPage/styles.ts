@@ -18,15 +18,15 @@ export const PlayerCareerContainer = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
-  padding: 24px;
-  padding-bottom: calc(24px + 80px);
+  padding: ${({ theme }) => theme.spacing.xxl};
+  padding-bottom: calc(${({ theme }) => theme.spacing.xxl} + 80px);
   max-width: 900px;
   margin: 0 auto;
   width: 100%;
 
   ${mq.mobile} {
-    padding: 16px;
-    padding-bottom: calc(16px + 80px);
+    padding: ${({ theme }) => theme.spacing.lg};
+    padding-bottom: calc(${({ theme }) => theme.spacing.lg} + 80px);
     height: 100dvh;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
@@ -51,14 +51,14 @@ export const PlayerName = styled.h1`
 export const PlayerRoleLabel = styled.p`
   color: ${({ theme }) => theme.colors.textSubdued};
   font-size: ${({ theme }) => theme.fontSizes.base};
-  margin: 0 0 20px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xl};
 `;
 
 /** Prev/Next navigation row. */
 export const NavRow = styled.div`
   display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-bottom: ${({ theme }) => theme.spacing.lg};
 `;
 
 /** Prev/Next button. */
