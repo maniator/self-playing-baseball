@@ -13,7 +13,7 @@ export const Dialog = styled.dialog`
   width: 100%;
   height: min(700px, 90vh);
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   line-height: 1.6;
   overflow: hidden;
 
@@ -23,7 +23,7 @@ export const Dialog = styled.dialog`
   }
 
   &::backdrop {
-    background: rgba(0, 0, 0, 0.75);
+    background: ${({ theme }) => theme.colors.overlayDark};
   }
 
   ${mq.mobile} {
@@ -42,7 +42,8 @@ export const DialogHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 20px 24px 16px;
+  padding: ${({ theme }) => theme.spacing.xl} ${({ theme }) => theme.spacing.xxl}
+    ${({ theme }) => theme.spacing.lg};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderFormAlpha40};
   flex-shrink: 0;
 `;
@@ -57,10 +58,10 @@ export const CloseXButton = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   width: 28px;
   height: 28px;
-  font-size: 16px;
+  font-size: ${({ theme }) => theme.fontSizes.display};
   font-family: inherit;
   cursor: pointer;
   display: flex;
@@ -78,20 +79,21 @@ export const CloseXButton = styled.button`
 
 export const ScrollBody = styled.div`
   overflow-y: auto;
-  padding: 8px 24px 20px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl}
+    ${({ theme }) => theme.spacing.xl};
   flex: 1 1 0;
 `;
 
 export const CloseButton = styled.button`
   display: block;
-  margin: 16px auto 0;
+  margin: ${({ theme }) => theme.spacing.lg} auto 0;
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
   border-radius: 20px;
-  padding: 8px 24px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-weight: 600;
   cursor: pointer;
 `;

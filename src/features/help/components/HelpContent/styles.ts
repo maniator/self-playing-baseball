@@ -16,9 +16,9 @@ export const SectionSummary = styled.summary`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   padding: 10px 14px;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -33,7 +33,7 @@ export const SectionSummary = styled.summary`
 
   &::after {
     content: "▸";
-    font-size: 11px;
+    font-size: ${({ theme }) => theme.fontSizes.sm};
     color: ${({ theme }) => theme.colors.borderForm};
     flex-shrink: 0;
     transition: transform 0.15s;
@@ -49,7 +49,7 @@ export const SectionSummary = styled.summary`
 `;
 
 export const SectionBody = styled.div`
-  padding: 10px 14px 12px;
+  padding: 10px 14px ${({ theme }) => theme.spacing.md};
 `;
 
 export const List = styled.ul`
@@ -59,5 +59,5 @@ export const List = styled.ul`
 `;
 
 export const Li = styled.li`
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
