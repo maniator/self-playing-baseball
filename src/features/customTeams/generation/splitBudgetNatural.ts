@@ -13,9 +13,13 @@ export interface SplitBudgetNaturalOptions {
  * effectiveBudget/3 per portion (like rolling 2 dice each) so individual stats
  * rarely dominate while still spanning the full cap range.
  *
- * Both `budget` and `maxEach` are floored to non-negative integers:
- * `intBudget = floor(budget)` and `intMaxEach = max(0, floor(maxEach))`. The
- * function then clamps the total distributable budget to
+ * `budget` and `maxEach` are each floored to non-negative integers:
+ * `intBudget = max(0, floor(budget))` and `intMaxEach = max(0, floor(maxEach))`.
+ * `NaN` or negative `budget` returns `[0, 0, 0]` immediately. Positive
+ * `Infinity` is allowed and gets clamped to `3 * intMaxEach`. Non-finite
+ * `maxEach` (NaN or ±Infinity) also returns `[0, 0, 0]`.
+ *
+ * The function then clamps the total distributable budget to
  * `effectiveBudget = min(intBudget, 3 * intMaxEach)`.
  *
  * All three portions are integers, each in the range `[0, intMaxEach]`. Any
@@ -28,8 +32,9 @@ export const splitBudgetNatural = (
   rng: () => number,
   { budget, maxEach }: SplitBudgetNaturalOptions,
 ): [number, number, number] => {
-  // Guard: non-positive or invalid budget yields all-zeros.
-  if (budget <= 0 || !Number.isFinite(budget)) {
+  // Guard: non-positive or NaN budget yields all-zeros. Positive Infinity is
+  // allowed and will be clamped by effectiveBudget = min(intBudget, 3 * intMaxEach).
+  if (budget <= 0 || Number.isNaN(budget)) {
     return [0, 0, 0];
   }
   // Guard: non-finite maxEach (NaN / Infinity) would propagate through all
@@ -48,6 +53,12 @@ export const splitBudgetNatural = (
   // that the function always returns portions summing to the (clamped) budget
   // without throwing a runtime error that would break the UI.
   const effectiveBudget = Math.min(intBudget, 3 * intMaxEach);
+
+  // Short-circuit: if there is nothing to distribute (e.g. budget was between
+  // 0 and 1, or maxEach is 0), return zeros without consuming any RNG draws.
+  if (effectiveBudget === 0) {
+    return [0, 0, 0];
+  }
 
   const wa = rng() + rng();
   const wb = rng() + rng();
