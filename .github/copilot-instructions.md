@@ -14,11 +14,11 @@ This file is the quick-reference index. For deeper detail, see:
 
 | Doc | Contents |
 |---|---|
-| [docs/repo-layout.md](docs/repo-layout.md) | Full directory tree, file descriptions, path aliases |
-| [docs/rxdb-persistence.md](docs/rxdb-persistence.md) | RxDB setup, schema versioning, collections, SaveStore/CustomTeamStore APIs, fingerprints, export/import bundles, game-loop integration |
-| [docs/architecture.md](docs/architecture.md) | Route architecture, auto-play scheduler, Manager Mode, notification system, shared logger |
-| [docs/e2e-testing.md](docs/e2e-testing.md) | Playwright projects, E2E helpers, `data-testid` reference, visual snapshots, CI workflows, save fixtures |
-| [docs/style-guide.md](docs/style-guide.md) | **UI Style Guide** — color palette, typography, breakpoints, all button variants, form elements, modals, cards, tables, game UI, and status patterns. **Consult before introducing any new color, font size, or component.** |
+| [docs/repo-layout.md](../docs/repo-layout.md) | Full directory tree, file descriptions, path aliases |
+| [docs/rxdb-persistence.md](../docs/rxdb-persistence.md) | RxDB setup, schema versioning, collections, SaveStore/CustomTeamStore APIs, fingerprints, export/import bundles, game-loop integration |
+| [docs/architecture.md](../docs/architecture.md) | Route architecture, auto-play scheduler, Manager Mode, notification system, shared logger |
+| [docs/e2e-testing.md](../docs/e2e-testing.md) | Playwright projects, E2E helpers, `data-testid` reference, visual snapshots, CI workflows, save fixtures |
+| [docs/style-guide.md](../docs/style-guide.md) | **UI Style Guide** — color palette, typography, breakpoints, all button variants, form elements, modals, cards, tables, game UI, and status patterns. **Consult before introducing any new color, font size, or component.** |
 
 ---
 
@@ -290,7 +290,7 @@ Validate changes by:
 - **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.
 - **`_createTestDb` requires `fake-indexeddb/auto`** — import it at the top of any test file that calls `_createTestDb`. It is a dev-only dependency.
 - **`useSaveStore` requires `<RxDatabaseProvider>`** in the tree. Mock the hook in component tests with `vi.mock("@feat/saves/hooks/useSaveStore", ...)`.
-- **RxDB schema changes MUST bump `version` and add a migration strategy** — any change to a collection's `properties`, `required`, or `indexes` at the same version number causes a DB6 schema hash mismatch for every existing user, blocking app startup. Always: (1) increment `version`, (2) add a `migrationStrategies` entry that never throws, (3) add an upgrade-path unit test. See `### Schema versioning & migration` in `docs/rxdb-persistence.md`.
+- **RxDB schema changes MUST bump `version` and add a migration strategy** — any change to a collection's `properties`, `required`, or `indexes` at the same version number causes a DB6 schema hash mismatch for every existing user, blocking app startup. Always: (1) increment `version`, (2) add a `migrationStrategies` entry that never throws, (3) add an upgrade-path unit test. See `### Schema versioning & migration` in [`docs/rxdb-persistence.md`](../docs/rxdb-persistence.md).
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `src/features/help/components/InstructionsModal/styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden. Import `InstructionsModal` via `@feat/help/components/InstructionsModal`.
 - **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.

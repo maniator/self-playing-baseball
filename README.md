@@ -210,6 +210,19 @@ Consult it before adding or changing any UI element — it covers:
 
 ---
 
+## Contributing
+
+See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup instructions, validation steps, PR guidelines, and where to read more.
+
+Quick links:
+- [docs/](docs/) — full documentation index
+- [docs/style-guide.md](docs/style-guide.md) — UI style guide (consult before any visual change)
+- [docs/architecture.md](docs/architecture.md) — route architecture and auto-play design
+- [docs/rxdb-persistence.md](docs/rxdb-persistence.md) — persistence layer and schema migration rules
+- [docs/e2e-testing.md](docs/e2e-testing.md) — Playwright E2E setup and visual snapshot workflow
+
+---
+
 ## License
 
 GPL-3.0-or-later © [Naftali Lubin](https://github.com/maniator)
