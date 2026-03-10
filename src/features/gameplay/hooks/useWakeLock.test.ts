@@ -269,4 +269,55 @@ describe("useWakeLock", () => {
     // Still only 1 call (the initial acquire); no re-acquire after deactivation
     expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
   });
+
+  it("releases stale sentinel when deactivated before request resolves", async () => {
+    // Arrange: request promise won't resolve until we manually trigger it
+    let resolveRequest!: (s: WakeLockSentinel) => void;
+    const inflightPromise = new Promise<WakeLockSentinel>((res) => {
+      resolveRequest = res;
+    });
+    (navigator as any).wakeLock = { request: vi.fn().mockReturnValue(inflightPromise) };
+    const staleSentinel = makeMockSentinel();
+
+    const { rerender } = renderHook((active: boolean) => useWakeLock(active), {
+      initialProps: true as boolean,
+    });
+
+    // Deactivate before the in-flight request resolves
+    await act(async () => {
+      rerender(false);
+    });
+
+    // Now the in-flight request resolves — sentinel must be released immediately
+    await act(async () => {
+      resolveRequest(staleSentinel);
+    });
+
+    expect(staleSentinel.release).toHaveBeenCalledTimes(1);
+    // The stale sentinel must NOT be stored (wakeLockRef stays null)
+    expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases stale sentinel when unmounted before request resolves", async () => {
+    let resolveRequest!: (s: WakeLockSentinel) => void;
+    const inflightPromise = new Promise<WakeLockSentinel>((res) => {
+      resolveRequest = res;
+    });
+    (navigator as any).wakeLock = { request: vi.fn().mockReturnValue(inflightPromise) };
+    const staleSentinel = makeMockSentinel();
+
+    const { unmount } = renderHook(() => useWakeLock(true));
+
+    // Unmount before the request resolves
+    await act(async () => {
+      unmount();
+    });
+
+    // Now the in-flight request resolves — sentinel must be released immediately
+    await act(async () => {
+      resolveRequest(staleSentinel);
+    });
+
+    expect(staleSentinel.release).toHaveBeenCalledTimes(1);
+  });
 });

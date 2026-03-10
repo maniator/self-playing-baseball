@@ -17,12 +17,28 @@ export const useWakeLock = (active: boolean): void => {
   // the current value without being re-created on every render.
   const activeRef = React.useRef(active);
   activeRef.current = active;
+  // Monotonically-increasing counter: each call to acquire() stamps the
+  // in-flight request with the current value. If the counter advances before
+  // the promise resolves (another acquire() started) or active has flipped
+  // false, the resolved sentinel is stale and must be released immediately.
+  const acquireIdRef = React.useRef(0);
 
   const acquire = React.useCallback(async () => {
     if (!("wakeLock" in navigator)) return;
     if (wakeLockRef.current && !wakeLockRef.current.released) return;
+    const acquireId = ++acquireIdRef.current;
     try {
       const sentinel = await navigator.wakeLock.request("screen");
+      // Guard: discard the sentinel if deactivated/unmounted while the request
+      // was in-flight, or if a newer acquire() call superseded this one.
+      if (!activeRef.current || acquireIdRef.current !== acquireId) {
+        try {
+          await sentinel.release();
+        } catch {
+          // Ignore release errors on the stale sentinel.
+        }
+        return;
+      }
       wakeLockRef.current = sentinel;
 
       // Reacquire if the OS drops the lock while the page is still active and
@@ -55,6 +71,9 @@ export const useWakeLock = (active: boolean): void => {
   }, []);
 
   const release = React.useCallback(async () => {
+    // Invalidate any in-flight acquire() call so a concurrently-resolving
+    // request does not store its sentinel after we've released.
+    acquireIdRef.current++;
     // Clear the ref immediately (before awaiting) so concurrent calls are
     // idempotent and do not attempt to release the same sentinel twice.
     const sentinel = wakeLockRef.current;
