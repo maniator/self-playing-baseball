@@ -47,7 +47,7 @@ const seedToNumber = (seed: string | number): number => {
 const randInt = (rng: () => number, min: number, max: number): number =>
   Math.floor(rng() * (max - min + 1)) + min;
 
-const pickFrom = <T>(rng: () => number, arr: T[]): T => arr[Math.floor(rng() * arr.length)];
+const pickFrom = <T>(rng: () => number, arr: ReadonlyArray<T>): T => arr[Math.floor(rng() * arr.length)];
 
 /** Fisher-Yates in-place shuffle using the seeded RNG. Returns the same array. */
 const shuffle = <T>(rng: () => number, arr: T[]): T[] => {

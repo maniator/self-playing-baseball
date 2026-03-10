@@ -43,7 +43,7 @@ export const CITIES = [
   "Tucson",
   "Virginia Beach",
   "Wichita",
-];
+] as const;
 
 export const NICKNAMES = [
   "Aces",
@@ -99,7 +99,7 @@ export const NICKNAMES = [
   "Vipers",
   "Wildcats",
   "Wolves",
-];
+] as const;
 
 export const FIRST_NAMES = [
   "Aaron",
@@ -170,7 +170,7 @@ export const FIRST_NAMES = [
   "Xavier",
   "Yogi",
   "Zane",
-];
+] as const;
 
 export const LAST_NAMES = [
   "Adams",
@@ -262,4 +262,4 @@ export const LAST_NAMES = [
   "Xiong",
   "Young",
   "Zavala",
-];
+] as const;
