@@ -35,7 +35,7 @@ jobs:
           # Chromium shard 1: determinism + desktop + Pixel devices
           - browser: chromium
             shardIndex: 1
-            shardTotal: 2
+            shardTotal: 3
             projects: >-
               --project=determinism
               --project=desktop
@@ -44,7 +44,16 @@ jobs:
           # Chromium shard 2: determinism + desktop + Pixel devices
           - browser: chromium
             shardIndex: 2
-            shardTotal: 2
+            shardTotal: 3
+            projects: >-
+              --project=determinism
+              --project=desktop
+              --project=pixel-7
+              --project=pixel-5
+          # Chromium shard 3: determinism + desktop + Pixel devices
+          - browser: chromium
+            shardIndex: 3
+            shardTotal: 3
             projects: >-
               --project=determinism
               --project=desktop
@@ -53,7 +62,7 @@ jobs:
           # WebKit shard 1: tablet + iPhone devices
           - browser: webkit
             shardIndex: 1
-            shardTotal: 2
+            shardTotal: 3
             projects: >-
               --project=tablet
               --project=iphone-15-pro-max
@@ -61,7 +70,15 @@ jobs:
           # WebKit shard 2: tablet + iPhone devices
           - browser: webkit
             shardIndex: 2
-            shardTotal: 2
+            shardTotal: 3
+            projects: >-
+              --project=tablet
+              --project=iphone-15-pro-max
+              --project=iphone-15
+          # WebKit shard 3: tablet + iPhone devices
+          - browser: webkit
+            shardIndex: 3
+            shardTotal: 3
             projects: >-
               --project=tablet
               --project=iphone-15-pro-max

@@ -355,3 +355,35 @@ test.describe("Routing — autoplay pauses off /game", () => {
     expect(countAfter).toBeLessThanOrEqual(countBefore + 2);
   });
 });
+
+test.describe("New Game seed auto-regeneration", () => {
+  test.beforeEach(async ({ page }) => {
+    await resetAppState(page);
+  });
+
+  test("New Game seed input is pre-filled on open", async ({ page }) => {
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const seedInput = page.getByTestId("seed-input");
+    await expect(seedInput).toBeVisible();
+    const value = await seedInput.inputValue();
+    expect(value.length).toBeGreaterThan(0);
+  });
+
+  test("closing and reopening New Game regenerates a different seed", async ({ page }) => {
+    // First open
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const firstSeed = await page.getByTestId("seed-input").inputValue();
+
+    // Navigate away and back
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 15_000 });
+    const secondSeed = await page.getByTestId("seed-input").inputValue();
+
+    // Seeds must differ (fresh generation each open)
+    expect(secondSeed).not.toBe(firstSeed);
+  });
+});
