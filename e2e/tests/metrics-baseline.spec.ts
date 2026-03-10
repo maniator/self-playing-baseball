@@ -373,11 +373,11 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
     ];
     const filteredErrors = consoleErrors.filter((m) => !knownNoise.some((n) => m.includes(n)));
     const filteredWarnings = consoleWarnings.filter((m) => !knownNoise.some((n) => m.includes(n)));
-    if (filteredErrors.length > 0 || filteredWarnings.length > 0) {
+    const COL = 52; // inner content width (after 2-space prefix, before trailing ║)
+    if (filteredErrors.length > 0) {
       console.log("╔══════════════════════════════════════════════════════╗");
-      console.log("║  CONSOLE ERRORS / WARNINGS (filtered)                ║");
+      console.log("║  CONSOLE ERRORS (filtered) — WILL FAIL TEST          ║");
       console.log("╠══════════════════════════════════════════════════════╣");
-      const COL = 52; // inner content width (after 2-space prefix, before trailing ║)
       for (const msg of filteredErrors.slice(0, 20)) {
         const truncated = msg.length > COL ? msg.slice(0, COL - 3) + "..." : msg;
         console.log(`║  ${truncated.padEnd(COL)}║`);
@@ -386,6 +386,13 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
         const errorsSummary = `... and ${filteredErrors.length - 20} more errors`;
         console.log(`║  ${errorsSummary.padEnd(COL)}║`);
       }
+      console.log("╚══════════════════════════════════════════════════════╝");
+      console.log("\n");
+    }
+    if (filteredWarnings.length > 0) {
+      console.log("╔══════════════════════════════════════════════════════╗");
+      console.log("║  CONSOLE WARNINGS (filtered) — informational only    ║");
+      console.log("╠══════════════════════════════════════════════════════╣");
       for (const msg of filteredWarnings.slice(0, 10)) {
         const truncated = msg.length > COL ? msg.slice(0, COL - 3) + "..." : msg;
         console.log(`║  ${truncated.padEnd(COL)}║`);
@@ -396,7 +403,8 @@ test.describe("Metrics baseline — 200 games via Instant mode (desktop only)", 
       }
       console.log("╚══════════════════════════════════════════════════════╝");
       console.log("\n");
-    } else {
+    }
+    if (filteredErrors.length === 0 && filteredWarnings.length === 0) {
       console.log("ℹ️  No unexpected console errors or warnings.\n");
     }
 
