@@ -45,13 +45,15 @@ const seedToNumber = (seed: string | number): number => {
 };
 
 /**
- * Splits `budget` extra points into 3 naturally distributed portions using
- * a Dirichlet(2,2,2) distribution: each weight is the sum of 2 uniform draws,
- * then all three are normalised to `budget`. This centres the split around
- * budget/3 per portion (like rolling 2 dice each) so individual stats rarely
- * dominate while still spanning the full cap range.
- * Each portion is capped at `maxEach`; total returned may be slightly < budget
- * when a portion is clamped.
+ * Splits `budget` extra points into 3 naturally distributed portions using a
+ * Dirichlet-inspired scheme: each raw weight (`wa`, `wb`, `wc`) is the sum of
+ * 2 independent uniform draws, then the weights are converted to proportions
+ * of `budget`. This centres the split around budget/3 per portion (like
+ * rolling 2 dice each) so individual stats rarely dominate while still
+ * spanning the full cap range.
+ * All three portions are floored and capped at `maxEach`. Any leftover from
+ * flooring or clamping is redistributed to portions that still have remaining
+ * capacity, so the returned portions always sum to exactly `budget`.
  */
 const splitBudgetNatural = (
   rng: () => number,
@@ -62,12 +64,25 @@ const splitBudgetNatural = (
   const wb = rng() + rng();
   const wc = rng() + rng();
   const wTotal = wa + wb + wc;
-  const p1 = Math.min(Math.floor((wa / wTotal) * budget), maxEach);
-  const p2 = Math.min(Math.floor((wb / wTotal) * budget), maxEach);
-  // p3 picks up the remaining budget so the full allocation is used.
-  // p3 ≥ 0 is guaranteed: floor(wa/w·B) + floor(wb/w·B) ≤ floor((wa+wb)/w·B) ≤ B.
-  // The Math.min clamp ensures p3 ≤ maxEach even if p1/p2 were small.
-  const p3 = Math.min(budget - p1 - p2, maxEach);
+  let p1 = Math.min(Math.floor((wa / wTotal) * budget), maxEach);
+  let p2 = Math.min(Math.floor((wb / wTotal) * budget), maxEach);
+  let p3 = Math.min(Math.floor((wc / wTotal) * budget), maxEach);
+  // Redistribute any leftover (from flooring and clamping) to portions that
+  // still have capacity, so the total always equals budget.
+  let leftover = budget - p1 - p2 - p3;
+  if (leftover > 0) {
+    const add = Math.min(leftover, maxEach - p1);
+    p1 += add;
+    leftover -= add;
+  }
+  if (leftover > 0) {
+    const add = Math.min(leftover, maxEach - p2);
+    p2 += add;
+    leftover -= add;
+  }
+  if (leftover > 0) {
+    p3 += Math.min(leftover, maxEach - p3);
+  }
   return [p1, p2, p3];
 };
 
@@ -135,7 +150,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
-    // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+    // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
     batting: randBatterStats(),
   }));
 
@@ -147,7 +162,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: benchPositionPool[i % benchPositionPool.length],
     handedness: pickHandedness(),
-    // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+    // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
     batting: randBatterStats(),
   }));
 
@@ -162,9 +177,9 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
       position: i === 0 ? "SP" : "RP",
       pitchingRole,
       handedness: pickHandedness(),
-      // Distribute the full hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP.
+      // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
       batting: randBatterStats(),
-      // Distribute the full pitcher budget naturally: each stat ≥ 25, total = PITCHER_STAT_CAP.
+      // Distribute the pitcher budget naturally: each stat ≥ 25, total up to PITCHER_STAT_CAP.
       pitching: randPitcherPitchingStats(),
     };
   });

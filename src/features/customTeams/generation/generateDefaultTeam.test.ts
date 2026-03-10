@@ -78,16 +78,16 @@ describe("generateDefaultCustomTeamDraft", () => {
     }
   });
 
-  it("generated hitter stat total does not exceed HITTER_STAT_CAP", () => {
+  it("generated hitter stat total equals HITTER_STAT_CAP exactly", () => {
     const draft = generateDefaultCustomTeamDraft("cap-check-hitters");
     const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
     for (const p of allBatters) {
       const total = hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed);
-      expect(total).toBeLessThanOrEqual(HITTER_STAT_CAP);
+      expect(total).toBe(HITTER_STAT_CAP);
     }
   });
 
-  it("generated pitcher pitching stat total does not exceed PITCHER_STAT_CAP", () => {
+  it("generated pitcher pitching stat total equals PITCHER_STAT_CAP exactly", () => {
     const draft = generateDefaultCustomTeamDraft("cap-check-pitchers");
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();
@@ -96,17 +96,16 @@ describe("generateDefaultCustomTeamDraft", () => {
         p.pitching!.control,
         p.pitching!.movement,
       );
-      expect(total).toBeLessThanOrEqual(PITCHER_STAT_CAP);
+      expect(total).toBe(PITCHER_STAT_CAP);
     }
   });
 
   it("hitter stat totals reach near the full cap (budget is actually used)", () => {
-    // Across many seeds, at least one batter should have a total above the old per-stat max
-    // of 3 × 50 = 150 — which is the cap itself — so verify totals are well above the old
-    // average of ~105 (3 × 35). We expect the mean to be near 150.
-    // Threshold of 130 allows for variance from the Dirichlet(2,2,2) split and
-    // occasional clamping (when one portion exceeds maxEach=80), while clearly
-    // distinguishing from the old average of ~105.
+    // Across many seeds, hitter totals should cluster near the full-budget cap of 150.
+    // The old generator produced an average total of ~105 (3 × 35), so we verify
+    // that the new mean is clearly higher and much closer to the cap.
+    // Threshold of 130 allows for variance from the Dirichlet-inspired split and
+    // occasional clamping, while clearly distinguishing from the old average of ~105.
     const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
     const totals = seeds.flatMap((s) => {
       const draft = generateDefaultCustomTeamDraft(s);
@@ -122,6 +121,7 @@ describe("generateDefaultCustomTeamDraft", () => {
   it("pitcher stat totals reach near the full pitcher cap (budget is actually used)", () => {
     // PITCHER_STAT_CAP is 160; old average was ~117 (3 × 39). Threshold of 140 clearly
     // distinguishes the new full-budget distribution from the old narrow one.
+    // The Dirichlet-inspired split centres around 160, so the mean should be well above 140.
     const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
     const totals = seeds.flatMap((s) =>
       generateDefaultCustomTeamDraft(s).roster.pitchers.map((p) =>
