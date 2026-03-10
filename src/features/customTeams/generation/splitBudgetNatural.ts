@@ -1,8 +1,15 @@
+export interface SplitBudgetNaturalOptions {
+  /** Total points to distribute across the three portions. */
+  budget: number;
+  /** Maximum points any single portion may receive. */
+  maxEach: number;
+}
+
 /**
  * Splits `budget` extra points into 3 naturally distributed portions using a
  * Dirichlet-inspired scheme: each raw weight (`wa`, `wb`, `wc`) is the sum of
  * 2 independent uniform draws, then the weights are converted to proportions
- * of `budget`. This centres the split around budget/3 per portion (like
+ * of `budget`. This centers the split around budget/3 per portion (like
  * rolling 2 dice each) so individual stats rarely dominate while still
  * spanning the full cap range.
  * All three portions are floored and capped at `maxEach`. Any leftover from
@@ -13,18 +20,23 @@
  */
 export const splitBudgetNatural = (
   rng: () => number,
-  budget: number,
-  maxEach: number,
+  { budget, maxEach }: SplitBudgetNaturalOptions,
 ): [number, number, number] => {
   // Guard: non-positive or invalid budget yields all-zeros.
   if (budget <= 0 || !Number.isFinite(budget)) {
     return [0, 0, 0];
   }
 
+  // Clamp both inputs to whole numbers so that `leftover` stays integral
+  // throughout the redistribution loop and the returned portions are always
+  // non-negative integers regardless of what the caller passes.
+  const intBudget = Math.floor(budget);
+  const intMaxEach = Math.max(0, Math.floor(maxEach));
+
   // Clamp budget to the maximum distributable across all three portions so
   // that the function always returns portions summing to the (clamped) budget
   // without throwing a runtime error that would break the UI.
-  const effectiveBudget = Math.min(budget, 3 * maxEach);
+  const effectiveBudget = Math.min(intBudget, 3 * intMaxEach);
 
   const wa = rng() + rng();
   const wb = rng() + rng();
@@ -42,11 +54,11 @@ export const splitBudgetNatural = (
   const raw3 = w3 * effectiveBudget;
 
   const portions: [number, number, number] = [
-    Math.min(Math.floor(raw1), maxEach),
-    Math.min(Math.floor(raw2), maxEach),
-    Math.min(Math.floor(raw3), maxEach),
+    Math.min(Math.floor(raw1), intMaxEach),
+    Math.min(Math.floor(raw2), intMaxEach),
+    Math.min(Math.floor(raw3), intMaxEach),
   ];
-  const capacities = portions.map((p) => maxEach - p);
+  const capacities = portions.map((p) => intMaxEach - p);
   // Fractional parts of the raw proportions drive the largest-remainder
   // redistribution. A used fraction is set to -1 so the next surplus point
   // goes to a different portion.

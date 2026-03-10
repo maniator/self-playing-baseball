@@ -89,13 +89,19 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
 
   /** Generate batting stats using the full HITTER_STAT_CAP budget, distributed naturally. */
   const randBatterStats = (): { contact: number; power: number; speed: number } => {
-    const [ec, ep, es] = splitBudgetNatural(rng, HITTER_STAT_CAP - 3 * 20, 100 - 20);
+    const [ec, ep, es] = splitBudgetNatural(rng, {
+      budget: HITTER_STAT_CAP - 3 * 20,
+      maxEach: 100 - 20,
+    });
     return { contact: 20 + ec, power: 20 + ep, speed: 20 + es };
   };
 
   /** Generate pitching stats using the full PITCHER_STAT_CAP budget, distributed naturally. */
   const randPitcherPitchingStats = (): { velocity: number; control: number; movement: number } => {
-    const [ev, ec, em] = splitBudgetNatural(rng, PITCHER_STAT_CAP - 3 * 25, 100 - 25);
+    const [ev, ec, em] = splitBudgetNatural(rng, {
+      budget: PITCHER_STAT_CAP - 3 * 25,
+      maxEach: 100 - 25,
+    });
     return { velocity: 25 + ev, control: 25 + ec, movement: 25 + em };
   };
 
