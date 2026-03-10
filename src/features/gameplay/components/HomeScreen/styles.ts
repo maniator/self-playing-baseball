@@ -7,8 +7,9 @@ export const HomeContainer = styled.div`
   align-items: center;
   justify-content: center;
   min-height: 100dvh;
-  padding: 32px 24px calc(32px + 80px);
-  gap: 16px;
+  padding: ${({ theme }) => theme.spacing.xxxl} ${({ theme }) => theme.spacing.xxl}
+    calc(${({ theme }) => theme.spacing.xxxl} + 80px);
+  gap: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const HomeLogo = styled.div`

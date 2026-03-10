@@ -10,17 +10,17 @@ export const Banner = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   color: ${({ theme }) => theme.colors.textBody};
   border-top: 2px solid ${({ theme }) => theme.colors.borderForm};
-  padding: 10px 16px;
+  padding: 10px ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
   font-size: 0.875rem;
 
   ${mq.mobile} {
     flex-direction: column;
     align-items: flex-start;
-    gap: 8px;
+    gap: ${({ theme }) => theme.spacing.sm};
   }
 `;
 
@@ -32,7 +32,7 @@ export const Message = styled.p`
 
 export const Actions = styled.div`
   display: flex;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
   flex-shrink: 0;
 `;
@@ -43,7 +43,7 @@ export const ReloadButton = styled.button`
   color: #000;
   cursor: pointer;
   padding: 5px 14px;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.radii.sm};
   font-size: 0.875rem;
   font-family: inherit;
   font-weight: bold;
@@ -59,8 +59,8 @@ export const DismissButton = styled.button`
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textBody};
   cursor: pointer;
-  padding: 4px 10px;
-  border-radius: 4px;
+  padding: ${({ theme }) => theme.spacing.xs} 10px;
+  border-radius: ${({ theme }) => theme.radii.sm};
   font-size: 0.875rem;
   font-family: inherit;
   min-height: 32px;
