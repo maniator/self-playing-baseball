@@ -252,7 +252,6 @@ export const useGameHistorySync = (
   // gameInstanceId is still in-flight when saveId transitions null → "save_*",
   // don't clear inFlightRef or isCommitting — the commit must finish first.
   const prevSaveIdRef = React.useRef<string | null>(null);
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: run-every-render ref-tracking effect; setIsCommitting is a stable setter
   React.useEffect(() => {
     const current = rxSaveIdRef.current;
     if (current !== prevSaveIdRef.current) {
