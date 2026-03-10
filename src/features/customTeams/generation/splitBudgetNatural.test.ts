@@ -91,7 +91,7 @@ describe("splitBudgetNatural", () => {
         [0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.5],
         [0.9, 0.1, 0.8, 0.2, 0.7, 0.3, 0.4],
         [0.01, 0.99, 0.5, 0.01, 0.99, 0.5, 0.5],
-      ] as number[][];
+      ];
       for (const seq of sequences) {
         const [a, b, c] = splitBudgetNatural(makeSeqRng(seq), { budget: 90, maxEach: 80 });
         expect(a + b + c).toBe(90);
@@ -111,6 +111,18 @@ describe("splitBudgetNatural", () => {
       expect(a).toBe(maxEach);
       expect(b).toBe(maxEach);
       expect(c).toBe(maxEach);
+    });
+
+    it("portions stay within maxEach and still sum to budget when budget = 3 * maxEach and rng is skewed", () => {
+      // Skewed weights would push the first portion beyond maxEach without clamping.
+      // The redistribution loop must correctly spill the excess into the other two portions.
+      const skewedRng = makeSeqRng([0.99, 0.99, 0.01, 0.01, 0.01, 0.01, 0.5]);
+      const maxEach = 30;
+      const [a, b, c] = splitBudgetNatural(skewedRng, { budget: 90, maxEach });
+      expect(a).toBeLessThanOrEqual(maxEach);
+      expect(b).toBeLessThanOrEqual(maxEach);
+      expect(c).toBeLessThanOrEqual(maxEach);
+      expect(a + b + c).toBe(90);
     });
   });
 
@@ -173,11 +185,13 @@ describe("splitBudgetNatural", () => {
     });
 
     it("different rng sequences produce different allocations", () => {
-      const result1 = splitBudgetNatural(makeSeqRng([0.1, 0.9, 0.2, 0.8, 0.3, 0.7, 0.5]), {
+      // Use non-complementary pairs so weights differ (wa≠wb≠wc) between the two calls.
+      // seq1: wa=0.3, wb=0.7, wc=1.1   seq2: wa=1.7, wb=1.3, wc=0.9 → distinct splits.
+      const result1 = splitBudgetNatural(makeSeqRng([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.5]), {
         budget: 90,
         maxEach: 80,
       });
-      const result2 = splitBudgetNatural(makeSeqRng([0.9, 0.1, 0.8, 0.2, 0.7, 0.3, 0.5]), {
+      const result2 = splitBudgetNatural(makeSeqRng([0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.5]), {
         budget: 90,
         maxEach: 80,
       });
