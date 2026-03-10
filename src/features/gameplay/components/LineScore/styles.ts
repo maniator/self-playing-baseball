@@ -15,14 +15,14 @@ export const Wrapper = styled.div`
 
 export const Table = styled.table`
   border-collapse: collapse;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 13px;
+  font-family: ${({ theme }) => theme.fonts.score};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   background: ${({ theme }) => theme.colors.bgGame};
   color: ${({ theme }) => theme.colors.textScore};
   width: 100%;
 
   ${mq.notMobile} {
-    font-size: 14px;
+    font-size: ${({ theme }) => theme.fontSizes.md};
   }
 `;
 
@@ -31,14 +31,14 @@ export const Th = styled.th<{ $accent?: boolean }>`
   text-align: center;
   color: ${({ $accent, theme }) =>
     $accent ? theme.colors.accentGold : theme.colors.textScoreHeader};
-  border-bottom: 1px solid #1e3a5f;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   font-weight: normal;
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   letter-spacing: 0.5px;
   white-space: nowrap;
 
   ${mq.notMobile} {
-    font-size: 13px;
+    font-size: ${({ theme }) => theme.fontSizes.base};
     padding: 3px 8px;
   }
 `;
@@ -66,9 +66,10 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
       : $accent
         ? theme.colors.accentGold
         : $dim
-          ? "#3d5a7a"
+          ? theme.colors.textScoreDim
           : theme.colors.textScore};
-  border-right: ${({ $accent }) => ($accent ? "none" : "1px solid #0f2540")};
+  border-right: ${({ $accent, theme }) =>
+    $accent ? "none" : `1px solid ${theme.colors.borderLineScoreCell}`};
   white-space: nowrap;
 
   ${mq.notMobile} {
@@ -78,8 +79,8 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
 
 export const TeamTd = styled(Td)`
   text-align: left;
-  font-size: 12px;
-  border-right: 1px solid #1e3a5f;
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  border-right: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   padding-right: 8px;
   white-space: nowrap;
   overflow: hidden;
@@ -87,13 +88,13 @@ export const TeamTd = styled(Td)`
   max-width: 90px;
 
   ${mq.notMobile} {
-    font-size: 13px;
+    font-size: ${({ theme }) => theme.fontSizes.base};
     max-width: 140px;
   }
 `;
 
 export const DividerTd = styled.td`
-  border-left: 1px solid #1e3a5f;
+  border-left: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   padding: 0;
   width: 4px;
 `;
@@ -104,13 +105,13 @@ export const BsoRow = styled.div`
   gap: 14px;
   padding: 6px 8px 4px;
   background: ${({ theme }) => theme.colors.bgGame};
-  font-family: "Courier New", Courier, monospace;
-  font-size: 11px;
+  font-family: ${({ theme }) => theme.fonts.score};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textScoreHeader};
   letter-spacing: 0.5px;
 
   ${mq.notMobile} {
-    font-size: 12px;
+    font-size: ${({ theme }) => theme.fontSizes.label};
   }
 `;
 
@@ -125,15 +126,15 @@ export const Dot = styled.span<{ $on: boolean; $color: string }>`
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: ${({ $on, $color }) => ($on ? $color : "#1e3a5f")};
-  border: 1px solid ${({ $on, $color }) => ($on ? $color : "#2e4a6f")};
+  background: ${({ $on, $color, theme }) => ($on ? $color : theme.colors.borderLineScore)};
+  border: 1px solid ${({ $on, $color, theme }) => ($on ? $color : theme.colors.borderLineScoreOff)};
 `;
 
 export const ExtraInningsBanner = styled.div`
   background: ${({ theme }) => theme.colors.blueDark};
   color: ${({ theme }) => theme.colors.textPrimary};
   font-weight: bold;
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   padding: 2px 8px;
   letter-spacing: 1px;
   margin-left: auto;
@@ -144,7 +145,7 @@ export const GameOverBanner = styled.div`
   color: ${({ theme }) => theme.colors.textPrimary};
   text-align: center;
   font-weight: bold;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   padding: 3px 8px;
   letter-spacing: 1px;
 `;

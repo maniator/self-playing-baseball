@@ -3,8 +3,8 @@ import styled from "styled-components";
 
 export const Panel = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
-  border: 1px solid #2a3f60;
-  border-radius: 8px;
+  border: 1px solid ${({ theme }) => theme.colors.borderCard};
+  border-radius: ${({ theme }) => theme.radii.lg};
   padding: 12px 14px;
   margin-top: 8px;
   width: 100%;
@@ -111,7 +111,7 @@ export const ActionButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: #5fffbb;
+    background: ${({ theme }) => theme.colors.accentGreenBright};
   }
 
   &:disabled {
@@ -120,7 +120,7 @@ export const ActionButton = styled.button`
   }
 
   &:focus-visible {
-    outline: 2px solid white;
+    outline: 2px solid ${({ theme }) => theme.colors.textPrimary};
     outline-offset: 2px;
   }
 `;
@@ -135,12 +135,16 @@ export const EmptyNote = styled.p`
 export const FatigueBar = styled.div``;
 
 export const FatigueLabel = styled.span<{ $level: "low" | "medium" | "high" }>`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   font-weight: 600;
   padding: 1px 6px;
-  border-radius: 4px;
-  color: ${({ $level }) =>
-    $level === "high" ? "#ff6b6b" : $level === "medium" ? "#ffd06b" : "#a0b4d0"};
+  border-radius: ${({ theme }) => theme.radii.sm};
+  color: ${({ $level, theme }) =>
+    $level === "high"
+      ? theme.colors.textFatigueHigh
+      : $level === "medium"
+        ? theme.colors.textFatigueMed
+        : theme.colors.textFaint};
 `;
 
 export const SubButton = styled.button`
