@@ -52,3 +52,37 @@ export const CountdownLabel = styled.span`
   min-width: ${({ theme }) => theme.sizes.countdownLabel};
   text-align: right;
 `;
+
+// ── DecisionButtonStyles ─────────────────────────────────────────────────────
+
+export const ActionButton = styled.button`
+  background: ${({ theme }) => theme.colors.accentPrimary};
+  color: ${({ theme }) => theme.colors.btnTextDark};
+  padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s14};
+  border-radius: ${({ theme }) => theme.radii.pill};
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  font-weight: 600;
+  &:focus-visible {
+    outline: 3px solid ${({ theme }) => theme.colors.textPrimary};
+    outline-offset: 2px;
+  }
+`;
+
+export const SkipButton = styled(ActionButton)`
+  background: ${({ theme }) => theme.colors.bgDecisionButton};
+  color: ${({ theme }) => theme.colors.textLight};
+`;
+
+export const Prompt = styled.span`
+  flex: 1 1 auto;
+  color: ${({ theme }) => theme.colors.textDecisionActive};
+  font-weight: 600;
+`;
+
+export const Odds = styled.span`
+  color: ${({ theme }) => theme.colors.textDecisionHighlight};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+`;

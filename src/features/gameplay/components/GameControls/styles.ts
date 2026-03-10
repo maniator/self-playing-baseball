@@ -141,3 +141,67 @@ export const Select = styled.select`
   font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
 `;
+
+// ── VolumeControls ───────────────────────────────────────────────────────────
+
+export const VolumeRow = styled.label`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.s5};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textBodyAlt};
+  cursor: default;
+`;
+
+export const VolumeIcon = styled.button`
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  line-height: 1;
+  color: inherit;
+  &:hover {
+    opacity: 0.75;
+  }
+`;
+
+export const RangeInput = styled.input`
+  accent-color: ${({ theme }) => theme.colors.accentPrimary};
+  cursor: pointer;
+  width: 72px;
+  height: ${({ theme }) => theme.sizes.progressBar};
+  vertical-align: middle;
+`;
+
+// ── ManagerModeStyles ────────────────────────────────────────────────────────
+
+export const NotifBadge = styled.span<{ $ok: boolean }>`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ $ok, theme }) => ($ok ? theme.colors.statusOkGreen : theme.colors.statusWarnYellow)};
+  cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
+  white-space: nowrap;
+`;
+
+export const SubButton = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  font-family: inherit;
+  cursor: pointer;
+  min-height: ${({ theme }) => theme.sizes.inputSm};
+  flex-shrink: 0;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
+`;

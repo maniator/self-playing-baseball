@@ -2,28 +2,8 @@ import * as React from "react";
 
 import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
-import styled from "styled-components";
 
-const Tabs = styled.div`
-  display: flex;
-  gap: 4px;
-  margin-bottom: 6px;
-`;
-
-const TabBtn = styled.button<{ $active: boolean }>`
-  flex: 1;
-  background: ${({ $active }) => ($active ? "#1a3a5a" : "transparent")};
-  border: 1px solid ${({ $active }) => ($active ? "#4a8abe" : "#333")};
-  color: ${({ $active }) => ($active ? "#cce8ff" : "#666")};
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-family: inherit;
-  font-size: 10px;
-  cursor: pointer;
-  text-overflow: ellipsis;
-  overflow: hidden;
-  white-space: nowrap;
-`;
+import { TabBtn, Tabs } from "./styles";
 
 interface Props {
   teams: [string, string];

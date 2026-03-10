@@ -1,36 +1,6 @@
 import * as React from "react";
 
-import styled from "styled-components";
-
-const VolumeRow = styled.label`
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 12px;
-  color: #cce8ff;
-  cursor: default;
-`;
-
-const VolumeIcon = styled.button`
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-  color: inherit;
-  &:hover {
-    opacity: 0.75;
-  }
-`;
-
-const RangeInput = styled.input`
-  accent-color: ${({ theme }) => theme.colors.accentPrimary};
-  cursor: pointer;
-  width: 72px;
-  height: 4px;
-  vertical-align: middle;
-`;
+import { RangeInput, VolumeIcon, VolumeRow } from "./styles";
 
 type Props = {
   announcementVolume: number;
