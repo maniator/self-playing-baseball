@@ -1111,9 +1111,9 @@ describe("defensive_shift decision", () => {
   });
 
   it("defensive shift raises ground-out rate for hard grounders", () => {
-    // hard_grounder: base threshold 400; shift boost +100 = 500.
-    // roll=450 → without shift: 450 >= 400 → single. With shift: 450 < 500 → ground out.
-    vi.spyOn(rngModule, "random").mockReturnValue(0.45);
+    // hard_grounder: base threshold 500; shift boost +100 = 600.
+    // roll=550 → without shift: 550 >= 500 → single. With shift: 550 < 600 → ground out.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.55);
     const { state: shiftOn, logs: logsOn } = dispatchAction(
       makeState({ defensiveShift: true }),
       "hit",
@@ -1124,8 +1124,8 @@ describe("defensive_shift decision", () => {
   });
 
   it("without defensive shift, same random does NOT produce a ground out", () => {
-    // Without shift: threshold 400. roll=450 → 450 >= 400 → single.
-    vi.spyOn(rngModule, "random").mockReturnValue(0.45);
+    // Without shift: threshold 500. roll=550 → 550 >= 500 → single.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.55);
     const { state: shiftOff } = dispatchAction(makeState({ defensiveShift: false }), "hit", {
       battedBallType: "hard_grounder",
       strategy: "balanced",

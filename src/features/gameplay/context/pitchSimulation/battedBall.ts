@@ -21,8 +21,8 @@ export type ContactQuality = "weak" | "medium" | "hard";
  * Outcome shape per type (approximate):
  *   pop_up       → ~100% out (pop-up)
  *   weak_grounder→ ~65% out (ground out / FC / DP), ~35% infield single
- *   hard_grounder→ ~40% out (ground out / FC / DP), ~60% single
- *   line_drive   → ~15% out (liner caught),          ~85% hit (Single–HR)
+ *   hard_grounder→ ~50% out (ground out / FC / DP), ~50% single
+ *   line_drive   → ~20% out (liner caught),          ~80% hit (Single–HR)
  *   medium_fly   → ~70% out (fly out),               ~30% hit (Single–Double)
  *   deep_fly     → ~35% out (warning-track out),     ~65% hit (Double–HR)
  */
@@ -59,7 +59,7 @@ export const resolveContactQuality = (
 ): ContactQuality => {
   // Hard contact threshold: batter power raises it; pitcher stuff lowers it;
   // fatigue raises it (tired pitchers allow more hard contact).
-  const hardBase = 25;
+  const hardBase = 20;
   const hardThreshold = Math.max(
     10,
     Math.min(

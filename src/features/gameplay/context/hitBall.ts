@@ -392,8 +392,8 @@ export interface HandleBallInPlayOptions {
  *
  *   pop_up        → always out (pop-up, runners hold under infield fly rule)
  *   weak_grounder → 65% ground out (FC / DP if runner on 1st), 35% infield single
- *   hard_grounder → 40% ground out (FC / DP if runner on 1st), 60% single through infield
- *   line_drive    → 15% liner caught (sac fly eligible), 85% hit (Single → HR spread)
+ *   hard_grounder → 50% ground out (FC / DP if runner on 1st), 50% single through infield
+ *   line_drive    → 20% liner caught (sac fly eligible), 80% hit (Single → HR spread)
  *   medium_fly    → 70% fly out (sac fly + tag-up eligible), 30% hit (Single or Double)
  *   deep_fly      → 35% warning-track out (sac fly + tag-up eligible), 65% hit (Double → HR)
  */
@@ -443,14 +443,14 @@ export const handleBallInPlay = (
       return processConfirmedHit(Hit.Single, base, log, strategy);
 
     case "hard_grounder":
-      // 40% ground out (may produce FC or DP if runner on 1st); +10% with defensive shift.
-      if (roll < 400 + shiftBoost) return handleGrounder(state, log, pitchKey);
+      // 50% ground out (may produce FC or DP if runner on 1st); +10% with defensive shift.
+      if (roll < 500 + shiftBoost) return handleGrounder(state, log, pitchKey);
       log("Sharp grounder finds a hole — single!");
       return processConfirmedHit(Hit.Single, base, log, strategy);
 
     case "line_drive":
-      // 15% liner caught (sac fly: 40%, tag-up from 2nd: 10%); 85% hit spread.
-      if (roll < 150) {
+      // 20% liner caught (sac fly: 40%, tag-up from 2nd: 10%); 80% hit spread.
+      if (roll < 200) {
         log("Line drive — snagged for the out!");
         return handleFlyOut(state, log, pitchKey, { sacFlyPct: 40, tagUp2ndPct: 10 });
       }
