@@ -39,6 +39,14 @@ test.describe("Team Summary and Leaders", () => {
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
+    // Wait for the e2e_summary_team option to appear in the dropdown before
+    // selecting it.  On slow CI/mobile WebKit runners the one-shot loadTeamIds
+    // effect that populates teamsWithHistory can still be in-flight when the
+    // page first renders, so calling selectOption before the option exists
+    // would throw a Playwright error rather than land at the data-ready guard.
+    await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
+      timeout: 15_000,
+    });
     await teamSelect.selectOption("e2e_summary_team");
     // Wait for the W-L record that is unique to the e2e_summary_team fixture
     // (2 wins, 1 loss → "2-1") rather than just waiting for team-summary-section.

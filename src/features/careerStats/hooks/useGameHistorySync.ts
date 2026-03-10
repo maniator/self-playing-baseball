@@ -73,7 +73,7 @@ export const useGameHistorySync = (
   wasAlreadyFinalOnLoad: boolean,
   /** Custom team docs for resolving globalPlayerId when committing a custom-team game. */
   customTeams: CustomTeamDoc[],
-): void => {
+): { isCommitting: boolean } => {
   const gameContext = useGameContext();
   const { gameOver } = gameContext;
 
@@ -86,6 +86,8 @@ export const useGameHistorySync = (
   alreadyFinalRef.current = wasAlreadyFinalOnLoad;
   // Incremented on transient failure so the effect re-fires automatically (capped at 3).
   const [retryCount, setRetryCount] = React.useState(0);
+  // True while a commit is in-flight (used to show "Saving…" UI).
+  const [isCommitting, setIsCommitting] = React.useState(false);
 
   const gameStateRef = React.useRef(gameContext);
   gameStateRef.current = gameContext;
@@ -99,18 +101,22 @@ export const useGameHistorySync = (
     if (committedRef.current || inFlightRef.current || alreadyFinalRef.current) return;
 
     const saveId = rxSaveIdRef.current;
-    if (!saveId) return;
-
-    inFlightRef.current = true;
-
     const state = gameStateRef.current;
     const currentCustomTeams = customTeamsRef.current;
+
+    // gameInstanceId is always present in modern game state (set in createFreshGameState
+    // via generateGameInstanceId). Legacy saves (pre-gameInstanceId schema) will not have
+    // it in the stateSnapshot, so fall back to saveId for those. If both are absent bail out.
+    const gameId = state.gameInstanceId ?? saveId;
+    if (!gameId) return;
+
+    inFlightRef.current = true;
+    setIsCommitting(true);
 
     // Prefer the stable gameInstanceId from state (generated once at game start,
     // carried in every save snapshot of that run) so that multiple save slots of
     // the same run all resolve to the same GameDoc.id — preventing double-counts.
     // Fall back to saveId for pre-gameInstanceId saves (legacy behaviour).
-    const gameId = state.gameInstanceId ?? saveId;
 
     // Build stat rows for both teams.
     const statRows: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt">[] = [];
@@ -170,7 +176,7 @@ export const useGameHistorySync = (
       homeScore: state.score[1],
       awayScore: state.score[0],
       innings: state.inning,
-      committedBySaveId: saveId,
+      ...(saveId ? { committedBySaveId: saveId } : {}),
     };
 
     // Build pitcher stat rows from pitcherGameLog.
@@ -228,10 +234,12 @@ export const useGameHistorySync = (
       .then(() => {
         committedRef.current = true;
         inFlightRef.current = false;
+        setIsCommitting(false);
       })
       .catch((err) => {
         appLog.error("useGameHistorySync: failed to commit completed game", err);
         inFlightRef.current = false;
+        setIsCommitting(false);
         // Increment retry nonce so this effect re-fires automatically.
         // Capped at 3 to prevent an infinite loop on persistent DB errors.
         setRetryCount((c) => (c < MAX_COMMIT_RETRIES ? c + 1 : c));
@@ -240,14 +248,20 @@ export const useGameHistorySync = (
 
   // Reset the committed flag when a new save is loaded (rxSaveIdRef changes).
   // This ensures a new game session can be committed even within the same
-  // browser tab.
+  // browser tab.  Guard against the SPEED_INSTANT race: if a commit started via
+  // gameInstanceId is still in-flight when saveId transitions null → "save_*",
+  // don't clear inFlightRef or isCommitting — the commit must finish first.
   const prevSaveIdRef = React.useRef<string | null>(null);
   React.useEffect(() => {
     const current = rxSaveIdRef.current;
     if (current !== prevSaveIdRef.current) {
       prevSaveIdRef.current = current;
       committedRef.current = false;
-      inFlightRef.current = false;
+      if (!inFlightRef.current) {
+        setIsCommitting(false);
+      }
     }
   });
+
+  return React.useMemo(() => ({ isCommitting }), [isCommitting]);
 };

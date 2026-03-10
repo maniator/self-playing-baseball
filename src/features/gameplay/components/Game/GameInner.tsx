@@ -54,6 +54,8 @@ interface Props {
   pendingLoadSave?: SaveDoc | null;
   /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
+  /** Called when the isCommitting state changes (career stats being saved). */
+  onSavingStateChange?: (saving: boolean) => void;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
@@ -65,6 +67,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   onConsumeGameSetup,
   pendingLoadSave,
   onConsumePendingLoad,
+  onSavingStateChange,
 }) => {
   const { dispatch, dispatchLog, teams } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
@@ -92,7 +95,11 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef);
-  useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
+  const { isCommitting } = useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
+
+  React.useEffect(() => {
+    onSavingStateChange?.(isCommitting);
+  }, [isCommitting, onSavingStateChange]);
 
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();
@@ -366,6 +373,7 @@ const GameInner: React.FunctionComponent<Props> = ({
         gameStarted={gameActive}
         onLoadSave={handleModalLoad}
         onBackToHome={onBackToHome}
+        isCommitting={isCommitting}
       />
       <GameBody>
         <FieldPanel>
