@@ -30,28 +30,28 @@ describe("generateDefaultCustomTeamDraft", () => {
     expect(draft.roster.pitchers).toHaveLength(5);
   });
 
-  it("batter batting stats are in [20, 50]", () => {
+  it("batter batting stats are in [20, 100]", () => {
     const draft = generateDefaultCustomTeamDraft("testbatters");
     const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
     for (const p of allBatters) {
       expect(p.batting.contact).toBeGreaterThanOrEqual(20);
-      expect(p.batting.contact).toBeLessThanOrEqual(50);
+      expect(p.batting.contact).toBeLessThanOrEqual(100);
       expect(p.batting.power).toBeGreaterThanOrEqual(20);
-      expect(p.batting.power).toBeLessThanOrEqual(50);
+      expect(p.batting.power).toBeLessThanOrEqual(100);
       expect(p.batting.speed).toBeGreaterThanOrEqual(20);
-      expect(p.batting.speed).toBeLessThanOrEqual(50);
+      expect(p.batting.speed).toBeLessThanOrEqual(100);
     }
   });
 
-  it("pitcher batting stats are in [20, 50]", () => {
+  it("pitcher batting stats are in [20, 100]", () => {
     const draft = generateDefaultCustomTeamDraft("testpitchers");
     for (const p of draft.roster.pitchers) {
       expect(p.batting.contact).toBeGreaterThanOrEqual(20);
-      expect(p.batting.contact).toBeLessThanOrEqual(50);
+      expect(p.batting.contact).toBeLessThanOrEqual(100);
       expect(p.batting.power).toBeGreaterThanOrEqual(20);
-      expect(p.batting.power).toBeLessThanOrEqual(50);
+      expect(p.batting.power).toBeLessThanOrEqual(100);
       expect(p.batting.speed).toBeGreaterThanOrEqual(20);
-      expect(p.batting.speed).toBeLessThanOrEqual(50);
+      expect(p.batting.speed).toBeLessThanOrEqual(100);
     }
   });
 
@@ -70,24 +70,32 @@ describe("generateDefaultCustomTeamDraft", () => {
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();
       expect(p.pitching!.velocity).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.velocity).toBeLessThanOrEqual(53);
+      expect(p.pitching!.velocity).toBeLessThanOrEqual(100);
       expect(p.pitching!.control).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.control).toBeLessThanOrEqual(53);
+      expect(p.pitching!.control).toBeLessThanOrEqual(100);
       expect(p.pitching!.movement).toBeGreaterThanOrEqual(25);
-      expect(p.pitching!.movement).toBeLessThanOrEqual(53);
+      expect(p.pitching!.movement).toBeLessThanOrEqual(100);
     }
   });
 
-  it("generated hitter stat total does not exceed HITTER_STAT_CAP", () => {
+  it("generated hitter stat total equals HITTER_STAT_CAP exactly", () => {
     const draft = generateDefaultCustomTeamDraft("cap-check-hitters");
     const allBatters = [...draft.roster.lineup, ...draft.roster.bench];
     for (const p of allBatters) {
       const total = hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed);
-      expect(total).toBeLessThanOrEqual(HITTER_STAT_CAP);
+      expect(total).toBe(HITTER_STAT_CAP);
     }
   });
 
-  it("generated pitcher pitching stat total does not exceed PITCHER_STAT_CAP", () => {
+  it("generated pitcher batting stat total equals HITTER_STAT_CAP exactly", () => {
+    const draft = generateDefaultCustomTeamDraft("cap-check-pitcher-batting");
+    for (const p of draft.roster.pitchers) {
+      const total = hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed);
+      expect(total).toBe(HITTER_STAT_CAP);
+    }
+  });
+
+  it("generated pitcher pitching stat total equals PITCHER_STAT_CAP exactly", () => {
     const draft = generateDefaultCustomTeamDraft("cap-check-pitchers");
     for (const p of draft.roster.pitchers) {
       expect(p.pitching).toBeDefined();
@@ -96,8 +104,39 @@ describe("generateDefaultCustomTeamDraft", () => {
         p.pitching!.control,
         p.pitching!.movement,
       );
-      expect(total).toBeLessThanOrEqual(PITCHER_STAT_CAP);
+      expect(total).toBe(PITCHER_STAT_CAP);
     }
+  });
+
+  it("hitter stat allocations vary across seeds (budget distribution is randomized)", () => {
+    // Earlier tests assert totals equal HITTER_STAT_CAP exactly. Here we verify
+    // that the contact/power/speed split actually varies between players and seeds —
+    // confirming the Dirichlet-inspired scheme produces diverse allocations.
+    const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
+    const allocationSignatures = new Set<string>();
+    for (const s of seeds) {
+      const draft = generateDefaultCustomTeamDraft(s);
+      for (const p of [...draft.roster.lineup, ...draft.roster.bench]) {
+        const { contact, power, speed } = p.batting;
+        allocationSignatures.add(`${contact}-${power}-${speed}`);
+      }
+    }
+    expect(allocationSignatures.size).toBeGreaterThan(5);
+  });
+
+  it("pitcher stat allocations vary across seeds (budget distribution is randomized)", () => {
+    // Earlier tests assert totals equal PITCHER_STAT_CAP exactly. Here we verify
+    // that the velocity/control/movement split actually varies between pitchers and seeds.
+    const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
+    const allocationSignatures = new Set<string>();
+    for (const s of seeds) {
+      const draft = generateDefaultCustomTeamDraft(s);
+      for (const p of draft.roster.pitchers) {
+        const { velocity, control, movement } = p.pitching!;
+        allocationSignatures.add(`${velocity}-${control}-${movement}`);
+      }
+    }
+    expect(allocationSignatures.size).toBeGreaterThan(5);
   });
 
   it("lineup players have positions from the standard batting position set", () => {
