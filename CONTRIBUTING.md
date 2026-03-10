@@ -36,13 +36,21 @@ yarn build
 
 ## Validation
 
-Always run all four steps before opening a PR — CI enforces them all:
+Run all of the following before opening a PR — CI enforces each step:
 
 ```bash
-yarn lint             # ESLint — zero errors/warnings required
-yarn build            # TypeScript compile + Vite bundle
-yarn test             # Vitest unit tests (must pass; ≥ 90% coverage)
-yarn test:e2e         # Playwright E2E tests across 7 device projects
+# Lint workflow (lint.yml)
+yarn lint                          # ESLint — zero errors/warnings required
+yarn format:check                  # Prettier format check
+yarn typecheck:e2e                 # Type-check Playwright E2E suite
+node scripts/check-spec-sizes.mjs  # Enforce per-spec file size limits
+
+# CI workflow (ci.yml)
+yarn test:coverage  # Vitest with coverage (lines/functions/statements ≥ 90%, branches ≥ 80%)
+yarn build          # TypeScript compile + Vite bundle
+
+# E2E workflow (playwright-e2e.yml)
+yarn test:e2e       # Playwright E2E tests across 7 device projects
 ```
 
 Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking lint.
