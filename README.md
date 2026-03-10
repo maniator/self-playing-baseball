@@ -212,4 +212,4 @@ Consult it before adding or changing any UI element — it covers:
 
 ## License
 
-GPL-3.0 © [Naftali Lubin](https://github.com/maniator)
+GPL-3.0-or-later © [Naftali Lubin](https://github.com/maniator)
