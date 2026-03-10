@@ -43,15 +43,15 @@ export const MenuGroup = styled.div`
   flex-direction: column;
   gap: 14px;
   width: min(100%, 300px);
-  margin-top: 16px;
+  margin-top: ${({ theme }) => theme.spacing.lg};
 `;
 
 export const PrimaryBtn = styled.button`
   background: ${({ theme }) => theme.colors.greenBg};
   color: ${({ theme }) => theme.colors.accentGreen};
   border: 1px solid ${({ theme }) => theme.colors.borderGreen};
-  border-radius: 6px;
-  padding: 16px 20px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
   font-size: 1.05rem;
   font-weight: 600;
   font-family: inherit;
@@ -77,8 +77,8 @@ export const SecondaryBtn = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.textLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 6px;
-  padding: 14px 20px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 14px ${({ theme }) => theme.spacing.xl};
   font-size: 0.95rem;
   font-family: inherit;
   cursor: pointer;
@@ -103,11 +103,11 @@ export const SecondaryBtn = styled.button`
 
 /** Non-interactive teaser box for upcoming League mode. */
 export const LeagueTeaserBox = styled.div`
-  margin-top: 8px;
-  padding: 12px 20px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderPanel};
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.radii.lg};
   width: min(100%, 300px);
   text-align: center;
 `;
@@ -116,7 +116,7 @@ export const LeagueTeaserTitle = styled.p`
   color: ${({ theme }) => theme.colors.textGold};
   font-size: 0.88rem;
   font-weight: 600;
-  margin: 0 0 4px;
+  margin: 0 0 ${({ theme }) => theme.spacing.xs};
 `;
 
 export const LeagueTeaserSub = styled.p`
