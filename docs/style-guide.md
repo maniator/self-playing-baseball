@@ -20,6 +20,7 @@
 11. [Game UI](#11-game-ui)
 12. [Status & Feedback](#12-status--feedback)
 13. [Collapsible Sections](#13-collapsible-sections)
+14. [Design Tokens Reference](#14-design-tokens-reference)
 
 ---
 
@@ -134,7 +135,8 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 
 ### Font families
 
-**Source file:** `src/index.scss`
+**Source file:** `src/index.scss` (SCSS variables, compile-time only)  
+**Theme tokens:** `theme.fonts.sans`, `theme.fonts.mono`, `theme.fonts.score` (runtime, via `ThemeProvider`)
 
 ```scss
 /* Primary — used everywhere */
@@ -155,25 +157,47 @@ font-family: "Courier New", Courier, monospace;
 
 All `<button>`, `<input>`, `<select>`, and `<textarea>` elements inherit `$font-sans` via the global `font: inherit` reset.
 
+In styled-components always use `font-family: ${({ theme }) => theme.fonts.sans}` — never copy the string literal.
+
 ### Type scale
 
-| Role | Desktop | Mobile | Weight | Transform |
-|---|---|---|---|---|
-| Logo (`HomeLogo`) | `3rem` | `2.5rem` | 400 | — |
-| Page title H1 (`HomeTitle`) | `2.2rem` | `1.8rem` | 400 | — |
-| Page title H1 (standard pages) | `1.5rem` – `1.8rem` | `1.2rem` – `1.3rem` | 400 | — |
-| Dialog / modal title | `17px` – `18px` | `16px` | 400 | — |
-| Editor section title | `1.3rem` | `1.3rem` | 400 | — |
-| Primary button | `1.05rem` | `0.95rem` | 600 | — |
-| CTA button (Play Ball!) | `15px` (fullwidth) | — | 700 | — |
-| Game controls button | `15px` | `13px` | varies | — |
-| Body / dialog text | `14px` | `14px` | 400 | — |
-| Table cell | `13px` | `13px` | 400 | — |
-| Label / section heading | `12px` | `12px` | 600 | `uppercase` |
-| Small label / field label | `11px` | `11px` | 400–600 | `uppercase` |
-| Summary cell label / leader stat label | `10px` | `10px` | 600 | `uppercase` |
+**Token source:** `theme.fontSizes.*` — always reference the token; never use raw `px`/`rem` values in `styles.ts`.
 
-**Letter spacing** for uppercase labels: `0.5px` – `1px` depending on size.  
+| Role | Token | Value | Weight | Transform |
+|---|---|---|---|---|
+| Logo (`HomeLogo`) | `theme.fontSizes.logo` | `3rem` | 400 | — |
+| Page title H1 (`HomeTitle`) | `theme.fontSizes.title` | `2.2rem` | 400 | — |
+| Large display heading | `theme.fontSizes.displayMd` | `2.5rem` | 400 | — |
+| Medium display heading | `theme.fontSizes.displaySm` | `1.8rem` | 400 | — |
+| H1 | `theme.fontSizes.h1` | `1.6rem` | 400 | — |
+| H2 | `theme.fontSizes.h2` | `1.4rem` | 400 | — |
+| Section heading | `theme.fontSizes.heading` | `1.5rem` | 400 | — |
+| H3 / editor section title | `theme.fontSizes.h3` | `1.2rem` | 400 | — |
+| Dialog / modal title | `theme.fontSizes.dialogTitle` | `18px` | 400 | — |
+| Large UI value | `theme.fontSizes.f20` | `20px` | varies | — |
+| Extra-large UI | `theme.fontSizes.xl` | `17px` | varies | — |
+| CTA / primary button | `theme.fontSizes.lg` | `15px` | 700 | — |
+| Game controls button | `theme.fontSizes.display` | `16px` | varies | — |
+| Body / dialog text | `theme.fontSizes.md` | `14px` | 400 | — |
+| Table cell | `theme.fontSizes.base` | `13px` | 400 | — |
+| Label / section heading | `theme.fontSizes.label` | `12px` | 600 | `uppercase` |
+| Small label | `theme.fontSizes.sm` | `11px` | 400–600 | `uppercase` |
+| Summary cell / leader stat | `theme.fontSizes.xs` | `10px` | 600 | `uppercase` |
+| Body prose (1rem) | `theme.fontSizes.bodyLg` | `1rem` | 400 | — |
+| Body prose (smaller) | `theme.fontSizes.body` | `0.95rem` | 400 | — |
+| Sub-text | `theme.fontSizes.sub` | `0.85rem` | 400 | — |
+| Tiny label | `theme.fontSizes.tiny` | `0.7rem` | 400 | — |
+
+**Letter spacing** for uppercase labels — always use `theme.letterSpacing.*` tokens:
+
+| Token | Value | When to use |
+|---|---|---|
+| `theme.letterSpacing.normal` | `0.5px` | Default table headers, stat labels |
+| `theme.letterSpacing.wide` | `0.6px` | Section titles, section dividers |
+| `theme.letterSpacing.wider` | `0.8px` | Small uppercase labels, `<summary>` |
+| `theme.letterSpacing.widest` | `1px` | Extra-innings / game-over banners |
+| `theme.letterSpacing.tight` | `0.04em` | Score monospace cells |
+
 **Line height** for prose (help/instructions): `1.6`.
 
 ---
@@ -953,20 +977,100 @@ Used by the How to Play / Help page accordion.
 
 ---
 
+## 14. Design Tokens Reference
+
+**Source:** `src/shared/theme.ts` — the single source of truth for all design tokens.  
+**Type augmentation:** `src/styled.d.ts` — makes `props.theme` fully type-checked in every styled-component.  
+**Runtime wiring:** `ThemeProvider` in `src/index.tsx` wraps the entire app.  
+**Test wiring:** `src/test/setup.ts` wraps all Testing Library renders with `ThemeProvider`.
+
+Always access tokens via `${({ theme }) => theme.<group>.<key>}` in styled-components. Never copy raw hex/px values into new `styles.ts` files.
+
+### Spacing (`theme.spacing.*`)
+
+| Token | Value | Typical use |
+|---|---|---|
+| `xxs` | `2px` | Minimal gap, icon padding |
+| `s3` | `3px` | Tight padding |
+| `xs` | `4px` | Compact padding |
+| `s5` | `5px` | Small gap |
+| `s6` | `6px` | Small padding / margin |
+| `s7` | `7px` | Small gap |
+| `sm` | `8px` | Standard small padding |
+| `s10` | `10px` | Moderate padding |
+| `md` | `12px` | Standard padding |
+| `s14` | `14px` | Moderate-large padding |
+| `lg` | `16px` | Standard large padding |
+| `s18` | `18px` | Generous padding |
+| `xl` | `20px` | Large padding |
+| `s22` | `22px` | Generous gap |
+| `xxl` | `24px` | Extra-large padding |
+| `s28` | `28px` | Button / card padding |
+| `xxxl` | `32px` | Section margins |
+| `s40` | `40px` | Large section padding |
+| `s48` | `48px` | Page-level padding |
+
+### Radii (`theme.radii.*`)
+
+| Token | Value | Use |
+|---|---|---|
+| `xxs` | `2px` | Tiny chips |
+| `s3` | `3px` | Focus ring offset |
+| `sm` | `4px` | Tight buttons/inputs |
+| `md` | `6px` | Standard buttons, selects |
+| `lg` | `8px` | Cards, panels |
+| `card` | `10px` | Card chrome |
+| `xl` | `12px` | Large panels |
+| `dialog` | `14px` | Modal/dialog chrome |
+| `pill` | `20px` | Pill buttons (game controls, save) |
+| `full` | `9999px` | Fully circular |
+
+### Sizes (`theme.sizes.*`)
+
+| Token | Value | Use |
+|---|---|---|
+| `inputSm` | `30px` | Small inputs |
+| `inputMd` | `32px` | Standard selects |
+| `inputLg` | `36px` | Large inputs |
+| `btnMd` | `36px` | Small buttons |
+| `btnLg` | `44px` | Standard CTA buttons (`min-height`) |
+| `btnXl` | `48px` | Large home-screen buttons |
+| `btnXxl` | `52px` | Primary home-screen button |
+| `icon` | `25px` | Icon button size |
+| `iconSm` | `14px` | Small inline icon |
+| `progressBar` | `4px` | Countdown progress bar height |
+| `countdownLabel` | `52px` | Countdown timer label width |
+
+### Letter Spacing (`theme.letterSpacing.*`)
+
+| Token | Value | Use |
+|---|---|---|
+| `tight` | `0.04em` | Score monospace cells |
+| `normal` | `0.5px` | Default table/stat headers |
+| `wide` | `0.6px` | Section titles, dividers |
+| `wider` | `0.8px` | Small uppercase labels, `<summary>` |
+| `widest` | `1px` | Extra-innings / game-over banners |
+
+### Font Sizes (`theme.fontSizes.*`)
+
+See [§2 Typography](#2-typography) for the full token-to-value mapping.
+
+---
+
 ## Quick Reference
 
 ### Focus ring (universal)
 
 All interactive elements must have:
 
-```css
+```tsx
 &:focus-visible {
-  outline: 2px solid aquamarine;
+  outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
   outline-offset: 2px;
 }
 ```
 
-Never remove `focus-visible` styles. Some elements (e.g. `BackBtn`) also add `border-radius: 3px` to the outline.
+Never remove `focus-visible` styles. Some elements (e.g. `BackBtn`) also add `border-radius: ${({ theme }) => theme.radii.s3}` to the outline.
 
 ### Disabled state
 
@@ -977,27 +1081,30 @@ cursor: not-allowed;
 
 ### `Add …` dashed buttons (team editor)
 
-```css
+```tsx
 background: transparent;
-color: #6effc0;
-border: 1px dashed #3a7a5a;
-border-radius: 6px;
+color: ${({ theme }) => theme.colors.accentGreen};
+border: 1px dashed ${({ theme }) => theme.colors.borderGreen};
+border-radius: ${({ theme }) => theme.radii.md};
 width: 100%;
-padding: 8px 16px;
+padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
 
-:hover { background: #0d1b2e; border-color: #6effc0; }
+:hover {
+  background: ${({ theme }) => theme.colors.bgSurface};
+  border-color: ${({ theme }) => theme.colors.accentGreen};
+}
 ```
 
 ### Section dividers / headings in editors
 
-```css
-color: #88bbee;
-font-size: 0.7–0.8rem;
+```tsx
+color: ${({ theme }) => theme.colors.textSecondaryLink};
+font-size: ${({ theme }) => theme.fontSizes.tiny}; /* 0.7–0.8rem */
 text-transform: uppercase;
-letter-spacing: 0.6–0.8px;
-border-bottom: 1px solid #1e3050;
-padding-bottom: 4–6px;
-margin-bottom: 6–10px;
+letter-spacing: ${({ theme }) => theme.letterSpacing.wide}; /* 0.6px or theme.letterSpacing.wider for 0.8px */
+border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
+padding-bottom: ${({ theme }) => theme.spacing.s6};
+margin-bottom: ${({ theme }) => theme.spacing.s10};
 ```
 
 ---
