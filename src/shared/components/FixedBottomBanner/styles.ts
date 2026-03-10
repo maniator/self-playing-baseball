@@ -13,7 +13,9 @@ export const FixedBottomBanner = styled.div`
   background: #0d1b2e;
   color: #cce0ff;
   border-top: 2px solid #4a6090;
-  /* top | horizontal | bottom — bottom includes safe-area so the banner clears the home indicator */
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+  /* Fallback for browsers without env() support */
+  padding: 10px 16px;
+  /* Override bottom padding to include safe-area so the banner clears the home indicator */
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   font-size: 0.875rem;
 `;
