@@ -4,16 +4,25 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { useWakeLock } from "./useWakeLock";
 
-const makeMockSentinel = (overrides: Partial<WakeLockSentinel> = {}): WakeLockSentinel => ({
-  released: false,
-  type: "screen",
-  release: vi.fn().mockResolvedValue(undefined),
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  dispatchEvent: vi.fn().mockReturnValue(true),
-  onrelease: null,
-  ...overrides,
-});
+type ReleaseListener = () => void;
+
+const makeMockSentinel = (overrides: Partial<WakeLockSentinel> = {}): WakeLockSentinel => {
+  const listeners: ReleaseListener[] = [];
+  return {
+    released: false,
+    type: "screen",
+    release: vi.fn().mockResolvedValue(undefined),
+    addEventListener: vi.fn((event: string, handler: ReleaseListener) => {
+      if (event === "release") listeners.push(handler);
+    }),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn().mockReturnValue(true),
+    onrelease: null,
+    // Helper to simulate the OS dropping the lock
+    fireRelease: () => listeners.forEach((fn) => fn()),
+    ...overrides,
+  } as unknown as WakeLockSentinel;
+};
 
 const installWakeLock = (sentinel: WakeLockSentinel) => {
   (navigator as any).wakeLock = {
@@ -71,7 +80,7 @@ describe("useWakeLock", () => {
       rerender(false);
     });
 
-    expect(sentinel.release).toHaveBeenCalled();
+    expect(sentinel.release).toHaveBeenCalledTimes(1);
   });
 
   it("releases the wake lock on unmount", async () => {
@@ -85,7 +94,7 @@ describe("useWakeLock", () => {
       unmount();
     });
 
-    expect(sentinel.release).toHaveBeenCalled();
+    expect(sentinel.release).toHaveBeenCalledTimes(1);
   });
 
   it("does not throw when Wake Lock API is unavailable", async () => {
@@ -152,6 +161,80 @@ describe("useWakeLock", () => {
     });
 
     // Should only have been called once (on mount)
+    expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("reacquires when the OS drops the lock while the page is still visible", async () => {
+    const sentinel = makeMockSentinel();
+    installWakeLock(sentinel);
+
+    await act(async () => {
+      renderHook(() => useWakeLock(true));
+    });
+
+    // Set up the next sentinel for the re-acquire call
+    const sentinel2 = makeMockSentinel();
+    (navigator as any).wakeLock.request.mockResolvedValueOnce(sentinel2);
+
+    // Simulate OS releasing the lock (sentinel release event fires, page still visible)
+    await act(async () => {
+      (sentinel as any).released = true;
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+      (sentinel as unknown as { fireRelease: () => void }).fireRelease();
+    });
+
+    expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not reacquire from sentinel release event when page is hidden", async () => {
+    const sentinel = makeMockSentinel();
+    installWakeLock(sentinel);
+
+    await act(async () => {
+      renderHook(() => useWakeLock(true));
+    });
+
+    // Simulate OS releasing the lock but page is hidden (normal tab-switch flow)
+    await act(async () => {
+      (sentinel as any).released = true;
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "hidden",
+      });
+      (sentinel as unknown as { fireRelease: () => void }).fireRelease();
+    });
+
+    // Should NOT reacquire — visibilitychange handler will do it when tab becomes visible
+    expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reacquire from sentinel release event when no longer active", async () => {
+    const sentinel = makeMockSentinel();
+    installWakeLock(sentinel);
+
+    const { rerender } = renderHook((active: boolean) => useWakeLock(active), {
+      initialProps: true,
+    });
+    await act(async () => {});
+
+    // Deactivate the hook, then fire the release event
+    await act(async () => {
+      rerender(false);
+    });
+
+    await act(async () => {
+      (sentinel as any).released = true;
+      Object.defineProperty(document, "visibilityState", {
+        configurable: true,
+        value: "visible",
+      });
+      (sentinel as unknown as { fireRelease: () => void }).fireRelease();
+    });
+
+    // Still only 1 call (the initial acquire); no re-acquire after deactivation
     expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
   });
 });
