@@ -25,6 +25,10 @@ export const useWakeLock = (active: boolean): void => {
 
   const acquire = React.useCallback(async () => {
     if (!("wakeLock" in navigator)) return;
+    // Don't attempt to acquire when the document is hidden — the browser rejects
+    // the request anyway. The visibilitychange handler will reacquire once the
+    // page becomes visible again.
+    if (document.visibilityState !== "visible") return;
     if (wakeLockRef.current && !wakeLockRef.current.released) return;
     const acquireId = ++acquireIdRef.current;
     try {

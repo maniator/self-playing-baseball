@@ -86,6 +86,23 @@ describe("useWakeLock", () => {
     expect((navigator as any).wakeLock.request).not.toHaveBeenCalled();
   });
 
+  it("does not request a wake lock when the document is hidden", async () => {
+    const sentinel = makeMockSentinel();
+    installWakeLock(sentinel);
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "hidden",
+    });
+
+    await act(async () => {
+      renderHook(() => useWakeLock(true));
+    });
+
+    // The visibilitychange handler will acquire once the tab is foregrounded.
+    expect((navigator as any).wakeLock.request).not.toHaveBeenCalled();
+  });
+
   it("releases the wake lock when active flips to false", async () => {
     const sentinel = makeMockSentinel();
     installWakeLock(sentinel);
