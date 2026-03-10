@@ -96,20 +96,33 @@ const splitBudgetNatural = (
   // Largest-remainder: give each surplus point to the portion with the highest
   // fractional part that still has capacity. Ties are broken with rng() so the
   // redistribution does not favour any particular stat position.
+  // Once all fractional priorities are consumed (fracs all -1), fall back to
+  // spreading any remaining surplus uniformly at random among portions that
+  // still have capacity, so the total always equals budget.
   while (leftover > 0) {
     let maxFrac = -1;
     for (let i = 0; i < 3; i++) {
       if (capacities[i] > 0 && fracs[i] > maxFrac) maxFrac = fracs[i];
     }
-    if (maxFrac < 0) break; // all portions at maxEach — can't distribute further
-    const candidates = ([0, 1, 2] as const).filter(
-      (i) => capacities[i] > 0 && fracs[i] === maxFrac,
-    );
+
+    let candidates: readonly number[];
+    const useFracs = maxFrac >= 0;
+    if (useFracs) {
+      candidates = ([0, 1, 2] as const).filter((i) => capacities[i] > 0 && fracs[i] === maxFrac);
+    } else {
+      // All fractional priorities used up; spread remaining surplus randomly
+      // among any portion that still has room below maxEach.
+      candidates = ([0, 1, 2] as const).filter((i) => capacities[i] > 0);
+      if (candidates.length === 0) break; // truly no capacity left anywhere
+    }
+
     const chosen =
       candidates.length === 1 ? candidates[0] : candidates[Math.floor(rng() * candidates.length)];
     portions[chosen]++;
     capacities[chosen]--;
-    fracs[chosen] = -1; // mark as used so the next point goes elsewhere
+    if (useFracs) {
+      fracs[chosen] = -1; // mark as used so the next point goes elsewhere
+    }
     leftover--;
   }
 

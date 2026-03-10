@@ -87,6 +87,14 @@ describe("generateDefaultCustomTeamDraft", () => {
     }
   });
 
+  it("generated pitcher batting stat total equals HITTER_STAT_CAP exactly", () => {
+    const draft = generateDefaultCustomTeamDraft("cap-check-pitcher-batting");
+    for (const p of draft.roster.pitchers) {
+      const total = hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed);
+      expect(total).toBe(HITTER_STAT_CAP);
+    }
+  });
+
   it("generated pitcher pitching stat total equals PITCHER_STAT_CAP exactly", () => {
     const draft = generateDefaultCustomTeamDraft("cap-check-pitchers");
     for (const p of draft.roster.pitchers) {
