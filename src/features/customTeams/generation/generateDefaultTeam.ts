@@ -52,38 +52,68 @@ const seedToNumber = (seed: string | number): number => {
  * rolling 2 dice each) so individual stats rarely dominate while still
  * spanning the full cap range.
  * All three portions are floored and capped at `maxEach`. Any leftover from
- * flooring or clamping is redistributed to portions that still have remaining
- * capacity, so the returned portions always sum to exactly `budget`.
+ * flooring or clamping is redistributed using the largest-remainder method
+ * (ties broken with `rng`) so the split stays symmetric and the portions
+ * always sum to exactly `budget`.
  */
 const splitBudgetNatural = (
   rng: () => number,
   budget: number,
   maxEach: number,
 ): [number, number, number] => {
+  // Guard: non-positive or invalid budget yields all-zeros.
+  if (budget <= 0 || !Number.isFinite(budget)) {
+    return [0, 0, 0];
+  }
+
   const wa = rng() + rng();
   const wb = rng() + rng();
   const wc = rng() + rng();
   const wTotal = wa + wb + wc;
-  let p1 = Math.min(Math.floor((wa / wTotal) * budget), maxEach);
-  let p2 = Math.min(Math.floor((wb / wTotal) * budget), maxEach);
-  let p3 = Math.min(Math.floor((wc / wTotal) * budget), maxEach);
-  // Redistribute any leftover (from flooring and clamping) to portions that
-  // still have capacity, so the total always equals budget.
-  let leftover = budget - p1 - p2 - p3;
-  if (leftover > 0) {
-    const add = Math.min(leftover, maxEach - p1);
-    p1 += add;
-    leftover -= add;
+
+  // Defensive fallback: if all six draws were exactly 0 (practically impossible
+  // with a real PRNG, but guarded against), treat the three weights as equal.
+  const w1 = wTotal > 0 ? wa / wTotal : 1 / 3;
+  const w2 = wTotal > 0 ? wb / wTotal : 1 / 3;
+  const w3 = wTotal > 0 ? wc / wTotal : 1 / 3;
+
+  const raw1 = w1 * budget;
+  const raw2 = w2 * budget;
+  const raw3 = w3 * budget;
+
+  const portions: [number, number, number] = [
+    Math.min(Math.floor(raw1), maxEach),
+    Math.min(Math.floor(raw2), maxEach),
+    Math.min(Math.floor(raw3), maxEach),
+  ];
+  const capacities = portions.map((p) => maxEach - p);
+  // Fractional parts of the raw proportions drive the largest-remainder
+  // redistribution. A used fraction is set to -1 so the next surplus point
+  // goes to a different portion.
+  const fracs = [raw1 % 1, raw2 % 1, raw3 % 1];
+
+  let leftover = budget - portions[0] - portions[1] - portions[2];
+  // Largest-remainder: give each surplus point to the portion with the highest
+  // fractional part that still has capacity. Ties are broken with rng() so the
+  // redistribution does not favour any particular stat position.
+  while (leftover > 0) {
+    let maxFrac = -1;
+    for (let i = 0; i < 3; i++) {
+      if (capacities[i] > 0 && fracs[i] > maxFrac) maxFrac = fracs[i];
+    }
+    if (maxFrac < 0) break; // all portions at maxEach — can't distribute further
+    const candidates = ([0, 1, 2] as const).filter(
+      (i) => capacities[i] > 0 && fracs[i] === maxFrac,
+    );
+    const chosen =
+      candidates.length === 1 ? candidates[0] : candidates[Math.floor(rng() * candidates.length)];
+    portions[chosen]++;
+    capacities[chosen]--;
+    fracs[chosen] = -1; // mark as used so the next point goes elsewhere
+    leftover--;
   }
-  if (leftover > 0) {
-    const add = Math.min(leftover, maxEach - p2);
-    p2 += add;
-    leftover -= add;
-  }
-  if (leftover > 0) {
-    p3 += Math.min(leftover, maxEach - p3);
-  }
-  return [p1, p2, p3];
+
+  return portions;
 };
 
 const pickFrom = <T>(rng: () => number, arr: ReadonlyArray<T>): T =>
@@ -150,7 +180,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: shuffledPositions[i] ?? "DH",
     handedness: pickHandedness(),
-    // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
+    // Distribute the hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP exactly.
     batting: randBatterStats(),
   }));
 
@@ -162,7 +192,7 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
     role: "batter" as const,
     position: benchPositionPool[i % benchPositionPool.length],
     handedness: pickHandedness(),
-    // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
+    // Distribute the hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP exactly.
     batting: randBatterStats(),
   }));
 
@@ -177,9 +207,9 @@ export function generateDefaultCustomTeamDraft(seed: string | number): CustomTea
       position: i === 0 ? "SP" : "RP",
       pitchingRole,
       handedness: pickHandedness(),
-      // Distribute the hitter budget naturally: each stat ≥ 20, total up to HITTER_STAT_CAP.
+      // Distribute the hitter budget naturally: each stat ≥ 20, total = HITTER_STAT_CAP exactly.
       batting: randBatterStats(),
-      // Distribute the pitcher budget naturally: each stat ≥ 25, total up to PITCHER_STAT_CAP.
+      // Distribute the pitcher budget naturally: each stat ≥ 25, total = PITCHER_STAT_CAP exactly.
       pitching: randPitcherPitchingStats(),
     };
   });

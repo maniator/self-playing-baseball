@@ -100,50 +100,35 @@ describe("generateDefaultCustomTeamDraft", () => {
     }
   });
 
-  it("hitter stat totals reach near the full cap (budget is actually used)", () => {
-    // Across many seeds, hitter totals should cluster near the full-budget cap of 150.
-    // The old generator produced an average total of ~105 (3 × 35), so we verify
-    // that the new mean is clearly higher and much closer to the cap.
-    // Threshold of 130 allows for variance from the Dirichlet-inspired split and
-    // occasional clamping, while clearly distinguishing from the old average of ~105.
+  it("hitter stat allocations vary across seeds (budget distribution is randomized)", () => {
+    // Earlier tests assert totals equal HITTER_STAT_CAP exactly. Here we verify
+    // that the contact/power/speed split actually varies between players and seeds —
+    // confirming the Dirichlet-inspired scheme produces diverse allocations.
     const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
-    const totals = seeds.flatMap((s) => {
+    const allocationSignatures = new Set<string>();
+    for (const s of seeds) {
       const draft = generateDefaultCustomTeamDraft(s);
-      return [...draft.roster.lineup, ...draft.roster.bench].map((p) =>
-        hitterStatTotal(p.batting.contact, p.batting.power, p.batting.speed),
-      );
-    });
-    const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
-    // Mean should be well above the old average (~105); full-budget split centres around 150.
-    expect(mean).toBeGreaterThan(130);
+      for (const p of [...draft.roster.lineup, ...draft.roster.bench]) {
+        const { contact, power, speed } = p.batting;
+        allocationSignatures.add(`${contact}-${power}-${speed}`);
+      }
+    }
+    expect(allocationSignatures.size).toBeGreaterThan(5);
   });
 
-  it("pitcher stat totals reach near the full pitcher cap (budget is actually used)", () => {
-    // PITCHER_STAT_CAP is 160; old average was ~117 (3 × 39). Threshold of 140 clearly
-    // distinguishes the new full-budget distribution from the old narrow one.
-    // The Dirichlet-inspired split centres around 160, so the mean should be well above 140.
+  it("pitcher stat allocations vary across seeds (budget distribution is randomized)", () => {
+    // Earlier tests assert totals equal PITCHER_STAT_CAP exactly. Here we verify
+    // that the velocity/control/movement split actually varies between pitchers and seeds.
     const seeds = Array.from({ length: 30 }, (_, i) => i + 1);
-    const totals = seeds.flatMap((s) =>
-      generateDefaultCustomTeamDraft(s).roster.pitchers.map((p) =>
-        pitcherStatTotal(p.pitching!.velocity, p.pitching!.control, p.pitching!.movement),
-      ),
-    );
-    const mean = totals.reduce((a, b) => a + b, 0) / totals.length;
-    expect(mean).toBeGreaterThan(140);
-  });
-
-  it("individual batter stats span above 50 across many seeds", () => {
-    // Verify the full range is used — the old cap was 50 per stat; the new approach allows up to 100.
-    const seeds = Array.from({ length: 50 }, (_, i) => i + 1);
-    const allStats = seeds.flatMap((s) => {
+    const allocationSignatures = new Set<string>();
+    for (const s of seeds) {
       const draft = generateDefaultCustomTeamDraft(s);
-      return [...draft.roster.lineup, ...draft.roster.bench].flatMap((p) => [
-        p.batting.contact,
-        p.batting.power,
-        p.batting.speed,
-      ]);
-    });
-    expect(Math.max(...allStats)).toBeGreaterThan(50);
+      for (const p of draft.roster.pitchers) {
+        const { velocity, control, movement } = p.pitching!;
+        allocationSignatures.add(`${velocity}-${control}-${movement}`);
+      }
+    }
+    expect(allocationSignatures.size).toBeGreaterThan(5);
   });
 
   it("lineup players have positions from the standard batting position set", () => {
