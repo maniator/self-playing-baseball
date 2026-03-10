@@ -7,30 +7,66 @@ export const theme = {
     bgInputSm: "#1a2440",
     bgGame: "#0a1628",
     bgDeep: "#0a0a1a",
+    bgGameDeep: "#071020",
+    bgSurfaceAlt: "#1a1a2e",
+    bgPlayerDetail: "#0d1117",
+    bgImport: "#0a1525",
+    bgDropdown: "#111111",
+    bgPaginationHover: "#25254a",
+    successBg: "#0d2016",
 
     // Borders
     borderPanel: "#2a3a5a",
+    borderCard: "#2a3f60",
     borderForm: "#4a6090",
     borderSubtle: "#2a2a3a",
     borderDark: "#1e3050",
     borderGreen: "#3a7a5a",
     borderDanger: "#883333",
+    borderLog: "#333333",
+    borderDarkest: "#222222",
+    borderMid: "#444444",
+    borderGameError: "#884e4e",
+    borderGameSection: "#2a2a2a",
+    borderLineScore: "#1e3a5f",
+    borderLineScoreCell: "#0f2540",
+    borderWarn: "#886600",
+    borderSavesDanger: "#7a3030",
+    borderWhiteAlpha: "rgba(255, 255, 255, 0.4)",
+    borderFormAlpha35: "rgba(74, 96, 144, 0.35)",
+    borderFormAlpha40: "rgba(74, 96, 144, 0.4)",
 
     // Text
     textPrimary: "#ffffff",
     textBody: "#cce0ff",
+    textBodyAlt: "#cce8ff",
     textDialog: "#e0f0ff",
     textMuted: "#aaaaaa",
+    textSemiLight: "#bbbbbb",
+    textLight: "#cccccc",
+    textDisabled: "#555555",
     textDimmer: "#666666",
+    textDropdown: "#dddddd",
     textHint: "#6680aa",
     textLink: "#aaccff",
     textSecondaryLink: "#88bbee",
     textScore: "#e8d5a3",
     textScoreHeader: "#8abadf",
+    textScoreDim: "#3d5a7a",
+    textNavBlue: "#6ab0e0",
+    textNavBlueDim: "#4a8abe",
+    textDimBlue: "#3a5070",
+    textFaint: "#a0b4d0",
+    textModalLink: "#7a9abf",
+    textReadOnly: "#8899bb",
+    textBlueMid: "#5577aa",
+    textGold: "#f0c040",
+    textTeamInfo: "#ccaa66",
 
     // Accent
     accentPrimary: "aquamarine",
     accentGreen: "#6effc0",
+    accentGreenBright: "#5fffbb",
     accentGold: "#f5c842",
 
     // Status / interactive
@@ -41,6 +77,10 @@ export const theme = {
     redBg: "#b30000",
     blueDark: "#0f4880",
     goldWarn: "#7a3200",
+    buttonNewBg: "#22c55e",
+    buttonNewBgHover: "#16a34a",
+    statusOkGreen: "#4ade80",
+    statusWarnYellow: "#fbbf24",
 
     // BSO indicators
     bsoBall: "#44cc88",
@@ -54,6 +94,58 @@ export const theme = {
     // Diamond / field indicators
     baseOccupied: "#3f4f7e",
     baseAway: "#ff21b1",
+    fieldGrass: "#aac32b",
+    fieldDirt: "#886c36",
+
+    // Danger actions
+    dangerText: "#ff7777",
+    dangerHoverBg: "#2a0000",
+    dangerHoverBorder: "#cc4444",
+
+    // Error / Warning
+    errorBg: "#1a0000",
+    errorBgTransparent: "rgba(80, 0, 0, 0.3)",
+    textError: "#ff8080",
+    bgSavesDangerHover: "rgba(120, 48, 48, 0.4)",
+    warnText: "#ff8888",
+    textWarnOrange: "#ff9977",
+    textWarnGold: "#ffdd88",
+    textWarnBright: "#ffcc44",
+    bgWarnDeep: "#1a1a00",
+
+    // Fatigue level indicators
+    textFatigueHigh: "#ff6b6b",
+    textFatigueMed: "#ffd06b",
+
+    // Decision panel
+    bgDecisionOverlay: "rgba(0, 30, 60, 0.92)",
+    bgDecisionSection: "#1a2e1a",
+    bgDecisionButton: "#3a4a6a",
+    textDecisionActive: "#e0f8f0",
+    textDecisionHighlight: "#aaffcc",
+
+    // Overlays
+    overlayDark: "rgba(0, 0, 0, 0.75)",
+    overlayMedDark: "rgba(0, 0, 0, 0.65)",
+    overlayLight: "rgba(0, 0, 0, 0.6)",
+    shadowDark: "rgba(0, 0, 0, 0.9)",
+
+    // Navigation / help button
+    helpButtonBg: "rgba(47, 63, 105, 0.7)",
+    helpButtonBgHover: "rgba(74, 96, 144, 0.9)",
+    navGroupBg: "rgba(47, 63, 105, 0.5)",
+    bgNavSection: "rgba(47, 63, 105, 0.35)",
+    bgFormAlpha15: "rgba(74, 96, 144, 0.15)",
+    bgFormAlpha60: "rgba(74, 96, 144, 0.6)",
+
+    // Player selection highlights
+    bgPlayerSelected: "rgba(106, 176, 224, 0.12)",
+    bgPlayerHover: "rgba(106, 176, 224, 0.18)",
+    bgSubtle: "rgba(255, 255, 255, 0.04)",
+
+    // Exhibition error
+    bgExhibitionError: "rgba(220, 40, 40, 0.15)",
+    borderExhibitionError: "rgba(220, 40, 40, 0.4)",
 
     // Subdued text (between textMuted and textDimmer)
     textSubdued: "#888888",

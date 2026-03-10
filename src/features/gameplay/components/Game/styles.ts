@@ -13,7 +13,7 @@ export const GameDiv = styled.main`
   display: flex;
   flex-direction: column;
   width: min(95vw, 1600px);
-  border: 1px solid #884e4e;
+  border: 1px solid ${({ theme }) => theme.colors.borderGameError};
   padding: 24px;
   margin: 0 auto;
 
@@ -74,7 +74,7 @@ export const FieldPanel = styled.div`
 `;
 
 export const LoadingScreen = styled.p`
-  color: #aaa;
+  color: ${({ theme }) => theme.colors.textMuted};
   text-align: center;
   margin: 48px auto;
   font-family: monospace;
@@ -97,7 +97,7 @@ export const DbResetNotice = styled.div`
 
   button {
     background: none;
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid ${({ theme }) => theme.colors.borderWhiteAlpha};
     color: ${({ theme }) => theme.colors.textPrimary};
     cursor: pointer;
     padding: 2px 8px;
@@ -133,11 +133,11 @@ export const LogPanel = styled.div`
     height: ${MOBILE_LOG_HEIGHT};
     overflow-y: auto;
     background: ${({ theme }) => theme.colors.bgVoid};
-    border-top: 1px solid #333;
+    border-top: 1px solid ${({ theme }) => theme.colors.borderLog};
     border-left: none;
     padding: 8px 16px;
     padding-bottom: env(safe-area-inset-bottom);
-    box-shadow: 0 -6px 12px rgba(0, 0, 0, 0.9);
+    box-shadow: 0 -6px 12px ${({ theme }) => theme.colors.shadowDark};
     z-index: 10;
   }
 `;
