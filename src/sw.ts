@@ -57,6 +57,16 @@ async function activate() {
   log.log(`activate — removed ${count} stale cache(s), calling self.clients.claim()`);
   await self.clients.claim();
   log.log("self.clients.claim() resolved — SW is now controlling all clients");
+
+  // Only notify clients when this is a real update (old caches were replaced),
+  // not on first install where count is 0 and there is nothing to reload.
+  if (count > 0) {
+    const clientList = await self.clients.matchAll({ type: "window" });
+    log.log(`activate — notifying ${clientList.length} client(s) of SW update`);
+    for (const client of clientList) {
+      (client as WindowClient).postMessage({ type: "SW_UPDATED" });
+    }
+  }
 }
 
 self.addEventListener("install", (e) => (e as ExtendableEvent).waitUntil(install()));
