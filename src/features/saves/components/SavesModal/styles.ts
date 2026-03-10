@@ -97,7 +97,7 @@ export const ImportArea = styled.textarea`
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
   font-size: ${({ theme }) => theme.fontSizes.label};
-  padding: 6px ${({ theme }) => theme.spacing.sm};
+  padding: ${({ theme }) => theme.spacing.s6} ${({ theme }) => theme.spacing.sm};
   resize: vertical;
   box-sizing: border-box;
 `;
@@ -120,7 +120,7 @@ export const CloseButton = styled.button`
   display: block;
   margin: ${({ theme }) => theme.spacing.lg} auto 0;
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: darkblue;
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s22};

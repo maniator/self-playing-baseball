@@ -71,6 +71,8 @@ export const theme = {
     accentGreen: "#6effc0",
     accentGreenBright: "#5fffbb",
     accentGold: "#f5c842",
+    /** High-contrast dark text on aquamarine/green accent buttons */
+    btnTextDark: "darkblue",
 
     // Status / interactive
     greenBg: "#1a3a2a",

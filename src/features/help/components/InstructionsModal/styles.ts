@@ -88,7 +88,7 @@ export const CloseButton = styled.button`
   display: block;
   margin: ${({ theme }) => theme.spacing.lg} auto 0;
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: darkblue;
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xxl};

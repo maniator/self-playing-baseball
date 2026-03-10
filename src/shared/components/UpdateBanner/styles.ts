@@ -7,7 +7,7 @@ export const Banner = styled(FixedBottomBanner)`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
     flex-direction: column;

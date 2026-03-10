@@ -163,7 +163,7 @@ export const PlayBallButton = styled.button`
   display: block;
   width: 100%;
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: darkblue;
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.xxl};

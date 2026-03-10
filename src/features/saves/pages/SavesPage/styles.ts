@@ -87,7 +87,7 @@ export const PasteActions = styled.div`
 export const ImportLabel = styled.label`
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: ${({ theme }) => theme.spacing.s10};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
@@ -103,7 +103,7 @@ export const FileInput = styled.input`
     color: ${({ theme }) => theme.colors.textSecondaryLink};
     border: 1px solid ${({ theme }) => theme.colors.borderForm};
     border-radius: ${({ theme }) => theme.radii.md};
-    padding: ${({ theme }) => theme.spacing.xs} 10px;
+    padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.s10};
     font-size: ${({ theme }) => theme.fontSizes.label};
     font-family: inherit;
     cursor: pointer;
@@ -122,5 +122,5 @@ export const ErrorMessage = styled.p`
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
   font-size: ${({ theme }) => theme.fontSizes.base};
-  margin-top: 10px;
+  margin-top: ${({ theme }) => theme.spacing.s10};
 `;

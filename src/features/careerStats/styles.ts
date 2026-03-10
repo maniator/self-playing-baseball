@@ -78,7 +78,7 @@ export const Td = styled.td`
 /** Shown when a page has no data to display. */
 export const EmptyState = styled.p`
   text-align: center;
-  padding: 40px;
+  padding: ${({ theme }) => theme.spacing.s40};
   color: ${({ theme }) => theme.colors.textDimmer};
   font-size: ${({ theme }) => theme.fontSizes.md};
 `;

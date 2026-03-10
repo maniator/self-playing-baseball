@@ -267,7 +267,7 @@ export const ButtonRow = styled.div`
 
 export const SaveBtn = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: darkblue;
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s28};
@@ -291,12 +291,12 @@ export const CancelBtn = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.textSemiLight};
   border: 1px solid ${({ theme }) => theme.colors.borderMid};
-  border-radius: 20px;
-  padding: 10px 24px;
+  border-radius: ${({ theme }) => theme.radii.pill};
+  padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.xxl};
   font-size: ${({ theme }) => theme.fontSizes.md};
   font-family: inherit;
   cursor: pointer;
-  min-height: 44px;
+  min-height: ${({ theme }) => theme.sizes.btnLg};
 
   &:hover {
     background: ${({ theme }) => theme.colors.bgDropdown};
@@ -315,11 +315,11 @@ export const GenerateBtn = styled.button`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   border-radius: ${({ theme }) => theme.radii.md};
-  padding: 7px 14px;
+  padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s14};
   font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
   cursor: pointer;
-  min-height: 36px;
+  min-height: ${({ theme }) => theme.sizes.btnMd};
 
   &:hover {
     background: ${({ theme }) => theme.colors.bgSurface};
@@ -335,8 +335,8 @@ export const GenerateBtn = styled.button`
 export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 6px;
+  gap: ${({ theme }) => theme.spacing.s6};
+  margin-top: ${({ theme }) => theme.spacing.s6};
   font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ $overCap, theme }) => ($overCap ? theme.colors.warnText : theme.colors.textHint)};
 `;
@@ -360,7 +360,7 @@ export const IdentityLockHint = styled.p`
 export const ImportPlayerBtn = styled(AddPlayerBtn)`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   border-color: ${({ theme }) => theme.colors.borderForm};
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.spacing.xs};
 
   &:hover {
     border-color: ${({ theme }) => theme.colors.textSecondaryLink};

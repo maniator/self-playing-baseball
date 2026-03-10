@@ -99,7 +99,7 @@ export const SelectField = styled.select`
 
 export const ActionButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: darkblue;
+  color: ${({ theme }) => theme.colors.btnTextDark};
   border: none;
   border-radius: ${({ theme }) => theme.radii.md};
   padding: 5px ${({ theme }) => theme.spacing.md};

@@ -19,7 +19,7 @@ type ButtonVariant = "default" | "new" | "saves" | "home";
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
     background: ${({ theme }) => theme.colors.accentPrimary};
-    color: darkblue;
+    color: ${({ theme }) => theme.colors.btnTextDark};
     border: none;
   `,
   new: css`
