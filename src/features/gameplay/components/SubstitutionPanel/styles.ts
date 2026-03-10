@@ -5,13 +5,13 @@ export const Panel = styled.div`
   background: ${({ theme }) => theme.colors.bgSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderCard};
   border-radius: ${({ theme }) => theme.radii.lg};
-  padding: 12px 14px;
-  margin-top: 8px;
+  padding: ${({ theme }) => theme.spacing.md} 14px;
+  margin-top: ${({ theme }) => theme.spacing.sm};
   width: 100%;
   max-width: 480px;
 
   ${mq.mobile} {
-    padding: 10px 12px;
+    padding: 10px ${({ theme }) => theme.spacing.md};
     max-width: 100%;
   }
 `;
@@ -34,9 +34,9 @@ export const CloseButton = styled.button`
   background: transparent;
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textSecondaryLink};
-  border-radius: 4px;
-  padding: 2px 8px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.sm};
+  padding: 2px ${({ theme }) => theme.spacing.sm};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   line-height: 1.4;
@@ -67,7 +67,7 @@ export const SectionTitle = styled.h5`
   letter-spacing: 0.6px;
   margin: 0 0 6px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderDark};
-  padding-bottom: 4px;
+  padding-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const Row = styled.div`
@@ -75,17 +75,17 @@ export const Row = styled.div`
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 4px;
+  margin-bottom: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const SelectField = styled.select`
   background: ${({ theme }) => theme.colors.bgInput};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 6px;
-  padding: 4px 8px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
   font-family: inherit;
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   cursor: pointer;
   min-height: 30px;
   flex: 1;
@@ -101,9 +101,9 @@ export const ActionButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
   color: darkblue;
   border: none;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: 5px ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-weight: 700;
   font-family: inherit;
   cursor: pointer;
@@ -126,9 +126,9 @@ export const ActionButton = styled.button`
 `;
 
 export const EmptyNote = styled.p`
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textHint};
-  margin: 2px 0 4px;
+  margin: 2px 0 ${({ theme }) => theme.spacing.xs};
   font-style: italic;
 `;
 
@@ -151,9 +151,9 @@ export const SubButton = styled.button`
   background: transparent;
   color: ${({ theme }) => theme.colors.textSecondaryLink};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.xs} 10px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   font-family: inherit;
   cursor: pointer;
   min-height: 30px;

@@ -16,9 +16,9 @@ export const Panel = styled.div`
 export const CountdownRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   width: 100%;
-  margin-top: 4px;
+  margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
 export const CountdownTrack = styled.div`
