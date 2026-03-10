@@ -57,19 +57,21 @@ export const Th = styled.th<{ $sortable?: boolean }>`
   text-align: left;
   padding: 8px;
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderSubtle};
-  font-size: 12px;
+  font-size: ${({ theme }) => theme.fontSizes.label};
   color: ${({ theme }) => theme.colors.textSubdued};
   font-weight: 600;
   white-space: nowrap;
-  ${({ $sortable }) => $sortable && `cursor: pointer; user-select: none; &:hover { color: #ccc; }`}
+  ${({ $sortable, theme }) =>
+    $sortable &&
+    `cursor: pointer; user-select: none; &:hover { color: ${theme.colors.textLight}; }`}
 `;
 
 /** Table data cell. */
 export const Td = styled.td`
   padding: 8px;
-  border-bottom: 1px solid #1a1a2a;
-  font-size: 13px;
-  color: #ccc;
+  border-bottom: 1px solid ${({ theme }) => theme.colors.borderTableRow};
+  font-size: ${({ theme }) => theme.fontSizes.base};
+  color: ${({ theme }) => theme.colors.textLight};
   white-space: nowrap;
 `;
 
@@ -77,8 +79,8 @@ export const Td = styled.td`
 export const EmptyState = styled.p`
   text-align: center;
   padding: 40px;
-  color: #666;
-  font-size: 14px;
+  color: ${({ theme }) => theme.colors.textDimmer};
+  font-size: ${({ theme }) => theme.fontSizes.md};
 `;
 
 /** Highlighted totals row (used by PlayerCareerPage). */

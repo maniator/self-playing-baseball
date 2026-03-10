@@ -45,8 +45,8 @@ export const TeamSelectorRow = styled.div`
 `;
 
 export const TeamSelectLabel = styled.label`
-  color: #888;
-  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   white-space: nowrap;
 `;
 
@@ -54,9 +54,9 @@ export const TeamSelect = styled.select`
   background: ${({ theme }) => theme.colors.bgSurface};
   color: ${({ theme }) => theme.colors.textBody};
   border: 1px solid ${({ theme }) => theme.colors.borderPanel};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   font-family: inherit;
   cursor: pointer;
   min-width: 200px;

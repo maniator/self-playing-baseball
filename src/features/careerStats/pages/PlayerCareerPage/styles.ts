@@ -38,7 +38,7 @@ export const PlayerCareerContainer = styled.div`
 
 /** Player name heading. */
 export const PlayerName = styled.h1`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   font-size: 1.4rem;
   margin: 0 0 4px;
 
@@ -49,8 +49,8 @@ export const PlayerName = styled.h1`
 
 /** Sub-label below the player name (role info). */
 export const PlayerRoleLabel = styled.p`
-  color: #888;
-  font-size: 13px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.base};
   margin: 0 0 20px;
 `;
 
@@ -63,15 +63,15 @@ export const NavRow = styled.div`
 
 /** Prev/Next button. */
 export const NavBtn = styled.button`
-  background: #1a1a2e;
-  border: 1px solid #333;
-  color: #ccc;
+  background: ${({ theme }) => theme.colors.bgSurfaceAlt};
+  border: 1px solid ${({ theme }) => theme.colors.borderLog};
+  color: ${({ theme }) => theme.colors.textLight};
   padding: 6px 14px;
-  border-radius: 4px;
+  border-radius: ${({ theme }) => theme.radii.sm};
   cursor: pointer;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   &:hover:not(:disabled) {
-    background: #25254a;
+    background: ${({ theme }) => theme.colors.bgPaginationHover};
     color: ${({ theme }) => theme.colors.textPrimary};
   }
   &:disabled {

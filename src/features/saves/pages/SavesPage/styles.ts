@@ -56,18 +56,18 @@ export const ImportSectionTitle = styled.h2`
 export const PasteTextarea = styled.textarea`
   width: 100%;
   min-height: 80px;
-  background: #0a1525;
+  background: ${({ theme }) => theme.colors.bgImport};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   color: ${({ theme }) => theme.colors.textBody};
   font-family: monospace;
-  font-size: 11px;
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   padding: 8px 10px;
   resize: vertical;
   box-sizing: border-box;
 
   &::placeholder {
-    color: #3a5070;
+    color: ${({ theme }) => theme.colors.textDimBlue};
   }
 
   &:focus {
@@ -116,11 +116,11 @@ export const FileInput = styled.input`
 `;
 
 export const ErrorMessage = styled.p`
-  color: #ff7777;
-  background: rgba(80, 0, 0, 0.3);
+  color: ${({ theme }) => theme.colors.dangerText};
+  background: ${({ theme }) => theme.colors.errorBgTransparent};
   border: 1px solid ${({ theme }) => theme.colors.borderDanger};
-  border-radius: 6px;
+  border-radius: ${({ theme }) => theme.radii.md};
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   margin-top: 10px;
 `;

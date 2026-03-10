@@ -12,8 +12,8 @@ export const TeamSummarySection = styled.div`
 `;
 
 export const SummaryHeading = styled.h2`
-  color: #888;
-  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
   text-transform: uppercase;
   letter-spacing: 1px;
   font-weight: 600;
@@ -43,8 +43,8 @@ export const SummaryCell = styled.div`
 `;
 
 export const SummaryCellLabel = styled.span`
-  color: #888;
-  font-size: 10px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
@@ -52,7 +52,7 @@ export const SummaryCellLabel = styled.span`
 
 export const SummaryCellValue = styled.span`
   color: ${({ theme }) => theme.colors.textBody};
-  font-size: 16px;
+  font-size: ${({ theme }) => theme.fontSizes.display};
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 `;
@@ -61,8 +61,8 @@ export const SummaryCellValue = styled.span`
 
 /** Label above a group of leader cards. */
 export const LeadersGroupLabel = styled.h3`
-  color: #888;
-  font-size: 10px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
@@ -113,8 +113,8 @@ export const LeaderCardPlaceholder = styled.div`
 `;
 
 export const LeaderStatLabel = styled.span`
-  color: #888;
-  font-size: 10px;
+  color: ${({ theme }) => theme.colors.textSubdued};
+  font-size: ${({ theme }) => theme.fontSizes.xs};
   text-transform: uppercase;
   letter-spacing: 0.8px;
   font-weight: 600;
@@ -131,12 +131,12 @@ export const LeaderName = styled.span`
 
 export const LeaderValue = styled.span`
   color: ${({ theme }) => theme.colors.accentGreen};
-  font-size: 18px;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
   font-weight: 700;
   font-variant-numeric: tabular-nums;
 `;
 
 export const LeaderPlaceholderText = styled.span`
-  color: #aaa;
-  font-size: 11px;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
 `;
