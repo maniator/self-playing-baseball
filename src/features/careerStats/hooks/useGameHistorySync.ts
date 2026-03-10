@@ -263,5 +263,5 @@ export const useGameHistorySync = (
     }
   });
 
-  return { isCommitting };
+  return React.useMemo(() => ({ isCommitting }), [isCommitting]);
 };
