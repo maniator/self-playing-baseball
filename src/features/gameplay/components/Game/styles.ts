@@ -9,25 +9,25 @@ import styled from "styled-components";
 const MOBILE_LOG_HEIGHT = "33vh";
 
 export const GameDiv = styled.main`
-  color: white;
+  color: ${({ theme }) => theme.colors.textPrimary};
   display: flex;
   flex-direction: column;
   width: min(95vw, 1600px);
   border: 1px solid ${({ theme }) => theme.colors.borderGameError};
-  padding: 24px;
+  padding: ${({ theme }) => theme.spacing.xxl};
   margin: 0 auto;
 
   ${mq.tablet} {
     height: 100dvh;
     overflow: hidden;
-    padding: 16px;
+    padding: ${({ theme }) => theme.spacing.lg};
   }
 
   ${mq.mobile} {
     height: 100dvh;
     overflow: hidden;
     overflow-anchor: none;
-    padding: 12px 16px;
+    padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.lg};
     padding-bottom: calc(${MOBILE_LOG_HEIGHT} + env(safe-area-inset-bottom));
   }
 `;
@@ -35,14 +35,14 @@ export const GameDiv = styled.main`
 export const GameBody = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
   align-items: stretch;
   margin-top: 14px;
 
   ${mq.desktop} {
     display: grid;
     grid-template-columns: 2.2fr 1fr;
-    gap: 20px;
+    gap: ${({ theme }) => theme.spacing.xl};
     align-items: stretch;
   }
 
@@ -50,14 +50,14 @@ export const GameBody = styled.div`
     flex: 1;
     min-height: 0;
     margin-top: 10px;
-    gap: 12px;
+    gap: ${({ theme }) => theme.spacing.md};
   }
 
   ${mq.mobile} {
     flex: 1;
     min-height: 0;
     overflow: hidden;
-    margin-top: 8px;
+    margin-top: ${({ theme }) => theme.spacing.sm};
     gap: 0;
   }
 `;
@@ -88,11 +88,11 @@ export const DbResetNotice = styled.div`
   z-index: 9999;
   background: ${({ theme }) => theme.colors.goldWarn};
   color: ${({ theme }) => theme.colors.textPrimary};
-  padding: 10px 16px;
+  padding: 10px ${({ theme }) => theme.spacing.lg};
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: ${({ theme }) => theme.spacing.md};
   font-size: 0.9rem;
 
   button {
@@ -100,8 +100,8 @@ export const DbResetNotice = styled.div`
     border: 1px solid ${({ theme }) => theme.colors.borderWhiteAlpha};
     color: ${({ theme }) => theme.colors.textPrimary};
     cursor: pointer;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 2px ${({ theme }) => theme.spacing.sm};
+    border-radius: ${({ theme }) => theme.radii.sm};
     font-size: 1rem;
   }
 `;
@@ -110,12 +110,12 @@ export const LogPanel = styled.div`
   min-width: 0;
   overflow-y: auto;
   border-top: 1px solid ${({ theme }) => theme.colors.borderGameSection};
-  padding-top: 8px;
+  padding-top: ${({ theme }) => theme.spacing.sm};
 
   ${mq.desktop} {
     border-top: none;
     border-left: 1px solid ${({ theme }) => theme.colors.borderGameSection};
-    padding-left: 16px;
+    padding-left: ${({ theme }) => theme.spacing.lg};
     padding-top: 0;
   }
 
@@ -135,7 +135,7 @@ export const LogPanel = styled.div`
     background: ${({ theme }) => theme.colors.bgVoid};
     border-top: 1px solid ${({ theme }) => theme.colors.borderLog};
     border-left: none;
-    padding: 8px 16px;
+    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
     padding-bottom: env(safe-area-inset-bottom);
     box-shadow: 0 -6px 12px ${({ theme }) => theme.colors.shadowDark};
     z-index: 10;

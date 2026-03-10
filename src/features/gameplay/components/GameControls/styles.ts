@@ -6,11 +6,11 @@ export const Controls = styled.div`
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  padding: 8px 0;
+  padding: ${({ theme }) => theme.spacing.sm} 0;
 
   ${mq.mobile} {
     gap: 6px;
-    padding: 4px 0;
+    padding: ${({ theme }) => theme.spacing.xs} 0;
   }
 `;
 
@@ -49,34 +49,34 @@ const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
 };
 
 export const Button = styled.button<{ $variant?: ButtonVariant }>`
-  padding: 12px 18px;
+  padding: ${({ theme }) => theme.spacing.md} 18px;
   border-radius: 30px;
   cursor: pointer;
   font-family: inherit;
-  font-size: 14px;
+  font-size: ${({ theme }) => theme.fontSizes.md};
   ${({ $variant = "default" }) => variantStyles[$variant]}
 
   ${mq.desktop} {
-    font-size: 15px;
+    font-size: ${({ theme }) => theme.fontSizes.lg};
   }
 
   ${mq.mobile} {
-    padding: 8px 12px;
-    font-size: 13px;
+    padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+    font-size: ${({ theme }) => theme.fontSizes.base};
   }
 `;
 
 export const AutoPlayGroup = styled.div`
   display: inline-flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: ${({ theme }) => theme.spacing.sm};
   align-items: center;
   background: ${({ theme }) => theme.colors.navGroupBg};
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
 
   ${mq.mobile} {
-    padding: 5px 8px;
+    padding: 5px ${({ theme }) => theme.spacing.sm};
     gap: 6px;
   }
 `;
@@ -85,7 +85,7 @@ export const ToggleLabel = styled.label`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   cursor: pointer;
 
   & input[type="checkbox"] {
@@ -96,18 +96,18 @@ export const ToggleLabel = styled.label`
   }
 
   ${mq.notMobile} {
-    font-size: 14px;
+    font-size: ${({ theme }) => theme.fontSizes.md};
   }
 `;
 
 export const BatterUpButton = styled(Button)`
-  font-size: 18px;
-  padding: 16px 28px;
+  font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
+  padding: ${({ theme }) => theme.spacing.lg} 28px;
   font-weight: bold;
 
   ${mq.desktop} {
     font-size: 20px;
-    padding: 18px 32px;
+    padding: 18px ${({ theme }) => theme.spacing.xxxl};
   }
 `;
 
@@ -135,9 +135,9 @@ export const Select = styled.select`
   background: ${({ theme }) => theme.colors.bgInputSm};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
   color: ${({ theme }) => theme.colors.textPrimary};
-  border-radius: 8px;
+  border-radius: ${({ theme }) => theme.radii.lg};
   padding: 3px 6px;
   cursor: pointer;
-  font-size: 13px;
+  font-size: ${({ theme }) => theme.fontSizes.base};
   font-family: inherit;
 `;
