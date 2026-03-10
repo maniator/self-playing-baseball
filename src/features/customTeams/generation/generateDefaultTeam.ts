@@ -1,6 +1,8 @@
 import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "@feat/customTeams/statBudget";
 import { BATTING_POSITIONS } from "@shared/utils/roster";
 
+import { CITIES, FIRST_NAMES, LAST_NAMES, NICKNAMES } from "./nameConstants";
+
 export interface GeneratedPlayer {
   id: string;
   name: string;
@@ -25,108 +27,6 @@ export interface CustomTeamDraft {
   };
 }
 
-const CITIES = [
-  "Austin",
-  "Boston",
-  "Charlotte",
-  "Denver",
-  "Detroit",
-  "Indianapolis",
-  "Jacksonville",
-  "Las Vegas",
-  "Memphis",
-  "Nashville",
-  "Orlando",
-  "Portland",
-  "Sacramento",
-  "San Antonio",
-  "Tampa",
-];
-
-const NICKNAMES = [
-  "Aces",
-  "Bears",
-  "Comets",
-  "Dynamo",
-  "Eagles",
-  "Foxes",
-  "Giants",
-  "Hawks",
-  "Iron",
-  "Jets",
-  "Kings",
-  "Lions",
-  "Marlins",
-  "Navigators",
-  "Owls",
-  "Pioneers",
-  "Raiders",
-  "Rockets",
-  "Stallions",
-  "Thunder",
-  "Titans",
-  "Vipers",
-  "Wolves",
-];
-
-const FIRST_NAMES = [
-  "Aaron",
-  "Ben",
-  "Carlos",
-  "Danny",
-  "Eric",
-  "Frank",
-  "Gary",
-  "Henry",
-  "Ivan",
-  "Jake",
-  "Karl",
-  "Leo",
-  "Marcus",
-  "Nathan",
-  "Oscar",
-  "Pete",
-  "Quinn",
-  "Ray",
-  "Sam",
-  "Tom",
-  "Upton",
-  "Victor",
-  "Wade",
-  "Xavier",
-  "Yogi",
-  "Zane",
-];
-
-const LAST_NAMES = [
-  "Adams",
-  "Baker",
-  "Cole",
-  "Davis",
-  "Evans",
-  "Ford",
-  "Grant",
-  "Hill",
-  "Irwin",
-  "Jones",
-  "Kent",
-  "Lane",
-  "Moore",
-  "Nash",
-  "Owen",
-  "Park",
-  "Quinn",
-  "Reed",
-  "Scott",
-  "Turner",
-  "Urban",
-  "Vega",
-  "Walsh",
-  "Xiong",
-  "Young",
-  "Zavala",
-];
-
 const makeMulberry32 = (a: number): (() => number) => {
   return (): number => {
     a += 0x6d2b79f5;
@@ -147,7 +47,8 @@ const seedToNumber = (seed: string | number): number => {
 const randInt = (rng: () => number, min: number, max: number): number =>
   Math.floor(rng() * (max - min + 1)) + min;
 
-const pickFrom = <T>(rng: () => number, arr: T[]): T => arr[Math.floor(rng() * arr.length)];
+const pickFrom = <T>(rng: () => number, arr: ReadonlyArray<T>): T =>
+  arr[Math.floor(rng() * arr.length)];
 
 /** Fisher-Yates in-place shuffle using the seeded RNG. Returns the same array. */
 const shuffle = <T>(rng: () => number, arr: T[]): T[] => {
