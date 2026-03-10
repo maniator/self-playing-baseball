@@ -15,7 +15,7 @@ export const Banner = styled.div`
   align-items: center;
   justify-content: space-between;
   gap: ${({ theme }) => theme.spacing.md};
-  font-size: 0.875rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
 
   ${mq.mobile} {
     flex-direction: column;
@@ -40,11 +40,11 @@ export const Actions = styled.div`
 export const ReloadButton = styled.button`
   background: ${({ theme }) => theme.colors.buttonNewBg};
   border: none;
-  color: #000;
+  color: ${({ theme }) => theme.colors.bgVoid};
   cursor: pointer;
-  padding: 5px 14px;
+  padding: 5px ${({ theme }) => theme.spacing.s14};
   border-radius: ${({ theme }) => theme.radii.sm};
-  font-size: 0.875rem;
+  font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
   font-weight: bold;
   min-height: 32px;
