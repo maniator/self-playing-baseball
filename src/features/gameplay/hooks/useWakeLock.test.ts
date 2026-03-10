@@ -34,13 +34,21 @@ const removeWakeLock = () => {
   delete (navigator as any).wakeLock;
 };
 
+let originalVisibilityStateDescriptor: PropertyDescriptor | undefined;
+
 beforeEach(() => {
+  originalVisibilityStateDescriptor = Object.getOwnPropertyDescriptor(document, "visibilityState");
   vi.spyOn(loggerModule.appLog, "warn").mockImplementation(() => {});
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
   removeWakeLock();
+  if (originalVisibilityStateDescriptor) {
+    Object.defineProperty(document, "visibilityState", originalVisibilityStateDescriptor);
+  } else {
+    delete (document as any).visibilityState;
+  }
 });
 
 describe("useWakeLock", () => {
@@ -209,6 +217,30 @@ describe("useWakeLock", () => {
 
     // Should NOT reacquire — visibilitychange handler will do it when tab becomes visible
     expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not reacquire on unmount even when page is visible and active was true", async () => {
+    const sentinel = makeMockSentinel();
+    installWakeLock(sentinel);
+
+    Object.defineProperty(document, "visibilityState", {
+      configurable: true,
+      value: "visible",
+    });
+
+    const { unmount } = renderHook(() => useWakeLock(true));
+    await act(async () => {});
+
+    // Unmount while active=true and page is visible — cleanup calls release(),
+    // which fires the sentinel release event. The handler must NOT reacquire.
+    await act(async () => {
+      unmount();
+    });
+
+    // release() triggered the sentinel release event, but the ref was already
+    // cleared — so request should only have been called once (initial acquire).
+    expect((navigator as any).wakeLock.request).toHaveBeenCalledTimes(1);
+    expect(sentinel.release).toHaveBeenCalledTimes(1);
   });
 
   it("does not reacquire from sentinel release event when no longer active", async () => {

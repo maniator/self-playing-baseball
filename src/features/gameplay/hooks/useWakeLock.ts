@@ -33,8 +33,15 @@ export const useWakeLock = (active: boolean): void => {
       sentinel.addEventListener(
         "release",
         () => {
-          if (activeRef.current && document.visibilityState === "visible") {
-            // Clear the released sentinel before attempting a fresh acquire.
+          // Only reacquire for an OS-policy drop, not for an explicit release()
+          // call from cleanup/unmount. release() clears wakeLockRef.current
+          // *before* awaiting sentinel.release(), so if the ref has already been
+          // cleared the event was triggered by our own release call — skip.
+          if (
+            wakeLockRef.current === sentinel &&
+            activeRef.current &&
+            document.visibilityState === "visible"
+          ) {
             wakeLockRef.current = null;
             void acquire();
           }
