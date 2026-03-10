@@ -92,7 +92,7 @@ export const splitBudgetNatural = (
   let leftover = effectiveBudget - portions[0] - portions[1] - portions[2];
   // Largest-remainder: give each surplus point to the portion with the highest
   // fractional part that still has capacity. Ties are broken with rng() so the
-  // redistribution does not favour any particular stat position.
+  // redistribution does not favor any particular stat position.
   // Once all fractional priorities are consumed (fracs all -1), fall back to
   // spreading any remaining surplus uniformly at random among portions that
   // still have capacity, so the total always equals effectiveBudget.

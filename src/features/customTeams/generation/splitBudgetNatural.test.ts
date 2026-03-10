@@ -12,7 +12,7 @@ const makeSeqRng = (values: number[]) => {
 };
 
 describe("splitBudgetNatural", () => {
-  describe("invalid input guards — return [0, 0, 0]", () => {
+  describe("guard cases — return [0, 0, 0]", () => {
     it("budget = 0", () => {
       expect(splitBudgetNatural(makeConstRng(0.5), { budget: 0, maxEach: 50 })).toEqual([0, 0, 0]);
     });
@@ -24,14 +24,6 @@ describe("splitBudgetNatural", () => {
     it("budget = NaN", () => {
       expect(splitBudgetNatural(makeConstRng(0.5), { budget: NaN, maxEach: 50 })).toEqual([
         0, 0, 0,
-      ]);
-    });
-
-    it("budget = Infinity (clamped to 3 * maxEach)", () => {
-      // Positive Infinity is allowed — effectiveBudget = min(Infinity, 3*50) = 150.
-      // Uniform rng gives equal weights → [50, 50, 50].
-      expect(splitBudgetNatural(makeConstRng(0.5), { budget: Infinity, maxEach: 50 })).toEqual([
-        50, 50, 50,
       ]);
     });
 
@@ -59,7 +51,7 @@ describe("splitBudgetNatural", () => {
       ]);
     });
 
-    it("maxEach = 0 (no capacity)", () => {
+    it("maxEach = 0 (zero capacity)", () => {
       expect(splitBudgetNatural(makeConstRng(0.5), { budget: 30, maxEach: 0 })).toEqual([0, 0, 0]);
     });
   });
@@ -68,6 +60,14 @@ describe("splitBudgetNatural", () => {
     it("portions sum to budget when budget <= 3 * maxEach", () => {
       const [a, b, c] = splitBudgetNatural(makeConstRng(0.5), { budget: 90, maxEach: 80 });
       expect(a + b + c).toBe(90);
+    });
+
+    it("positive Infinity budget is clamped to 3 * maxEach", () => {
+      // Positive Infinity is allowed — effectiveBudget = min(Infinity, 3*50) = 150.
+      // Uniform rng gives equal weights → [50, 50, 50].
+      expect(splitBudgetNatural(makeConstRng(0.5), { budget: Infinity, maxEach: 50 })).toEqual([
+        50, 50, 50,
+      ]);
     });
 
     it("portions sum to 3 * maxEach when budget > 3 * maxEach (clamped)", () => {
