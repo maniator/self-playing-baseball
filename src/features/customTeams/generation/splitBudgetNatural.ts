@@ -15,9 +15,10 @@ export interface SplitBudgetNaturalOptions {
  *
  * `budget` and `maxEach` are each floored to non-negative integers:
  * `intBudget = max(0, floor(budget))` and `intMaxEach = max(0, floor(maxEach))`.
- * `NaN` or negative `budget` returns `[0, 0, 0]` immediately. Positive
- * `Infinity` is allowed and gets clamped to `3 * intMaxEach`. Non-finite
- * `maxEach` (NaN or ±Infinity) also returns `[0, 0, 0]`.
+ * Any `budget` that floors to 0 or below — including zero, negative values,
+ * and fractional values in `(0, 1)` — returns `[0, 0, 0]` immediately, as does
+ * `NaN`. Positive `Infinity` is allowed and gets clamped to `3 * intMaxEach`.
+ * Non-finite `maxEach` (NaN or ±Infinity) also returns `[0, 0, 0]`.
  *
  * The function then clamps the total distributable budget to
  * `effectiveBudget = min(intBudget, 3 * intMaxEach)`.
@@ -32,9 +33,10 @@ export const splitBudgetNatural = (
   rng: () => number,
   { budget, maxEach }: SplitBudgetNaturalOptions,
 ): [number, number, number] => {
-  // Guard: non-positive or NaN budget yields all-zeros. Positive Infinity is
+  // Guard: budget that floors to 0 or below (covers zero, negative, and the
+  // fractional (0,1) range) and NaN both yield all-zeros. Positive Infinity is
   // allowed and will be clamped by effectiveBudget = min(intBudget, 3 * intMaxEach).
-  if (budget <= 0 || Number.isNaN(budget)) {
+  if (Math.floor(budget) <= 0 || Number.isNaN(budget)) {
     return [0, 0, 0];
   }
   // Guard: non-finite maxEach (NaN / Infinity) would propagate through all
@@ -54,8 +56,9 @@ export const splitBudgetNatural = (
   // without throwing a runtime error that would break the UI.
   const effectiveBudget = Math.min(intBudget, 3 * intMaxEach);
 
-  // Short-circuit: if there is nothing to distribute (e.g. budget was between
-  // 0 and 1, or maxEach is 0), return zeros without consuming any RNG draws.
+  // Short-circuit: if there is nothing to distribute (e.g. maxEach is 0 or
+  // budget was clamped to 0 by the capacity ceiling), return zeros without
+  // consuming any RNG draws.
   if (effectiveBudget === 0) {
     return [0, 0, 0];
   }
