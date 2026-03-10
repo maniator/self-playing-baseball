@@ -9,14 +9,20 @@ export interface SplitBudgetNaturalOptions {
  * Splits `budget` extra points into 3 naturally distributed portions using a
  * Dirichlet-inspired scheme: each raw weight (`wa`, `wb`, `wc`) is the sum of
  * 2 independent uniform draws, then the weights are converted to proportions
- * of `budget`. This centers the split around budget/3 per portion (like
- * rolling 2 dice each) so individual stats rarely dominate while still
- * spanning the full cap range.
- * All three portions are floored and capped at `maxEach`. Any leftover from
- * flooring or clamping is redistributed using the largest-remainder method
- * (ties broken with `rng`) so the split stays symmetric and the portions
- * always sum to exactly `budget` (or to `3 * maxEach` when `budget` exceeds
- * total capacity, in which case `budget` is silently clamped down).
+ * of an integer `effectiveBudget`. This centers the split around
+ * effectiveBudget/3 per portion (like rolling 2 dice each) so individual stats
+ * rarely dominate while still spanning the full cap range.
+ *
+ * Both `budget` and `maxEach` are floored to non-negative integers:
+ * `intBudget = floor(budget)` and `intMaxEach = max(0, floor(maxEach))`. The
+ * function then clamps the total distributable budget to
+ * `effectiveBudget = min(intBudget, 3 * intMaxEach)`.
+ *
+ * All three portions are integers, each in the range `[0, intMaxEach]`. Any
+ * leftover from flooring or clamping is redistributed using the
+ * largest-remainder method (ties broken with `rng`) so the split stays
+ * symmetric and the portions always sum to exactly `effectiveBudget` (which is
+ * equal to `intBudget` when `budget` is within total capacity).
  */
 export const splitBudgetNatural = (
   rng: () => number,
@@ -24,6 +30,11 @@ export const splitBudgetNatural = (
 ): [number, number, number] => {
   // Guard: non-positive or invalid budget yields all-zeros.
   if (budget <= 0 || !Number.isFinite(budget)) {
+    return [0, 0, 0];
+  }
+  // Guard: non-finite maxEach (NaN / Infinity) would propagate through all
+  // downstream arithmetic, so treat it the same as a zero cap.
+  if (!Number.isFinite(maxEach)) {
     return [0, 0, 0];
   }
 
