@@ -7,9 +7,9 @@ export const Banner = styled.div`
   left: 0;
   right: 0;
   z-index: 9998;
-  background: #3d2a00;
-  color: #fde68a;
-  border-top: 2px solid #92400e;
+  background: #0d1b2e;
+  color: #cce0ff;
+  border-top: 2px solid #4a6090;
   padding: 10px 16px;
   display: flex;
   align-items: center;
@@ -56,8 +56,8 @@ export const ReloadButton = styled.button`
 
 export const DismissButton = styled.button`
   background: none;
-  border: 1px solid rgba(253, 230, 138, 0.35);
-  color: #fde68a;
+  border: 1px solid #4a6090;
+  color: #cce0ff;
   cursor: pointer;
   padding: 4px 10px;
   border-radius: 4px;
@@ -66,6 +66,7 @@ export const DismissButton = styled.button`
   min-height: 32px;
 
   &:hover {
-    border-color: rgba(253, 230, 138, 0.6);
+    border-color: #88bbee;
+    color: #fff;
   }
 `;
