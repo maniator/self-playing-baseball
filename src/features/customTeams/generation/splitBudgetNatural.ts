@@ -1,0 +1,90 @@
+/**
+ * Splits `budget` extra points into 3 naturally distributed portions using a
+ * Dirichlet-inspired scheme: each raw weight (`wa`, `wb`, `wc`) is the sum of
+ * 2 independent uniform draws, then the weights are converted to proportions
+ * of `budget`. This centres the split around budget/3 per portion (like
+ * rolling 2 dice each) so individual stats rarely dominate while still
+ * spanning the full cap range.
+ * All three portions are floored and capped at `maxEach`. Any leftover from
+ * flooring or clamping is redistributed using the largest-remainder method
+ * (ties broken with `rng`) so the split stays symmetric and the portions
+ * always sum to exactly `budget` (or to `3 * maxEach` when `budget` exceeds
+ * total capacity, in which case `budget` is silently clamped down).
+ */
+export const splitBudgetNatural = (
+  rng: () => number,
+  budget: number,
+  maxEach: number,
+): [number, number, number] => {
+  // Guard: non-positive or invalid budget yields all-zeros.
+  if (budget <= 0 || !Number.isFinite(budget)) {
+    return [0, 0, 0];
+  }
+
+  // Clamp budget to the maximum distributable across all three portions so
+  // that the function always returns portions summing to the (clamped) budget
+  // without throwing a runtime error that would break the UI.
+  const effectiveBudget = Math.min(budget, 3 * maxEach);
+
+  const wa = rng() + rng();
+  const wb = rng() + rng();
+  const wc = rng() + rng();
+  const wTotal = wa + wb + wc;
+
+  // Defensive fallback: if all six draws were exactly 0 (practically impossible
+  // with a real PRNG, but guarded against), treat the three weights as equal.
+  const w1 = wTotal > 0 ? wa / wTotal : 1 / 3;
+  const w2 = wTotal > 0 ? wb / wTotal : 1 / 3;
+  const w3 = wTotal > 0 ? wc / wTotal : 1 / 3;
+
+  const raw1 = w1 * effectiveBudget;
+  const raw2 = w2 * effectiveBudget;
+  const raw3 = w3 * effectiveBudget;
+
+  const portions: [number, number, number] = [
+    Math.min(Math.floor(raw1), maxEach),
+    Math.min(Math.floor(raw2), maxEach),
+    Math.min(Math.floor(raw3), maxEach),
+  ];
+  const capacities = portions.map((p) => maxEach - p);
+  // Fractional parts of the raw proportions drive the largest-remainder
+  // redistribution. A used fraction is set to -1 so the next surplus point
+  // goes to a different portion.
+  const fracs = [raw1 % 1, raw2 % 1, raw3 % 1];
+
+  let leftover = effectiveBudget - portions[0] - portions[1] - portions[2];
+  // Largest-remainder: give each surplus point to the portion with the highest
+  // fractional part that still has capacity. Ties are broken with rng() so the
+  // redistribution does not favour any particular stat position.
+  // Once all fractional priorities are consumed (fracs all -1), fall back to
+  // spreading any remaining surplus uniformly at random among portions that
+  // still have capacity, so the total always equals effectiveBudget.
+  while (leftover > 0) {
+    let maxFrac = -1;
+    for (let i = 0; i < 3; i++) {
+      if (capacities[i] > 0 && fracs[i] > maxFrac) maxFrac = fracs[i];
+    }
+
+    let candidates: readonly number[];
+    const useFracs = maxFrac >= 0;
+    if (useFracs) {
+      candidates = ([0, 1, 2] as const).filter((i) => capacities[i] > 0 && fracs[i] === maxFrac);
+    } else {
+      // All fractional priorities used up; spread remaining surplus randomly
+      // among any portion that still has room below maxEach.
+      candidates = ([0, 1, 2] as const).filter((i) => capacities[i] > 0);
+      if (candidates.length === 0) break; // truly no capacity left anywhere
+    }
+
+    const chosen =
+      candidates.length === 1 ? candidates[0] : candidates[Math.floor(rng() * candidates.length)];
+    portions[chosen]++;
+    capacities[chosen]--;
+    if (useFracs) {
+      fracs[chosen] = -1; // mark as used so the next point goes elsewhere
+    }
+    leftover--;
+  }
+
+  return portions;
+};
