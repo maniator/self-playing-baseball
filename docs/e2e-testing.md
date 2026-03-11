@@ -10,15 +10,15 @@ Playwright E2E tests live in `e2e/` and are separate from the Vitest unit tests 
 
 `playwright.config.ts` defines **7 projects**:
 
-| Project | Browser | Viewport | Runs |
-|---|---|---|---|
-| `determinism` | Desktop Chrome | 1280×800 | `determinism.spec.ts` only |
-| `desktop` | Desktop Chrome | 1280×800 | all except `determinism.spec.ts` |
-| `tablet` | WebKit (iPad gen 7) | 820×1180 | all except `determinism.spec.ts` |
-| `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739 | all except `determinism.spec.ts` |
-| `iphone-15` | WebKit (iPhone 15) | 393×659 | all except `determinism.spec.ts` |
-| `pixel-7` | Chromium (Pixel 7) | 412×839 | all except `determinism.spec.ts` |
-| `pixel-5` | Chromium (Pixel 5) | 393×727 | all except `determinism.spec.ts` |
+| Project             | Browser                    | Viewport | Runs                             |
+| ------------------- | -------------------------- | -------- | -------------------------------- |
+| `determinism`       | Desktop Chrome             | 1280×800 | `determinism.spec.ts` only       |
+| `desktop`           | Desktop Chrome             | 1280×800 | all except `determinism.spec.ts` |
+| `tablet`            | WebKit (iPad gen 7)        | 820×1180 | all except `determinism.spec.ts` |
+| `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739  | all except `determinism.spec.ts` |
+| `iphone-15`         | WebKit (iPhone 15)         | 393×659  | all except `determinism.spec.ts` |
+| `pixel-7`           | Chromium (Pixel 7)         | 412×839  | all except `determinism.spec.ts` |
+| `pixel-5`           | Chromium (Pixel 5)         | 393×727  | all except `determinism.spec.ts` |
 
 The `determinism` project is intentionally isolated to desktop because it spawns two sequential fresh browser contexts per test — running it on all 6 device projects would multiply CI time by 6× for no additional coverage value (PRNG determinism is not viewport-dependent).
 
@@ -31,22 +31,22 @@ The `determinism` project is intentionally isolated to desktop because it spawns
 
 ### Helper functions (`e2e/utils/helpers.ts`)
 
-| Helper | Purpose |
-|---|---|
-| `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
-| `startGameViaPlayBall(page, options?)` | Navigate to `/exhibition/new`, fill seed-input field (if provided), configure teams, click Play Ball |
-| `configureNewGame(page, options?)` | Fill seed/team fields on `/exhibition/new` without submitting |
-| `loadFixture(page, fixtureName)` | Navigate to `/` → Load Saved Game → import file fixture → auto-load restores state — self-contained, no prior `resetAppState` needed |
-| `waitForLogLines(page, count, timeout?)` | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout) |
-| `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string |
-| `openSavesModal(page)` | Click saves button, wait for modal |
-| `saveCurrentGame(page)` | Open modal + click Save current game |
-| `loadFirstSave(page)` | Open modal + click first Load button, wait for modal to close |
-| `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path (requires active game) |
-| `assertFieldAndLogVisible(page)` | Assert field-view + scoreboard visible with non-zero bounding boxes |
-| `disableAnimations(page)` | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
-| `computeTeamsSignature(page, payload)` | Evaluate `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))` in the browser page context |
-| `importTeamsFixture(page, fixtureName)` | Navigate to `/teams`, set `import-teams-file-input` to fixture path, wait for `import-teams-success` |
+| Helper                                               | Purpose                                                                                                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `resetAppState(page)`                                | Navigate to `/` and wait for DB loading to finish                                                                                    |
+| `startGameViaPlayBall(page, options?)`               | Navigate to `/exhibition/new`, fill seed-input field (if provided), configure teams, click Play Ball                                 |
+| `configureNewGame(page, options?)`                   | Fill seed/team fields on `/exhibition/new` without submitting                                                                        |
+| `loadFixture(page, fixtureName)`                     | Navigate to `/` → Load Saved Game → import file fixture → auto-load restores state — self-contained, no prior `resetAppState` needed |
+| `waitForLogLines(page, count, timeout?)`             | Expand log if collapsed, poll until ≥ count entries (default 60 s timeout)                                                           |
+| `captureGameSignature(page, minLines?, logTimeout?)` | Wait for entries, read `data-log-index` 0–4, return joined string                                                                    |
+| `openSavesModal(page)`                               | Click saves button, wait for modal                                                                                                   |
+| `saveCurrentGame(page)`                              | Open modal + click Save current game                                                                                                 |
+| `loadFirstSave(page)`                                | Open modal + click first Load button, wait for modal to close                                                                        |
+| `importSaveFromFixture(page, fixtureName)`           | Open modal + set file input to fixture path (requires active game)                                                                   |
+| `assertFieldAndLogVisible(page)`                     | Assert field-view + scoreboard visible with non-zero bounding boxes                                                                  |
+| `disableAnimations(page)`                            | Inject CSS to zero all animation/transition durations (use before visual snapshots)                                                  |
+| `computeTeamsSignature(page, payload)`               | Evaluate `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))` in the browser page context                                             |
+| `importTeamsFixture(page, fixtureName)`              | Navigate to `/teams`, set `import-teams-file-input` to fixture path, wait for `import-teams-success`                                 |
 
 ### `data-testid` reference
 
@@ -79,6 +79,7 @@ When an intentional UI change requires new baselines, you have two options:
 **Option 1 — Use the `e2e-test-runner` agent (preferred for Copilot sessions):** The agent runs `--update-snapshots` inside the same Docker container and commits the updated PNGs directly to the branch in the same session. No workflow wait required. See `.github/agents/e2e-test-runner.md` for the exact `docker run` commands.
 
 **Option 2 — Use the `update-visual-snapshots` GitHub Actions workflow:**
+
 - It fires **automatically** on every push to any non-master branch.
 - For manual control: **Actions → "Update Visual Snapshots" → Run workflow → select your branch → Run workflow**.
 - The workflow runs inside the same Playwright container as CI, regenerates all snapshot PNGs, and commits them back to your branch (without `[skip ci]`), so `playwright-e2e.yml` runs against the updated baselines on that commit.
@@ -88,19 +89,22 @@ Do **not** regenerate snapshots unless you are intentionally changing a visual.
 ### Workflow sequencing for snapshot changes
 
 When you push a commit that changes the app or its tests, **two things happen**:
-1. `update-visual-snapshots` fires (auto-trigger), regenerates PNGs in the CI container, and commits them back to the branch.
-2. `playwright-e2e` fires against the *original* commit — this run may fail if the new test has no baseline yet.
 
-Once `update-visual-snapshots` commits the new baselines, a *second* `playwright-e2e` run is triggered against that commit. That run uses the fresh baselines and should pass. The initial failure on the original commit is expected and self-correcting.
+1. `update-visual-snapshots` fires (auto-trigger), regenerates PNGs in the CI container, and commits them back to the branch.
+2. `playwright-e2e` fires against the _original_ commit — this run may fail if the new test has no baseline yet.
+
+Once `update-visual-snapshots` commits the new baselines, a _second_ `playwright-e2e` run is triggered against that commit. That run uses the fresh baselines and should pass. The initial failure on the original commit is expected and self-correcting.
 
 ### CI
 
 `.github/workflows/playwright-e2e.yml` — pure test runner; does **not** regenerate or commit snapshots:
+
 1. `yarn build` — produces `dist/` for `vite preview`
 2. `npx playwright test` — runs all projects headlessly (browser binaries pre-installed in the container)
 3. Uploads `playwright-report/` + `test-results/` as artifacts on failure
 
 `.github/workflows/update-visual-snapshots.yml` — snapshot regeneration workflow (auto-triggers on every push to non-master branches):
+
 - Runs inside the **same** `mcr.microsoft.com/playwright:v1.58.2-noble` container as `playwright-e2e.yml`.
 - **Auto-trigger:** every push to any non-master branch.
 - **Manual trigger:** Actions → "Update Visual Snapshots" → Run workflow → select branch.
@@ -115,14 +119,14 @@ Pre-crafted save files in `e2e/fixtures/` let E2E tests jump straight into a spe
 
 ### When to use a fixture instead of `startGameViaPlayBall`
 
-| Situation | Use fixture? |
-|---|---|
-| Need a manager decision panel visible immediately | ✅ `pending-decision.json` |
-| Need specific pending decision (pinch hitter, shift, etc.) | ✅ craft a new fixture |
-| Need RBI / stats already on the board | ✅ `mid-game-with-rbi.json` |
-| Testing visual snapshot of a mid-game UI element | ✅ craft a fixture for that state |
+| Situation                                                            | Use fixture?                            |
+| -------------------------------------------------------------------- | --------------------------------------- |
+| Need a manager decision panel visible immediately                    | ✅ `pending-decision.json`              |
+| Need specific pending decision (pinch hitter, shift, etc.)           | ✅ craft a new fixture                  |
+| Need RBI / stats already on the board                                | ✅ `mid-game-with-rbi.json`             |
+| Testing visual snapshot of a mid-game UI element                     | ✅ craft a fixture for that state       |
 | Testing correctness of the simulation (seed regression, determinism) | ❌ must use real `startGameViaPlayBall` |
-| Testing the full game-completion flow (FINAL banner) | ❌ must use real autoplay |
+| Testing the full game-completion flow (FINAL banner)                 | ❌ must use real autoplay               |
 
 ### The `loadFixture` helper
 
@@ -138,15 +142,15 @@ await loadFixture(page, "pending-decision.json");
 
 ### Available fixtures
 
-| File | State summary | Covers |
-|---|---|---|
-| `sample-save.json` | Inning 2, Mets vs Yankees, no pending decision | Import smoke tests |
-| `pending-decision.json` | Inning 4 bottom, defensive_shift pending, managerMode on | Manager decision panel UI, notification smoke |
-| `pending-decision-pinch-hitter.json` | Inning 7 top, pinch_hitter pending + 2 candidates, default teams | Pinch-hitter dropdown visual snapshot |
-| `pending-decision-pinch-hitter-teams.json` | Same as above but with custom teams + player sigs in the bundle | Signed custom-team fixture with player fingerprints |
-| `mid-game-with-rbi.json` | Inning 5 top, 3-2 score, playLog has RBI entries | RBI stats display + save/reload persistence |
-| `finished-game.json` | Completed game, FINAL banner shown | Game-over state regression tests |
-| `legacy-teams-no-fingerprints.json` | Pre-v2 teams bundle (no player or team fingerprints) | Legacy import migration regression |
+| File                                       | State summary                                                    | Covers                                              |
+| ------------------------------------------ | ---------------------------------------------------------------- | --------------------------------------------------- |
+| `sample-save.json`                         | Inning 2, Mets vs Yankees, no pending decision                   | Import smoke tests                                  |
+| `pending-decision.json`                    | Inning 4 bottom, defensive_shift pending, managerMode on         | Manager decision panel UI, notification smoke       |
+| `pending-decision-pinch-hitter.json`       | Inning 7 top, pinch_hitter pending + 2 candidates, default teams | Pinch-hitter dropdown visual snapshot               |
+| `pending-decision-pinch-hitter-teams.json` | Same as above but with custom teams + player sigs in the bundle  | Signed custom-team fixture with player fingerprints |
+| `mid-game-with-rbi.json`                   | Inning 5 top, 3-2 score, playLog has RBI entries                 | RBI stats display + save/reload persistence         |
+| `finished-game.json`                       | Completed game, FINAL banner shown                               | Game-over state regression tests                    |
+| `legacy-teams-no-fingerprints.json`        | Pre-v2 teams bundle (no player or team fingerprints)             | Legacy import migration regression                  |
 
 ### Authoring a new fixture
 
@@ -175,17 +179,17 @@ const payload = { version: 1, header, events, sig: makeSig(header, events) };
 
 **Key fields in `header.stateSnapshot.state`:**
 
-| Field | Purpose | Notes |
-|---|---|---|
-| `pendingDecision` | Decision panel state | `null` = no panel; `{ kind: "defensive_shift" }` = shift panel; `{ kind: "pinch_hitter", candidates: [...], teamIdx: 0, lineupIdx: N }` = dropdown |
-| `managerMode` (in `setup`) | Shows the DecisionPanel | Must be `true` for any pending-decision fixture |
-| `managedTeam` (in `setup`) | Which team is managed | `0` = away, `1` = home |
-| `playLog` | RBI / hit stats | Each entry needs `{ inning, half, batterNum, team, event, runs, rbi }` where `event` is the Hit enum value (Single=0, Double=1, Triple=2, Homerun=3, Walk=4) |
-| `inningRuns` | Line-score display | `inningRuns[team][inning-1]` = runs that team scored in that inning |
-| `lineupOrder` | Player IDs in batting order | Always populated for custom-team games |
-| `playerOverrides` | Custom names/positions/stat mods | Use player IDs as keys |
-| `resolvedMods` | Pre-computed stat mods | Needed for `pinch_hitter` candidates' `contactMod`/`powerMod` to be accurate |
-| `rosterBench` | Bench player IDs | Required for `pinch_hitter` decisions to show candidates |
+| Field                      | Purpose                          | Notes                                                                                                                                                        |
+| -------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pendingDecision`          | Decision panel state             | `null` = no panel; `{ kind: "defensive_shift" }` = shift panel; `{ kind: "pinch_hitter", candidates: [...], teamIdx: 0, lineupIdx: N }` = dropdown           |
+| `managerMode` (in `setup`) | Shows the DecisionPanel          | Must be `true` for any pending-decision fixture                                                                                                              |
+| `managedTeam` (in `setup`) | Which team is managed            | `0` = away, `1` = home                                                                                                                                       |
+| `playLog`                  | RBI / hit stats                  | Each entry needs `{ inning, half, batterNum, team, event, runs, rbi }` where `event` is the Hit enum value (Single=0, Double=1, Triple=2, Homerun=3, Walk=4) |
+| `inningRuns`               | Line-score display               | `inningRuns[team][inning-1]` = runs that team scored in that inning                                                                                          |
+| `lineupOrder`              | Player IDs in batting order      | Always populated for custom-team games                                                                                                                       |
+| `playerOverrides`          | Custom names/positions/stat mods | Use player IDs as keys                                                                                                                                       |
+| `resolvedMods`             | Pre-computed stat mods           | Needed for `pinch_hitter` candidates' `contactMod`/`powerMod` to be accurate                                                                                 |
+| `rosterBench`              | Bench player IDs                 | Required for `pinch_hitter` decisions to show candidates                                                                                                     |
 
 **Minimal fixture checklist:**
 
@@ -198,6 +202,7 @@ const payload = { version: 1, header, events, sig: makeSig(header, events) };
 ### State restoration mechanics
 
 When `loadFixture` imports a save, `useSavesModal.ts` calls `handleLoad` which:
+
 1. `dispatch({ type: "restore_game", payload: snap.state })` — applies `stateSnapshot.state` via `backfillRestoredState` (safe-defaults for any missing fields)
 2. `onSetupRestore({ strategy, managedTeam, managerMode })` — writes to localStorage
 3. `onLoadActivate(slot.id)` — sets `gameActive = true` so the DecisionPanel renders
@@ -211,11 +216,11 @@ Because `pendingDecision` is part of `State` and `backfillRestoredState` merges 
 
 There are **three complementary ways** to collect aggregate simulation metrics. The right choice depends on the context:
 
-| Method | Speed | Sample size | Environment | Authoritative? | Best for |
-|---|---|---|---|---|---|
-| Vitest in-process harness | ~30 s | 100 games | Node.js only | ❌ Directional | Rapid iteration inside an agent session |
-| **MCP browser (agent method)** | **~2 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds** |
-| Playwright spec runner | ~20–25 min | 200 games | Full Chrome + RxDB | ✅ Ground truth | CI / human-driven full runs |
+| Method                         | Speed      | Sample size    | Environment            | Authoritative?      | Best for                                |
+| ------------------------------ | ---------- | -------------- | ---------------------- | ------------------- | --------------------------------------- |
+| Vitest in-process harness      | ~30 s      | 100 games      | Node.js only           | ❌ Directional      | Rapid iteration inside an agent session |
+| **MCP browser (agent method)** | **~2 min** | **200+ games** | **Full Chrome + RxDB** | **✅ Ground truth** | **Agent-driven tuning rounds**          |
+| Playwright spec runner         | ~20–25 min | 200 games      | Full Chrome + RxDB     | ✅ Ground truth     | CI / human-driven full runs             |
 
 > **For agents (Copilot sessions): use the MCP browser batch-loop method.**
 > The Playwright spec (`e2e/tests/metrics-baseline.spec.ts`) is a **reference implementation** that documents the full automated flow. For agent-driven tuning it is far faster to run games directly through the MCP browser using the single-tab batch-loop evaluate — you get results in real time, can interleave with code changes, and can collect 200 games in **under 2 minutes** of wall-clock time (vs ~20–25 minutes for the sequential spec runner).
@@ -223,6 +228,7 @@ There are **three complementary ways** to collect aggregate simulation metrics. 
 ### Canonical team fixture
 
 All browser metric runs use the **5 teams committed to `e2e/fixtures/metrics-teams.json`**:
+
 - Charlotte Bears (CHB)
 - Denver Raiders (DRD)
 - San Antonio Giants (SAG)
@@ -297,11 +303,11 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
 2. Navigate the MCP browser to `http://localhost:5173`.
 3. Set localStorage for Instant mode + no-manager — **this applies to all tabs on the same origin**:
    ```js
-   localStorage.setItem("speed", "0");              // SPEED_INSTANT
+   localStorage.setItem("speed", "0"); // SPEED_INSTANT
    localStorage.setItem("announcementVolume", "0"); // mute TTS
-   localStorage.setItem("alertVolume", "0");        // mute alerts
-   localStorage.setItem("_e2eNoInningPause", "1");  // skip half-inning pause
-   localStorage.setItem("managerMode", "false");    // fully unmanaged
+   localStorage.setItem("alertVolume", "0"); // mute alerts
+   localStorage.setItem("_e2eNoInningPause", "1"); // skip half-inning pause
+   localStorage.setItem("managerMode", "false"); // fully unmanaged
    ```
    > **Speed note:** There is no speed selector on the `/exhibition/new` form. Speed is read from `localStorage.speed` by the game when it starts. The `"speed": "0"` set here (SPEED_INSTANT) is shared across all same-origin tabs in Chromium — you only need to set it once. Do **not** try to inject a speed `<select>` on the new-game form; no such element exists. If you are unsure whether Instant mode is active, confirm via the game controls dropdown on any running game tab — it will show "Instant" selected.
 4. Navigate to `/teams` and import `e2e/fixtures/metrics-teams.json` via the **Import from File** button. Teams persist in RxDB for the entire Chrome session — this only needs to be done once.
@@ -312,10 +318,23 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
    // Install a persistent console-error capture shim on the current page.
    // Re-run this after each navigation (it survives within a page context only).
    // Restore any previous shim first to avoid double-wrapping on re-run.
-   if (window.__metricsOrig) { console.error = window.__metricsOrig.error; console.warn = window.__metricsOrig.warn; }
-   const _orig = window.__metricsOrig = { error: console.error, warn: console.warn };
-   console.error = (...a) => { _orig.error(...a); const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[E] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
-   console.warn  = (...a) => { _orig.warn(...a);  const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors')||'[]'); msgs.push('[W] '+a.join(' ')); localStorage.setItem('metricsConsoleErrors', JSON.stringify(msgs)); };
+   if (window.__metricsOrig) {
+     console.error = window.__metricsOrig.error;
+     console.warn = window.__metricsOrig.warn;
+   }
+   const _orig = (window.__metricsOrig = { error: console.error, warn: console.warn });
+   console.error = (...a) => {
+     _orig.error(...a);
+     const msgs = JSON.parse(localStorage.getItem("metricsConsoleErrors") || "[]");
+     msgs.push("[E] " + a.join(" "));
+     localStorage.setItem("metricsConsoleErrors", JSON.stringify(msgs));
+   };
+   console.warn = (...a) => {
+     _orig.warn(...a);
+     const msgs = JSON.parse(localStorage.getItem("metricsConsoleErrors") || "[]");
+     msgs.push("[W] " + a.join(" "));
+     localStorage.setItem("metricsConsoleErrors", JSON.stringify(msgs));
+   };
    ```
    > **Note:** The shim captures errors from the current page context only. When you navigate between pages the shim is reset — reinstall it after each page load, or use `playwright-browser_console_messages` at the end to see all accumulated messages for the session.
 
@@ -329,30 +348,36 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
 // ── 2. Set teams + seed via JS injection ──────────────────────────────────
 // Speed does NOT need to be set here — it is already Instant via localStorage.
 // (use playwright-browser_evaluate with the snippet below)
-(async function(away, home, seed) {
-  await new Promise(r => { const c = () => document.querySelector('[data-testid="new-game-custom-away-team-select"]') ? r() : setTimeout(c, 100); c(); });
+(async function (away, home, seed) {
+  await new Promise((r) => {
+    const c = () =>
+      document.querySelector('[data-testid="new-game-custom-away-team-select"]')
+        ? r()
+        : setTimeout(c, 100);
+    c();
+  });
   function setSelect(testId, label) {
     const el = document.querySelector(`[data-testid="${testId}"]`);
-    const opt = [...el.options].find(o => o.text.includes(label));
-    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
+    const opt = [...el.options].find((o) => o.text.includes(label));
+    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
     ns.call(el, opt.value);
-    el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function setSeed(val) {
     const el = document.querySelector('[data-testid="seed-input"]');
-    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
     ns.call(el, val);
-    const fk = Object.keys(el).find(k => k.startsWith('__reactFiber'));
+    const fk = Object.keys(el).find((k) => k.startsWith("__reactFiber"));
     if (fk) el[fk]?.memoizedProps?.onChange?.({ target: el });
-    else el.dispatchEvent(new Event('input', { bubbles: true }));
+    else el.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  setSelect('new-game-custom-away-team-select', away);
-  setSelect('new-game-custom-home-team-select', home);
+  setSelect("new-game-custom-away-team-select", away);
+  setSelect("new-game-custom-home-team-select", home);
   setSeed(seed);
-  await new Promise(r => setTimeout(r, 300));
+  await new Promise((r) => setTimeout(r, 300));
   document.querySelector('[data-testid="play-ball-button"]').click();
   return `${away} @ ${home} seed=${seed} started`;
-})('Charlotte Bears', 'Denver Raiders', 's1g1');
+})("Charlotte Bears", "Denver Raiders", "s1g1");
 
 // ── 3. Wait for FINAL ─────────────────────────────────────────────────────
 // (use playwright-browser_wait_for with text="FINAL", timeout ~30s)
@@ -360,43 +385,61 @@ This is the **fastest way for an agent to collect 200+ browser game metrics**. I
 // ── 4. Collect stats and accumulate in localStorage ───────────────────────
 // (use playwright-browser_evaluate with the snippet below)
 (async () => {
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   // Ensure "This game" tab is active
   const thisGame = document.querySelector('[data-testid="stats-tab-this-game"]');
-  if (thisGame) { thisGame.click(); await sleep(150); }
+  if (thisGame) {
+    thisGame.click();
+    await sleep(150);
+  }
   function readTable() {
-    let ab = 0, h = 0, bb = 0, k = 0;
-    for (const row of document.querySelectorAll('table tbody tr')) {
+    let ab = 0,
+      h = 0,
+      bb = 0,
+      k = 0;
+    for (const row of document.querySelectorAll("table tbody tr")) {
       if (row.closest('[data-testid="scoreboard"]')) continue;
-      const cells = [...row.querySelectorAll('td')];
+      const cells = [...row.querySelectorAll("td")];
       if (cells.length < 6) continue;
-      const n = i => { const t = cells[i]?.textContent?.trim(); return (t && t !== '–') ? parseInt(t, 10) || 0 : 0; };
-      ab += n(2); h += n(3); bb += n(4); k += n(5);
+      const n = (i) => {
+        const t = cells[i]?.textContent?.trim();
+        return t && t !== "–" ? parseInt(t, 10) || 0 : 0;
+      };
+      ab += n(2);
+      h += n(3);
+      bb += n(4);
+      k += n(5);
     }
     return { ab, h, bb, k };
   }
   const tabs = document.querySelectorAll('[role="tab"]');
-  tabs[0].click(); await sleep(200);
+  tabs[0].click();
+  await sleep(200);
   const away = readTable();
-  tabs[1].click(); await sleep(200);
+  tabs[1].click();
+  await sleep(200);
   const home = readTable();
   const sb = document.querySelector('[data-testid="scoreboard"]');
-  const hdrs = [...(sb?.querySelectorAll('thead tr th,thead tr td') || [])];
-  const rIdx = hdrs.findIndex(c => c.textContent?.trim() === 'R');
-  const scores = [...(sb?.querySelectorAll('tbody tr') || [])]
-    .filter(r => r.querySelectorAll('td').length > 3).slice(0, 2)
-    .map(row => {
-      const cells = [...row.querySelectorAll('td')];
-      return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || '0') || 0 : 0;
+  const hdrs = [...(sb?.querySelectorAll("thead tr th,thead tr td") || [])];
+  const rIdx = hdrs.findIndex((c) => c.textContent?.trim() === "R");
+  const scores = [...(sb?.querySelectorAll("tbody tr") || [])]
+    .filter((r) => r.querySelectorAll("td").length > 3)
+    .slice(0, 2)
+    .map((row) => {
+      const cells = [...row.querySelectorAll("td")];
+      return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || "0") || 0 : 0;
     });
   const result = {
-    ab: away.ab + home.ab, h: away.h + home.h,
-    bb: away.bb + home.bb, k: away.k + home.k,
-    awayScore: scores[0] ?? 0, homeScore: scores[1] ?? 0,
+    ab: away.ab + home.ab,
+    h: away.h + home.h,
+    bb: away.bb + home.bb,
+    k: away.k + home.k,
+    awayScore: scores[0] ?? 0,
+    homeScore: scores[1] ?? 0,
   };
-  const results = JSON.parse(localStorage.getItem('metricsResults') || '[]');
+  const results = JSON.parse(localStorage.getItem("metricsResults") || "[]");
   results.push(result);
-  localStorage.setItem('metricsResults', JSON.stringify(results));
+  localStorage.setItem("metricsResults", JSON.stringify(results));
   return { count: results.length, lastResult: result };
 })();
 ```
@@ -408,38 +451,63 @@ Instead of 4 tool calls per game (switch tab → collect evaluate → navigate �
 ```js
 // After a game reaches FINAL, use this single evaluate to collect AND start the next game.
 // This halves MCP tool-call overhead vs the separate collect → navigate → inject flow.
-(async function(nextAway, nextHome, nextSeed) {
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+(async function (nextAway, nextHome, nextSeed) {
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   // ── Collect stats from completed game ─────────────────────────────────────
   const thisGame = document.querySelector('[data-testid="stats-tab-this-game"]');
-  if (thisGame) { thisGame.click(); await sleep(150); }
+  if (thisGame) {
+    thisGame.click();
+    await sleep(150);
+  }
   function readTable() {
-    let ab = 0, h = 0, bb = 0, k = 0;
-    for (const row of document.querySelectorAll('table tbody tr')) {
+    let ab = 0,
+      h = 0,
+      bb = 0,
+      k = 0;
+    for (const row of document.querySelectorAll("table tbody tr")) {
       if (row.closest('[data-testid="scoreboard"]')) continue;
-      const cells = [...row.querySelectorAll('td')];
+      const cells = [...row.querySelectorAll("td")];
       if (cells.length < 6) continue;
-      const n = i => { const t = cells[i]?.textContent?.trim(); return (t && t !== '–') ? parseInt(t, 10) || 0 : 0; };
-      ab += n(2); h += n(3); bb += n(4); k += n(5);
+      const n = (i) => {
+        const t = cells[i]?.textContent?.trim();
+        return t && t !== "–" ? parseInt(t, 10) || 0 : 0;
+      };
+      ab += n(2);
+      h += n(3);
+      bb += n(4);
+      k += n(5);
     }
     return { ab, h, bb, k };
   }
   const tabs = document.querySelectorAll('[role="tab"]');
-  tabs[0].click(); await sleep(200);
+  tabs[0].click();
+  await sleep(200);
   const awayStats = readTable();
-  tabs[1].click(); await sleep(200);
+  tabs[1].click();
+  await sleep(200);
   const homeStats = readTable();
   const sb = document.querySelector('[data-testid="scoreboard"]');
-  const hdrs = [...(sb?.querySelectorAll('thead tr th,thead tr td') || [])];
-  const rIdx = hdrs.findIndex(c => c.textContent?.trim() === 'R');
-  const scores = [...(sb?.querySelectorAll('tbody tr') || [])]
-    .filter(r => r.querySelectorAll('td').length > 3).slice(0, 2)
-    .map(row => { const cells = [...row.querySelectorAll('td')]; return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || '0') || 0 : 0; });
-  const result = { ab: awayStats.ab + homeStats.ab, h: awayStats.h + homeStats.h, bb: awayStats.bb + homeStats.bb, k: awayStats.k + homeStats.k, awayScore: scores[0] ?? 0, homeScore: scores[1] ?? 0 };
-  const results = JSON.parse(localStorage.getItem('metricsResults') || '[]');
+  const hdrs = [...(sb?.querySelectorAll("thead tr th,thead tr td") || [])];
+  const rIdx = hdrs.findIndex((c) => c.textContent?.trim() === "R");
+  const scores = [...(sb?.querySelectorAll("tbody tr") || [])]
+    .filter((r) => r.querySelectorAll("td").length > 3)
+    .slice(0, 2)
+    .map((row) => {
+      const cells = [...row.querySelectorAll("td")];
+      return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || "0") || 0 : 0;
+    });
+  const result = {
+    ab: awayStats.ab + homeStats.ab,
+    h: awayStats.h + homeStats.h,
+    bb: awayStats.bb + homeStats.bb,
+    k: awayStats.k + homeStats.k,
+    awayScore: scores[0] ?? 0,
+    homeScore: scores[1] ?? 0,
+  };
+  const results = JSON.parse(localStorage.getItem("metricsResults") || "[]");
   results.push(result);
-  localStorage.setItem('metricsResults', JSON.stringify(results));
+  localStorage.setItem("metricsResults", JSON.stringify(results));
 
   // ── Navigate to new game form and start next game ─────────────────────────
   // "New Game" button appears after FINAL — click it to navigate (SPA push-state).
@@ -448,33 +516,44 @@ Instead of 4 tool calls per game (switch tab → collect evaluate → navigate �
     newGameBtn.click();
   } else {
     // Fallback: push state directly into React Router
-    window.history.pushState({}, '', '/exhibition/new');
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    window.history.pushState({}, "", "/exhibition/new");
+    window.dispatchEvent(new PopStateEvent("popstate"));
   }
   await sleep(500);
   // Wait for the form to be ready
-  await new Promise(r => { const c = () => document.querySelector('[data-testid="new-game-custom-away-team-select"]') ? r() : setTimeout(c, 100); c(); });
+  await new Promise((r) => {
+    const c = () =>
+      document.querySelector('[data-testid="new-game-custom-away-team-select"]')
+        ? r()
+        : setTimeout(c, 100);
+    c();
+  });
   function setSelect(testId, label) {
     const el = document.querySelector(`[data-testid="${testId}"]`);
-    const opt = [...el.options].find(o => o.text.includes(label));
-    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
-    ns.call(el, opt.value); el.dispatchEvent(new Event('change', { bubbles: true }));
+    const opt = [...el.options].find((o) => o.text.includes(label));
+    const ns = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set;
+    ns.call(el, opt.value);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
   }
   function setSeed(val) {
     const el = document.querySelector('[data-testid="seed-input"]');
-    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    const ns = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set;
     ns.call(el, val);
-    const fk = Object.keys(el).find(k => k.startsWith('__reactFiber'));
+    const fk = Object.keys(el).find((k) => k.startsWith("__reactFiber"));
     if (fk) el[fk]?.memoizedProps?.onChange?.({ target: el });
-    else el.dispatchEvent(new Event('input', { bubbles: true }));
+    else el.dispatchEvent(new Event("input", { bubbles: true }));
   }
-  setSelect('new-game-custom-away-team-select', nextAway);
-  setSelect('new-game-custom-home-team-select', nextHome);
+  setSelect("new-game-custom-away-team-select", nextAway);
+  setSelect("new-game-custom-home-team-select", nextHome);
   setSeed(nextSeed);
   await sleep(300);
   document.querySelector('[data-testid="play-ball-button"]').click();
-  return { collected: result.awayScore + '-' + result.homeScore, started: `${nextAway} @ ${nextHome} ${nextSeed}`, total: results.length };
-})('Charlotte Bears', 'Denver Raiders', 's1g2');
+  return {
+    collected: result.awayScore + "-" + result.homeScore,
+    started: `${nextAway} @ ${nextHome} ${nextSeed}`,
+    total: results.length,
+  };
+})("Charlotte Bears", "Denver Raiders", "s1g2");
 ```
 
 > **Why this works:** After FINAL the app shows a "New Game" button that navigates to `/exhibition/new` via React Router's SPA push-state (no full page reload). The evaluate continues executing in the same JavaScript context, so you can collect stats and start the next game within a single tool call. If the "New Game" button's `data-testid` is not found, the snippet falls back to `history.pushState`.
@@ -484,13 +563,13 @@ Instead of 4 tool calls per game (switch tab → collect evaluate → navigate �
 After any number of games, evaluate this snippet to see running totals:
 
 ```js
-const r = JSON.parse(localStorage.getItem('metricsResults') || '[]');
-const PA = r.reduce((s,g) => s+g.ab+g.bb, 0);
-const BB = r.reduce((s,g) => s+g.bb, 0);
-const K  = r.reduce((s,g) => s+g.k,  0);
-const H  = r.reduce((s,g) => s+g.h,  0);
-const runs = r.reduce((s,g) => s+g.awayScore+g.homeScore, 0);
-`${r.length} games | BB%=${(BB/PA*100).toFixed(1)}% | K%=${(K/PA*100).toFixed(1)}% | H/PA=${(H / PA).toFixed(3)} | R/game=${(runs/r.length).toFixed(1)} | BB/game=${(BB/r.length).toFixed(1)}`;
+const r = JSON.parse(localStorage.getItem("metricsResults") || "[]");
+const PA = r.reduce((s, g) => s + g.ab + g.bb, 0);
+const BB = r.reduce((s, g) => s + g.bb, 0);
+const K = r.reduce((s, g) => s + g.k, 0);
+const H = r.reduce((s, g) => s + g.h, 0);
+const runs = r.reduce((s, g) => s + g.awayScore + g.homeScore, 0);
+`${r.length} games | BB%=${((BB / PA) * 100).toFixed(1)}% | K%=${((K / PA) * 100).toFixed(1)}% | H/PA=${(H / PA).toFixed(3)} | R/game=${(runs / r.length).toFixed(1)} | BB/game=${(BB / r.length).toFixed(1)}`;
 ```
 
 #### Reading console errors and warnings
@@ -502,26 +581,24 @@ For a quick summary filtered to actionable errors only (excludes known noise lik
 ```js
 // Evaluate this on any page after the batch to see filtered errors
 const KNOWN_NOISE = [
-  'ERR_BLOCKED_BY_CLIENT',
-  'RxDB Open Core RxStorage',
-  'AudioContext',
-  'useRxdbGameSync: failed to update progress',
+  "ERR_BLOCKED_BY_CLIENT",
+  "RxDB Open Core RxStorage",
+  "AudioContext",
+  "useRxdbGameSync: failed to update progress",
 ];
-const msgs = JSON.parse(localStorage.getItem('metricsConsoleErrors') || '[]');
-const filtered = msgs.filter(m => !KNOWN_NOISE.some(n => m.includes(n)));
-filtered.length
-  ? filtered.slice(0, 20).join('\n')
-  : 'No unexpected errors';
+const msgs = JSON.parse(localStorage.getItem("metricsConsoleErrors") || "[]");
+const filtered = msgs.filter((m) => !KNOWN_NOISE.some((n) => m.includes(n)));
+filtered.length ? filtered.slice(0, 20).join("\n") : "No unexpected errors";
 ```
 
 Common expected errors during Instant-mode batch runs:
 
-| Error | Cause | Impact |
-|---|---|---|
-| `useRxdbGameSync: failed to update progress (game over)` | Rapid navigation races RxDB write chain | None — cosmetic only |
-| `useRxdbGameSync: failed to update progress (half-inning)` | Same as above | None — cosmetic only |
-| `ERR_BLOCKED_BY_CLIENT` (GTM) | Ad-blocker in browser | None |
-| RxDB premium upsell banner | Expected on every RxDB init | None |
+| Error                                                      | Cause                                   | Impact               |
+| ---------------------------------------------------------- | --------------------------------------- | -------------------- |
+| `useRxdbGameSync: failed to update progress (game over)`   | Rapid navigation races RxDB write chain | None — cosmetic only |
+| `useRxdbGameSync: failed to update progress (half-inning)` | Same as above                           | None — cosmetic only |
+| `ERR_BLOCKED_BY_CLIENT` (GTM)                              | Ad-blocker in browser                   | None                 |
+| RxDB premium upsell banner                                 | Expected on every RxDB init             | None                 |
 
 If you see errors outside this table — especially React render errors, unhandled rejections, or `TypeError` — investigate before accepting the metrics.
 
@@ -534,66 +611,118 @@ The recommended approach is the **single-tab batch-loop evaluate**: a single `pl
 ```js
 // Single batch-loop evaluate: runs N games on the current tab in one MCP call.
 // ⬇ Edit these three values before calling:
-const away = 'Charlotte Bears';  // away team name — must exactly match an imported team name
-const home = 'Denver Raiders';   // home team name — valid names: Charlotte Bears, Denver Raiders, San Antonio Giants, Portland Foxes, Nashville Comets
-const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s1g2, …
+const away = "Charlotte Bears"; // away team name — must exactly match an imported team name
+const home = "Denver Raiders"; // home team name — valid names: Charlotte Bears, Denver Raiders, San Antonio Giants, Portland Foxes, Nashville Comets
+const prefix = "s1"; // seed prefix, e.g. 's1' → s1g1, s1g2, …
 (async () => {
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
   function collectGame() {
-    let ab=0,h=0,bb=0,k=0;
-    const tabs=document.querySelectorAll('[role="tab"]');
-    [0,1].forEach(i => {
-      if(tabs[i]) { tabs[i].click();
-        for(const row of document.querySelectorAll('table tbody tr')){
-          const cells=[...row.querySelectorAll('td')];
-          if(cells.length<6) continue;
-          const n=j=>{const t=cells[j]?.textContent?.trim();return(t&&t!=='–')?parseInt(t)||0:0;};
-          ab+=n(2);h+=n(3);bb+=n(4);k+=n(5);
+    let ab = 0,
+      h = 0,
+      bb = 0,
+      k = 0;
+    const tabs = document.querySelectorAll('[role="tab"]');
+    [0, 1].forEach((i) => {
+      if (tabs[i]) {
+        tabs[i].click();
+        for (const row of document.querySelectorAll("table tbody tr")) {
+          const cells = [...row.querySelectorAll("td")];
+          if (cells.length < 6) continue;
+          const n = (j) => {
+            const t = cells[j]?.textContent?.trim();
+            return t && t !== "–" ? parseInt(t) || 0 : 0;
+          };
+          ab += n(2);
+          h += n(3);
+          bb += n(4);
+          k += n(5);
         }
       }
     });
-    const sb=document.querySelector('[data-testid="scoreboard"]');
-    const hdrs=sb?[...sb.querySelectorAll('thead tr th,thead tr td')].map(c=>c.textContent.trim()):[];
-    const rIdx=hdrs.indexOf('R');
-    const scores=[...(sb?.querySelectorAll('tbody tr')||[])].slice(0,2).map(r=>{
-      const cells=[...r.querySelectorAll('td')];
-      return rIdx>=0?parseInt(cells[rIdx]?.textContent?.trim()||'0')||0:0;
+    const sb = document.querySelector('[data-testid="scoreboard"]');
+    const hdrs = sb
+      ? [...sb.querySelectorAll("thead tr th,thead tr td")].map((c) => c.textContent.trim())
+      : [];
+    const rIdx = hdrs.indexOf("R");
+    const scores = [...(sb?.querySelectorAll("tbody tr") || [])].slice(0, 2).map((r) => {
+      const cells = [...r.querySelectorAll("td")];
+      return rIdx >= 0 ? parseInt(cells[rIdx]?.textContent?.trim() || "0") || 0 : 0;
     });
-    return {ab,h,bb,k,awayScore:scores[0]??0,homeScore:scores[1]??0};
+    return { ab, h, bb, k, awayScore: scores[0] ?? 0, homeScore: scores[1] ?? 0 };
   }
-  function setSelect(testid,val){const el=document.querySelector('[data-testid="'+testid+'"]');if(!el)return false;const opt=[...el.options].find(o=>o.text.includes(val)||o.value===val);if(!opt)return false;Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(el,opt.value);el.dispatchEvent(new Event('change',{bubbles:true}));return true;}
-  function setInput(testid,val){const el=document.querySelector('[data-testid="'+testid+'"]');if(!el)return false;Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val);const fk=Object.keys(el).find(k=>k.startsWith('__reactFiber'));if(fk)el[fk]?.memoizedProps?.onChange?.({target:el});else el.dispatchEvent(new Event('input',{bubbles:true}));return true;}
-  async function waitFor(sel,t=5000){const e=Date.now()+t;while(Date.now()<e){if(document.querySelector(sel))return true;await sleep(50);}return false;}
-  async function waitForFinal(t=30000){const e=Date.now()+t;while(Date.now()<e){if(document.body.textContent.includes('FINAL'))return true;await sleep(100);}return false;}
+  function setSelect(testid, val) {
+    const el = document.querySelector('[data-testid="' + testid + '"]');
+    if (!el) return false;
+    const opt = [...el.options].find((o) => o.text.includes(val) || o.value === val);
+    if (!opt) return false;
+    Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(el, opt.value);
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+    return true;
+  }
+  function setInput(testid, val) {
+    const el = document.querySelector('[data-testid="' + testid + '"]');
+    if (!el) return false;
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set.call(el, val);
+    const fk = Object.keys(el).find((k) => k.startsWith("__reactFiber"));
+    if (fk) el[fk]?.memoizedProps?.onChange?.({ target: el });
+    else el.dispatchEvent(new Event("input", { bubbles: true }));
+    return true;
+  }
+  async function waitFor(sel, t = 5000) {
+    const e = Date.now() + t;
+    while (Date.now() < e) {
+      if (document.querySelector(sel)) return true;
+      await sleep(50);
+    }
+    return false;
+  }
+  async function waitForFinal(t = 30000) {
+    const e = Date.now() + t;
+    while (Date.now() < e) {
+      if (document.body.textContent.includes("FINAL")) return true;
+      await sleep(100);
+    }
+    return false;
+  }
 
-  const arr=JSON.parse(localStorage.getItem('metricsResults')||'[]');
-  const results=[];
+  const arr = JSON.parse(localStorage.getItem("metricsResults") || "[]");
+  const results = [];
   // ⬇ away, home, prefix are defined above — change them before calling
 
   // Optionally collect an already-FINAL game first
-  if(document.body.textContent.includes('FINAL')){
-    const r=collectGame();arr.push(r);
-    results.push({seed:'existing',score:`${r.awayScore}-${r.homeScore}`,runs:r.awayScore+r.homeScore});
+  if (document.body.textContent.includes("FINAL")) {
+    const r = collectGame();
+    arr.push(r);
+    results.push({
+      seed: "existing",
+      score: `${r.awayScore}-${r.homeScore}`,
+      runs: r.awayScore + r.homeScore,
+    });
     document.querySelector('[data-testid="new-game-button"]')?.click();
     await sleep(400);
   }
 
-  for(let g=1;g<=10;g++){
+  for (let g = 1; g <= 10; g++) {
     await waitFor('[data-testid="new-game-custom-away-team-select"]');
-    setSelect('new-game-custom-away-team-select',away);
-    setSelect('new-game-custom-home-team-select',home);
-    setInput('seed-input',`${prefix}g${g}`);
+    setSelect("new-game-custom-away-team-select", away);
+    setSelect("new-game-custom-home-team-select", home);
+    setInput("seed-input", `${prefix}g${g}`);
     await sleep(200);
     document.querySelector('[data-testid="play-ball-button"]')?.click();
     await waitForFinal(30000);
-    const r=collectGame();arr.push(r);
-    results.push({seed:`${prefix}g${g}`,score:`${r.awayScore}-${r.homeScore}`,runs:r.awayScore+r.homeScore});
+    const r = collectGame();
+    arr.push(r);
+    results.push({
+      seed: `${prefix}g${g}`,
+      score: `${r.awayScore}-${r.homeScore}`,
+      runs: r.awayScore + r.homeScore,
+    });
     document.querySelector('[data-testid="new-game-button"]')?.click();
     await sleep(400);
   }
-  localStorage.setItem('metricsResults',JSON.stringify(arr));
-  return {total:arr.length,thisRun:results};
+  localStorage.setItem("metricsResults", JSON.stringify(arr));
+  return { total: arr.length, thisRun: results };
 })();
 ```
 
@@ -602,11 +731,13 @@ const prefix = 's1';                       // seed prefix, e.g. 's1' → s1g1, s
 **Minimum tuning round (200 games, ~90–120 s):** Change `g<=10` to `g<=20` in the loop above to collect 20 games per tab. Run across 10 tabs for 200 games total. **200 games is the minimum required before drawing any tuning conclusions.**
 
 **Workflow (applies to both):**
+
 1. Open 10 browser tabs (one per matchup block) — they only need to be on any valid app page.
 2. On each tab, run the batch-loop evaluate with the appropriate `away`, `home`, and `prefix` for that matchup block.
 3. After all tabs complete, collect aggregate results with the summary snippet below.
 
 **Timing breakdown (verified from actual 108-game run on 2026-03-09):**
+
 - Simulation time per game: **<100ms** (essentially zero in Instant mode on active tab)
 - Time per batch-loop evaluate (10 games): **~2–3 seconds** (MCP tool-call overhead only)
 - Tab-switch calls: **~2 seconds each**
@@ -618,6 +749,7 @@ The game simulation in Instant mode is never the bottleneck. The only overhead i
 ### Playwright spec runner: reference implementation for automated runs
 
 `e2e/tests/metrics-baseline.spec.ts` is the **canonical automated implementation** of the above MCP workflow. It is:
+
 - A faithful, self-contained reference showing exactly what a correct 200-game metrics run looks like
 - Useful for running metrics in CI or in a human terminal session without MCP
 - Configured via `playwright-metrics.config.ts` (60-minute timeout, desktop Chromium)
@@ -636,15 +768,15 @@ The spec runs `GAMES_PER_BLOCK` games per matchup block. `GAMES_PER_BLOCK = 20` 
 
 The project has three ways to measure simulation metrics at scale:
 
-| | Stock-team harness | Custom-team harness | Browser run (MCP or spec) |
-|---|---|---|---|
-| **File** | `src/test/calibration/simHarness.test.ts` | `src/test/calibration/customTeamMetrics.test.ts` | MCP browser / `metrics-baseline.spec.ts` |
-| **Speed** | ~5 s | ~30 s | ~2 min (MCP batch-loop) / ~20–25 min (spec) |
-| **Teams** | All-balanced stock players | `metrics-teams.json` fixture | `metrics-teams.json` fixture |
-| **Environment** | Node.js only | Node.js only | Full Chrome + RxDB + React |
-| **RNG sequence** | Pure game logic | Pure game logic | Extra `random()` calls from React, RxDB, audio, TTS |
-| **Authoritative?** | ❌ Directional only | ❌ Directional only | ✅ Ground truth |
-| **Use for** | Fastest iteration signal | Better fixture match | Required final validation |
+|                    | Stock-team harness                        | Custom-team harness                              | Browser run (MCP or spec)                           |
+| ------------------ | ----------------------------------------- | ------------------------------------------------ | --------------------------------------------------- |
+| **File**           | `src/test/calibration/simHarness.test.ts` | `src/test/calibration/customTeamMetrics.test.ts` | MCP browser / `metrics-baseline.spec.ts`            |
+| **Speed**          | ~5 s                                      | ~30 s                                            | ~2 min (MCP batch-loop) / ~20–25 min (spec)         |
+| **Teams**          | All-balanced stock players                | `metrics-teams.json` fixture                     | `metrics-teams.json` fixture                        |
+| **Environment**    | Node.js only                              | Node.js only                                     | Full Chrome + RxDB + React                          |
+| **RNG sequence**   | Pure game logic                           | Pure game logic                                  | Extra `random()` calls from React, RxDB, audio, TTS |
+| **Authoritative?** | ❌ Directional only                       | ❌ Directional only                              | ✅ Ground truth                                     |
+| **Use for**        | Fastest iteration signal                  | Better fixture match                             | Required final validation                           |
 
 **Key rule:** Never claim a tuning success based solely on the in-process harness. The harness provides a fast directional signal (seconds), but the browser run is the only valid apple-to-apple comparison against prior browser baselines. The harness BB% is typically **~1–2 pp lower** than browser BB% due to PRNG sequence differences.
 

@@ -12,13 +12,13 @@
 
 This file is the quick-reference index. For deeper detail, see:
 
-| Doc | Contents |
-|---|---|
-| [docs/repo-layout.md](../docs/repo-layout.md) | Full directory tree, file descriptions, path aliases |
-| [docs/rxdb-persistence.md](../docs/rxdb-persistence.md) | RxDB setup, schema versioning, collections, SaveStore/CustomTeamStore APIs, fingerprints, export/import bundles, game-loop integration |
-| [docs/architecture.md](../docs/architecture.md) | Route architecture, auto-play scheduler, Manager Mode, notification system, shared logger |
-| [docs/e2e-testing.md](../docs/e2e-testing.md) | Playwright projects, E2E helpers, `data-testid` reference, visual snapshots, CI workflows, save fixtures |
-| [docs/style-guide.md](../docs/style-guide.md) | **UI Style Guide** — color palette, typography, breakpoints, all button variants, form elements, modals, cards, tables, game UI, and status patterns. **Consult before introducing any new color, font size, or component.** |
+| Doc                                                     | Contents                                                                                                                                                                                                                     |
+| ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [docs/repo-layout.md](../docs/repo-layout.md)           | Full directory tree, file descriptions, path aliases                                                                                                                                                                         |
+| [docs/rxdb-persistence.md](../docs/rxdb-persistence.md) | RxDB setup, schema versioning, collections, SaveStore/CustomTeamStore APIs, fingerprints, export/import bundles, game-loop integration                                                                                       |
+| [docs/architecture.md](../docs/architecture.md)         | Route architecture, auto-play scheduler, Manager Mode, notification system, shared logger                                                                                                                                    |
+| [docs/e2e-testing.md](../docs/e2e-testing.md)           | Playwright projects, E2E helpers, `data-testid` reference, visual snapshots, CI workflows, save fixtures                                                                                                                     |
+| [docs/style-guide.md](../docs/style-guide.md)           | **UI Style Guide** — color palette, typography, breakpoints, all button variants, form elements, modals, cards, tables, game UI, and status patterns. **Consult before introducing any new color, font size, or component.** |
 
 ---
 
@@ -26,12 +26,12 @@ This file is the quick-reference index. For deeper detail, see:
 
 All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
-| Alias | Resolves to | Notes |
-|---|---|---|
-| `@feat/*` | `src/features/*` | **Preferred** for all feature code |
-| `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
-| `@storage/*` | `src/storage/*` | Persistence infra (DB wiring, shared types, utilities) |
-| `@test/*` | `src/test/*` | Test helpers |
+| Alias        | Resolves to      | Notes                                                  |
+| ------------ | ---------------- | ------------------------------------------------------ |
+| `@feat/*`    | `src/features/*` | **Preferred** for all feature code                     |
+| `@shared/*`  | `src/shared/*`   | Genuinely cross-feature utilities                      |
+| `@storage/*` | `src/storage/*`  | Persistence infra (DB wiring, shared types, utilities) |
+| `@test/*`    | `src/test/*`     | Test helpers                                           |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).
 
@@ -85,17 +85,17 @@ src/
 
 ### Feature ownership rules
 
-| Code type | Where it lives |
-|---|---|
-| Page component + hook + styles for one route | `src/features/<domain>/pages/<PageName>/` |
-| UI component owned by one feature | `src/features/<domain>/components/<Name>/` |
-| Domain adapter / resolver | `src/features/<domain>/adapters/` |
-| RxDB schema + migration strategies for a collection | `src/features/<domain>/storage/schema.ts` |
+| Code type                                            | Where it lives                                 |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| Page component + hook + styles for one route         | `src/features/<domain>/pages/<PageName>/`      |
+| UI component owned by one feature                    | `src/features/<domain>/components/<Name>/`     |
+| Domain adapter / resolver                            | `src/features/<domain>/adapters/`              |
+| RxDB schema + migration strategies for a collection  | `src/features/<domain>/storage/schema.ts`      |
 | Store API (query/mutation functions) for one feature | `src/features/<domain>/storage/<name>Store.ts` |
-| Utility used only by one feature | `src/features/<domain>/utils/` |
-| Code used by 2+ unrelated features | `src/shared/` |
-| DB wiring, shared types, file I/O utilities | `src/storage/` |
-| Game simulation engine | `src/features/gameplay/context/` |
+| Utility used only by one feature                     | `src/features/<domain>/utils/`                 |
+| Code used by 2+ unrelated features                   | `src/shared/`                                  |
+| DB wiring, shared types, file I/O utilities          | `src/storage/`                                 |
+| Game simulation engine                               | `src/features/gameplay/context/`               |
 
 ---
 
@@ -134,6 +134,7 @@ The project uses **ESLint v9** (flat config) + **Prettier v3**.
 - `@typescript-eslint/no-explicit-any` and `@typescript-eslint/no-unused-vars` are turned off for test files (`**/*.test.{ts,tsx}` and `src/test/**`).
 
 **Import ordering** is enforced by `eslint-plugin-simple-import-sort` with these groups:
+
 1. Side-effect imports (e.g. CSS)
 2. React packages (`react`, `react-dom`, `react/*`)
 3. Other external packages
@@ -145,9 +146,11 @@ The project uses **ESLint v9** (flat config) + **Prettier v3**.
 ```bash
 yarn lint          # ESLint check
 yarn lint:fix      # ESLint auto-fix
-yarn format        # Prettier write
-yarn format:check  # Prettier check
+yarn format        # Prettier write (TS/TSX + E2E TS + Playwright config + all Markdown)
+yarn format:check  # Prettier check (TS/TSX + E2E TS + Playwright config + all Markdown)
 ```
+
+Pre-commit formatting is enforced locally via a Husky + lint-staged hook (`.husky/pre-commit`) that runs Prettier on staged `*.md`, `*.ts`, `*.tsx`, and `playwright.config.ts` files.
 
 The **CI lint workflow** (`.github/workflows/lint.yml`) runs `yarn lint` and `yarn format:check` on every push and PR.
 
@@ -180,6 +183,7 @@ yarn format:check     # Prettier check
 **Always run all validation steps locally and confirm they pass before using `report_progress` to commit and push.** CI failures on the branch are not acceptable.
 
 Validate changes by:
+
 1. `yarn lint` — zero errors/warnings required. Run `yarn lint:fix && yarn format` to auto-fix import order and Prettier issues before checking.
 2. `yarn build` — confirms TypeScript compiles and the bundle is valid.
 3. `yarn test` — all tests must pass. Run `yarn test:coverage` to verify coverage thresholds (lines/functions/statements ≥ 90%, branches ≥ 80%).
@@ -206,45 +210,45 @@ Validate changes by:
 
 ### Decision tree
 
-| What is duplicated? | Where to put the shared version |
-|---|---|
-| Pure utility function (formatting, file I/O, math) | `src/shared/utils/` or `src/storage/` (e.g. `saveIO.ts`); if only one feature uses it, `src/features/<domain>/utils/` |
-| Domain adapter / resolver (label resolution, ID mapping) | `src/features/<domain>/adapters/` |
-| React hook owned by one feature | `src/features/<domain>/hooks/` or alongside the page that uses it |
-| React hook reused across 2+ unrelated features | `src/shared/hooks/` |
-| Styled-component definitions for one feature | `src/features/<domain>/components/<Name>/styles.ts` |
-| Styled-component definitions used by 2+ unrelated features | `src/shared/components/<SharedName>/styles.ts` |
-| JSX content block owned by one feature | `src/features/<domain>/components/<Name>/index.tsx` |
-| JSX content block used by 2+ unrelated features | `src/shared/components/<Name>/index.tsx` |
-| Page-level layout chrome (`PageContainer`, `BackBtn`, etc.) | `src/shared/components/PageLayout/styles.ts` |
-| RxDB schema + migrations for a collection | `src/features/<domain>/storage/schema.ts` |
+| What is duplicated?                                         | Where to put the shared version                                                                                       |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Pure utility function (formatting, file I/O, math)          | `src/shared/utils/` or `src/storage/` (e.g. `saveIO.ts`); if only one feature uses it, `src/features/<domain>/utils/` |
+| Domain adapter / resolver (label resolution, ID mapping)    | `src/features/<domain>/adapters/`                                                                                     |
+| React hook owned by one feature                             | `src/features/<domain>/hooks/` or alongside the page that uses it                                                     |
+| React hook reused across 2+ unrelated features              | `src/shared/hooks/`                                                                                                   |
+| Styled-component definitions for one feature                | `src/features/<domain>/components/<Name>/styles.ts`                                                                   |
+| Styled-component definitions used by 2+ unrelated features  | `src/shared/components/<SharedName>/styles.ts`                                                                        |
+| JSX content block owned by one feature                      | `src/features/<domain>/components/<Name>/index.tsx`                                                                   |
+| JSX content block used by 2+ unrelated features             | `src/shared/components/<Name>/index.tsx`                                                                              |
+| Page-level layout chrome (`PageContainer`, `BackBtn`, etc.) | `src/shared/components/PageLayout/styles.ts`                                                                          |
+| RxDB schema + migrations for a collection                   | `src/features/<domain>/storage/schema.ts`                                                                             |
 
 ### Existing shared modules (extend these, do not re-implement)
 
-| Module | What it provides |
-|---|---|
-| `@storage/saveIO` | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename`, `teamsFilename`, `playerFilename` |
-| `@storage/hash` | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed |
-| `@storage/generateId` | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based |
-| `@storage/types` | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc. |
-| `@shared/utils/logger` | `createLogger(tag)` + `appLog` singleton — shared colored console logger |
-| `@shared/utils/rng` | `initSeed`, `reinitSeed`, `random`, `getSeed`, `getRngState`, `restoreRng`, `restoreSeed`, `generateFreshSeed` |
-| `@shared/utils/mediaQueries` | `mq.mobile`, `mq.desktop`, `mq.tablet`, `mq.notMobile` breakpoint helpers |
-| `@shared/utils/roster` | Roster helpers used by gameplay, customTeams, and careerStats |
-| `@shared/utils/saves` | `currentSeedStr()` — current seed as base-36 string |
-| `@shared/utils/stats/computeBattingStatsFromLogs` | Batting stat aggregation (gameplay + careerStats) |
-| `@shared/constants/hitTypes` | `HitType` enum: Single, Double, Triple, Homerun, Walk |
-| `@feat/gameplay/utils/announce` | Barrel re-export: `audio` + `homeMusic` + `tts` audio/speech utilities |
-| `@feat/gameplay/constants/pitchTypes` | `PitchType` enum + `selectPitchType`, `pitchName` helpers |
-| `@feat/careerStats/utils/computePitcherGameStats` | Per-pitcher stats (IP, ERA, WHIP, SV/HLD/BS) |
+| Module                                             | What it provides                                                                                                                      |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `@storage/saveIO`                                  | `formatSaveDate`, `downloadJson`, `readFileAsText`, `saveFilename`, `teamsFilename`, `playerFilename`                                 |
+| `@storage/hash`                                    | `fnv1a(str)` — FNV-1a 32-bit hash used everywhere sigs/fingerprints are computed                                                      |
+| `@storage/generateId`                              | `generateTeamId()`, `generatePlayerId()`, `generateSaveId()`, `generateSeed()` — nanoid-based                                         |
+| `@storage/types`                                   | Shared domain types: `SaveDoc`, `EventDoc`, `CustomTeamDoc`, `TeamPlayer`, `PlayerDoc`, etc.                                          |
+| `@shared/utils/logger`                             | `createLogger(tag)` + `appLog` singleton — shared colored console logger                                                              |
+| `@shared/utils/rng`                                | `initSeed`, `reinitSeed`, `random`, `getSeed`, `getRngState`, `restoreRng`, `restoreSeed`, `generateFreshSeed`                        |
+| `@shared/utils/mediaQueries`                       | `mq.mobile`, `mq.desktop`, `mq.tablet`, `mq.notMobile` breakpoint helpers                                                             |
+| `@shared/utils/roster`                             | Roster helpers used by gameplay, customTeams, and careerStats                                                                         |
+| `@shared/utils/saves`                              | `currentSeedStr()` — current seed as base-36 string                                                                                   |
+| `@shared/utils/stats/computeBattingStatsFromLogs`  | Batting stat aggregation (gameplay + careerStats)                                                                                     |
+| `@shared/constants/hitTypes`                       | `HitType` enum: Single, Double, Triple, Homerun, Walk                                                                                 |
+| `@feat/gameplay/utils/announce`                    | Barrel re-export: `audio` + `homeMusic` + `tts` audio/speech utilities                                                                |
+| `@feat/gameplay/constants/pitchTypes`              | `PitchType` enum + `selectPitchType`, `pitchName` helpers                                                                             |
+| `@feat/careerStats/utils/computePitcherGameStats`  | Per-pitcher stats (IP, ERA, WHIP, SV/HLD/BS)                                                                                          |
 | `@feat/customTeams/storage/customTeamExportImport` | `buildTeamFingerprint`, `buildPlayerSig`, `exportCustomTeams`, `exportCustomPlayer`, `importCustomTeams`, `parseExportedCustomPlayer` |
-| `@feat/customTeams/adapters/customTeamAdapter` | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc. |
-| `@feat/saves/storage/saveStore` | `SaveStore` singleton — `createSave`, `appendEvents`, `updateProgress`, `listSaves`, `deleteSave`, `exportRxdbSave`, `importRxdbSave` |
-| `@feat/careerStats/storage/gameHistoryStore` | `GameHistoryStore` singleton — career batting/pitching aggregates |
-| `@feat/help/components/HelpContent` | All help/how-to-play section JSX (used by InstructionsModal + HelpPage) |
-| `@shared/components/PageLayout/styles` | `PageContainer`, `PageHeader`, `BackBtn` — shared page chrome |
-| `@feat/saves/components/SaveSlotList` | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage) |
-| `@test/testHelpers` | `makeState`, `makeContextValue`, `makeLogs`, `mockRandom` |
+| `@feat/customTeams/adapters/customTeamAdapter`     | `resolveTeamLabel`, `resolveCustomIdsInString`, `customTeamToDisplayName`, etc.                                                       |
+| `@feat/saves/storage/saveStore`                    | `SaveStore` singleton — `createSave`, `appendEvents`, `updateProgress`, `listSaves`, `deleteSave`, `exportRxdbSave`, `importRxdbSave` |
+| `@feat/careerStats/storage/gameHistoryStore`       | `GameHistoryStore` singleton — career batting/pitching aggregates                                                                     |
+| `@feat/help/components/HelpContent`                | All help/how-to-play section JSX (used by InstructionsModal + HelpPage)                                                               |
+| `@shared/components/PageLayout/styles`             | `PageContainer`, `PageHeader`, `BackBtn` — shared page chrome                                                                         |
+| `@feat/saves/components/SaveSlotList`              | Save row list UI + Load/Export/Delete buttons (used by SavesModal + SavesPage)                                                        |
+| `@test/testHelpers`                                | `makeState`, `makeContextValue`, `makeLogs`, `mockRandom`                                                                             |
 
 ### Rules
 
@@ -266,7 +270,7 @@ Validate changes by:
 - **React 19:** Entry point uses `createRoot` from `react-dom/client`.
 - **React import style:** Files use `import * as React from "react"` (not the default import).
 - **Styled-components v6:** Custom props **must** be typed via generics, e.g. `styled.div<{ $active: boolean }>`. Use `$propName` (transient props) for non-HTML props.
-- **No `React.FunctionComponent<{}>` — write `React.FunctionComponent` (no type param) for zero-prop components.
+- \*\*No `React.FunctionComponent<{}>` — write `React.FunctionComponent` (no type param) for zero-prop components.
 - **Node version:** Node 24.x (see `.nvmrc`).
 - **`browserslist`** is set in `package.json` (`> 0.5%, last 2 versions, not dead`).
 - **`webkitAudioContext`** — use `(window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext` for the Safari fallback in `audio.ts`.
@@ -275,6 +279,7 @@ Validate changes by:
 - **Context module cycle-free order** — `strategy` → `advanceRunners` → `gameOver` → `playerOut` → `hitBall` → `buntAttempt` → `playerActions` → `reducer`. No module may import from a module later in this chain.
 - **`Function` type is banned** — use explicit function signatures: `(action: GameAction) => void` for dispatch, `(action: LogAction) => void` for dispatchLog.
 - **Options-hash convention for new functions** — any new function with more than two non-`state`/`log` parameters must use an options object as its final argument instead of positional params. Define a named `interface` (or `type`) for it, give every field a clear name, and provide defaults via destructuring. This avoids callers passing magic `0` / `false` sentinels to skip optional params. Example:
+
   ```typescript
   // ✅ Correct: named options, defaults in destructuring
   interface HandleFlyOutOptions { sacFlyPct: number; tagUp2ndPct?: number; }
@@ -284,7 +289,9 @@ Validate changes by:
   const handleFlyOut = (state, log, pitchKey, sacFlyPct, tagUp2ndPct) => …
   handleFlyOut(state, log, key, 65, 0)  // what is 0?
   ```
+
   Exported options interfaces live alongside the function they describe in the same file. Existing functions with positional params are not required to be refactored unless they are being modified as part of the current task.
+
 - **ESLint enforces import order** — run `yarn lint:fix` after adding imports to auto-sort them.
 - **`@storage/*` alias** — always import from `@storage/db`, `@storage/types`, `@storage/hash`, `@storage/generateId`, `@storage/saveIO`; never use relative paths across directories. Note: `saveStore` has moved to `@feat/saves/storage/saveStore`; `customTeamStore` to `@feat/customTeams/storage/customTeamStore`; `gameHistoryStore` to `@feat/careerStats/storage/gameHistoryStore`.
 - **`SaveStore` is a singleton** backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))` — each call to `_createTestDb()` appends a random suffix to avoid RxDB registry collisions.
@@ -293,7 +300,7 @@ Validate changes by:
 - **RxDB schema changes MUST bump `version` and add a migration strategy** — any change to a collection's `properties`, `required`, or `indexes` at the same version number causes a DB6 schema hash mismatch for every existing user, blocking app startup. Always: (1) increment `version`, (2) add a `migrationStrategies` entry that never throws, (3) add an upgrade-path unit test. See `### Schema versioning & migration` in [`docs/rxdb-persistence.md`](../docs/rxdb-persistence.md).
 - **Service worker must NOT initialize or use RxDB** — RxDB is window-only. The service worker only handles notifications and lightweight message passing.
 - **`InstructionsModal` visibility** — `display: flex` lives inside `&[open]` in `src/features/help/components/InstructionsModal/styles.ts`. Never move it outside or the native `<dialog>` hidden state will be overridden. Import `InstructionsModal` via `@feat/help/components/InstructionsModal`.
-- **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests *inside* a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
+- **Do NOT use `@vitest/browser` for E2E tests** — `@vitest/browser` (with the Playwright provider) runs component tests _inside_ a real browser, but it cannot do page navigation, multi-step user flows, or visual regression. Use `@playwright/test` (in `e2e/`) for all end-to-end tests. The two test runners serve different purposes and coexist without conflict.
 - **No IIFEs in JSX** — never use `(() => { ... })()` inside JSX. IIFEs create a new function reference on every render causing unnecessary re-renders and unpredictable behaviour. Instead, compute values as `const` variables before the `return` statement and reference them directly in JSX. For non-trivial conditional rendering blocks, extract them into a named sub-component (e.g. `StarterPitcherSelector` in `ExhibitionSetupPage/`) to keep them independently testable.
 - **`SavesModal` no longer has `autoOpen`/`openSavesRequestCount`/`onRequestClose`/`closeLabel` props** — these were removed when "Load Saved Game" became a dedicated `/saves` route. The modal now always closes with a simple `close()`. Do not re-add these props.
 - **`CustomTeamEditor` uses drag-and-drop for all sections** — lineup, bench, and pitchers all use `SortablePlayerRow` with `@dnd-kit/sortable`. There are **no up/down arrow buttons** in the editor. Lineup and bench share one `DndContext` (inside `<div data-testid="lineup-bench-dnd-container">`) so players can be dragged between sections. Pitchers have their own isolated `DndContext`. The `TRANSFER_PLAYER` action (`{ fromSection, toSection, playerId, toIndex }`) in `editorReducer` handles cross-section moves. `PlayerRow` (the old up/down component) is preserved in the file system but is not used in `index.tsx` — do not resurrect it.

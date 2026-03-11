@@ -1,63 +1,77 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
-    <title>Ballgame ⚾</title>
+  <head>
+    <meta charset="utf-8" />
+    <title>BlipIt Baseball Legends ⚾</title>
     <!-- Global site tag (gtag.js) - Google Analytics -->
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
     <!-- Primary SEO -->
-    <meta name="description" content="Self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots.">
-    <meta name="keywords" content="baseball, simulator, game, self-playing, manager mode, browser game, pitch, innings, scoreboard">
-    <meta name="author" content="Naftali Lubin">
-    <meta name="robots" content="index, follow">
-    <link rel="canonical" href="https://blipit.net/">
+    <meta
+      name="description"
+      content="BlipIt Baseball Legends — self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots."
+    />
+    <meta
+      name="keywords"
+      content="baseball, simulator, game, self-playing, manager mode, browser game, pitch, innings, scoreboard, blipit, legends"
+    />
+    <meta name="author" content="Naftali Lubin" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://blipit.net/" />
 
     <!-- Open Graph / Facebook / LinkedIn -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://blipit.net/">
-    <meta property="og:site_name" content="Ballgame">
-    <meta property="og:title" content="Ballgame ⚾">
-    <meta property="og:description" content="Self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots.">
-    <meta property="og:image" content="https://blipit.net/og-image.png">
-    <meta property="og:image:width" content="512">
-    <meta property="og:image:height" content="512">
-    <meta property="og:image:alt" content="Ballgame baseball icon">
-    <meta property="og:locale" content="en_US">
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://blipit.net/" />
+    <meta property="og:site_name" content="BlipIt Baseball Legends" />
+    <meta property="og:title" content="BlipIt Baseball Legends ⚾" />
+    <meta
+      property="og:description"
+      content="BlipIt Baseball Legends — self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots."
+    />
+    <meta property="og:image" content="https://blipit.net/og-image.png" />
+    <meta property="og:image:width" content="512" />
+    <meta property="og:image:height" content="512" />
+    <meta property="og:image:alt" content="BlipIt Baseball Legends icon" />
+    <meta property="og:locale" content="en_US" />
 
     <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary">
-    <meta name="twitter:title" content="Ballgame ⚾">
-    <meta name="twitter:description" content="Self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots.">
-    <meta name="twitter:image" content="https://blipit.net/og-image.png">
-    <meta name="twitter:image:alt" content="Ballgame baseball icon">
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="BlipIt Baseball Legends ⚾" />
+    <meta
+      name="twitter:description"
+      content="BlipIt Baseball Legends — self-playing, talking baseball simulator. Watch a full 9-inning game unfold pitch by pitch — or jump in as the Manager and call the shots."
+    />
+    <meta name="twitter:image" content="https://blipit.net/og-image.png" />
+    <meta name="twitter:image:alt" content="BlipIt Baseball Legends icon" />
 
     <!-- PWA / Mobile -->
-    <meta name="theme-color" content="#000000">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
-    <meta name="apple-mobile-web-app-title" content="Ballgame">
-    <link rel="manifest" href="/manifest.webmanifest">
-    <link rel="icon" type="image/svg+xml" href="/images/baseball.svg">
-    <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32.png">
-    <link rel="apple-touch-icon" href="/images/baseball-180.png">
+    <meta name="theme-color" content="#0F1E34" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="BlipIt Legends" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="icon" type="image/svg+xml" href="/images/blipit.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/images/blipit-32.png" />
+    <link rel="apple-touch-icon" href="/images/blipit-180.png" />
 
     <script>
-      if (window.location.hostname === 'blipit.net') {
-        const s = document.createElement('script');
+      if (window.location.hostname === "blipit.net") {
+        const s = document.createElement("script");
         s.async = true;
-        s.src = 'https://www.googletagmanager.com/gtag/js?id=G-EBR970J2BS';
+        s.src = "https://www.googletagmanager.com/gtag/js?id=G-EBR970J2BS";
         document.head.appendChild(s);
         window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-EBR970J2BS');
+        function gtag() {
+          dataLayer.push(arguments);
+        }
+        gtag("js", new Date());
+        gtag("config", "G-EBR970J2BS");
       }
     </script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="game"></div>
     <script type="module" src="index.tsx"></script>
-</body>
+  </body>
 </html>

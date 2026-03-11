@@ -74,13 +74,13 @@ See [`docs/repo-layout.md`](docs/repo-layout.md) for the full directory tree and
 
 ## Docs map
 
-| Doc | When to read it |
-|---|---|
-| [`docs/style-guide.md`](docs/style-guide.md) | Before adding or changing any UI element, color, font size, or button variant |
-| [`docs/architecture.md`](docs/architecture.md) | Before touching routes, auto-play scheduler, Manager Mode, or the notification system |
-| [`docs/rxdb-persistence.md`](docs/rxdb-persistence.md) | Before changing any RxDB schema, collection, or persistence logic |
-| [`docs/e2e-testing.md`](docs/e2e-testing.md) | Before writing or changing E2E tests, fixtures, or visual snapshots |
-| [`docs/repo-layout.md`](docs/repo-layout.md) | For a full directory tour and path aliases |
+| Doc                                                    | When to read it                                                                       |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| [`docs/style-guide.md`](docs/style-guide.md)           | Before adding or changing any UI element, color, font size, or button variant         |
+| [`docs/architecture.md`](docs/architecture.md)         | Before touching routes, auto-play scheduler, Manager Mode, or the notification system |
+| [`docs/rxdb-persistence.md`](docs/rxdb-persistence.md) | Before changing any RxDB schema, collection, or persistence logic                     |
+| [`docs/e2e-testing.md`](docs/e2e-testing.md)           | Before writing or changing E2E tests, fixtures, or visual snapshots                   |
+| [`docs/repo-layout.md`](docs/repo-layout.md)           | For a full directory tour and path aliases                                            |
 
 ---
 

@@ -12,22 +12,20 @@ export const HomeContainer = styled.div`
   gap: ${({ theme }) => theme.spacing.lg};
 `;
 
-export const HomeLogo = styled.div`
-  font-size: ${({ theme }) => theme.fontSizes.logo};
-
-  ${mq.mobile} {
-    font-size: ${({ theme }) => theme.fontSizes.displayMd};
-  }
-`;
-
-export const HomeTitle = styled.h1`
-  color: ${({ theme }) => theme.colors.textPrimary};
-  font-size: ${({ theme }) => theme.fontSizes.title};
+export const HomeLogo = styled.h1`
+  width: ${({ theme }) => theme.sizes.logoMd};
+  height: ${({ theme }) => theme.sizes.logoMd};
   margin: 0;
-  text-align: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
 
   ${mq.mobile} {
-    font-size: ${({ theme }) => theme.fontSizes.displaySm};
+    width: ${({ theme }) => theme.sizes.logoSm};
+    height: ${({ theme }) => theme.sizes.logoSm};
   }
 `;
 
@@ -47,9 +45,9 @@ export const MenuGroup = styled.div`
 `;
 
 export const PrimaryBtn = styled.button`
-  background: ${({ theme }) => theme.colors.greenBg};
-  color: ${({ theme }) => theme.colors.accentGreen};
-  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  background: ${({ theme }) => theme.colors.btnPrimaryBg};
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  border: 1px solid ${({ theme }) => theme.colors.borderAccent};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.lg} ${({ theme }) => theme.spacing.xl};
   font-size: ${({ theme }) => theme.fontSizes.bodyXl};
@@ -60,11 +58,11 @@ export const PrimaryBtn = styled.button`
   text-align: center;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.greenHover};
+    background: ${({ theme }) => theme.colors.btnPrimaryBgHover};
   }
 
   &:active {
-    background: ${({ theme }) => theme.colors.greenActive};
+    background: ${({ theme }) => theme.colors.btnPrimaryBgActive};
   }
 
   &:focus-visible {
@@ -113,7 +111,7 @@ export const LeagueTeaserBox = styled.div`
 `;
 
 export const LeagueTeaserTitle = styled.p`
-  color: ${({ theme }) => theme.colors.textGold};
+  color: ${({ theme }) => theme.colors.textAccent};
   font-size: ${({ theme }) => theme.fontSizes.subLg};
   font-weight: 600;
   margin: 0 0 ${({ theme }) => theme.spacing.xs};

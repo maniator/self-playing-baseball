@@ -99,7 +99,7 @@ export const SelectField = styled.select`
 
 export const ActionButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: ${({ theme }) => theme.colors.btnTextDark};
+  color: ${({ theme }) => theme.colors.btnPrimaryText};
   border: none;
   border-radius: ${({ theme }) => theme.radii.md};
   padding: 5px ${({ theme }) => theme.spacing.md};
@@ -111,7 +111,7 @@ export const ActionButton = styled.button`
   flex-shrink: 0;
 
   &:hover {
-    background: ${({ theme }) => theme.colors.accentGreenBright};
+    background: ${({ theme }) => theme.colors.accentBright};
   }
 
   &:disabled {

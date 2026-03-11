@@ -13,9 +13,10 @@
 
 The **How to Play → Game Flow** section describes the two volume controls using emojis. The second emoji is wrong:
 
-> Help text: *"🔊 slider = play-by-play voice volume · **🔔** slider = chime & fanfare volume."*
+> Help text: _"🔊 slider = play-by-play voice volume · **🔔** slider = chime & fanfare volume."_
 
 Actual in-game UI:
+
 - 🔊 button/slider — announcement/speech volume ✅
 - **🎵** button/slider — music volume ❌ (Help says 🔔)
 
@@ -26,7 +27,7 @@ A user reading the help and then looking at the game controls will not find a �
 ## Reproduction steps
 
 1. Navigate to `/help` → expand **Game Flow**.
-2. Read: *"🔊 slider = play-by-play voice volume · 🔔 slider = chime & fanfare volume."*
+2. Read: _"🔊 slider = play-by-play voice volume · 🔔 slider = chime & fanfare volume."_
 3. Open a game at any speed.
 4. Look at the volume controls.
 5. **Expected:** A 🔔 icon for the second slider.

@@ -58,11 +58,11 @@ Pre-crafted save files in `e2e/fixtures/` let tests start in a specific game sta
 
 Available fixtures:
 
-| File | State | Replaces |
-|---|---|---|
-| `pending-decision.json` | Inning 4, defensive_shift pending, managerMode on | 120 s wait for decision panel |
-| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending + candidates | Pinch-hitter visual that never completed |
-| `mid-game-with-rbi.json` | Inning 5, RBI in playLog | 80 log-line wait for RBI values |
+| File                                 | State                                             | Replaces                                 |
+| ------------------------------------ | ------------------------------------------------- | ---------------------------------------- |
+| `pending-decision.json`              | Inning 4, defensive_shift pending, managerMode on | 120 s wait for decision panel            |
+| `pending-decision-pinch-hitter.json` | Inning 7, pinch_hitter pending + candidates       | Pinch-hitter visual that never completed |
+| `mid-game-with-rbi.json`             | Inning 5, RBI in playLog                          | 80 log-line wait for RBI values          |
 
 To author a new fixture, use the Node.js signing approach documented in the "Authoring a new fixture" section of `../docs/e2e-testing.md` (use Node, not Python — Python `json.dumps` escapes non-ASCII differently from JS `JSON.stringify`, causing sig mismatches).
 
@@ -93,13 +93,13 @@ If visual snapshot consistency in Copilot sessions is needed, install fonts via 
 
 ## Workflow files reference
 
-| File | Purpose |
-|---|---|
-| `.github/workflows/ci.yml` | Lint + unit test CI |
-| `.github/workflows/lint.yml` | ESLint + Prettier check |
-| `.github/workflows/playwright-e2e.yml` | Playwright E2E (containerized) |
-| `.github/workflows/update-visual-snapshots.yml` | Regenerate visual snapshot baselines |
-| `.github/workflows/copilot-setup-steps.yml` | Copilot agent environment setup (no container) |
+| File                                            | Purpose                                        |
+| ----------------------------------------------- | ---------------------------------------------- |
+| `.github/workflows/ci.yml`                      | Lint + unit test CI                            |
+| `.github/workflows/lint.yml`                    | ESLint + Prettier check                        |
+| `.github/workflows/playwright-e2e.yml`          | Playwright E2E (containerized)                 |
+| `.github/workflows/update-visual-snapshots.yml` | Regenerate visual snapshot baselines           |
+| `.github/workflows/copilot-setup-steps.yml`     | Copilot agent environment setup (no container) |
 
 ## Pre-commit checklist
 

@@ -20,11 +20,11 @@ You are a data integrity and persistence expert for `maniator/self-playing-baseb
 
 ## RxDB architecture reference
 
-| Collection | Purpose |
-|---|---|
-| `saves` | One header doc per save (`SaveDoc`) — setup, `progressIdx`, `stateSnapshot`. **Current schema version: 1.** |
-| `events` | Append-only event log (`EventDoc`) — one doc per action, keyed `${saveId}:${idx}` |
-| `teams` | Legacy (removed — was MLB team cache). No longer a collection. |
+| Collection | Purpose                                                                                                     |
+| ---------- | ----------------------------------------------------------------------------------------------------------- |
+| `saves`    | One header doc per save (`SaveDoc`) — setup, `progressIdx`, `stateSnapshot`. **Current schema version: 1.** |
+| `events`   | Append-only event log (`EventDoc`) — one doc per action, keyed `${saveId}:${idx}`                           |
+| `teams`    | Legacy (removed — was MLB team cache). No longer a collection.                                              |
 
 - `SaveStore` is a singleton backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))`.
 - `_createTestDb` requires `fake-indexeddb/auto` imported at the top of the test file.
@@ -99,6 +99,7 @@ half-inning / gameOver
 ```
 
 When changing this flow:
+
 - `reset`, `setTeams`, and `restore_game` actions are filtered out of the event log — do not accidentally include them.
 - `stateSnapshot` must include both `state` (full `State`) and `rngState` for deterministic save/load replay.
 

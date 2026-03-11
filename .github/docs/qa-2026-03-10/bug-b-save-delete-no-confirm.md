@@ -21,13 +21,14 @@ Saves are harder to recover than teams (teams can be re-created; game history da
 
 1. Navigate to **Load Saved Game** (`/saves`) or open the 💾 Saves panel in-game.
 2. Click the **✕** button on any save entry.
-3. **Expected:** A confirmation prompt such as *"Delete this save? This cannot be undone."*
+3. **Expected:** A confirmation prompt such as _"Delete this save? This cannot be undone."_
 4. **Actual:** Save is deleted immediately with no prompt.
 
 For comparison:
+
 1. Navigate to **Manage Teams** (`/teams`).
 2. Click **Delete** on any team.
-3. A native `confirm()` dialog appears: *"Delete 'Team Name'? This cannot be undone."*
+3. A native `confirm()` dialog appears: _"Delete 'Team Name'? This cannot be undone."_
 
 ---
 
@@ -36,11 +37,7 @@ For comparison:
 `src/features/saves/components/SaveSlotList/index.tsx` line ~52:
 
 ```tsx
-<ActionBtn
-  type="button"
-  onClick={() => onDelete(s.id)}
-  data-testid="delete-save-button"
->
+<ActionBtn type="button" onClick={() => onDelete(s.id)} data-testid="delete-save-button">
   ✕
 </ActionBtn>
 ```

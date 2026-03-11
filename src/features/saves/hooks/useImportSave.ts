@@ -11,7 +11,7 @@ const PASS_THROUGH_RE = /^Cannot import save:/i;
 export const friendlyImportError = (raw: string): string => {
   if (PASS_THROUGH_RE.test(raw)) return raw;
   return SIGNATURE_RE.test(raw)
-    ? "The file you selected is not a valid Ballgame save file."
+    ? "The file you selected is not a valid BlipIt Baseball Legends save file."
     : "Import failed. Please check the file and try again.";
 };
 

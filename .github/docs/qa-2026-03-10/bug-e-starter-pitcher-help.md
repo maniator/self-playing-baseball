@@ -24,6 +24,7 @@ Users who manage a team for the first time may miss the dropdown entirely, or no
 3. **Actual:** No mention of the Starter Pitcher dropdown.
 
 To observe the actual feature:
+
 1. Go to `/exhibition/new`.
 2. Under **Manage a team?** select Home or Away.
 3. A **Starting Pitcher** dropdown appears (e.g. "Memphis Bears starting pitcher: Felix Williams (SP)").
@@ -45,8 +46,8 @@ Add a bullet to the Pre-game Customization list:
 
 ```tsx
 <Li>
-  When managing a team, a <strong>Starting Pitcher</strong> dropdown appears —
-  choose which eligible pitcher starts the game before clicking Play Ball.
+  When managing a team, a <strong>Starting Pitcher</strong> dropdown appears — choose which eligible
+  pitcher starts the game before clicking Play Ball.
 </Li>
 ```
 

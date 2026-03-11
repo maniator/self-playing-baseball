@@ -19,21 +19,21 @@ type ButtonVariant = "default" | "new" | "saves" | "home";
 const variantStyles: Record<ButtonVariant, ReturnType<typeof css>> = {
   default: css`
     background: ${({ theme }) => theme.colors.accentPrimary};
-    color: ${({ theme }) => theme.colors.btnTextDark};
+    color: ${({ theme }) => theme.colors.btnPrimaryText};
     border: none;
   `,
   new: css`
-    background: ${({ theme }) => theme.colors.buttonNewBg};
+    background: ${({ theme }) => theme.colors.btnActionBg};
     color: ${({ theme }) => theme.colors.textPrimary};
     border: none;
     font-weight: bold;
   `,
   saves: css`
-    background: ${({ theme }) => theme.colors.greenBg};
-    color: ${({ theme }) => theme.colors.accentGreen};
-    border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+    background: ${({ theme }) => theme.colors.btnPrimaryBg};
+    color: ${({ theme }) => theme.colors.accentPrimary};
+    border: 1px solid ${({ theme }) => theme.colors.borderAccent};
     &:hover {
-      background: ${({ theme }) => theme.colors.greenHover};
+      background: ${({ theme }) => theme.colors.btnPrimaryBgHover};
     }
   `,
   home: css`
@@ -178,7 +178,7 @@ export const RangeInput = styled.input`
 
 export const NotifBadge = styled.span<{ $ok: boolean }>`
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  color: ${({ $ok, theme }) => ($ok ? theme.colors.statusOkGreen : theme.colors.statusWarnYellow)};
+  color: ${({ $ok, theme }) => ($ok ? theme.colors.statusSuccess : theme.colors.statusWarn)};
   cursor: ${({ $ok }) => ($ok ? "default" : "pointer")};
   white-space: nowrap;
 `;

@@ -86,7 +86,7 @@ export const DbResetNotice = styled.div`
   left: 0;
   right: 0;
   z-index: 9999;
-  background: ${({ theme }) => theme.colors.goldWarn};
+  background: ${({ theme }) => theme.colors.bgWarn};
   color: ${({ theme }) => theme.colors.textPrimary};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.lg};
   display: flex;

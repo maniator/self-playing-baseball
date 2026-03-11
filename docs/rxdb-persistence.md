@@ -51,15 +51,15 @@ vi.mock("@feat/saves/hooks/useSaveStore", () => ({
 
 ### Collections
 
-| Collection | Purpose |
-|---|---|
-| `saves` | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.** |
-| `events` | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`. |
-| `customTeams` | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 3** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill; v2→v3: `teamSeed`/`playerSeed` backfill with seed-based fingerprint recomputation). |
-| `players` | Global player identity docs (`PlayerDoc`). Keyed by `globalPlayerId`. Stores player metadata independent of team. **Current schema version: 0.** |
-| `games` | Completed game docs (`GameDoc`). Keyed by `gameInstanceId` (idempotent — multiple saves of the same run share one row). **Current schema version: 0.** |
-| `playerGameStats` | Batting stats per player per game (`PlayerGameStatDoc`). Keyed `${gameId}:${teamId}:${playerKey}`. **Current schema version: 0.** |
-| `pitcherGameStats` | Pitching stats per pitcher per game (`PitcherGameStatDoc`). Keyed `${gameId}:${teamId}:${pitcherKey}`. Includes IP, H, BB, K, HR, R, ER, ERA, WHIP, SV, HLD, BS. **Current schema version: 0.** |
+| Collection         | Purpose                                                                                                                                                                                                                                                                                       |
+| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `saves`            | One header doc per save game (`SaveDoc`). Stores setup, progressIdx, stateSnapshot (full game `State` + `rngState`). **Current schema version: 1.**                                                                                                                                           |
+| `events`           | Append-only event log (`EventDoc`). One doc per dispatched action, keyed `${saveId}:${idx}`.                                                                                                                                                                                                  |
+| `customTeams`      | Custom team docs (`CustomTeamDoc`). Stores full roster (lineup/bench/pitchers) + metadata. **Current schema version: 3** (v0→v1: abbreviation + team fingerprint; v1→v2: per-player fingerprint backfill; v2→v3: `teamSeed`/`playerSeed` backfill with seed-based fingerprint recomputation). |
+| `players`          | Global player identity docs (`PlayerDoc`). Keyed by `globalPlayerId`. Stores player metadata independent of team. **Current schema version: 0.**                                                                                                                                              |
+| `games`            | Completed game docs (`GameDoc`). Keyed by `gameInstanceId` (idempotent — multiple saves of the same run share one row). **Current schema version: 0.**                                                                                                                                        |
+| `playerGameStats`  | Batting stats per player per game (`PlayerGameStatDoc`). Keyed `${gameId}:${teamId}:${playerKey}`. **Current schema version: 0.**                                                                                                                                                             |
+| `pitcherGameStats` | Pitching stats per pitcher per game (`PitcherGameStatDoc`). Keyed `${gameId}:${teamId}:${pitcherKey}`. Includes IP, H, BB, K, HR, R, ER, ERA, WHIP, SV, HLD, BS. **Current schema version: 0.**                                                                                               |
 
 ### SaveStore API
 
@@ -103,14 +103,17 @@ Teams carry a `fingerprint?: string` and `teamSeed?: string`. The fingerprint is
 ### Export/Import Bundles
 
 **Teams bundle** (`type: "customTeams"`, `formatVersion: 1`):
+
 - Every player row carries an export-only `sig` (FNV-1a over `{name, role, batting, pitching}`) for tamper detection — stripped before DB storage.
 - Bundle-level `sig` = `fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload))`.
 
 **Player bundle** (`type: "customPlayer"`, `formatVersion: 1`):
+
 - Signed with `PLAYER_EXPORT_KEY`.
 - Decoded by `parseExportedCustomPlayer(json)` — throws if tampered.
 
 Import flow in `useImportCustomTeams` hook:
+
 1. File upload or paste JSON triggers `importFn(json)`
 2. If `result.requiresDuplicateConfirmation` → surface `duplicatePlayerWarnings`, await user choice
 3. User confirms → `importFn(json, { allowDuplicatePlayers: true })`

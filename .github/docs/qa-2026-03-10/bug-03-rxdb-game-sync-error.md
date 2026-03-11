@@ -21,13 +21,13 @@ A console error fires whenever the game sync hook attempts to persist a "game ov
 
 ## Known triggers (all confirmed in QA)
 
-| Trigger | Session |
-|---|---|
-| Game ends naturally at FINAL | Session 1 |
-| Load a FINAL saved game from `/saves` | Session 1 |
-| Click "Resume Current Game" on home for a FINAL game | Session 2 |
+| Trigger                                                | Session   |
+| ------------------------------------------------------ | --------- |
+| Game ends naturally at FINAL                           | Session 1 |
+| Load a FINAL saved game from `/saves`                  | Session 1 |
+| Click "Resume Current Game" on home for a FINAL game   | Session 2 |
 | Open then close 💾 Saves dialog while game is at FINAL | Session 2 |
-| Delete a save while the current game is at FINAL | Session 2 |
+| Delete a save while the current game is at FINAL       | Session 2 |
 
 ---
 
@@ -68,6 +68,7 @@ SaveStore.updateProgress(saveId, state.pitchKey, { ... })
 ## Fix plan
 
 **Files:**
+
 - `src/features/saves/hooks/useRxdbGameSync.ts`
 - `src/features/saves/storage/saveStore.ts`
 

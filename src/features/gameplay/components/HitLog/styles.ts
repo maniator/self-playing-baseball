@@ -52,12 +52,12 @@ export const Entry = styled.div`
 
 export const Label = styled.span<{ $hr?: boolean }>`
   font-weight: bold;
-  color: ${({ $hr, theme }) => ($hr ? theme.colors.accentGold : theme.colors.textScoreHeader)};
+  color: ${({ $hr, theme }) => ($hr ? theme.colors.accentPrimary : theme.colors.textScoreHeader)};
   min-width: 22px;
 `;
 
 export const Runs = styled.span`
-  color: ${({ theme }) => theme.colors.redDanger};
+  color: ${({ theme }) => theme.colors.textDanger};
   font-size: ${({ theme }) => theme.fontSizes.sm};
 `;
 

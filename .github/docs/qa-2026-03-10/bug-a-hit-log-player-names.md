@@ -52,6 +52,7 @@ The `#N` notation is meaningless to users who are not simultaneously cross-refer
 Extend the `PlayLogEntry` type to include a `batterName` field populated at the point the hit is recorded in the reducer. This is the cleanest fix: the name is captured at game time (so it works even after roster substitutions) and the hit log renderer just reads it.
 
 Files:
+
 - `src/features/gameplay/context/index.tsx` — add `batterName?: string` to `PlayLogEntry`
 - Reducer / handler that creates `PlayLogEntry` objects — populate `batterName` from the active lineup at the moment of the hit
 - `src/features/gameplay/components/HitLog/index.tsx` — render `entry.batterName ?? \`#${entry.batterNum}\`` (graceful fallback for old saves)

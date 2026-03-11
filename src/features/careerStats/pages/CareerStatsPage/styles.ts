@@ -216,7 +216,7 @@ export const LeaderName = styled.span`
 `;
 
 export const LeaderValue = styled.span`
-  color: ${({ theme }) => theme.colors.accentGreen};
+  color: ${({ theme }) => theme.colors.accentPrimary};
   font-size: ${({ theme }) => theme.fontSizes.dialogTitle};
   font-weight: 700;
   font-variant-numeric: tabular-nums;

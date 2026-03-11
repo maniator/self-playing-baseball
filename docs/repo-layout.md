@@ -23,11 +23,11 @@
 │   ├── manifest.webmanifest        # PWA manifest: name "Ballgame", icons, theme_color #000000
 │   ├── og-image.png                # OG / Twitter card image (stable URL: /og-image.png)
 │   └── images/
-│       ├── baseball.svg            # SVG icon (baseball with red stitches on black bg) — favicon + source
-│       ├── baseball-192.png        # PWA icon 192×192 (generated from baseball.svg)
-│       ├── baseball-512.png        # PWA icon 512×512 / maskable (generated from baseball.svg)
-│       ├── baseball-180.png        # Apple touch icon 180×180
-│       └── favicon-32.png          # Fallback favicon 32×32
+│       ├── blipit.svg              # SVG app icon (lossless wrapper around the 512 PNG)
+│       ├── blipit-192.png          # PWA icon 192×192
+│       ├── blipit-512.png          # PWA icon 512×512 / maskable
+│       ├── blipit-180.png          # Apple touch icon 180×180
+│       └── blipit-32.png           # Fallback favicon 32×32
 ├── dist/                           # Build output (gitignored)
 ├── e2e/                            # Playwright E2E tests
 │   ├── fixtures/
@@ -277,11 +277,11 @@ Tests are **co-located** next to their source files (e.g. `src/features/gameplay
 
 All cross-directory imports use aliases (configured in `tsconfig.json` and `vite.config.ts`):
 
-| Alias | Resolves to | Notes |
-|---|---|---|
-| `@feat/*` | `src/features/*` | **Preferred** for all feature code |
-| `@shared/*` | `src/shared/*` | Genuinely cross-feature utilities |
-| `@storage/*` | `src/storage/*` | Shared persistence infra (DB wiring, thin type re-exports) |
-| `@test/*` | `src/test/*` | Test helpers |
+| Alias        | Resolves to      | Notes                                                      |
+| ------------ | ---------------- | ---------------------------------------------------------- |
+| `@feat/*`    | `src/features/*` | **Preferred** for all feature code                         |
+| `@shared/*`  | `src/shared/*`   | Genuinely cross-feature utilities                          |
+| `@storage/*` | `src/storage/*`  | Shared persistence infra (DB wiring, thin type re-exports) |
+| `@test/*`    | `src/test/*`     | Test helpers                                               |
 
 Same-directory imports remain relative (e.g. `"./styles"`, `"./constants"`).

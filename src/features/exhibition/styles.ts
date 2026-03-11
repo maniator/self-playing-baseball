@@ -127,9 +127,9 @@ export const RadioLabel = styled.label`
 export const ResumeButton = styled.button`
   display: block;
   width: 100%;
-  background: ${({ theme }) => theme.colors.greenBg};
-  color: ${({ theme }) => theme.colors.accentGreen};
-  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  background: ${({ theme }) => theme.colors.btnPrimaryBg};
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  border: 1px solid ${({ theme }) => theme.colors.borderAccent};
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.xxl};
   font-family: inherit;
@@ -139,7 +139,7 @@ export const ResumeButton = styled.button`
   margin-bottom: ${({ theme }) => theme.spacing.xs};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.greenHover};
+    background: ${({ theme }) => theme.colors.btnPrimaryBgHover};
   }
 
   ${mq.mobile} {
@@ -163,7 +163,7 @@ export const PlayBallButton = styled.button`
   display: block;
   width: 100%;
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: ${({ theme }) => theme.colors.btnTextDark};
+  color: ${({ theme }) => theme.colors.btnPrimaryText};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.xxl};

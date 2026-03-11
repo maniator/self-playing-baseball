@@ -23,14 +23,14 @@ You are a UI/UX and front-end engineering expert for `maniator/self-playing-base
 
 Validate layout and readability across all configured Playwright projects:
 
-| Project | Viewport |
-|---|---|
-| `desktop` | 1280×800 |
-| `tablet` | 820×1180 |
-| `iphone-15-pro-max` | 430×739 |
-| `iphone-15` | 393×659 |
-| `pixel-7` | 412×839 |
-| `pixel-5` | 393×727 |
+| Project             | Viewport |
+| ------------------- | -------- |
+| `desktop`           | 1280×800 |
+| `tablet`            | 820×1180 |
+| `iphone-15-pro-max` | 430×739  |
+| `iphone-15`         | 393×659  |
+| `pixel-7`           | 412×839  |
+| `pixel-5`           | 393×727  |
 
 ### Key UI areas to check
 

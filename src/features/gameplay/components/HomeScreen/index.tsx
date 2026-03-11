@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { HomeContainer, HomeLogo, HomeSubtitle, HomeTitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -23,8 +23,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
   onCareerStats,
 }) => (
   <HomeContainer data-testid="home-screen">
-    <HomeLogo>⚾</HomeLogo>
-    <HomeTitle>Ballgame</HomeTitle>
+    <HomeLogo>
+      <img src="/images/blipit.svg" alt="BlipIt Baseball Legends" />
+    </HomeLogo>
     <HomeSubtitle>Self-playing baseball simulator</HomeSubtitle>
     <MenuGroup>
       {onResumeCurrent && (

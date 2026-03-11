@@ -40,9 +40,11 @@ container:
 Use the following pattern for all `docker run` invocations. The `n 24` step installs Node 24 (matching `.nvmrc`) over the container's default Node, and `hash -r` refreshes the shell path so the new binary is used immediately.
 
 > **Root ownership caveat:** The container runs as `root`. Files written during the run (e.g., `dist/`, `node_modules/`, regenerated snapshot PNGs) will be owned by root on the host. After each `docker run` command, fix ownership so subsequent `git`, `yarn`, and editor operations work:
+>
 > ```bash
 > sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 > ```
+>
 > The `-h` flag (`--no-dereference`) ensures symlinks inside `node_modules/` are not followed on the host — only the symlink entries themselves get chowned. The `2>/dev/null || true` makes the command safe to copy-paste even when some directories don't exist yet (e.g., `dist/` is absent on a fresh clone).
 
 ```bash
@@ -87,17 +89,18 @@ sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || tru
 
 ## Playwright projects reference
 
-| Project | Browser | Viewport | Notes |
-|---|---|---|---|
-| `determinism` | Desktop Chromium | 1280×800 | `determinism.spec.ts` only; spawns two fresh browser contexts per test |
-| `desktop` | Desktop Chromium | 1280×800 | Excludes `determinism.spec.ts` |
-| `tablet` | WebKit (iPad gen 7) | 820×1180 | Excludes `determinism.spec.ts` |
-| `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739 | Excludes `determinism.spec.ts` |
-| `iphone-15` | WebKit (iPhone 15) | 393×659 | Excludes `determinism.spec.ts` |
-| `pixel-7` | Chromium (Pixel 7) | 412×839 | Excludes `determinism.spec.ts` |
-| `pixel-5` | Chromium (Pixel 5) | 393×727 | Excludes `determinism.spec.ts` |
+| Project             | Browser                    | Viewport | Notes                                                                  |
+| ------------------- | -------------------------- | -------- | ---------------------------------------------------------------------- |
+| `determinism`       | Desktop Chromium           | 1280×800 | `determinism.spec.ts` only; spawns two fresh browser contexts per test |
+| `desktop`           | Desktop Chromium           | 1280×800 | Excludes `determinism.spec.ts`                                         |
+| `tablet`            | WebKit (iPad gen 7)        | 820×1180 | Excludes `determinism.spec.ts`                                         |
+| `iphone-15-pro-max` | WebKit (iPhone 15 Pro Max) | 430×739  | Excludes `determinism.spec.ts`                                         |
+| `iphone-15`         | WebKit (iPhone 15)         | 393×659  | Excludes `determinism.spec.ts`                                         |
+| `pixel-7`           | Chromium (Pixel 7)         | 412×839  | Excludes `determinism.spec.ts`                                         |
+| `pixel-5`           | Chromium (Pixel 5)         | 393×727  | Excludes `determinism.spec.ts`                                         |
 
 **Project groupings for snapshot work:**
+
 - **Chromium snapshots**: `--project=desktop --project=pixel-7 --project=pixel-5`
 - **WebKit snapshots**: `--project=tablet --project=iphone-15-pro-max --project=iphone-15`
 - Run both groups (sequentially or in separate commands) to regenerate all baselines.
@@ -170,35 +173,35 @@ sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/
 
 ## Test helpers (`e2e/utils/helpers.ts`)
 
-| Helper | Purpose |
-|---|---|
-| `resetAppState(page)` | Navigate to `/` and wait for DB loading to finish |
-| `startGameViaPlayBall(page, options?)` | Navigate to `/exhibition/new`, fill seed/team fields, click Play Ball |
-| `loadFixture(page, fixtureName)` | Import a pre-crafted save fixture and auto-load — instant (no autoplay wait) |
-| `configureNewGame(page, options?)` | Fill seed/team fields on `/exhibition/new` without submitting |
-| `waitForLogLines(page, count, timeout?)` | Poll until ≥ count play-by-play entries appear |
-| `captureGameSignature(page, minLines?, logTimeout?)` | Read `data-log-index` 0–4 for determinism checks |
-| `openSavesModal(page)` | Click saves button, wait for modal |
-| `saveCurrentGame(page)` | Open modal + click Save current game |
-| `loadFirstSave(page)` | Open modal + click first Load button |
-| `importSaveFromFixture(page, fixtureName)` | Open modal + set file input to fixture path |
-| `assertFieldAndLogVisible(page)` | Assert field-view + scoreboard visible with non-zero bounding boxes |
-| `disableAnimations(page)` | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
-| `importTeamsFixture(page, fixtureName)` | Navigate to `/teams`, import fixture, wait for success banner |
+| Helper                                               | Purpose                                                                             |
+| ---------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `resetAppState(page)`                                | Navigate to `/` and wait for DB loading to finish                                   |
+| `startGameViaPlayBall(page, options?)`               | Navigate to `/exhibition/new`, fill seed/team fields, click Play Ball               |
+| `loadFixture(page, fixtureName)`                     | Import a pre-crafted save fixture and auto-load — instant (no autoplay wait)        |
+| `configureNewGame(page, options?)`                   | Fill seed/team fields on `/exhibition/new` without submitting                       |
+| `waitForLogLines(page, count, timeout?)`             | Poll until ≥ count play-by-play entries appear                                      |
+| `captureGameSignature(page, minLines?, logTimeout?)` | Read `data-log-index` 0–4 for determinism checks                                    |
+| `openSavesModal(page)`                               | Click saves button, wait for modal                                                  |
+| `saveCurrentGame(page)`                              | Open modal + click Save current game                                                |
+| `loadFirstSave(page)`                                | Open modal + click first Load button                                                |
+| `importSaveFromFixture(page, fixtureName)`           | Open modal + set file input to fixture path                                         |
+| `assertFieldAndLogVisible(page)`                     | Assert field-view + scoreboard visible with non-zero bounding boxes                 |
+| `disableAnimations(page)`                            | Inject CSS to zero all animation/transition durations (use before visual snapshots) |
+| `importTeamsFixture(page, fixtureName)`              | Navigate to `/teams`, import fixture, wait for success banner                       |
 
 ## Pre-crafted save fixtures (`e2e/fixtures/`)
 
 Use `loadFixture` instead of long autoplay-based setup whenever the test only needs a specific game state:
 
-| File | State | Use for |
-|---|---|---|
-| `sample-save.json` | Inning 2, Mets vs Yankees, no pending decision | Import smoke tests |
-| `pending-decision.json` | Inning 4 bottom, defensive_shift pending, managerMode on | Decision panel UI, notification smoke |
-| `pending-decision-pinch-hitter.json` | Inning 7 top, pinch_hitter pending + 2 candidates | Pinch-hitter visual snapshot |
-| `pending-decision-pinch-hitter-teams.json` | Same with custom teams + player sigs | Signed custom-team fixture tests |
-| `mid-game-with-rbi.json` | Inning 5 top, 3-2 score, RBI in playLog | RBI stats display, save/reload persistence |
-| `finished-game.json` | Completed game, FINAL banner | Game-over regression tests |
-| `legacy-teams-no-fingerprints.json` | Pre-v2 teams bundle (no fingerprints) | Legacy import migration regression |
+| File                                       | State                                                    | Use for                                    |
+| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------ |
+| `sample-save.json`                         | Inning 2, Mets vs Yankees, no pending decision           | Import smoke tests                         |
+| `pending-decision.json`                    | Inning 4 bottom, defensive_shift pending, managerMode on | Decision panel UI, notification smoke      |
+| `pending-decision-pinch-hitter.json`       | Inning 7 top, pinch_hitter pending + 2 candidates        | Pinch-hitter visual snapshot               |
+| `pending-decision-pinch-hitter-teams.json` | Same with custom teams + player sigs                     | Signed custom-team fixture tests           |
+| `mid-game-with-rbi.json`                   | Inning 5 top, 3-2 score, RBI in playLog                  | RBI stats display, save/reload persistence |
+| `finished-game.json`                       | Completed game, FINAL banner                             | Game-over regression tests                 |
+| `legacy-teams-no-fingerprints.json`        | Pre-v2 teams bundle (no fingerprints)                    | Legacy import migration regression         |
 
 ## Authoring new tests
 

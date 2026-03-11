@@ -13,10 +13,11 @@ export const TabBar = styled.div`
 
 /** Individual tab button — active state controlled via $active transient prop. */
 export const TabBtn = styled.button<{ $active: boolean }>`
-  background: ${({ $active, theme }) => ($active ? theme.colors.greenBg : "transparent")};
-  color: ${({ $active, theme }) => ($active ? theme.colors.accentGreen : theme.colors.textSubdued)};
+  background: ${({ $active, theme }) => ($active ? theme.colors.btnPrimaryBg : "transparent")};
+  color: ${({ $active, theme }) =>
+    $active ? theme.colors.accentPrimary : theme.colors.textSubdued};
   border: 1px solid
-    ${({ $active, theme }) => ($active ? theme.colors.borderGreen : theme.colors.borderSubtle)};
+    ${({ $active, theme }) => ($active ? theme.colors.borderAccent : theme.colors.borderSubtle)};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
   font-size: ${({ theme }) => theme.fontSizes.subLg};
@@ -27,10 +28,11 @@ export const TabBtn = styled.button<{ $active: boolean }>`
 
   &:hover {
     background: ${({ $active, theme }) =>
-      $active ? theme.colors.greenHover : theme.colors.bgSurface};
-    color: ${({ $active, theme }) => ($active ? theme.colors.accentGreen : theme.colors.textLink)};
+      $active ? theme.colors.btnPrimaryBgHover : theme.colors.bgSurface};
+    color: ${({ $active, theme }) =>
+      $active ? theme.colors.accentPrimary : theme.colors.textLink};
     border-color: ${({ $active, theme }) =>
-      $active ? theme.colors.borderGreen : theme.colors.borderForm};
+      $active ? theme.colors.borderAccent : theme.colors.borderForm};
   }
 
   &:focus-visible {

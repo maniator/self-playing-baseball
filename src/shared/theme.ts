@@ -2,8 +2,8 @@ export const theme = {
   colors: {
     // Backgrounds
     bgVoid: "#000000",
-    bgSurface: "#0d1b2e",
-    bgInput: "#1a2e4a",
+    bgSurface: "#0F1E34",
+    bgInput: "#1C2E4A",
     bgInputSm: "#1a2440",
     bgGame: "#0a1628",
     bgDeep: "#0a0a1a",
@@ -13,7 +13,7 @@ export const theme = {
     bgImport: "#0a1525",
     bgDropdown: "#111111",
     bgPaginationHover: "#25254a",
-    successBg: "#0d2016",
+    bgSuccess: "#1a1400",
 
     // Borders
     borderPanel: "#2a3a5a",
@@ -21,7 +21,7 @@ export const theme = {
     borderForm: "#4a6090",
     borderSubtle: "#2a2a3a",
     borderDark: "#1e3050",
-    borderGreen: "#3a7a5a",
+    borderAccent: "#994200",
     borderDanger: "#883333",
     borderLog: "#333333",
     borderDarkest: "#222222",
@@ -44,11 +44,11 @@ export const theme = {
     textBody: "#cce0ff",
     textBodyAlt: "#cce8ff",
     textDialog: "#e0f0ff",
-    textMuted: "#aaaaaa",
+    textMuted: "#BFC7CF",
     textSemiLight: "#bbbbbb",
     textLight: "#cccccc",
     textDisabled: "#555555",
-    textDimmer: "#666666",
+    textDimmer: "#6B7785",
     textDropdown: "#dddddd",
     textHint: "#6680aa",
     textLink: "#aaccff",
@@ -56,51 +56,49 @@ export const theme = {
     textScore: "#e8d5a3",
     textScoreHeader: "#8abadf",
     textScoreDim: "#3d5a7a",
-    textNavBlue: "#6ab0e0",
-    textNavBlueDim: "#4a8abe",
-    textDimBlue: "#3a5070",
+    textNav: "#6ab0e0",
+    textNavDim: "#4a8abe",
+    textNavFaint: "#3a5070",
     textFaint: "#a0b4d0",
     textModalLink: "#7a9abf",
     textReadOnly: "#8899bb",
-    textBlueMid: "#5577aa",
-    textGold: "#f0c040",
-    textTeamInfo: "#ccaa66",
+    textNavMid: "#5577aa",
+    textAccent: "#FF9A1F",
+    textTeamInfo: "#C99A2E",
 
-    // Accent
-    accentPrimary: "aquamarine",
-    accentGreen: "#6effc0",
-    accentGreenBright: "#5fffbb",
-    accentGold: "#f5c842",
-    /** High-contrast dark text on aquamarine/green accent buttons */
-    btnTextDark: "darkblue",
+    // Accent — anchored to the newest logo palette (orange #FF9A1F and gold #F2C14E)
+    accentPrimary: "#FF9A1F",
+    accentBright: "#F2C14E",
+    /** High-contrast dark text on gold/amber accent buttons */
+    btnPrimaryText: "#0b1a38",
 
     // Status / interactive
-    greenBg: "#1a3a2a",
-    greenHover: "#254f38",
-    greenActive: "#0e2418",
-    redDanger: "#ff7070",
-    redBg: "#b30000",
-    blueDark: "#0f4880",
-    goldWarn: "#7a3200",
-    buttonNewBg: "#22c55e",
-    buttonNewBgHover: "#16a34a",
-    statusOkGreen: "#4ade80",
-    statusWarnYellow: "#fbbf24",
+    btnPrimaryBg: "#2a1200",
+    btnPrimaryBgHover: "#461e00",
+    btnPrimaryBgActive: "#180a00",
+    textDanger: "#ff7070",
+    bgDanger: "#b30000",
+    bgNavActive: "#0f4880",
+    bgWarn: "#7A3300",
+    btnActionBg: "#FF6A00",
+    btnActionBgHover: "#CC5500",
+    statusSuccess: "#4ade80",
+    statusWarn: "#FF9A1F",
 
-    // BSO indicators
+    // BSO indicators — strike uses SVG gold, ball uses teal, out stays red
     bsoBall: "#44cc88",
-    bsoStrike: "#f5c842",
+    bsoStrike: "#F2C14E",
     bsoOut: "#ff7070",
 
     // Countdown bar states
-    countdownWarn: "#ffaa33",
+    countdownWarn: "#FF9A1F",
     countdownDanger: "#ff4444",
 
     // Diamond / field indicators
     baseOccupied: "#3f4f7e",
     baseAway: "#ff21b1",
-    fieldGrass: "#aac32b",
-    fieldDirt: "#886c36",
+    fieldGrass: "#6CBF4A",
+    fieldDirt: "#B06A2E",
 
     // Danger actions
     dangerText: "#ff7777",
@@ -113,22 +111,22 @@ export const theme = {
     textError: "#ff8080",
     bgSavesDangerHover: "rgba(120, 48, 48, 0.4)",
     bgFormAlpha40: "rgba(74, 96, 144, 0.4)",
-    warnText: "#ff8888",
-    textWarnOrange: "#ff9977",
-    textWarnGold: "#ffdd88",
-    textWarnBright: "#ffcc44",
-    bgWarnDeep: "#1a1a00",
+    textWarn: "#ff8888",
+    textWarnStrong: "#ff9977",
+    textWarnSubtle: "#FF9A1F",
+    textWarnBold: "#F2C14E",
+    bgWarnSurface: "#1a1a00",
 
     // Fatigue level indicators
     textFatigueHigh: "#ff6b6b",
-    textFatigueMed: "#ffd06b",
+    textFatigueMed: "#F2C14E",
 
     // Decision panel
     bgDecisionOverlay: "rgba(0, 30, 60, 0.92)",
-    bgDecisionSection: "#1a2e1a",
+    bgDecisionSection: "#1a2030",
     bgDecisionButton: "#3a4a6a",
-    textDecisionActive: "#e0f8f0",
-    textDecisionHighlight: "#aaffcc",
+    textDecisionActive: "#fef9e7",
+    textDecisionHighlight: "#F2C14E",
 
     // Overlays
     overlayDark: "rgba(0, 0, 0, 0.75)",
@@ -154,7 +152,7 @@ export const theme = {
     borderExhibitionError: "rgba(220, 40, 40, 0.4)",
 
     // Subdued text (between textMuted and textDimmer)
-    textSubdued: "#888888",
+    textSubdued: "#8895A2",
   },
   fonts: {
     sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
@@ -248,6 +246,9 @@ export const theme = {
     bottomBar: "80px",
     /** Minimum height for the import/export paste textarea. */
     pasteTextarea: "80px",
+    /** Home-screen logo image — desktop and mobile sizes. */
+    logoMd: "200px",
+    logoSm: "160px",
   },
 } as const;
 

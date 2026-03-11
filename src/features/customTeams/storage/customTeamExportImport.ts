@@ -210,7 +210,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   if (obj["formatVersion"] !== 1)
     throw new Error(
       `Invalid teams file (unsupported format version: ${obj["formatVersion"]}). ` +
-        `Make sure to export using the Ballgame app (Export All Teams or Export on a single team).`,
+        `Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).`,
     );
   if (!obj["payload"] || typeof obj["payload"] !== "object")
     throw new Error("Invalid custom teams file: missing payload");
@@ -241,7 +241,7 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
   const expectedBundleSig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(obj["payload"]));
   if (typeof obj["sig"] !== "string" || obj["sig"] !== expectedBundleSig)
     throw new Error(
-      "Teams signature mismatch — file may be corrupted or not a valid Ballgame teams export",
+      "Teams signature mismatch — file may be corrupted or not a valid BlipIt Baseball Legends teams export",
     );
 
   // ── 2. Per-player signatures ───────────────────────────────────────────────
@@ -569,7 +569,7 @@ export function parseExportedCustomPlayer(json: string): TeamPlayer {
   const expectedBundleSig = fnv1a(PLAYER_EXPORT_KEY + JSON.stringify(obj["payload"]));
   if (typeof obj["sig"] !== "string" || obj["sig"] !== expectedBundleSig)
     throw new Error(
-      "Player signature mismatch — file may be corrupted or not a valid Ballgame player export",
+      "Player signature mismatch — file may be corrupted or not a valid BlipIt Baseball Legends player export",
     );
 
   // ── Per-player content signature ───────────────────────────────────────────

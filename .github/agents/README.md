@@ -11,6 +11,7 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** Any code reorganization, extraction, rename, or modularization task where observable behavior must not change.
 
 **Key guardrails:**
+
 - Preserves deterministic PRNG call order (no replay drift)
 - Preserves reducer routing, invariants, and debug output
 - Keeps PRs scoped — no opportunistic rewrites
@@ -23,11 +24,13 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** Any UI, layout, typography, styled-components, or responsive-design change — especially if Playwright visual snapshots may be affected.
 
 **Key guardrails:**
+
 - Assumes snapshots must be regenerated for any visible UI change
 - Validates across all 6 device/viewport Playwright projects
 - Enforces `dvh` over `vh` for modal sizing; `mq` helpers over raw `@media`
 
 **Critical — Playwright container parity:**
+
 > Visual snapshot baselines must be regenerated in an environment matching the Playwright E2E CI Docker container (`mcr.microsoft.com/playwright:v1.58.2-noble`). Font/system library differences between environments create false visual diffs. Use the Docker container locally or trigger the `update-visual-snapshots` workflow.
 
 ---
@@ -37,6 +40,7 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** Deterministic simulation bugs, stat inconsistencies (e.g., hits vs AB), impossible game states, lineup/team mapping errors.
 
 **Key guardrails:**
+
 - Requires seed + event index captured before touching any code
 - Validates invariants: batting line consistency, lineup wrap, home/away mapping, scoreboard totals
 - Adds seed-anchored regression tests for every fixed bug
@@ -49,11 +53,13 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** GitHub Actions workflow changes — Playwright CI, lint/test CI, sharding, artifact uploads, or Copilot setup steps.
 
 **Key guardrails:**
+
 - Minimal, safe workflow diffs; artifact uploads preserved
 - Does not assume system `apt` packages are cacheable
 - For Playwright container jobs: browser binaries are pre-installed — no extra `playwright install` step
 
 **Critical — Copilot Setup Steps workflow:**
+
 > `.github/workflows/copilot-setup-steps.yml` must **NOT** use `container:`. Copilot's internal bootstrap steps can fail inside containers due to `/bin/sh` vs bash shell compatibility issues (e.g., `pipefail`). This is a known, intentional configuration for this repo.
 
 ---
@@ -63,6 +69,7 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** RxDB persistence changes — save/load, export/import, event-log structure, `SaveStore` API, `stateSnapshot` format, or **any change to a collection's JSON schema**.
 
 **Key guardrails:**
+
 - Treats FNV-1a export signature and monotonic event `idx` as critical invariants
 - **Schema changes require a version bump + migration strategy that never throws** — any properties change at the same version causes DB6 for all existing users
 - Tests malformed import payloads, collisions, and partial-write safety
@@ -76,25 +83,27 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 **When to use:** Running, debugging, authoring, or updating Playwright E2E tests — especially when visual snapshot baselines need to be regenerated.
 
 **Key guardrails:**
+
 - Always runs tests inside `mcr.microsoft.com/playwright:v1.58.2-noble` via `docker run` — never on the host
 - Can regenerate and **commit visual snapshot baselines directly** (no workflow wait) because the container is identical to CI
 - Only commits PNGs for intentionally changed visuals — no unrelated snapshot churn
 - Uses `loadFixture` for instant game-state setup; never adds `test.setTimeout()`
 
 **Critical — Node 24 inside the container:**
+
 > The Playwright container does not ship Node 24. Every `docker run` command must install it first: `npm install -g n && n 24 && hash -r` before `corepack enable && yarn install`.
 
 ---
 
 ## Common gotchas
 
-| Gotcha | Detail |
-|---|---|
-| Determinism | All `random()` calls flow through `src/utils/rng.ts`. Any conditional call insertion/removal breaks seed replay. |
-| Snapshot environment | Regenerate baselines inside `mcr.microsoft.com/playwright:v1.58.2-noble` using the `e2e-test-runner` agent (`docker run --update-snapshots`) or via the `update-visual-snapshots` workflow. Never commit locally generated PNGs. |
-| Copilot setup workflow | `copilot-setup-steps.yml` must not use `container:` — known bootstrap shell compatibility issue. |
-| Reducer cycle order | `strategy → advanceRunners → gameOver → playerOut → hitBall → buntAttempt → playerActions → reducer`. No circular imports. |
-| RxDB schema versioning | Any change to a collection's `properties`, `required`, or `indexes` at the same `version` causes DB6 for all existing users. Always bump `version`, add a migration strategy that never throws, and add an upgrade-path unit test. |
-| `useSaveStore` in tests | Requires `<RxDatabaseProvider>` in tree. Always mock with `vi.mock("@hooks/useSaveStore", ...)` in component tests. |
-| `dvh` vs `vh` | Always use `dvh` for modal `max-height` — `100vh` on mobile can exceed visible viewport. |
-| E2E test speed | If a test waits >30 s for autoplay to reach a game state (decision panel, RBI on board, specific inning), use `loadFixture(page, "name.json")` with a pre-crafted fixture instead. See "Save Fixtures for E2E Testing" in `../docs/e2e-testing.md`. |
+| Gotcha                  | Detail                                                                                                                                                                                                                                              |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Determinism             | All `random()` calls flow through `src/utils/rng.ts`. Any conditional call insertion/removal breaks seed replay.                                                                                                                                    |
+| Snapshot environment    | Regenerate baselines inside `mcr.microsoft.com/playwright:v1.58.2-noble` using the `e2e-test-runner` agent (`docker run --update-snapshots`) or via the `update-visual-snapshots` workflow. Never commit locally generated PNGs.                    |
+| Copilot setup workflow  | `copilot-setup-steps.yml` must not use `container:` — known bootstrap shell compatibility issue.                                                                                                                                                    |
+| Reducer cycle order     | `strategy → advanceRunners → gameOver → playerOut → hitBall → buntAttempt → playerActions → reducer`. No circular imports.                                                                                                                          |
+| RxDB schema versioning  | Any change to a collection's `properties`, `required`, or `indexes` at the same `version` causes DB6 for all existing users. Always bump `version`, add a migration strategy that never throws, and add an upgrade-path unit test.                  |
+| `useSaveStore` in tests | Requires `<RxDatabaseProvider>` in tree. Always mock with `vi.mock("@hooks/useSaveStore", ...)` in component tests.                                                                                                                                 |
+| `dvh` vs `vh`           | Always use `dvh` for modal `max-height` — `100vh` on mobile can exceed visible viewport.                                                                                                                                                            |
+| E2E test speed          | If a test waits >30 s for autoplay to reach a game state (decision panel, RBI on board, specific inning), use `loadFixture(page, "name.json")` with a pre-crafted fixture instead. See "Save Fixtures for E2E Testing" in `../docs/e2e-testing.md`. |

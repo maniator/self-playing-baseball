@@ -67,7 +67,7 @@ export const PasteTextarea = styled.textarea`
   box-sizing: border-box;
 
   &::placeholder {
-    color: ${({ theme }) => theme.colors.textDimBlue};
+    color: ${({ theme }) => theme.colors.textNavFaint};
   }
 
   &:focus {

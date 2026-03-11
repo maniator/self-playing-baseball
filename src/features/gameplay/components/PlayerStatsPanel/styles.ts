@@ -43,7 +43,7 @@ export const DetailEmptyState = styled.div`
 `;
 
 export const DetailPlayerName = styled.div`
-  color: ${({ theme }) => theme.colors.textNavBlue};
+  color: ${({ theme }) => theme.colors.textNav};
   font-weight: 700;
   font-size: ${({ theme }) => theme.fontSizes.label};
   margin-bottom: ${({ theme }) => theme.spacing.xxs};
@@ -109,9 +109,8 @@ export const PanelToggle = styled.button`
 export const ModeToggle = styled.button<{ $active?: boolean }>`
   background: none;
   border: 1px solid
-    ${({ $active, theme }) => ($active ? theme.colors.textNavBlue : theme.colors.borderLog)};
-  color: ${({ $active, theme }) =>
-    $active ? theme.colors.textNavBlue : theme.colors.textDisabled};
+    ${({ $active, theme }) => ($active ? theme.colors.textNav : theme.colors.borderLog)};
+  color: ${({ $active, theme }) => ($active ? theme.colors.textNav : theme.colors.textDisabled)};
   font-size: ${({ theme }) => theme.fontSizes.xs};
   cursor: pointer;
   padding: 1px ${({ theme }) => theme.spacing.s6};
@@ -148,7 +147,7 @@ export const StatsTableTd = styled.td<{ $highlight?: boolean }>`
     $highlight ? theme.colors.textDialog : theme.colors.textSubdued};
   &:first-child {
     text-align: left;
-    color: ${({ theme }) => theme.colors.textNavBlue};
+    color: ${({ theme }) => theme.colors.textNav};
     font-weight: 700;
   }
 `;
@@ -162,7 +161,7 @@ export const StatsTableTr = styled.tr<{ $selected?: boolean }>`
       $selected ? theme.colors.bgPlayerHover : theme.colors.bgSubtle};
   }
   &:focus-visible {
-    outline: 1px solid ${({ theme }) => theme.colors.textNavBlue};
+    outline: 1px solid ${({ theme }) => theme.colors.textNav};
     outline-offset: -1px;
   }
 `;
