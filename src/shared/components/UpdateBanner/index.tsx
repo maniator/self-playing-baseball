@@ -15,8 +15,8 @@ interface Props {
 const UpdateBanner: React.FunctionComponent<Props> = ({ onDismiss }) => (
   <Banner role="alert" data-testid="update-banner">
     <Message>
-      ⚠️ A new version of Ballgame is available. Running an outdated version may cause unexpected
-      game behavior — reload now to update.
+      ⚠️ A new version of BlipIt Baseball Legends is available. Running an outdated version may
+      cause unexpected game behavior — reload now to update.
     </Message>
     <Actions>
       <ReloadButton onClick={() => window.location.reload()}>🔄 Reload app</ReloadButton>

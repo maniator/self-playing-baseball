@@ -103,7 +103,7 @@ export const ImportArea = styled.textarea`
 `;
 
 export const ErrorMsg = styled.p`
-  color: ${({ theme }) => theme.colors.redDanger};
+  color: ${({ theme }) => theme.colors.textDanger};
   font-size: ${({ theme }) => theme.fontSizes.label};
   margin: ${({ theme }) => theme.spacing.xs} 0 0;
 `;
@@ -120,7 +120,7 @@ export const CloseButton = styled.button`
   display: block;
   margin: ${({ theme }) => theme.spacing.lg} auto 0;
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: ${({ theme }) => theme.colors.btnTextDark};
+  color: ${({ theme }) => theme.colors.btnPrimaryText};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s22};

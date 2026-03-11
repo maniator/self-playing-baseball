@@ -57,7 +57,7 @@ export const CountdownLabel = styled.span`
 
 export const ActionButton = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: ${({ theme }) => theme.colors.btnTextDark};
+  color: ${({ theme }) => theme.colors.btnPrimaryText};
   padding: ${({ theme }) => theme.spacing.s7} ${({ theme }) => theme.spacing.s14};
   border-radius: ${({ theme }) => theme.radii.pill};
   cursor: pointer;

@@ -171,8 +171,8 @@ export const RemoveBtn = styled(SmallIconBtn)`
 
 export const AddPlayerBtn = styled.button`
   background: transparent;
-  color: ${({ theme }) => theme.colors.accentGreen};
-  border: 1px dashed ${({ theme }) => theme.colors.borderGreen};
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  border: 1px dashed ${({ theme }) => theme.colors.borderAccent};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.lg};
   font-size: ${({ theme }) => theme.fontSizes.base};
@@ -183,7 +183,7 @@ export const AddPlayerBtn = styled.button`
 
   &:hover {
     background: ${({ theme }) => theme.colors.bgSurface};
-    border-color: ${({ theme }) => theme.colors.accentGreen};
+    border-color: ${({ theme }) => theme.colors.accentPrimary};
   }
 
   &:focus-visible {
@@ -193,7 +193,7 @@ export const AddPlayerBtn = styled.button`
 `;
 
 export const ErrorMsg = styled.p`
-  color: ${({ theme }) => theme.colors.warnText};
+  color: ${({ theme }) => theme.colors.textWarn};
   font-size: ${({ theme }) => theme.fontSizes.base};
   margin: 0 0 ${({ theme }) => theme.spacing.md};
   background: ${({ theme }) => theme.colors.errorBg};
@@ -267,7 +267,7 @@ export const ButtonRow = styled.div`
 
 export const SaveBtn = styled.button`
   background: ${({ theme }) => theme.colors.accentPrimary};
-  color: ${({ theme }) => theme.colors.btnTextDark};
+  color: ${({ theme }) => theme.colors.btnPrimaryText};
   border: none;
   border-radius: ${({ theme }) => theme.radii.pill};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s28};
@@ -278,7 +278,7 @@ export const SaveBtn = styled.button`
   min-height: ${({ theme }) => theme.sizes.btnLg};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.accentGreenBright};
+    background: ${({ theme }) => theme.colors.accentBright};
   }
 
   &:focus-visible {
@@ -338,7 +338,7 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
   gap: ${({ theme }) => theme.spacing.s6};
   margin-top: ${({ theme }) => theme.spacing.s6};
   font-size: ${({ theme }) => theme.fontSizes.label};
-  color: ${({ $overCap, theme }) => ($overCap ? theme.colors.warnText : theme.colors.textHint)};
+  color: ${({ $overCap, theme }) => ($overCap ? theme.colors.textWarn : theme.colors.textHint)};
 `;
 
 export const ReadOnlyInput = styled(TextInput)`
@@ -351,7 +351,7 @@ export const ReadOnlyInput = styled(TextInput)`
 
 export const IdentityLockHint = styled.p`
   font-size: ${({ theme }) => theme.fontSizes.sm};
-  color: ${({ theme }) => theme.colors.textBlueMid};
+  color: ${({ theme }) => theme.colors.textNavMid};
   margin: ${({ theme }) => theme.spacing.xxs} 0 ${({ theme }) => theme.spacing.sm};
   font-style: italic;
 `;
@@ -370,13 +370,13 @@ export const ImportPlayerBtn = styled(AddPlayerBtn)`
 
 /** Warning banner shown when an imported player matches an existing one. */
 export const PlayerDuplicateBanner = styled.div`
-  background: ${({ theme }) => theme.colors.bgWarnDeep};
+  background: ${({ theme }) => theme.colors.bgWarnSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderWarn};
   border-radius: ${({ theme }) => theme.radii.md};
   padding: 10px ${({ theme }) => theme.spacing.md};
   margin-top: ${({ theme }) => theme.spacing.xs};
   font-size: ${({ theme }) => theme.fontSizes.label};
-  color: ${({ theme }) => theme.colors.textWarnGold};
+  color: ${({ theme }) => theme.colors.textWarnSubtle};
 `;
 
 export const PlayerDuplicateActions = styled.div`

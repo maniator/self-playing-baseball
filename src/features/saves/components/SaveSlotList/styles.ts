@@ -12,7 +12,7 @@ const actionBtnVariants: Record<
     hoverBg: keyof AppTheme["colors"];
   }
 > = {
-  primary: { color: "accentGreen", border: "borderGreen", hoverBg: "greenBg" },
+  primary: { color: "accentPrimary", border: "borderAccent", hoverBg: "btnPrimaryBg" },
   secondary: { color: "textSecondaryLink", border: "borderForm", hoverBg: "bgSurface" },
   danger: { color: "dangerText", border: "borderDanger", hoverBg: "dangerHoverBg" },
 };

@@ -16,7 +16,9 @@ describe("UpdateBanner", () => {
   it("renders the update warning message", () => {
     render(<UpdateBanner onDismiss={vi.fn()} />);
     expect(screen.getByTestId("update-banner")).toBeInTheDocument();
-    expect(screen.getByText(/new version of Ballgame is available/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(/new version of BlipIt Baseball Legends is available/i),
+    ).toBeInTheDocument();
     expect(screen.getByText(/unexpected game behavior/i)).toBeInTheDocument();
   });
 

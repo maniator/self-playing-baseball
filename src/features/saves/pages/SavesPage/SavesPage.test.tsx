@@ -151,7 +151,7 @@ describe("SavesPage", () => {
     });
     await user.click(screen.getByTestId("paste-save-button"));
     await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
-    expect(screen.getByText(/not a valid Ballgame save file/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a valid BlipIt Baseball Legends save file/i)).toBeInTheDocument();
   });
 
   it("Back to Home button navigates to /", async () => {
@@ -173,7 +173,7 @@ describe("SavesPage", () => {
     await user.upload(input, file);
 
     await waitFor(() => expect(screen.getByTestId("import-error")).toBeInTheDocument());
-    expect(screen.getByText(/not a valid Ballgame save file/i)).toBeInTheDocument();
+    expect(screen.getByText(/not a valid BlipIt Baseball Legends save file/i)).toBeInTheDocument();
   });
 
   it("calls onLoadSave after successful file import", async () => {

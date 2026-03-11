@@ -30,7 +30,7 @@ export const Th = styled.th<{ $accent?: boolean }>`
   padding: ${({ theme }) => theme.spacing.s3} ${({ theme }) => theme.spacing.s6};
   text-align: center;
   color: ${({ $accent, theme }) =>
-    $accent ? theme.colors.accentGold : theme.colors.textScoreHeader};
+    $accent ? theme.colors.accentPrimary : theme.colors.textScoreHeader};
   border-bottom: 1px solid ${({ theme }) => theme.colors.borderLineScore};
   font-weight: normal;
   font-size: ${({ theme }) => theme.fontSizes.sm};
@@ -64,7 +64,7 @@ export const Td = styled.td<{ $active?: boolean; $accent?: boolean; $dim?: boole
     $active
       ? theme.colors.textPrimary
       : $accent
-        ? theme.colors.accentGold
+        ? theme.colors.accentPrimary
         : $dim
           ? theme.colors.textScoreDim
           : theme.colors.textScore};
@@ -132,7 +132,7 @@ export const Dot = styled.span<{ $on: boolean; $color: string }>`
 `;
 
 export const ExtraInningsBanner = styled.div`
-  background: ${({ theme }) => theme.colors.blueDark};
+  background: ${({ theme }) => theme.colors.bgNavActive};
   color: ${({ theme }) => theme.colors.textPrimary};
   font-weight: bold;
   font-size: ${({ theme }) => theme.fontSizes.sm};
@@ -142,7 +142,7 @@ export const ExtraInningsBanner = styled.div`
 `;
 
 export const GameOverBanner = styled.div`
-  background: ${({ theme }) => theme.colors.redBg};
+  background: ${({ theme }) => theme.colors.bgDanger};
   color: ${({ theme }) => theme.colors.textPrimary};
   text-align: center;
   font-weight: bold;

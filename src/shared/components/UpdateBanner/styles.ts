@@ -30,7 +30,7 @@ export const Actions = styled.div`
 `;
 
 export const ReloadButton = styled.button`
-  background: ${({ theme }) => theme.colors.buttonNewBg};
+  background: ${({ theme }) => theme.colors.btnActionBg};
   border: none;
   color: ${({ theme }) => theme.colors.bgVoid};
   cursor: pointer;
@@ -42,7 +42,7 @@ export const ReloadButton = styled.button`
   min-height: ${({ theme }) => theme.sizes.inputMd};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.buttonNewBgHover};
+    background: ${({ theme }) => theme.colors.btnActionBgHover};
   }
 `;
 

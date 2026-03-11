@@ -56,9 +56,9 @@ export const InfoBanner = styled.p`
 `;
 
 export const CreateBtn = styled.button`
-  background: ${({ theme }) => theme.colors.greenBg};
-  color: ${({ theme }) => theme.colors.accentGreen};
-  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  background: ${({ theme }) => theme.colors.btnPrimaryBg};
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  border: 1px solid ${({ theme }) => theme.colors.borderAccent};
   border-radius: ${({ theme }) => theme.radii.lg};
   padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.xl};
   font-size: ${({ theme }) => theme.fontSizes.body};
@@ -72,7 +72,7 @@ export const CreateBtn = styled.button`
   margin-bottom: ${({ theme }) => theme.spacing.xl};
 
   &:hover {
-    background: ${({ theme }) => theme.colors.greenHover};
+    background: ${({ theme }) => theme.colors.btnPrimaryBgHover};
   }
 
   &:focus-visible {
@@ -192,7 +192,7 @@ export const EditorLoading = styled.p`
 `;
 
 export const NotFoundMsg = styled.p`
-  color: ${({ theme }) => theme.colors.textWarnOrange};
+  color: ${({ theme }) => theme.colors.textWarnStrong};
   font-size: ${({ theme }) => theme.fontSizes.body};
   padding: ${({ theme }) => theme.spacing.xxl};
 `;
@@ -227,9 +227,9 @@ export const ImportExportTitle = styled.p`
 `;
 
 export const SuccessMessage = styled.p`
-  color: ${({ theme }) => theme.colors.accentGreen};
-  background: ${({ theme }) => theme.colors.successBg};
-  border: 1px solid ${({ theme }) => theme.colors.borderGreen};
+  color: ${({ theme }) => theme.colors.accentPrimary};
+  background: ${({ theme }) => theme.colors.bgSuccess};
+  border: 1px solid ${({ theme }) => theme.colors.borderAccent};
   border-radius: ${({ theme }) => theme.radii.lg};
   padding: ${({ theme }) => theme.spacing.s10} ${({ theme }) => theme.spacing.s14};
   font-size: ${({ theme }) => theme.fontSizes.base};
@@ -275,7 +275,7 @@ export const ImportExportBtn = styled.button`
 `;
 
 export const ErrorMessage = styled.p`
-  color: ${({ theme }) => theme.colors.textWarnOrange};
+  color: ${({ theme }) => theme.colors.textWarnStrong};
   font-size: ${({ theme }) => theme.fontSizes.base};
   margin-top: ${({ theme }) => theme.spacing.sm};
 `;
@@ -295,7 +295,7 @@ export const PasteTextarea = styled.textarea`
   margin-top: ${({ theme }) => theme.spacing.s10};
 
   &::placeholder {
-    color: ${({ theme }) => theme.colors.textDimBlue};
+    color: ${({ theme }) => theme.colors.textNavFaint};
   }
 
   &:focus {
@@ -315,25 +315,25 @@ export const PasteActions = styled.div`
 
 /** Banner shown when a team import is blocked due to duplicate players. */
 export const DuplicateConfirmBanner = styled.div`
-  background: ${({ theme }) => theme.colors.bgWarnDeep};
+  background: ${({ theme }) => theme.colors.bgWarnSurface};
   border: 1px solid ${({ theme }) => theme.colors.borderWarn};
   border-radius: ${({ theme }) => theme.radii.lg};
   padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.s14};
   margin-top: ${({ theme }) => theme.spacing.s10};
   font-size: ${({ theme }) => theme.fontSizes.base};
-  color: ${({ theme }) => theme.colors.textWarnGold};
+  color: ${({ theme }) => theme.colors.textWarnSubtle};
 `;
 
 export const DuplicateConfirmTitle = styled.p`
   margin: 0 0 ${({ theme }) => theme.spacing.sm};
   font-weight: 600;
-  color: ${({ theme }) => theme.colors.textWarnBright};
+  color: ${({ theme }) => theme.colors.textWarnBold};
 `;
 
 export const DuplicateConfirmList = styled.ul`
   margin: 0 0 ${({ theme }) => theme.spacing.s10};
   padding-left: ${({ theme }) => theme.spacing.lg};
-  color: ${({ theme }) => theme.colors.textWarnGold};
+  color: ${({ theme }) => theme.colors.textWarnSubtle};
 `;
 
 export const DuplicateConfirmActions = styled.div`

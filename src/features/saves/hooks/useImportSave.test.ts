@@ -29,10 +29,14 @@ const makeSave = (id = "save_1"): SaveDoc =>
 
 describe("friendlyImportError", () => {
   it("returns signature message for error containing 'signature'", () => {
-    expect(friendlyImportError("Invalid signature")).toMatch(/not a valid Ballgame save file/i);
+    expect(friendlyImportError("Invalid signature")).toMatch(
+      /not a valid BlipIt Baseball Legends save file/i,
+    );
   });
   it("returns signature message for error containing 'corrupt'", () => {
-    expect(friendlyImportError("File is corrupt")).toMatch(/not a valid Ballgame save file/i);
+    expect(friendlyImportError("File is corrupt")).toMatch(
+      /not a valid BlipIt Baseball Legends save file/i,
+    );
   });
   it("returns generic message for other errors", () => {
     expect(friendlyImportError("Network timeout")).toMatch(/Import failed/i);
@@ -117,7 +121,7 @@ describe("useImportSave", () => {
       act(() => result.current.setPasteJson('{"v":1}'));
       act(() => result.current.handlePasteImport());
       await waitFor(() => expect(result.current.importing).toBe(false));
-      expect(result.current.importError).toMatch(/not a valid Ballgame save file/i);
+      expect(result.current.importError).toMatch(/not a valid BlipIt Baseball Legends save file/i);
       expect(mockOnSuccess).not.toHaveBeenCalled();
     });
 
