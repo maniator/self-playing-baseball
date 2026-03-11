@@ -13,9 +13,9 @@ Outputs (all written relative to repo root):
     public/images/blipit.svg       — lossless SVG wrapper (embeds 512 PNG)
     public/og-image.png            — OG / Twitter card image
 
-The script trims transparent padding, centres the logo on a transparent
+The script trims transparent padding, centers the logo on a transparent
 square canvas, and writes RGBA PNGs so the icons render correctly on any
-background colour.
+background color.
 """
 
 import argparse
