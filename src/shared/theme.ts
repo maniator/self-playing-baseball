@@ -152,7 +152,7 @@ export const theme = {
     borderExhibitionError: "rgba(220, 40, 40, 0.4)",
 
     // Subdued text (between textMuted and textDimmer)
-    textSubdued: "#6B7785",
+    textSubdued: "#8895A2",
   },
   fonts: {
     sans: '"Inter Variable", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',

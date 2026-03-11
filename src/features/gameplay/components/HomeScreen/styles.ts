@@ -12,9 +12,10 @@ export const HomeContainer = styled.div`
   gap: ${({ theme }) => theme.spacing.lg};
 `;
 
-export const HomeLogo = styled.div`
+export const HomeLogo = styled.h1`
   width: ${({ theme }) => theme.sizes.logoMd};
   height: ${({ theme }) => theme.sizes.logoMd};
+  margin: 0;
 
   img {
     width: 100%;

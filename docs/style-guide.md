@@ -65,7 +65,7 @@ The app uses an exclusively dark theme. There is no light mode. Every surface, b
 | `#fff` / `#ffffff` | `textPrimary`       | Primary content, headings, active cell text         | Global (`* { color: #fff }` in `index.scss`)                                   |
 | `#cce0ff`          | `textBody`          | Body text in dialogs, list items                    | `HelpContent/styles.ts`, modal styles                                          |
 | `#e0f0ff`          | `textDialog`        | Dialog surface text color                           | `InstructionsModal/styles.ts`, `SavesModal/styles.ts`                          |
-| `#888`             | `textSubdued`       | Sub-labels, section header labels, hit-log headings | `HitLog/styles.ts`, `Announcements/styles.ts`, `PlayerStatsPanel/styles.ts`    |
+| `#8895a2`          | `textSubdued`       | Sub-labels, section header labels, hit-log headings | `HitLog/styles.ts`, `Announcements/styles.ts`, `PlayerStatsPanel/styles.ts`    |
 | `#aaa`             | `textMuted`         | Toggle hover, inactive tabs                         | `HitLog/styles.ts`, `PlayerStatsPanel/styles.ts`                               |
 | `#666`             | `textDimmer`        | Very quiet secondary text                           | `careerStats/styles.ts`                                                        |
 | `#6680aa`          | `textHint`          | Back buttons, save dates, field labels              | `PageLayout/styles.ts`, `SaveSlotList/styles.ts`, `CustomTeamEditor/styles.ts` |
