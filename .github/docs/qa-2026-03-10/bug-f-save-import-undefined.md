@@ -13,7 +13,7 @@
 
 When a user pastes arbitrary or invalid JSON into the **Import Save** text area (in the in-game 💾 Saves panel or on `/saves`) and clicks "Import from text", the error message shown contains the raw JavaScript token `"undefined"`:
 
-> *"Unsupported save version: undefined"*
+> _"Unsupported save version: undefined"_
 
 This is the same category of issue as Bug 5 (team import error), which was partially improved but only for the teams import path. The save import path was not updated.
 
@@ -25,7 +25,7 @@ This is the same category of issue as Bug 5 (team import error), which was parti
 2. Paste invalid JSON into the import textarea, e.g. `{"totally":"wrong"}`.
 3. Click **Import from text**.
 4. **Expected:** A clear, user-friendly error with no raw code tokens.
-5. **Actual:** Error reads *"Unsupported save version: undefined"*.
+5. **Actual:** Error reads _"Unsupported save version: undefined"_.
 
 ---
 
@@ -34,8 +34,7 @@ This is the same category of issue as Bug 5 (team import error), which was parti
 `src/features/saves/storage/saveStore.ts` line ~210:
 
 ```ts
-if (version !== RXDB_EXPORT_VERSION)
-  throw new Error(`Unsupported save version: ${version}`);
+if (version !== RXDB_EXPORT_VERSION) throw new Error(`Unsupported save version: ${version}`);
 ```
 
 When the pasted JSON has no `version` field, `version` is `undefined`, which JavaScript stringifies as `"undefined"` in the template literal. There is no prior check that `version` exists and is a number.
@@ -53,12 +52,12 @@ const version = parsed["version"];
 
 if (typeof version !== "number") {
   throw new Error(
-    "Invalid save file. Make sure to export the save using the Ballgame app (💾 Saves → Export)."
+    "Invalid save file. Make sure to export the save using the Ballgame app (💾 Saves → Export).",
   );
 }
 if (version !== RXDB_EXPORT_VERSION) {
   throw new Error(
-    `Unsupported save version: ${version}. Make sure to export using the current version of the Ballgame app.`
+    `Unsupported save version: ${version}. Make sure to export using the current version of the Ballgame app.`,
   );
 }
 ```

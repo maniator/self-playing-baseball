@@ -6,18 +6,19 @@
 
 The app uses **React Router v7** (`react-router` package — not `react-router-dom`) with the data router API (`createBrowserRouter` + `RouterProvider`) defined in `src/router.tsx`. `AppShell` is a **pure layout component** that renders only `<Outlet context={outletContext} />` — it does NOT mount the game persistently. `Game` lives at the `/game` route as a real route element (`GamePage`) that mounts on entry and unmounts on navigation away.
 
-| Route | Component | Notes |
-|---|---|---|
-| `/` | `HomeScreen` | New Game, Load Saved Game, Manage Teams, Help buttons |
-| `/exhibition/new` | `ExhibitionSetupPage` | Primary new-game entry point; defaults to Custom Teams tab |
-| `/game` | `GamePage` | Mounts on entry, unmounts on navigate-away; state persisted to RxDB on unmount |
-| `/teams` | `ManageTeamsScreen` | Custom team list |
-| `/teams/new` | `ManageTeamsScreen` (create view) | URL-routed editor; browser-back returns to list |
-| `/teams/:id/edit` | `ManageTeamsScreen` (edit view) | Loader redirects to `/teams` if team ID missing; shows loading/not-found states on deep-link |
-| `/saves` | `SavesPage` | Standalone saves list; navigates to `/game` only after a save is loaded |
-| `/help` | `HelpPage` | How to Play; browser back returns to previous page |
+| Route             | Component                         | Notes                                                                                        |
+| ----------------- | --------------------------------- | -------------------------------------------------------------------------------------------- |
+| `/`               | `HomeScreen`                      | New Game, Load Saved Game, Manage Teams, Help buttons                                        |
+| `/exhibition/new` | `ExhibitionSetupPage`             | Primary new-game entry point; defaults to Custom Teams tab                                   |
+| `/game`           | `GamePage`                        | Mounts on entry, unmounts on navigate-away; state persisted to RxDB on unmount               |
+| `/teams`          | `ManageTeamsScreen`               | Custom team list                                                                             |
+| `/teams/new`      | `ManageTeamsScreen` (create view) | URL-routed editor; browser-back returns to list                                              |
+| `/teams/:id/edit` | `ManageTeamsScreen` (edit view)   | Loader redirects to `/teams` if team ID missing; shows loading/not-found states on deep-link |
+| `/saves`          | `SavesPage`                       | Standalone saves list; navigates to `/game` only after a save is loaded                      |
+| `/help`           | `HelpPage`                        | How to Play; browser back returns to previous page                                           |
 
 **AppShellOutletContext** — all navigation callbacks and session state passed through outlet context to child routes:
+
 - `onStartGame(setup: ExhibitionGameSetup)` — navigates to `/game` with `pendingGameSetup` in `location.state`
 - `onLoadSave(slot: SaveDoc)` — navigates to `/game` with `pendingLoadSave` in `location.state`
 - `onGameSessionStarted()` — called by `GamePage` once a session is active (gates "Resume Current Game" button)
@@ -34,10 +35,10 @@ Auto-play is implemented in `src/features/gameplay/hooks/useAutoPlayScheduler.ts
 
 **Persistence split:**
 
-| What | Where |
-|---|---|
-| Game save state + events | RxDB (`saves` + `events` collections via `useRxdbGameSync`) |
-| UI preferences (speed, volume, managerMode, strategy, managedTeam) | `localStorage` (scalars only) |
+| What                                                               | Where                                                       |
+| ------------------------------------------------------------------ | ----------------------------------------------------------- |
+| Game save state + events                                           | RxDB (`saves` + `events` collections via `useRxdbGameSync`) |
+| UI preferences (speed, volume, managerMode, strategy, managedTeam) | `localStorage` (scalars only)                               |
 
 ---
 
@@ -61,4 +62,4 @@ Auto-play is implemented in `src/features/gameplay/hooks/useAutoPlayScheduler.ts
 ## Shared Logger (`src/shared/utils/logger.ts`)
 
 - **`appLog`** — singleton for the main-app context. Import this directly; do not call `createLogger("app")` again.
-- **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)` where `version` is derived from `self.__WB_MANIFEST` content hashes.
+- **SW logger** — `sw.ts` creates its own: `const log = createLogger(\`SW ${version.slice(0, 8)}\`)`where`version`is derived from`self.\_\_WB_MANIFEST` content hashes.

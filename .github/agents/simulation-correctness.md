@@ -32,15 +32,15 @@ When investigating a simulation bug, capture all reproducibility context before 
 
 ## Invariants to validate
 
-| Area | Invariant |
-|---|---|
-| Batting line | Hits ≤ AB; walks not counted in AB; strikeouts consistent |
-| Lineup progression | Batter index wraps correctly (mod 9 or lineup size) |
-| Home/away mapping | Home team always bats in the bottom half; never inverted |
-| Scoreboard totals | Per-inning runs aggregate to match total score |
-| Base state | No runner occupies two bases; no base advancement past scoring |
-| Stat ordering | No impossible stat ordering (e.g., batter index out of range) |
-| PRNG determinism | Same seed → same sequence of `random()` calls → same play-by-play |
+| Area               | Invariant                                                         |
+| ------------------ | ----------------------------------------------------------------- |
+| Batting line       | Hits ≤ AB; walks not counted in AB; strikeouts consistent         |
+| Lineup progression | Batter index wraps correctly (mod 9 or lineup size)               |
+| Home/away mapping  | Home team always bats in the bottom half; never inverted          |
+| Scoreboard totals  | Per-inning runs aggregate to match total score                    |
+| Base state         | No runner occupies two bases; no base advancement past scoring    |
+| Stat ordering      | No impossible stat ordering (e.g., batter index out of range)     |
+| PRNG determinism   | Same seed → same sequence of `random()` calls → same play-by-play |
 
 ## Randomness and PRNG rules
 

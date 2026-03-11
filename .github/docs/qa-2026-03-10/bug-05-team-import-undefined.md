@@ -13,7 +13,7 @@
 
 When a user imports an invalid or unrecognized custom teams file, the error message contains the raw JavaScript token `"undefined"`:
 
-> *"Invalid teams file (unsupported format version: undefined). Make sure to export using the Ballgame app (Export All Teams or Export on a single team)."*
+> _"Invalid teams file (unsupported format version: undefined). Make sure to export using the Ballgame app (Export All Teams or Export on a single team)."_
 
 The word "undefined" is a technical JavaScript artifact that means nothing to a non-developer user. The message should either omit the version value entirely when it is absent, or replace it with a plain-language description like "unrecognized" or "missing".
 
@@ -48,6 +48,7 @@ When the parsed object has no `formatVersion` field, `obj["formatVersion"]` eval
 ## Fix plan
 
 **Files:**
+
 - `src/features/customTeams/storage/customTeamExportImport.ts`
 - `src/features/careerStats/storage/gameHistoryStore.ts` (same pattern)
 
@@ -56,9 +57,7 @@ Check whether `formatVersion` is present and a number before using it in the mes
 ```ts
 // Before throwing, produce a human-readable version label:
 const versionLabel =
-  typeof obj["formatVersion"] === "number"
-    ? String(obj["formatVersion"])
-    : "unrecognized";
+  typeof obj["formatVersion"] === "number" ? String(obj["formatVersion"]) : "unrecognized";
 throw new Error(
   `Invalid teams file (unsupported format version: ${versionLabel}). ` +
     `Make sure to export using the Ballgame app (Export All Teams or Export on a single team).`,
@@ -70,10 +69,14 @@ Or simplify the message to remove the version value entirely when it is absent:
 ```ts
 const version = obj["formatVersion"];
 if (typeof version !== "number") {
-  throw new Error("Invalid teams file. Make sure to export using the Ballgame app (Export All Teams or Export on a single team).");
+  throw new Error(
+    "Invalid teams file. Make sure to export using the Ballgame app (Export All Teams or Export on a single team).",
+  );
 }
 if (version !== SUPPORTED_VERSION) {
-  throw new Error(`Unsupported teams format version: ${version}. Make sure to export using the Ballgame app.`);
+  throw new Error(
+    `Unsupported teams format version: ${version}. Make sure to export using the Ballgame app.`,
+  );
 }
 ```
 

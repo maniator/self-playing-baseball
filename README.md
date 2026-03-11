@@ -12,56 +12,56 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 
 ### Home screen
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                     | Mobile                                                    |
+| ----------------------------------------------------------- | --------------------------------------------------------- |
 | ![Home screen — desktop](docs/screenshots/home-desktop.png) | ![Home screen — mobile](docs/screenshots/home-mobile.png) |
 
 ### New Game setup
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                            | Mobile                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | ![New Game setup — desktop](docs/screenshots/new-game-desktop.png) | ![New Game setup — mobile](docs/screenshots/new-game-mobile.png) |
 
 ### In-game view
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                    | Mobile                                                   |
+| ---------------------------------------------------------- | -------------------------------------------------------- |
 | ![In-game — desktop](docs/screenshots/in-game-desktop.png) | ![In-game — mobile](docs/screenshots/in-game-mobile.png) |
 
 ### Manager Mode decision panel
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                                                                                   | Mobile                                                                                                                   |
+| ------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | ![Manager Mode decision panel — desktop](https://github.com/user-attachments/assets/b05ae75e-7c32-46fc-a4ef-8f85d794ff83) | ![Manager Mode decision panel — mobile](https://github.com/user-attachments/assets/31eda8a1-c1cb-4c5d-b029-dbaf9f09463e) |
 
 ### How to play
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                            | Mobile                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | ![How to play — desktop](docs/screenshots/how-to-play-desktop.png) | ![How to play — mobile](docs/screenshots/how-to-play-mobile.png) |
 
 ### Saves
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                | Mobile                                               |
+| ------------------------------------------------------ | ---------------------------------------------------- |
 | ![Saves — desktop](docs/screenshots/saves-desktop.png) | ![Saves — mobile](docs/screenshots/saves-mobile.png) |
 
 ### Career Stats
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                              | Mobile                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | ![Career Stats — desktop](docs/screenshots/career-stats-desktop.png) | ![Career Stats — mobile](docs/screenshots/career-stats-mobile.png) |
 
 ### Manage Teams
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                              | Mobile                                                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------ |
 | ![Manage Teams — desktop](docs/screenshots/manage-teams-desktop.png) | ![Manage Teams — mobile](docs/screenshots/manage-teams-mobile.png) |
 
 ### Team Editor
 
-| Desktop | Mobile |
-|---|---|
+| Desktop                                                            | Mobile                                                           |
+| ------------------------------------------------------------------ | ---------------------------------------------------------------- |
 | ![Team Editor — desktop](docs/screenshots/team-editor-desktop.png) | ![Team Editor — mobile](docs/screenshots/team-editor-mobile.png) |
 
 ---
@@ -69,7 +69,7 @@ A self-playing, talking baseball simulator that runs entirely in your browser. W
 ## Features
 
 - **Installable PWA** — add to your Android or desktop home screen for a native app experience with its own ⚾ icon.
-- **Step-by-step or auto-play** — press *Batter Up!* (or Spacebar) for one pitch at a time, or enable Auto-play and choose Slow / Normal / Fast speed.
+- **Step-by-step or auto-play** — press _Batter Up!_ (or Spacebar) for one pitch at a time, or enable Auto-play and choose Slow / Normal / Fast speed.
 - **Play-by-play announcements** — the Web Speech API narrates every pitch, hit, and out.
 - **Live scoreboard** — line score with per-inning runs, hits, balls/strikes/outs indicator, and an EXTRA INNINGS banner when the game goes deep.
 - **Live batting stats panel** — AB, H, HR, RBI, AVG, OBP, and SLG for every batter in both lineups, updated in real time.
@@ -152,26 +152,26 @@ yarn test:e2e:ui                    # open Playwright UI for interactive debuggi
 yarn test:e2e:update-snapshots      # regenerate visual regression baselines
 ```
 
-| Spec | What it covers |
-|---|---|
-| `smoke.spec.ts` | App loads, New Game dialog visible, Play Ball starts autoplay |
-| `determinism.spec.ts` | Same seed (via seed input field) → identical play-by-play (uses isolated IndexedDB contexts) |
-| `save-load.spec.ts` | Save game, load game, autoplay resumes after load |
-| `import.spec.ts` | Import fixture JSON, save appears in list with Load button |
-| `responsive-smoke.spec.ts` | Scoreboard + field + log visible & non-zero sized on all viewports |
-| `visual/*.visual.spec.ts` | Pixel-diff snapshots: New Game dialog, in-game scoreboard, saves modal, team editor, decision panel |
-| `manager-mode.spec.ts` | Manager Mode toggle + strategy selector visible after game starts |
-| `custom-team-editor.spec.ts` | Team editor interactions, drag handles present, no up/down buttons |
-| `manage-teams-and-custom-game-flow.spec.ts` | Full Create/Edit/Delete team + start custom game |
-| `import-export-teams.spec.ts` | Export/import round-trip, legacy file import, tamper detection, dedup skip |
-| `substitution.spec.ts` | Pinch hitter substitution flow |
+| Spec                                        | What it covers                                                                                      |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `smoke.spec.ts`                             | App loads, New Game dialog visible, Play Ball starts autoplay                                       |
+| `determinism.spec.ts`                       | Same seed (via seed input field) → identical play-by-play (uses isolated IndexedDB contexts)        |
+| `save-load.spec.ts`                         | Save game, load game, autoplay resumes after load                                                   |
+| `import.spec.ts`                            | Import fixture JSON, save appears in list with Load button                                          |
+| `responsive-smoke.spec.ts`                  | Scoreboard + field + log visible & non-zero sized on all viewports                                  |
+| `visual/*.visual.spec.ts`                   | Pixel-diff snapshots: New Game dialog, in-game scoreboard, saves modal, team editor, decision panel |
+| `manager-mode.spec.ts`                      | Manager Mode toggle + strategy selector visible after game starts                                   |
+| `custom-team-editor.spec.ts`                | Team editor interactions, drag handles present, no up/down buttons                                  |
+| `manage-teams-and-custom-game-flow.spec.ts` | Full Create/Edit/Delete team + start custom game                                                    |
+| `import-export-teams.spec.ts`               | Export/import round-trip, legacy file import, tamper detection, dedup skip                          |
+| `substitution.spec.ts`                      | Pinch hitter substitution flow                                                                      |
 
 **Key implementation notes:**
+
 - `data-testid` attributes on all critical elements enable stable locators.
 - Each play-by-play log entry has a hidden `data-log-index` attribute (`0` = oldest event), used by `captureGameSignature` to build a stable determinism signature that does not shift as autoplay prepends new entries.
 - The webServer is `vite preview` (production build), not `yarn dev`, to avoid the RxDB dev-mode plugin hanging in headless Chromium.
 - Seeds are set via the seed input field on the New Game form, which calls `reinitSeed(seedStr)` on submit. E2E tests use the seed input field via `configureNewGame(page, { seed: "..." })`.
-
 
 ## UI Style Guide
 
@@ -192,21 +192,21 @@ Consult it before adding or changing any UI element — it covers:
 
 ## Tech stack
 
-| Layer | Technology |
-|---|---|
-| Framework | React 19 (hooks) |
-| Language | TypeScript 5 |
-| Styling | styled-components v6 + SASS |
-| Bundler | Vite v7 |
-| Unit testing | Vitest + Testing Library |
-| E2E testing | Playwright (7 device projects) |
-| Speech | Web Speech API |
-| Audio | Web Audio API |
-| Randomness | Seeded PRNG (mulberry32) |
-| Local DB | RxDB v17 (IndexedDB via Dexie) |
-| Drag & Drop | @dnd-kit |
-| PWA | Web App Manifest + Service Worker |
-| Deployment | Vercel |
+| Layer        | Technology                        |
+| ------------ | --------------------------------- |
+| Framework    | React 19 (hooks)                  |
+| Language     | TypeScript 5                      |
+| Styling      | styled-components v6 + SASS       |
+| Bundler      | Vite v7                           |
+| Unit testing | Vitest + Testing Library          |
+| E2E testing  | Playwright (7 device projects)    |
+| Speech       | Web Speech API                    |
+| Audio        | Web Audio API                     |
+| Randomness   | Seeded PRNG (mulberry32)          |
+| Local DB     | RxDB v17 (IndexedDB via Dexie)    |
+| Drag & Drop  | @dnd-kit                          |
+| PWA          | Web App Manifest + Service Worker |
+| Deployment   | Vercel                            |
 
 ---
 
@@ -215,6 +215,7 @@ Consult it before adding or changing any UI element — it covers:
 See **[CONTRIBUTING.md](CONTRIBUTING.md)** for setup instructions, validation steps, PR guidelines, and where to read more.
 
 Quick links:
+
 - [docs/](docs/) — full documentation index
 - [docs/style-guide.md](docs/style-guide.md) — UI style guide (consult before any visual change)
 - [docs/architecture.md](docs/architecture.md) — route architecture and auto-play design

@@ -13,7 +13,7 @@
 
 The **How to Play → Custom Teams** section tells users they can edit stats after generating a random team:
 
-> *"Use ✨ Generate Random to create a randomized team as a starting point. **Edit names, stats, and positions** to customize it."*
+> _"Use ✨ Generate Random to create a randomized team as a starting point. **Edit names, stats, and positions** to customize it."_
 
 This is incorrect. In the actual team editor, **stat sliders are disabled for all existing players** — they are locked at creation and cannot be changed. Only the player's name and batting/throwing position are editable after creation. The "Stats are locked after creation." hint is shown per-player in the editor, but the Help text creates the opposite expectation.
 
@@ -24,7 +24,7 @@ Users who generate a random team and then try to adjust their pitcher's velocity
 ## Reproduction steps
 
 1. Navigate to `/help` → expand **Custom Teams**.
-2. Read: *"Edit names, stats, and positions to customize it."*
+2. Read: _"Edit names, stats, and positions to customize it."_
 3. Go to **Manage Teams** → generate a random team → click **Edit**.
 4. Attempt to drag a stat slider (e.g. Contact for a batter).
 5. **Expected (based on Help):** Slider is interactive.
@@ -52,9 +52,9 @@ Remove "stats" from the editable fields list, and add a note about the lock:
 
 ```tsx
 <Li>
-  Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
-  Edit player names and positions to customize it.{" "}
-  <strong>Note:</strong> stat values are set at creation and cannot be changed afterward.
+  Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point. Edit
+  player names and positions to customize it. <strong>Note:</strong> stat values are set at creation
+  and cannot be changed afterward.
 </Li>
 ```
 

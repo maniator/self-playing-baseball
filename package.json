@@ -11,10 +11,11 @@
     "build": "vite build",
     "dev": "vite",
     "dev:deploy": "vite build && vite preview",
-    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\"",
-    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\"",
+    "format": "prettier --write \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\" \"**/*.md\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\" \"e2e/**/*.ts\" \"playwright.config.ts\" \"**/*.md\"",
     "lint": "eslint src e2e playwright.config.ts",
     "lint:fix": "eslint src e2e playwright.config.ts --fix",
+    "prepare": "husky",
     "test": "vitest run --reporter=verbose",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "yarn build && playwright test",
@@ -26,7 +27,7 @@
     "test:e2e:run:shard3": "playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=1/2",
     "test:e2e:run:shard4": "playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=2/2",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:update-snapshots": "playwright test --update-snapshots",
+    "test:e2e:update-snapshots": "node scripts/ensure-docker-snapshot-update.cjs && playwright test --update-snapshots",
     "typecheck": "tsc --noEmit",
     "typecheck:e2e": "tsc --noEmit -p e2e/tsconfig.json"
   },
@@ -65,8 +66,9 @@
     "fake-indexeddb": "^6.2.5",
     "git-cz": "^4.6.2",
     "globals": "^16",
-    "husky": "^4.2.5",
+    "husky": "^9.1.7",
     "jsdom": "26.0.0",
+    "lint-staged": "^15.5.2",
     "prettier": "^3",
     "sass": "^1.97.3",
     "typescript": "^5.9.3",
@@ -75,15 +77,22 @@
     "vite-plugin-pwa": "^1.2.0",
     "vitest": "3.0.7"
   },
-  "husky": {
-    "hooks": {
-      "prepare-commit-msg": "exec < /dev/tty && git cz --hook || true"
-    }
-  },
   "config": {
     "commitizen": {
       "path": "git-cz"
     }
+  },
+  "lint-staged": {
+    "*.md": [
+      "prettier --write"
+    ],
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "playwright.config.ts": [
+      "prettier --write"
+    ]
   },
   "browserslist": "> 0.5%, last 2 versions, not dead"
 }

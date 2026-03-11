@@ -20,7 +20,7 @@ The **How to Play → Game Flow** section lists available game speeds as "Slow /
 1. Navigate to `/help` (or open the in-game **?** modal).
 2. Expand **Game Flow**.
 3. **Expected:** Copy mentions Slow, Normal, Fast, and Instant.
-4. **Actual:** Copy reads *"Choose Slow / Normal / Fast speed to control the pace."* Instant is not mentioned.
+4. **Actual:** Copy reads _"Choose Slow / Normal / Fast speed to control the pace."_ Instant is not mentioned.
 
 Also: Instant speed persists between games via `localStorage`. A user who accidentally selects Instant and starts a new game will see it resolve immediately with no explanation.
 
@@ -46,8 +46,8 @@ Update the Game Flow list item to include Instant and briefly describe its behav
 
 ```tsx
 <Li>
-  Choose <strong>Slow / Normal / Fast / Instant</strong> speed to control the pace.
-  Instant resolves the entire game in one step with no delay.
+  Choose <strong>Slow / Normal / Fast / Instant</strong> speed to control the pace. Instant resolves
+  the entire game in one step with no delay.
 </Li>
 ```
 

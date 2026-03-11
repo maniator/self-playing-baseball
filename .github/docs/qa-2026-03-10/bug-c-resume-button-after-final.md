@@ -26,6 +26,7 @@ The button correctly appears for in-progress games; the bug is that it also appe
 5. Click Resume — navigates to `/game` showing a FINAL scoreboard. No action is possible.
 
 Also reproducible via loading a completed save:
+
 1. Go to `/saves` → **Load** a FINAL game.
 2. Wait for FINAL state, then click **← Home**.
 3. **Resume Current Game** button is visible.

@@ -220,7 +220,6 @@ Run it inside the Playwright Docker container with --trace=on and --repeat-each=
 on the tablet project, then inspect the trace artifacts to identify the root cause.
 ```
 
-
 ### Add a fixture for a specific game state
 
 ```
