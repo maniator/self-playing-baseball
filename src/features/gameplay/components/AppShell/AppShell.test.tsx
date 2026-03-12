@@ -27,6 +27,9 @@ function HomeRouteEl() {
       <button onClick={ctx.onHelp} data-testid="help-mock">
         Help
       </button>
+      <button onClick={ctx.onContact} data-testid="contact-mock">
+        Contact
+      </button>
     </div>
   );
 }
@@ -72,6 +75,7 @@ function renderAppShell(initialPath = "/") {
           <Route path="exhibition/new" element={<div data-testid="exhibition-mock" />} />
           <Route path="saves" element={<div data-testid="saves-mock" />} />
           <Route path="help" element={<div data-testid="help-page-mock" />} />
+          <Route path="contact" element={<div data-testid="contact-page-mock" />} />
         </Route>
       </Routes>
     </MemoryRouter>,
@@ -179,6 +183,14 @@ describe("AppShell", () => {
     const user = userEvent.setup();
     renderAppShell("/");
     await user.click(screen.getByTestId("help-mock"));
+    expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
+  });
+
+  it("clicking Contact navigates away from home (to /contact)", async () => {
+    const user = userEvent.setup();
+    renderAppShell("/");
+    await user.click(screen.getByTestId("contact-mock"));
+    expect(screen.getByTestId("contact-page-mock")).toBeInTheDocument();
     expect(screen.queryByTestId("home-screen-mock")).not.toBeInTheDocument();
   });
 

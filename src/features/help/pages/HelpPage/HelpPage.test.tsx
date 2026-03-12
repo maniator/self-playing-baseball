@@ -59,12 +59,12 @@ describe("HelpPage", () => {
     expect(screen.getByText("Saves")).toBeInTheDocument();
   });
 
-  it("renders all 8 accordion sections", () => {
+  it("renders all 9 accordion sections", () => {
     renderHelpPage();
     const helpPage = screen.getByTestId("help-page");
     // <details> elements have implicit ARIA role "group" — scope to the container.
     const details = within(helpPage).getAllByRole("group");
-    expect(details).toHaveLength(8);
+    expect(details).toHaveLength(9);
     // Spot-check section titles via <summary> scoped to the container.
     const rawSummaries = Array.from(helpPage.querySelectorAll("summary")).map((s) =>
       s.textContent?.trim(),
@@ -74,6 +74,12 @@ describe("HelpPage", () => {
     expect(rawSummaries).toContain("Manager Mode");
     expect(rawSummaries).toContain("Hit types");
     expect(rawSummaries).toContain("Saves");
+    expect(rawSummaries).toContain("Reporting issues");
+  });
+
+  it("Reporting issues section mentions Contact / Report Bug", () => {
+    renderHelpPage();
+    expect(screen.getByText(/Contact \/ Report Bug/i)).toBeInTheDocument();
   });
 
   it("each section has a summary (accordion toggle) and non-empty body content", () => {

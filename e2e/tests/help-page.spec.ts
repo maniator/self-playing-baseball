@@ -17,13 +17,13 @@ import { disableAnimations, resetAppState } from "../utils/helpers";
 /** Mobile project names — viewports ≤ 768 px where PageContainer scrolls. */
 const MOBILE_PROJECTS = ["iphone-15-pro-max", "iphone-15", "pixel-7", "pixel-5"];
 
-/** Open every closed <details> in the help page and wait until all 8 are open. */
+/** Open every closed <details> in the help page and wait until all 9 are open. */
 async function expandAllSections(page: Page): Promise<void> {
   const closedSummaries = page.locator('[data-testid="help-page"] details:not([open]) > summary');
   while ((await closedSummaries.count()) > 0) {
     await closedSummaries.first().click();
   }
-  await expect(page.locator('[data-testid="help-page"] details[open]')).toHaveCount(8);
+  await expect(page.locator('[data-testid="help-page"] details[open]')).toHaveCount(9);
 }
 
 test.describe("Help page — all sections present", () => {
@@ -34,9 +34,9 @@ test.describe("Help page — all sections present", () => {
     await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 10_000 });
   });
 
-  test("all 8 accordion sections are present", async ({ page }) => {
+  test("all 9 accordion sections are present", async ({ page }) => {
     const sections = page.locator('[data-testid="help-page"] details');
-    await expect(sections).toHaveCount(8);
+    await expect(sections).toHaveCount(9);
   });
 
   test("all sections can be expanded and show content", async ({ page }) => {

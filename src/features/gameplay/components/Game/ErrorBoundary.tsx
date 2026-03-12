@@ -9,6 +9,10 @@ const GAME_LS_KEYS = [
   "managedTeam",
 ];
 
+function buildContactPath(): string {
+  return `/contact?source=error-boundary&url=${encodeURIComponent(window.location.href)}`;
+}
+
 const clearGameStorage = () => {
   try {
     GAME_LS_KEYS.forEach((k) => localStorage.removeItem(k));
@@ -51,6 +55,10 @@ const BTN_STYLE: React.CSSProperties = {
   fontSize: 15,
   fontFamily: "inherit",
   fontWeight: "bold",
+};
+
+const LINK_STYLE: React.CSSProperties = {
+  color: "#93c5fd",
 };
 
 export class ErrorBoundary extends React.Component<React.PropsWithChildren, State> {
@@ -97,6 +105,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
     if (!this.state.hasError) return this.props.children;
 
     const { message, isChunkLoad } = this.state;
+    const contactPath = buildContactPath();
 
     return (
       <div
@@ -132,6 +141,13 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
             <p style={{ color: "#888", fontSize: 12, maxWidth: 480, marginTop: 24 }}>
               Still broken after reloading?
             </p>
+            <p style={{ color: "#cce0ff", fontSize: 13, maxWidth: 480 }}>
+              Please report it via the{" "}
+              <a href={contactPath} style={LINK_STYLE}>
+                contact page
+              </a>{" "}
+              or email naftali@lubin.dev.
+            </p>
             <button
               onClick={this.handleReset}
               style={{ ...BTN_STYLE, background: "#374151", color: "#fff", fontSize: 13 }}
@@ -144,6 +160,13 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
             <p style={{ color: "#cce0ff", fontSize: 14, maxWidth: 480 }}>
               Your saved data may be corrupted. Try a hard reload first — if the problem persists,
               resetting will clear local app data (including saves) and reload the page.
+            </p>
+            <p style={{ color: "#cce0ff", fontSize: 13, maxWidth: 480 }}>
+              If this keeps happening, please report it via the{" "}
+              <a href={contactPath} style={LINK_STYLE}>
+                contact page
+              </a>{" "}
+              or email naftali@lubin.dev.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
               <button

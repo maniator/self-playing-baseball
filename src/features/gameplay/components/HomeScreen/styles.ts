@@ -10,6 +10,18 @@ export const HomeContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.xxxl} ${({ theme }) => theme.spacing.xxl}
     calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
+
+  ${mq.mobile} {
+    justify-content: flex-start;
+    max-height: 100dvh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: ${({ theme }) => theme.spacing.md};
+
+    > * {
+      flex-shrink: 0;
+    }
+  }
 `;
 
 export const HomeLogo = styled.h1`
@@ -24,8 +36,8 @@ export const HomeLogo = styled.h1`
   }
 
   ${mq.mobile} {
-    width: ${({ theme }) => theme.sizes.logoSm};
-    height: ${({ theme }) => theme.sizes.logoSm};
+    width: ${({ theme }) => theme.sizes.logoXs};
+    height: ${({ theme }) => theme.sizes.logoXs};
   }
 `;
 
@@ -42,6 +54,11 @@ export const MenuGroup = styled.div`
   gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
+
+  ${mq.mobile} {
+    margin-top: 0;
+    gap: ${({ theme }) => theme.spacing.s10};
+  }
 `;
 
 export const PrimaryBtn = styled.button`
@@ -97,6 +114,43 @@ export const SecondaryBtn = styled.button`
     outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
   }
+`;
+
+/** Muted ghost button — used for low-priority utility actions like Contact / Report Bug. */
+export const GhostBtn = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textHint};
+  border: 1px solid ${({ theme }) => theme.colors.borderSubtle};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
+  font-family: inherit;
+  cursor: pointer;
+  min-height: ${({ theme }) => theme.sizes.btnLg};
+  text-align: center;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.textFaint};
+    border-color: ${({ theme }) => theme.colors.borderPanel};
+    background: ${({ theme }) => theme.colors.bgSubtle};
+  }
+
+  &:active {
+    background: ${({ theme }) => theme.colors.bgGameDeep};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
+`;
+
+/** Thin rule that visually separates utility actions from main nav buttons. */
+export const MenuDivider = styled.hr`
+  width: 100%;
+  border: 0;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderSubtle};
+  margin: ${({ theme }) => theme.spacing.xs} 0 0;
 `;
 
 /** Non-interactive teaser box for upcoming League mode. */

@@ -97,6 +97,27 @@ describe("HomeScreen", () => {
     expect(onHelp).toHaveBeenCalled();
   });
 
+  it("does NOT show Contact button when onContact is not provided", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
+    expect(screen.queryByTestId("home-contact-button")).not.toBeInTheDocument();
+  });
+
+  it("shows Contact button when onContact is provided", () => {
+    render(
+      <HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onContact={noop} />,
+    );
+    expect(screen.getByTestId("home-contact-button")).toBeInTheDocument();
+  });
+
+  it("calls onContact when Contact button is clicked", () => {
+    const onContact = vi.fn();
+    render(
+      <HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onContact={onContact} />,
+    );
+    fireEvent.click(screen.getByTestId("home-contact-button"));
+    expect(onContact).toHaveBeenCalled();
+  });
+
   it("shows creator attribution link", () => {
     render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
     const creatorLink = screen.getByRole("link", { name: /naftali.dev/i });

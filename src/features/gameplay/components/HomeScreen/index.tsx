@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Attribution, AttributionLink, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { Attribution, AttributionLink, GhostBtn, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuDivider, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -12,6 +12,8 @@ type Props = {
   onHelp?: () => void;
   /** When provided, shows a "Career Stats" button. */
   onCareerStats?: () => void;
+  /** When provided, shows a "Contact / Report Bug" button at the bottom of the menu. */
+  onContact?: () => void;
 };
 
 const HomeScreen: React.FunctionComponent<Props> = ({
@@ -21,6 +23,7 @@ const HomeScreen: React.FunctionComponent<Props> = ({
   onResumeCurrent,
   onHelp,
   onCareerStats,
+  onContact,
 }) => (
   <HomeContainer data-testid="home-screen">
     <HomeLogo>
@@ -51,6 +54,14 @@ const HomeScreen: React.FunctionComponent<Props> = ({
         <SecondaryBtn onClick={onCareerStats} data-testid="home-career-stats-button">
           Career Stats
         </SecondaryBtn>
+      )}
+      {onContact && (
+        <>
+          <MenuDivider />
+          <GhostBtn onClick={onContact} data-testid="home-contact-button">
+            Contact / Report Bug
+          </GhostBtn>
+        </>
       )}
     </MenuGroup>
     <LeagueTeaserBox data-testid="league-play-teaser">
