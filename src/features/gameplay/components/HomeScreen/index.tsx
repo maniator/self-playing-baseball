@@ -72,6 +72,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
         Season schedules, standings, and playoffs are on the roadmap.
       </LeagueTeaserSub>
     </LeagueTeaserBox>
+    <Attribution>
+      Created by <AttributionLink href="https://naftali.dev">naftali.dev</AttributionLink>
+    </Attribution>
   </HomeContainer>
 );
 

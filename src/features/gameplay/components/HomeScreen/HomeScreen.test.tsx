@@ -116,6 +116,11 @@ describe("HomeScreen", () => {
     );
     fireEvent.click(screen.getByTestId("home-contact-button"));
     expect(onContact).toHaveBeenCalled();
+  it("shows creator attribution link", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
+    const creatorLink = screen.getByRole("link", { name: /naftali.dev/i });
+    expect(creatorLink).toBeInTheDocument();
+    expect(creatorLink).toHaveAttribute("href", "https://naftali.dev");
   });
 
   it("always shows the League play coming soon teaser", () => {
