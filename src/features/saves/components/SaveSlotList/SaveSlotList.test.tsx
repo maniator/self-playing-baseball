@@ -13,6 +13,7 @@ vi.stubGlobal("confirm", confirmMock);
 
 import type { SaveDoc } from "@storage/types";
 
+import { DELETE_SAVE_CONFIRM_MSG } from "./index";
 import SaveSlotList from "./index";
 
 const makeSave = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
@@ -56,7 +57,7 @@ describe("SaveSlotList", () => {
     const onDelete = vi.fn();
     render(<SaveSlotList {...defaultProps} onDelete={onDelete} />);
     fireEvent.click(screen.getByTestId("delete-save-button"));
-    expect(confirmMock).toHaveBeenCalledWith("Delete this save? This cannot be undone.");
+    expect(confirmMock).toHaveBeenCalledWith(DELETE_SAVE_CONFIRM_MSG);
   });
 
   it("calls onDelete with the save id when confirm returns true", () => {

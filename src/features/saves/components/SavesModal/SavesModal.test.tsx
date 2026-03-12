@@ -3,7 +3,7 @@ import * as React from "react";
 import type { Strategy } from "@feat/gameplay/context/index";
 import { GameContext } from "@feat/gameplay/context/index";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { makeContextValue, makeState } from "@test/testHelpers";
@@ -24,6 +24,7 @@ vi.stubGlobal(
   "confirm",
   vi.fn(() => true),
 );
+afterAll(() => vi.unstubAllGlobals());
 
 const mockSetup: GameSaveSetup = {
   strategy: "balanced" as Strategy,

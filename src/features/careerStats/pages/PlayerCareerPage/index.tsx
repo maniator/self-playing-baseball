@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
-import { useNavigate, useParams, useSearchParams } from "react-router";
+import { createSearchParams, useNavigate, useParams, useSearchParams } from "react-router";
 
 import PlayerCareerBattingTab from "./PlayerCareerBattingTab";
 import PlayerCareerPitchingTab from "./PlayerCareerPitchingTab";
@@ -76,7 +76,11 @@ const PlayerCareerPage: React.FunctionComponent = () => {
         <BackBtn
           type="button"
           onClick={() =>
-            navigate(teamParam ? `/stats?team=${encodeURIComponent(teamParam)}` : "/stats")
+            navigate(
+              teamParam
+                ? { pathname: "/stats", search: createSearchParams({ team: teamParam }).toString() }
+                : "/stats",
+            )
           }
           aria-label="Go back"
         >

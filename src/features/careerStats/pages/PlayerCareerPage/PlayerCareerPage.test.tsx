@@ -144,7 +144,10 @@ describe("PlayerCareerPage", () => {
     await act(async () => {});
     const backBtn = screen.getByRole("button", { name: /back/i });
     await user.click(backBtn);
-    expect(mockNavigate).toHaveBeenCalledWith("/stats?team=custom%3Act_1");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      pathname: "/stats",
+      search: "team=custom%3Act_1",
+    });
   });
 
   it("shows 'No batting data.' when no batting rows", async () => {

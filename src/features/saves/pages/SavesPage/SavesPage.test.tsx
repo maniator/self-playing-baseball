@@ -3,7 +3,7 @@ import * as React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SaveStore so tests don't need IndexedDB
 vi.mock("@feat/saves/storage/saveStore", () => ({
@@ -27,6 +27,7 @@ vi.stubGlobal(
   "confirm",
   vi.fn(() => true),
 );
+afterAll(() => vi.unstubAllGlobals());
 
 import { SaveStore } from "@feat/saves/storage/saveStore";
 
