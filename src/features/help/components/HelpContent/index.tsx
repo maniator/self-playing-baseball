@@ -45,6 +45,10 @@ const HelpContent: React.FunctionComponent = () => (
           after the game starts.
         </Li>
         <Li>
+          When managing a team, a <strong>Starting Pitcher</strong> dropdown appears during pre-game
+          setup — choose which eligible pitcher starts the game before clicking Play Ball.
+        </Li>
+        <Li>
           Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
         </Li>
       </List>
@@ -58,7 +62,8 @@ const HelpContent: React.FunctionComponent = () => (
         </Li>
         <Li>
           Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
-          Edit names, stats, and positions to customize it.
+          Edit player names and positions to customize it. <strong>Note:</strong> player stat values
+          are determined at creation and cannot be changed afterward.
         </Li>
         <Li>
           Each team needs at least one lineup player and one pitcher before it can be used in a
@@ -74,8 +79,11 @@ const HelpContent: React.FunctionComponent = () => (
     <Section title="Game Flow">
       <List>
         <Li>The game runs automatically once started — sit back and watch.</Li>
-        <Li>Choose Slow / Normal / Fast speed to control the pace.</Li>
-        <Li>🔊 slider = play-by-play voice volume · 🔔 slider = chime &amp; fanfare volume.</Li>
+        <Li>
+          Choose <strong>Slow / Normal / Fast / Instant</strong> speed to control the pace. Instant
+          resolves the entire game in one step with no delay.
+        </Li>
+        <Li>🔊 slider = play-by-play voice volume · 🎵 slider = background music volume.</Li>
       </List>
     </Section>
 
