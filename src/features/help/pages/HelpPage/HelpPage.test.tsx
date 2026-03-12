@@ -77,6 +77,11 @@ describe("HelpPage", () => {
     expect(rawSummaries).toContain("Reporting issues");
   });
 
+  it("Reporting issues section mentions Contact / Report Bug", () => {
+    renderHelpPage();
+    expect(screen.getByText(/Contact \/ Report Bug/i)).toBeInTheDocument();
+  });
+
   it("each section has a summary (accordion toggle) and non-empty body content", () => {
     renderHelpPage();
     const helpPage = screen.getByTestId("help-page");
