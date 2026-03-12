@@ -73,7 +73,12 @@ async function ensureDemoSeedSuppressed(page: Page): Promise<void> {
       // src/shared/hooks/useSeedDemoTeams.ts.  Direct import is not possible
       // here because the e2e/ tsconfig clears @shared/* path aliases and the
       // hook depends on browser-only modules that cannot run in Node.js.
-      localStorage.setItem("ballgame:demoSeedDone", "1");
+      try {
+        localStorage.setItem("ballgame:demoSeedDone", "1");
+      } catch {
+        // localStorage may be blocked in some browser security configurations;
+        // the demo-seeding hook handles the missing flag gracefully.
+      }
     });
     typedPage._ballgameDemoSeedSuppressed = true;
   }
@@ -309,12 +314,19 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await page.goto("/exhibition/new");
   await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
   await configureNewGame(page, options);
-  // Wait for custom teams to load into the selects before clicking Play Ball.
-  // On slow WebKit CI runners, the RxDB reactive query can take 10-20 s to resolve,
-  // causing the "Create at least two custom teams" validation to fire if we click early
-  // (customTeams.length === 0 at click time → handleSubmit returns early → page stays stuck).
-  await expect(page.getByTestId("new-game-custom-away-team-select")).toBeVisible({
+  // Wait for both team selects to have non-empty values before clicking Play Ball.
+  // The selects become visible as soon as customTeams.length > 0, but the useEffect
+  // that sets customAwayId/customHomeId runs *after* the browser paint (React passive
+  // effect).  On slow WebKit CI runners there is a window where the selects are visible
+  // but both IDs are still "" — handleSubmit then fails with "Select valid away and home
+  // teams" and the page stays stuck.  Both IDs are set in the same React effect batch,
+  // so waiting for the away select is sufficient; we guard the home select too for
+  // explicit clarity and defence-in-depth.
+  await expect(page.getByTestId("new-game-custom-away-team-select")).not.toHaveValue("", {
     timeout: 20_000,
+  });
+  await expect(page.getByTestId("new-game-custom-home-team-select")).not.toHaveValue("", {
+    timeout: 5_000, // away already resolved; home is set in the same effect batch
   });
   await page.getByTestId("play-ball-button").click();
   // The setup UI should disappear after starting.
