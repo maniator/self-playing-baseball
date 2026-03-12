@@ -125,6 +125,55 @@ describe("useSeedDemoTeams", () => {
     });
   });
 
+  it("forwards position, handedness, and pitchingRole to every roster player", async () => {
+    mockStore.listCustomTeams.mockResolvedValue([]);
+
+    renderHook(() => useSeedDemoTeams());
+
+    await waitFor(() =>
+      expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
+    );
+
+    DEMO_TEAMS.forEach((def, i) => {
+      const [input] = mockStore.createCustomTeam.mock.calls[i] as [
+        {
+          roster: {
+            lineup: Array<{ position?: string; handedness?: string; pitchingRole?: string }>;
+            bench: Array<{ position?: string; handedness?: string }>;
+            pitchers: Array<{ position?: string; handedness?: string; pitchingRole?: string }>;
+          };
+        },
+        unknown,
+      ];
+
+      // Every lineup player must have a position and handedness.
+      input.roster.lineup.forEach((p, j) => {
+        expect(p.position, `${def.name} lineup[${j}].position`).toBeDefined();
+        expect(p.position, `${def.name} lineup[${j}].position non-empty`).not.toBe("");
+        expect(p.handedness, `${def.name} lineup[${j}].handedness`).toBeDefined();
+        expect(p.handedness, `${def.name} lineup[${j}].handedness non-empty`).not.toBe("");
+      });
+
+      // Every bench player must have a position and handedness.
+      input.roster.bench.forEach((p, j) => {
+        expect(p.position, `${def.name} bench[${j}].position`).toBeDefined();
+        expect(p.position, `${def.name} bench[${j}].position non-empty`).not.toBe("");
+        expect(p.handedness, `${def.name} bench[${j}].handedness`).toBeDefined();
+        expect(p.handedness, `${def.name} bench[${j}].handedness non-empty`).not.toBe("");
+      });
+
+      // Every pitcher must have a position, handedness, and pitchingRole.
+      input.roster.pitchers.forEach((p, j) => {
+        expect(p.position, `${def.name} pitcher[${j}].position`).toBeDefined();
+        expect(p.position, `${def.name} pitcher[${j}].position non-empty`).not.toBe("");
+        expect(p.handedness, `${def.name} pitcher[${j}].handedness`).toBeDefined();
+        expect(p.handedness, `${def.name} pitcher[${j}].handedness non-empty`).not.toBe("");
+        expect(p.pitchingRole, `${def.name} pitcher[${j}].pitchingRole`).toBeDefined();
+        expect(p.pitchingRole, `${def.name} pitcher[${j}].pitchingRole non-empty`).not.toBe("");
+      });
+    });
+  });
+
   it("does not re-seed when the hook mounts a second time in the same page load", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
@@ -152,6 +201,29 @@ describe("useSeedDemoTeams", () => {
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
     );
     expect(mockLog.warn).toHaveBeenCalled();
+    // At least one succeeded → done-flag must be set.
+    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBe("1");
+  });
+
+  it("does NOT set the done-flag and clears _seedPromise when ALL inserts fail", async () => {
+    mockStore.listCustomTeams.mockResolvedValue([]);
+    const dbError = new Error("transient DB error");
+    mockStore.createCustomTeam.mockRejectedValue(dbError);
+
+    renderHook(() => useSeedDemoTeams());
+
+    await waitFor(() => expect(mockLog.warn).toHaveBeenCalled());
+    // All inserts failed → done-flag must NOT be set so the next mount can retry.
+    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBeNull();
+    // _seedPromise was cleared by the catch handler — a new mount retries seeding.
+    mockStore.createCustomTeam.mockResolvedValue("ct_some_id");
+    renderHook(() => useSeedDemoTeams());
+    await waitFor(() =>
+      expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(
+        DEMO_TEAMS.length * 2, // first round (all failed) + second round (all succeed)
+      ),
+    );
+    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBe("1");
   });
 
   it("clears the in-flight promise on transient listCustomTeams failure so the next mount retries", async () => {
