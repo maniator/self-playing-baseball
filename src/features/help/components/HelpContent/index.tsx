@@ -156,6 +156,16 @@ const HelpContent: React.FunctionComponent = () => (
         </Li>
       </List>
     </Section>
+
+    <Section title="Reporting issues">
+      <List>
+        <Li>
+          Spotted a bug or something unexpected? Use the <strong>Contact / Report Bug</strong>{" "}
+          button at the bottom of the home screen to open a pre-filled GitHub issue or send a direct
+          email.
+        </Li>
+      </List>
+    </Section>
   </>
 );
 

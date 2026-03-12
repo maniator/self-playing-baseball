@@ -10,6 +10,13 @@ export const HomeContainer = styled.div`
   padding: ${({ theme }) => theme.spacing.xxxl} ${({ theme }) => theme.spacing.xxl}
     calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
+
+  ${mq.mobile} {
+    justify-content: flex-start;
+    max-height: 100dvh;
+    overflow-y: auto;
+    gap: ${({ theme }) => theme.spacing.md};
+  }
 `;
 
 export const HomeLogo = styled.h1`
@@ -24,8 +31,8 @@ export const HomeLogo = styled.h1`
   }
 
   ${mq.mobile} {
-    width: ${({ theme }) => theme.sizes.logoSm};
-    height: ${({ theme }) => theme.sizes.logoSm};
+    width: 110px;
+    height: 110px;
   }
 `;
 
@@ -42,6 +49,11 @@ export const MenuGroup = styled.div`
   gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
+
+  ${mq.mobile} {
+    margin-top: 0;
+    gap: ${({ theme }) => theme.spacing.s10};
+  }
 `;
 
 export const PrimaryBtn = styled.button`
