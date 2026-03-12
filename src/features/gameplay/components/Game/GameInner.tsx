@@ -56,6 +56,8 @@ interface Props {
   onConsumePendingLoad?: () => void;
   /** Called when the isCommitting state changes (career stats being saved). */
   onSavingStateChange?: (saving: boolean) => void;
+  /** Called when the game reaches FINAL so AppShell can clear hasActiveSession. */
+  onGameOver?: () => void;
 }
 
 const GameInner: React.FunctionComponent<Props> = ({
@@ -68,8 +70,9 @@ const GameInner: React.FunctionComponent<Props> = ({
   pendingLoadSave,
   onConsumePendingLoad,
   onSavingStateChange,
+  onGameOver,
 }) => {
-  const { dispatch, dispatchLog, teams } = useGameContext();
+  const { dispatch, dispatchLog, teams, gameOver } = useGameContext();
   const [, setManagerMode] = useLocalStorage("managerMode", false);
   const [, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
@@ -94,12 +97,27 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Prevents useGameHistorySync from re-committing stats for a completed game.
   const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
 
-  useRxdbGameSync(rxSaveIdRef, actionBufferRef);
+  useRxdbGameSync(rxSaveIdRef, actionBufferRef, wasAlreadyFinalOnLoad);
   const { isCommitting } = useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
 
   React.useEffect(() => {
     onSavingStateChange?.(isCommitting);
   }, [isCommitting, onSavingStateChange]);
+
+  // Notify AppShell once when the game transitions to FINAL.
+  // gameOverFiredRef is reset when gameOver becomes false (i.e. when a new game
+  // starts via dispatch({ type: "reset" }) or a restore_game to a non-final state),
+  // so that the callback fires exactly once for each individual game played.
+  const gameOverFiredRef = React.useRef(false);
+  React.useEffect(() => {
+    if (!gameOver) {
+      gameOverFiredRef.current = false;
+      return;
+    }
+    if (gameOverFiredRef.current) return;
+    gameOverFiredRef.current = true;
+    onGameOver?.();
+  }, [gameOver, onGameOver]);
 
   // Reactive saves list — used for auto-resume detection on initial load.
   const { saves, createSave } = useSaveStore();

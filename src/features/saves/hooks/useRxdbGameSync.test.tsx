@@ -296,6 +296,26 @@ describe("useRxdbGameSync", () => {
     expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
   });
 
+  it("does not call updateProgress on game over when wasAlreadyFinalOnLoad is true", async () => {
+    const refs = makeRefs();
+    let ctx = makeContextValue({ gameOver: false });
+    const { rerender } = renderHook(
+      () => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef, true),
+      {
+        wrapper: ({ children }: { children: React.ReactNode }) => (
+          <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+        ),
+      },
+    );
+
+    await act(async () => {
+      ctx = makeContextValue({ gameOver: true });
+      rerender();
+    });
+
+    expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
+  });
+
   it("calls updateProgress with stateSnapshot on unmount (navigate-away from /game)", () => {
     const refs = makeRefs();
     const ctx = makeContextValue({

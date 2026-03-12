@@ -91,6 +91,7 @@ const GamePage: React.FunctionComponent = () => {
         pendingLoadSave={pendingLoadRef.current}
         onConsumePendingLoad={handleConsumeLoad}
         onSavingStateChange={setIsCommitting}
+        onGameOver={ctx.onGameOver}
       />
       {blocker.state === "blocked" && (
         <SavingBanner role="status" aria-live="polite" data-testid="saving-stats-banner">

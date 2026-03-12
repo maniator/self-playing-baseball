@@ -686,6 +686,39 @@ describe("GameInner — onNewGame prop (external navigation)", () => {
   });
 });
 
+describe("GameInner — onGameOver prop", () => {
+  it("calls onGameOver when gameOver transitions from false to true", () => {
+    const onGameOver = vi.fn();
+    const { rerender } = render(
+      <GameContext.Provider value={makeContextValue({ gameOver: false })}>
+        <GameInner onGameOver={onGameOver} />
+      </GameContext.Provider>,
+    );
+    expect(onGameOver).not.toHaveBeenCalled();
+    rerender(
+      <GameContext.Provider value={makeContextValue({ gameOver: true })}>
+        <GameInner onGameOver={onGameOver} />
+      </GameContext.Provider>,
+    );
+    expect(onGameOver).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onGameOver only once even on multiple re-renders after game over", () => {
+    const onGameOver = vi.fn();
+    const { rerender } = render(
+      <GameContext.Provider value={makeContextValue({ gameOver: true })}>
+        <GameInner onGameOver={onGameOver} />
+      </GameContext.Provider>,
+    );
+    rerender(
+      <GameContext.Provider value={makeContextValue({ gameOver: true })}>
+        <GameInner onGameOver={onGameOver} />
+      </GameContext.Provider>,
+    );
+    expect(onGameOver).toHaveBeenCalledTimes(1);
+  });
+});
+
 // ─── Modal save load (handleModalLoad / onLoadSave callback) ──────────────────
 
 const makeModalSaveSlot = (): SaveDoc => ({
