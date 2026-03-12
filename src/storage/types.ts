@@ -88,7 +88,7 @@ export type AppShellOutletContext = {
   onCareerStats: () => void;
   onBackToHome: () => void;
   hasActiveSession: boolean;
-  /** Called by GamePage when a game reaches FINAL, so AppShell clears hasActiveSession. */
+  /** Called by GameInner (via GamePage/Game) when a game reaches FINAL, so AppShell clears hasActiveSession. */
   onGameOver: () => void;
 };
 

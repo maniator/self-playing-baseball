@@ -300,7 +300,8 @@ describe("useRxdbGameSync", () => {
     const refs = makeRefs();
     let ctx = makeContextValue({ gameOver: false });
     const { rerender } = renderHook(
-      () => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef, true),
+      () =>
+        useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef, { wasAlreadyFinalOnLoad: true }),
       {
         wrapper: ({ children }: { children: React.ReactNode }) => (
           <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
@@ -314,6 +315,50 @@ describe("useRxdbGameSync", () => {
     });
 
     expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
+  });
+
+  it("calls updateProgress on game over when wasAlreadyFinalOnLoad changes from true to false mid-session", async () => {
+    const refs = makeRefs();
+    let ctx = makeContextValue({
+      pitchKey: 10,
+      inning: 9,
+      atBat: 1,
+      score: [3, 2] as [number, number],
+      gameOver: false,
+    });
+    let wasAlreadyFinalOnLoad = true;
+    const { rerender } = renderHook(
+      () => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef, { wasAlreadyFinalOnLoad }),
+      {
+        wrapper: ({ children }: { children: React.ReactNode }) => (
+          <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+        ),
+      },
+    );
+
+    // Simulate loading a new (non-final) save mid-session — flag becomes false.
+    act(() => {
+      wasAlreadyFinalOnLoad = false;
+      rerender();
+    });
+
+    // Now the game ends — updateProgress should be called since flag is now false.
+    await act(async () => {
+      ctx = makeContextValue({
+        pitchKey: 10,
+        inning: 9,
+        atBat: 1,
+        score: [3, 2] as [number, number],
+        gameOver: true,
+      });
+      rerender();
+    });
+
+    expect(saveStoreModule.SaveStore.updateProgress).toHaveBeenCalledWith(
+      "save_1",
+      10,
+      expect.objectContaining({ scoreSnapshot: { away: 3, home: 2 } }),
+    );
   });
 
   it("calls updateProgress with stateSnapshot on unmount (navigate-away from /game)", () => {

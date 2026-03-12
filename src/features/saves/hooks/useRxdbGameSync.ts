@@ -22,6 +22,11 @@ const GAME_EVENT_TYPES = new Set([
   "set_pending_decision",
 ]);
 
+type UseRxdbGameSyncOptions = {
+  /** When true, skips the game-over updateProgress write (save is already FINAL). */
+  wasAlreadyFinalOnLoad?: boolean;
+};
+
 /**
  * Wires the RxDB event store into the live game loop:
  * - flushes game actions to SaveStore.appendEvents() whenever pitchKey advances
@@ -34,7 +39,7 @@ const GAME_EVENT_TYPES = new Set([
 export const useRxdbGameSync = (
   rxSaveIdRef: React.MutableRefObject<string | null>,
   actionBufferRef: React.MutableRefObject<GameAction[]>,
-  wasAlreadyFinalOnLoad = false,
+  { wasAlreadyFinalOnLoad = false }: UseRxdbGameSyncOptions = {},
 ): void => {
   const { dispatch: _d, dispatchLog: _dl, log: _l, ...gameState } = useGameContext();
   const { pitchKey, inning, atBat, gameOver } = gameState;

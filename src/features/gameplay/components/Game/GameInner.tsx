@@ -97,7 +97,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Prevents useGameHistorySync from re-committing stats for a completed game.
   const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
 
-  useRxdbGameSync(rxSaveIdRef, actionBufferRef, wasAlreadyFinalOnLoad);
+  useRxdbGameSync(rxSaveIdRef, actionBufferRef, { wasAlreadyFinalOnLoad });
   const { isCommitting } = useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
 
   React.useEffect(() => {
