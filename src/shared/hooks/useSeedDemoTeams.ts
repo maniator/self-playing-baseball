@@ -18,13 +18,19 @@ export const DEMO_SEED_DONE_KEY = "ballgame:demoSeedDone";
 /** Map a demo player definition to a TeamPlayer ready for store insertion. */
 function mapDemoPlayer(
   p: DemoTeamDef["lineup"][number],
-): Pick<TeamPlayer, "id" | "name" | "role" | "batting" | "pitching"> {
+): Pick<
+  TeamPlayer,
+  "id" | "name" | "role" | "batting" | "pitching" | "position" | "handedness" | "pitchingRole"
+> {
   return {
     id: generatePlayerId(),
     name: p.name,
     role: p.role,
     batting: p.batting,
+    position: p.position,
+    handedness: p.handedness,
     ...(p.pitching !== undefined && { pitching: p.pitching }),
+    ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
   };
 }
 
@@ -56,6 +62,9 @@ async function seedIfEmpty(): Promise<void> {
     return;
   }
 
+  let anyInserted = false;
+  let lastError: unknown = null;
+
   for (const def of DEMO_TEAMS) {
     try {
       await CustomTeamStore.createCustomTeam(
@@ -76,18 +85,31 @@ async function seedIfEmpty(): Promise<void> {
         // try/catch below handles that error as a graceful skip.
         { id: def.demoId },
       );
+      anyInserted = true;
     } catch (err) {
       // Another tab may have already inserted this team during the same
       // first-launch. Treat any per-team failure as a graceful skip so the
       // remaining teams still get inserted.
       appLog.warn(`useSeedDemoTeams: skipped "${def.name}" (already exists or DB error)`, err);
+      lastError = err;
     }
   }
 
-  try {
-    localStorage.setItem(DEMO_SEED_DONE_KEY, "1");
-  } catch {
-    /* ignore */
+  // Only mark seeding as done when at least one team was freshly inserted.
+  // If every insert failed (all duplicate-key = concurrent tab already seeded,
+  // or a transient DB error), skip setting the flag so the next mount can
+  // either find the teams via listCustomTeams (concurrent-tab case) or retry
+  // the inserts (transient-error case).  Each individual error is already
+  // logged by appLog.warn in the loop above.  Rethrowing clears _seedPromise
+  // so the next getSeedPromise() call re-runs seedIfEmpty.
+  if (anyInserted) {
+    try {
+      localStorage.setItem(DEMO_SEED_DONE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+  } else if (lastError !== null) {
+    throw lastError;
   }
 }
 
