@@ -22,6 +22,11 @@ const GAME_EVENT_TYPES = new Set([
   "set_pending_decision",
 ]);
 
+type UseRxdbGameSyncOptions = {
+  /** When true, skips the game-over updateProgress write (save is already FINAL). */
+  wasAlreadyFinalOnLoad?: boolean;
+};
+
 /**
  * Wires the RxDB event store into the live game loop:
  * - flushes game actions to SaveStore.appendEvents() whenever pitchKey advances
@@ -34,6 +39,7 @@ const GAME_EVENT_TYPES = new Set([
 export const useRxdbGameSync = (
   rxSaveIdRef: React.MutableRefObject<string | null>,
   actionBufferRef: React.MutableRefObject<GameAction[]>,
+  { wasAlreadyFinalOnLoad = false }: UseRxdbGameSyncOptions = {},
 ): void => {
   const { dispatch: _d, dispatchLog: _dl, log: _l, ...gameState } = useGameContext();
   const { pitchKey, inning, atBat, gameOver } = gameState;
@@ -41,6 +47,13 @@ export const useRxdbGameSync = (
   // Always-current ref of game state — read by effects without re-creating them.
   const gameStateRef = React.useRef(gameState);
   gameStateRef.current = gameState;
+
+  // Always-current ref for wasAlreadyFinalOnLoad so the gameOver effect can read
+  // the latest value without being in its dependency array.  The value can change
+  // during the hook's lifetime when the user loads a different save mid-session
+  // (e.g. FINAL → in-progress), so we keep the ref up-to-date on every render.
+  const wasAlreadyFinalOnLoadRef = React.useRef(wasAlreadyFinalOnLoad);
+  wasAlreadyFinalOnLoadRef.current = wasAlreadyFinalOnLoad;
 
   const prevPitchKeyRef = React.useRef<number | null>(null);
 
@@ -119,6 +132,9 @@ export const useRxdbGameSync = (
   // Update progress when the game ends.
   React.useEffect(() => {
     if (!gameOver) return;
+    // Skip if the save was already in FINAL state when loaded — re-marking it
+    // is redundant and triggers a console error from updateProgress.
+    if (wasAlreadyFinalOnLoadRef.current) return;
     const saveId = rxSaveIdRef.current;
     if (!saveId) return;
     const state = gameStateRef.current;

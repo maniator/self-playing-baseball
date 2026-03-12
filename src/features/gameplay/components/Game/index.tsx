@@ -31,6 +31,8 @@ type Props = {
   onConsumePendingLoad?: () => void;
   /** Called when the career stats commit state changes (saving/done). */
   onSavingStateChange?: (saving: boolean) => void;
+  /** Called when the game reaches FINAL so AppShell can clear hasActiveSession. */
+  onGameOver?: () => void;
 };
 
 const Game: React.FunctionComponent<Props> = ({
@@ -42,6 +44,7 @@ const Game: React.FunctionComponent<Props> = ({
   pendingLoadSave,
   onConsumePendingLoad,
   onSavingStateChange,
+  onGameOver,
 }) => {
   const actionBufferRef = React.useRef<GameAction[]>([]);
   const [db, setDb] = React.useState<BallgameDb | null>(null);
@@ -112,6 +115,7 @@ const Game: React.FunctionComponent<Props> = ({
           pendingLoadSave={pendingLoadSave}
           onConsumePendingLoad={onConsumePendingLoad}
           onSavingStateChange={onSavingStateChange}
+          onGameOver={onGameOver}
         />
       </GameProviderWrapper>
     </RxDatabaseProvider>

@@ -28,6 +28,10 @@ const AppShell: React.FunctionComponent = () => {
     setHasActiveSession(true);
   }, []);
 
+  const handleGameOver = React.useCallback(() => {
+    setHasActiveSession(false);
+  }, []);
+
   const handleResumeCurrent = React.useCallback(() => {
     navigate("/game");
   }, [navigate]);
@@ -91,6 +95,7 @@ const AppShell: React.FunctionComponent = () => {
       onCareerStats: handleCareerStats,
       onBackToHome: handleBackToHome,
       hasActiveSession,
+      onGameOver: handleGameOver,
     }),
     [
       handleStartFromExhibition,
@@ -105,6 +110,7 @@ const AppShell: React.FunctionComponent = () => {
       handleCareerStats,
       handleBackToHome,
       hasActiveSession,
+      handleGameOver,
     ],
   );
 
