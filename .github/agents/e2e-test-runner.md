@@ -48,13 +48,71 @@ Use the following pattern for all `docker run` invocations. The `n 24` step inst
 > The `-h` flag (`--no-dereference`) ensures symlinks inside `node_modules/` are not followed on the host — only the symlink entries themselves get chowned. The `2>/dev/null || true` makes the command safe to copy-paste even when some directories don't exist yet (e.g., `dist/` is absent on a fresh clone).
 
 ```bash
-# Run all E2E tests (all projects)
+# Run all E2E tests using shards — mirrors the CI playwright-e2e.yml workflow exactly.
+# CI runs 6 parallel jobs (3 Chromium + 3 WebKit shards); run them sequentially here.
+# Build once, then run each shard. The `--shard=N/3` flag splits the test suite evenly.
+
+# --- Build (shared for all shards) ---
 docker run --rm \
   -e CI=true \
   -v "$(pwd):/work" \
   -w /work \
   mcr.microsoft.com/playwright:v1.58.2-noble \
-  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build && npx playwright test"
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && yarn build"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || true
+
+# --- Chromium shard 1/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=determinism --project=desktop --project=pixel-7 --project=pixel-5 --shard=1/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# --- Chromium shard 2/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=determinism --project=desktop --project=pixel-7 --project=pixel-5 --shard=2/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# --- Chromium shard 3/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=determinism --project=desktop --project=pixel-7 --project=pixel-5 --shard=3/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# --- WebKit shard 1/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=1/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# --- WebKit shard 2/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=2/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# --- WebKit shard 3/3 ---
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=3/3"
 sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 
 # Run a single spec file (desktop project only — fastest feedback loop)
@@ -215,6 +273,90 @@ Use `loadFixture` instead of long autoplay-based setup whenever the test only ne
 4. For visual snapshot tests, place them in `e2e/tests/visual/` and call `disableAnimations(page)` before taking the screenshot.
 5. Never add `test.setTimeout()` — use a fixture if autoplay needs more than 30 s to reach a state.
 6. Run `yarn typecheck:e2e` after adding or changing any E2E test files to catch Playwright API type errors early.
+
+## Running failing tests from CI workflow failures
+
+When the `playwright-e2e` CI workflow fails, use the GitHub MCP tools to identify which tests failed and then re-run only those tests in the container.
+
+### Step 1 — Identify the failing shard(s) and test names
+
+Use the MCP tools (available to the Copilot agent) to inspect the failed workflow run:
+
+```
+# List recent workflow runs to find the failed run ID
+github-mcp-server-actions_list  method=list_workflow_runs  owner=maniator  repo=self-playing-baseball  resource_id=playwright-e2e.yml
+
+# Get job logs for the failed run (replace <run_id> with the actual ID)
+github-mcp-server-get_job_logs  owner=maniator  repo=self-playing-baseball  run_id=<run_id>  failed_only=true  return_content=true
+```
+
+The logs will contain lines like `✘ [FAILED] e2e/tests/smoke.spec.ts:42:5 › some test name`. Collect the spec file paths and test names from the failures.
+
+### Step 2 — Re-run only the failing tests
+
+**Option A — `--last-failed` (fastest when test-results/ exists locally)**
+
+If you already have a `test-results/` directory from a previous local run, Playwright can re-run exactly the tests that failed on the last run:
+
+```bash
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --last-failed"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+```
+
+**Option B — target specific spec files + projects from the failed CI shard**
+
+Use the spec files and projects from the failed CI shard job (e.g., `chromium-shard-2`). Add `-g "test name"` to narrow to a specific test if needed:
+
+```bash
+# Re-run a specific spec that failed in a Chromium shard
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test e2e/tests/failing.spec.ts --project=desktop --project=pixel-7 --project=pixel-5"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# Re-run a specific test by name across the failing WebKit shard
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 -g 'failing test name'"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+```
+
+**Option C — re-run the exact failing shard**
+
+If the CI failure was in a specific shard (e.g., `chromium-shard-2`), reproduce it exactly by passing the same `--shard` flag as that CI job used. The shard index deterministically maps to the same subset of tests:
+
+```bash
+# Reproduce chromium-shard-2 failure exactly
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=determinism --project=desktop --project=pixel-7 --project=pixel-5 --shard=2/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+
+# Reproduce webkit-shard-1 failure exactly
+docker run --rm \
+  -e CI=true \
+  -v "$(pwd):/work" \
+  -w /work \
+  mcr.microsoft.com/playwright:v1.58.2-noble \
+  bash -c "npm install -g n && n 24 && hash -r && corepack enable && yarn install --immutable && npx playwright test --project=tablet --project=iphone-15-pro-max --project=iphone-15 --shard=1/3"
+sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
+```
+
+> **Tip:** Always check the CI shard job name (e.g., `E2E (chromium-shard-2)`) to know which `--project` flags and `--shard` index apply. The matrix in `.github/workflows/playwright-e2e.yml` maps each job name to its exact flags.
 
 ## Debugging failing tests
 
