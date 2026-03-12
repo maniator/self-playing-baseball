@@ -22,6 +22,12 @@ vi.mock("@storage/db", () => ({
   }),
 }));
 
+// jsdom doesn't implement window.confirm; stub it to return true so delete actions work.
+vi.stubGlobal(
+  "confirm",
+  vi.fn(() => true),
+);
+
 import { SaveStore } from "@feat/saves/storage/saveStore";
 
 import type { SaveDoc } from "@storage/types";

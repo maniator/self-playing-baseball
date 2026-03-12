@@ -49,7 +49,11 @@ const SaveSlotList: React.FunctionComponent<Props> = ({
               <ActionBtn
                 type="button"
                 $variant="danger"
-                onClick={() => onDelete(s.id)}
+                onClick={() => {
+                  if (window.confirm("Delete this save? This cannot be undone.")) {
+                    onDelete(s.id);
+                  }
+                }}
                 aria-label="Delete save"
                 data-testid="delete-save-button"
               >

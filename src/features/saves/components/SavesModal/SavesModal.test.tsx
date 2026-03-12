@@ -19,6 +19,12 @@ HTMLDialogElement.prototype.close = vi.fn().mockImplementation(function (this: H
   this.removeAttribute("open");
 });
 
+// jsdom doesn't implement window.confirm; stub it to return true so delete actions work.
+vi.stubGlobal(
+  "confirm",
+  vi.fn(() => true),
+);
+
 const mockSetup: GameSaveSetup = {
   strategy: "balanced" as Strategy,
   managedTeam: null,
