@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
-import { useNavigate, useParams } from "react-router";
+import { createSearchParams, useNavigate, useParams, useSearchParams } from "react-router";
 
 import PlayerCareerBattingTab from "./PlayerCareerBattingTab";
 import PlayerCareerPitchingTab from "./PlayerCareerPitchingTab";
@@ -27,6 +27,8 @@ type Tab = "batting" | "pitching";
 const PlayerCareerPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { playerKey } = useParams<{ playerKey: string }>();
+  const [searchParams] = useSearchParams();
+  const teamParam = searchParams.get("team");
   const [activeTab, setActiveTab] = React.useState<Tab>("batting");
 
   const {
@@ -71,7 +73,17 @@ const PlayerCareerPage: React.FunctionComponent = () => {
   return (
     <PlayerCareerContainer data-testid="player-career-page">
       <PageHeader>
-        <BackBtn type="button" onClick={() => navigate(-1)} aria-label="Go back">
+        <BackBtn
+          type="button"
+          onClick={() =>
+            navigate(
+              teamParam
+                ? { pathname: "/stats", search: createSearchParams({ team: teamParam }).toString() }
+                : "/stats",
+            )
+          }
+          aria-label="Go back"
+        >
           ← Back
         </BackBtn>
       </PageHeader>

@@ -122,13 +122,32 @@ describe("PlayerCareerPage", () => {
     expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
   });
 
-  it("back button calls navigate(-1)", async () => {
+  it("back button navigates to /stats when no team param", async () => {
     const user = userEvent.setup();
     renderPage();
     await act(async () => {});
     const backBtn = screen.getByRole("button", { name: /back/i });
     await user.click(backBtn);
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
+    expect(mockNavigate).toHaveBeenCalledWith("/stats");
+  });
+
+  it("back button navigates to /stats?team=X when team param is present", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter initialEntries={["/players/team1:p1?team=custom:ct_1"]}>
+        <Routes>
+          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+          <Route path="/stats" element={<div data-testid="stats-page" />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+    await act(async () => {});
+    const backBtn = screen.getByRole("button", { name: /back/i });
+    await user.click(backBtn);
+    expect(mockNavigate).toHaveBeenCalledWith({
+      pathname: "/stats",
+      search: "team=custom%3Act_1",
+    });
   });
 
   it("shows 'No batting data.' when no batting rows", async () => {

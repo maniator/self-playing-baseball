@@ -3,7 +3,7 @@ import * as React from "react";
 import type { Strategy } from "@feat/gameplay/context/index";
 import { GameContext } from "@feat/gameplay/context/index";
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { GameSaveSetup, SaveDoc } from "@storage/types";
 import { makeContextValue, makeState } from "@test/testHelpers";
@@ -18,6 +18,11 @@ HTMLDialogElement.prototype.showModal = vi.fn().mockImplementation(function (
 HTMLDialogElement.prototype.close = vi.fn().mockImplementation(function (this: HTMLDialogElement) {
   this.removeAttribute("open");
 });
+
+// jsdom doesn't implement window.confirm; stub it to return true so delete actions work.
+const confirmMock = vi.fn(() => true);
+vi.stubGlobal("confirm", confirmMock);
+afterAll(() => vi.unstubAllGlobals());
 
 const mockSetup: GameSaveSetup = {
   strategy: "balanced" as Strategy,
@@ -99,6 +104,7 @@ const openPanel = () =>
 describe("SavesModal", () => {
   beforeEach(async () => {
     vi.clearAllMocks();
+    confirmMock.mockReturnValue(true);
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue(makeMockStore());
     // Restore showModal/close mock implementations after vi.clearAllMocks()

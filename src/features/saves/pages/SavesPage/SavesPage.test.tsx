@@ -3,7 +3,7 @@ import * as React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Outlet, Route, Routes } from "react-router";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock SaveStore so tests don't need IndexedDB
 vi.mock("@feat/saves/storage/saveStore", () => ({
@@ -21,6 +21,11 @@ vi.mock("@storage/db", () => ({
     find: () => ({ exec: () => Promise.resolve([]) }),
   }),
 }));
+
+// jsdom doesn't implement window.confirm; stub it to return true so delete actions work.
+const confirmMock = vi.fn(() => true);
+vi.stubGlobal("confirm", confirmMock);
+afterAll(() => vi.unstubAllGlobals());
 
 import { SaveStore } from "@feat/saves/storage/saveStore";
 
@@ -64,6 +69,7 @@ const makeSave = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
 describe("SavesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    confirmMock.mockReturnValue(true);
     vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
     vi.mocked(SaveStore.importRxdbSave).mockResolvedValue(makeSave({ id: "imported_save" }));
   });

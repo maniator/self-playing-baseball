@@ -94,6 +94,8 @@ test.describe("Modals", () => {
       const countBefore = await listItems.count();
 
       // Click the delete (✕) button on the first save.
+      // The save deletion shows a window.confirm — accept it.
+      page.once("dialog", (dialog) => dialog.accept());
       await listItems
         .first()
         .getByRole("button", { name: /delete save/i })
