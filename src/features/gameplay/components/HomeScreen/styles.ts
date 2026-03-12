@@ -99,6 +99,42 @@ export const SecondaryBtn = styled.button`
   }
 `;
 
+/** Muted ghost button — used for low-priority utility actions like Contact / Report Bug. */
+export const GhostBtn = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textHint};
+  border: 1px solid ${({ theme }) => theme.colors.borderSubtle};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.xl};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
+  font-family: inherit;
+  cursor: pointer;
+  text-align: center;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.textFaint};
+    border-color: ${({ theme }) => theme.colors.borderPanel};
+    background: ${({ theme }) => theme.colors.bgSubtle};
+  }
+
+  &:active {
+    background: ${({ theme }) => theme.colors.bgGameDeep};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
+`;
+
+/** Thin rule that visually separates utility actions from main nav buttons. */
+export const MenuDivider = styled.hr`
+  width: 100%;
+  border: 0;
+  border-top: 1px solid ${({ theme }) => theme.colors.borderSubtle};
+  margin: ${({ theme }) => theme.spacing.xs} 0 0;
+`;
+
 /** Non-interactive teaser box for upcoming League mode. */
 export const LeagueTeaserBox = styled.div`
   margin-top: ${({ theme }) => theme.spacing.sm};

@@ -10,6 +10,7 @@ import {
   Divider,
   List,
   ListItem,
+  OfflineNote,
   PageContainer,
   PageHeader,
   PageTitle,
@@ -18,12 +19,47 @@ import {
 } from "./styles";
 
 const CONTACT_EMAIL = "naftali@lubin.dev";
-const BUG_REPORT_URL =
-  "https://github.com/maniator/self-playing-baseball/issues/new?template=bug_report.md&labels=bug";
+const GITHUB_REPO = "maniator/blipit-legends";
+const BUG_REPORT_BASE = `https://github.com/${GITHUB_REPO}/issues/new?template=bug_report.md&labels=bug`;
+
+const ISSUE_BODY_TEMPLATE = `**Describe the bug**
+
+<!-- A clear and concise description of what the bug is. -->
+
+**To Reproduce**
+
+<!-- Steps to reproduce the behavior -->
+
+**Expected behavior**
+
+<!-- What you expected to happen -->
+
+**Environment (auto-filled)**`;
+
+function buildIssueUrl(fromErrorBoundary: boolean): string {
+  const envLines = [
+    `- Browser/UA: ${navigator.userAgent}`,
+    `- URL: ${window.location.href}`,
+    `- Source: ${fromErrorBoundary ? "error-boundary" : "contact-page"}`,
+  ].join("\n");
+  return `${BUG_REPORT_BASE}&body=${encodeURIComponent(`${ISSUE_BODY_TEMPLATE}\n${envLines}`)}`;
+}
 
 const ContactPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const [isOnline, setIsOnline] = React.useState(() => navigator.onLine);
+
+  React.useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
 
   const source = searchParams.get("source");
   const fromErrorBoundary = source === "error-boundary";
@@ -67,18 +103,24 @@ const ContactPage: React.FunctionComponent = () => {
       <Divider />
 
       <Card>
-        <SubTitle>Or open a pre-filled GitHub bug report</SubTitle>
+        <SubTitle>Open a pre-filled GitHub bug report</SubTitle>
         <Copy>
           This uses the bug issue template so reports stay consistent and easier to triage.
         </Copy>
-        <SecondaryLink
-          href={BUG_REPORT_URL}
-          target="_blank"
-          rel="noreferrer"
-          data-testid="contact-page-issue-link"
-        >
-          Create GitHub bug report
-        </SecondaryLink>
+        {isOnline ? (
+          <SecondaryLink
+            href={buildIssueUrl(fromErrorBoundary)}
+            target="_blank"
+            rel="noreferrer"
+            data-testid="contact-page-issue-link"
+          >
+            Create GitHub issue
+          </SecondaryLink>
+        ) : (
+          <OfflineNote data-testid="contact-page-offline-note">
+            🔌 You appear to be offline. Connect to the internet to open a GitHub issue.
+          </OfflineNote>
+        )}
         <List>
           <ListItem>What happened vs what you expected</ListItem>
           <ListItem>Steps to reproduce</ListItem>

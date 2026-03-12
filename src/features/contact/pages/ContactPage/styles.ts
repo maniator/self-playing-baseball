@@ -65,6 +65,12 @@ export const Divider = styled.hr`
   margin: ${({ theme }) => `${theme.spacing.sm} 0 ${theme.spacing.lg}`};
 `;
 
+export const OfflineNote = styled.p`
+  color: ${({ theme }) => theme.colors.textHint};
+  font-style: italic;
+  margin: 0 0 ${({ theme }) => theme.spacing.md};
+`;
+
 export const List = styled.ul`
   margin: ${({ theme }) => theme.spacing.md} 0 0;
   padding-left: ${({ theme }) => theme.spacing.lg};
