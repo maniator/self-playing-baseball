@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { DEMO_TEAMS, type DemoTeamDef } from "@feat/customTeams/generation/demoTeams";
+import { DEMO_TEAMS, type DemoPlayerDef } from "@feat/customTeams/generation/demoTeams";
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { appLog } from "@shared/utils/logger";
 
@@ -17,7 +17,7 @@ export const DEMO_SEED_DONE_KEY = "ballgame:demoSeedDone";
 
 /** Map a demo player definition to a TeamPlayer ready for store insertion. */
 function mapDemoPlayer(
-  p: DemoTeamDef["lineup"][number],
+  p: DemoPlayerDef,
 ): Pick<
   TeamPlayer,
   "id" | "name" | "role" | "batting" | "pitching" | "position" | "handedness" | "pitchingRole"
