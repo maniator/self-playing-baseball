@@ -205,6 +205,10 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
     throw new Error("Invalid custom teams file: not an object");
   const obj = parsed as Record<string, unknown>;
 
+  if (typeof obj["formatVersion"] !== "number")
+    throw new Error(
+      "Invalid team file: missing or unrecognised format. Please export a team from Manage Teams and try again.",
+    );
   if (obj["type"] !== "customTeams")
     throw new Error(`Invalid custom teams file: expected type "customTeams", got "${obj["type"]}"`);
   if (obj["formatVersion"] !== 1)
