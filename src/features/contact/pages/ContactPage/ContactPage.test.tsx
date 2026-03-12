@@ -112,6 +112,10 @@ describe("ContactPage", () => {
     expect(decoded).toContain("Bug report");
     expect(decoded).toContain("Browser/UA:");
     expect(decoded).toContain("URL:");
+    // Uses the same template structure as the GitHub issue form
+    expect(decoded).toContain("**Describe the bug**");
+    expect(decoded).toContain("**To Reproduce**");
+    expect(decoded).toContain("**Expected behavior**");
   });
 
   it("email includes source=error-boundary when opened from error boundary", () => {

@@ -23,17 +23,6 @@ const GITHUB_REPO = "maniator/blipit-legends";
 const BUG_REPORT_BASE = `https://github.com/${GITHUB_REPO}/issues/new?template=bug_report.md&labels=bug`;
 const EMAIL_SUBJECT = encodeURIComponent("Bug report – Blipit Legends");
 
-const EMAIL_BODY_TEMPLATE = `What happened:
-
-
-Steps to reproduce:
-
-
-Expected behavior:
-
-
-Environment (auto-filled):`;
-
 const ISSUE_BODY_TEMPLATE = `**Describe the bug**
 
 <!-- A clear and concise description of what the bug is. -->
@@ -58,7 +47,7 @@ function buildEnvLines(fromErrorBoundary: boolean, reportedUrl?: string): string
 
 function buildMailtoUrl(fromErrorBoundary: boolean, reportedUrl?: string): string {
   const body = encodeURIComponent(
-    `${EMAIL_BODY_TEMPLATE}\n${buildEnvLines(fromErrorBoundary, reportedUrl)}`,
+    `${ISSUE_BODY_TEMPLATE}\n${buildEnvLines(fromErrorBoundary, reportedUrl)}`,
   );
   return `mailto:${CONTACT_EMAIL}?subject=${EMAIL_SUBJECT}&body=${body}`;
 }
