@@ -1,7 +1,7 @@
 import type { DemoTeamDef } from "./demoTeams";
 
 /**
- * Riverside Rockets — one of two starter teams seeded on first launch.
+ * Riverside Rockets — one of the demo starter teams seeded on first launch.
  * Stat constraints: hitters contact+power+speed = 150; pitchers velocity+control+movement = 160.
  */
 export const RIVERSIDE_ROCKETS: DemoTeamDef = {

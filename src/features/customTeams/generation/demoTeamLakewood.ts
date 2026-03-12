@@ -1,7 +1,7 @@
 import type { DemoTeamDef } from "./demoTeams";
 
 /**
- * Lakewood Legends — one of two starter teams seeded on first launch.
+ * Lakewood Legends — one of the demo starter teams seeded on first launch.
  * Stat constraints: hitters contact+power+speed = 150; pitchers velocity+control+movement = 160.
  */
 export const LAKEWOOD_LEGENDS: DemoTeamDef = {
