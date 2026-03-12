@@ -45,8 +45,10 @@ const HelpContent: React.FunctionComponent = () => (
           after the game starts.
         </Li>
         <Li>
-          When managing a team, a <strong>Starting Pitcher</strong> dropdown appears during pre-game
-          setup — choose which eligible pitcher starts the game before clicking Play Ball.
+          When managing a team with at least one SP-eligible pitcher, a{" "}
+          <strong>Starting Pitcher</strong> dropdown appears during pre-game setup so you can choose
+          who starts. If the managed team has no SP-eligible pitchers, you&apos;ll see a validation
+          error when starting the game — add a starter in <strong>Manage Teams</strong> first.
         </Li>
         <Li>
           Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
@@ -57,8 +59,8 @@ const HelpContent: React.FunctionComponent = () => (
     <Section title="Custom Teams">
       <List>
         <Li>
-          Click <strong>Manage Teams</strong> to create and edit your own teams with custom players,
-          stats, and positions.
+          Click <strong>Manage Teams</strong> to create and edit your own teams with custom players
+          and positions.
         </Li>
         <Li>
           Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
