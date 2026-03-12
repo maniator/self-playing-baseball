@@ -115,7 +115,7 @@ describe("ErrorBoundary", () => {
       );
       expect(screen.getByRole("link", { name: /contact page/i })).toHaveAttribute(
         "href",
-        "/contact?source=error-boundary",
+        expect.stringContaining("/contact?source=error-boundary"),
       );
     });
 
@@ -207,7 +207,7 @@ describe("ErrorBoundary", () => {
       );
       expect(screen.getByRole("link", { name: /contact page/i })).toHaveAttribute(
         "href",
-        "/contact?source=error-boundary",
+        expect.stringContaining("/contact?source=error-boundary"),
       );
     });
 

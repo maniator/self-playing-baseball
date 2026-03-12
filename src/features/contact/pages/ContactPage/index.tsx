@@ -21,6 +21,18 @@ import {
 const CONTACT_EMAIL = "naftali@lubin.dev";
 const GITHUB_REPO = "maniator/blipit-legends";
 const BUG_REPORT_BASE = `https://github.com/${GITHUB_REPO}/issues/new?template=bug_report.md&labels=bug`;
+const EMAIL_SUBJECT = encodeURIComponent("Bug report – Blipit Legends");
+
+const EMAIL_BODY_TEMPLATE = `What happened:
+
+
+Steps to reproduce:
+
+
+Expected behavior:
+
+
+Environment (auto-filled):`;
 
 const ISSUE_BODY_TEMPLATE = `**Describe the bug**
 
@@ -36,13 +48,23 @@ const ISSUE_BODY_TEMPLATE = `**Describe the bug**
 
 **Environment (auto-filled)**`;
 
-function buildIssueUrl(fromErrorBoundary: boolean, reportedUrl?: string): string {
-  const envLines = [
+function buildEnvLines(fromErrorBoundary: boolean, reportedUrl?: string): string {
+  return [
     `- Browser/UA: ${navigator.userAgent}`,
     `- URL: ${reportedUrl ?? window.location.href}`,
     `- Source: ${fromErrorBoundary ? "error-boundary" : "contact-page"}`,
   ].join("\n");
-  return `${BUG_REPORT_BASE}&body=${encodeURIComponent(`${ISSUE_BODY_TEMPLATE}\n${envLines}`)}`;
+}
+
+function buildMailtoUrl(fromErrorBoundary: boolean, reportedUrl?: string): string {
+  const body = encodeURIComponent(
+    `${EMAIL_BODY_TEMPLATE}\n${buildEnvLines(fromErrorBoundary, reportedUrl)}`,
+  );
+  return `mailto:${CONTACT_EMAIL}?subject=${EMAIL_SUBJECT}&body=${body}`;
+}
+
+function buildIssueUrl(fromErrorBoundary: boolean, reportedUrl?: string): string {
+  return `${BUG_REPORT_BASE}&body=${encodeURIComponent(`${ISSUE_BODY_TEMPLATE}\n${buildEnvLines(fromErrorBoundary, reportedUrl)}`)}`;
 }
 
 const ContactPage: React.FunctionComponent = () => {
@@ -96,7 +118,10 @@ const ContactPage: React.FunctionComponent = () => {
 
       <Card>
         <SubTitle>Email me directly</SubTitle>
-        <ContactLink href={`mailto:${CONTACT_EMAIL}`} data-testid="contact-page-email-link">
+        <ContactLink
+          href={buildMailtoUrl(fromErrorBoundary, reportedUrl)}
+          data-testid="contact-page-email-link"
+        >
           {CONTACT_EMAIL}
         </ContactLink>
       </Card>

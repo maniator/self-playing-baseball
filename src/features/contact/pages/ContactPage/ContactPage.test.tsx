@@ -30,10 +30,10 @@ describe("ContactPage", () => {
     renderPage();
 
     expect(screen.getByTestId("contact-page")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /naftali@lubin.dev/i })).toHaveAttribute(
-      "href",
-      "mailto:naftali@lubin.dev",
-    );
+    const emailLink = screen.getByRole("link", { name: /naftali@lubin.dev/i });
+    expect(emailLink).toHaveAttribute("href", expect.stringContaining("mailto:naftali@lubin.dev"));
+    expect(emailLink).toHaveAttribute("href", expect.stringContaining("subject="));
+    expect(emailLink).toHaveAttribute("href", expect.stringContaining("body="));
   });
 
   it("renders GitHub issue link pointing to the correct repo when online", () => {
@@ -100,5 +100,33 @@ describe("ContactPage", () => {
 
     const link = screen.getByTestId("contact-page-issue-link");
     expect(link).toHaveAttribute("href", expect.stringContaining("error-boundary"));
+  });
+
+  it("pre-fills email subject and body with environment info", () => {
+    renderPage();
+
+    const emailLink = screen.getByTestId("contact-page-email-link");
+    const href = emailLink.getAttribute("href") ?? "";
+    const decoded = decodeURIComponent(href);
+    expect(decoded).toContain("mailto:naftali@lubin.dev");
+    expect(decoded).toContain("Bug report");
+    expect(decoded).toContain("Browser/UA:");
+    expect(decoded).toContain("URL:");
+  });
+
+  it("email includes source=error-boundary when opened from error boundary", () => {
+    renderPage("/contact?source=error-boundary");
+
+    const emailLink = screen.getByTestId("contact-page-email-link");
+    expect(decodeURIComponent(emailLink.getAttribute("href") ?? "")).toContain("error-boundary");
+  });
+
+  it("email uses url param as reported URL when provided", () => {
+    renderPage("/contact?source=error-boundary&url=https%3A%2F%2Fexample.com%2Fgame");
+
+    const emailLink = screen.getByTestId("contact-page-email-link");
+    expect(decodeURIComponent(emailLink.getAttribute("href") ?? "")).toContain(
+      "https://example.com/game",
+    );
   });
 });
