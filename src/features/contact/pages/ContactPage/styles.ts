@@ -37,6 +37,12 @@ export const ContactLink = styled.a`
   color: ${({ theme }) => theme.colors.textLink};
   font-size: ${({ theme }) => theme.fontSizes.xl};
   font-weight: bold;
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.radii.sm};
+  }
 `;
 
 export const SecondaryLink = styled.a`
@@ -55,6 +61,11 @@ export const SecondaryLink = styled.a`
 
   &:hover {
     background: ${({ theme }) => theme.colors.helpButtonBgHover};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
   }
 `;
 

@@ -111,7 +111,7 @@ const ContactPage: React.FunctionComponent = () => {
           <SecondaryLink
             href={buildIssueUrl(fromErrorBoundary)}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             data-testid="contact-page-issue-link"
           >
             Create GitHub issue
