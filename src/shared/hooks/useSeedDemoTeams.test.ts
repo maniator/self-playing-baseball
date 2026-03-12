@@ -97,10 +97,12 @@ describe("useSeedDemoTeams", () => {
 
     renderHook(() => useSeedDemoTeams());
 
-    // Allow a tick for any async work to settle.
-    await new Promise((r) => setTimeout(r, 10));
-    expect(mockStore.listCustomTeams).not.toHaveBeenCalled();
-    expect(mockStore.createCustomTeam).not.toHaveBeenCalled();
+    // Use waitFor (which wraps in act) so React effects are fully flushed before
+    // asserting. Avoids the flakiness of a fixed-duration setTimeout.
+    await waitFor(() => {
+      expect(mockStore.listCustomTeams).not.toHaveBeenCalled();
+      expect(mockStore.createCustomTeam).not.toHaveBeenCalled();
+    });
   });
 
   it("continues to seed when localStorage.getItem throws (unavailable storage)", async () => {
