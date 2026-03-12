@@ -23,10 +23,8 @@ vi.mock("@storage/db", () => ({
 }));
 
 // jsdom doesn't implement window.confirm; stub it to return true so delete actions work.
-vi.stubGlobal(
-  "confirm",
-  vi.fn(() => true),
-);
+const confirmMock = vi.fn(() => true);
+vi.stubGlobal("confirm", confirmMock);
 afterAll(() => vi.unstubAllGlobals());
 
 import { SaveStore } from "@feat/saves/storage/saveStore";
@@ -71,6 +69,7 @@ const makeSave = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
 describe("SavesPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    confirmMock.mockReturnValue(true);
     vi.mocked(SaveStore.listSaves).mockResolvedValue([]);
     vi.mocked(SaveStore.importRxdbSave).mockResolvedValue(makeSave({ id: "imported_save" }));
   });
