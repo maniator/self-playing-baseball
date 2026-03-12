@@ -2,6 +2,7 @@ import * as React from "react";
 
 import { ErrorBoundary } from "@feat/gameplay/components/Game/ErrorBoundary";
 import UpdateBanner from "@shared/components/UpdateBanner";
+import { useSeedDemoTeams } from "@shared/hooks/useSeedDemoTeams";
 import { useServiceWorkerUpdate } from "@shared/hooks/useServiceWorkerUpdate";
 import { Outlet } from "react-router";
 
@@ -15,6 +16,7 @@ import { Outlet } from "react-router";
  */
 const RootLayout: React.FunctionComponent = () => {
   const { updateAvailable, dismiss } = useServiceWorkerUpdate();
+  useSeedDemoTeams();
 
   return (
     <ErrorBoundary>
