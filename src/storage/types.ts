@@ -84,6 +84,7 @@ export type AppShellOutletContext = {
   onManageTeams: () => void;
   onResumeCurrent: () => void;
   onHelp: () => void;
+  onContact: () => void;
   onCareerStats: () => void;
   onBackToHome: () => void;
   hasActiveSession: boolean;

@@ -61,6 +61,10 @@ const AppShell: React.FunctionComponent = () => {
     navigate("/help");
   }, [navigate]);
 
+  const handleContact = React.useCallback(() => {
+    navigate("/contact");
+  }, [navigate]);
+
   const handleCareerStats = React.useCallback(() => {
     navigate("/stats");
   }, [navigate]);
@@ -83,6 +87,7 @@ const AppShell: React.FunctionComponent = () => {
       onManageTeams: handleManageTeams,
       onResumeCurrent: handleResumeCurrent,
       onHelp: handleHelp,
+      onContact: handleContact,
       onCareerStats: handleCareerStats,
       onBackToHome: handleBackToHome,
       hasActiveSession,
@@ -96,6 +101,7 @@ const AppShell: React.FunctionComponent = () => {
       handleManageTeams,
       handleResumeCurrent,
       handleHelp,
+      handleContact,
       handleCareerStats,
       handleBackToHome,
       hasActiveSession,

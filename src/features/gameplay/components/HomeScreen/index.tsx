@@ -10,6 +10,8 @@ type Props = {
   onResumeCurrent?: () => void;
   /** When provided, shows a "How to Play" button. */
   onHelp?: () => void;
+  /** When provided, shows a "Contact / Report Bug" button. */
+  onContact?: () => void;
   /** When provided, shows a "Career Stats" button. */
   onCareerStats?: () => void;
 };
@@ -20,6 +22,7 @@ const HomeScreen: React.FunctionComponent<Props> = ({
   onManageTeams,
   onResumeCurrent,
   onHelp,
+  onContact,
   onCareerStats,
 }) => (
   <HomeContainer data-testid="home-screen">
@@ -45,6 +48,11 @@ const HomeScreen: React.FunctionComponent<Props> = ({
       {onHelp && (
         <SecondaryBtn onClick={onHelp} data-testid="home-help-button">
           How to Play
+        </SecondaryBtn>
+      )}
+      {onContact && (
+        <SecondaryBtn onClick={onContact} data-testid="home-contact-button">
+          Contact / Report Bug
         </SecondaryBtn>
       )}
       {onCareerStats && (

@@ -9,6 +9,7 @@ import { createBrowserRouter, Navigate, redirect, useOutletContext } from "react
 import type { AppShellOutletContext } from "@storage/types";
 
 const CareerStatsPage = React.lazy(() => import("@feat/careerStats/pages/CareerStatsPage"));
+const ContactPage = React.lazy(() => import("@feat/contact/pages/ContactPage"));
 const ExhibitionSetupPage = React.lazy(() => import("@feat/exhibition/pages/ExhibitionSetupPage"));
 const GamePage = React.lazy(() => import("@feat/gameplay/pages/GamePage"));
 const HelpPage = React.lazy(() => import("@feat/help/pages/HelpPage"));
@@ -25,6 +26,7 @@ function HomeRoute() {
       onManageTeams={ctx.onManageTeams}
       onResumeCurrent={ctx.hasActiveSession ? ctx.onResumeCurrent : undefined}
       onHelp={ctx.onHelp}
+      onContact={ctx.onContact}
       onCareerStats={ctx.onCareerStats}
     />
   );
@@ -98,6 +100,14 @@ export const router = createBrowserRouter([
             element: (
               <React.Suspense fallback={null}>
                 <HelpPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "contact",
+            element: (
+              <React.Suspense fallback={null}>
+                <ContactPage />
               </React.Suspense>
             ),
           },

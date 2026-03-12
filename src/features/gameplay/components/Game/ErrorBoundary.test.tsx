@@ -107,6 +107,18 @@ describe("ErrorBoundary", () => {
       expect(screen.getByRole("button", { name: /hard reload/i })).toBeTruthy();
     });
 
+    it("shows the contact page link for reporting persistent errors", () => {
+      render(
+        <ErrorBoundary>
+          <Thrower message="RxError DB6: schema hash mismatch" />
+        </ErrorBoundary>,
+      );
+      expect(screen.getByRole("link", { name: /contact page/i })).toHaveAttribute(
+        "href",
+        "/contact?source=error-boundary",
+      );
+    });
+
     it("calls window.location.reload when Reset is clicked", () => {
       const reloadMock = vi.fn();
       Object.defineProperty(window, "location", {
@@ -185,6 +197,18 @@ describe("ErrorBoundary", () => {
         </ErrorBoundary>,
       );
       expect(screen.getByText(/this usually happens after an update/i)).toBeTruthy();
+    });
+
+    it("shows the contact page link for reporting persistent chunk-load errors", () => {
+      render(
+        <ErrorBoundary>
+          <Thrower message="Loading chunk 3 failed." />
+        </ErrorBoundary>,
+      );
+      expect(screen.getByRole("link", { name: /contact page/i })).toHaveAttribute(
+        "href",
+        "/contact?source=error-boundary",
+      );
     });
 
     it("calls window.location.reload when Reload app is clicked", () => {
