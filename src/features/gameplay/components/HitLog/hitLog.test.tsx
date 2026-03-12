@@ -1,5 +1,5 @@
 /**
- * Tests for HitLog component (src/features/gameplay/components/HitLog/index.tsx)
+ * Tests for HitLog component (src/HitLog/index.tsx)
  */
 import * as React from "react";
 
@@ -14,11 +14,65 @@ import { makeContextValue } from "@test/testHelpers";
 
 import HitLog from ".";
 
-const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue =>
-  makeContextValue({
-    teamLabels: ["Away FC", "Home SC"],
-    ...overrides,
-  });
+vi.mock("@shared/hooks/useCustomTeams", () => ({
+  useCustomTeams: vi.fn().mockReturnValue({
+    teams: [
+      {
+        id: "ct_hitlog_away",
+        name: "Away",
+        city: "",
+        abbreviation: "AWY",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+      {
+        id: "ct_hitlog_home",
+        name: "Home",
+        city: "",
+        abbreviation: "HME",
+        source: "custom",
+        schemaVersion: 1,
+        createdAt: "2024-01-01T00:00:00.000Z",
+        updatedAt: "2024-01-01T00:00:00.000Z",
+        roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+        metadata: { archived: false },
+      },
+    ],
+    loading: false,
+    createTeam: vi.fn(),
+    updateTeam: vi.fn(),
+    deleteTeam: vi.fn(),
+    refresh: vi.fn(),
+  }),
+}));
+
+const makeCtx = (overrides: Partial<ContextValue> = {}): ContextValue => ({
+  inning: 1,
+  score: [0, 0],
+  teams: ["custom:ct_hitlog_away", "custom:ct_hitlog_home"],
+  baseLayout: [0, 0, 0],
+  outs: 0,
+  strikes: 0,
+  balls: 0,
+  atBat: 0,
+  gameOver: false,
+  pendingDecision: null,
+  onePitchModifier: null,
+  pitchKey: 0,
+  decisionLog: [],
+  hitType: undefined,
+  log: [],
+  batterIndex: [0, 0],
+  inningRuns: [[], []],
+  playLog: [],
+  dispatch: vi.fn(),
+  dispatchLog: vi.fn(),
+  ...overrides,
+});
 
 const renderHitLog = (ctx: ContextValue = makeCtx(), activeTeam: 0 | 1 = 0) =>
   render(
@@ -54,35 +108,7 @@ describe("HitLog", () => {
     });
     renderHitLog(ctx, 0);
     expect(screen.getByText("1B")).toBeInTheDocument();
-    expect(screen.getByText(/Away FC/)).toBeInTheDocument();
-  });
-
-  it("shows batterName when present instead of #N slot", () => {
-    const ctx = makeCtx({
-      playLog: [makeEntry({ batterNum: 3, batterName: "Roberto Martinez", team: 0 })],
-    });
-    renderHitLog(ctx, 0);
-    expect(screen.getByText(/Roberto Martinez/)).toBeInTheDocument();
-    expect(screen.queryByText(/#3/)).not.toBeInTheDocument();
-  });
-
-  it("falls back to #N slot when batterName is absent (backward compat)", () => {
-    const ctx = makeCtx({
-      playLog: [makeEntry({ batterNum: 4, team: 0 })],
-    });
-    renderHitLog(ctx, 0);
-    expect(screen.getByText(/#4/)).toBeInTheDocument();
-  });
-
-  it("uses teamLabels for orphaned-team saves (team doc deleted)", () => {
-    const ctx = makeCtx({
-      teams: ["custom:ct_deleted", "custom:ct_home"],
-      teamLabels: ["Buffalo Dynamo", "Cincinnati Bucks"],
-      playLog: [makeEntry({ team: 0, batterName: "Will Lane" })],
-    });
-    renderHitLog(ctx, 0);
-    expect(screen.getByText(/Buffalo Dynamo/)).toBeInTheDocument();
-    expect(screen.queryByText(/ct_deleted/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Away #3/)).toBeInTheDocument();
   });
 
   it("shows HR in gold color class for a homerun", () => {

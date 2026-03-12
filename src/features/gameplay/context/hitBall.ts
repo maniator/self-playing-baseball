@@ -1,6 +1,5 @@
 import getRandomInt from "@feat/gameplay/utils/getRandomInt";
 import { Hit } from "@shared/constants/hitTypes";
-import { generateRoster } from "@shared/utils/roster";
 
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
@@ -329,26 +328,11 @@ const processConfirmedHit = (
 
   // Record this at-bat in the play log (batter reached base).
   const batterNum = batterSlotIdx + 1;
-  // Resolve the batter's display name at hit time so the Hit Log can show
-  // it even after substitutions or if the team doc is later deleted.
-  // Prefer the player's custom nickname (set in playerOverrides for custom teams),
-  // fall back to the roster-generated name for stock teams.
-  let batterName: string | undefined;
-  if (playerId) {
-    const overrideNickname = base.playerOverrides[battingTeam][playerId]?.nickname?.trim();
-    if (overrideNickname) {
-      batterName = overrideNickname;
-    } else {
-      const roster = generateRoster(base.teams[battingTeam]);
-      batterName = roster.batters.find((p) => p.id === playerId)?.name;
-    }
-  }
   const playEntry: PlayLogEntry = {
     inning: base.inning,
     half: battingTeam,
     batterNum,
     ...(playerId ? { playerId } : {}),
-    ...(batterName ? { batterName } : {}),
     team: battingTeam,
     event: type,
     runs: totalRuns,
