@@ -1,5 +1,6 @@
 import getRandomInt from "@feat/gameplay/utils/getRandomInt";
 import { Hit } from "@shared/constants/hitTypes";
+import { generateRoster } from "@shared/utils/roster";
 
 import { advanceRunners } from "./advanceRunners";
 import { DecisionType, OnePitchModifier, PlayLogEntry, State, Strategy } from "./index";
@@ -328,11 +329,20 @@ const processConfirmedHit = (
 
   // Record this at-bat in the play log (batter reached base).
   const batterNum = batterSlotIdx + 1;
+  const overrideNickname = playerId
+    ? base.playerOverrides[battingTeam]?.[playerId]?.nickname?.trim()
+    : undefined;
+  const batterName: string | undefined =
+    (overrideNickname && overrideNickname.length > 0 ? overrideNickname : undefined) ??
+    (playerId
+      ? generateRoster(base.teams[battingTeam]).batters.find((p) => p.id === playerId)?.name
+      : undefined);
   const playEntry: PlayLogEntry = {
     inning: base.inning,
     half: battingTeam,
     batterNum,
     ...(playerId ? { playerId } : {}),
+    ...(batterName ? { batterName } : {}),
     team: battingTeam,
     event: type,
     runs: totalRuns,
