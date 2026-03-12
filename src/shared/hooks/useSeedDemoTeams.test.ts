@@ -103,6 +103,23 @@ describe("useSeedDemoTeams", () => {
     expect(mockStore.createCustomTeam).not.toHaveBeenCalled();
   });
 
+  it("continues to seed when localStorage.getItem throws (unavailable storage)", async () => {
+    // Simulate a browser where localStorage is blocked/unavailable.
+    const getItemSpy = vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => {
+      throw new Error("Storage blocked");
+    });
+    mockStore.listCustomTeams.mockResolvedValue([]);
+
+    renderHook(() => useSeedDemoTeams());
+
+    // Should still fall through to the DB check and seed the teams.
+    await waitFor(() =>
+      expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
+    );
+
+    getItemSpy.mockRestore();
+  });
+
   it("passes correct team info and deterministic ID to createCustomTeam", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 

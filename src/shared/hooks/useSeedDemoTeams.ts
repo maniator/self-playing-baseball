@@ -41,8 +41,9 @@ async function seedIfEmpty(): Promise<void> {
   try {
     if (localStorage.getItem(DEMO_SEED_DONE_KEY)) return;
   } catch {
-    // localStorage unavailable (e.g. private browsing with storage blocked) — skip.
-    return;
+    // localStorage unavailable (e.g. private browsing with storage blocked) — treat
+    // this as "no done-flag set" and continue to the DB emptiness check so
+    // first-launch users still get the demo teams when IndexedDB is available.
   }
 
   // includeArchived: true so installs with only archived teams are not
@@ -144,10 +145,10 @@ export function _resetForTest(): void {
 }
 
 /**
- * Seeds the two demo teams into the custom-teams collection the first time a
- * brand-new user opens the app (empty IndexedDB). Subsequent calls within the
- * same page load return the same in-flight promise so seeding runs at most
- * once, and the DB count check ensures nothing is written when teams already
+ * Seeds the demo teams from `DEMO_TEAMS` into the custom-teams collection the
+ * first time a brand-new user opens the app (empty IndexedDB). Subsequent calls
+ * within the same page load return the same in-flight promise so seeding runs at
+ * most once, and the DB count check ensures nothing is written when teams already
  * exist. On a transient failure the promise is cleared so the next mount can
  * retry.
  *
