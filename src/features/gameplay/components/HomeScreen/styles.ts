@@ -123,3 +123,25 @@ export const LeagueTeaserSub = styled.p`
   margin: 0;
   line-height: 1.4;
 `;
+
+export const Attribution = styled.p`
+  margin: ${({ theme }) => theme.spacing.sm} 0 0;
+  color: ${({ theme }) => theme.colors.textMuted};
+  font-size: ${({ theme }) => theme.fontSizes.sub};
+  text-align: center;
+`;
+
+export const AttributionLink = styled.a`
+  color: ${({ theme }) => theme.colors.textLink};
+  text-underline-offset: 2px;
+
+  &:hover {
+    color: ${({ theme }) => theme.colors.textSecondaryLink};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+    border-radius: ${({ theme }) => theme.radii.xs};
+  }
+`;

@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { Attribution, AttributionLink, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -69,6 +69,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
         Season schedules, standings, and playoffs are on the roadmap.
       </LeagueTeaserSub>
     </LeagueTeaserBox>
+    <Attribution>
+      Created by <AttributionLink href="https://naftali.dev">naftali.dev</AttributionLink>
+    </Attribution>
   </HomeContainer>
 );
 
