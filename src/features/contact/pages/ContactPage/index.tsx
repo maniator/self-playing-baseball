@@ -21,19 +21,23 @@ import {
 const CONTACT_EMAIL = "naftali@lubin.dev";
 const GITHUB_REPO = "maniator/blipit-legends";
 const BUG_REPORT_BASE = `https://github.com/${GITHUB_REPO}/issues/new?template=bug_report.md&labels=bug`;
-const EMAIL_SUBJECT = encodeURIComponent("Bug report – Blipit Legends");
+const EMAIL_SUBJECT = encodeURIComponent("Bug report – BlipIt Baseball Legends");
 
 const ISSUE_BODY_TEMPLATE = `**Describe the bug**
-
-<!-- A clear and concise description of what the bug is. -->
+A clear and concise description of what the bug is.
 
 **To Reproduce**
+Steps to reproduce the behavior:
 
-<!-- Steps to reproduce the behavior -->
+1. Go to '...'
+2. Click on '....'
+3. See error
 
 **Expected behavior**
+A clear and concise description of what you expected to happen.
 
-<!-- What you expected to happen -->
+**Screenshots**
+If applicable, add screenshots to help explain your problem.
 
 **Environment (auto-filled)**`;
 
