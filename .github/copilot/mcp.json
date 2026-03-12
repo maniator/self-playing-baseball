@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.40",
+        "--viewport-size",
+        "1280,720",
+        "--output-dir",
+        "/tmp/playwright-logs",
+        "--allowed-origins",
+        "localhost;localhost:*;127.0.0.1;127.0.0.1:*;blipit.net;*.blipit.net"
+      ]
+    }
+  }
+}
