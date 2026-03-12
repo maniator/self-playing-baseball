@@ -207,7 +207,11 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
 
   if (typeof obj["formatVersion"] !== "number")
     throw new Error(
-      "Invalid team file: missing or unrecognised format. Please export a team from Manage Teams and try again.",
+      "Invalid team file: missing or unrecognised format. Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).",
+    );
+  if (typeof obj["type"] !== "string")
+    throw new Error(
+      "Invalid team file: missing or unrecognised format. Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).",
     );
   if (obj["type"] !== "customTeams")
     throw new Error(`Invalid custom teams file: expected type "customTeams", got "${obj["type"]}"`);

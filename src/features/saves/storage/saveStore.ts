@@ -133,6 +133,8 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Updates the progress cursor and optional snapshot fields on a save header.
+     * Silently no-ops if the save is not found (e.g. deleted between game start and
+     * game over) rather than throwing, to avoid spurious console errors in that case.
      */
     async updateProgress(
       saveId: string,

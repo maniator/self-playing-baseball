@@ -284,6 +284,7 @@ describe("parseExportedCustomTeams", () => {
     expect(err!.message).not.toMatch(/undefined|null|NaN/);
     expect(err!.message).toContain("Invalid");
     expect(err!.message).toContain("format");
+    expect(err!.message).toMatch(/Make sure to export using/i);
   });
 
   it("throws when type is wrong", () => {
