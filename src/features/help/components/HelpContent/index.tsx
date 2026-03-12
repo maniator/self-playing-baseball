@@ -45,6 +45,12 @@ const HelpContent: React.FunctionComponent = () => (
           after the game starts.
         </Li>
         <Li>
+          When managing a team with at least one SP-eligible pitcher, a{" "}
+          <strong>Starting Pitcher</strong> dropdown appears during pre-game setup so you can choose
+          who starts. If the managed team has no SP-eligible pitchers, you&apos;ll see a validation
+          error when starting the game — add a starter in <strong>Manage Teams</strong> first.
+        </Li>
+        <Li>
           Enter a <strong>Seed</strong> for a repeatable game, or leave blank for random.
         </Li>
       </List>
@@ -53,12 +59,13 @@ const HelpContent: React.FunctionComponent = () => (
     <Section title="Custom Teams">
       <List>
         <Li>
-          Click <strong>Manage Teams</strong> to create and edit your own teams with custom players,
-          stats, and positions.
+          Click <strong>Manage Teams</strong> to create and edit your own teams with custom players
+          and positions.
         </Li>
         <Li>
           Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
-          Edit names, stats, and positions to customize it.
+          Edit player names and positions to customize it. <strong>Note:</strong> player stat values
+          are determined at creation and cannot be changed afterward.
         </Li>
         <Li>
           Each team needs at least one lineup player and one pitcher before it can be used in a
@@ -74,8 +81,13 @@ const HelpContent: React.FunctionComponent = () => (
     <Section title="Game Flow">
       <List>
         <Li>The game runs automatically once started — sit back and watch.</Li>
-        <Li>Choose Slow / Normal / Fast speed to control the pace.</Li>
-        <Li>🔊 slider = play-by-play voice volume · 🔔 slider = chime &amp; fanfare volume.</Li>
+        <Li>
+          Choose <strong>Slow / Normal / Fast / Instant</strong> speed to control the pace. Instant
+          plays pitches with no delay between them and still pauses for Manager Mode decisions.
+        </Li>
+        <Li>
+          🔊 slider = play-by-play voice volume · 🎵 slider = music + in-game chimes/fanfare volume.
+        </Li>
       </List>
     </Section>
 
