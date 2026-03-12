@@ -152,7 +152,7 @@ sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/
 **4. Stage and commit the updated PNG files** (using normal `git` commands — do NOT `git push`):
 
 ```bash
-git add e2e/tests/
+git add 'e2e/tests/**/*.png'
 git status  # review which PNGs changed
 git commit -m "test(e2e): regenerate visual snapshots for <description>"
 # ⚠️  STOP HERE — do NOT run git push or gh.

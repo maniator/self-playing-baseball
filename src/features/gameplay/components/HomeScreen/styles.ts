@@ -15,7 +15,12 @@ export const HomeContainer = styled.div`
     justify-content: flex-start;
     max-height: 100dvh;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     gap: ${({ theme }) => theme.spacing.md};
+
+    > * {
+      flex-shrink: 0;
+    }
   }
 `;
 
