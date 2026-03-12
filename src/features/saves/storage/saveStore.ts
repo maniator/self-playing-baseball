@@ -133,6 +133,8 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Updates the progress cursor and optional snapshot fields on a save header.
+     * Silently no-ops if the save is not found (e.g. deleted between game start and
+     * game over) rather than throwing, to avoid spurious console errors in that case.
      */
     async updateProgress(
       saveId: string,
@@ -141,7 +143,7 @@ function buildStore(getDbFn: GetDb) {
     ): Promise<void> {
       const db = await getDbFn();
       const doc = await db.saves.findOne(saveId).exec();
-      if (!doc) throw new Error(`Save not found: ${saveId}`);
+      if (!doc) return;
       await doc.patch({
         progressIdx,
         updatedAt: Date.now(),
@@ -207,6 +209,10 @@ function buildStore(getDbFn: GetDb) {
       }
       if (!parsed || typeof parsed !== "object") throw new Error("Invalid save file");
       const { version, header, events, sig } = parsed as RxdbExportedSave;
+      if (typeof version !== "number")
+        throw new Error(
+          "Invalid save file: missing or unrecognized format. Please export a save from the app and try again.",
+        );
       if (version !== RXDB_EXPORT_VERSION) throw new Error(`Unsupported save version: ${version}`);
       if (!header || typeof header !== "object" || typeof header.id !== "string")
         throw new Error("Invalid save data");

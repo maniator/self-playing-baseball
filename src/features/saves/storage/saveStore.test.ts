@@ -245,8 +245,8 @@ describe("SaveStore.updateProgress", () => {
     expect(doc?.stateSnapshot?.rngState).toBe(99);
   });
 
-  it("throws for an unknown saveId", async () => {
-    await expect(store.updateProgress("nonexistent", 0)).rejects.toThrow("Save not found");
+  it("silently resolves for an unknown saveId (save deleted between game start and game over)", async () => {
+    await expect(store.updateProgress("nonexistent", 0)).resolves.toBeUndefined();
   });
 });
 
@@ -352,6 +352,14 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
 
   it("importRxdbSave throws on invalid JSON", async () => {
     await expect(store.importRxdbSave("not json")).rejects.toThrow("Invalid JSON");
+  });
+
+  it("importRxdbSave rejects empty object with a clean error (no undefined/null/NaN)", async () => {
+    const err = await store.importRxdbSave("{}").catch((e: Error) => e);
+    expect(err).toBeInstanceOf(Error);
+    expect((err as Error).message).not.toMatch(/undefined|null|NaN/);
+    expect((err as Error).message).toContain("Invalid");
+    expect((err as Error).message).toContain("format");
   });
 
   it("importRxdbSave throws on unsupported version", async () => {
