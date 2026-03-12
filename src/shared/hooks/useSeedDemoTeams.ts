@@ -7,6 +7,14 @@ import { appLog } from "@shared/utils/logger";
 import { generatePlayerId } from "@storage/generateId";
 import type { TeamPlayer } from "@storage/types";
 
+/**
+ * localStorage key used to record that demo teams have been seeded (or should
+ * be skipped) in this browser context.  Set after a successful first-launch
+ * seed, and pre-populated by E2E test helpers so test contexts never receive
+ * the demo teams.
+ */
+export const DEMO_SEED_DONE_KEY = "ballgame:demoSeedDone";
+
 /** Map a demo player definition to a TeamPlayer ready for store insertion. */
 function mapDemoPlayer(
   p: DemoTeamDef["lineup"][number],
@@ -20,31 +28,38 @@ function mapDemoPlayer(
   };
 }
 
-/**
- * Module-level flag — prevents duplicate seeding attempts even if React
- * strict-mode or concurrent rendering mounts RootLayout more than once in
- * the same page-load.
- */
-let _seedAttempted = false;
+async function seedIfEmpty(): Promise<void> {
+  // Skip if already seeded (or suppressed by the test helper).  The flag
+  // persists within the same browser context so refreshing the page after the
+  // first launch is a no-op.
+  try {
+    if (localStorage.getItem(DEMO_SEED_DONE_KEY)) return;
+  } catch {
+    // localStorage unavailable (e.g. private browsing with storage blocked) — skip.
+    return;
+  }
 
-/**
- * Seeds the two demo teams into the custom-teams collection the first time a
- * brand-new user opens the app (empty IndexedDB).  Subsequent launches are
- * no-ops because the module-level flag prevents it from running more than once
- * per page load, and the count check ensures nothing is written when teams
- * already exist.
- */
-export function useSeedDemoTeams(): void {
-  React.useEffect(() => {
-    if (_seedAttempted) return;
-    _seedAttempted = true;
+  // includeArchived: true so installs with only archived teams are not
+  // mistakenly treated as "empty" and seeded again.
+  const existing = await CustomTeamStore.listCustomTeams({
+    withRoster: false,
+    includeArchived: true,
+  });
 
-    async function seedIfEmpty() {
-      const existing = await CustomTeamStore.listCustomTeams({ withRoster: false });
-      if (existing.length > 0) return;
+  if (existing.length > 0) {
+    // Teams already exist — mark as done so we never check again.
+    try {
+      localStorage.setItem(DEMO_SEED_DONE_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
 
-      for (const def of DEMO_TEAMS) {
-        await CustomTeamStore.createCustomTeam({
+  for (const def of DEMO_TEAMS) {
+    try {
+      await CustomTeamStore.createCustomTeam(
+        {
           name: def.name,
           city: def.city,
           abbreviation: def.abbreviation,
@@ -54,12 +69,72 @@ export function useSeedDemoTeams(): void {
             bench: def.bench.map(mapDemoPlayer),
             pitchers: def.pitchers.map(mapDemoPlayer),
           },
-        });
-      }
+        },
+        // Deterministic ID so a concurrent tab's attempt to insert the same
+        // team produces a predictable RxDB duplicate-primary-key error rather
+        // than silently creating two teams with the same name.  The per-team
+        // try/catch below handles that error as a graceful skip.
+        { id: def.demoId },
+      );
+    } catch (err) {
+      // Another tab may have already inserted this team during the same
+      // first-launch. Treat any per-team failure as a graceful skip so the
+      // remaining teams still get inserted.
+      appLog.warn(`useSeedDemoTeams: skipped "${def.name}" (already exists or DB error)`, err);
     }
+  }
 
-    seedIfEmpty().catch((err) => {
-      appLog.warn("useSeedDemoTeams: failed to seed demo teams", err);
-    });
+  try {
+    localStorage.setItem(DEMO_SEED_DONE_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Module-level in-flight promise — prevents duplicate seeding attempts even
+ * when React strict-mode or concurrent rendering mounts RootLayout more than
+ * once in the same page load. On rejection the promise is cleared so a
+ * subsequent mount can retry the seeding.
+ */
+let _seedPromise: Promise<void> | null = null;
+
+function getSeedPromise(): Promise<void> {
+  if (_seedPromise) return _seedPromise;
+
+  _seedPromise = seedIfEmpty().catch((err) => {
+    // Clear so the next mount can attempt a retry after a transient failure.
+    _seedPromise = null;
+    appLog.warn("useSeedDemoTeams: failed to seed demo teams", err);
+  });
+
+  return _seedPromise;
+}
+
+/** @internal Resets module-level seeding state — for use in tests only. */
+export function _resetForTest(): void {
+  _seedPromise = null;
+  try {
+    localStorage.removeItem(DEMO_SEED_DONE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+/**
+ * Seeds the two demo teams into the custom-teams collection the first time a
+ * brand-new user opens the app (empty IndexedDB). Subsequent calls within the
+ * same page load return the same in-flight promise so seeding runs at most
+ * once, and the DB count check ensures nothing is written when teams already
+ * exist. On a transient failure the promise is cleared so the next mount can
+ * retry.
+ *
+ * E2E test helpers suppress seeding by setting the `DEMO_SEED_DONE_KEY`
+ * localStorage key via `page.addInitScript` before the page loads, so test
+ * contexts always start with an empty teams collection.
+ */
+export function useSeedDemoTeams(): void {
+  React.useEffect(() => {
+    getSeedPromise();
   }, []);
 }

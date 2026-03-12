@@ -54,6 +54,32 @@ async function ensureMutedAnnouncementsInit(page: Page): Promise<void> {
 }
 
 /**
+ * Registers an `addInitScript` that suppresses demo-team seeding exactly once
+ * per `Page` instance.  Safe to call from any helper — duplicates are a no-op.
+ *
+ * Sets the `ballgame:demoSeedDone` localStorage key before the app loads so
+ * `useSeedDemoTeams` skips its first-launch write.  Each Playwright test gets a
+ * fresh BrowserContext (fresh localStorage), so this suppression applies only
+ * to the current test's page and does not carry over.
+ *
+ * Without this guard every `resetAppState` call would seed the two demo teams,
+ * breaking tests that rely on an empty custom-teams collection.
+ */
+async function ensureDemoSeedSuppressed(page: Page): Promise<void> {
+  const typedPage = page as Page & { _ballgameDemoSeedSuppressed?: boolean };
+  if (!typedPage._ballgameDemoSeedSuppressed) {
+    await page.addInitScript(() => {
+      // Key must stay in sync with DEMO_SEED_DONE_KEY in
+      // src/shared/hooks/useSeedDemoTeams.ts.  Direct import is not possible
+      // here because the e2e/ tsconfig clears @shared/* path aliases and the
+      // hook depends on browser-only modules that cannot run in Node.js.
+      localStorage.setItem("ballgame:demoSeedDone", "1");
+    });
+    typedPage._ballgameDemoSeedSuppressed = true;
+  }
+}
+
+/**
  * Navigates to the app root and waits for it to finish loading (DB ready).
  * Each Playwright test runs in a fresh BrowserContext so IndexedDB and
  * localStorage are already isolated — no manual cleanup is needed.
@@ -64,6 +90,9 @@ async function ensureMutedAnnouncementsInit(page: Page): Promise<void> {
 export async function resetAppState(page: Page): Promise<void> {
   // Mute announcement volume BEFORE navigation so React picks it up on mount.
   await ensureMutedAnnouncementsInit(page);
+  // Suppress demo-team seeding so tests always start with an empty teams
+  // collection and don't have to clean up seeded data.
+  await ensureDemoSeedSuppressed(page);
 
   const home = page.getByTestId("home-screen");
   const loading = page.getByText("Loading game…");
@@ -232,6 +261,8 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
   // Mute announcer to speed up tests.
   await ensureMutedAnnouncementsInit(page);
+  // Suppress demo-team seeding so only explicitly created teams are present.
+  await ensureDemoSeedSuppressed(page);
   await page.goto("/teams");
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
 
@@ -457,6 +488,8 @@ export async function loadFixture(
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
   // Mute announcer to speed up tests.
   await ensureMutedAnnouncementsInit(page);
+  // Suppress demo-team seeding so only fixture teams are present.
+  await ensureDemoSeedSuppressed(page);
   // Import fixture teams first so the save's custom team IDs pass validation.
   // Callers may pass a custom teams fixture when the save references non-standard team IDs.
   await importTeamsFixture(page, teamsFixtureName);
@@ -491,6 +524,8 @@ export async function importTeamsFixture(page: Page, fixtureName: string): Promi
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
   // Mute announcer to speed up tests.
   await ensureMutedAnnouncementsInit(page);
+  // Suppress demo-team seeding so only fixture teams are present.
+  await ensureDemoSeedSuppressed(page);
   await page.goto("/");
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("home-manage-teams-button").click();
