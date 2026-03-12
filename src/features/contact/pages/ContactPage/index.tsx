@@ -36,10 +36,10 @@ const ISSUE_BODY_TEMPLATE = `**Describe the bug**
 
 **Environment (auto-filled)**`;
 
-function buildIssueUrl(fromErrorBoundary: boolean): string {
+function buildIssueUrl(fromErrorBoundary: boolean, reportedUrl?: string): string {
   const envLines = [
     `- Browser/UA: ${navigator.userAgent}`,
-    `- URL: ${window.location.href}`,
+    `- URL: ${reportedUrl ?? window.location.href}`,
     `- Source: ${fromErrorBoundary ? "error-boundary" : "contact-page"}`,
   ].join("\n");
   return `${BUG_REPORT_BASE}&body=${encodeURIComponent(`${ISSUE_BODY_TEMPLATE}\n${envLines}`)}`;
@@ -63,6 +63,7 @@ const ContactPage: React.FunctionComponent = () => {
 
   const source = searchParams.get("source");
   const fromErrorBoundary = source === "error-boundary";
+  const reportedUrl = searchParams.get("url") ?? undefined;
 
   return (
     <PageContainer data-testid="contact-page">
@@ -109,7 +110,7 @@ const ContactPage: React.FunctionComponent = () => {
         </Copy>
         {isOnline ? (
           <SecondaryLink
-            href={buildIssueUrl(fromErrorBoundary)}
+            href={buildIssueUrl(fromErrorBoundary, reportedUrl)}
             target="_blank"
             rel="noopener noreferrer"
             data-testid="contact-page-issue-link"

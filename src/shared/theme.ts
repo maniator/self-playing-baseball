@@ -246,9 +246,11 @@ export const theme = {
     bottomBar: "80px",
     /** Minimum height for the import/export paste textarea. */
     pasteTextarea: "80px",
-    /** Home-screen logo image — desktop and mobile sizes. */
+    /** Home-screen logo image — desktop, standard mobile, and compact mobile sizes. */
     logoMd: "200px",
     logoSm: "160px",
+    /** Compact mobile logo (home screen, small viewports). */
+    logoXs: "110px",
   },
 } as const;
 

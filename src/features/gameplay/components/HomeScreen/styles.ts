@@ -31,8 +31,8 @@ export const HomeLogo = styled.h1`
   }
 
   ${mq.mobile} {
-    width: 110px;
-    height: 110px;
+    width: ${({ theme }) => theme.sizes.logoXs};
+    height: ${({ theme }) => theme.sizes.logoXs};
   }
 `;
 

@@ -9,7 +9,9 @@ const GAME_LS_KEYS = [
   "managedTeam",
 ];
 
-const CONTACT_PATH = "/contact?source=error-boundary";
+function buildContactPath(): string {
+  return `/contact?source=error-boundary&url=${encodeURIComponent(window.location.href)}`;
+}
 
 const clearGameStorage = () => {
   try {
@@ -103,6 +105,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
     if (!this.state.hasError) return this.props.children;
 
     const { message, isChunkLoad } = this.state;
+    const contactPath = buildContactPath();
 
     return (
       <div
@@ -140,7 +143,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
             </p>
             <p style={{ color: "#cce0ff", fontSize: 13, maxWidth: 480 }}>
               Please report it via the{" "}
-              <a href={CONTACT_PATH} style={LINK_STYLE}>
+              <a href={contactPath} style={LINK_STYLE}>
                 contact page
               </a>{" "}
               or email naftali@lubin.dev.
@@ -160,7 +163,7 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren, Stat
             </p>
             <p style={{ color: "#cce0ff", fontSize: 13, maxWidth: 480 }}>
               If this keeps happening, please report it via the{" "}
-              <a href={CONTACT_PATH} style={LINK_STYLE}>
+              <a href={contactPath} style={LINK_STYLE}>
                 contact page
               </a>{" "}
               or email naftali@lubin.dev.
