@@ -28,6 +28,16 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # Pre-install the Playwright MCP server package so the npx cache is warm
+      # when the Copilot agent starts.  The local MCP config in
+      # .github/copilot/mcp.json instructs GitHub to launch the Playwright MCP
+      # via `npx -y @playwright/mcp@0.0.40`; pre-installing here ensures that
+      # command resolves instantly from cache rather than downloading on-demand.
+      # The `--allowed-origins` in mcp.json includes blipit.net so the agent
+      # can navigate to the production site during live-browser QA sessions.
+      - name: Pre-install Playwright MCP server
+        run: npx --yes @playwright/mcp@0.0.40 --help 2>/dev/null || true
+
       # Pre-pull the Playwright container image so the e2e-test-runner agent
       # can run `docker run` commands immediately without a download delay.
       # Docker is pre-installed on GitHub-hosted ubuntu-latest runners.
