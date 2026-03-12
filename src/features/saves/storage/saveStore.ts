@@ -211,7 +211,7 @@ function buildStore(getDbFn: GetDb) {
       const { version, header, events, sig } = parsed as RxdbExportedSave;
       if (typeof version !== "number")
         throw new Error(
-          "Invalid save file: missing or unrecognised format. Please export a save from the app and try again.",
+          "Invalid save file: missing or unrecognized format. Please export a save from the app and try again.",
         );
       if (version !== RXDB_EXPORT_VERSION) throw new Error(`Unsupported save version: ${version}`);
       if (!header || typeof header !== "object" || typeof header.id !== "string")

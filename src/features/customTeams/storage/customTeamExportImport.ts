@@ -205,20 +205,16 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
     throw new Error("Invalid custom teams file: not an object");
   const obj = parsed as Record<string, unknown>;
 
-  if (typeof obj["formatVersion"] !== "number")
-    throw new Error(
-      "Invalid team file: missing or unrecognised format. Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).",
-    );
-  if (typeof obj["type"] !== "string")
-    throw new Error(
-      "Invalid team file: missing or unrecognised format. Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).",
-    );
+  const INVALID_FORMAT_MSG =
+    "Invalid custom teams file: missing or unrecognized format. Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export a single team).";
+  if (typeof obj["formatVersion"] !== "number") throw new Error(INVALID_FORMAT_MSG);
+  if (typeof obj["type"] !== "string") throw new Error(INVALID_FORMAT_MSG);
   if (obj["type"] !== "customTeams")
     throw new Error(`Invalid custom teams file: expected type "customTeams", got "${obj["type"]}"`);
   if (obj["formatVersion"] !== 1)
     throw new Error(
-      `Invalid teams file (unsupported format version: ${obj["formatVersion"]}). ` +
-        `Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export on a single team).`,
+      `Invalid custom teams file (unsupported format version: ${obj["formatVersion"]}). ` +
+        `Make sure to export using the BlipIt Baseball Legends app (Export All Teams or Export a single team).`,
     );
   if (!obj["payload"] || typeof obj["payload"] !== "object")
     throw new Error("Invalid custom teams file: missing payload");

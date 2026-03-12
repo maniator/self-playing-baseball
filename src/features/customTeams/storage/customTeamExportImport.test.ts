@@ -692,7 +692,7 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     // A bare array IS typeof "object" but has no formatVersion — triggers the
     // generic format guard before any type/version-specific check.
     expect(() => parseExportedCustomTeams(JSON.stringify([{ id: "ct1" }]))).toThrow(
-      "missing or unrecognised format",
+      "missing or unrecognized format",
     );
   });
 
