@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { fireEvent, render, screen } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@storage/saveIO", () => ({
   formatSaveDate: vi.fn(() => "Jan 1, 2025"),
@@ -10,6 +10,7 @@ vi.mock("@storage/saveIO", () => ({
 // jsdom doesn't implement window.confirm; provide a controllable mock.
 const confirmMock = vi.fn(() => true);
 vi.stubGlobal("confirm", confirmMock);
+afterAll(() => vi.unstubAllGlobals());
 
 import type { SaveDoc } from "@storage/types";
 
