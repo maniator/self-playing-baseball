@@ -93,7 +93,7 @@ const ContactPage: React.FunctionComponent = () => {
         </BackBtn>
       </PageHeader>
 
-      <PageTitle>📬 Contact / Report Something Weird</PageTitle>
+      <PageTitle>📬 Contact / Report Bug</PageTitle>
       <Copy>
         If you spot something odd in the app, please send me a quick report so I can reproduce and
         fix it.
