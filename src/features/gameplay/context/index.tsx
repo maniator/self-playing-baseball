@@ -12,6 +12,8 @@ export type PlayLogEntry = {
   batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
   /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
   playerId?: string;
+  /** Display name of the batter at the time of the hit. Optional for backward compat with older saves; HitLog falls back to `#batterNum` when absent. */
+  batterName?: string;
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
   runs: number; // runs scored on this play

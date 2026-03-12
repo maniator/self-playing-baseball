@@ -1,9 +1,7 @@
 import * as React from "react";
 
-import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useGameContext } from "@feat/gameplay/context/index";
 import { Hit } from "@shared/constants/hitTypes";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import { Area, EmptyState, Entry, HeadingRow, Label, Runs, Toggle } from "./styles";
 
@@ -18,10 +16,8 @@ const EVENT_LABEL: Record<Hit, string> = {
 const HALF_ARROW = ["▲", "▼"] as const;
 
 const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) => {
-  const { playLog, teams } = useGameContext();
-  const { teams: customTeams } = useCustomTeams();
+  const { playLog, teamLabels } = useGameContext();
   const [collapsed, setCollapsed] = React.useState(false);
-  const teamLabel = (t: string) => resolveTeamLabel(t, customTeams);
 
   const filtered = playLog.filter((entry) => entry.team === activeTeam);
 
@@ -43,12 +39,14 @@ const HitLog: React.FunctionComponent<{ activeTeam: 0 | 1 }> = ({ activeTeam }) 
           ) : (
             [...filtered].reverse().map((entry, idx) => {
               const key = `${entry.inning}-${entry.half}-${entry.team}-${entry.batterNum}-${idx}`;
+              // Use batterName when available (modern saves); fall back to #N for older saves.
+              const batterLabel = entry.batterName ?? `#${entry.batterNum}`;
               return (
                 <Entry key={key}>
                   <Label $hr={entry.event === Hit.Homerun}>{EVENT_LABEL[entry.event]}</Label>
                   <span>
                     {HALF_ARROW[entry.half]}
-                    {entry.inning} — {teamLabel(teams[entry.team])} #{entry.batterNum}
+                    {entry.inning} — {teamLabels[entry.team]} {batterLabel}
                   </span>
                   {entry.runs > 0 && (
                     <Runs>
