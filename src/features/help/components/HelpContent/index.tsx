@@ -81,9 +81,11 @@ const HelpContent: React.FunctionComponent = () => (
         <Li>The game runs automatically once started — sit back and watch.</Li>
         <Li>
           Choose <strong>Slow / Normal / Fast / Instant</strong> speed to control the pace. Instant
-          resolves the entire game in one step with no delay.
+          plays pitches with no delay between them and still pauses for Manager Mode decisions.
         </Li>
-        <Li>🔊 slider = play-by-play voice volume · 🎵 slider = background music volume.</Li>
+        <Li>
+          🔊 slider = play-by-play voice volume · 🎵 slider = music + in-game chimes/fanfare volume.
+        </Li>
       </List>
     </Section>
 
