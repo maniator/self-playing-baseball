@@ -29,14 +29,18 @@ jobs:
         run: yarn install --immutable
 
       # Pre-install the Playwright MCP server package so the npx cache is warm
-      # when the Copilot agent starts.  The local MCP config in
-      # .github/copilot/mcp.json instructs GitHub to launch the Playwright MCP
-      # via `npx -y @playwright/mcp@0.0.40`; pre-installing here ensures that
-      # command resolves instantly from cache rather than downloading on-demand.
+      # when the Copilot agent starts.  The package and version are read
+      # directly from .github/copilot/mcp.json (the second element of "args")
+      # so this step and the MCP config stay in sync automatically.
       # The `--allowed-origins` in mcp.json includes blipit.net so the agent
       # can navigate to the production site during live-browser QA sessions.
       - name: Pre-install Playwright MCP server
-        run: npx --yes @playwright/mcp@0.0.40 --help 2>/dev/null || true
+        run: |
+          MCP_PKG=$(jq -r '.mcpServers.playwright.args[1]' .github/copilot/mcp.json)
+          echo "Pre-installing Playwright MCP: $MCP_PKG"
+          if ! npx --yes "$MCP_PKG" --help; then
+            echo "::warning::Playwright MCP cache-warm failed for $MCP_PKG — agent will download on first use"
+          fi
 
       # Pre-pull the Playwright container image so the e2e-test-runner agent
       # can run `docker run` commands immediately without a download delay.
