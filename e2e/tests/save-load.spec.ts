@@ -110,6 +110,8 @@ test.describe("Save / Load", () => {
     //    wipe IndexedDB — so without this step the pre-existing "· Inning" row
     //    would still be present after "reset", making the import assertion a
     //    false positive (Codex review comment).
+    // The save deletion shows a window.confirm — accept it.
+    page.once("dialog", (dialog) => dialog.accept());
     await manualSaveRow.getByRole("button", { name: /delete save/i }).click();
     await expect(modal.locator("li").filter({ hasText: "· Inning" })).toHaveCount(0, {
       timeout: 5_000,

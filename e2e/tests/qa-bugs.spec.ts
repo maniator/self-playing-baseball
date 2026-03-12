@@ -223,12 +223,9 @@ test.describe("Help page — Protect swing documented (Bug 6)", () => {
     await expect(page.getByTestId("help-page")).toBeVisible({ timeout: 15_000 });
 
     // Open the Manager Mode section (it's collapsed by default).
-    const managerSection = page
-      .getByRole("group")
-      .filter({ hasText: /manager mode/i })
-      .first();
-    // If it's a details/summary element, click the summary to open it.
-    const summary = page.getByText(/manager mode/i).first();
+    // Use locator("summary") to target the <summary> element specifically —
+    // getByText() would also match "Manager Mode" inside the section body.
+    const summary = page.locator("summary").filter({ hasText: /^Manager Mode$/i });
     await summary.click();
 
     // The word "Protect" must now be visible in the expanded section.

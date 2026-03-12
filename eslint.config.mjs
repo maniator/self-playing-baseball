@@ -95,7 +95,7 @@ export default tseslint.config(
 
   // logger.ts intentionally uses console — it IS the logging abstraction
   {
-    files: ["src/utils/logger.ts"],
+    files: ["src/shared/utils/logger.ts"],
     rules: {
       "no-console": "off",
     },

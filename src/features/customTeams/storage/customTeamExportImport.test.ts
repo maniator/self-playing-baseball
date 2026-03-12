@@ -272,6 +272,21 @@ describe("parseExportedCustomTeams", () => {
     expect(() => parseExportedCustomTeams("not json")).toThrow("Invalid JSON");
   });
 
+  it("rejects empty object with a clean error (no undefined/null/NaN)", () => {
+    const err = (() => {
+      try {
+        parseExportedCustomTeams("{}");
+      } catch (e) {
+        return e as Error;
+      }
+    })();
+    expect(err).toBeInstanceOf(Error);
+    expect(err!.message).not.toMatch(/undefined|null|NaN/);
+    expect(err!.message).toContain("Invalid");
+    expect(err!.message).toContain("format");
+    expect(err!.message).toMatch(/Make sure to export using/i);
+  });
+
   it("throws when type is wrong", () => {
     const bad = makeSignedBundle({ type: "saves" });
     expect(() => parseExportedCustomTeams(bad)).toThrow('expected type "customTeams"');
@@ -674,10 +689,10 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
   });
 
   it("rejects a bundle where the whole payload is a bare array (not a keyed object)", () => {
-    // A bare array IS typeof "object", so the parser's type check passes but
-    // the 'type' discriminator will be undefined — the type check is the specific rejection.
+    // A bare array IS typeof "object" but has no formatVersion — triggers the
+    // generic format guard before any type/version-specific check.
     expect(() => parseExportedCustomTeams(JSON.stringify([{ id: "ct1" }]))).toThrow(
-      'expected type "customTeams"',
+      "missing or unrecognized format",
     );
   });
 

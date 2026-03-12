@@ -5,6 +5,8 @@ import type { SaveDoc } from "@storage/types";
 
 import { ActionBtn, SaveActions, SaveCard, SaveDate, SaveInfo, SaveList, SaveName } from "./styles";
 
+export const DELETE_SAVE_CONFIRM_MSG = "Delete this save? This cannot be undone.";
+
 interface Props {
   saves: SaveDoc[];
   /** Optional: transform a save name before display (e.g. resolve custom: IDs). Defaults to identity. */
@@ -49,7 +51,11 @@ const SaveSlotList: React.FunctionComponent<Props> = ({
               <ActionBtn
                 type="button"
                 $variant="danger"
-                onClick={() => onDelete(s.id)}
+                onClick={() => {
+                  if (window.confirm(DELETE_SAVE_CONFIRM_MSG)) {
+                    onDelete(s.id);
+                  }
+                }}
                 aria-label="Delete save"
                 data-testid="delete-save-button"
               >
