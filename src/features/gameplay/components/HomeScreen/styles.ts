@@ -121,6 +121,7 @@ export const GhostBtn = styled.button`
   font-size: ${({ theme }) => theme.fontSizes.sub};
   font-family: inherit;
   cursor: pointer;
+  min-height: ${({ theme }) => theme.sizes.btnLg};
   text-align: center;
 
   &:hover {
