@@ -109,6 +109,8 @@ sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ 2>/dev/null || tru
 
 Because you run inside the same `mcr.microsoft.com/playwright:v1.58.2-noble` container as CI, any snapshot PNGs you generate are pixel-identical to CI baselines. You can regenerate and commit them directly — no need to wait for the `update-visual-snapshots` workflow.
 
+> **⚠️ CRITICAL — you cannot push.** This agent runs as a sub-agent. It has access to `git commit` but **NOT** to `report_progress` and NOT to `git push` / `gh`. After creating a local commit, you **must** tell the calling agent (Copilot) the exact commit SHA and instruct it to run `report_progress` to push. Never attempt `git push` or `gh` in this agent — it will fail with a 403 and the changes will be silently stranded in an unpushed local commit.
+
 ### Step-by-step snapshot update flow
 
 **1. Run `--update-snapshots` for Chromium projects:**
@@ -147,12 +149,14 @@ docker run --rm \
 sudo chown -hR "$(id -u):$(id -g)" dist/ node_modules/ .yarn/ e2e/tests/ 2>/dev/null || true
 ```
 
-**4. Commit the updated PNG files** (from outside the container, using normal `git` commands):
+**4. Stage and commit the updated PNG files** (using normal `git` commands — do NOT `git push`):
 
 ```bash
-git add "e2e/tests/**/*-snapshots/**/*.png"
+git add e2e/tests/
 git status  # review which PNGs changed
-# then use report_progress to commit and push
+git commit -m "test(e2e): regenerate visual snapshots for <description>"
+# ⚠️  STOP HERE — do NOT run git push or gh.
+# Tell the calling Copilot agent the commit SHA and instruct it to run report_progress to push.
 ```
 
 > Only commit PNGs that correspond to intentional visual changes. Do not commit unrelated snapshot diffs.
