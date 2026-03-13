@@ -347,6 +347,12 @@ export const ReadOnlyInput = styled(TextInput)`
   background: ${({ theme }) => theme.colors.bgSubtle};
   color: ${({ theme }) => theme.colors.textReadOnly};
   border-color: ${({ theme }) => theme.colors.borderPanel};
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
 `;
 
 export const IdentityLockHint = styled.p`

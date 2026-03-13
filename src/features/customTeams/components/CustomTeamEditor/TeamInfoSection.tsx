@@ -49,8 +49,7 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
             <ReadOnlyInput
               id="ct-name"
               value={state.name}
-              readOnly
-              aria-readonly="true"
+              disabled
               data-testid="custom-team-name-input"
             />
           ) : (
@@ -87,8 +86,7 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
               <ReadOnlyInput
                 id="ct-abbrev"
                 value={state.abbreviation}
-                readOnly
-                aria-readonly="true"
+                disabled
                 data-testid="custom-team-abbreviation-input"
               />
             ) : (
@@ -122,8 +120,7 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
               <ReadOnlyInput
                 id="ct-city"
                 value={state.city}
-                readOnly
-                aria-readonly="true"
+                disabled
                 data-testid="custom-team-city-input"
               />
             ) : (
