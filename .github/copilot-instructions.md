@@ -19,6 +19,8 @@ This file is the quick-reference index. For deeper detail, see:
 | [docs/architecture.md](../docs/architecture.md)         | Route architecture, auto-play scheduler, Manager Mode, notification system, shared logger                                                                                                                                    |
 | [docs/e2e-testing.md](../docs/e2e-testing.md)           | Playwright projects, E2E helpers, `data-testid` reference, visual snapshots, CI workflows, save fixtures                                                                                                                     |
 | [docs/style-guide.md](../docs/style-guide.md)           | **UI Style Guide** — color palette, typography, breakpoints, all button variants, form elements, modals, cards, tables, game UI, and status patterns. **Consult before introducing any new color, font size, or component.** |
+| [agents/README.md](agents/README.md)                    | Agent routing guide — which specialized agent to use for each task type, common gotchas for multi-session PRs                                                                                                                |
+| [agents/prompt-examples.md](agents/prompt-examples.md)  | Copy-paste prompt templates for each agent type                                                                                                                                                                              |
 
 ---
 
@@ -191,6 +193,8 @@ Validate changes by:
 5. `yarn test:e2e` — all Playwright E2E tests must pass (builds the app, then runs all 7 projects headlessly). If adding/changing UI components that have `data-testid` selectors or affect the play-by-play log, visual baselines may need updating — use the **`e2e-test-runner`** agent to regenerate them inside the Docker container and commit directly, or let the **`update-visual-snapshots`** workflow handle it automatically on push.
 
 **Do not call `report_progress` until all five steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
+
+**PR title and description must reflect the entire PR, not just the current session's changes.** Before writing `prTitle` and `prDescription` in any `report_progress` call, review the full git history for the branch to understand all changes made across all sessions. See [agents/README.md](agents/README.md) for the full cross-session PR guideline.
 
 ---
 
