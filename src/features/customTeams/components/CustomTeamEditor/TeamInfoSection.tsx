@@ -63,9 +63,10 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
                 }
                 placeholder="e.g. Eagles"
                 aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
+                aria-describedby="ct-name-hint"
                 data-testid="custom-team-name-input"
               />
-              <FieldHint>
+              <FieldHint id="ct-name-hint">
                 Short name only — displayed as{" "}
                 {cityTrimmed || nameTrimmed ? (
                   <strong>
