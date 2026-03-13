@@ -331,10 +331,10 @@ function buildStore(getDbFn: GetDb) {
         ...targetTeam.roster.bench.map((p) => p.id),
         ...targetTeam.roster.pitchers.map((p) => p.id),
       ]);
-      const playerToAppend = allTargetIds.has(player.id)
+      const playerWithResolvedId = allTargetIds.has(player.id)
         ? { ...player, id: generatePlayerId() }
         : player;
-      const updatedSection = [...targetTeam.roster[section], playerToAppend];
+      const updatedSection = [...targetTeam.roster[section], playerWithResolvedId];
       await this.updateCustomTeam(targetTeamId, {
         roster: {
           lineup: section === "lineup" ? updatedSection : targetTeam.roster.lineup,
@@ -343,7 +343,7 @@ function buildStore(getDbFn: GetDb) {
         },
       });
 
-      return { status: "success", finalLocalId: playerToAppend.id };
+      return { status: "success", finalLocalId: playerWithResolvedId.id };
     },
   };
 }

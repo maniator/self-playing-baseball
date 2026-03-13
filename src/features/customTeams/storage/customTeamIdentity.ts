@@ -29,7 +29,7 @@ export async function resolvePlayerConflict(
   const matchingPlayerDocs = matchingDocs.map((doc) => doc.toJSON() as unknown as PlayerDoc);
 
   const conflictingMatch = matchingPlayerDocs.find(
-    (doc) => doc.teamId !== null && doc.teamId !== undefined && doc.teamId !== targetTeamId,
+    (doc) => doc.teamId != null && doc.teamId !== targetTeamId,
   );
   if (conflictingMatch) {
     const owningTeamDoc = conflictingMatch.teamId
