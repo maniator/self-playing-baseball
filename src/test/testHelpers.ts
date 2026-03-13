@@ -17,7 +17,10 @@ const emptyOverrides: [TeamCustomPlayerOverrides, TeamCustomPlayerOverrides] = [
 const emptyResolvedMods: [Record<string, ResolvedPlayerMods>, Record<string, ResolvedPlayerMods>] =
   [{}, {}];
 
-const emptyHandednessByTeam: [Record<string, Handedness>, Record<string, Handedness>] = [{}, {}];
+const makeEmptyHandednessByTeam = (): [Record<string, Handedness>, Record<string, Handedness>] => [
+  {},
+  {},
+];
 
 /** Creates a full default State with optional field overrides. */
 export const makeState = (overrides: Partial<State> = {}): State => {
@@ -72,7 +75,7 @@ export const makeState = (overrides: Partial<State> = {}): State => {
     teams,
     teamLabels,
     resolvedMods,
-    handednessByTeam: emptyHandednessByTeam,
+    handednessByTeam: overrides.handednessByTeam ?? makeEmptyHandednessByTeam(),
   };
 };
 
@@ -121,7 +124,7 @@ export const makeContextValue = (overrides: Partial<ContextValue> = {}): Context
       import("@feat/gameplay/context/index").PitcherLogEntry[],
     ],
     resolvedMods: emptyResolvedMods,
-    handednessByTeam: emptyHandednessByTeam,
+    handednessByTeam: overrides.handednessByTeam ?? makeEmptyHandednessByTeam(),
     ...overrides,
     // Derived fields that must be computed after overrides:
     teams,

@@ -27,6 +27,10 @@ const PinchHitterDecisionButtons: React.FunctionComponent<Props> = ({
     candidates.length > 0 ? candidates[0].id : "",
   );
 
+  React.useEffect(() => {
+    setSelectedCandidateId(candidates.length > 0 ? candidates[0].id : "");
+  }, [candidates, teamIdx, lineupIdx]);
+
   if (candidates.length === 0) {
     return (
       <>
