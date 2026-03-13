@@ -1,6 +1,6 @@
 # AGENTS.md — Copilot Coding Agent Instructions
 
-This file provides global instructions and agent-routing guidance for the Copilot coding agent working on `maniator/self-playing-baseball`.
+This file provides global instructions and agent-routing guidance for the Copilot coding agent working on `maniator/blipit-legends`.
 
 ---
 
@@ -8,8 +8,8 @@ This file provides global instructions and agent-routing guidance for the Copilo
 
 A **deterministic, self-playing baseball simulator** built as a single-page React/TypeScript PWA. Key characteristics:
 
-- Seeded PRNG (`src/utils/rng.ts`, mulberry32) — all randomness flows through `random()`. Same seed → same game, every time.
-- Reducer-based game state (`src/context/reducer.ts`) with domain handler modules.
+- Seeded PRNG (`src/shared/utils/rng.ts`, mulberry32) — all randomness flows through `random()`. Same seed → same game, every time.
+- Reducer-based game state (`src/features/gameplay/context/reducer.ts`) with domain handler modules.
 - Playwright E2E + visual snapshot tests across 7 viewport projects.
 - RxDB local-only persistence (saves, events, teams, customTeams collections).
 - Custom team builder with full roster management and drag-and-drop reordering across all sections.
@@ -39,10 +39,10 @@ For tasks that span multiple areas (e.g., a refactor that also touches UI), appl
 ## Global rules (apply to every task)
 
 1. **Minimal, surgical diffs.** Change as few lines as possible to accomplish the goal.
-2. **Never call `Math.random()` in simulation code.** All randomness goes through `src/utils/rng.ts`.
-3. **Never import `GameContext` directly.** Always use `useGameContext()` from `@context/index`.
+2. **Never call `Math.random()` in simulation code.** All randomness goes through `src/shared/utils/rng.ts`.
+3. **Never import `GameContext` directly.** Always use `useGameContext()` from `@feat/gameplay/context/index`.
 4. **Never use the `Function` type.** Use explicit signatures: `(action: GameAction) => void`.
-5. **Always use `mq` helpers** (`@utils/mediaQueries`) in styled-components. No raw `@media` strings.
+5. **Always use `mq` helpers** (`@shared/utils/mediaQueries`) in styled-components. No raw `@media` strings.
 6. **Always use `dvh`** (not `vh`) for modal `max-height`.
 7. **Always run `yarn lint:fix && yarn format` before every commit.** This auto-fixes import order and Prettier formatting so no lint errors are ever committed. Then run `yarn lint` to confirm zero errors before pushing.
 8. **Run all four validation steps** before reporting progress:

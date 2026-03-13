@@ -265,7 +265,7 @@ yarn build
 # Start the Playwright metrics test in the background.
 # Its webServer config starts `npx vite preview --port 5173` as a child process,
 # which is the only method that makes localhost:5173 reachable in the MCP browser.
-cd /home/runner/work/self-playing-baseball/self-playing-baseball
+cd /home/runner/work/blipit-legends/blipit-legends
 npx playwright test --config=playwright-metrics.config.ts --project=desktop > /tmp/pltest.txt 2>&1 &
 
 # Wait ~12 seconds for vite preview to boot, then verify
