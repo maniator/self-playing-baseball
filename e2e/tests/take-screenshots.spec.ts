@@ -12,6 +12,7 @@ import * as path from "path";
 
 import {
   importHistoryFixture,
+  loadFixture,
   resetAppState,
   startGameViaPlayBall,
   waitForLogLines,
@@ -188,9 +189,16 @@ test.describe("Documentation Screenshots", () => {
   // ── 5. Saves page ───────────────────────────────────────────────────────────
   test("5. Saves page", async () => {
     await forBothViewports(async (page, viewport) => {
-      await resetAppState(page);
+      // Load a save fixture so the saves page shows an example save row instead
+      // of the empty state.  loadFixture auto-navigates to /game after import;
+      // we then navigate back to /saves to take the screenshot.
+      await loadFixture(page, "sample-save.json");
       await page.goto("/saves", { waitUntil: "domcontentloaded" });
       await page.waitForSelector("[data-testid='saves-page']", { state: "visible" });
+      await page.waitForSelector("[data-testid='saves-list-item']", {
+        state: "visible",
+        timeout: 10_000,
+      });
       await captureScreenshot(page, `saves-${viewport}.png`);
     });
   });
