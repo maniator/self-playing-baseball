@@ -83,8 +83,9 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
         {(teamValidationError || isSameTeam) && (
           <TeamValidationError role="alert" data-testid="team-validation-error">
             ⚠{" "}
-            {teamValidationError ||
-              "Away and home teams must be different — choose two different teams."}
+            {teamValidationError
+              ? teamValidationError
+              : "Away and home teams must be different — choose two different teams."}
           </TeamValidationError>
         )}
 

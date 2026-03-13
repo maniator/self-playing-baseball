@@ -36,6 +36,9 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
     dispatch({ type: "APPLY_DRAFT", draft: generateDefaultCustomTeamDraft(++_generateCounter) });
   };
 
+  const cityTrimmed = state.city.trim();
+  const nameTrimmed = state.name.trim();
+
   return (
     <FormSection>
       <SectionHeading>Team Info</SectionHeading>
@@ -64,13 +67,11 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
               />
               <FieldHint>
                 Short name only — displayed as{" "}
-                {state.city.trim() || state.name.trim() ? (
-                  <>
-                    <strong>
-                      {state.city.trim() ? `${state.city.trim()} ` : ""}
-                      {state.name.trim() || "…"}
-                    </strong>
-                  </>
+                {cityTrimmed || nameTrimmed ? (
+                  <strong>
+                    {cityTrimmed ? `${cityTrimmed} ` : ""}
+                    {nameTrimmed || "…"}
+                  </strong>
                 ) : (
                   <strong>City Name</strong>
                 )}{" "}
