@@ -88,11 +88,13 @@ export const StatsGrid = styled.div`
   margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
-export const StatRow = styled.div`
+export const StatRow = styled.div<{ $locked?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   width: 100%;
+  opacity: ${({ $locked }) => ($locked ? 0.5 : 1)};
+  pointer-events: ${({ $locked }) => ($locked ? "none" : "auto")};
 `;
 
 export const StatLabel = styled.label`
@@ -106,6 +108,10 @@ export const StatInput = styled.input`
   flex: 1;
   accent-color: ${({ theme }) => theme.colors.accentPrimary};
   cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 `;
 
 export const StatValue = styled.span`
