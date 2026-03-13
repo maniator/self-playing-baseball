@@ -30,10 +30,10 @@ Then navigate using `http://localhost:3456` — **never** `https://blipit.net`.
 
 The Copilot sandbox enforces two independent network layers:
 
-| Layer | Controls | blipit.net |
-|---|---|---|
-| **Network firewall** (repo-level) | Which hostnames Node.js processes can reach | ✅ Always allowed for this repo |
-| **Playwright browser sandbox** | Which URLs the browser can navigate to | ❌ Locked to localhost-only — hardcoded, cannot be overridden |
+| Layer                             | Controls                                    | blipit.net                                                    |
+| --------------------------------- | ------------------------------------------- | ------------------------------------------------------------- |
+| **Network firewall** (repo-level) | Which hostnames Node.js processes can reach | ✅ Always allowed for this repo                               |
+| **Playwright browser sandbox**    | Which URLs the browser can navigate to      | ❌ Locked to localhost-only — hardcoded, cannot be overridden |
 
 Node.js processes in the agent can reach `blipit.net` freely (it's in the repo-level firewall allowlist). The Playwright browser cannot — the agent infrastructure enforces a localhost-only browser policy regardless of any config in the repo.
 
@@ -66,8 +66,8 @@ All standard Playwright MCP tools work normally once you are on `http://localhos
 
 ## Key file
 
-| File | Purpose |
-|---|---|
+| File                              | Purpose                                                |
+| --------------------------------- | ------------------------------------------------------ |
 | `.github/scripts/blipit-proxy.js` | Reverse proxy: `localhost:3456` → `https://blipit.net` |
 
 ## Caveats
