@@ -173,6 +173,11 @@ export const PlayBallButton = styled.button`
   cursor: pointer;
   margin-top: ${({ theme }) => theme.spacing.sm};
 
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
   ${mq.mobile} {
     margin-top: ${({ theme }) => theme.spacing.s6};
   }

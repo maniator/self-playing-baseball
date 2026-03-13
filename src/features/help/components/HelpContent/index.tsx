@@ -64,8 +64,8 @@ const HelpContent: React.FunctionComponent = () => (
         </Li>
         <Li>
           Use <strong>✨ Generate Random</strong> to create a randomized team as a starting point.
-          Edit player names and positions to customize it. <strong>Note:</strong> player stat values
-          are determined at creation and cannot be changed afterward.
+          Edit player positions and batting handedness to customize it. <strong>Note:</strong>{" "}
+          player names and stat values are fixed at creation and cannot be changed afterward.
         </Li>
         <Li>
           Each team needs at least one lineup player and one pitcher before it can be used in a

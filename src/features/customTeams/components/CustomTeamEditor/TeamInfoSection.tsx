@@ -5,6 +5,7 @@ import { generateDefaultCustomTeamDraft } from "@feat/customTeams/generation/gen
 import type { EditorAction, EditorState } from "./editorState";
 import {
   FieldGroup,
+  FieldHint,
   FieldLabel,
   FormSection,
   GenerateBtn,
@@ -35,6 +36,9 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
     dispatch({ type: "APPLY_DRAFT", draft: generateDefaultCustomTeamDraft(++_generateCounter) });
   };
 
+  const cityTrimmed = state.city.trim();
+  const nameTrimmed = state.name.trim();
+
   return (
     <FormSection>
       <SectionHeading>Team Info</SectionHeading>
@@ -50,16 +54,31 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
               data-testid="custom-team-name-input"
             />
           ) : (
-            <TextInput
-              id="ct-name"
-              value={state.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
-              }
-              placeholder="e.g. Eagles"
-              aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
-              data-testid="custom-team-name-input"
-            />
+            <>
+              <TextInput
+                id="ct-name"
+                value={state.name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
+                }
+                placeholder="e.g. Eagles"
+                aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
+                aria-describedby="ct-name-hint"
+                data-testid="custom-team-name-input"
+              />
+              <FieldHint id="ct-name-hint">
+                Short name only — displayed as{" "}
+                {cityTrimmed || nameTrimmed ? (
+                  <strong>
+                    {cityTrimmed ? `${cityTrimmed} ` : ""}
+                    {nameTrimmed || "…"}
+                  </strong>
+                ) : (
+                  <strong>City Name</strong>
+                )}{" "}
+                (e.g. Austin Eagles)
+              </FieldHint>
+            </>
           )}
         </FieldGroup>
         <TeamInfoSecondRow>
@@ -123,7 +142,9 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
         </TeamInfoSecondRow>
       </TeamInfoGrid>
       {isEditMode && (
-        <IdentityLockHint>Team identity fields are locked after creation.</IdentityLockHint>
+        <IdentityLockHint>
+          🔒 Team identity fields and player names are locked after creation.
+        </IdentityLockHint>
       )}
       {!isEditMode && (
         <GenerateBtn

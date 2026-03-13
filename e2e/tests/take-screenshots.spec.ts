@@ -6,7 +6,7 @@
  * Output is written to docs/screenshots/.
  */
 
-import { expect, type BrowserContext, devices, type Page, test } from "@playwright/test";
+import { type BrowserContext, devices, expect, type Page, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 

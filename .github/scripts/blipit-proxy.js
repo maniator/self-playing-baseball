@@ -47,8 +47,21 @@ const server = http.createServer((req, res) => {
     },
   };
 
-  // Remove headers that can cause issues with the upstream server
-  delete options.headers["accept-encoding"];
+  // Strip hop-by-hop headers that must not be forwarded to an upstream HTTPS
+  // server.  Forwarding `connection: keep-alive` verbatim causes socket
+  // hang-ups because the upstream TLS connection has its own lifetime.
+  const HOP_BY_HOP = [
+    "connection",
+    "keep-alive",
+    "transfer-encoding",
+    "te",
+    "trailer",
+    "upgrade",
+    "proxy-authorization",
+    "proxy-authenticate",
+    "accept-encoding",
+  ];
+  HOP_BY_HOP.forEach((h) => delete options.headers[h]);
 
   const proxyReq = https.request(options, (proxyRes) => {
     const headers = Object.assign({}, proxyRes.headers);

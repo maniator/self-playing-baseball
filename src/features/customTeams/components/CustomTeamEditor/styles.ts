@@ -88,11 +88,13 @@ export const StatsGrid = styled.div`
   margin-top: ${({ theme }) => theme.spacing.xs};
 `;
 
-export const StatRow = styled.div`
+export const StatRow = styled.div<{ $locked?: boolean }>`
   display: flex;
   align-items: center;
   gap: ${({ theme }) => theme.spacing.sm};
   width: 100%;
+  opacity: ${({ $locked }) => ($locked ? 0.5 : 1)};
+  pointer-events: ${({ $locked }) => ($locked ? "none" : "auto")};
 `;
 
 export const StatLabel = styled.label`
@@ -106,6 +108,10 @@ export const StatInput = styled.input`
   flex: 1;
   accent-color: ${({ theme }) => theme.colors.accentPrimary};
   cursor: pointer;
+
+  &:disabled {
+    cursor: not-allowed;
+  }
 `;
 
 export const StatValue = styled.span`
@@ -347,13 +353,24 @@ export const ReadOnlyInput = styled(TextInput)`
   background: ${({ theme }) => theme.colors.bgSubtle};
   color: ${({ theme }) => theme.colors.textReadOnly};
   border-color: ${({ theme }) => theme.colors.borderPanel};
+
+  &[readonly] {
+    cursor: default;
+    opacity: 0.7;
+  }
 `;
 
 export const IdentityLockHint = styled.p`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textNavMid};
   margin: ${({ theme }) => theme.spacing.xxs} 0 ${({ theme }) => theme.spacing.sm};
-  font-style: italic;
+`;
+
+export const FieldHint = styled.p`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textHint};
+  margin: ${({ theme }) => theme.spacing.s3} 0 0;
+  line-height: 1.3;
 `;
 
 /** Import-player button — ghost blue style, mirrors AddPlayerBtn. */

@@ -33,4 +33,10 @@ export const mq = {
   tablet: `@media (min-width: ${breakpoints.mobile + 1}px) and (max-width: ${breakpoints.desktop - 1}px)`,
   /** Applies to tablet + desktop (everything above the mobile breakpoint). */
   notMobile: `@media (min-width: ${breakpoints.mobile + 1}px)`,
+  /**
+   * Short non-mobile viewports (e.g. 1280×720 laptop screens).
+   * Used to compact vertical spacing so nothing is pushed below the fold.
+   * "Short" = viewport height ≤ 760 px; "not-mobile" = width > 768 px.
+   */
+  shortNotMobile: `@media (max-height: 760px) and (min-width: ${breakpoints.mobile + 1}px)`,
 } as const;

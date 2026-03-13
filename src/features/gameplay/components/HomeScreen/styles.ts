@@ -11,6 +11,16 @@ export const HomeContainer = styled.div`
     calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
 
+  /* Compact layout for short non-mobile viewports (e.g. 1280×720) so the
+     Contact button clears the fixed audio bar at the bottom of the fold. */
+  ${mq.shortNotMobile} {
+    padding-top: ${({ theme }) => theme.spacing.xs};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar}
+    );
+    gap: ${({ theme }) => theme.spacing.md};
+  }
+
   ${mq.mobile} {
     justify-content: flex-start;
     max-height: 100dvh;
@@ -54,6 +64,10 @@ export const MenuGroup = styled.div`
   gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
+
+  ${mq.shortNotMobile} {
+    margin-top: ${({ theme }) => theme.spacing.sm};
+  }
 
   ${mq.mobile} {
     margin-top: 0;

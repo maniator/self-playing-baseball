@@ -31,6 +31,12 @@ describe("mq", () => {
     expect(mq.notMobile).toBe(`@media (min-width: ${breakpoints.mobile + 1}px)`);
   });
 
+  it("shortNotMobile targets short non-mobile viewports (max-height:760px, min-width above mobile)", () => {
+    expect(mq.shortNotMobile).toBe(
+      `@media (max-height: 760px) and (min-width: ${breakpoints.mobile + 1}px)`,
+    );
+  });
+
   it("mobile upper bound is below desktop lower bound", () => {
     expect(breakpoints.mobile).toBeLessThan(breakpoints.desktop);
   });

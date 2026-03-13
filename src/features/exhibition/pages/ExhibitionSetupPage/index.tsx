@@ -33,6 +33,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
     seedInput,
     setSeedInput,
     teamValidationError,
+    isSameTeam,
     customTeams,
     customAwayId,
     setCustomAwayId,
@@ -79,9 +80,12 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
           onHomeChange={setCustomHomeId}
           onManageTeams={() => navigate("/teams")}
         />
-        {teamValidationError && (
+        {(teamValidationError || isSameTeam) && (
           <TeamValidationError role="alert" data-testid="team-validation-error">
-            ⚠ {teamValidationError}
+            ⚠{" "}
+            {teamValidationError
+              ? teamValidationError
+              : "Away and home teams must be different — choose two different teams."}
           </TeamValidationError>
         )}
 
@@ -129,7 +133,7 @@ const ExhibitionSetupPage: React.FunctionComponent = () => {
           <SeedHint>Leave blank for a random game.</SeedHint>
         </FieldGroup>
 
-        <PlayBallButton type="submit" data-testid="play-ball-button">
+        <PlayBallButton type="submit" disabled={isSameTeam} data-testid="play-ball-button">
           Play Ball!
         </PlayBallButton>
       </form>

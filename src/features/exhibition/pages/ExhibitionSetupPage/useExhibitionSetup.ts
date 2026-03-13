@@ -67,6 +67,12 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
   const awayLabel = awayDoc ? customTeamToDisplayName(awayDoc) : "Away";
   const homeLabel = homeDoc ? customTeamToDisplayName(homeDoc) : "Home";
 
+  // Proactive inline check — shown immediately when both dropdowns are the same,
+  // before the user clicks Play Ball.  Only meaningful when ≥2 teams exist;
+  // with one team the selector is forced to the same value and the submit
+  // handler shows the "create more teams" message instead.
+  const isSameTeam = customTeams.length >= 2 && !!customAwayId && customAwayId === customHomeId;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     reinitSeed(seedInput.trim());
@@ -144,6 +150,7 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
     seedInput,
     setSeedInput,
     teamValidationError,
+    isSameTeam,
     customTeams,
     customAwayId,
     setCustomAwayId,
