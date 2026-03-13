@@ -7,6 +7,7 @@
 
 import type { AiDecision } from "./aiTypes";
 import type { DecisionType, State } from "./index";
+import { PINCH_HITTER_CONTACT_WEIGHT, PINCH_HITTER_POWER_WEIGHT } from "./playerTypes";
 
 export {
   AI_FATIGUE_THRESHOLD_HIGH,
@@ -103,8 +104,13 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
         // Composite score: contact first, then power, then platoon edge.
         const bestCandidate = candidates.reduce((best, c) => {
           const bestScore =
-            best.contactMod * 1.2 + best.powerMod * 0.35 + (best.matchupDeltaPct ?? 0);
-          const candidateScore = c.contactMod * 1.2 + c.powerMod * 0.35 + (c.matchupDeltaPct ?? 0);
+            best.contactMod * PINCH_HITTER_CONTACT_WEIGHT +
+            best.powerMod * PINCH_HITTER_POWER_WEIGHT +
+            (best.matchupDeltaPct ?? 0);
+          const candidateScore =
+            c.contactMod * PINCH_HITTER_CONTACT_WEIGHT +
+            c.powerMod * PINCH_HITTER_POWER_WEIGHT +
+            (c.matchupDeltaPct ?? 0);
           return candidateScore > bestScore ? c : best;
         });
         const matchupText =

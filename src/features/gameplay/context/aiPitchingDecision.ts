@@ -75,13 +75,23 @@ export function findBestReliever(
   return -1;
 }
 
+interface FindMatchupAwareRelieverOptions {
+  pitchingTeamIdx: 0 | 1;
+  rosterPitchers: string[];
+  activePitcherIdx: number;
+  substitutedOut: string[];
+  pitcherRoles: Record<string, string>;
+}
+
 const findMatchupAwareReliever = (
   state: State,
-  pitchingTeamIdx: 0 | 1,
-  rosterPitchers: string[],
-  activePitcherIdx: number,
-  substitutedOut: string[],
-  pitcherRoles: Record<string, string>,
+  {
+    pitchingTeamIdx,
+    rosterPitchers,
+    activePitcherIdx,
+    substitutedOut,
+    pitcherRoles,
+  }: FindMatchupAwareRelieverOptions,
 ): number => {
   const fallback = findBestReliever(rosterPitchers, activePitcherIdx, substitutedOut, pitcherRoles);
   if (fallback === -1) return -1;
@@ -161,14 +171,13 @@ export function makeAiPitchingDecision(
     : 0.4;
   if (random() > pullProbability) return { kind: "none" };
 
-  const relieverIdx = findMatchupAwareReliever(
-    state,
+  const relieverIdx = findMatchupAwareReliever(state, {
     pitchingTeamIdx,
     rosterPitchers,
     activePitcherIdx,
     substitutedOut,
     pitcherRoles,
-  );
+  });
 
   if (relieverIdx === -1) return { kind: "none" };
 

@@ -11,6 +11,7 @@ import { handleSetupAction } from "./handlers/setup";
 import { handleSimAction } from "./handlers/sim";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
+import { PINCH_HITTER_CONTACT_WEIGHT, PINCH_HITTER_POWER_WEIGHT } from "./playerTypes";
 import { applyHandlersInOrder } from "./reducerHelpers";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
@@ -141,10 +142,12 @@ export const detectDecision = (
       })
       .sort(
         (a, b) =>
-          b.contactMod * 1.2 +
-          b.powerMod * 0.4 +
+          b.contactMod * PINCH_HITTER_CONTACT_WEIGHT +
+          b.powerMod * PINCH_HITTER_POWER_WEIGHT +
           (b.matchupDeltaPct ?? 0) -
-          (a.contactMod * 1.2 + a.powerMod * 0.4 + (a.matchupDeltaPct ?? 0)),
+          (a.contactMod * PINCH_HITTER_CONTACT_WEIGHT +
+            a.powerMod * PINCH_HITTER_POWER_WEIGHT +
+            (a.matchupDeltaPct ?? 0)),
       );
     return {
       kind: "pinch_hitter",

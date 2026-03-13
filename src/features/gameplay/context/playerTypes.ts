@@ -46,3 +46,11 @@ export type PinchHitterCandidate = {
   /** Batter-edge percent for this candidate vs active pitcher (positive = hitter edge). */
   matchupDeltaPct?: number;
 };
+
+/**
+ * Shared scoring weights for pinch-hitter candidate ranking.
+ * Used by both the candidate-sort in the reducer and AI selection in aiManager
+ * to ensure the order presented to the manager matches what the AI would choose.
+ */
+export const PINCH_HITTER_CONTACT_WEIGHT = 1.2;
+export const PINCH_HITTER_POWER_WEIGHT = 0.35;
