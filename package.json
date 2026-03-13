@@ -80,7 +80,8 @@
     ],
     "*.{ts,tsx}": [
       "eslint --fix",
-      "prettier --write"
+      "prettier --write",
+      "vitest related --run --reporter=verbose"
     ],
     "playwright.config.ts": [
       "prettier --write"
