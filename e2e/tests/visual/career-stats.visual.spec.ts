@@ -29,12 +29,12 @@ import {
 test.describe("Visual — empty states", () => {
   test.beforeEach(async ({ page }) => {
     await resetAppState(page);
-    await disableAnimations(page);
   });
 
   test("Career Stats page — no teams empty state", async ({ page }) => {
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    await disableAnimations(page);
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot("career-stats-empty.png", {
       maxDiffPixelRatio: 0.05,
     });
@@ -43,6 +43,7 @@ test.describe("Visual — empty states", () => {
   test("Player Career page — empty state", async ({ page }) => {
     await page.goto("/players/smoke_test_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
+    await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
       "player-career-empty.png",
       { maxDiffPixelRatio: 0.05 },
@@ -154,7 +155,6 @@ test.describe("Visual — Team Summary and Leaders", () => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
     await loadFixture(page, "sample-save.json");
-    await disableAnimations(page);
     await importHistoryFixture(page, "team-summary-history.json");
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
@@ -166,7 +166,10 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await teamSelect.selectOption("e2e_summary_team");
     // Use a data-specific guard (W/L = "2-1") instead of team-summary-section,
     // which renders for any team and can resolve immediately for the wrong team.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 30_000 });
+    // Use a generous 45 s timeout: on slow CI desktop runners the RxDB query
+    // that aggregates the three imported games can take longer than 30 s.
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
+    await disableAnimations(page);
   }
 
   test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {

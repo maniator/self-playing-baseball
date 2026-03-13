@@ -4,6 +4,7 @@ import {
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   importTeamsFixture,
+  loadFixture,
   resetAppState,
   startGameViaPlayBall,
 } from "../utils/helpers";
@@ -121,7 +122,12 @@ test.describe("Career Stats with seeded history", () => {
     await page.addInitScript(() => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
-    await startGameViaPlayBall(page);
+    // Use loadFixture (loads a pre-built save snapshot) instead of
+    // startGameViaPlayBall to avoid the Play Ball → /game navigation
+    // timing-out on slow CI tablet/mobile WebKit runners.
+    // loadFixture still enters a game session (saves-button visible) so
+    // importHistoryFixture can open the SavesModal as needed.
+    await loadFixture(page, "sample-save.json");
     await importHistoryFixture(page, "career-stats-history.json");
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
