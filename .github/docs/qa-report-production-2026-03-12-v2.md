@@ -1,14 +1,23 @@
-# Production QA Report - 2026-03-12 (v2)
+# Production QA Report — 2026-03-12 (v2, revised)
 
 ## Scope
 
-| Field              | Value                                                                                                                                                                                                     |
-| ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| URL tested         | `http://127.0.0.1:3000` (local production build — `yarn build` + static server from `master`)                                                                                                             |
-| Tester             | Playwright MCP agent (Copilot)                                                                                                                                                                            |
-| Date/time          | 2026-03-12, ~23:48–00:30 UTC                                                                                                                                                                              |
-| Viewport coverage  | Desktop 1280×720, Desktop 1280×900 (full-page), Tablet 768×1024, Mobile 375×812                                                                                                                           |
-| Major areas tested | Home screen, New Game setup, In-game, Saves/Load/Import/Export, Team Management, Career Stats, Player Pages, How to Play, Contact, Responsive layouts, Browser back/forward, Chaotic/random user behavior |
+| Field              | Value                                                                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| URL tested         | **Local production build only** — `yarn build` + static server from `master` at `http://127.0.0.1:3000` ⚠️ _See testing note below_                                                                                             |
+| Tester             | Playwright MCP agent (Copilot)                                                                                                                                                                                                  |
+| Date/time          | 2026-03-12, ~23:48–00:30 UTC                                                                                                                                                                                                    |
+| Viewport coverage  | Desktop 1280×720, Desktop 1280×900 (full-page), Tablet 768×1024, Mobile 375×812                                                                                                                                                 |
+| Major areas tested | Home screen, New Game setup, In-game, Saves/Load/Import/Export, Team Management, Career Stats, Player Pages, How to Play, Contact, Responsive layouts, Browser back/forward, Chaotic/random user behavior, Blank-slate new-user |
+
+> **⚠️ Testing note — local build only, not live production (approved):**
+> The Playwright MCP agent could not reach the live site at `blipit.net` due to network restrictions
+> in the sandbox environment. With explicit approval, this pass was conducted entirely against a local
+> production build (`yarn build` served with a static file server). All findings that depend on server
+> configuration are marked **⚠️ Needs production verification** and must be re-confirmed against the live
+> site before acting on them — CDN behavior, server routing rules, and environment-specific settings may
+> differ. Findings not marked with that label reflect application code and are expected to reproduce
+> identically in production.
 
 ---
 
@@ -34,16 +43,18 @@ BlipIt Baseball Legends is a polished and functional self-playing baseball simul
 
 **What feels broken or at risk:**
 
-- No server-side SPA catch-all routing: refreshing on any non-root route (`/game`, `/stats`, `/teams`, `/saves`, `/help`) returns a raw 404 from the static server. This is a critical deployment concern.
-- A silent console error fires at game completion (`useRxdbGameSync: failed to update progress (game over)`) suggesting the save record may not always be finalized correctly.
+- SPA catch-all routing behavior on the production server is unconfirmed — refreshing on any non-root
+  route returns a raw 404 from a plain static server. ⚠️ **Needs production verification at blipit.net.**
+- A silent RxDB `CONFLICT` error fires consistently at game completion (`useRxdbGameSync: failed to
+update progress (game over)`) — the final save state may not always be persisted correctly.
 - The Help copy says "Edit player names" but player names cannot be edited after team creation.
 
 **Top priority issues:**
 
-1. SPA catch-all routing not configured (refresh = 404 on any non-root page)
-2. Silent RxDB sync error at game-over (save may be incomplete)
-3. Edit Team UX: readonly fields with no explanation
-4. Help copy discrepancy: "Edit player names" is not true
+1. Silent RxDB CONFLICT error at game-over (save may be incomplete) — **confirmed in app code**
+2. SPA catch-all routing — ⚠️ **needs production verification** at blipit.net
+3. Edit Team UX: readonly fields with no explanation — **confirmed in app**
+4. Help copy discrepancy: "Edit player names" is not true — **confirmed in app**
 
 ---
 
@@ -215,6 +226,7 @@ Notes:
 - **Discrepancy found:** Custom Teams section states: _"Edit player names and positions to customize it."_ — however, player names are `readonly` in the Edit Team page and cannot be changed after creation. Only positions (and batting handedness) are editable. The copy should read something like "Edit player positions and batting handedness to customize it."
 
 ![How to Play modal in game](qa-report-production-2026-03-12-v2-assets/how-to-play-modal-game.png)
+![Help — Custom Teams wrong copy](qa-report-production-2026-03-12-v2-assets/supplemental-03-help-custom-teams-wrong-copy.png)
 
 ---
 
@@ -285,7 +297,11 @@ Notes:
 - **Expected result:** Either the fields are editable, or a clear message explains they are locked after creation
 - **Actual result:** All fields appear as styled text inputs but have `readonly`/`aria-readonly="true"` attributes. Clicking does nothing. No tooltip, no disabled styling, no explanation.
 - **Frequency:** Always
-- **Screenshot:** ![Issue 01](qa-report-production-2026-03-12-v2-assets/issue-02-team-editor-fields-readonly.png)
+- **Screenshot:**
+
+  ![Issue 01 — Edit team readonly fields full page](qa-report-production-2026-03-12-v2-assets/supplemental-05-edit-team-page-full.png)
+  ![Issue 01 — Clicking a readonly field does nothing](qa-report-production-2026-03-12-v2-assets/supplemental-06-readonly-click-attempt.png)
+
 - **Notes:** Only Position (combobox) and Batting Handedness (combobox) are editable. The drag handle for lineup reordering also works. Everything else is silently locked. A new user will be confused by this with no guidance. The page heading "Edit Team" compounds the expectation mismatch.
 
 ---
@@ -305,7 +321,10 @@ Notes:
 - **Expected result:** Copy accurately describes what can be edited
 - **Actual result:** Copy says "player names" can be edited but they cannot. Only positions and batting handedness are editable.
 - **Frequency:** Always
-- **Screenshot:** (same as ISSUE-01 — team editor fields readonly)
+- **Screenshot:**
+
+  ![Issue 02 — Help wrong copy](qa-report-production-2026-03-12-v2-assets/supplemental-03-help-custom-teams-wrong-copy.png)
+
 - **Notes:** Suggested correction: _"Edit player positions and batting handedness to customize it."_ or _"Drag players to reorder the lineup. Player stat values and names are fixed at creation."_
 
 ---
@@ -324,7 +343,11 @@ Notes:
 - **Expected result:** User understands that display name = City + Team Name
 - **Actual result:** Team is saved as "Omaha Lakewood Legends" — a confusing double-name. No label hints that Team Name is the short nickname.
 - **Frequency:** Whenever a user types a full team name into the Team Name field
-- **Screenshot:** ![Issue 03](qa-report-production-2026-03-12-v2-assets/issue-03-duplicate-team-name-no-validation.png)
+- **Screenshot:**
+
+  ![Issue 03 — Create team form](qa-report-production-2026-03-12-v2-assets/supplemental-10-create-team-form.png)
+  ![Issue 03 — Full name typed in Team Name field](qa-report-production-2026-03-12-v2-assets/supplemental-11-team-name-full-name-mistake.png)
+
 - **Notes:** Could be fixed with a label change ("Team Nickname \*") or a hint text ("This is combined with City to form the full name, e.g. 'City Eagles'").
 
 ---
@@ -346,21 +369,33 @@ Notes:
 
 ---
 
-### ISSUE-05: Silent RxDB save error at game completion
+### ISSUE-05: Silent RxDB CONFLICT error at game completion — final save may be incomplete
 
 - **Severity:** Medium
 - **Type:** Bug / Data integrity
 - **Viewport(s):** All
-- **Preconditions:** Start a game; let it run to FINAL
+- **Confirmed:** ✅ App code — reproduced consistently in this QA pass
 - **Steps to reproduce:**
   1. Start a new game
-  2. Let the game run to FINAL (or use Instant speed)
+  2. Let the game run to FINAL (Instant speed triggers it reliably)
   3. Open browser DevTools → Console
 - **Expected result:** Game-over state persisted cleanly to the save record
-- **Actual result:** Console shows: `useRxdbGameSync: failed to update progress (game over) saveId=save_...`
-- **Frequency:** Observed once; may be intermittent or consistent
-- **Screenshot:** (Console error — not visually captured)
-- **Notes:** The error is silent — no user-facing message. If the final game state is not written to RxDB, loading this save later might show an incomplete game. The save entry does appear in the saves list after the game ends, but its content accuracy is uncertain.
+- **Actual result:** Console shows:
+  ```
+  useRxdbGameSync: failed to update progress (game over) saveId=save_...
+  RxDB Error-Code: CONFLICT (HTTP 409) — collection: "saves"
+  ```
+  This is a write conflict: a periodic progress-sync write races against the game-over finalization
+  write for the same document. The finalization write loses. The final `progressIdx` may not be
+  persisted.
+- **Frequency:** Consistently observed when using Instant speed; may be intermittent at lower speeds
+- **Screenshot:**
+
+  ![Issue 05 — Game at FINAL state](qa-report-production-2026-03-12-v2-assets/issue-05-game-final-screen.png)
+
+- **Notes:** The error is entirely silent — no user-facing message or banner. If the final game state is
+  not written to RxDB, loading this save later might show an incomplete game. The save entry does appear
+  in the saves list but its content accuracy is uncertain.
 
 ---
 
@@ -369,15 +404,25 @@ Notes:
 - **Severity:** High (deployment configuration)
 - **Type:** Bug / Infrastructure
 - **Viewport(s):** All
-- **Preconditions:** App built with `yarn build`; served with a static file server without SPA catch-all routing
-- **Steps to reproduce:**
-  1. Navigate to any non-root route (e.g. `/game`, `/stats`, `/teams`, `/saves`, `/help`)
-  2. Refresh the page (F5 / Cmd+R) or navigate directly to the URL
-- **Expected result:** App loads and the correct route renders (SPA routing handled by serving `index.html` for all paths)
-- **Actual result:** Static server returns HTTP 404 "File not found" — raw error page shown, React app never loads
-- **Frequency:** Always when refreshing on non-root routes in the local static server setup
-- **Screenshot:** (Raw 404 page — not captured)
-- **Notes:** This is a server configuration concern. The production server at blipit.net must be configured with a catch-all rule (e.g. Nginx `try_files $uri /index.html`, Netlify `_redirects`, etc.) to correctly serve the SPA. If not configured, any user who bookmarks `/stats`, refreshes mid-game, or shares a link to `/game` will see a blank error page. **This should be verified on production.**
+- **Confirmed:** ⚠️ **Local plain static server only — needs production verification at blipit.net**
+- **Steps to reproduce (local):**
+  1. Navigate to any non-root route via the app (e.g. `/stats`, `/teams`, `/saves`, `/help`)
+  2. Refresh the page (F5 / Cmd+R) or paste the URL directly into the address bar
+- **Expected result:** App loads and the correct route renders (server serves `index.html` for all paths)
+- **Actual result (local plain static server):** Server returns HTTP 404 "File not found" — raw error
+  page, React app never loads
+- **Frequency (local):** Always on a plain static file server with no catch-all rule
+- **Screenshot:**
+
+  ![Issue 06 — 404 on /stats direct navigation](qa-report-production-2026-03-12-v2-assets/issue-06-spa-routing-404.png)
+  ![Issue 06 — 404 on /teams direct navigation](qa-report-production-2026-03-12-v2-assets/issue-06-spa-routing-404-teams.png)
+
+- **Notes:** This was observed against a minimal local static server with no SPA catch-all rule. The
+  production server at blipit.net may already be configured correctly (e.g. Nginx `try_files $uri
+/index.html`, Netlify `_redirects`, Vercel `rewrites`). **Please verify on production by refreshing on
+  `/stats`, `/teams`, `/saves`, `/help`, and `/game` directly.** If the issue exists in production, any
+  user who bookmarks a page, refreshes mid-game, or shares a link will hit a hard error with no recovery
+  path.
 
 ---
 
@@ -451,17 +496,134 @@ Notes:
 
 ## Open questions / uncertain items
 
-1. **Production SPA routing** — Is blipit.net configured with a proper SPA catch-all (`try_files` / `_redirects`)? This is critical for any user who refreshes on a non-root route. Could not confirm from local build alone.
+1. **Production SPA routing** ⚠️ _Needs production verification_ — Is blipit.net configured with a
+   proper SPA catch-all (`try_files` / `_redirects`)? This is critical for any user who refreshes on a
+   non-root route. Could not confirm from local build alone.
 
-2. **RxDB save-at-FINAL integrity** — The `useRxdbGameSync: failed to update progress (game over)` console error was observed once. Is this consistent? Does it occur on production? What exactly is written vs. lost? Loading such a save should be tested separately.
+2. **RxDB save-at-FINAL integrity** — The `useRxdbGameSync: failed to update progress (game over)` RxDB
+   CONFLICT error was observed consistently (every Instant-speed game in this pass). The conflict is a
+   write race between the periodic progress-sync and the game-over finalization. Does this also occur at
+   Slow/Normal speed? What exactly is lost?
 
-3. **Seed validation** — Seed field accepts any arbitrary string. Is there any normalization, max-length clamping, or character restrictions applied on submit? Could a very long seed string cause any issues?
+3. **Seed validation** — Seed field accepts any arbitrary string. Is there any normalization, max-length
+   clamping, or character restrictions applied on submit? Could a very long seed string cause any issues?
 
-4. **Extra innings behavior** — In one game, a `10` column appeared in the scoreboard for extra innings. Is there a hard maximum on extra innings? What happens if a game never ends (both teams perfectly tied)?
+4. **Extra innings behavior** — In one game, a `10` column appeared in the scoreboard for extra innings.
+   Is there a hard maximum on extra innings? What happens if a game never ends (both teams perfectly
+   tied)?
 
-5. **Career stats with 0 games** — Career Stats page was only tested post-game. Does it render gracefully with no game history, or does it show empty/broken state?
+5. **Career stats with 0 games** — Career Stats was tested with no prior game history; the page rendered
+   cleanly with empty tables. ✅ Confirmed working.
 
-6. **Same-team matchup** — Setting both Away and Home to the same team is allowed in the local build. The reporter notes this may not be reproducible on production. If the production build enforces uniqueness, the mechanism should be documented; if not, it should be added.
+6. **Same-team matchup** — Setting both Away and Home to the same team is allowed in the local build.
+   The resulting game runs without errors but the setup UI shows both Manager Mode labels as identical
+   (e.g. "Away (Lakewood Legends)" and "Home (Lakewood Legends)"). Is this intended? ⚠️ _Needs
+   production verification — behavior may differ._
+
+---
+
+## Supplemental QA pass — blank-slate new-user perspective
+
+> This section documents a second QA pass with an explicit "knows nothing" mindset: a user who has never
+> seen the app, clicks things organically, misunderstands labels, and tries unexpected sequences. This is
+> qualitative and narrative, not a structured test plan.
+
+### First contact — what I clicked first and why
+
+On first load the home screen presents six clearly labeled buttons. My first instinct as a new user was
+**not** to click New Game — I clicked **How to Play** instead, because I wanted to understand the app
+before committing to anything.
+
+![Fresh first load — desktop](qa-report-production-2026-03-12-v2-assets/supplemental-01-fresh-first-load.png)
+![How to Play — first click](qa-report-production-2026-03-12-v2-assets/supplemental-02-how-to-play-first-click.png)
+
+**What confused me initially:** The How to Play page opens with Basics already expanded — clear enough.
+But the remaining eight accordion sections are all collapsed by default. The collapsed headers
+("Pre-game customization", "Custom Teams", "Game Flow"…) give very little signal about _what_ each
+section explains. A scanning user might not realize there's a dedicated section for Saves or Manager
+Mode without opening every one.
+
+**What I misunderstood before I figured it out:** I expanded "Custom Teams" and read _"Edit player names
+and positions to customize it."_ I assumed I could click into a team and rename players. I went to
+Manage Teams → Edit, clicked on player name fields, and nothing happened. It took me several clicks
+across multiple fields before I realized they were all `readonly`. The copy is incorrect and the UX
+gives no hint.
+
+![Help — Custom Teams wrong copy](qa-report-production-2026-03-12-v2-assets/supplemental-03-help-custom-teams-wrong-copy.png)
+
+---
+
+### Poking around in Manage Teams before playing
+
+**What I did:** Went to Manage Teams before starting any game, curious about how customization worked.
+
+![Manage Teams — entry point](qa-report-production-2026-03-12-v2-assets/supplemental-04-manage-teams-entry.png)
+
+**What felt unintuitive:** Clicking Edit on Lakewood Legends opened a page showing Team Name, City,
+Abbreviation, and every player's name in styled text inputs. I clicked "Team Name". Nothing. I clicked a
+player's name. Nothing. I tried clicking City. Still nothing. There is zero visual distinction between
+these locked inputs and the functional Position / Batting dropdowns. The heading "Edit Team" compounds
+the problem — it primes the user to expect full editing.
+
+![Edit Team — full page with readonly fields](qa-report-production-2026-03-12-v2-assets/supplemental-05-edit-team-page-full.png)
+![Edit Team — clicking a readonly field does nothing](qa-report-production-2026-03-12-v2-assets/supplemental-06-readonly-click-attempt.png)
+
+**What I tried that a real user would try:** After getting confused on the Edit page I went back and
+tried Create New Team instead, to see whether naming worked there. It does — on the Create page all
+fields are editable. This made me realize the Edit page intentionally locks the identity fields, but
+there's no indication of that in the UI.
+
+---
+
+### Trying strange things on New Game setup
+
+**Same team vs same team:** I set both dropdowns to Lakewood Legends just to see what would happen.
+The app allowed it with no warning. The Manager Mode radio buttons showed "Away (Lakewood Legends)" and
+"Home (Lakewood Legends)" — indistinguishable. The game ran without error. A user who accidentally
+picks the same team twice gets no feedback.
+
+![Same team on both sides — no warning](qa-report-production-2026-03-12-v2-assets/supplemental-07-same-team-setup.png)
+
+---
+
+### Checking Career Stats before playing
+
+I clicked Career Stats before starting any game, expecting either an empty state or an error. The page
+loaded cleanly and showed an empty Team Summary table — correct empty-state behavior, no errors.
+
+![Career Stats — no games played yet](qa-report-production-2026-03-12-v2-assets/supplemental-08-career-stats-no-games.png)
+
+---
+
+### Create team — Team Name label confusion
+
+On the Create New Team form, "Team Name \*" with placeholder _"e.g. Eagles"_ did not communicate to me
+that this was a _nickname only_. I typed "Lakewood Legends" into the field. If I then saved with City as
+"Omaha", the team would display as "Omaha Lakewood Legends". The City + Name display model is not
+explained anywhere on the form.
+
+![Create team form](qa-report-production-2026-03-12-v2-assets/supplemental-10-create-team-form.png)
+![Team Name field — full compound name typed by mistake](qa-report-production-2026-03-12-v2-assets/supplemental-11-team-name-full-name-mistake.png)
+
+---
+
+### Mobile blank-slate experience
+
+The mobile first load is clean and confident — all six action buttons are visible without scrolling at
+375×812. Nothing is hidden, nothing overflows. Demo teams load automatically. A mobile-only user would
+have no trouble starting a game.
+
+![Mobile — fresh first load](qa-report-production-2026-03-12-v2-assets/supplemental-09-mobile-fresh-load.png)
+
+---
+
+### Refreshing on a non-root route
+
+After navigating to `/stats` via the app, I pressed refresh. The plain static server returned a raw 404. The React app never loaded. There was no "go back" button — just a hard dead end. This is a
+critical risk if the production server is not configured with an SPA catch-all. Any user who bookmarks
+their stats page, shares a link, or refreshes mid-game hits this. ⚠️ _Needs production verification._
+
+![404 on refresh at /stats](qa-report-production-2026-03-12-v2-assets/issue-06-spa-routing-404.png)
 
 ---
 
