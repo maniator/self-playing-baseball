@@ -61,8 +61,8 @@ await page.goto("https://blipit.net");
 ```
 
 All standard Playwright MCP tools work normally once you are on `http://localhost:3456`:
-`browser_click`, `browser_snapshot`, `browser_take_screenshot`, `browser_type`,
-`browser_select_option`, `browser_fill_form`, `browser_navigate` (use `http://localhost:3456/...`).
+`playwright-browser_click`, `playwright-browser_snapshot`, `playwright-browser_take_screenshot`, `playwright-browser_type`,
+`playwright-browser_select_option`, `playwright-browser_fill_form`, `playwright-browser_navigate` (use `http://localhost:3456/...`).
 
 ## Key file
 

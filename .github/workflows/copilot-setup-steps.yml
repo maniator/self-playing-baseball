@@ -17,7 +17,7 @@ jobs:
       # Checkout is needed so subsequent steps can read repo files (.nvmrc,
       # package.json, yarn.lock).  After this workflow completes, the Copilot
       # agent does its own independent clone into a separate workspace — that is
-      # normal infrastructure behaviour, not a duplicate of this step.
+      # normal infrastructure behavior, not a duplicate of this step.
       - name: Checkout
         uses: actions/checkout@v4
 

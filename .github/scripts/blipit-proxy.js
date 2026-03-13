@@ -50,11 +50,21 @@ const server = http.createServer((req, res) => {
   const proxyReq = https.request(options, (proxyRes) => {
     const headers = Object.assign({}, proxyRes.headers);
 
-    // Rewrite any redirect Location headers so they stay on localhost
-    if (headers.location) {
+    // Rewrite any redirect Location headers so they stay on localhost.
+    // Guard against both string and string-array values (Node.js HTTP headers
+    // are typically strings, but some edge-case upstream servers may send
+    // duplicate Location headers which Node.js surfaces as an array).
+    if (typeof headers.location === "string") {
       headers.location = headers.location.replace(
         /https?:\/\/(www\.)?blipit\.net/gi,
         `http://localhost:${PORT}`,
+      );
+    } else if (Array.isArray(headers.location)) {
+      headers.location = headers.location.map((loc) =>
+        loc.replace(
+          /https?:\/\/(www\.)?blipit\.net/gi,
+          `http://localhost:${PORT}`,
+        ),
       );
     }
 
