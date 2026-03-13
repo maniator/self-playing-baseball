@@ -348,14 +348,63 @@ describe("ExhibitionSetupPage", () => {
     const homeSelect = screen.getByTestId("new-game-custom-home-team-select");
     await user.selectOptions(homeSelect, "ct_away");
 
-    await act(async () => {
-      await user.click(screen.getByTestId("play-ball-button"));
-    });
-
-    expect(mockOnStartGame).not.toHaveBeenCalled();
+    // Proactive inline warning appears immediately — before any submit attempt.
     expect(screen.getByTestId("team-validation-error")).toHaveTextContent(
       /away and home teams must be different/i,
     );
+    // Play Ball is disabled proactively.
+    expect(screen.getByTestId("play-ball-button")).toBeDisabled();
+    expect(mockOnStartGame).not.toHaveBeenCalled();
+  });
+
+  it("self-matchup: warning clears and Play Ball re-enables when different teams are selected", async () => {
+    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
+    const makeValidTeam = (id: string, name: string) => ({
+      id,
+      name,
+      city: "",
+      abbreviation: name.slice(0, 3).toUpperCase(),
+      roster: {
+        lineup: ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"].map((pos, i) => ({
+          id: `${id}-p${i}`,
+          name: String.fromCharCode(65 + i),
+          position: pos,
+          batting: { contact: 60, power: 60, speed: 60 },
+        })),
+        pitchers: [
+          {
+            id: `${id}-sp`,
+            name: "Starter",
+            role: "SP" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
+            pitching: { velocity: 60, control: 60, movement: 60 },
+          },
+        ],
+        bench: [],
+      },
+    });
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeValidTeam("ct_away", "Away Team"), makeValidTeam("ct_home", "Home Team")] as any,
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    // Force same team → warning appears.
+    const homeSelect = screen.getByTestId("new-game-custom-home-team-select");
+    await user.selectOptions(homeSelect, "ct_away");
+    expect(screen.getByTestId("team-validation-error")).toBeInTheDocument();
+    expect(screen.getByTestId("play-ball-button")).toBeDisabled();
+
+    // Switch home back to ct_home → warning clears, button re-enables.
+    await user.selectOptions(homeSelect, "ct_home");
+    expect(screen.queryByTestId("team-validation-error")).not.toBeInTheDocument();
+    expect(screen.getByTestId("play-ball-button")).not.toBeDisabled();
   });
 
   it("managed team with no SP-eligible pitchers shows validation error", async () => {

@@ -41,7 +41,7 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
       <SectionHeading>Team Info</SectionHeading>
       <TeamInfoGrid>
         <FieldGroup>
-          <FieldLabel htmlFor="ct-name">{isEditMode ? "Team Name *" : "Team Nickname *"}</FieldLabel>
+          <FieldLabel htmlFor="ct-name">Team Name *</FieldLabel>
           {isEditMode ? (
             <ReadOnlyInput
               id="ct-name"
@@ -63,9 +63,18 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
                 data-testid="custom-team-name-input"
               />
               <FieldHint>
-                Displayed as:{" "}
-                {state.city.trim() ? `${state.city.trim()} ` : ""}
-                {state.name.trim() || "Nickname"} (e.g. Austin Eagles)
+                Short name only — displayed as{" "}
+                {state.city.trim() || state.name.trim() ? (
+                  <>
+                    <strong>
+                      {state.city.trim() ? `${state.city.trim()} ` : ""}
+                      {state.name.trim() || "…"}
+                    </strong>
+                  </>
+                ) : (
+                  <strong>City Name</strong>
+                )}{" "}
+                (e.g. Austin Eagles)
               </FieldHint>
             </>
           )}
