@@ -11,6 +11,16 @@ export const HomeContainer = styled.div`
     calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
 
+  /* Compact layout for short desktop viewports (e.g. 1280×720) so the
+     Contact button doesn't slip just below the fold. */
+  @media (max-height: 760px) and (min-width: 769px) {
+    padding-top: ${({ theme }) => theme.spacing.xl};
+    padding-bottom: calc(
+      ${({ theme }) => theme.spacing.xl} + ${({ theme }) => theme.sizes.bottomBar}
+    );
+    gap: ${({ theme }) => theme.spacing.md};
+  }
+
   ${mq.mobile} {
     justify-content: flex-start;
     max-height: 100dvh;
@@ -54,6 +64,10 @@ export const MenuGroup = styled.div`
   gap: ${({ theme }) => theme.spacing.s14};
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
+
+  @media (max-height: 760px) and (min-width: 769px) {
+    margin-top: ${({ theme }) => theme.spacing.sm};
+  }
 
   ${mq.mobile} {
     margin-top: 0;
