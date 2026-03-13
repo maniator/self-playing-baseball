@@ -87,7 +87,7 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 - **Always start the proxy first** — run the bash snippet at the top of the agent file before any Playwright MCP tool call
 - **Navigate to `http://localhost:3456`**, never `https://blipit.net` — the browser sandbox always strips non-localhost entries from `--allowed-origins`
 - The proxy is started **on demand**, not always-on — only spun up when this agent is invoked
-- `mcp.json` must stay in the repo — it is what adds blipit.net to the network-level firewall that the proxy relies on
+- blipit.net is in the repo-level firewall allowlist — no special config needed; the proxy works out of the box
 
 ---
 

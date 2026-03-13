@@ -3,8 +3,7 @@ name: playwright-prod
 description: >
   Live-browser QA sessions against the production BlipIt Legends site
   (blipit.net) using the Playwright MCP. Starts the localhost reverse proxy
-  on demand and knows the full network-firewall architecture of the Copilot
-  sandbox.
+  on demand and knows the Copilot sandbox browser restrictions.
 ---
 
 # Playwright Prod Agent
@@ -33,19 +32,19 @@ The Copilot sandbox enforces two independent network layers:
 
 | Layer | Controls | blipit.net |
 |---|---|---|
-| **Network firewall** (eBPF/mkcert) | Which hostnames Node.js processes can reach | ✅ Allowed — `mcp.json` adds it |
-| **Playwright browser sandbox** (`--allowed-origins`) | Which URLs the browser can navigate to | ❌ Stripped — the agent always enforces localhost-only for the browser |
+| **Network firewall** (repo-level) | Which hostnames Node.js processes can reach | ✅ Always allowed for this repo |
+| **Playwright browser sandbox** | Which URLs the browser can navigate to | ❌ Locked to localhost-only — hardcoded, cannot be overridden |
 
-`.github/copilot/mcp.json` lists `blipit.net` in `--allowed-origins`. The Copilot launcher reads this and adds `blipit.net` to the **network-level** firewall, so Node.js processes (including the proxy) can reach it. However, the agent infrastructure also **strips** every non-localhost entry before passing `--allowed-origins` to the Playwright browser process. This is a hardcoded browser sandbox policy that cannot be overridden from the repo.
+Node.js processes in the agent can reach `blipit.net` freely (it's in the repo-level firewall allowlist). The Playwright browser cannot — the agent infrastructure enforces a localhost-only browser policy regardless of any config in the repo.
 
-**The proxy bridges the gap:** `localhost:3456` (always browser-allowed) → Node.js request → `https://blipit.net` (network-firewall allowed).
+**The proxy bridges the gap:**
 
 ```
 Playwright browser
   └─ page.goto("http://localhost:3456/...")   ← localhost: always OK
         ▼
 blipit-proxy.js  (Node.js on port 3456)
-        │  Node.js HTTP/HTTPS request — allowed by network firewall
+        │  Node.js HTTPS request — always allowed (repo-level firewall)
         ▼
 https://blipit.net  (production)
 ```
@@ -65,16 +64,15 @@ All standard Playwright MCP tools work normally once you are on `http://localhos
 `browser_click`, `browser_snapshot`, `browser_take_screenshot`, `browser_type`,
 `browser_select_option`, `browser_fill_form`, `browser_navigate` (use `http://localhost:3456/...`).
 
-## Key files
+## Key file
 
 | File | Purpose |
 |---|---|
 | `.github/scripts/blipit-proxy.js` | Reverse proxy: `localhost:3456` → `https://blipit.net` |
-| `.github/copilot/mcp.json` | Playwright MCP config — adds blipit.net to the network firewall |
 
 ## Caveats
 
 - **HTTP, not HTTPS** — cookies with `Secure` or `SameSite=None` may behave differently than on the real domain.
 - **Redirect rewrites** — `Location` headers are rewritten to stay on `http://localhost:3456/...`.
-- **Third-party assets** — fonts, analytics, CDNs loaded from other domains will be blocked by the browser sandbox. Core app layout and functionality are intact.
+- **Third-party assets** — fonts, analytics, CDNs loaded from other external domains will be blocked by the browser sandbox. Core app layout and functionality are intact.
 - **Port conflict** — if port 3456 is taken, run `BLIPIT_PROXY_PORT=3457 node .github/scripts/blipit-proxy.js &` and navigate to `http://localhost:3457`.
