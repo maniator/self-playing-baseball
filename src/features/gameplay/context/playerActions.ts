@@ -12,6 +12,7 @@ import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
 export { buntAttempt } from "./buntAttempt";
+export { stealAttempt } from "./stealAttempt";
 
 export const playerStrike = (
   state: State,
@@ -92,57 +93,6 @@ export const playerBall = (
   };
 };
 
-export const stealAttempt = (
-  state: State,
-  log: (msg: string) => void,
-  successPct: number,
-  base: 0 | 1,
-): State => {
-  log(`Steal attempt from ${base === 0 ? "1st" : "2nd"}...`);
-  const roll = getRandomInt(100);
-  if (roll < successPct) {
-    log("Safe! Steal successful!");
-    const newBase: [number, number, number] = [...state.baseLayout] as [number, number, number];
-    newBase[base] = 0;
-    newBase[base + 1] = 1;
-    const newRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
-      string | null,
-      string | null,
-      string | null,
-    ];
-    newRunnerIds[base + 1] = newRunnerIds[base];
-    newRunnerIds[base] = null;
-    return {
-      ...state,
-      baseLayout: newBase,
-      baseRunnerIds: newRunnerIds,
-      pendingDecision: null,
-      onePitchModifier: null,
-      pitchKey: (state.pitchKey ?? 0) + 1,
-    };
-  }
-  log("Caught stealing!");
-  const clearedBases: [number, number, number] = [...state.baseLayout] as [number, number, number];
-  clearedBases[base] = 0;
-  const clearedRunnerIds = [...(state.baseRunnerIds ?? [null, null, null])] as [
-    string | null,
-    string | null,
-    string | null,
-  ];
-  clearedRunnerIds[base] = null;
-  return playerOut(
-    {
-      ...state,
-      pendingDecision: null,
-      baseLayout: clearedBases,
-      baseRunnerIds: clearedRunnerIds,
-      pitchKey: (state.pitchKey ?? 0) + 1,
-    },
-    log,
-    false,
-  );
-};
-
 interface ComputeWaitOutcomeOptions {
   strategy: Strategy;
   modifier: OnePitchModifier;
@@ -174,7 +124,9 @@ const computeWaitOutcome = (
       999,
       Math.max(
         0,
-        Math.round((220 * stratMod(strategy, "walk") * walkRateMultiplier) / (zoneMod * controlFactor)),
+        Math.round(
+          (220 * stratMod(strategy, "walk") * walkRateMultiplier) / (zoneMod * controlFactor),
+        ),
       ),
     );
     return random < adjustedWalkChance ? "ball" : "strike";

@@ -1,0 +1,48 @@
+export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
+
+export type Handedness = "R" | "L" | "S";
+
+export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
+
+export type PlayerCustomization = {
+  nickname?: string;
+  /** Defensive position string (e.g. "C", "LF") — populated for custom-team players. */
+  position?: string;
+  /** Batter/pitcher throwing side. "S" is allowed for switch hitters. */
+  handedness?: Handedness;
+  contactMod?: ModPreset;
+  powerMod?: ModPreset;
+  speedMod?: ModPreset;
+  controlMod?: ModPreset;
+  velocityMod?: ModPreset;
+  movementMod?: ModPreset;
+  staminaMod?: ModPreset;
+};
+
+export type TeamCustomPlayerOverrides = Record<string, PlayerCustomization>;
+
+/** Pre-computed player mods with all fields defaulted to 0. Computed once at setTeams. */
+export type ResolvedPlayerMods = {
+  contactMod: number;
+  powerMod: number;
+  speedMod: number;
+  velocityMod: number;
+  controlMod: number;
+  movementMod: number;
+  /** Higher staminaMod = pitcher stays effective for more batters before fatigue sets in. */
+  staminaMod: number;
+};
+
+/** Bench player info surfaced in the pinch_hitter decision for concrete player selection. */
+export type PinchHitterCandidate = {
+  id: string;
+  name: string;
+  position?: string;
+  handedness?: Handedness;
+  /** Resolved contact mod from playerOverrides — used by AI for stat-based selection. */
+  contactMod: number;
+  /** Resolved power mod from playerOverrides — used by AI for stat-based selection. */
+  powerMod: number;
+  /** Batter-edge percent for this candidate vs active pitcher (positive = hitter edge). */
+  matchupDeltaPct?: number;
+};
