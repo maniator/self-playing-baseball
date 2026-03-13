@@ -24,6 +24,14 @@ const https = require("https");
 const TARGET_HOST = "blipit.net";
 const PORT = parseInt(process.env.BLIPIT_PROXY_PORT || "3456", 10);
 
+if (!Number.isFinite(PORT) || PORT < 1 || PORT > 65535) {
+  console.error(
+    `[blipit-proxy] Invalid port: "${process.env.BLIPIT_PROXY_PORT}". ` +
+      "Set BLIPIT_PROXY_PORT to a number between 1 and 65535.",
+  );
+  process.exit(1);
+}
+
 const server = http.createServer((req, res) => {
   const options = {
     hostname: TARGET_HOST,
