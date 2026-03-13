@@ -192,6 +192,8 @@ Validate changes by:
 
 **Do not call `report_progress` until all five steps above pass locally.** If CI fails after a push, investigate it immediately using the GitHub MCP `list_workflow_runs` + `get_job_logs` tools, fix the failures, and push a corrective commit.
 
+**PR title and description must reflect the entire PR, not just the current session's changes.** Before writing `prTitle` and `prDescription` in any `report_progress` call, review the full git history for the branch (`git log --oneline origin/master..HEAD` or equivalent) to understand all changes made across all sessions. The `prTitle` should be a short summary of the overall PR goal, and `prDescription` should cover the complete set of changes — not only what the current session added. Never overwrite the PR description with a summary that only covers the most recent incremental session.
+
 ---
 
 ## Code Style & File Size
