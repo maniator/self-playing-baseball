@@ -22,6 +22,8 @@ export interface ResolveSwingOutcomeOptions {
   batterContactMod?: number;
   /** Pitcher fatigue (≥ 1.0; higher = more tired, reduces velocity effectiveness). */
   fatigueFactor?: number;
+  /** Handedness/platoon multiplier applied to whiff threshold. */
+  whiffRateMultiplier?: number;
 }
 
 /**
@@ -42,6 +44,7 @@ export const resolveSwingOutcome = (
     pitcherMovementMod = 0,
     batterContactMod = 0,
     fatigueFactor = 1.0,
+    whiffRateMultiplier = 1,
   }: ResolveSwingOutcomeOptions = {},
 ): SwingOutcome => {
   const baseWhiff = 22;
@@ -55,7 +58,10 @@ export const resolveSwingOutcome = (
 
   const whiffThreshold = Math.max(
     8,
-    Math.min(40, baseWhiff + velocityBonus - fatigueReduction - contactReduction),
+    Math.min(
+      40,
+      Math.round((baseWhiff + velocityBonus - fatigueReduction - contactReduction) * whiffRateMultiplier),
+    ),
   );
 
   // Movement shifts energy from contact to foul/weak contact.

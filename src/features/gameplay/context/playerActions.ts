@@ -143,13 +143,27 @@ export const stealAttempt = (
   );
 };
 
+interface ComputeWaitOutcomeOptions {
+  strategy: Strategy;
+  modifier: OnePitchModifier;
+  pitchType?: PitchType;
+  pitcherControlMod?: number;
+  pitcherVelocityMod?: number;
+  walkRateMultiplier?: number;
+  calledStrikeRateMultiplier?: number;
+}
+
 const computeWaitOutcome = (
   random: number,
-  strategy: Strategy,
-  modifier: OnePitchModifier,
-  pitchType?: PitchType,
-  pitcherControlMod: number = 0,
-  pitcherVelocityMod: number = 0,
+  {
+    strategy,
+    modifier,
+    pitchType,
+    pitcherControlMod = 0,
+    pitcherVelocityMod = 0,
+    walkRateMultiplier = 1,
+    calledStrikeRateMultiplier = 1,
+  }: ComputeWaitOutcomeOptions,
 ): "ball" | "strike" => {
   const zoneMod = pitchType ? pitchStrikeZoneMod(pitchType) : 1.0;
   // Higher control = pitcher more likely to throw strikes; higher velocity = harder to draw walks.
@@ -158,16 +172,31 @@ const computeWaitOutcome = (
   if (modifier === "take") {
     const adjustedWalkChance = Math.min(
       999,
-      Math.max(0, Math.round((220 * stratMod(strategy, "walk")) / (zoneMod * controlFactor))),
+      Math.max(
+        0,
+        Math.round((220 * stratMod(strategy, "walk") * walkRateMultiplier) / (zoneMod * controlFactor)),
+      ),
     );
     return random < adjustedWalkChance ? "ball" : "strike";
   }
   const adjustedStrikeThreshold = Math.min(
     999,
-    Math.max(0, Math.round((500 * zoneMod * controlFactor) / stratMod(strategy, "walk"))),
+    Math.max(
+      0,
+      Math.round(
+        ((500 * zoneMod * controlFactor * calledStrikeRateMultiplier) /
+          stratMod(strategy, "walk")) *
+          (1 / Math.max(0.5, walkRateMultiplier)),
+      ),
+    ),
   );
   return random < adjustedStrikeThreshold ? "strike" : "ball";
 };
+
+interface PlayerWaitOptions {
+  walkRateMultiplier?: number;
+  calledStrikeRateMultiplier?: number;
+}
 
 export const playerWait = (
   state: State,
@@ -175,6 +204,7 @@ export const playerWait = (
   strategy: Strategy = "balanced",
   modifier: OnePitchModifier = null,
   pitchType?: PitchType,
+  { walkRateMultiplier = 1, calledStrikeRateMultiplier = 1 }: PlayerWaitOptions = {},
 ): State => {
   const random = getRandomInt(1000);
   // Look up active pitcher's control and velocity mods
@@ -198,14 +228,15 @@ export const playerWait = (
   const fatigueControlPenalty = Math.round((fatigueFactor - 1) * 20);
   const effectiveControlMod = pitcherControlMod - fatigueControlPenalty;
 
-  const outcome = computeWaitOutcome(
-    random,
+  const outcome = computeWaitOutcome(random, {
     strategy,
     modifier,
     pitchType,
-    effectiveControlMod,
+    pitcherControlMod: effectiveControlMod,
     pitcherVelocityMod,
-  );
+    walkRateMultiplier,
+    calledStrikeRateMultiplier,
+  });
   return outcome === "ball"
     ? playerBall(state, log, pitchType)
     : playerStrike(state, log, false, false, pitchType);

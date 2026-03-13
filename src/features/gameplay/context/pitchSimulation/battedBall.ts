@@ -46,6 +46,8 @@ export interface ResolveContactQualityOptions {
   pitcherMovementMod?: number;
   /** Pitcher fatigue (≥ 1.0; higher = more tired, allows more hard contact). */
   fatigueFactor?: number;
+  /** Handedness/platoon multiplier applied to hard-contact threshold. */
+  hardContactMultiplier?: number;
 }
 
 export const resolveContactQuality = (
@@ -55,6 +57,7 @@ export const resolveContactQuality = (
     pitcherVelocityMod = 0,
     pitcherMovementMod = 0,
     fatigueFactor = 1.0,
+    hardContactMultiplier = 1,
   }: ResolveContactQualityOptions = {},
 ): ContactQuality => {
   // Hard contact threshold: batter power raises it; pitcher stuff lowers it;
@@ -64,10 +67,13 @@ export const resolveContactQuality = (
     10,
     Math.min(
       50,
-      hardBase +
-        Math.round(batterPowerMod / 5) -
-        Math.round((pitcherVelocityMod + pitcherMovementMod) / 10) +
-        Math.round((fatigueFactor - 1) * 10),
+      Math.round(
+        (hardBase +
+          Math.round(batterPowerMod / 5) -
+          Math.round((pitcherVelocityMod + pitcherMovementMod) / 10) +
+          Math.round((fatigueFactor - 1) * 10)) *
+          hardContactMultiplier,
+      ),
     ),
   );
   const mediumThreshold = Math.min(75, hardThreshold + 35);
@@ -96,6 +102,7 @@ export interface ResolveBattedBallOptions {
   pitcherMovementMod?: number;
   /** Pitcher fatigue (≥ 1.0; higher = more tired). */
   fatigueFactor?: number;
+  hardContactMultiplier?: number;
 }
 
 export const resolveBattedBallType = (
@@ -107,6 +114,7 @@ export const resolveBattedBallType = (
     pitcherVelocityMod = 0,
     pitcherMovementMod = 0,
     fatigueFactor = 1.0,
+    hardContactMultiplier = 1,
   }: ResolveBattedBallOptions = {},
 ): BattedBallType => {
   const quality = resolveContactQuality(contactRoll, {
@@ -114,6 +122,7 @@ export const resolveBattedBallType = (
     pitcherVelocityMod,
     pitcherMovementMod,
     fatigueFactor,
+    hardContactMultiplier,
   });
 
   // Power strategy can upgrade the batted-ball type one tier toward extra bases.

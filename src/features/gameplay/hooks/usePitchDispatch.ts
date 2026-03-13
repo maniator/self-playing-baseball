@@ -9,6 +9,12 @@ import {
 } from "@feat/gameplay/context/aiManager";
 import { GameAction, LogAction, State, Strategy } from "@feat/gameplay/context/index";
 import {
+  buildHandednessMatchup,
+  getHandednessOutcomeModifiers,
+  resolvePitcherHandedness,
+  resolvePlayerHandedness,
+} from "@feat/gameplay/context/handednessMatchup";
+import {
   computeFatigueFactor,
   computeSwingRate,
   resolveBattedBallType,
@@ -215,6 +221,18 @@ export const usePitchDispatch = ({
       ? (currentState.resolvedMods?.[pitchingTeam]?.[activePitcherId] ?? ZERO_MODS)
       : ZERO_MODS;
 
+    const batterHandedness = batterId
+      ? resolvePlayerHandedness(currentState.handednessByTeam[battingTeam]?.[batterId], batterId)
+      : "R";
+    const pitcherHandedness = activePitcherId
+      ? resolvePitcherHandedness(
+          currentState.handednessByTeam[pitchingTeam]?.[activePitcherId],
+          activePitcherId,
+        )
+      : "R";
+    const matchup = buildHandednessMatchup(batterHandedness, pitcherHandedness);
+    const matchupMods = getHandednessOutcomeModifiers(matchup);
+
     // Compute pitcher fatigue factor from pitch count (primary) and batters faced (secondary).
     const pitcherBattersFaced = (currentState.pitcherBattersFaced ?? [0, 0])[pitchingTeam];
     const pitcherPitchCount = (currentState.pitcherPitchCount ?? [0, 0])[pitchingTeam];
@@ -231,6 +249,7 @@ export const usePitchDispatch = ({
       batterContactMod: batterMods.contactMod,
       pitchType,
       onePitchMod,
+      swingRateMultiplier: matchupMods.swingRateMultiplier,
     });
 
     if (swingRoll < swingRate) {
@@ -241,6 +260,7 @@ export const usePitchDispatch = ({
         pitcherMovementMod: pitcherMods.movementMod,
         batterContactMod: batterMods.contactMod,
         fatigueFactor,
+        whiffRateMultiplier: matchupMods.whiffRateMultiplier,
       });
 
       if (swingOutcome === "whiff") {
@@ -257,12 +277,21 @@ export const usePitchDispatch = ({
           pitcherVelocityMod: pitcherMods.velocityMod,
           pitcherMovementMod: pitcherMods.movementMod,
           fatigueFactor,
+          hardContactMultiplier: matchupMods.hardContactMultiplier,
         });
         dispatch({ type: "hit", payload: { battedBallType, strategy: effectiveStrategy } });
       }
     } else {
       // 5. Batter takes the pitch — resolve ball or called strike.
-      dispatch({ type: "wait", payload: { strategy: effectiveStrategy, pitchType } });
+      dispatch({
+        type: "wait",
+        payload: {
+          strategy: effectiveStrategy,
+          pitchType,
+          walkRateMultiplier: matchupMods.walkRateMultiplier,
+          calledStrikeRateMultiplier: matchupMods.calledStrikeRateMultiplier,
+        },
+      });
     }
   }, [
     dispatch,

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildHandednessMatchup,
   deterministicHandednessForPlayerId,
+  getHandednessOutcomeModifiers,
   getMatchupBucket,
   resolveEffectiveBatterSide,
   resolvePitcherHandedness,
@@ -32,6 +33,22 @@ describe("handednessMatchup", () => {
       effectiveBatterSide: "L",
       bucket: "S_R",
     });
+  });
+
+  it("returns batter-favored outcome modifiers for opposite-side matchups", () => {
+    const modifiers = getHandednessOutcomeModifiers(buildHandednessMatchup("L", "R"));
+    expect(modifiers.walkRateMultiplier).toBeGreaterThan(1);
+    expect(modifiers.whiffRateMultiplier).toBeLessThan(1);
+    expect(modifiers.hardContactMultiplier).toBeGreaterThan(1);
+    expect(modifiers.promptDeltaPct).toBeGreaterThan(0);
+  });
+
+  it("returns pitcher-favored outcome modifiers for same-side matchups", () => {
+    const modifiers = getHandednessOutcomeModifiers(buildHandednessMatchup("R", "R"));
+    expect(modifiers.walkRateMultiplier).toBeLessThan(1);
+    expect(modifiers.whiffRateMultiplier).toBeGreaterThan(1);
+    expect(modifiers.hardContactMultiplier).toBeLessThan(1);
+    expect(modifiers.promptDeltaPct).toBeLessThan(0);
   });
 
   it("uses explicit handedness when provided", () => {

@@ -13,6 +13,70 @@ export interface HandednessMatchup {
   bucket: MatchupBucket;
 }
 
+export interface HandednessOutcomeModifiers {
+  swingRateMultiplier: number;
+  whiffRateMultiplier: number;
+  walkRateMultiplier: number;
+  calledStrikeRateMultiplier: number;
+  hardContactMultiplier: number;
+  /** Prompt-friendly relative edge in percent (positive = batter edge). */
+  promptDeltaPct: number;
+}
+
+const MATCHUP_OUTCOME_MODIFIERS: Record<MatchupBucket, HandednessOutcomeModifiers> = {
+  // Same-side matchups are mildly pitcher-favored.
+  R_R: {
+    swingRateMultiplier: 0.99,
+    whiffRateMultiplier: 1.05,
+    walkRateMultiplier: 0.92,
+    calledStrikeRateMultiplier: 1.04,
+    hardContactMultiplier: 0.95,
+    promptDeltaPct: -5,
+  },
+  L_L: {
+    swingRateMultiplier: 0.99,
+    whiffRateMultiplier: 1.07,
+    walkRateMultiplier: 0.9,
+    calledStrikeRateMultiplier: 1.05,
+    hardContactMultiplier: 0.93,
+    promptDeltaPct: -7,
+  },
+  // Opposite-side matchups are batter-favored (platoon edge).
+  R_L: {
+    swingRateMultiplier: 1.01,
+    whiffRateMultiplier: 0.95,
+    walkRateMultiplier: 1.08,
+    calledStrikeRateMultiplier: 0.96,
+    hardContactMultiplier: 1.06,
+    promptDeltaPct: 6,
+  },
+  L_R: {
+    swingRateMultiplier: 1.01,
+    whiffRateMultiplier: 0.93,
+    walkRateMultiplier: 1.1,
+    calledStrikeRateMultiplier: 0.95,
+    hardContactMultiplier: 1.08,
+    promptDeltaPct: 8,
+  },
+  // Switch-hitter buckets map to their effective opposite-side profile.
+  S_R: {
+    swingRateMultiplier: 1.01,
+    whiffRateMultiplier: 0.93,
+    walkRateMultiplier: 1.1,
+    calledStrikeRateMultiplier: 0.95,
+    hardContactMultiplier: 1.08,
+    promptDeltaPct: 8,
+  },
+  S_L: {
+    swingRateMultiplier: 1.01,
+    whiffRateMultiplier: 0.95,
+    walkRateMultiplier: 1.08,
+    calledStrikeRateMultiplier: 0.96,
+    hardContactMultiplier: 1.06,
+    promptDeltaPct: 6,
+  },
+};
+
 /**
  * Deterministic fallback used when a player has no explicit handedness value.
  * Uses stable player ID hashing so repeated setups remain reproducible.
@@ -64,3 +128,7 @@ export const buildHandednessMatchup = (
   effectiveBatterSide: resolveEffectiveBatterSide(batterHandedness, pitcherHandedness),
   bucket: getMatchupBucket(batterHandedness, pitcherHandedness),
 });
+
+export const getHandednessOutcomeModifiers = (
+  matchup: HandednessMatchup,
+): HandednessOutcomeModifiers => MATCHUP_OUTCOME_MODIFIERS[matchup.bucket];
