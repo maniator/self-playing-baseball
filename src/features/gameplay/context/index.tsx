@@ -131,6 +131,8 @@ export type PinchHitterCandidate = {
   contactMod: number;
   /** Resolved power mod from playerOverrides — used by AI for stat-based selection. */
   powerMod: number;
+  /** Batter-edge percent for this candidate vs active pitcher (positive = hitter edge). */
+  matchupDeltaPct?: number;
 };
 
 export type DecisionType =
@@ -148,6 +150,10 @@ export type DecisionType =
       teamIdx: 0 | 1;
       /** Lineup position index of the current batter being replaced. */
       lineupIdx: number;
+      /** Throwing side of the active pitcher the pinch hitter would face. */
+      pitcherHandedness?: "R" | "L";
+      /** Current batter platoon edge (positive = batter edge). */
+      currentBatterMatchupDeltaPct?: number;
     }
   | { kind: "defensive_shift" };
 

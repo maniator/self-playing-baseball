@@ -3,6 +3,12 @@ import { handleDecisionsAction } from "./handlers/decisions";
 import { handleLifecycleAction } from "./handlers/lifecycle";
 import { handleSetupAction } from "./handlers/setup";
 import { handleSimAction } from "./handlers/sim";
+import {
+  buildHandednessMatchup,
+  getHandednessOutcomeModifiers,
+  resolvePitcherHandedness,
+  resolvePlayerHandedness,
+} from "./handednessMatchup";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
 import { applyHandlersInOrder } from "./reducerHelpers";
@@ -92,16 +98,62 @@ export const detectDecision = (
     const lineupIdx = (state.batterIndex ?? [0, 0])[teamIdx];
     const subOut = (state.substitutedOut ?? [[], []])[teamIdx];
     const teamMods = state.resolvedMods?.[teamIdx] ?? {};
+
+    const pitchingTeam = (1 - (state.atBat as number)) as 0 | 1;
+    const activePitcherId =
+      state.rosterPitchers?.[pitchingTeam]?.[(state.activePitcherIdx ?? [0, 0])[pitchingTeam]];
+    const pitcherHandedness = activePitcherId
+      ? resolvePitcherHandedness(
+          state.handednessByTeam[pitchingTeam]?.[activePitcherId],
+          activePitcherId,
+        )
+      : "R";
+
+    const currentBatterId = state.lineupOrder[teamIdx]?.[lineupIdx];
+    const currentBatterMatchupDeltaPct = currentBatterId
+      ? getHandednessOutcomeModifiers(
+          buildHandednessMatchup(
+            resolvePlayerHandedness(
+              state.handednessByTeam[teamIdx]?.[currentBatterId],
+              currentBatterId,
+            ),
+            pitcherHandedness,
+          ),
+        ).promptDeltaPct
+      : 0;
+
     const candidates = (state.rosterBench[teamIdx] ?? [])
       .filter((id) => !subOut.includes(id))
-      .map((id) => ({
-        id,
-        name: state.playerOverrides[teamIdx]?.[id]?.nickname ?? id.slice(0, 8),
-        position: state.playerOverrides[teamIdx]?.[id]?.position,
-        contactMod: teamMods[id]?.contactMod ?? 0,
-        powerMod: teamMods[id]?.powerMod ?? 0,
-      }));
-    return { kind: "pinch_hitter", candidates, teamIdx, lineupIdx };
+      .map((id) => {
+        const batterHandedness = resolvePlayerHandedness(state.handednessByTeam[teamIdx]?.[id], id);
+        const matchupDeltaPct = getHandednessOutcomeModifiers(
+          buildHandednessMatchup(batterHandedness, pitcherHandedness),
+        ).promptDeltaPct;
+        return {
+          id,
+          name: state.playerOverrides[teamIdx]?.[id]?.nickname ?? id.slice(0, 8),
+          position: state.playerOverrides[teamIdx]?.[id]?.position,
+          handedness: batterHandedness,
+          contactMod: teamMods[id]?.contactMod ?? 0,
+          powerMod: teamMods[id]?.powerMod ?? 0,
+          matchupDeltaPct,
+        };
+      })
+      .sort(
+        (a, b) =>
+          b.contactMod * 1.2 +
+          b.powerMod * 0.4 +
+          (b.matchupDeltaPct ?? 0) -
+          (a.contactMod * 1.2 + a.powerMod * 0.4 + (a.matchupDeltaPct ?? 0)),
+      );
+    return {
+      kind: "pinch_hitter",
+      candidates,
+      teamIdx,
+      lineupIdx,
+      pitcherHandedness,
+      currentBatterMatchupDeltaPct,
+    };
   }
 
   if (outs < 2 && (baseLayout[0] || baseLayout[1])) return { kind: "bunt" };

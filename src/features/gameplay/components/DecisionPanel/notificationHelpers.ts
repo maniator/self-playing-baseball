@@ -22,8 +22,14 @@ export const getNotificationBody = (d: DecisionType): string => {
       return "Intentional walk opportunity";
     case "ibb_or_steal":
       return `Intentional walk or steal from ${d.base === 0 ? "1st" : "2nd"}? (${d.successPct}% steal success)`;
-    case "pinch_hitter":
-      return "Pinch hitter opportunity";
+    case "pinch_hitter": {
+      const vs = d.pitcherHandedness ? ` vs ${d.pitcherHandedness}HP` : "";
+      const edge =
+        d.currentBatterMatchupDeltaPct !== undefined
+          ? ` (current edge ${d.currentBatterMatchupDeltaPct >= 0 ? "+" : ""}${d.currentBatterMatchupDeltaPct}%)`
+          : "";
+      return `Pinch hitter opportunity${vs}${edge}`;
+    }
     case "defensive_shift":
       return "Deploy defensive shift? (pop-outs ↑)";
     default:

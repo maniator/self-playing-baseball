@@ -13,6 +13,12 @@
 
 import { random } from "@shared/utils/rng";
 
+import {
+  buildHandednessMatchup,
+  getHandednessOutcomeModifiers,
+  resolvePitcherHandedness,
+  resolvePlayerHandedness,
+} from "./handednessMatchup";
 import type { DecisionType, State, Strategy } from "./index";
 import { computeFatigueFactor } from "./pitchSimulation";
 
@@ -125,6 +131,52 @@ export function findBestReliever(
   return -1;
 }
 
+const findMatchupAwareReliever = (
+  state: State,
+  pitchingTeamIdx: 0 | 1,
+  rosterPitchers: string[],
+  activePitcherIdx: number,
+  substitutedOut: string[],
+  pitcherRoles: Record<string, string>,
+): number => {
+  const fallback = findBestReliever(rosterPitchers, activePitcherIdx, substitutedOut, pitcherRoles);
+  if (fallback === -1) return -1;
+
+  const battingTeamIdx = (1 - pitchingTeamIdx) as 0 | 1;
+  const batterIdx = (state.batterIndex ?? [0, 0])[battingTeamIdx] ?? 0;
+  const batterId = state.lineupOrder?.[battingTeamIdx]?.[batterIdx];
+  if (!batterId) return fallback;
+
+  const batterHandedness = resolvePlayerHandedness(
+    state.handednessByTeam?.[battingTeamIdx]?.[batterId],
+    batterId,
+  );
+
+  let bestIdx = fallback;
+  let bestPitcherEdge = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < rosterPitchers.length; i++) {
+    const pitcherId = rosterPitchers[i];
+    const role = pitcherRoles[pitcherId];
+    if (!isPitcherEligibleForChange(pitcherId, i, activePitcherIdx, substitutedOut, role)) continue;
+
+    const pitcherHandedness = resolvePitcherHandedness(
+      state.handednessByTeam?.[pitchingTeamIdx]?.[pitcherId],
+      pitcherId,
+    );
+    const batterEdge = getHandednessOutcomeModifiers(
+      buildHandednessMatchup(batterHandedness, pitcherHandedness),
+    ).promptDeltaPct;
+    // Lower batter edge is better for the pitcher.
+    if (batterEdge < bestPitcherEdge) {
+      bestPitcherEdge = batterEdge;
+      bestIdx = i;
+    }
+  }
+
+  return bestIdx;
+};
+
 /**
  * Derives pitcher role mapping from state's playerOverrides.
  * Since pitching role is stored in custom team docs (not playerOverrides),
@@ -182,8 +234,10 @@ export function makeAiPitchingDecision(
     : 0.4;
   if (random() > pullProbability) return { kind: "none" };
 
-  // Find the best available reliever.
-  const relieverIdx = findBestReliever(
+  // Find the best available reliever, then bias toward the better handedness matchup.
+  const relieverIdx = findMatchupAwareReliever(
+    state,
+    pitchingTeamIdx,
     rosterPitchers,
     activePitcherIdx,
     substitutedOut,
@@ -292,17 +346,25 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
     }
 
     case "pinch_hitter": {
-      const { candidates, teamIdx, lineupIdx } = decision;
+      const { candidates, teamIdx, lineupIdx, pitcherHandedness } = decision;
       if (candidates.length > 0) {
-        // Pick the candidate with the best contact mod for late-game situational hitting.
-        // Falls back to first candidate when all mods are equal.
-        const bestCandidate = candidates.reduce((best, c) =>
-          c.contactMod > best.contactMod ? c : best,
-        );
+        // Composite score: contact first, then power, then platoon edge.
+        const bestCandidate = candidates.reduce((best, c) => {
+          const bestScore =
+            best.contactMod * 1.2 + best.powerMod * 0.35 + (best.matchupDeltaPct ?? 0);
+          const candidateScore = c.contactMod * 1.2 + c.powerMod * 0.35 + (c.matchupDeltaPct ?? 0);
+          return candidateScore > bestScore ? c : best;
+        });
+        const matchupText =
+          pitcherHandedness && bestCandidate.matchupDeltaPct !== undefined
+            ? ` vs ${pitcherHandedness}HP (${bestCandidate.matchupDeltaPct >= 0 ? "+" : ""}${bestCandidate.matchupDeltaPct}%)`
+            : "";
         const reason =
-          bestCandidate.contactMod > 0
-            ? "pinch hitter — strong contact bat"
-            : "pinch hitter — best available";
+          (bestCandidate.matchupDeltaPct ?? 0) > 0
+            ? "pinch hitter — platoon edge"
+            : bestCandidate.contactMod > 0
+              ? "pinch hitter — strong contact bat"
+              : "pinch hitter — best available";
         return {
           kind: "tactical",
           actionType: "make_substitution",
@@ -313,7 +375,7 @@ export function makeAiTacticalDecision(state: State, decision: DecisionType): Ai
             benchPlayerId: bestCandidate.id,
             reason,
           },
-          reasonText: `${bestCandidate.name} in as pinch hitter`,
+          reasonText: `${bestCandidate.name} in as pinch hitter${matchupText}`,
         };
       }
       // No bench available — fall back to strategy override

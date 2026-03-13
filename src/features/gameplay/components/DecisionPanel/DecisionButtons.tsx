@@ -123,7 +123,8 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       );
     }
     case "pinch_hitter": {
-      const { candidates, teamIdx, lineupIdx } = pendingDecision;
+      const { candidates, teamIdx, lineupIdx, pitcherHandedness, currentBatterMatchupDeltaPct } =
+        pendingDecision;
       if (candidates.length === 0) {
         // No bench available — fall back to strategy selection
         return (
@@ -155,9 +156,22 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
       };
       const candidateLabel = (c: PinchHitterCandidate) =>
         c.position ? `${c.name} (${c.position})` : c.name;
+      const selectedCandidate =
+        candidates.find((c) => c.id === selectedCandidateId) ?? candidates[0];
+      const formatPct = (value: number) => `${value >= 0 ? "+" : ""}${value}%`;
       return (
         <>
-          <Prompt>Send up a pinch hitter:</Prompt>
+          <Prompt>
+            Send up a pinch hitter{pitcherHandedness ? ` vs ${pitcherHandedness}HP` : ""}:
+          </Prompt>
+          {currentBatterMatchupDeltaPct !== undefined && (
+            <Odds>Current batter platoon edge: {formatPct(currentBatterMatchupDeltaPct)}</Odds>
+          )}
+          {selectedCandidate?.matchupDeltaPct !== undefined && (
+            <Odds>
+              Selected hitter platoon edge: {formatPct(selectedCandidate.matchupDeltaPct)}
+            </Odds>
+          )}
           <select
             value={selectedCandidateId}
             onChange={(e) => setSelectedCandidateId(e.target.value)}
@@ -167,6 +181,9 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
             {candidates.map((c) => (
               <option key={c.id} value={c.id}>
                 {candidateLabel(c)}
+                {c.matchupDeltaPct !== undefined
+                  ? ` [${c.matchupDeltaPct >= 0 ? "+" : ""}${c.matchupDeltaPct}%]`
+                  : ""}
               </option>
             ))}
           </select>
