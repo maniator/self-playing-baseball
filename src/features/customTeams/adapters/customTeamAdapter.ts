@@ -1,4 +1,4 @@
-import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
+import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import { BATTING_POSITIONS } from "@shared/utils/roster";
 
 import type { CustomTeamDoc } from "@storage/types";
@@ -157,8 +157,8 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
  * Players missing explicit handedness are omitted and resolved later via
  * deterministic fallback in gameplay.
  */
-export function customTeamToHandednessMap(team: CustomTeamDoc): Record<string, "R" | "L" | "S"> {
-  const handednessByPlayer: Record<string, "R" | "L" | "S"> = {};
+export function customTeamToHandednessMap(team: CustomTeamDoc): Record<string, Handedness> {
+  const handednessByPlayer: Record<string, Handedness> = {};
   const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
   for (const player of allPlayers) {
     if (player.handedness) handednessByPlayer[player.id] = player.handedness;
