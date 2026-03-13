@@ -4,6 +4,6 @@ This repository is `maniator/blipit-legends`. All agent-routing guidance, custom
 
 | What you need                                   | Where to look                                                            |
 | ----------------------------------------------- | ------------------------------------------------------------------------ |
-| Agent routing & per-agent guardrails & gotchas  | [`.github/agents/README.md`](.github/agents/README.md)                  |
-| Code conventions, global rules & critical notes | [`.github/copilot-instructions.md`](.github/copilot-instructions.md)    |
+| Agent routing & per-agent guardrails & gotchas  | [`.github/agents/README.md`](.github/agents/README.md)                   |
+| Code conventions, global rules & critical notes | [`.github/copilot-instructions.md`](.github/copilot-instructions.md)     |
 | Copy-paste prompt templates                     | [`.github/agents/prompt-examples.md`](.github/agents/prompt-examples.md) |
