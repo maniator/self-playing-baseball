@@ -60,6 +60,7 @@ export default defineConfig(({ mode }) => ({
       manifest: false,
       injectManifest: {
         rollupFormat: "es",
+        globPatterns: ["**/*.{js,css,html,woff2}", "images/**", "manifest.webmanifest"],
       },
     }) as PluginOption,
   ],

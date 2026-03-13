@@ -6,7 +6,7 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "types": ["vitest/globals"],
+    "types": ["vitest/globals", "vite-plugin-pwa/react"],
     "baseUrl": ".",
     "paths": {
       "@storage/*": ["src/storage/*"],

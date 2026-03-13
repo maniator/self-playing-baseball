@@ -20,6 +20,7 @@ import RootLayout from "./index";
 
 const mockUseUpdate = vi.mocked(useServiceWorkerUpdate);
 const mockDismiss = vi.fn();
+const mockReload = vi.fn();
 
 function renderLayout() {
   return render(
@@ -36,11 +37,11 @@ function renderLayout() {
 describe("RootLayout", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { reload: vi.fn() },
+    mockUseUpdate.mockReturnValue({
+      updateAvailable: false,
+      dismiss: mockDismiss,
+      reload: mockReload,
     });
-    mockUseUpdate.mockReturnValue({ updateAvailable: false, dismiss: mockDismiss });
   });
 
   it("renders children via Outlet inside the ErrorBoundary", () => {
@@ -55,22 +56,34 @@ describe("RootLayout", () => {
   });
 
   it("renders the update banner when an update is available", () => {
-    mockUseUpdate.mockReturnValue({ updateAvailable: true, dismiss: mockDismiss });
+    mockUseUpdate.mockReturnValue({
+      updateAvailable: true,
+      dismiss: mockDismiss,
+      reload: mockReload,
+    });
     renderLayout();
     expect(screen.getByTestId("update-banner")).toBeInTheDocument();
   });
 
   it("calls dismiss when the banner dismiss button is clicked", () => {
-    mockUseUpdate.mockReturnValue({ updateAvailable: true, dismiss: mockDismiss });
+    mockUseUpdate.mockReturnValue({
+      updateAvailable: true,
+      dismiss: mockDismiss,
+      reload: mockReload,
+    });
     renderLayout();
     fireEvent.click(screen.getByRole("button", { name: /dismiss update notice/i }));
     expect(mockDismiss).toHaveBeenCalledOnce();
   });
 
-  it("reloads the page when the banner reload button is clicked", () => {
-    mockUseUpdate.mockReturnValue({ updateAvailable: true, dismiss: mockDismiss });
+  it("calls reload when the banner reload button is clicked", () => {
+    mockUseUpdate.mockReturnValue({
+      updateAvailable: true,
+      dismiss: mockDismiss,
+      reload: mockReload,
+    });
     renderLayout();
     fireEvent.click(screen.getByRole("button", { name: /reload app/i }));
-    expect(window.location.reload).toHaveBeenCalledOnce();
+    expect(mockReload).toHaveBeenCalledOnce();
   });
 });

@@ -3,88 +3,137 @@ import * as React from "react";
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("virtual:pwa-register/react", () => ({
+  useRegisterSW: vi.fn(),
+}));
+
+import { useRegisterSW } from "virtual:pwa-register/react";
+
 import { useServiceWorkerUpdate } from "./useServiceWorkerUpdate";
 
+const mockUseRegisterSW = vi.mocked(useRegisterSW);
+
 describe("useServiceWorkerUpdate", () => {
-  const mockSW = {
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
-  };
+  const mockSetNeedRefresh = vi.fn();
+  const mockUpdateServiceWorker = vi.fn();
+
+  // Capture the original visibilityState descriptor before any test mutates it
+  // so it can be restored in afterEach, preventing cross-test state leakage.
+  let originalVisibilityStateDescriptor: PropertyDescriptor | undefined;
 
   beforeEach(() => {
-    Object.defineProperty(navigator, "serviceWorker", {
-      value: mockSW,
-      writable: true,
-      configurable: true,
-    });
+    originalVisibilityStateDescriptor = Object.getOwnPropertyDescriptor(
+      document,
+      "visibilityState",
+    );
     vi.clearAllMocks();
+    mockUseRegisterSW.mockReturnValue({
+      needRefresh: [false, mockSetNeedRefresh],
+      offlineReady: [false, vi.fn()],
+      updateServiceWorker: mockUpdateServiceWorker,
+    });
   });
 
   afterEach(() => {
-    Object.defineProperty(navigator, "serviceWorker", {
-      value: undefined,
-      writable: true,
-      configurable: true,
+    if (originalVisibilityStateDescriptor) {
+      Object.defineProperty(document, "visibilityState", originalVisibilityStateDescriptor);
+    } else {
+      delete (document as Record<string, unknown>).visibilityState;
+    }
+  });
+
+  it("returns updateAvailable: false when needRefresh is false", () => {
+    const { result } = renderHook(() => useServiceWorkerUpdate());
+    expect(result.current.updateAvailable).toBe(false);
+  });
+
+  it("returns updateAvailable: true when needRefresh is true", () => {
+    mockUseRegisterSW.mockReturnValue({
+      needRefresh: [true, mockSetNeedRefresh],
+      offlineReady: [false, vi.fn()],
+      updateServiceWorker: mockUpdateServiceWorker,
     });
+    const { result } = renderHook(() => useServiceWorkerUpdate());
+    expect(result.current.updateAvailable).toBe(true);
   });
 
-  const getMessageHandler = (): ((e: MessageEvent) => void) => {
-    const call = mockSW.addEventListener.mock.calls.find(([event]) => event === "message");
-    if (!call) throw new Error("No 'message' listener registered on navigator.serviceWorker");
-    return call[1] as (e: MessageEvent) => void;
-  };
+  it("dismiss() calls setNeedRefresh(false)", () => {
+    const { result } = renderHook(() => useServiceWorkerUpdate());
+    act(() => result.current.dismiss());
+    expect(mockSetNeedRefresh).toHaveBeenCalledWith(false);
+  });
 
-  it("registers a message listener on mount", () => {
+  it("reload() calls updateServiceWorker(true)", () => {
+    const { result } = renderHook(() => useServiceWorkerUpdate());
+    act(() => result.current.reload());
+    expect(mockUpdateServiceWorker).toHaveBeenCalledWith(true);
+  });
+
+  it("registers a visibilitychange listener and interval on mount", () => {
+    const addEventListenerSpy = vi.spyOn(document, "addEventListener");
+    const setIntervalSpy = vi.spyOn(globalThis, "setInterval");
+
     renderHook(() => useServiceWorkerUpdate());
-    expect(mockSW.addEventListener).toHaveBeenCalledWith("message", expect.any(Function));
+
+    expect(addEventListenerSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+    expect(setIntervalSpy).toHaveBeenCalledWith(expect.any(Function), 60 * 60 * 1000);
+
+    addEventListenerSpy.mockRestore();
+    setIntervalSpy.mockRestore();
   });
 
-  it("removes the message listener on unmount", () => {
+  it("removes the visibilitychange listener and clears the interval on unmount", () => {
+    const removeEventListenerSpy = vi.spyOn(document, "removeEventListener");
+    const clearIntervalSpy = vi.spyOn(globalThis, "clearInterval");
+
     const { unmount } = renderHook(() => useServiceWorkerUpdate());
     unmount();
-    expect(mockSW.removeEventListener).toHaveBeenCalledWith("message", expect.any(Function));
+
+    expect(removeEventListenerSpy).toHaveBeenCalledWith("visibilitychange", expect.any(Function));
+    expect(clearIntervalSpy).toHaveBeenCalled();
+
+    removeEventListenerSpy.mockRestore();
+    clearIntervalSpy.mockRestore();
   });
 
-  it("starts with updateAvailable = false", () => {
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    expect(result.current.updateAvailable).toBe(false);
-  });
+  it("calls registration.update() when the tab becomes visible after SW registers", () => {
+    const mockRegistration = {
+      update: vi.fn().mockResolvedValue(undefined),
+    } as unknown as ServiceWorkerRegistration;
 
-  it("sets updateAvailable to true when SW_UPDATED message is received", () => {
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    act(() => getMessageHandler()({ data: { type: "SW_UPDATED" } } as MessageEvent));
-    expect(result.current.updateAvailable).toBe(true);
-  });
+    let capturedOnRegistered: ((swUrl: string, reg: ServiceWorkerRegistration) => void) | undefined;
+    mockUseRegisterSW.mockImplementation((options) => {
+      capturedOnRegistered = options?.onRegisteredSW;
+      return {
+        needRefresh: [false, mockSetNeedRefresh],
+        offlineReady: [false, vi.fn()],
+        updateServiceWorker: mockUpdateServiceWorker,
+      };
+    });
 
-  it("ignores messages with a different type", () => {
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    act(() => getMessageHandler()({ data: { type: "NOTIFICATION_ACTION" } } as MessageEvent));
-    expect(result.current.updateAvailable).toBe(false);
-  });
+    renderHook(() => useServiceWorkerUpdate());
 
-  it("ignores messages with no data", () => {
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    act(() => getMessageHandler()({ data: null } as MessageEvent));
-    expect(result.current.updateAvailable).toBe(false);
-  });
+    // Simulate SW registration — stores it in the ref
+    act(() => capturedOnRegistered?.("/sw.js", mockRegistration));
 
-  it("dismiss() resets updateAvailable to false", () => {
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    act(() => getMessageHandler()({ data: { type: "SW_UPDATED" } } as MessageEvent));
-    expect(result.current.updateAvailable).toBe(true);
-    act(() => result.current.dismiss());
-    expect(result.current.updateAvailable).toBe(false);
-  });
-
-  it("does nothing when serviceWorker is unavailable", () => {
-    Object.defineProperty(navigator, "serviceWorker", {
-      value: undefined,
-      writable: true,
+    // Simulate tab becoming visible
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
       configurable: true,
     });
-    // Should not throw and should return the default state.
-    const { result } = renderHook(() => useServiceWorkerUpdate());
-    expect(result.current.updateAvailable).toBe(false);
-    expect(mockSW.addEventListener).not.toHaveBeenCalled();
+    document.dispatchEvent(new Event("visibilitychange"));
+
+    expect(mockRegistration.update).toHaveBeenCalled();
+  });
+
+  it("does not throw when visibilitychange fires before the SW registers", () => {
+    renderHook(() => useServiceWorkerUpdate());
+
+    // No registration set yet — ref is undefined; should be a safe no-op
+    Object.defineProperty(document, "visibilityState", {
+      value: "visible",
+      configurable: true,
+    });
+    expect(() => document.dispatchEvent(new Event("visibilitychange"))).not.toThrow();
   });
 });
