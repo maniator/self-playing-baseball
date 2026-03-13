@@ -38,5 +38,5 @@ export const mq = {
    * Used to compact vertical spacing so nothing is pushed below the fold.
    * "Short" = viewport height ≤ 760 px; "not-mobile" = width > 768 px.
    */
-  shortDesktop: `@media (max-height: 760px) and (min-width: ${breakpoints.mobile + 1}px)`,
+  shortNotMobile: `@media (max-height: 760px) and (min-width: ${breakpoints.mobile + 1}px)`,
 } as const;

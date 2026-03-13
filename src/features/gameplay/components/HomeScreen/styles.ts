@@ -16,7 +16,7 @@ export const HomeContainer = styled.div`
      padding-top drives layout position when content overflows the flex
      container — reducing it from xxxl (32px) to xs (4px) shifts everything
      up by ~28px, moving the Contact button from ~699px to ~671px. */
-  ${mq.shortDesktop} {
+  ${mq.shortNotMobile} {
     padding-top: ${({ theme }) => theme.spacing.xs};
     padding-bottom: calc(
       ${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar}
@@ -68,7 +68,7 @@ export const MenuGroup = styled.div`
   width: min(100%, 300px);
   margin-top: ${({ theme }) => theme.spacing.lg};
 
-  ${mq.shortDesktop} {
+  ${mq.shortNotMobile} {
     margin-top: ${({ theme }) => theme.spacing.sm};
   }
 
