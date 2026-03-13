@@ -13,9 +13,7 @@ import { buildResolvedMods } from "../resolvePlayerMods";
 const computeLineupPositions = (order: string[], overrides: TeamCustomPlayerOverrides): string[] =>
   order.map((id) => overrides[id]?.position ?? "");
 
-const buildHandednessMap = (
-  overrides: TeamCustomPlayerOverrides,
-): Record<string, Handedness> => {
+const buildHandednessMap = (overrides: TeamCustomPlayerOverrides): Record<string, Handedness> => {
   const handedness: Record<string, Handedness> = {};
   for (const [id, ov] of Object.entries(overrides)) {
     if (ov.handedness) handedness[id] = ov.handedness;

@@ -1,14 +1,14 @@
 /// <reference types="vite/client" />
-import { handleDecisionsAction } from "./handlers/decisions";
-import { handleLifecycleAction } from "./handlers/lifecycle";
-import { handleSetupAction } from "./handlers/setup";
-import { handleSimAction } from "./handlers/sim";
 import {
   buildHandednessMatchup,
   getHandednessOutcomeModifiers,
   resolvePitcherHandedness,
   resolvePlayerHandedness,
 } from "./handednessMatchup";
+import { handleDecisionsAction } from "./handlers/decisions";
+import { handleLifecycleAction } from "./handlers/lifecycle";
+import { handleSetupAction } from "./handlers/setup";
+import { handleSimAction } from "./handlers/sim";
 import type { DecisionType, GameAction, LogAction, State, Strategy } from "./index";
 import { warnIfImpossible } from "./invariants";
 import { applyHandlersInOrder } from "./reducerHelpers";

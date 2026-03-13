@@ -60,7 +60,9 @@ export const resolveSwingOutcome = (
     8,
     Math.min(
       40,
-      Math.round((baseWhiff + velocityBonus - fatigueReduction - contactReduction) * whiffRateMultiplier),
+      Math.round(
+        (baseWhiff + velocityBonus - fatigueReduction - contactReduction) * whiffRateMultiplier,
+      ),
     ),
   );
 
