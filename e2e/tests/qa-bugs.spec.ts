@@ -150,19 +150,27 @@ test.describe("Speed constants — Fast speed is ≤ 200 ms (Bug 5)", () => {
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Speed constant test runs on desktop only");
 
-    // Start a game so the speed selector is rendered inside GameControls.
+    // Start a game so the speed slider is rendered inside GameControls.
     await startGameViaPlayBall(page);
 
-    // The speed selector must be present and the Fast option must be ≤ 200 ms.
-    const fastOptionValue = await page.evaluate(() => {
-      const select = document.querySelector<HTMLSelectElement>('[data-testid="speed-select"]');
-      if (!select) return null;
-      const fast = Array.from(select.options).find((o) => o.text === "Fast");
-      return fast ? Number(fast.value) : null;
-    });
+    // The speed slider must be present. Slide to position 2 (Fast = index 2 in SPEED_STEPS)
+    // and verify that the corresponding speed value is ≤ 200 ms.
+    const slider = page.getByTestId("speed-slider");
+    await expect(slider).toBeVisible({ timeout: 10_000 });
 
-    expect(fastOptionValue).not.toBeNull();
-    expect(fastOptionValue).toBeLessThanOrEqual(200);
+    // Read the max value and verify it matches 3 (4 positions: Slow/Normal/Fast/Instant).
+    const max = await slider.getAttribute("max");
+    expect(Number(max)).toBe(3);
+
+    // Slide to position 2 (Fast).
+    await slider.fill("2");
+
+    // Read SPEED_FAST from the SPEED_STEPS mapping: position 2 → 150 ms.
+    // We verify via evaluate since the value stored in localStorage is the ms value.
+    const fastSpeedMs = await page.evaluate(() => {
+      return Number(localStorage.getItem("speed"));
+    });
+    expect(fastSpeedMs).toBeLessThanOrEqual(200);
   });
 });
 

@@ -79,9 +79,9 @@ describe("GameControls", () => {
     expect(screen.getByRole("slider", { name: /music volume/i })).toBeInTheDocument();
   });
 
-  it("shows speed selector", () => {
+  it("shows speed slider", () => {
     renderWithContext(<GameControls />);
-    expect(screen.getByRole("combobox")).toBeInTheDocument();
+    expect(screen.getByRole("slider", { name: /game speed/i })).toBeInTheDocument();
   });
 
   it("enabling Manager Mode requests notification permission", () => {
@@ -94,11 +94,11 @@ describe("GameControls", () => {
     (Notification as any).permission = "granted";
   });
 
-  it("changing speed select updates the value", () => {
+  it("changing speed slider updates the value", () => {
     renderWithContext(<GameControls />);
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "150" } });
-    expect((select as HTMLSelectElement).value).toBe("150");
+    const slider = screen.getByRole("slider", { name: /game speed/i });
+    fireEvent.change(slider, { target: { value: "2" } });
+    expect((slider as HTMLInputElement).value).toBe("2");
   });
 
   it("changing announcement volume slider fires handler", () => {
@@ -159,18 +159,19 @@ describe("GameControls", () => {
     expect(screen.getByText("Yankees")).toBeInTheDocument();
   });
 
-  it("speed selector includes Instant option", () => {
+  it("speed slider has correct range", () => {
     renderWithContext(<GameControls />);
-    const select = screen.getByTestId("speed-select");
-    const options = Array.from((select as HTMLSelectElement).options).map((o) => o.text);
-    expect(options).toContain("Instant");
+    const slider = screen.getByTestId("speed-slider");
+    expect(slider).toHaveAttribute("min", "0");
+    expect(slider).toHaveAttribute("max", "3");
+    expect(slider).toHaveAttribute("step", "1");
   });
 
-  it("can select Instant speed mode", () => {
+  it("can set Instant speed via slider", () => {
     renderWithContext(<GameControls />);
-    const select = screen.getByRole("combobox");
-    fireEvent.change(select, { target: { value: "0" } }); // SPEED_INSTANT = 0
-    expect((select as HTMLSelectElement).value).toBe("0");
+    const slider = screen.getByRole("slider", { name: /game speed/i });
+    fireEvent.change(slider, { target: { value: "3" } });
+    expect((slider as HTMLInputElement).value).toBe("3");
   });
 
   describe("isCommitting prop", () => {
@@ -206,5 +207,35 @@ describe("GameControls", () => {
       expect(btn).not.toBeDisabled();
       expect(btn).toHaveTextContent("New Game");
     });
+  });
+
+  it("shows pause/play button when gameStarted=true and game not over", () => {
+    renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: false }));
+    expect(screen.getByTestId("pause-play-button")).toBeInTheDocument();
+    expect(screen.getByTestId("pause-play-button")).toHaveAttribute("aria-label", "Pause game");
+  });
+
+  it("does NOT show pause/play button when gameStarted=false", () => {
+    renderWithContext(<GameControls gameStarted={false} />);
+    expect(screen.queryByTestId("pause-play-button")).not.toBeInTheDocument();
+  });
+
+  it("does NOT show pause/play button when game is over", () => {
+    renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: true }));
+    expect(screen.queryByTestId("pause-play-button")).not.toBeInTheDocument();
+  });
+
+  it("pause button shows Resume label when game is paused", () => {
+    localStorage.setItem("gamePaused", "true");
+    renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: false }));
+    expect(screen.getByTestId("pause-play-button")).toHaveAttribute("aria-label", "Resume game");
+    expect(screen.getByTestId("pause-play-button")).toHaveTextContent("▶");
+  });
+
+  it("pause button shows Pause label when game is playing", () => {
+    localStorage.setItem("gamePaused", "false");
+    renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: false }));
+    expect(screen.getByTestId("pause-play-button")).toHaveAttribute("aria-label", "Pause game");
+    expect(screen.getByTestId("pause-play-button")).toHaveTextContent("⏸");
   });
 });

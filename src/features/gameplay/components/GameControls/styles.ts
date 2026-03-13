@@ -148,21 +148,6 @@ export const SpeedRow = styled.div`
   gap: ${({ theme }) => theme.spacing.s6};
 `;
 
-export const SpeedSlider = styled(RangeInput)`
-  width: 80px;
-
-  ${mq.mobile} {
-    width: 64px;
-  }
-`;
-
-export const SpeedLabel = styled.span`
-  font-size: ${({ theme }) => theme.fontSizes.label};
-  color: ${({ theme }) => theme.colors.textBodyAlt};
-  min-width: 44px;
-  user-select: none;
-`;
-
 export const PausePlayButton = styled.button`
   background: ${({ theme }) => theme.colors.bgInputSm};
   border: 1px solid ${({ theme }) => theme.colors.borderForm};
@@ -219,6 +204,25 @@ export const RangeInput = styled.input`
   width: 72px;
   height: ${({ theme }) => theme.sizes.progressBar};
   vertical-align: middle;
+`;
+
+export const SpeedSlider = styled(RangeInput)`
+  width: 80px;
+
+  ${mq.mobile} {
+    width: 64px;
+  }
+`;
+
+export const SpeedLabel = styled.span`
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textBodyAlt};
+  min-width: 44px;
+  user-select: none;
+
+  ${mq.mobile} {
+    display: none;
+  }
 `;
 
 // ── Manager mode controls ─────────────────────────────────────────────────────

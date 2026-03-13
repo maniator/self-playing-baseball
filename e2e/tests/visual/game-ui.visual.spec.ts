@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 
 import {
   disableAnimations,
+  pauseGame,
   resetAppState,
   saveCurrentGame,
   startGameViaPlayBall,
@@ -22,6 +23,7 @@ test.describe("Visual", () => {
   test("in-game state screenshot after a few events", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual1" });
     await waitForLogLines(page, 8);
+    await pauseGame(page);
     // Capture the full scoreboard + field area
     await expect(page.getByTestId("scoreboard")).toHaveScreenshot("scoreboard-in-game.png", {
       maxDiffPixelRatio: 0.05,
@@ -37,6 +39,7 @@ test.describe("Visual", () => {
   test("team tab bar screenshot", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual-stats1" });
     await waitForLogLines(page, 8);
+    await pauseGame(page);
     const tabBar = page.getByTestId("team-tab-bar");
     await expect(tabBar).toBeVisible({ timeout: 10_000 });
     await expect(tabBar).toHaveScreenshot("team-tab-bar.png", {
@@ -55,6 +58,7 @@ test.describe("Visual", () => {
   test("player stats panel with RBI column screenshot", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual-stats1" });
     await waitForLogLines(page, 8);
+    await pauseGame(page);
     const statsPanel = page.getByTestId("player-stats-panel");
     await expect(statsPanel).toBeVisible({ timeout: 10_000 });
     // Seed is deterministic and we wait for a fixed log-line count, so the
@@ -75,6 +79,7 @@ test.describe("Visual", () => {
   test("player stats panel selected batter screenshot", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual-stats1" });
     await waitForLogLines(page, 8);
+    await pauseGame(page);
     const statsPanel = page.getByTestId("player-stats-panel");
     await expect(statsPanel).toBeVisible({ timeout: 10_000 });
     // Select the first batter row — this transitions Player Details from empty
@@ -100,6 +105,7 @@ test.describe("Visual", () => {
   test("saves modal screenshot with one save present", async ({ page }) => {
     await startGameViaPlayBall(page, { seed: "visual2" });
     await waitForLogLines(page, 5);
+    await pauseGame(page);
     await saveCurrentGame(page);
     await expect(page.getByTestId("saves-modal")).toHaveScreenshot("saves-modal-with-save.png", {
       mask: [
