@@ -334,14 +334,6 @@ describe("useAutoPlayScheduler", () => {
 });
 
 describe("paused parameter", () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-  });
-
   it("does not call handlePitch when paused=true even after speed interval elapses", () => {
     const handlePitch = vi.fn();
     vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);

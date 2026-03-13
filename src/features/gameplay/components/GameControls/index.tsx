@@ -74,6 +74,7 @@ const GameControls: React.FunctionComponent<Props> = ({
     resolveTeamLabel(teams[0], customTeamDocs),
     resolveTeamLabel(teams[1], customTeamDocs),
   ];
+  const speedIndex = Math.max(0, SPEED_STEPS.indexOf(speed));
 
   return (
     <>
@@ -144,14 +145,14 @@ const GameControls: React.FunctionComponent<Props> = ({
                 min={0}
                 max={SPEED_STEPS.length - 1}
                 step={1}
-                value={Math.max(0, SPEED_STEPS.indexOf(speed))}
+                value={speedIndex}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSpeed(SPEED_STEPS[parseInt(e.target.value, 10)])
                 }
                 aria-label="Game speed"
                 data-testid="speed-slider"
               />
-              <SpeedLabel>{SPEED_STEP_LABELS[Math.max(0, SPEED_STEPS.indexOf(speed))]}</SpeedLabel>
+              <SpeedLabel>{SPEED_STEP_LABELS[speedIndex]}</SpeedLabel>
             </ToggleLabel>
           </SpeedRow>
           <VolumeControls
