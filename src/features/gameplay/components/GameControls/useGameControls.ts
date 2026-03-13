@@ -36,7 +36,10 @@ export const useGameControls = ({
   const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
-  const [paused, setPaused] = useLocalStorage("gamePaused", false);
+  // paused is session-only — no persistence needed. useState is guaranteed
+  // reactive; useLocalStorage was unreliable here due to useSyncExternalStore
+  // emitter timing in usehooks-ts v3.
+  const [paused, setPaused] = React.useState(false);
   const [currentSaveId, setCurrentSaveId] = React.useState<string | null>(null);
 
   // Sanitize values read from localStorage — invalid entries are coerced to safe defaults
@@ -45,7 +48,6 @@ export const useGameControls = ({
   const safeManagedTeam: 0 | 1 = managedTeam === 0 || managedTeam === 1 ? managedTeam : 0;
   const safeSpeed = VALID_SPEEDS.includes(speed) ? speed : SPEED_NORMAL;
   const safeManagerMode = typeof managerMode === "boolean" ? managerMode : false;
-  const safePaused = typeof paused === "boolean" ? paused : false;
   const safeAnnouncementVolume =
     typeof announcementVolume === "number" && announcementVolume >= 0 && announcementVolume <= 1
       ? announcementVolume
@@ -59,12 +61,16 @@ export const useGameControls = ({
     if (managedTeam !== 0 && managedTeam !== 1) setManagedTeam(0);
     if (!VALID_SPEEDS.includes(speed)) setSpeed(SPEED_NORMAL);
     if (typeof managerMode !== "boolean") setManagerMode(false);
-    if (typeof paused !== "boolean") setPaused(false);
     if (typeof announcementVolume !== "number" || announcementVolume < 0 || announcementVolume > 1)
       setAnnouncementVolumeState(1);
     if (typeof alertVolume !== "number" || alertVolume < 0 || alertVolume > 1)
       setAlertVolumeState(1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset pause when the game ends so the next game always starts playing.
+  React.useEffect(() => {
+    if (gameOver) setPaused(false);
+  }, [gameOver]);
 
   const { skipDecision } = useGameRefs({
     strikes,
@@ -114,7 +120,7 @@ export const useGameControls = ({
     gameOver,
     muted: safeAnnouncementVolume === 0,
     speed: safeSpeed,
-    paused: safePaused,
+    paused,
     handlePitch,
     inning,
     atBat,
@@ -144,7 +150,7 @@ export const useGameControls = ({
     dispatch,
     speed: safeSpeed,
     setSpeed,
-    paused: safePaused,
+    paused,
     setPaused,
     announcementVolume: safeAnnouncementVolume,
     alertVolume: safeAlertVolume,

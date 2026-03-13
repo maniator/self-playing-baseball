@@ -92,17 +92,17 @@ test.describe("Pause / play button", () => {
     }).toPass({ timeout: 10_000 });
   });
 
-  test("pause state persists in localStorage", async ({ page }) => {
+  test("pause state is reflected in the button aria-label", async ({ page }) => {
     await startGameViaPlayBall(page);
     await waitForLogLines(page, 3);
-    await pauseGame(page);
 
-    const paused = await page.evaluate(() => localStorage.getItem("gamePaused"));
-    expect(paused).toBe("true");
+    const btn = page.getByTestId("pause-play-button");
+    await expect(btn).toHaveAttribute("aria-label", "Pause game");
+
+    await pauseGame(page);
+    await expect(btn).toHaveAttribute("aria-label", "Resume game");
 
     await resumeGame(page);
-
-    const resumed = await page.evaluate(() => localStorage.getItem("gamePaused"));
-    expect(resumed).toBe("false");
+    await expect(btn).toHaveAttribute("aria-label", "Pause game");
   });
 });

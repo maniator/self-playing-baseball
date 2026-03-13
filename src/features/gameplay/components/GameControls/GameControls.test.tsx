@@ -226,16 +226,19 @@ describe("GameControls", () => {
   });
 
   it("pause button shows Resume label when game is paused", () => {
-    localStorage.setItem("gamePaused", "true");
     renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: false }));
-    expect(screen.getByTestId("pause-play-button")).toHaveAttribute("aria-label", "Resume game");
-    expect(screen.getByTestId("pause-play-button")).toHaveTextContent("▶");
+    const btn = screen.getByTestId("pause-play-button");
+    // Click once to pause
+    fireEvent.click(btn);
+    expect(btn).toHaveAttribute("aria-label", "Resume game");
+    expect(btn).toHaveTextContent("▶");
   });
 
   it("pause button shows Pause label when game is playing", () => {
-    localStorage.setItem("gamePaused", "false");
     renderWithContext(<GameControls gameStarted />, makeContextValue({ gameOver: false }));
-    expect(screen.getByTestId("pause-play-button")).toHaveAttribute("aria-label", "Pause game");
-    expect(screen.getByTestId("pause-play-button")).toHaveTextContent("⏸");
+    // Fresh render starts unpaused
+    const btn = screen.getByTestId("pause-play-button");
+    expect(btn).toHaveAttribute("aria-label", "Pause game");
+    expect(btn).toHaveTextContent("⏸");
   });
 });
