@@ -6,15 +6,15 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import UpdateBanner from "./index";
 
 describe("UpdateBanner", () => {
+  const onDismiss = vi.fn();
+  const onReload = vi.fn();
+
   beforeEach(() => {
-    Object.defineProperty(window, "location", {
-      configurable: true,
-      value: { reload: vi.fn() },
-    });
+    vi.clearAllMocks();
   });
 
   it("renders the update warning message", () => {
-    render(<UpdateBanner onDismiss={vi.fn()} />);
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     expect(screen.getByTestId("update-banner")).toBeInTheDocument();
     expect(
       screen.getByText(/new version of BlipIt Baseball Legends is available/i),
@@ -23,32 +23,30 @@ describe("UpdateBanner", () => {
   });
 
   it("has role=alert for screen-reader accessibility", () => {
-    render(<UpdateBanner onDismiss={vi.fn()} />);
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     expect(screen.getByRole("alert")).toBeInTheDocument();
   });
 
-  it("calls window.location.reload when the Reload button is clicked", () => {
-    render(<UpdateBanner onDismiss={vi.fn()} />);
+  it("calls onReload when the Reload button is clicked", () => {
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     fireEvent.click(screen.getByRole("button", { name: /reload app/i }));
-    expect(window.location.reload).toHaveBeenCalledOnce();
+    expect(onReload).toHaveBeenCalledOnce();
   });
 
   it("calls onDismiss when the dismiss button is clicked", () => {
-    const onDismiss = vi.fn();
-    render(<UpdateBanner onDismiss={onDismiss} />);
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     fireEvent.click(screen.getByRole("button", { name: /dismiss update notice/i }));
     expect(onDismiss).toHaveBeenCalledOnce();
   });
 
-  it("does not call window.location.reload when dismiss is clicked", () => {
-    render(<UpdateBanner onDismiss={vi.fn()} />);
+  it("does not call onReload when dismiss is clicked", () => {
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     fireEvent.click(screen.getByRole("button", { name: /dismiss update notice/i }));
-    expect(window.location.reload).not.toHaveBeenCalled();
+    expect(onReload).not.toHaveBeenCalled();
   });
 
   it("does not call onDismiss when reload is clicked", () => {
-    const onDismiss = vi.fn();
-    render(<UpdateBanner onDismiss={onDismiss} />);
+    render(<UpdateBanner onDismiss={onDismiss} onReload={onReload} />);
     fireEvent.click(screen.getByRole("button", { name: /reload app/i }));
     expect(onDismiss).not.toHaveBeenCalled();
   });

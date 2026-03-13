@@ -10,18 +10,20 @@ import { Outlet } from "react-router";
  * Thin root layout that wraps all routes with the application's ErrorBoundary
  * and renders the matched child route via <Outlet />.
  *
- * Also mounts the SW update banner: when a new version is deployed the service
- * worker posts SW_UPDATED after claiming clients, and the banner prompts the
- * user to reload before the outdated JS causes game issues.
+ * Also mounts the SW update banner: when a new SW version is waiting,
+ * `useServiceWorkerUpdate` (backed by vite-plugin-pwa's `useRegisterSW`) sets
+ * `updateAvailable`, and the banner prompts the user to reload.  The reload
+ * sends SKIP_WAITING to the SW before refreshing so the updated assets are
+ * guaranteed to be served.
  */
 const RootLayout: React.FunctionComponent = () => {
-  const { updateAvailable, dismiss } = useServiceWorkerUpdate();
+  const { updateAvailable, dismiss, reload } = useServiceWorkerUpdate();
   useSeedDemoTeams();
 
   return (
     <ErrorBoundary>
       <Outlet />
-      {updateAvailable && <UpdateBanner onDismiss={dismiss} />}
+      {updateAvailable && <UpdateBanner onDismiss={dismiss} onReload={reload} />}
     </ErrorBoundary>
   );
 };

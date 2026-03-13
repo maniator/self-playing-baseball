@@ -1,110 +1,52 @@
 /// <reference lib="webworker" />
 
 import { createLogger } from "@shared/utils/logger";
+import { clientsClaim } from "workbox-core";
+import {
+  cleanupOutdatedCaches,
+  createHandlerBoundToURL,
+  precacheAndRoute,
+} from "workbox-precaching";
+import { NavigationRoute, registerRoute } from "workbox-routing";
 
-// `self.__WB_MANIFEST` is injected by vite-plugin-pwa's injectManifest strategy at build
-// time with an array of all pre-cached asset entries ({url, revision}).
 declare const self: ServiceWorkerGlobalScope & {
   __WB_MANIFEST: Array<{ url: string; revision: string | null }>;
 };
 
-const WB_MANIFEST: Array<{ url: string; revision: string | null }> = self.__WB_MANIFEST ?? [];
-
-// Derive a stable version string by hashing the full manifest so the cache
-// name rotates whenever any entry URL or revision changes (including when
-// revision is null for fingerprinted filenames, whose URL prefix is stable).
-function hashManifest(entries: Array<{ url: string; revision: string | null }>): string {
-  if (entries.length === 0) return "dev";
-  const input = JSON.stringify(entries.map(({ url, revision }) => ({ url, revision })));
-  let h = 0x811c9dc5; // FNV-1a 32-bit offset basis
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 0x01000193); // FNV-1a 32-bit prime
-  }
-  return (h >>> 0).toString(16).padStart(8, "0");
-}
-
-const version = hashManifest(WB_MANIFEST);
-
-const log = createLogger(`SW ${version.slice(0, 8)}`);
+const log = createLogger("SW");
 
 // ---------------------------------------------------------------------------
-// Pre-caching — install all bundles from the Workbox manifest into a versioned
-// cache so the app works offline and upgrades atomically.
-// ---------------------------------------------------------------------------
-async function install() {
-  log.log(`install — pre-caching ${WB_MANIFEST.length} bundle(s)`);
-  const cache = await caches.open(version);
-  await cache.addAll(WB_MANIFEST.map((e) => e.url));
-  log.log("install — pre-cache complete, calling skipWaiting()");
-  await (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
-  log.log("skipWaiting() resolved — SW will activate immediately");
-}
-
-async function activate() {
-  log.log("activate — cleaning up old caches");
-  const keys = await caches.keys();
-  const deleted = await Promise.all(
-    keys.map((key) => {
-      if (key !== version) {
-        log.log(`activate — deleting stale cache "${key}"`);
-        return caches.delete(key);
-      }
-      return Promise.resolve(false);
-    }),
-  );
-  const count = deleted.filter(Boolean).length;
-  log.log(`activate — removed ${count} stale cache(s), calling self.clients.claim()`);
-  await self.clients.claim();
-  log.log("self.clients.claim() resolved — SW is now controlling all clients");
-
-  // Only notify clients when this is a real update (old caches were replaced),
-  // not on first install where count is 0 and there is nothing to reload.
-  if (count > 0) {
-    const clientList = await self.clients.matchAll({ type: "window" });
-    log.log(`activate — notifying ${clientList.length} client(s) of SW update`);
-    for (const client of clientList) {
-      (client as WindowClient).postMessage({ type: "SW_UPDATED" });
-    }
-  }
-}
-
-self.addEventListener("install", (e) => (e as ExtendableEvent).waitUntil(install()));
-self.addEventListener("activate", (e) => (e as ExtendableEvent).waitUntil(activate()));
-
-// ---------------------------------------------------------------------------
-// Network-first fetch with cache fallback for navigation requests.
-// ---------------------------------------------------------------------------
-self.addEventListener("fetch", (event) => {
-  const fe = event as FetchEvent;
-  // Only handle same-origin GET requests; let everything else pass through.
-  if (fe.request.method !== "GET") return;
-  try {
-    const url = new URL(fe.request.url);
-    if (url.origin !== location.origin) return;
-  } catch {
-    return;
-  }
-
-  fe.respondWith(
-    fetch(fe.request)
-      .then((response) => {
-        // Update the cache with the fresh response.
-        const clone = response.clone();
-        caches.open(version).then((cache) => cache.put(fe.request, clone));
-        return response;
-      })
-      .catch(() => caches.match(fe.request).then((r) => r ?? Response.error())),
-  );
-});
-
-// ---------------------------------------------------------------------------
-// Log messages sent from the page to the SW (rare, but useful for debugging).
+// SKIP_WAITING prompt — the client sends this when the user clicks "Reload" in
+// the update banner.  The new SW waits until then so it does not disrupt an
+// in-progress game session.
 // ---------------------------------------------------------------------------
 self.addEventListener("message", (event) => {
   const me = event as ExtendableMessageEvent;
-  log.log("message received from page:", me.data);
+  if (me.data?.type === "SKIP_WAITING") {
+    log.log("SKIP_WAITING received — activating new SW");
+    me.waitUntil(self.skipWaiting());
+  }
 });
+
+// ---------------------------------------------------------------------------
+// Precache all build output entries injected by vite-plugin-pwa and wire up
+// cache-first routing for those entries.
+// ---------------------------------------------------------------------------
+precacheAndRoute(self.__WB_MANIFEST);
+
+// Remove outdated Workbox precache entries (e.g., stale revision hashes from
+// previous builds). This only cleans up Workbox-managed caches; legacy
+// CacheStorage entries from the previous hand-rolled SW are not affected.
+cleanupOutdatedCaches();
+
+// ---------------------------------------------------------------------------
+// SPA navigation fallback — serve the precached index.html for every
+// same-origin navigation request so client-side routes work while offline.
+// ---------------------------------------------------------------------------
+registerRoute(new NavigationRoute(createHandlerBoundToURL("/index.html")));
+
+// Take immediate control of all open tabs on first install.
+clientsClaim();
 
 // ---------------------------------------------------------------------------
 // Handle notification action button clicks and notification body clicks.

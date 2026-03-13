@@ -4,22 +4,26 @@ import { Actions, Banner, DismissButton, Message, ReloadButton } from "./styles"
 
 interface Props {
   onDismiss: () => void;
+  onReload: () => void;
 }
 
 /**
  * Persistent bottom banner shown when the service worker detects a new app
  * version has been deployed.  Warns the user that continuing without reloading
- * may cause unexpected game behavior, and offers a one-click reload — matching
- * the same direct window.location.reload() pattern used by ErrorBoundary.
+ * may cause unexpected game behavior, and offers a one-click reload.
+ *
+ * `onReload` should call `updateServiceWorker(true)` from `useRegisterSW` so
+ * the waiting SW receives SKIP_WAITING before the page reloads — ensuring the
+ * new assets are served rather than the old cached ones.
  */
-const UpdateBanner: React.FunctionComponent<Props> = ({ onDismiss }) => (
+const UpdateBanner: React.FunctionComponent<Props> = ({ onDismiss, onReload }) => (
   <Banner role="alert" data-testid="update-banner">
     <Message>
       ⚠️ A new version of BlipIt Baseball Legends is available. Running an outdated version may
       cause unexpected game behavior — reload now to update.
     </Message>
     <Actions>
-      <ReloadButton onClick={() => window.location.reload()}>🔄 Reload app</ReloadButton>
+      <ReloadButton onClick={onReload}>🔄 Reload app</ReloadButton>
       <DismissButton onClick={onDismiss} aria-label="Dismiss update notice">
         ✕
       </DismissButton>
