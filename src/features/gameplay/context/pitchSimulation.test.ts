@@ -15,6 +15,7 @@ import {
   computeFatigueFactor,
   computeSwingRate,
   resolveBattedBallType,
+  resolveContactQuality,
   resolveSwingOutcome,
 } from "./pitchSimulation";
 
@@ -149,6 +150,26 @@ describe("computeSwingRate", () => {
       computeSwingRate(1, { strategy: "contact", batterContactMod: 5, pitchType: "slider" }),
     ).toBe(computeSwingRate(1, { strategy: "contact", batterContactMod: 5, pitchType: "slider" }));
   });
+
+  it("applies swingRateMultiplier and still respects caps/one-pitch overrides", () => {
+    const baseline = computeSwingRate(1, { strategy: "balanced" });
+    const boosted = computeSwingRate(1, { strategy: "balanced", swingRateMultiplier: 1.2 });
+    const reduced = computeSwingRate(1, { strategy: "balanced", swingRateMultiplier: 0.8 });
+
+    expect(boosted).toBeGreaterThan(baseline);
+    expect(reduced).toBeLessThan(baseline);
+
+    const capped = computeSwingRate(2, {
+      strategy: "aggressive",
+      batterContactMod: 20,
+      pitchType: "fastball",
+      swingRateMultiplier: 5,
+    });
+    expect(capped).toBe(920);
+
+    expect(computeSwingRate(0, { onePitchMod: "swing", swingRateMultiplier: 0.1 })).toBe(1000);
+    expect(computeSwingRate(2, { onePitchMod: "take", swingRateMultiplier: 10 })).toBe(0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -225,6 +246,30 @@ describe("resolveSwingOutcome", () => {
       fatigueFactor: 1.2,
     };
     expect(resolveSwingOutcome(45, opts)).toBe(resolveSwingOutcome(45, opts));
+  });
+
+  it("applies whiffRateMultiplier directionally", () => {
+    const roll = 15;
+    const lowerWhiff = resolveSwingOutcome(roll, { whiffRateMultiplier: 0.7 });
+    const higherWhiff = resolveSwingOutcome(roll, { whiffRateMultiplier: 1.3 });
+    expect(lowerWhiff).toBe("foul");
+    expect(higherWhiff).toBe("whiff");
+  });
+
+  it("clamps whiff threshold to [8, 40] even with extreme multipliers", () => {
+    expect(resolveSwingOutcome(39, { pitcherVelocityMod: 20, whiffRateMultiplier: 10 })).toBe(
+      "whiff",
+    );
+    expect(resolveSwingOutcome(40, { pitcherVelocityMod: 20, whiffRateMultiplier: 10 })).toBe(
+      "foul",
+    );
+
+    expect(resolveSwingOutcome(7, { batterContactMod: 20, whiffRateMultiplier: 0.01 })).toBe(
+      "whiff",
+    );
+    expect(resolveSwingOutcome(8, { batterContactMod: 20, whiffRateMultiplier: 0.01 })).toBe(
+      "foul",
+    );
   });
 });
 
@@ -353,6 +398,51 @@ describe("resolveBattedBallType", () => {
       fatigueFactor: 1.2,
     };
     expect(resolveBattedBallType(15, 25, opts)).toBe(resolveBattedBallType(15, 25, opts));
+  });
+
+  it("applies hardContactMultiplier directionally", () => {
+    expect(resolveContactQuality(15)).toBe("hard");
+    expect(resolveContactQuality(15, { hardContactMultiplier: 0.5 })).toBe("medium");
+    expect(resolveContactQuality(22, { hardContactMultiplier: 1.3 })).toBe("hard");
+  });
+
+  it("clamps hard-contact threshold to [10, 50] with extreme multipliers", () => {
+    expect(
+      resolveContactQuality(49, {
+        batterPowerMod: 20,
+        fatigueFactor: 1.6,
+        hardContactMultiplier: 5,
+      }),
+    ).toBe("hard");
+    expect(
+      resolveContactQuality(50, {
+        batterPowerMod: 20,
+        fatigueFactor: 1.6,
+        hardContactMultiplier: 5,
+      }),
+    ).toBe("medium");
+
+    expect(
+      resolveContactQuality(9, {
+        batterPowerMod: -20,
+        pitcherVelocityMod: 20,
+        pitcherMovementMod: 20,
+        hardContactMultiplier: 0.1,
+      }),
+    ).toBe("hard");
+    expect(
+      resolveContactQuality(10, {
+        batterPowerMod: -20,
+        pitcherVelocityMod: 20,
+        pitcherMovementMod: 20,
+        hardContactMultiplier: 0.1,
+      }),
+    ).toBe("medium");
+  });
+
+  it("hardContactMultiplier changes batted-ball outcomes for the same rolls", () => {
+    expect(resolveBattedBallType(15, 20)).toBe("deep_fly");
+    expect(resolveBattedBallType(15, 20, { hardContactMultiplier: 0.5 })).toBe("medium_fly");
   });
 });
 

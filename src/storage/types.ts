@@ -38,7 +38,7 @@ export type {
 } from "@feat/saves/storage/types";
 
 // Cross-feature / app-shell types (genuinely shared)
-import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
+import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import type { SaveDoc } from "@feat/saves/storage/types";
 
 export type PlayerOverrides = {
@@ -50,6 +50,8 @@ export type PlayerOverrides = {
   homeBench?: string[];
   awayPitchers?: string[];
   homePitchers?: string[];
+  awayHandedness?: Record<string, Handedness>;
+  homeHandedness?: Record<string, Handedness>;
   /**
    * Starting pitcher index into awayPitchers/homePitchers for each team.
    * null = use index 0 (default). Only meaningful for managed custom-team games.

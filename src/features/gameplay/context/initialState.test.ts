@@ -72,6 +72,7 @@ describe("createFreshGameState", () => {
     expect(state.rosterPitchers).toEqual([[], []]);
     expect(state.activePitcherIdx).toEqual([0, 0]);
     expect(state.lineupPositions).toEqual([[], []]);
+    expect(state.handednessByTeam).toEqual([{}, {}]);
   });
 
   it("returns different instances on each call (no shared references)", () => {
@@ -244,6 +245,14 @@ describe("backfillRestoredState", () => {
     delete restored.lineupPositions;
     const result = backfillRestoredState(restored);
     expect(result.lineupPositions).toEqual([[], []]);
+  });
+
+  it("defaults handednessByTeam to [{},{}] when missing (backfill for older saves)", () => {
+    const restored = makeState();
+    // @ts-expect-error intentionally deleting to simulate older save
+    delete restored.handednessByTeam;
+    const result = backfillRestoredState(restored);
+    expect(result.handednessByTeam).toEqual([{}, {}]);
   });
 
   // -------------------------------------------------------------------------

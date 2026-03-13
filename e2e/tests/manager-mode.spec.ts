@@ -47,4 +47,23 @@ test.describe("Manager Mode", () => {
     // Decision panel should close once the action is dispatched.
     await expect(page.getByTestId("manager-decision-panel")).not.toBeVisible({ timeout: 5_000 });
   });
+
+  test("pinch hitter decision shows handedness matchup context", async ({ page }) => {
+    await loadFixture(
+      page,
+      "pending-decision-pinch-hitter-handedness.json",
+      "pending-decision-pinch-hitter-teams.json",
+    );
+
+    const panel = page.getByTestId("manager-decision-panel");
+    await expect(panel).toBeVisible({ timeout: 10_000 });
+
+    await expect(panel.getByText(/send up a pinch hitter vs RHP/i)).toBeVisible();
+    await expect(panel.getByText(/current batter platoon edge:\s*-4%/i)).toBeVisible();
+    await expect(panel.getByText(/selected hitter platoon edge:\s*\+6%/i)).toBeVisible();
+
+    const pinchHitterSelect = page.getByTestId("pinch-hitter-select");
+    await expect(pinchHitterSelect).toContainText("J. Lee (LF) [+6%]");
+    await expect(pinchHitterSelect).toContainText("K. Patel (DH) [-2%]");
+  });
 });

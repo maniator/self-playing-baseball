@@ -1,7 +1,8 @@
 import * as React from "react";
 
-import type { DecisionType, PinchHitterCandidate, Strategy } from "@feat/gameplay/context/index";
+import type { DecisionType, Strategy } from "@feat/gameplay/context/index";
 
+import PinchHitterDecisionButtons from "./PinchHitterDecisionButtons";
 import { ActionButton, Odds, Prompt, SkipButton } from "./styles";
 
 type Props = {
@@ -17,23 +18,6 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
   onSkip,
   onDispatch,
 }) => {
-  const [selectedCandidateId, setSelectedCandidateId] = React.useState<string>(() => {
-    if (pendingDecision.kind === "pinch_hitter" && pendingDecision.candidates.length > 0) {
-      return pendingDecision.candidates[0].id;
-    }
-    return "";
-  });
-
-  // Reset the selected candidate whenever the decision changes (e.g. a new pinch_hitter
-  // opportunity for a different batter — rare but possible in long extra-inning games).
-  React.useEffect(() => {
-    if (pendingDecision.kind === "pinch_hitter" && pendingDecision.candidates.length > 0) {
-      setSelectedCandidateId(pendingDecision.candidates[0].id);
-    } else {
-      setSelectedCandidateId("");
-    }
-  }, [pendingDecision]);
-
   switch (pendingDecision.kind) {
     case "steal": {
       const { base, successPct } = pendingDecision;
@@ -122,61 +106,18 @@ const DecisionButtons: React.FunctionComponent<Props> = ({
         </>
       );
     }
-    case "pinch_hitter": {
-      const { candidates, teamIdx, lineupIdx } = pendingDecision;
-      if (candidates.length === 0) {
-        // No bench available — fall back to strategy selection
-        return (
-          <>
-            <Prompt>Send up a pinch hitter? Pick a strategy:</Prompt>
-            {(["contact", "patient", "power", "aggressive", "balanced"] as Strategy[]).map((s) => (
-              <ActionButton
-                key={s}
-                onClick={() => onDispatch({ type: "set_pinch_hitter_strategy", payload: s })}
-              >
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </ActionButton>
-            ))}
-            <SkipButton onClick={onSkip}>Skip</SkipButton>
-          </>
-        );
-      }
-      const handleConfirm = () => {
-        if (!selectedCandidateId) return;
-        onDispatch({
-          type: "make_substitution",
-          payload: { teamIdx, kind: "batter", lineupIdx, benchPlayerId: selectedCandidateId },
-        });
-        // Always lock as "contact" — the pinch-hit scenario is a contact situation
-        // regardless of the current overall strategy; this prevents re-offering the
-        // decision for the rest of the at-bat without silently overriding the user's
-        // chosen game strategy for the next at-bat.
-        onDispatch({ type: "set_pinch_hitter_strategy", payload: "contact" });
-      };
-      const candidateLabel = (c: PinchHitterCandidate) =>
-        c.position ? `${c.name} (${c.position})` : c.name;
+    case "pinch_hitter":
       return (
-        <>
-          <Prompt>Send up a pinch hitter:</Prompt>
-          <select
-            value={selectedCandidateId}
-            onChange={(e) => setSelectedCandidateId(e.target.value)}
-            aria-label="Select pinch hitter"
-            data-testid="pinch-hitter-select"
-          >
-            {candidates.map((c) => (
-              <option key={c.id} value={c.id}>
-                {candidateLabel(c)}
-              </option>
-            ))}
-          </select>
-          <ActionButton onClick={handleConfirm} disabled={!selectedCandidateId}>
-            Send up pinch hitter
-          </ActionButton>
-          <SkipButton onClick={onSkip}>Skip</SkipButton>
-        </>
+        <PinchHitterDecisionButtons
+          candidates={pendingDecision.candidates}
+          teamIdx={pendingDecision.teamIdx}
+          lineupIdx={pendingDecision.lineupIdx}
+          pitcherHandedness={pendingDecision.pitcherHandedness}
+          currentBatterMatchupDeltaPct={pendingDecision.currentBatterMatchupDeltaPct}
+          onSkip={onSkip}
+          onDispatch={onDispatch}
+        />
       );
-    }
     case "defensive_shift":
       return (
         <>

@@ -91,6 +91,33 @@ describe("handleSetupAction — setTeams (object payload)", () => {
     expect(next?.lineupOrder).toEqual(lineup);
   });
 
+  it("applies handednessByTeam when provided", () => {
+    const state = makeState();
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        handednessByTeam: [{ a1: "L" }, { h1: "R" }],
+      },
+    });
+    expect(next?.handednessByTeam).toEqual([{ a1: "L" }, { h1: "R" }]);
+  });
+
+  it("derives handednessByTeam from playerOverrides when explicit map not provided", () => {
+    const state = makeState();
+    const next = handleSetupAction(state, {
+      type: "setTeams",
+      payload: {
+        teams: ["A", "B"],
+        playerOverrides: [
+          { a1: { handedness: "L", nickname: "A" } },
+          { h1: { handedness: "R", nickname: "H" } },
+        ] as never,
+      },
+    });
+    expect(next?.handednessByTeam).toEqual([{ a1: "L" }, { h1: "R" }]);
+  });
+
   it("omits playerOverrides from result when not provided", () => {
     const originalOverrides = makeState().playerOverrides;
     const state = makeState();

@@ -207,6 +207,27 @@ describe("makeAiPitchingDecision", () => {
     const decision = makeAiPitchingDecision(state as typeof state, 1);
     expect(decision.kind).toBe("none");
   });
+
+  it("prefers reliever with better handedness matchup when candidates are otherwise eligible", () => {
+    alwaysPull();
+    const state = makeState({
+      pitcherPitchCount: [0, AI_FATIGUE_THRESHOLD_HIGH],
+      pitcherBattersFaced: [0, 0],
+      rosterPitchers: [["unused"], ["sp1", "rpL", "rpR"]],
+      activePitcherIdx: [0, 0],
+      substitutedOut: [[], []],
+      lineupOrder: [["bL"], []],
+      batterIndex: [0, 0],
+      handednessByTeam: [{ bL: "L" }, { sp1: "R", rpL: "L", rpR: "R" }],
+    });
+
+    const decision = makeAiPitchingDecision(state, 1, { sp1: "SP", rpL: "RP", rpR: "RP" });
+    expect(decision.kind).toBe("pitching_change");
+    if (decision.kind === "pitching_change") {
+      // vs L batter, L reliever has the better platoon suppression edge.
+      expect(decision.pitcherIdx).toBe(1);
+    }
+  });
 });
 
 describe("makeAiTacticalDecision", () => {

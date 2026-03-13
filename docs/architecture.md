@@ -47,6 +47,16 @@ Auto-play is implemented in `src/features/gameplay/hooks/useAutoPlayScheduler.ts
 - **Decision detection** (`detectDecision` from `src/features/gameplay/context/reducer.ts`) — evaluated before each pitch in `usePitchDispatch`. Returns one of: `steal`, `bunt`, `count30`, `count02`, `ibb`, `ibb_or_steal`, `pinch_hitter`, `defensive_shift`, or `null`.
 - `DecisionPanel/index.tsx` renders the panel, plays a chime, shows a browser notification via service worker, and runs a 10-second countdown bar.
 
+### Handedness/Platoon Methodology
+
+- Matchups are resolved from batter/pitcher handedness buckets (`R_R`, `R_L`, `L_R`, `L_L`, `S_R`, `S_L`) in `src/features/gameplay/context/handednessMatchup.ts`.
+- Switch hitters use an opposite-side batting profile (`S_R` behaves like `L_R`; `S_L` behaves like `R_L`).
+- Outcome multipliers are intentionally modest and affect swing, whiff, walk/called-strike, and hard-contact rates without overpowering core player mods.
+- Calibration target is directionally MLB-like platoon behavior rather than exact season replication:
+  - Same-side buckets slightly favor the pitcher (more whiffs/called strikes, fewer walks/hard contact).
+  - Opposite-side buckets slightly favor the batter (fewer whiffs/called strikes, more walks/hard contact).
+- Prompt deltas (`promptDeltaPct`) are informational UI values for manager decisions and AI tie-breakers, not direct stat percentages.
+
 ---
 
 ## Notification System (Service Worker)

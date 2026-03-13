@@ -29,6 +29,8 @@ export interface ComputeSwingRateOptions {
   batterContactMod?: number;
   pitchType?: PitchType;
   onePitchMod?: OnePitchModifier;
+  /** Handedness/platoon multiplier applied after strategy/contact adjustments. */
+  swingRateMultiplier?: number;
 }
 
 /**
@@ -53,6 +55,7 @@ export const computeSwingRate = (
     batterContactMod = 0,
     pitchType,
     onePitchMod = null,
+    swingRateMultiplier = 1,
   }: ComputeSwingRateOptions = {},
 ): number => {
   if (onePitchMod === "swing") return 1000;
@@ -69,7 +72,9 @@ export const computeSwingRate = (
 
   const pitchMod = pitchType ? pitchSwingRateMod(pitchType) : 1.0;
 
-  const raw = Math.round(base * stratFactor * protectBonus * contactBonus * pitchMod);
+  const raw = Math.round(
+    base * stratFactor * protectBonus * contactBonus * pitchMod * swingRateMultiplier,
+  );
   // Normal play caps at 920 — only the "swing" modifier reaches 1000.
   return Math.min(920, Math.max(0, raw));
 };

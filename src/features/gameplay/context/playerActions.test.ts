@@ -70,4 +70,42 @@ describe("playerWait — computeWaitOutcome threshold clamping", () => {
     playerWait(state, log);
     expect(logs.some((l) => /strike/i.test(l))).toBe(true);
   });
+
+  it("higher walkRateMultiplier reduces called-strike outcomes under fixed RNG", () => {
+    const state = makeState({ atBat: 0 });
+    // random=500; baseline threshold is ~588, but walk-boosted threshold drops to ~452.
+    vi.spyOn(rngModule, "random").mockReturnValue(0.5);
+    const { log } = makeLogs();
+
+    const baseline = playerWait(state, log, "balanced", null, undefined, {
+      walkRateMultiplier: 1,
+      calledStrikeRateMultiplier: 1,
+    });
+    const walkBoosted = playerWait(state, log, "balanced", null, undefined, {
+      walkRateMultiplier: 1.3,
+      calledStrikeRateMultiplier: 1,
+    });
+
+    expect(baseline.strikes).toBe(1);
+    expect(walkBoosted.balls).toBe(1);
+  });
+
+  it("higher calledStrikeRateMultiplier increases called-strike outcomes under fixed RNG", () => {
+    const state = makeState({ atBat: 0 });
+    // random=620; baseline threshold is ~588 (ball), boosted threshold rises to ~764 (strike).
+    vi.spyOn(rngModule, "random").mockReturnValue(0.62);
+    const { log } = makeLogs();
+
+    const baseline = playerWait(state, log, "balanced", null, undefined, {
+      walkRateMultiplier: 1,
+      calledStrikeRateMultiplier: 1,
+    });
+    const strikeBoosted = playerWait(state, log, "balanced", null, undefined, {
+      walkRateMultiplier: 1,
+      calledStrikeRateMultiplier: 1.3,
+    });
+
+    expect(baseline.balls).toBe(1);
+    expect(strikeBoosted.strikes).toBe(1);
+  });
 });

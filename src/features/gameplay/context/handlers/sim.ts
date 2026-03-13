@@ -58,13 +58,22 @@ export const handleSimAction = (
       };
     }
     case "wait": {
-      const wp = action.payload as { strategy?: Strategy; pitchType?: PitchType };
+      const wp = action.payload as {
+        strategy?: Strategy;
+        pitchType?: PitchType;
+        walkRateMultiplier?: number;
+        calledStrikeRateMultiplier?: number;
+      };
       const result = playerWait(
         state,
         log,
         wp?.strategy ?? "balanced",
         state.onePitchModifier,
         wp?.pitchType,
+        {
+          walkRateMultiplier: wp?.walkRateMultiplier,
+          calledStrikeRateMultiplier: wp?.calledStrikeRateMultiplier,
+        },
       );
       // checkWalkoff is required here: a 4th ball (walk) can score the game-winning run
       // in the bottom of the 9th or later (e.g. bases-loaded walk in extra innings).

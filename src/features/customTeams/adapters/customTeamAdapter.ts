@@ -1,4 +1,4 @@
-import type { TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
+import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import { BATTING_POSITIONS } from "@shared/utils/roster";
 
 import type { CustomTeamDoc } from "@storage/types";
@@ -138,6 +138,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
     overrides[player.id] = {
       nickname: player.name,
       ...(player.position ? { position: player.position } : {}),
+      ...(player.handedness ? { handedness: player.handedness } : {}),
       contactMod: clampMod(player.batting.contact - 60),
       powerMod: clampMod(player.batting.power - 60),
       speedMod: clampMod(player.batting.speed - 60),
@@ -149,6 +150,20 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
     };
   }
   return overrides;
+}
+
+/**
+ * Returns a lookup of playerId -> handedness for every rostered player.
+ * Players missing explicit handedness are omitted and resolved later via
+ * deterministic fallback in gameplay.
+ */
+export function customTeamToHandednessMap(team: CustomTeamDoc): Record<string, Handedness> {
+  const handednessByPlayer: Record<string, Handedness> = {};
+  const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
+  for (const player of allPlayers) {
+    if (player.handedness) handednessByPlayer[player.id] = player.handedness;
+  }
+  return handednessByPlayer;
 }
 
 /**
