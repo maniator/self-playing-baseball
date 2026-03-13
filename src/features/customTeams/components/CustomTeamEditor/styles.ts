@@ -343,7 +343,7 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
 
 export const ReadOnlyInput = styled(TextInput)`
   opacity: 0.7;
-  cursor: default;
+  cursor: not-allowed;
   background: ${({ theme }) => theme.colors.bgSubtle};
   color: ${({ theme }) => theme.colors.textReadOnly};
   border-color: ${({ theme }) => theme.colors.borderPanel};
@@ -353,7 +353,6 @@ export const IdentityLockHint = styled.p`
   font-size: ${({ theme }) => theme.fontSizes.sm};
   color: ${({ theme }) => theme.colors.textNavMid};
   margin: ${({ theme }) => theme.spacing.xxs} 0 ${({ theme }) => theme.spacing.sm};
-  font-style: italic;
 `;
 
 /** Import-player button — ghost blue style, mirrors AddPlayerBtn. */

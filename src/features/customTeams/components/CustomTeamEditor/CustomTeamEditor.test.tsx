@@ -446,7 +446,9 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
 
   it("identity lock hint is shown in edit mode", () => {
     renderEditor({ team: existingTeam });
-    expect(screen.getByText("Team identity fields are locked after creation.")).toBeTruthy();
+    expect(
+      screen.getByText("🔒 Team identity fields and player names are locked after creation."),
+    ).toBeTruthy();
   });
 
   it("create mode: all team identity fields are editable", () => {

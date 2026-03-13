@@ -123,7 +123,9 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
         </TeamInfoSecondRow>
       </TeamInfoGrid>
       {isEditMode && (
-        <IdentityLockHint>Team identity fields are locked after creation.</IdentityLockHint>
+        <IdentityLockHint>
+          🔒 Team identity fields and player names are locked after creation.
+        </IdentityLockHint>
       )}
       {!isEditMode && (
         <GenerateBtn
