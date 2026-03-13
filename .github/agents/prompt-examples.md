@@ -1,6 +1,6 @@
 # Copilot Agent Prompt Examples
 
-Copy-paste prompts for common tasks in `maniator/self-playing-baseball`. Prepend `@safe-refactor`, `@ui-visual-snapshot`, etc. to route to the correct agent.
+Copy-paste prompts for common tasks in `maniator/blipit-legends`. Prepend `@safe-refactor`, `@ui-visual-snapshot`, etc. to route to the correct agent.
 
 ---
 

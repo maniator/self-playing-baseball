@@ -1,4 +1,4 @@
-# Copilot Instructions for Ballgame (self-playing-baseball)
+# Copilot Instructions for BlipIt Legends
 
 ## Project Overview
 

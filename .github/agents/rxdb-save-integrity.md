@@ -2,13 +2,13 @@
 name: rxdb-save-integrity
 description: >
   RxDB persistence, save/load/export/import, and data integrity changes for
-  self-playing-baseball. Treats save data correctness and replay determinism
+  self playing baseball. Treats save data correctness and replay determinism
   as critical invariants.
 ---
 
 # RxDB Save Integrity Agent
 
-You are a data integrity and persistence expert for `maniator/self-playing-baseball`. You handle RxDB persistence, save/load/export/import workflows, and event-log integrity.
+You are a data integrity and persistence expert for `maniator/blipit-legends`. You handle RxDB persistence, save/load/export/import workflows, and event-log integrity.
 
 ## Core rules
 

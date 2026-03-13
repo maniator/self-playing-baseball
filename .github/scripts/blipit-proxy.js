@@ -1,0 +1,104 @@
+#!/usr/bin/env node
+/**
+ * blipit-proxy.js
+ *
+ * Reverse proxy: http://localhost:3456  →  https://blipit.net
+ *
+ * The Playwright browser sandbox is hardcoded to localhost-only navigation
+ * regardless of any --allowed-origins config. Node.js processes can reach
+ * blipit.net freely (repo-level network firewall allows it). This proxy
+ * bridges the two: the browser navigates to http://localhost:3456 and Node.js
+ * forwards the request to the live production site.
+ *
+ * Usage:
+ *   node .github/scripts/blipit-proxy.js
+ *   # or with a custom port:
+ *   BLIPIT_PROXY_PORT=8080 node .github/scripts/blipit-proxy.js
+ */
+
+"use strict";
+
+const http = require("http");
+const https = require("https");
+
+const TARGET_HOST = "blipit.net";
+// Use Number() (not parseInt) so partially-numeric strings like "3456abc" are
+// rejected as NaN rather than silently parsed as 3456.
+const _rawPort = process.env.BLIPIT_PROXY_PORT;
+const PORT = _rawPort !== undefined ? Number(_rawPort) : 3456;
+
+if (!Number.isFinite(PORT) || PORT < 1 || PORT > 65535) {
+  console.error(
+    `[blipit-proxy] Invalid port: "${_rawPort}". ` +
+      "Set BLIPIT_PROXY_PORT to an integer between 1 and 65535.",
+  );
+  process.exit(1);
+}
+
+const server = http.createServer((req, res) => {
+  const options = {
+    hostname: TARGET_HOST,
+    port: 443,
+    path: req.url || "/",
+    method: req.method,
+    headers: {
+      ...req.headers,
+      host: TARGET_HOST,
+    },
+  };
+
+  // Remove headers that can cause issues with the upstream server
+  delete options.headers["accept-encoding"];
+
+  const proxyReq = https.request(options, (proxyRes) => {
+    const headers = Object.assign({}, proxyRes.headers);
+
+    // Rewrite any redirect Location headers so they stay on localhost.
+    // Guard against both string and string-array values (Node.js HTTP headers
+    // are typically strings, but some edge-case upstream servers may send
+    // duplicate Location headers which Node.js surfaces as an array).
+    if (typeof headers.location === "string") {
+      headers.location = headers.location.replace(
+        /https?:\/\/(www\.)?blipit\.net/gi,
+        `http://localhost:${PORT}`,
+      );
+    } else if (Array.isArray(headers.location)) {
+      headers.location = headers.location.map((loc) =>
+        loc.replace(
+          /https?:\/\/(www\.)?blipit\.net/gi,
+          `http://localhost:${PORT}`,
+        ),
+      );
+    }
+
+    res.writeHead(proxyRes.statusCode, headers);
+    proxyRes.pipe(res, { end: true });
+
+    // Clean up upstream if the client disconnects mid-response
+    res.on("close", () => proxyRes.destroy());
+  });
+
+  proxyReq.on("error", (err) => {
+    console.error("[blipit-proxy] upstream error:", err.message);
+    if (!res.headersSent) {
+      res.writeHead(502, { "content-type": "text/plain" });
+    }
+    res.end(`Proxy error: ${err.message}\n`);
+  });
+
+  // Clean up upstream request if the client aborts before a response begins
+  req.on("close", () => proxyReq.destroy());
+
+  req.pipe(proxyReq, { end: true });
+});
+
+server.on("error", (err) => {
+  console.error("[blipit-proxy] server error:", err.message);
+  process.exit(1);
+});
+
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(
+    `[blipit-proxy] Listening on http://localhost:${PORT}  →  https://${TARGET_HOST}`,
+  );
+});

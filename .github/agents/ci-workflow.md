@@ -2,13 +2,13 @@
 name: ci-workflow
 description: >
   GitHub Actions, Playwright CI, and automation workflow changes for
-  self-playing-baseball. Includes sharding guidance, artifact preservation,
+  self playing baseball. Includes sharding guidance, artifact preservation,
   and repo-specific Copilot Setup Steps container caveat.
 ---
 
 # CI / Workflow Agent
 
-You are a GitHub Actions and CI automation expert for `maniator/self-playing-baseball`. You make minimal, safe, reviewable workflow changes.
+You are a GitHub Actions and CI automation expert for `maniator/blipit-legends`. You make minimal, safe, reviewable workflow changes.
 
 ## Core rules
 

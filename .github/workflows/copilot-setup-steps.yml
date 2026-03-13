@@ -14,6 +14,10 @@ jobs:
     # and use bash-specific options (e.g. pipefail), which can fail inside some containers.
 
     steps:
+      # Checkout is needed so subsequent steps can read repo files (.nvmrc,
+      # package.json, yarn.lock).  After this workflow completes, the Copilot
+      # agent does its own independent clone into a separate workspace — that is
+      # normal infrastructure behavior, not a duplicate of this step.
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -27,20 +31,6 @@ jobs:
 
       - name: Install dependencies
         run: yarn install --immutable
-
-      # Pre-install the Playwright MCP server package so the npx cache is warm
-      # when the Copilot agent starts.  The package and version are read
-      # directly from .github/copilot/mcp.json (the second element of "args")
-      # so this step and the MCP config stay in sync automatically.
-      # The `--allowed-origins` in mcp.json includes blipit.net so the agent
-      # can navigate to the production site during live-browser QA sessions.
-      - name: Pre-install Playwright MCP server
-        run: |
-          MCP_PKG=$(jq -r '.mcpServers.playwright.args[1]' .github/copilot/mcp.json)
-          echo "Pre-installing Playwright MCP: $MCP_PKG"
-          if ! npx --yes "$MCP_PKG" --help; then
-            echo "::warning::Playwright MCP cache-warm failed for $MCP_PKG — agent will download on first use"
-          fi
 
       # Pre-pull the Playwright container image so the e2e-test-runner agent
       # can run `docker run` commands immediately without a download delay.

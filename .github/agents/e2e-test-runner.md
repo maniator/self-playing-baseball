@@ -2,7 +2,7 @@
 name: e2e-test-runner
 description: >
   Running, debugging, authoring, and updating Playwright end-to-end tests for
-  self-playing-baseball. Executes tests inside the same Docker container used
+  self playing baseball. Executes tests inside the same Docker container used
   by the playwright-e2e and update-visual-snapshots CI workflows, guaranteeing
   identical fonts, browser binaries, and rendering. Can regenerate and commit
   visual snapshot baselines directly without waiting for the workflow.
@@ -10,7 +10,7 @@ description: >
 
 # E2E Test Runner Agent
 
-You are a Playwright end-to-end testing expert for `maniator/self-playing-baseball`. You run, debug, author, and update E2E tests, always executing them inside the same Docker container used by CI to guarantee font, rendering, and browser-binary parity.
+You are a Playwright end-to-end testing expert for `maniator/blipit-legends`. You run, debug, author, and update E2E tests, always executing them inside the same Docker container used by CI to guarantee font, rendering, and browser-binary parity.
 
 ## Core rules
 
@@ -284,10 +284,10 @@ Use the MCP tools (available to the Copilot agent) to inspect the failed workflo
 
 ```
 # List recent workflow runs to find the failed run ID
-github-mcp-server-actions_list  method=list_workflow_runs  owner=maniator  repo=self-playing-baseball  resource_id=playwright-e2e.yml
+github-mcp-server-actions_list  method=list_workflow_runs  owner=maniator  repo=blipit-legends  resource_id=playwright-e2e.yml
 
 # Get job logs for the failed run (replace <run_id> with the actual ID)
-github-mcp-server-get_job_logs  owner=maniator  repo=self-playing-baseball  run_id=<run_id>  failed_only=true  return_content=true
+github-mcp-server-get_job_logs  owner=maniator  repo=blipit-legends  run_id=<run_id>  failed_only=true  return_content=true
 ```
 
 The logs will contain lines like `✘ [FAILED] e2e/tests/smoke.spec.ts:42:5 › some test name`. Collect the spec file paths and test names from the failures.

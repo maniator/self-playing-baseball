@@ -1,6 +1,6 @@
 # Custom Copilot Agents — Overview
 
-This directory contains **GitHub Copilot custom agents** tailored for `maniator/self-playing-baseball`. Each agent is a `.md` file with YAML front-matter and domain-specific instructions that guide Copilot when working on specific task types.
+This directory contains **GitHub Copilot custom agents** tailored for `maniator/blipit-legends`. Each agent is a `.md` file with YAML front-matter and domain-specific instructions that guide Copilot when working on specific task types.
 
 ---
 
@@ -75,6 +75,19 @@ This directory contains **GitHub Copilot custom agents** tailored for `maniator/
 - Tests malformed import payloads, collisions, and partial-write safety
 - Verifies correctness under long autoplay sessions (hundreds of events)
 - Keeps `save-load.spec.ts` and `import.spec.ts` E2E tests passing
+
+---
+
+### `playwright-prod`
+
+**When to use:** Live-browser QA sessions against the production site at blipit.net — taking screenshots, checking layout, verifying deployed features with the Playwright MCP.
+
+**Key guardrails:**
+
+- **Always start the proxy first** — run the bash snippet at the top of the agent file before any Playwright MCP tool call
+- **Navigate to `http://localhost:3456`**, never `https://blipit.net` — the browser sandbox always strips non-localhost entries from `--allowed-origins`
+- The proxy is started **on demand**, not always-on — only spun up when this agent is invoked
+- blipit.net is in the repo-level firewall allowlist — no special config needed; the proxy works out of the box
 
 ---
 
