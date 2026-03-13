@@ -49,12 +49,13 @@ BlipIt Baseball Legends is a polished and functional self-playing baseball simul
 update progress (game over)`) — the final save state may not always be persisted correctly.
 - The Help copy says "Edit player names" but player names cannot be edited after team creation.
 
-**Top priority issues:**
+**Top priority issues:** _(See Triage summary section for full P0–P3 table)_
 
-1. Silent RxDB CONFLICT error at game-over (save may be incomplete) — **confirmed in app code**
-2. SPA catch-all routing — ⚠️ **needs production verification** at blipit.net
-3. Edit Team UX: readonly fields with no explanation — **confirmed in app**
-4. Help copy discrepancy: "Edit player names" is not true — **confirmed in app**
+1. **P1** — Silent RxDB CONFLICT error at game-over (save may be incomplete) — **confirmed in app code**
+2. **P1\*** — SPA catch-all routing — ⚠️ **needs production verification** at blipit.net
+3. **P2** — Edit Team UX: readonly fields with no explanation — **confirmed in app**
+4. **P2** — Help copy discrepancy: "Edit player names" is not true — **confirmed in app**
+5. **P3** — Same-team post-submit-only validation (no inline block) — **confirmed in app; game always blocked**
 
 ---
 
@@ -276,7 +277,7 @@ Notes:
 | Start game → save → go Home → Load Saved Game                                            | Loads correctly ✅                                                   |
 | Navigate to /game directly by typing URL                                                 | 404 error (see ISSUE-06) ⚠️                                          |
 | Navigate to /stats, /teams, /help via app then browser-back to root then browser-forward | Works correctly ✅                                                   |
-| Set both Away and Home to same team                                                      | Allowed — game launches (see Observation OBS-01)                     |
+| Set both Away and Home to same team                                                      | Validation error on submit; game blocked (see ISSUE-07)              |
 | Create team → Generate Random → change Team Name to something long / overlapping         | Saved with no error; display name = "City + Name" combined correctly |
 | Create team with no players → Save                                                       | Shows "At least 1 lineup player is required." validation ✅          |
 
@@ -426,7 +427,94 @@ Notes:
 
 ---
 
-## Unexpected / random behavior tested
+### ISSUE-07: New Game setup — same-team validation is post-submit only; no inline warning
+
+- **Severity:** Low
+- **Type:** UX
+- **Viewport(s):** All
+- **Confirmed:** ✅ App code — reproduced consistently for all team types
+- **Steps to reproduce:**
+  1. Go to New Game
+  2. Set both Away and Home dropdowns to the same team
+  3. Observe the form before clicking Play Ball
+  4. Click Play Ball
+- **Expected result:** Ideally an inline validation hint appears while both dropdowns show the same
+  value, before the user even clicks Play Ball
+- **Actual result:** No validation indicator appears while the same team is selected on both sides.
+  The Manager Mode radio buttons silently show two identical labels
+  (e.g. "Away (Lakewood Legends)" and "Home (Lakewood Legends)"). Only _after_ clicking Play Ball does
+  the error appear: _"⚠ Away and home teams must be different — choose two different teams."_ The
+  game does not start.
+- **Frequency:** Always, for all team types
+- **Screenshot:**
+
+  ![Issue 07 — Same team selected, no inline warning](qa-report-production-2026-03-12-v2-assets/obs01-case1-lakewood-before-submit.png)
+  ![Issue 07 — Error after clicking Play Ball](qa-report-production-2026-03-12-v2-assets/obs01-case1-lakewood-after-submit-error.png)
+
+- **Notes:** The validation logic is correct and the error message is clear. The gap is only in
+  proactiveness — disabling Play Ball or showing an inline hint while the dropdowns match would prevent
+  the user from having to submit to learn about the conflict. The error does clear immediately when
+  the user selects different teams.
+
+---
+
+## Same-team matchup investigation
+
+> This section is a targeted follow-up to resolve the same-team question noted in the initial QA pass.
+
+**Question being investigated:** Is the same-team matchup observation (from the blank-slate session) a
+general validation bug, a demo-team-only quirk, or something else?
+
+### Methodology
+
+Four cases were tested in isolated browser sessions using a local production build:
+
+1. Lakewood Legends vs Lakewood Legends (demo team)
+2. Riverside Rockets vs Riverside Rockets (demo team)
+3. A newly created custom team vs itself (with demo teams also present in the database)
+4. Behavior after going Back and re-entering New Game after a same-team selection
+
+For each case, the following was recorded:
+
+- Whether the UI allows the selection without any inline warning
+- Whether a validation error appears (and when — before or after submit)
+- Whether Play Ball! is blocked or enabled at the time of selection
+- Whether the game actually navigates to `/game` on submit
+
+### Findings
+
+| Case                              | Inline warning | Play Ball blocked | Error on submit                                                          | Game starts |
+| --------------------------------- | -------------- | ----------------- | ------------------------------------------------------------------------ | ----------- |
+| Lakewood Legends vs Lakewood      | ❌ None        | ❌ Not blocked    | ✅ "Away and home teams must be different — choose two different teams." | ❌ Blocked  |
+| Riverside Rockets vs Riverside    | ❌ None        | ❌ Not blocked    | ✅ Same error                                                            | ❌ Blocked  |
+| Custom team (Columbus) vs itself  | ❌ None        | ❌ Not blocked    | ✅ Same error                                                            | ❌ Blocked  |
+| After Back + re-entering New Game | ❌ None        | ❌ Not blocked    | ✅ Same error (if re-submitted)                                          | ❌ Blocked  |
+
+Additional finding — error recovery: When the user fixes the selection (picks different teams after seeing
+the error), the error message disappears immediately from the form without requiring another submit.
+Play Ball then navigates to `/game` successfully.
+
+![Case 1 — Lakewood vs Lakewood, before submit (no warning shown)](qa-report-production-2026-03-12-v2-assets/obs01-case1-lakewood-before-submit.png)
+![Case 1 — Validation error after submit](qa-report-production-2026-03-12-v2-assets/obs01-case1-lakewood-after-submit-error.png)
+![Case 2 — Riverside vs Riverside, before submit](qa-report-production-2026-03-12-v2-assets/obs01-case2-riverside-before-submit.png)
+![Case 2 — Validation error after submit](qa-report-production-2026-03-12-v2-assets/obs01-case2-riverside-after-submit-error.png)
+![Case 3 — Custom team vs itself, before submit](qa-report-production-2026-03-12-v2-assets/obs01-case3-custom-before-submit.png)
+![Case 3 — Validation error after submit](qa-report-production-2026-03-12-v2-assets/obs01-case3-custom-after-submit-error.png)
+![Case 4 — Error visible; then cleared after fix](qa-report-production-2026-03-12-v2-assets/obs01-case4-error-visible.png)
+![Case 4 — Error clears when teams are different](qa-report-production-2026-03-12-v2-assets/obs01-case4-error-after-fix.png)
+
+### Conclusion
+
+The same-team matchup question is **resolved**:
+
+- This is **not** a demo-team-only issue — it applies to all team types equally
+- This is **not** a validation bug that lets a game start with the same team on both sides — the game
+  is always blocked
+- This **is** a minor UX gap: the Play Ball button is not disabled and no inline hint appears while
+  the same team is selected; the user must click Play Ball to discover the conflict
+- Confidence: ✅ **App-confirmed** — consistent across all four cases, all team types
+
+---
 
 | Action                                                 | Observed behavior                                                             | Assessment                                 |
 | ------------------------------------------------------ | ----------------------------------------------------------------------------- | ------------------------------------------ |
@@ -441,7 +529,7 @@ Notes:
 | Export a save from saves panel                         | Browser download triggered (file content not verified)                        | ✅                                         |
 | Click "Paste from Clipboard" in saves page             | Button present and rendered (clipboard prompt depends on browser permissions) | ✅                                         |
 | Navigate directly to `/help` via typed URL             | 404 from static server (same as ISSUE-06)                                     | ⚠️                                         |
-| Set both teams to same team                            | Allowed; game setup shows both radio labels as same team name                 | Observation OBS-01                         |
+| Set both teams to same team                            | Validation error on submit; game blocked (see ISSUE-07)                       | ⚠️ Post-submit only; no inline warning     |
 
 ---
 
@@ -515,10 +603,10 @@ Notes:
 5. **Career stats with 0 games** — Career Stats was tested with no prior game history; the page rendered
    cleanly with empty tables. ✅ Confirmed working.
 
-6. **Same-team matchup** — Setting both Away and Home to the same team is allowed in the local build.
-   The resulting game runs without errors but the setup UI shows both Manager Mode labels as identical
-   (e.g. "Away (Lakewood Legends)" and "Home (Lakewood Legends)"). Is this intended? ⚠️ _Needs
-   production verification — behavior may differ._
+6. **Same-team matchup** ✅ _Resolved — see Same-team investigation section._ The same-team validation
+   exists and is consistent across all team types (demo and custom). The game is always blocked. The
+   only gap is that the Play Ball button is not disabled proactively and no inline hint appears before
+   submit.
 
 ---
 
@@ -578,9 +666,13 @@ there's no indication of that in the UI.
 ### Trying strange things on New Game setup
 
 **Same team vs same team:** I set both dropdowns to Lakewood Legends just to see what would happen.
-The app allowed it with no warning. The Manager Mode radio buttons showed "Away (Lakewood Legends)" and
-"Home (Lakewood Legends)" — indistinguishable. The game ran without error. A user who accidentally
-picks the same team twice gets no feedback.
+The app allowed me to make that selection with no inline warning — the Manager Mode radio buttons showed
+"Away (Lakewood Legends)" and "Home (Lakewood Legends)" as identical labels with no hint that this was
+invalid. I clicked Play Ball and _then_ the error appeared: "⚠ Away and home teams must be different
+— choose two different teams." The game did not start. A follow-up investigation (see Same-team
+matchup investigation section) confirmed this behavior is consistent across all team types and is
+not a validation gap that lets a game start — it is a proactiveness gap where the error appears
+after submit rather than inline.
 
 ![Same team on both sides — no warning](qa-report-production-2026-03-12-v2-assets/supplemental-07-same-team-setup.png)
 
@@ -627,6 +719,34 @@ their stats page, shares a link, or refreshes mid-game hits this. ⚠️ _Needs 
 
 ---
 
+## Issue triage summary
+
+> Prioritization layer added to make the report actionable without additional sorting. Each issue is rated
+> P0 (blocker) → P3 (polish), and labeled by confidence and scope.
+
+| Issue    | Title                                                  | Priority | User impact                                                                                                   | Confidence                                                        | Scope                                   |
+| -------- | ------------------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | --------------------------------------- |
+| ISSUE-05 | Silent RxDB CONFLICT at game-over                      | **P1**   | High — final game state may not be saved; user has no indication; loaded save may be incomplete               | ✅ App-confirmed — consistent reproduction                        | All users, all game endings             |
+| ISSUE-06 | SPA routing — 404 on direct/refresh navigation         | **P1\*** | Critical if unmitigated — any bookmark, share, or mid-game refresh returns hard error with no recovery path   | ⚠️ Local plain static server only — needs production verification | All users navigating non-root routes    |
+| ISSUE-01 | Edit Team page — identity fields are silently readonly | **P2**   | Medium — users who attempt to customize teams will be confused and may abandon customization                  | ✅ App-confirmed                                                  | Users who edit teams                    |
+| ISSUE-02 | Help copy says "Edit player names" — incorrect         | **P2**   | Medium — misleads users who read help before editing; compounds ISSUE-01 confusion                            | ✅ App-confirmed                                                  | Users who read How to Play              |
+| ISSUE-03 | "Team Name" label doesn't clarify it's a nickname only | **P3**   | Low — leads to awkward compound names (e.g. "Omaha Lakewood Legends") if user types full name                 | ✅ App-confirmed                                                  | Users creating custom teams             |
+| ISSUE-04 | Desktop 1280×720 — Contact button 7px past fold        | **P3**   | Low — Contact is barely below fold on one common viewport; easily discovered by scrolling                     | ✅ App-confirmed                                                  | Desktop 720p viewport only              |
+| ISSUE-07 | New Game — same-team validation is post-submit only    | **P3**   | Low — validation exists and blocks the game correctly; gap is only that Play Ball is not proactively disabled | ✅ App-confirmed                                                  | Users who accidentally select same team |
+
+> **Priority key:**
+>
+> - **P0** — Blocker (app broken for all users; nothing in this report reached P0)
+> - **P1** — High (significant functionality impaired; should be fixed before broad promotion)
+> - **P2** — Medium (clear UX problem; causes confusion or abandonment; fix in next release cycle)
+> - **P3** — Low / Polish (minor friction; visible but not blocking)
+>
+> **\* ISSUE-06** is rated P1 only if the production server lacks a SPA catch-all rule. If blipit.net
+> already handles this (e.g. via Netlify/Vercel rewrites), the effective priority drops to **N/A**.
+> This must be verified before filing a ticket.
+
+---
+
 ## Final assessment
 
 **Is production in good shape for a first-time user?**
@@ -639,11 +759,16 @@ Mostly yes. The core game loop is complete, polished, and satisfying. A new user
 3. **Edit Team UX** — Users who go to customize teams will be frustrated by readonly-but-styled-as-editable fields; likely to abandon team customization
 4. **Help copy discrepancy** — "Edit player names" is incorrect; medium-impact for users who read the docs
 
-**Suggested next fixes in priority order:**
+**Suggested next fixes in priority order:** _(see Triage summary for full details)_
 
-1. Verify and fix SPA catch-all routing on production server
-2. Investigate and fix `useRxdbGameSync` game-over failure; add user-visible save confirmation
-3. Edit Team page: either make fields editable, add a clear "locked after creation" badge/tooltip, or use `disabled` + greyed styling instead of invisible `readonly`
-4. Help copy fix: "Edit player names and positions" → something accurate
-5. "Team Name" field label: add "(nickname only)" hint or change label to "Team Nickname"
-6. Desktop 720p home screen: reduce content/padding so the Contact button fits above the fold
+1. **P1** — Investigate and fix `useRxdbGameSync` game-over CONFLICT; add user-visible save
+   confirmation banner
+2. **P1\*** — Verify SPA catch-all routing on production server (blipit.net); if missing, add
+   `_redirects` / `try_files` / rewrites rule
+3. **P2** — Edit Team page: make locked fields visually distinct (`disabled` + greyed styling or a
+   clear "locked after creation" notice); rename page or add subtitle
+4. **P2** — Help copy fix: "Edit player names and positions" → "Edit player positions and batting
+   handedness" (or similar accurate description)
+5. **P3** — "Team Name" field: add "(nickname only)" hint or rename label to "Team Nickname"
+6. **P3** — Desktop 720p home screen: reduce padding so the Contact button fits above the fold
+7. **P3** — New Game form: disable Play Ball proactively when same team is selected on both sides
