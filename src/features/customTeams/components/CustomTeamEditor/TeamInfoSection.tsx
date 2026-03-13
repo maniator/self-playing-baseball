@@ -5,6 +5,7 @@ import { generateDefaultCustomTeamDraft } from "@feat/customTeams/generation/gen
 import type { EditorAction, EditorState } from "./editorState";
 import {
   FieldGroup,
+  FieldHint,
   FieldLabel,
   FormSection,
   GenerateBtn,
@@ -40,7 +41,7 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
       <SectionHeading>Team Info</SectionHeading>
       <TeamInfoGrid>
         <FieldGroup>
-          <FieldLabel htmlFor="ct-name">Team Name *</FieldLabel>
+          <FieldLabel htmlFor="ct-name">{isEditMode ? "Team Name *" : "Team Nickname *"}</FieldLabel>
           {isEditMode ? (
             <ReadOnlyInput
               id="ct-name"
@@ -50,16 +51,23 @@ export const TeamInfoSection: React.FunctionComponent<Props> = ({
               data-testid="custom-team-name-input"
             />
           ) : (
-            <TextInput
-              id="ct-name"
-              value={state.name}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
-              }
-              placeholder="e.g. Eagles"
-              aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
-              data-testid="custom-team-name-input"
-            />
+            <>
+              <TextInput
+                id="ct-name"
+                value={state.name}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  dispatch({ type: "SET_FIELD", field: "name", value: e.target.value })
+                }
+                placeholder="e.g. Eagles"
+                aria-invalid={!state.name.trim() && !!state.error ? "true" : undefined}
+                data-testid="custom-team-name-input"
+              />
+              <FieldHint>
+                Displayed as:{" "}
+                {state.city.trim() ? `${state.city.trim()} ` : ""}
+                {state.name.trim() || "Nickname"} (e.g. Austin Eagles)
+              </FieldHint>
+            </>
           )}
         </FieldGroup>
         <TeamInfoSecondRow>

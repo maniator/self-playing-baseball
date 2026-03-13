@@ -355,6 +355,13 @@ export const IdentityLockHint = styled.p`
   margin: ${({ theme }) => theme.spacing.xxs} 0 ${({ theme }) => theme.spacing.sm};
 `;
 
+export const FieldHint = styled.p`
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  color: ${({ theme }) => theme.colors.textHint};
+  margin: ${({ theme }) => theme.spacing.s3} 0 0;
+  line-height: 1.3;
+`;
+
 /** Import-player button — ghost blue style, mirrors AddPlayerBtn. */
 export const ImportPlayerBtn = styled(AddPlayerBtn)`
   color: ${({ theme }) => theme.colors.textSecondaryLink};
