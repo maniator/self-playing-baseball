@@ -52,6 +52,9 @@ const server = http.createServer((req, res) => {
 
     res.writeHead(proxyRes.statusCode, headers);
     proxyRes.pipe(res, { end: true });
+
+    // Clean up upstream if the client disconnects mid-response
+    res.on("close", () => proxyRes.destroy());
   });
 
   proxyReq.on("error", (err) => {
@@ -61,6 +64,9 @@ const server = http.createServer((req, res) => {
     }
     res.end(`Proxy error: ${err.message}\n`);
   });
+
+  // Clean up upstream request if the client aborts before a response begins
+  req.on("close", () => proxyReq.destroy());
 
   req.pipe(proxyReq, { end: true });
 });
