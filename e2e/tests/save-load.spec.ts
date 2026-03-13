@@ -2,14 +2,12 @@ import { expect, test } from "@playwright/test";
 import * as fs from "fs";
 
 import {
-  configureNewGame,
   loadFirstSave,
   openSavesModal,
   resetAppState,
   saveCurrentGame,
   startGameViaPlayBall,
   waitForLogLines,
-  waitForNewGameDialog,
 } from "../utils/helpers";
 
 test.describe("Save / Load", () => {
@@ -117,12 +115,12 @@ test.describe("Save / Load", () => {
       timeout: 5_000,
     });
 
-    // 5. Close the modal and reset to a fresh game state.
+    // 5. Close the modal and start a fresh game with full team-select guards so Play
+    //    Ball is only submitted once the team selects are populated (avoids the
+    //    "Select valid away and home teams" validation error that fires when the
+    //    selects are still empty on slow CI runners).
     await page.getByRole("button", { name: /close/i }).click();
-    await resetAppState(page);
-    await configureNewGame(page);
-    await page.getByTestId("play-ball-button").click();
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 20_000 });
+    await startGameViaPlayBall(page);
 
     // 6. Import via paste and let auto-load handle the rest.
     await openSavesModal(page);

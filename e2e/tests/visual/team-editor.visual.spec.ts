@@ -141,7 +141,14 @@ test.describe("Visual — Stage 2B: Create Team editor, mobile portrait", () => 
     await page.getByTestId("manage-teams-create-button").click();
     await expect(page.getByTestId("manage-teams-editor-shell")).toBeVisible({ timeout: 5_000 });
     await page.getByTestId("custom-team-regenerate-defaults-button").click();
+    // Wait for both the team name AND abbreviation fields to be populated so we
+    // know the full form re-render from "Generate Defaults" has settled before
+    // taking the screenshot.  Waiting only for the name field can capture the
+    // editor mid-render (two values stacked) on slow mobile WebKit CI runners.
     await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
+      timeout: 5_000,
+    });
+    await expect(page.getByTestId("custom-team-abbreviation-input")).not.toHaveValue("", {
       timeout: 3_000,
     });
 

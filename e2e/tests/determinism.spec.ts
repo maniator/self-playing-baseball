@@ -33,17 +33,29 @@ async function runGameInFreshContext(
   const page = await context.newPage();
   try {
     await page.goto("/");
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
+    // Fresh contexts on slow CI runners can take longer than 15 s for the
+    // RxDB database to initialise (IndexedDB cold-start inside a new context).
+    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 30_000 });
     // Import fixture teams before starting (custom teams required for new games).
     await importTeamsFixture(page, "fixture-teams.json");
     await page.goto("/exhibition/new");
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
     await configureNewGame(page, { seed });
+    // Wait for both team selects to be populated before submitting — the useEffect
+    // that sets team IDs runs after the first paint, so on slow CI runners the
+    // selects can still be empty when Play Ball is clicked, causing a validation
+    // error that leaves the page stuck on the setup screen.
+    await expect(page.getByTestId("new-game-custom-away-team-select")).not.toHaveValue("", {
+      timeout: 20_000,
+    });
+    await expect(page.getByTestId("new-game-custom-home-team-select")).not.toHaveValue("", {
+      timeout: 5_000,
+    });
     await page.getByTestId("play-ball-button").click();
     await expect(
       page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-    ).not.toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    ).not.toBeVisible({ timeout: 20_000 });
+    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 20_000 });
     // Wait for 5 lines with a generous 30 s budget — at SPEED_FAST (150 ms/pitch)
     // the first 5 log lines appear within a few seconds on CI runners.
     // We only need 5 lines because captureGameSignature reads
