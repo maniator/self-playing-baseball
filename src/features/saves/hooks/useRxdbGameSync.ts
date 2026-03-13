@@ -113,6 +113,12 @@ export const useRxdbGameSync = (
     if (halfKey === prevHalfKeyRef.current) return;
     prevHalfKeyRef.current = halfKey;
 
+    // Skip if the game just ended in this same render — the game-over effect
+    // will write the final state.  Both effects fire when halfKey and gameOver
+    // change together (last half-inning + FINAL in one state transition).
+    // Writing from both causes an RxDB CONFLICT on the same document revision.
+    if (gameStateRef.current.gameOver) return;
+
     const saveId = rxSaveIdRef.current;
     if (!saveId) return;
 

@@ -404,4 +404,35 @@ describe("useRxdbGameSync", () => {
 
     expect(saveStoreModule.SaveStore.updateProgress).not.toHaveBeenCalled();
   });
+
+  it("does not call updateProgress for the half-inning when gameOver changes in the same render (prevents CONFLICT)", async () => {
+    // Regression test: when the last half-inning and gameOver both flip in the
+    // same render, the half-inning effect must NOT write — the game-over effect
+    // is the sole writer so both effects don't race on the same document revision.
+    const refs = makeRefs();
+    let ctx = makeContextValue({ inning: 9, atBat: 1, gameOver: false, pitchKey: 20 });
+    const { rerender } = renderHook(() => useRxdbGameSync(refs.rxSaveIdRef, refs.actionBufferRef), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <GameContext.Provider value={ctx}>{children}</GameContext.Provider>
+      ),
+    });
+
+    vi.clearAllMocks();
+
+    // Simulate game ending: halfKey advances (atBat 1→0 of next inning) AND
+    // gameOver becomes true in the same render.
+    await act(async () => {
+      ctx = makeContextValue({ inning: 10, atBat: 0, gameOver: true, pitchKey: 21 });
+      rerender();
+    });
+
+    // updateProgress should be called exactly once — from the game-over effect,
+    // not twice (game-over + half-inning racing each other).
+    expect(saveStoreModule.SaveStore.updateProgress).toHaveBeenCalledTimes(1);
+    expect(saveStoreModule.SaveStore.updateProgress).toHaveBeenCalledWith(
+      "save_1",
+      21,
+      expect.objectContaining({ scoreSnapshot: expect.any(Object) }),
+    );
+  });
 });
