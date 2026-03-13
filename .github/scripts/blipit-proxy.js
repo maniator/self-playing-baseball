@@ -22,12 +22,15 @@ const http = require("http");
 const https = require("https");
 
 const TARGET_HOST = "blipit.net";
-const PORT = parseInt(process.env.BLIPIT_PROXY_PORT || "3456", 10);
+// Use Number() (not parseInt) so partially-numeric strings like "3456abc" are
+// rejected as NaN rather than silently parsed as 3456.
+const _rawPort = process.env.BLIPIT_PROXY_PORT;
+const PORT = _rawPort !== undefined ? Number(_rawPort) : 3456;
 
 if (!Number.isFinite(PORT) || PORT < 1 || PORT > 65535) {
   console.error(
-    `[blipit-proxy] Invalid port: "${process.env.BLIPIT_PROXY_PORT}". ` +
-      "Set BLIPIT_PROXY_PORT to a number between 1 and 65535.",
+    `[blipit-proxy] Invalid port: "${_rawPort}". ` +
+      "Set BLIPIT_PROXY_PORT to an integer between 1 and 65535.",
   );
   process.exit(1);
 }
