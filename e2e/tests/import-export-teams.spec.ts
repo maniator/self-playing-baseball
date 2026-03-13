@@ -321,8 +321,15 @@ test.describe("Custom Team Editor — cross-team player import conflict", () => 
     await expect(page.getByText("Team B")).toBeVisible({ timeout: 15_000 });
 
     // Open Team B editor
-    // The most recently created team appears first in the list (sorted by updatedAt desc)
-    await page.getByTestId("custom-team-edit-button").first().click();
+    // Find Team B's list item by text and click its edit button to avoid any
+    // sort-order ambiguity between Team A and Team B on slow CI runners
+    // (sorting by updatedAt desc can be non-deterministic when both timestamps
+    // are nearly equal).
+    await page
+      .getByTestId("custom-team-list-item")
+      .filter({ hasText: "Team B" })
+      .getByTestId("custom-team-edit-button")
+      .click();
     await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 10_000 });
 
     // ── Step 3: Attempt to import Team A's player into Team B ─────────────────

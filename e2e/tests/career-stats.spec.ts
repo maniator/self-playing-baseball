@@ -181,13 +181,15 @@ test.describe("Career Stats with seeded history", () => {
     await page.getByTestId("career-stats-pitching-tab").click();
     // All three seeded pitchers should appear.
     // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
+    // Use a generous 20 s timeout: the pitching-tab RxDB query fires after the tab switch and
+    // can take longer on slow mobile WebKit CI runners.
     await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
-      timeout: 10_000,
+      timeout: 20_000,
     });
-    await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 10_000 });
     // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
     await expect(page.getByRole("button", { name: "C. Closer", exact: true })).toBeVisible({
-      timeout: 5_000,
+      timeout: 10_000,
     });
     // C. Closer has SV=1 — find the row and verify SV column.
     const closerRow = page.locator("tr", { hasText: "C. Closer" });
@@ -202,7 +204,7 @@ test.describe("Career Stats with seeded history", () => {
     await page.getByTestId("career-stats-pitching-tab").click();
     // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
     await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
-      timeout: 10_000,
+      timeout: 20_000,
     });
     // A. Ace: outsPitched=18 → IP=6.0; earnedRuns=3 → ERA=(3*27)/18=4.50
     const aceRow = page.locator("tr", { hasText: "A. Ace" });

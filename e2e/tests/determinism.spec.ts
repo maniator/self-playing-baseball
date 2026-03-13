@@ -1,6 +1,6 @@
 import { type Browser, expect, test } from "@playwright/test";
 
-import { captureGameSignature, configureNewGame, importTeamsFixture } from "../utils/helpers";
+import { captureGameSignature, startGameViaPlayBall } from "../utils/helpers";
 
 const FIXED_SEED = "deadbeef";
 
@@ -32,18 +32,10 @@ async function runGameInFreshContext(
   });
   const page = await context.newPage();
   try {
-    await page.goto("/");
-    await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
-    // Import fixture teams before starting (custom teams required for new games).
-    await importTeamsFixture(page, "fixture-teams.json");
-    await page.goto("/exhibition/new");
-    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    await configureNewGame(page, { seed });
-    await page.getByTestId("play-ball-button").click();
-    await expect(
-      page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-    ).not.toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+    // startGameViaPlayBall handles: DB loading wait, fixture-team import,
+    // exhibition setup navigation, team-select population guards, Play Ball
+    // click, and scoreboard visibility — all anti-flake logic lives in one place.
+    await startGameViaPlayBall(page, { seed });
     // Wait for 5 lines with a generous 30 s budget — at SPEED_FAST (150 ms/pitch)
     // the first 5 log lines appear within a few seconds on CI runners.
     // We only need 5 lines because captureGameSignature reads

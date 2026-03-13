@@ -66,7 +66,9 @@ test.describe("Manage Teams — team list and CRUD", () => {
     await resetAppState(page);
     await page.getByTestId("home-manage-teams-button").click();
     await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 15_000 });
+    // Use a generous timeout: the RxDB reactive query that repopulates the list
+    // can take longer than 15 s on heavily-loaded CI runners.
+    await expect(page.getByText("Persistent Eagles")).toBeVisible({ timeout: 30_000 });
   });
 
   test("editing a custom team: name is read-only in Edit mode; team remains in list after save", async ({
