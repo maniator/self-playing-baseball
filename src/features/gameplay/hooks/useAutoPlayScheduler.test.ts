@@ -42,6 +42,7 @@ const renderScheduler = ({
   gameOver = false,
   muted = false,
   speed = 700,
+  paused = false,
   handlePitch = vi.fn(),
   inning = 1,
   atBat = 0 as 0 | 1 | null,
@@ -54,6 +55,7 @@ const renderScheduler = ({
       gameOver,
       muted,
       speed,
+      paused,
       handlePitch,
       inning,
       atBat,
@@ -143,6 +145,7 @@ describe("useAutoPlayScheduler", () => {
       gameStarted: true,
       muted: true,
       speed: 100,
+      paused: false,
       handlePitch: handleClick,
       inning: 1,
       atBat: 1,
@@ -187,6 +190,7 @@ describe("useAutoPlayScheduler", () => {
       managerMode: false,
       muted: true,
       speed: 100,
+      paused: false,
       handlePitch: handleClick,
       inning: 9,
       atBat: 1,
@@ -204,6 +208,7 @@ describe("useAutoPlayScheduler", () => {
       managerMode: false,
       muted: true,
       speed: 100,
+      paused: false,
       handlePitch: handleClick,
       inning: 1,
       atBat: 0,
@@ -313,6 +318,7 @@ describe("useAutoPlayScheduler", () => {
       gameStarted: true,
       muted: true,
       speed: 0,
+      paused: false,
       handlePitch: handleClick,
       inning: 1,
       atBat: 1 as 0 | 1,
@@ -324,5 +330,51 @@ describe("useAutoPlayScheduler", () => {
     // With instant mode, should fire immediately even at half-inning boundary — no 1500ms pause.
     vi.advanceTimersByTime(1);
     expect(handleClick).toHaveBeenCalled();
+  });
+});
+
+describe("paused parameter", () => {
+  it("does not call handlePitch when paused=true even after speed interval elapses", () => {
+    const handlePitch = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+    renderScheduler({
+      gameStarted: true,
+      muted: true,
+      speed: 100,
+      paused: true,
+      handlePitch,
+    });
+    vi.advanceTimersByTime(500);
+    expect(handlePitch).not.toHaveBeenCalled();
+  });
+
+  it("resumes calling handlePitch when paused flips from true to false", () => {
+    const handlePitch = vi.fn();
+    vi.spyOn(announceModule, "isSpeechPending").mockReturnValue(false);
+    const { rerender } = renderScheduler({
+      gameStarted: true,
+      muted: true,
+      speed: 100,
+      paused: true,
+      handlePitch,
+    });
+    vi.advanceTimersByTime(500);
+    expect(handlePitch).not.toHaveBeenCalled();
+
+    rerender({
+      gameStarted: true,
+      muted: true,
+      speed: 100,
+      paused: false,
+      handlePitch,
+      pendingDecision: null,
+      managerMode: false,
+      gameOver: false,
+      inning: 1,
+      atBat: 0,
+    });
+
+    vi.advanceTimersByTime(200);
+    expect(handlePitch).toHaveBeenCalled();
   });
 });

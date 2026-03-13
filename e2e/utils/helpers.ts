@@ -688,3 +688,35 @@ export async function importHistoryFixture(page: Page, fixtureName: string): Pro
     { guard: async () => await modal.isVisible() },
   );
 }
+
+/**
+ * Pauses the autoplay scheduler by clicking the pause/play button.
+ * Only clicks if the game is not already paused (button shows ⏸, aria-label "Pause game").
+ * After clicking, waits for the button to confirm the paused state (aria-label "Resume game").
+ *
+ * Call this after waitForLogLines to freeze game state before taking visual snapshots,
+ * guaranteeing deterministic screenshot content regardless of autoplay timing.
+ */
+export async function pauseGame(page: Page): Promise<void> {
+  const btn = page.getByTestId("pause-play-button");
+  await btn.waitFor({ state: "visible", timeout: 10_000 });
+  const label = await btn.getAttribute("aria-label");
+  if (label !== "Resume game") {
+    await btn.click();
+    await expect(btn).toHaveAttribute("aria-label", "Resume game", { timeout: 5_000 });
+  }
+}
+
+/**
+ * Resumes the autoplay scheduler by clicking the pause/play button.
+ * Only clicks if the game is currently paused (button shows ▶, aria-label "Resume game").
+ */
+export async function resumeGame(page: Page): Promise<void> {
+  const btn = page.getByTestId("pause-play-button");
+  await btn.waitFor({ state: "visible", timeout: 10_000 });
+  const label = await btn.getAttribute("aria-label");
+  if (label !== "Pause game") {
+    await btn.click();
+    await expect(btn).toHaveAttribute("aria-label", "Pause game", { timeout: 5_000 });
+  }
+}

@@ -1,6 +1,11 @@
 import { expect, type Page, test } from "@playwright/test";
 
-import { disableAnimations, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  disableAnimations,
+  pauseGame,
+  startGameViaPlayBall,
+  waitForLogLines,
+} from "../utils/helpers";
 
 /**
  * Game-layout visual regression snapshots.
@@ -89,6 +94,7 @@ async function setupLayout(page: Page, viewport: Viewport): Promise<void> {
   // Wait for enough entries so AnnouncementsArea and HitLog fill to max-height.
   await waitForLogLines(page, 30, 90_000);
   await waitForStableHeight(page, "main");
+  await pauseGame(page);
 }
 
 test.describe("Game layout snapshots", () => {

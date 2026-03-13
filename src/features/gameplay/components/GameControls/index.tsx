@@ -6,9 +6,19 @@ import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import type { SaveDoc } from "@storage/types";
 
-import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
+import { SPEED_STEP_LABELS, SPEED_STEPS } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
+import {
+  AutoPlayGroup,
+  Button,
+  Controls,
+  HelpButton,
+  PausePlayButton,
+  SpeedLabel,
+  SpeedRow,
+  SpeedSlider,
+  ToggleLabel,
+} from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 
@@ -36,6 +46,8 @@ const GameControls: React.FunctionComponent<Props> = ({
   const {
     speed,
     setSpeed,
+    paused,
+    setPaused,
     announcementVolume,
     alertVolume,
     managerMode,
@@ -62,6 +74,7 @@ const GameControls: React.FunctionComponent<Props> = ({
     resolveTeamLabel(teams[0], customTeamDocs),
     resolveTeamLabel(teams[1], customTeamDocs),
   ];
+  const speedIndex = Math.max(0, SPEED_STEPS.indexOf(speed));
 
   return (
     <>
@@ -114,21 +127,34 @@ const GameControls: React.FunctionComponent<Props> = ({
           <InstructionsModal />
         </React.Suspense>
         <AutoPlayGroup>
-          <ToggleLabel>
-            Speed
-            <Select
-              value={speed}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setSpeed(parseInt(e.target.value, 10))
-              }
-              data-testid="speed-select"
-            >
-              <option value={SPEED_SLOW}>Slow</option>
-              <option value={SPEED_NORMAL}>Normal</option>
-              <option value={SPEED_FAST}>Fast</option>
-              <option value={SPEED_INSTANT}>Instant</option>
-            </Select>
-          </ToggleLabel>
+          <SpeedRow>
+            {gameStarted && !gameOver && (
+              <PausePlayButton
+                onClick={() => setPaused(!paused)}
+                aria-label={paused ? "Resume game" : "Pause game"}
+                data-testid="pause-play-button"
+                title={paused ? "Resume" : "Pause"}
+              >
+                {paused ? "▶" : "⏸"}
+              </PausePlayButton>
+            )}
+            <ToggleLabel>
+              Speed
+              <SpeedSlider
+                type="range"
+                min={0}
+                max={SPEED_STEPS.length - 1}
+                step={1}
+                value={speedIndex}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSpeed(SPEED_STEPS[parseInt(e.target.value, 10)])
+                }
+                aria-label="Game speed"
+                data-testid="speed-slider"
+              />
+              <SpeedLabel>{SPEED_STEP_LABELS[speedIndex]}</SpeedLabel>
+            </ToggleLabel>
+          </SpeedRow>
           <VolumeControls
             announcementVolume={announcementVolume}
             alertVolume={alertVolume}

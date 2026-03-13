@@ -36,6 +36,10 @@ export const useGameControls = ({
   const [managerMode, setManagerMode] = useLocalStorage("managerMode", false);
   const [strategy, setStrategy] = useLocalStorage<Strategy>("strategy", "balanced");
   const [managedTeam, setManagedTeam] = useLocalStorage<0 | 1>("managedTeam", 0);
+  // paused is session-only — no persistence needed. useState is guaranteed
+  // reactive; useLocalStorage was unreliable here due to useSyncExternalStore
+  // emitter timing in usehooks-ts v3.
+  const [paused, setPaused] = React.useState(false);
   const [currentSaveId, setCurrentSaveId] = React.useState<string | null>(null);
 
   // Sanitize values read from localStorage — invalid entries are coerced to safe defaults
@@ -62,6 +66,11 @@ export const useGameControls = ({
     if (typeof alertVolume !== "number" || alertVolume < 0 || alertVolume > 1)
       setAlertVolumeState(1);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Reset pause when the game ends so the next game always starts playing.
+  React.useEffect(() => {
+    if (gameOver) setPaused(false);
+  }, [gameOver]);
 
   const { skipDecision } = useGameRefs({
     strikes,
@@ -111,6 +120,7 @@ export const useGameControls = ({
     gameOver,
     muted: safeAnnouncementVolume === 0,
     speed: safeSpeed,
+    paused,
     handlePitch,
     inning,
     atBat,
@@ -140,6 +150,8 @@ export const useGameControls = ({
     dispatch,
     speed: safeSpeed,
     setSpeed,
+    paused,
+    setPaused,
     announcementVolume: safeAnnouncementVolume,
     alertVolume: safeAlertVolume,
     managerMode: safeManagerMode,
