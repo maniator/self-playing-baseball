@@ -154,8 +154,8 @@ test.describe("Visual — Team Summary and Leaders", () => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
     await loadFixture(page, "sample-save.json");
-    await disableAnimations(page);
     await importHistoryFixture(page, "team-summary-history.json");
+    await disableAnimations(page);
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");
@@ -166,7 +166,9 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await teamSelect.selectOption("e2e_summary_team");
     // Use a data-specific guard (W/L = "2-1") instead of team-summary-section,
     // which renders for any team and can resolve immediately for the wrong team.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 30_000 });
+    // Use a generous 45 s timeout: on slow CI desktop runners the RxDB query
+    // that aggregates the three imported games can take longer than 30 s.
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
   }
 
   test("Career Stats — Team Summary + leaders batting tab", async ({ page }) => {

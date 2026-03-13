@@ -302,6 +302,14 @@ test.describe("Custom Team Editor — cross-team player import conflict", () => 
     // Open Team A editor and export the first lineup player
     await page.getByTestId("custom-team-edit-button").first().click();
     await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 10_000 });
+    // Wait explicitly for the export button — this guarantees that Team A's
+    // players have been fully loaded from the DB into the editor state before
+    // we attempt to export.  On slow CI runners there is a brief window where
+    // the lineup section element is visible but the player rows (and their
+    // export buttons) have not yet rendered from the async DB hydration.
+    await expect(page.getByTestId("export-player-button").first()).toBeVisible({
+      timeout: 15_000,
+    });
 
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("export-player-button").first().click();
