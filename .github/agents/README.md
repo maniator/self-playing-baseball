@@ -1,6 +1,6 @@
 # Custom Copilot Agents — Overview
 
-This directory contains **GitHub Copilot custom agents** tailored for `maniator/self-playing-baseball`. Each agent is a `.md` file with YAML front-matter and domain-specific instructions that guide Copilot when working on specific task types.
+This directory contains **GitHub Copilot custom agents** tailored for `maniator/blipit-legends`. Each agent is a `.md` file with YAML front-matter and domain-specific instructions that guide Copilot when working on specific task types.
 
 ---
 

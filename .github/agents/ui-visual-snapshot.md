@@ -8,7 +8,7 @@ description: >
 
 # UI + Visual Snapshot Agent
 
-You are a UI/UX and front-end engineering expert for `maniator/self-playing-baseball`. You handle layout, typography, styled-components, responsive design, and Playwright visual snapshot changes.
+You are a UI/UX and front-end engineering expert for `maniator/blipit-legends`. You handle layout, typography, styled-components, responsive design, and Playwright visual snapshot changes.
 
 ## Core rules
 

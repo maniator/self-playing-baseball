@@ -4,10 +4,11 @@
  *
  * Reverse proxy: http://localhost:3456  →  https://blipit.net
  *
- * The Playwright MCP that Copilot uses only allows localhost origins
- * (the sandbox firewall prevents adding external domains to --allowed-origins).
- * This proxy lets the MCP navigate to http://localhost:3456 and see the live
- * production site.
+ * The Playwright browser sandbox is hardcoded to localhost-only navigation
+ * regardless of any --allowed-origins config. Node.js processes can reach
+ * blipit.net freely (repo-level network firewall allows it). This proxy
+ * bridges the two: the browser navigates to http://localhost:3456 and Node.js
+ * forwards the request to the live production site.
  *
  * Usage:
  *   node .github/scripts/blipit-proxy.js
@@ -27,7 +28,7 @@ const server = http.createServer((req, res) => {
   const options = {
     hostname: TARGET_HOST,
     port: 443,
-    path: req.url,
+    path: req.url || "/",
     method: req.method,
     headers: {
       ...req.headers,
