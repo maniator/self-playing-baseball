@@ -6,9 +6,19 @@ import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import type { SaveDoc } from "@storage/types";
 
-import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
+import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW, SPEED_STEP_LABELS, SPEED_STEPS } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
-import { AutoPlayGroup, Button, Controls, HelpButton, Select, ToggleLabel } from "./styles";
+import {
+  AutoPlayGroup,
+  Button,
+  Controls,
+  HelpButton,
+  PausePlayButton,
+  SpeedLabel,
+  SpeedRow,
+  SpeedSlider,
+  ToggleLabel,
+} from "./styles";
 import { useGameControls } from "./useGameControls";
 import VolumeControls from "./VolumeControls";
 

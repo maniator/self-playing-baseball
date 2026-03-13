@@ -23,6 +23,7 @@ export const useAutoPlayScheduler = ({
   gameOver,
   muted,
   speed,
+  paused,
   handlePitch,
   inning,
   atBat,
@@ -33,6 +34,8 @@ export const useAutoPlayScheduler = ({
   gameOver: boolean;
   muted: boolean;
   speed: number;
+  /** When true the scheduler does not fire — the game is user-paused. */
+  paused: boolean;
   handlePitch: () => void;
   inning: number;
   atBat: 0 | 1 | null;
@@ -53,6 +56,7 @@ export const useAutoPlayScheduler = ({
   React.useEffect(() => {
     if (!gameStarted) return;
     if (gameOver) return;
+    if (paused) return;
     if (pendingDecision && managerMode) return;
 
     let timerId: ReturnType<typeof setTimeout>;
@@ -132,6 +136,7 @@ export const useAutoPlayScheduler = ({
     pendingDecision,
     managerMode,
     gameOver,
+    paused,
     // handlePitch intentionally omitted — stabilized via handlePitchRef so the effect
     // does not restart on every pitch (handlePitch is recreated each render).
     muted,

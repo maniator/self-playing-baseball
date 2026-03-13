@@ -142,6 +142,53 @@ export const Select = styled.select`
   font-family: inherit;
 `;
 
+export const SpeedRow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: ${({ theme }) => theme.spacing.s6};
+`;
+
+export const SpeedSlider = styled(RangeInput)`
+  width: 80px;
+
+  ${mq.mobile} {
+    width: 64px;
+  }
+`;
+
+export const SpeedLabel = styled.span`
+  font-size: ${({ theme }) => theme.fontSizes.label};
+  color: ${({ theme }) => theme.colors.textBodyAlt};
+  min-width: 44px;
+  user-select: none;
+`;
+
+export const PausePlayButton = styled.button`
+  background: ${({ theme }) => theme.colors.bgInputSm};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  color: ${({ theme }) => theme.colors.textPrimary};
+  font-size: ${({ theme }) => theme.fontSizes.md};
+  cursor: pointer;
+  width: ${({ theme }) => theme.sizes.icon};
+  height: ${({ theme }) => theme.sizes.icon};
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  flex-shrink: 0;
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.colors.bgDropdown};
+    border-color: ${({ theme }) => theme.colors.accentPrimary};
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+`;
+
 // ── VolumeControls ───────────────────────────────────────────────────────────
 
 export const VolumeRow = styled.label`
