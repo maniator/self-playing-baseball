@@ -75,7 +75,8 @@ const SortablePlayerRow: React.FunctionComponent<Props> = ({
         {isExistingPlayer ? (
           <ReadOnlyInput
             value={player.name}
-            disabled
+            readOnly
+            aria-readonly="true"
             aria-label="Player name"
             style={{ flex: 1 }}
           />

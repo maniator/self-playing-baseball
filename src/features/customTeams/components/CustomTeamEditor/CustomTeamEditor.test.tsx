@@ -384,19 +384,19 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
   it("team name is read-only in edit mode", () => {
     renderEditor({ team: existingTeam });
     const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
-    expect(nameInput.disabled).toBe(true);
+    expect(nameInput.readOnly).toBe(true);
   });
 
   it("team abbreviation is read-only in edit mode", () => {
     renderEditor({ team: existingTeam });
     const abbrevInput = screen.getByTestId("custom-team-abbreviation-input") as HTMLInputElement;
-    expect(abbrevInput.disabled).toBe(true);
+    expect(abbrevInput.readOnly).toBe(true);
   });
 
   it("city is read-only in edit mode", () => {
     renderEditor({ team: existingTeam });
     const cityInput = screen.getByTestId("custom-team-city-input") as HTMLInputElement;
-    expect(cityInput.disabled).toBe(true);
+    expect(cityInput.readOnly).toBe(true);
   });
 
   it("existing player names are read-only", () => {
@@ -410,7 +410,7 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     // All lineup + bench players (ep1..ep9 + eb1) should be read-only
     expect(playerNameInputs.length).toBeGreaterThanOrEqual(1);
     playerNameInputs.forEach((input) => {
-      expect(input.disabled).toBe(true);
+      expect(input.readOnly).toBe(true);
     });
   });
 
@@ -425,7 +425,7 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     expect(playerNameInputs.length).toBeGreaterThanOrEqual(1);
     // The new player's name input should NOT be read-only
     const lastInput = playerNameInputs[playerNameInputs.length - 1];
-    expect(lastInput.disabled).toBe(false);
+    expect(lastInput.readOnly).toBe(false);
   });
 
   it("new player name in edit mode can be typed and updated", async () => {
@@ -436,7 +436,7 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     });
     const playerNameInputs = screen.getAllByPlaceholderText(/player name/i) as HTMLInputElement[];
     const newPlayerInput = playerNameInputs[playerNameInputs.length - 1];
-    expect(newPlayerInput.disabled).toBe(false);
+    expect(newPlayerInput.readOnly).toBe(false);
     // Typing must update the value (onChange is wired for new players)
     await act(async () => {
       fireEvent.change(newPlayerInput, { target: { value: "Brand New Slugger" } });
@@ -454,11 +454,11 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
   it("create mode: all team identity fields are editable", () => {
     renderEditor();
     const nameInput = screen.getByTestId("custom-team-name-input") as HTMLInputElement;
-    expect(nameInput.disabled).toBe(false);
+    expect(nameInput.readOnly).toBe(false);
     const abbrevInput = screen.getByTestId("custom-team-abbreviation-input") as HTMLInputElement;
-    expect(abbrevInput.disabled).toBe(false);
+    expect(abbrevInput.readOnly).toBe(false);
     const cityInput = screen.getByTestId("custom-team-city-input") as HTMLInputElement;
-    expect(cityInput.disabled).toBe(false);
+    expect(cityInput.readOnly).toBe(false);
   });
 });
 

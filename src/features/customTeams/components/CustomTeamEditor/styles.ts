@@ -349,15 +349,14 @@ export const StatBudgetRow = styled.div<{ $overCap: boolean }>`
 
 export const ReadOnlyInput = styled(TextInput)`
   opacity: 0.7;
-  cursor: not-allowed;
+  cursor: default;
   background: ${({ theme }) => theme.colors.bgSubtle};
   color: ${({ theme }) => theme.colors.textReadOnly};
   border-color: ${({ theme }) => theme.colors.borderPanel};
 
-  &:disabled {
+  &[readonly] {
+    cursor: default;
     opacity: 0.7;
-    cursor: not-allowed;
-    pointer-events: none;
   }
 `;
 

@@ -11,11 +11,8 @@ export const HomeContainer = styled.div`
     calc(${({ theme }) => theme.spacing.xxxl} + ${({ theme }) => theme.sizes.bottomBar});
   gap: ${({ theme }) => theme.spacing.lg};
 
-  /* Compact layout for short desktop viewports (e.g. 1280×720) so the
-     Contact button clears the fixed audio bar at the bottom of the fold.
-     padding-top drives layout position when content overflows the flex
-     container — reducing it from xxxl (32px) to xs (4px) shifts everything
-     up by ~28px, moving the Contact button from ~699px to ~671px. */
+  /* Compact layout for short non-mobile viewports (e.g. 1280×720) so the
+     Contact button clears the fixed audio bar at the bottom of the fold. */
   ${mq.shortNotMobile} {
     padding-top: ${({ theme }) => theme.spacing.xs};
     padding-bottom: calc(
