@@ -11,6 +11,18 @@ import {
 const TEAM_EDITOR_SNAPSHOT_OPTIONS = { maxDiffPixelRatio: 0.05 } as const;
 
 /**
+ * File-level beforeEach: mock Date.now() to a fixed timestamp so that
+ * `_generateCounter = Date.now() | 0` in TeamInfoSection.tsx always starts
+ * at the same value, making "Generate Random" team defaults deterministic
+ * across test runs. This must run before any navigation (before resetAppState).
+ */
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript(() => {
+    Date.now = () => 1700000000000;
+  });
+});
+
+/**
  * Timeout for the team-name-visible assertion after clicking Save.
  * Save navigates to /teams, which remounts ManageTeamsScreen and triggers a
  * fresh useCustomTeams DB fetch. CI containers can be slow, so 15s is used.
