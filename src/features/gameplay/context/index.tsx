@@ -88,12 +88,16 @@ export const useGameContext = (): ContextValue => {
 
 export type Strategy = "balanced" | "aggressive" | "patient" | "contact" | "power";
 
+export type Handedness = "R" | "L" | "S";
+
 export type ModPreset = -20 | -10 | -5 | 0 | 5 | 10 | 20;
 
 export type PlayerCustomization = {
   nickname?: string;
   /** Defensive position string (e.g. "C", "LF") — populated for custom-team players. */
   position?: string;
+  /** Batter/pitcher throwing side. "S" is allowed for switch hitters. */
+  handedness?: Handedness;
   contactMod?: ModPreset;
   powerMod?: ModPreset;
   speedMod?: ModPreset;
@@ -122,6 +126,7 @@ export type PinchHitterCandidate = {
   id: string;
   name: string;
   position?: string;
+  handedness?: Handedness;
   /** Resolved contact mod from playerOverrides — used by AI for stat-based selection. */
   contactMod: number;
   /** Resolved power mod from playerOverrides — used by AI for stat-based selection. */
@@ -234,6 +239,11 @@ export interface State {
    * [away, home]
    */
   resolvedMods: [Record<string, ResolvedPlayerMods>, Record<string, ResolvedPlayerMods>];
+  /**
+   * Per-team handedness lookup by player ID. Populated at setup time from custom rosters
+   * and used by gameplay/manager logic to evaluate platoon matchups.
+   */
+  handednessByTeam: [Record<string, Handedness>, Record<string, Handedness>];
   /**
    * Per-game pitcher appearance log. Each entry accumulates stats for one pitcher appearance.
    * Indexed by [teamIdx][entryIndex] where teamIdx is the PITCHING team.

@@ -7,6 +7,7 @@ import {
   customTeamToBenchRoster,
   customTeamToDisplayName,
   customTeamToGameId,
+  customTeamToHandednessMap,
   customTeamToLineupOrder,
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
@@ -30,6 +31,7 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
         id: "p1",
         name: "Tom Adams",
         role: "batter",
+        handedness: "L",
         batting: { contact: 70, power: 65, speed: 60 },
       },
       {
@@ -52,6 +54,7 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
         id: "p4",
         name: "Ray Davis",
         role: "pitcher",
+        handedness: "R",
         batting: { contact: 30, power: 25, speed: 30 },
         pitching: { velocity: 75, control: 65, movement: 70 },
       },
@@ -125,6 +128,12 @@ describe("customTeamToPlayerOverrides", () => {
     expect(overrides["p1"].nickname).toBe("Tom Adams");
   });
 
+  it("includes handedness in overrides when available", () => {
+    const overrides = customTeamToPlayerOverrides(makeTeam());
+    expect(overrides["p1"].handedness).toBe("L");
+    expect(overrides["p4"].handedness).toBe("R");
+  });
+
   it("converts stats 70 contact to +10 modifier (closest to 70-60=10)", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].contactMod).toBe(10);
@@ -171,6 +180,19 @@ describe("customTeamToPlayerOverrides", () => {
   it("omits position in override when player has no position set", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].position).toBeUndefined();
+  });
+});
+
+describe("customTeamToHandednessMap", () => {
+  it("returns a playerId->handedness lookup for rostered players", () => {
+    const map = customTeamToHandednessMap(makeTeam());
+    expect(map["p1"]).toBe("L");
+    expect(map["p4"]).toBe("R");
+  });
+
+  it("omits players that do not have explicit handedness", () => {
+    const map = customTeamToHandednessMap(makeTeam());
+    expect(map["p2"]).toBeUndefined();
   });
 });
 

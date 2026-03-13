@@ -1,5 +1,6 @@
 import type {
   GameAction,
+  Handedness,
   PitcherLogEntry,
   ResolvedPlayerMods,
   State,
@@ -11,6 +12,16 @@ import { buildResolvedMods } from "../resolvePlayerMods";
 /** Computes the defensive slot assignments for a lineup from player overrides. */
 const computeLineupPositions = (order: string[], overrides: TeamCustomPlayerOverrides): string[] =>
   order.map((id) => overrides[id]?.position ?? "");
+
+const buildHandednessMap = (
+  overrides: TeamCustomPlayerOverrides,
+): Record<string, Handedness> => {
+  const handedness: Record<string, Handedness> = {};
+  for (const [id, ov] of Object.entries(overrides)) {
+    if (ov.handedness) handedness[id] = ov.handedness;
+  }
+  return handedness;
+};
 
 /**
  * Handles pre-game setup / new-game configuration actions.
@@ -30,6 +41,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
             lineupOrder?: [string[], string[]];
             rosterBench?: [string[], string[]];
             rosterPitchers?: [string[], string[]];
+            handednessByTeam?: [Record<string, Handedness>, Record<string, Handedness>];
             /** Override the starting pitcher index per team. null = use 0 (default). */
             startingPitcherIdx?: [number | null, number | null];
           };
@@ -53,6 +65,11 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         Record<string, ResolvedPlayerMods>,
         Record<string, ResolvedPlayerMods>,
       ] = [buildResolvedMods(newPlayerOverrides[0]), buildResolvedMods(newPlayerOverrides[1])];
+      const newHandednessByTeam: [Record<string, Handedness>, Record<string, Handedness>] =
+        p.handednessByTeam ??
+        (p.playerOverrides
+          ? [buildHandednessMap(newPlayerOverrides[0]), buildHandednessMap(newPlayerOverrides[1])]
+          : state.handednessByTeam);
       // Apply starting pitcher index per team (clamped to valid range; default 0).
       // When rosterPitchers is provided, always re-initialize the index so stale state
       // (e.g., from a previous game) doesn't bleed through if startingPitcherIdx is omitted.
@@ -126,6 +143,7 @@ export const handleSetupAction = (state: State, action: GameAction): State | und
         activePitcherIdx: newActivePitcherIdx,
         lineupPositions,
         resolvedMods: newResolvedMods,
+        handednessByTeam: newHandednessByTeam,
         pitcherGameLog: newPitcherGameLog,
       };
     }

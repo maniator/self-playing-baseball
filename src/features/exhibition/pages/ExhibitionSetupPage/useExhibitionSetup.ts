@@ -4,6 +4,7 @@ import {
   customTeamToBenchRoster,
   customTeamToDisplayName,
   customTeamToGameId,
+  customTeamToHandednessMap,
   customTeamToLineupOrder,
   customTeamToPitcherRoster,
   customTeamToPlayerOverrides,
@@ -133,6 +134,8 @@ export const useExhibitionSetup = (onStartGame: (setup: ExhibitionGameSetup) => 
         homeBench: customTeamToBenchRoster(homeDoc),
         awayPitchers: customTeamToPitcherRoster(awayDoc),
         homePitchers: customTeamToPitcherRoster(homeDoc),
+        awayHandedness: customTeamToHandednessMap(awayDoc),
+        homeHandedness: customTeamToHandednessMap(homeDoc),
         startingPitcherIdx:
           mt !== null
             ? [

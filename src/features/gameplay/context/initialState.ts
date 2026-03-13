@@ -1,6 +1,7 @@
 import { generateGameInstanceId } from "@storage/generateId";
 
 import type {
+  Handedness,
   PitcherLogEntry,
   PlayLogEntry,
   ResolvedPlayerMods,
@@ -59,6 +60,7 @@ export const createFreshGameState = (
     Record<string, ResolvedPlayerMods>,
     Record<string, ResolvedPlayerMods>,
   ],
+  handednessByTeam: [{}, {}] as [Record<string, Handedness>, Record<string, Handedness>],
   pitcherGameLog: [[], []] as [PitcherLogEntry[], PitcherLogEntry[]],
 });
 
@@ -133,6 +135,7 @@ export const backfillRestoredState = (restored: State): State => {
       base.resolvedMods && Object.keys(base.resolvedMods[0]).length > 0
         ? [backfillTeamMods(base.resolvedMods[0]), backfillTeamMods(base.resolvedMods[1])]
         : [buildResolvedMods(base.playerOverrides[0]), buildResolvedMods(base.playerOverrides[1])],
+    handednessByTeam: base.handednessByTeam ?? [{}, {}],
     pitcherGameLog: base.pitcherGameLog ?? [[], []],
   };
 };
