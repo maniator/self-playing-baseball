@@ -51,6 +51,23 @@ describe("handednessMatchup", () => {
     expect(modifiers.promptDeltaPct).toBeLessThan(0);
   });
 
+  it("applies stronger walk support in opposite-side buckets than same-side buckets", () => {
+    const sameSide = getHandednessOutcomeModifiers(buildHandednessMatchup("R", "R"));
+    const oppositeSide = getHandednessOutcomeModifiers(buildHandednessMatchup("L", "R"));
+
+    expect(oppositeSide.walkRateMultiplier).toBeGreaterThan(sameSide.walkRateMultiplier);
+    expect(oppositeSide.calledStrikeRateMultiplier).toBeLessThan(
+      sameSide.calledStrikeRateMultiplier,
+    );
+    expect(oppositeSide.whiffRateMultiplier).toBeLessThan(sameSide.whiffRateMultiplier);
+  });
+
+  it("maps switch-hitter vs RHP modifiers to the left-handed profile", () => {
+    const switchVsRight = getHandednessOutcomeModifiers(buildHandednessMatchup("S", "R"));
+    const leftVsRight = getHandednessOutcomeModifiers(buildHandednessMatchup("L", "R"));
+    expect(switchVsRight).toEqual(leftVsRight);
+  });
+
   it("uses explicit handedness when provided", () => {
     expect(resolvePlayerHandedness("L", "player-1")).toBe("L");
   });
