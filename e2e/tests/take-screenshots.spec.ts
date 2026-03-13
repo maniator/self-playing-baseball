@@ -6,11 +6,17 @@
  * Output is written to docs/screenshots/.
  */
 
-import { type BrowserContext, devices, type Page, test } from "@playwright/test";
+import { expect, type BrowserContext, devices, type Page, test } from "@playwright/test";
 import * as fs from "fs";
 import * as path from "path";
 
-import { resetAppState, startGameViaPlayBall, waitForLogLines } from "../utils/helpers";
+import {
+  importHistoryFixture,
+  loadFixture,
+  resetAppState,
+  startGameViaPlayBall,
+  waitForLogLines,
+} from "../utils/helpers";
 
 // Output directory for screenshots
 const SCREENSHOTS_DIR = path.join(process.cwd(), "docs", "screenshots");
@@ -74,6 +80,15 @@ test.describe("Documentation Screenshots", () => {
           document.head.appendChild(style);
         });
       });
+      // Mute announcement volume on every page load so the scheduler doesn't
+      // wait up to 8 s for Web Speech API announcements between pitches.
+      await ctx.addInitScript(() => {
+        try {
+          localStorage.setItem("announcementVolume", "0");
+        } catch {
+          // localStorage may be unavailable in some security contexts.
+        }
+      });
       const pg = await ctx.newPage();
       contexts.set(name, ctx);
       pages.set(name, pg);
@@ -96,6 +111,17 @@ test.describe("Documentation Screenshots", () => {
     }
   }
 
+  // Navigate to "/" without suppressing demo-team seeding so screenshots
+  // that need demo teams (New Game dialog, Manage Teams) see them populated.
+  // Audio is already muted by the context-level init script in beforeEach.
+  async function goHomeForDocs(page: Page): Promise<void> {
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.waitForSelector("[data-testid='home-screen']", {
+      state: "visible",
+      timeout: 30_000,
+    });
+  }
+
   // ── 1. Home Screen ──────────────────────────────────────────────────────────
   test("1. Home screen", async () => {
     await forBothViewports(async (page, viewport) => {
@@ -111,11 +137,20 @@ test.describe("Documentation Screenshots", () => {
   // ── 2. New Game Dialog ──────────────────────────────────────────────────────
   test("2. New Game dialog", async () => {
     await forBothViewports(async (page, viewport) => {
-      await resetAppState(page);
+      // Use goHomeForDocs (no demo-seed suppression) so the team selects show
+      // the seeded Riverside Rockets / Lakewood Legends demo teams.
+      await goHomeForDocs(page);
       await page.getByTestId("home-new-game-button").click();
       await page.waitForSelector("[data-testid='exhibition-setup-page']", {
         state: "visible",
         timeout: 15_000,
+      });
+      // Wait for demo teams to seed and auto-select in the custom-team selects.
+      await page
+        .getByTestId("new-game-custom-away-team-select")
+        .waitFor({ state: "visible", timeout: 20_000 });
+      await expect(page.getByTestId("new-game-custom-away-team-select")).not.toHaveValue("", {
+        timeout: 10_000,
       });
       await captureScreenshot(page, `new-game-${viewport}.png`);
     });
@@ -154,9 +189,16 @@ test.describe("Documentation Screenshots", () => {
   // ── 5. Saves page ───────────────────────────────────────────────────────────
   test("5. Saves page", async () => {
     await forBothViewports(async (page, viewport) => {
-      await resetAppState(page);
+      // Load a save fixture so the saves page shows an example save row instead
+      // of the empty state.  loadFixture auto-navigates to /game after import;
+      // we then navigate back to /saves to take the screenshot.
+      await loadFixture(page, "sample-save.json");
       await page.goto("/saves", { waitUntil: "domcontentloaded" });
       await page.waitForSelector("[data-testid='saves-page']", { state: "visible" });
+      await page.waitForSelector("[data-testid='saves-list-item']", {
+        state: "visible",
+        timeout: 10_000,
+      });
       await captureScreenshot(page, `saves-${viewport}.png`);
     });
   });
@@ -164,7 +206,10 @@ test.describe("Documentation Screenshots", () => {
   // ── 6. Career Stats page ────────────────────────────────────────────────────
   test("6. Career Stats page", async () => {
     await forBothViewports(async (page, viewport) => {
-      await resetAppState(page);
+      // Start a game so the saves modal is accessible, then import the history
+      // fixture to populate leaderboards and stat tables.
+      await startGameViaPlayBall(page, { seed: "carstats" });
+      await importHistoryFixture(page, "career-stats-history.json");
       await page.goto("/stats", { waitUntil: "domcontentloaded" });
       await page.waitForSelector("[data-testid='career-stats-page']", { state: "visible" });
       await captureScreenshot(page, `career-stats-${viewport}.png`);
@@ -174,9 +219,32 @@ test.describe("Documentation Screenshots", () => {
   // ── 7a. Manage Teams page ───────────────────────────────────────────────────
   test("7a. Manage Teams page", async () => {
     await forBothViewports(async (page, viewport) => {
-      await resetAppState(page);
+      // Use goHomeForDocs (no demo-seed suppression) so the team list shows the
+      // seeded Riverside Rockets / Lakewood Legends demo teams.
+      await goHomeForDocs(page);
       await page.goto("/teams", { waitUntil: "domcontentloaded" });
       await page.waitForSelector("[data-testid='manage-teams-screen']", { state: "visible" });
+      // Wait for demo teams to finish seeding and appear in the list.
+      // useCustomTeams fetches once on mount — if seeding hasn't completed yet
+      // when the initial DB query runs, the list will appear empty.  In that
+      // case, wait briefly for seeding to finish and reload so the hook
+      // re-runs its fetch with the freshly-inserted teams.
+      // NOTE: The correct testid is "custom-team-list-item" (see TeamListItem.tsx).
+      const teamItemLocator = page.locator("[data-testid='custom-team-list-item']");
+      const found = await teamItemLocator
+        .first()
+        .waitFor({ state: "visible", timeout: 8_000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!found) {
+        // Seeding was still in flight — reload to re-trigger the DB fetch.
+        await page.reload({ waitUntil: "domcontentloaded" });
+        await page.waitForSelector("[data-testid='manage-teams-screen']", { state: "visible" });
+        await page.waitForSelector("[data-testid='custom-team-list-item']", {
+          state: "visible",
+          timeout: 15_000,
+        });
+      }
       await captureScreenshot(page, `manage-teams-${viewport}.png`);
     });
   });
