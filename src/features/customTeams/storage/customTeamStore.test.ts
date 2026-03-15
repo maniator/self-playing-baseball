@@ -1412,7 +1412,6 @@ describe("importPlayer", () => {
   });
 });
 
-
 describe("importCustomTeams — stat cap enforcement", () => {
   it("rejects a bundle with over-cap batting stats and does not persist the team", async () => {
     const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
