@@ -1,6 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import type { TeamPlayer } from "@storage/types";
+import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { CreateCustomTeamInput, TeamPlayer } from "@storage/types";
+import { makePlayer as makeSharedPlayer } from "@test/helpers/customTeams";
 
 import {
   buildRoster,
@@ -15,6 +18,7 @@ import {
   STAT_MIN,
   validatePlayerStatCaps,
 } from "./customTeamSanitizers";
+import { makeCustomTeamStore } from "./customTeamStore";
 
 const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
   id: "p1",
@@ -356,5 +360,66 @@ describe("sanitizePlayer — stat cap enforcement (clamp + cap integration)", ()
       pitching: { velocity: 200, control: -10, movement: 60 },
     });
     expect(() => sanitizePlayer(player, 0)).not.toThrow();
+  });
+});
+
+// ── sanitizePlayer — fingerprint storage (integration via store) ──────────────
+
+describe("sanitizePlayer — fingerprint storage", () => {
+  const makeStoreInput = (
+    overrides: Partial<CreateCustomTeamInput> = {},
+  ): CreateCustomTeamInput => ({
+    name: "Test Team",
+    roster: {
+      lineup: [makeSharedPlayer()],
+      bench: [],
+      pitchers: [],
+    },
+    ...overrides,
+  });
+
+  let db: BallgameDb;
+  let store: ReturnType<typeof makeCustomTeamStore>;
+
+  beforeEach(async () => {
+    db = await _createTestDb(getRxStorageMemory());
+    store = makeCustomTeamStore(() => Promise.resolve(db));
+  });
+
+  afterEach(async () => {
+    await db.close();
+  });
+
+  it("stores a fingerprint on each player when a team is created", async () => {
+    const id = await store.createCustomTeam(
+      makeStoreInput({
+        roster: {
+          lineup: [makeSharedPlayer({ id: "p_fp1", name: "Fingerprint Batter" })],
+          bench: [],
+          pitchers: [
+            makeSharedPlayer({
+              id: "p_fp2",
+              name: "Fingerprint Pitcher",
+              role: "pitcher",
+              pitching: { velocity: 55, control: 55, movement: 50 },
+            }),
+          ],
+        },
+      }),
+    );
+    const team = await store.getCustomTeam(id);
+    expect(team?.roster.lineup[0].fingerprint).toBeTruthy();
+    expect(team?.roster.pitchers[0].fingerprint).toBeTruthy();
+  });
+
+  it("fingerprint matches buildPlayerSig result", async () => {
+    const { buildPlayerSig } = await import("./customTeamExportImport");
+    const player = makeSharedPlayer({ id: "p_sig", name: "Sig Check" });
+    const id = await store.createCustomTeam(
+      makeStoreInput({ roster: { lineup: [player], bench: [], pitchers: [] } }),
+    );
+    const team = await store.getCustomTeam(id);
+    const stored = team?.roster.lineup[0];
+    expect(stored?.fingerprint).toBe(buildPlayerSig(stored!));
   });
 });
