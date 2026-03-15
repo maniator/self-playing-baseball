@@ -11,7 +11,7 @@ const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
   id: `player_${Math.random().toString(36).slice(2, 8)}`,
   name: "Test Player",
   role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
+  batting: { contact: 50, power: 50, speed: 50 },
   ...overrides,
 });
 
@@ -116,13 +116,13 @@ describe("createCustomTeam", () => {
   it("clamps pitching stats to 0–100", async () => {
     const player = makePlayer({
       role: "pitcher",
-      pitching: { velocity: 200, control: -5, movement: 80 },
+      pitching: { velocity: 200, control: -5, movement: 55 },
     });
     const id = await store.createCustomTeam(makeInput({ roster: { lineup: [player] } }));
     const team = await store.getCustomTeam(id);
     expect(team?.roster.lineup[0].pitching?.velocity).toBe(100);
     expect(team?.roster.lineup[0].pitching?.control).toBe(0);
-    expect(team?.roster.lineup[0].pitching?.movement).toBe(80);
+    expect(team?.roster.lineup[0].pitching?.movement).toBe(55);
   });
 
   it("throws when player name is empty", async () => {
@@ -451,7 +451,7 @@ describe("importCustomTeams", () => {
             id: "p_ia",
             name: "Player",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
           },
         ],
         bench: [],
@@ -482,7 +482,7 @@ describe("importCustomTeams", () => {
             id: "p_ib",
             name: "Player",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
           },
         ],
         bench: [],
@@ -517,7 +517,7 @@ describe("importCustomTeams", () => {
             id: "p_id_test",
             name: "Identity Player",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
             globalPlayerId: knownGid,
             playerSeed: knownSeed,
             fingerprint: knownFingerprint,
@@ -593,7 +593,7 @@ describe("sanitizePlayer — fingerprint storage", () => {
               id: "p_fp2",
               name: "Fingerprint Pitcher",
               role: "pitcher",
-              pitching: { velocity: 85, control: 70, movement: 65 },
+              pitching: { velocity: 55, control: 55, movement: 50 },
             }),
           ],
         },
@@ -671,7 +671,7 @@ describe("createCustomTeam — playerSeed", () => {
               id: "p_s2",
               name: "Seeded Pitcher",
               role: "pitcher",
-              pitching: { velocity: 80, control: 70, movement: 65 },
+              pitching: { velocity: 55, control: 55, movement: 50 },
             }),
           ],
         },
@@ -846,7 +846,7 @@ describe("players collection integration", () => {
             id: "imp_p1",
             name: "Imported Batter",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
           },
         ],
         bench: [
@@ -890,7 +890,7 @@ describe("players collection integration", () => {
             id: "lgcy_p1",
             name: "Legacy Batter",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
             // Explicitly no globalPlayerId — simulates fixture-teams.json format
             playerSeed: "seed_legacy_p1",
             fingerprint: "aabbccdd",
@@ -926,7 +926,7 @@ describe("players collection integration", () => {
             id: "leg_p1",
             name: "Legacy Batter",
             role: "batter" as const,
-            batting: { contact: 70, power: 60, speed: 50 },
+            batting: { contact: 50, power: 50, speed: 50 },
           },
         ],
         bench: [],
@@ -983,7 +983,7 @@ describe("players collection integration", () => {
       id: "tp_check",
       name: "Field Checker",
       role: "pitcher",
-      pitching: { velocity: 88, control: 72, movement: 65 },
+      pitching: { velocity: 60, control: 55, movement: 45 },
     });
     const id = await store.createCustomTeam(
       makeInput({
@@ -1195,7 +1195,7 @@ describe("importPlayer", () => {
       name: "Import Pitcher",
       role: "pitcher",
       batting: { contact: 30, power: 20, speed: 25 },
-      pitching: { velocity: 88, control: 72, movement: 65 },
+      pitching: { velocity: 60, control: 55, movement: 45 },
       playerSeed: "pitcher-seed-unique",
       globalPlayerId: "pl_pitcher_unique_import",
     };
@@ -1224,7 +1224,7 @@ describe("importPlayer", () => {
       id: "p_gid_preserved",
       name: "GID Preserved",
       role: "batter",
-      batting: { contact: 60, power: 55, speed: 50 },
+      batting: { contact: 50, power: 50, speed: 50 },
       playerSeed: "preserve-gid-seed",
       globalPlayerId: "pl_preserved_gid_check",
     };
@@ -1255,7 +1255,7 @@ describe("importPlayer", () => {
       id: "p_seed_check",
       name: "Seed Preserved",
       role: "batter",
-      batting: { contact: 60, power: 55, speed: 50 },
+      batting: { contact: 50, power: 50, speed: 50 },
       playerSeed: "my-exact-seed-value",
       globalPlayerId: "pl_seed_pres_check",
     };
@@ -1339,7 +1339,7 @@ describe("importPlayer", () => {
       id: "p_no_team",
       name: "No Team Player",
       role: "batter",
-      batting: { contact: 60, power: 55, speed: 50 },
+      batting: { contact: 50, power: 50, speed: 50 },
       playerSeed: "no-team-seed",
       globalPlayerId: "pl_no_team_gid",
     };
@@ -1357,7 +1357,7 @@ describe("importPlayer", () => {
       id: "p_no_gid",
       name: "No GID Player",
       role: "batter",
-      batting: { contact: 60, power: 55, speed: 50 },
+      batting: { contact: 50, power: 50, speed: 50 },
       playerSeed: "no-gid-seed",
       // globalPlayerId intentionally omitted
     };
@@ -1390,7 +1390,7 @@ describe("importPlayer", () => {
       id: sharedId, // same local id as existing player
       name: "Incoming Collision Player",
       role: "batter",
-      batting: { contact: 55, power: 45, speed: 60 },
+      batting: { contact: 50, power: 45, speed: 55 },
       playerSeed: "collision-import-seed",
       globalPlayerId: "pl_collision_unique_gid",
     };
@@ -1409,5 +1409,68 @@ describe("importPlayer", () => {
     // Identity fields must be preserved despite the id remap
     expect(importedPlayer?.globalPlayerId).toBe("pl_collision_unique_gid");
     expect(importedPlayer?.playerSeed).toBe("collision-import-seed");
+  });
+});
+
+
+describe("importCustomTeams — stat cap enforcement", () => {
+  it("rejects a bundle with over-cap batting stats and does not persist the team", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const overCapTeam = {
+      id: "ct_overcap_bat_test",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Over Cap Bat Import",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_overcap_bat",
+            name: "Over Cap Batter",
+            role: "batter" as const,
+            batting: { contact: 60, power: 55, speed: 50 }, // 165 > 150
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([overCapTeam]);
+    await expect(store.importCustomTeams(json)).rejects.toThrow(/stat cap/i);
+    // The team must not have been persisted
+    const found = await store.getCustomTeam("ct_overcap_bat_test");
+    expect(found).toBeNull();
+  });
+
+  it("rejects a bundle with over-cap pitching stats", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const overCapTeam = {
+      id: "ct_overcap_pitch_test",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Over Cap Pitch Import",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_overcap_pitch",
+            name: "Over Cap Pitcher",
+            role: "pitcher" as const,
+            batting: { contact: 30, power: 20, speed: 25 },
+            pitching: { velocity: 70, control: 60, movement: 55 }, // 185 > 160
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([overCapTeam]);
+    await expect(store.importCustomTeams(json)).rejects.toThrow(/stat cap/i);
   });
 });

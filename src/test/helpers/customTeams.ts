@@ -15,7 +15,7 @@ export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => (
   id: `p_${Math.random().toString(36).slice(2, 8)}`,
   name: "Alice",
   role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
+  batting: { contact: 50, power: 50, speed: 50 },
   ...overrides,
 });
 
