@@ -7,6 +7,7 @@ import type { CustomTeamDoc, TeamPlayer, UpdateCustomTeamInput } from "@storage/
 import { type ImportPlayerResult } from "./customTeamExportBundles";
 import { resolvePlayerConflict } from "./customTeamIdentity";
 import { removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
+import { validatePlayerStatCaps } from "./customTeamSanitizers";
 
 /**
  * Orchestrates the upsert of a single team and its player docs during an import.
@@ -25,6 +26,10 @@ export async function orchestrateTeamImport(
   };
   await db.customTeams.upsert(teamDoc);
   try {
+    // Validate stat caps for every player before writing to the DB.
+    team.roster.lineup.forEach((p, i) => validatePlayerStatCaps(p, i));
+    team.roster.bench.forEach((p, i) => validatePlayerStatCaps(p, i));
+    team.roster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, i));
     const newDocIds = await writePlayerDocs(db, team.id, team.roster);
     await removePlayerDocs(db, team.id, newDocIds);
   } catch (err) {

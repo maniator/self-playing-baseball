@@ -1,8 +1,12 @@
+import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "@feat/customTeams/statBudget";
+
 import { generateSeed } from "@storage/generateId";
 import { fnv1a } from "@storage/hash";
 import type { TeamPlayer, TeamRoster } from "@storage/types";
 
 import { buildPlayerSig } from "./customTeamSignatures";
+
+export { HITTER_STAT_CAP, PITCHER_STAT_CAP };
 
 export const STAT_MIN = 0;
 export const STAT_MAX = 100;
@@ -29,6 +33,38 @@ export function sanitizeAbbreviation(value: string): string {
 
 export function clampStat(value: number): number {
   return Math.max(STAT_MIN, Math.min(STAT_MAX, value));
+}
+
+/**
+ * Validates that a player's stat totals do not exceed the enforced caps:
+ * - Hitter cap (HITTER_STAT_CAP): contact + power + speed ≤ 150 (non-pitchers)
+ * - Pitcher cap (PITCHER_STAT_CAP): velocity + control + movement ≤ 160 (non-batters)
+ *
+ * Called after individual stats are clamped to 0–100 so that clamping always
+ * runs first and the cap is the final gate.
+ * Throws an Error with a message containing "stat cap" if the total exceeds the cap.
+ */
+export function validatePlayerStatCaps(player: TeamPlayer, index: number): void {
+  if (player.role !== "pitcher") {
+    const { contact, power, speed } = player.batting;
+    const total = contact + power + speed;
+    if (total > HITTER_STAT_CAP) {
+      throw new Error(
+        `roster player[${index}] batting stat cap exceeded: ` +
+          `contact(${contact}) + power(${power}) + speed(${speed}) = ${total} > ${HITTER_STAT_CAP}`,
+      );
+    }
+  }
+  if (player.role !== "batter" && player.pitching) {
+    const { velocity = 0, control = 0, movement = 0 } = player.pitching;
+    const total = velocity + control + movement;
+    if (total > PITCHER_STAT_CAP) {
+      throw new Error(
+        `roster player[${index}] pitching stat cap exceeded: ` +
+          `velocity(${velocity}) + control(${control}) + movement(${movement}) = ${total} > ${PITCHER_STAT_CAP}`,
+      );
+    }
+  }
 }
 
 export function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
@@ -61,6 +97,9 @@ export function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
       },
     }),
   };
+  // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
+  // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
+  validatePlayerStatCaps(sanitized, index);
   // Preserve the existing playerSeed or generate a new one at creation time.
   // The seed is stored permanently so the fingerprint can be re-verified.
   const playerSeed = player.playerSeed ?? generateSeed();
