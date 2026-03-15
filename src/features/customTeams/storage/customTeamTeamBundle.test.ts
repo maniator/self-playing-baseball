@@ -320,6 +320,18 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
       "missing required field: batting",
     );
   });
+
+  it("throws a descriptive error when a player has an invalid role", () => {
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [] },
+    });
+    const bundle = JSON.parse(exportCustomTeams([team]));
+    bundle.payload.teams[0].roster.lineup[0].role = "superplayer";
+    bundle.sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(bundle.payload));
+    expect(() => parseExportedCustomTeams(JSON.stringify(bundle))).toThrow(
+      'invalid role "superplayer"',
+    );
+  });
 });
 
 // ── exportCustomTeams — identity fields per player ────────────────────────────

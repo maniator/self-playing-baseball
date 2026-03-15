@@ -8,6 +8,7 @@ import { type ImportPlayerResult } from "./customTeamExportBundles";
 import { resolvePlayerConflict } from "./customTeamIdentity";
 import { removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
 import { clampPlayerStats, validatePlayerStatCaps } from "./customTeamSanitizers";
+import { buildPlayerSig } from "./customTeamSignatures";
 
 /**
  * Orchestrates the upsert of a single team and its player docs during an import.
@@ -29,11 +30,18 @@ export async function orchestrateTeamImport(
     // Clamp per-stat values to [0, 100] first, then enforce total caps.
     // This mirrors what sanitizePlayer does on create/update, preventing crafted
     // bundles from storing per-stat values outside the valid range.
+    // After clamping, recompute each player's fingerprint so that identity invariants
+    // (duplicate detection, sig verification) remain valid for the stored stat values.
+    const recomputeFingerprint = (p: TeamPlayer): TeamPlayer => ({
+      ...p,
+      fingerprint: buildPlayerSig(p),
+    });
+    const clampAndRefp = (p: TeamPlayer): TeamPlayer => recomputeFingerprint(clampPlayerStats(p));
     const clampedRoster = {
       ...team.roster,
-      lineup: team.roster.lineup.map(clampPlayerStats),
-      bench: team.roster.bench.map(clampPlayerStats),
-      pitchers: team.roster.pitchers.map(clampPlayerStats),
+      lineup: team.roster.lineup.map(clampAndRefp),
+      bench: team.roster.bench.map(clampAndRefp),
+      pitchers: team.roster.pitchers.map(clampAndRefp),
     };
     clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, i));
     clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, i));

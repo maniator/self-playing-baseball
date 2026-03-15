@@ -127,8 +127,10 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
           throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: id`);
         if (typeof p["name"] !== "string" || !p["name"])
           throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: name`);
-        if (typeof p["role"] !== "string")
-          throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: role`);
+        if (typeof p["role"] !== "string" || !["batter", "pitcher", "two-way"].includes(p["role"]))
+          throw new Error(
+            `Team[${ti}] ${slot}[${pi}] invalid role "${p["role"]}" — must be "batter", "pitcher", or "two-way"`,
+          );
         if (!p["batting"] || typeof p["batting"] !== "object")
           throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: batting`);
 

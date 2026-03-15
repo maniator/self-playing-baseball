@@ -93,11 +93,27 @@ describe("importCustomTeams", () => {
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
 
-  it("preserves globalPlayerId, playerSeed, and fingerprint when importing a team into a fresh DB", async () => {
+  it("preserves globalPlayerId and playerSeed; recomputes fingerprint on import", async () => {
     const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const { buildPlayerSig } = await import("./customTeamSignatures");
     const knownGid = "pl_identity_preserved_gid";
     const knownSeed = "known-identity-seed-value";
-    const knownFingerprint = "aabbccdd";
+    const playerFields = {
+      name: "Identity Player",
+      role: "batter" as const,
+      batting: { contact: 50, power: 50, speed: 50 },
+      playerSeed: knownSeed,
+    };
+    // Compute the fingerprint that should be stored after import
+    const expectedFingerprint = buildPlayerSig(playerFields);
+    // Use a stale value that we know differs from the expected fingerprint
+    const staleFingerprint = expectedFingerprint + "_stale";
+    const player = {
+      id: "p_id_test",
+      ...playerFields,
+      globalPlayerId: knownGid,
+      fingerprint: staleFingerprint,
+    };
     const teamWithIdentity = {
       id: "ct_identity_test",
       schemaVersion: 1,
@@ -105,26 +121,10 @@ describe("importCustomTeams", () => {
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Identity Team",
       source: "custom" as const,
-      roster: {
-        schemaVersion: 1,
-        lineup: [
-          {
-            id: "p_id_test",
-            name: "Identity Player",
-            role: "batter" as const,
-            batting: { contact: 50, power: 50, speed: 50 },
-            globalPlayerId: knownGid,
-            playerSeed: knownSeed,
-            fingerprint: knownFingerprint,
-          },
-        ],
-        bench: [],
-        pitchers: [],
-      },
+      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
       metadata: { archived: false },
     };
 
-    // Export from the original team
     const json = exportFn([teamWithIdentity]);
 
     // Import into a fresh in-memory DB (simulates a different install)
@@ -134,14 +134,17 @@ describe("importCustomTeams", () => {
     const freshStore = makeCustomTeamStore(() => Promise.resolve(freshDb));
 
     try {
-      const result = await freshStore.importCustomTeams(json);
-      // importCustomTeams may remap the team ID — resolve by name instead
-      const importedTeam = result.teams.find((t) => t.name === "Identity Team");
-      expect(importedTeam).toBeDefined();
+      await freshStore.importCustomTeams(json);
+      // Read from DB to verify stored identity fields
+      const importedTeam = await freshStore.getCustomTeam("ct_identity_test");
+      expect(importedTeam).not.toBeNull();
       const importedPlayer = importedTeam!.roster.lineup[0];
       expect(importedPlayer.globalPlayerId).toBe(knownGid);
       expect(importedPlayer.playerSeed).toBe(knownSeed);
-      expect(importedPlayer.fingerprint).toBe(knownFingerprint);
+      // Fingerprint is recomputed from stored stats after import (not preserved verbatim)
+      expect(importedPlayer.fingerprint).toBe(expectedFingerprint);
+      // The stale fingerprint must NOT be persisted
+      expect(importedPlayer.fingerprint).not.toBe(staleFingerprint);
     } finally {
       await freshDb.close();
     }
