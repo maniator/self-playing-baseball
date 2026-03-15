@@ -63,7 +63,7 @@ export function buildPlayerSig(
 export function stripPlayerSig(player: TeamPlayer): TeamPlayer {
   if (!("sig" in player)) return player;
 
-  const { sig: _sig, ...rest } = player as TeamPlayer & { sig?: string };
+  const { sig: _, ...rest } = player as TeamPlayer & { sig?: string };
   return rest as TeamPlayer;
 }
 
@@ -78,9 +78,4 @@ export function stripTeamPlayerSigs(team: CustomTeamDoc): CustomTeamDoc {
       pitchers: team.roster.pitchers.map(stripPlayerSig),
     },
   };
-}
-
-/** Attaches a `sig` to every player in `players`. */
-export function signPlayers(players: TeamPlayer[]): TeamPlayer[] {
-  return players.map((p) => ({ ...stripPlayerSig(p), sig: buildPlayerSig(p) }));
 }

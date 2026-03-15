@@ -7,11 +7,15 @@ import {
   CUSTOM_TEAM_EXPORT_FORMAT_VERSION,
   PLAYER_EXPORT_FORMAT_VERSION,
   PLAYER_EXPORT_KEY,
-  signPlayers,
   stripPlayerSig,
   type TeamPlayerWithSig,
   TEAMS_EXPORT_KEY,
 } from "./customTeamSignatures";
+
+/** Attaches a `sig` to every player in `players`. */
+function signPlayers(players: TeamPlayer[]): TeamPlayer[] {
+  return players.map((p) => ({ ...stripPlayerSig(p), sig: buildPlayerSig(p) }));
+}
 
 /**
  * Result shape returned by `CustomTeamStore.importPlayer`.
