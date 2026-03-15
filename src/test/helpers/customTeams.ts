@@ -1,8 +1,15 @@
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 /**
- * Creates a minimal valid `TeamPlayer` with optional field overrides.
+ * Creates a minimal `TeamPlayer` for unit tests with optional field overrides.
  * The generated `id` is random so each call produces a distinct player.
+ *
+ * This is an intentionally minimal fixture — it is **not** required to pass store
+ * validation. Use it directly when testing logic that only needs a `TeamPlayer`
+ * shape; use `makeCustomTeamStore` + `createCustomTeam` when you need a fully
+ * store-validated player with `sanitizePlayer` enforced.
+ *
+ * Default stats (70 / 60 / 50) are within the valid range: STAT_MIN=0, STAT_MAX=100.
  */
 export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
   id: `p_${Math.random().toString(36).slice(2, 8)}`,
@@ -13,9 +20,14 @@ export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => (
 });
 
 /**
- * Creates a minimal valid `CustomTeamDoc` with optional field overrides.
+ * Creates a minimal `CustomTeamDoc` for unit tests with optional field overrides.
  * The generated `id` is random so each call produces a distinct team.
- * The default lineup contains one player created by `makePlayer`.
+ *
+ * This is an intentionally minimal fixture — it contains one lineup player and no
+ * pitchers, which would fail store validation but is sufficient for tests that only
+ * need a `CustomTeamDoc` shape (export/import, fingerprint, prescan, etc.).
+ * Use `makeCustomTeamStore` + `createCustomTeam` when you need a fully validated
+ * team with `buildRoster`/`sanitizePlayer` enforced.
  */
 export const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
   id: `ct_test_${Math.random().toString(36).slice(2, 8)}`,
