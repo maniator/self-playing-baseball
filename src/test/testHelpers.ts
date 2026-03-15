@@ -4,3 +4,4 @@
  * Per-feature helpers live in `@test/helpers/<feature>`.
  */
 export * from "./helpers/gameplay";
+export * from "./helpers/saves";
