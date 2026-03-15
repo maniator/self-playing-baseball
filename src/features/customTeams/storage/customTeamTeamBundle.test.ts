@@ -1,37 +1,11 @@
 import { describe, expect, it } from "vitest";
 
 import { fnv1a } from "@storage/hash";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { CustomTeamDoc } from "@storage/types";
+import { makePlayer, makeTeam } from "@test/helpers/customTeams";
 
 import { buildPlayerSig, buildTeamFingerprint, TEAMS_EXPORT_KEY } from "./customTeamSignatures";
 import { exportCustomTeams, parseExportedCustomTeams } from "./customTeamTeamBundle";
-
-// ── Fixtures ────────────────────────────────────────────────────────────────
-
-const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
-  id: `p_${Math.random().toString(36).slice(2, 8)}`,
-  name: "Alice",
-  role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
-  ...overrides,
-});
-
-const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
-  id: `ct_test_${Math.random().toString(36).slice(2, 8)}`,
-  schemaVersion: 1,
-  createdAt: "2024-01-01T00:00:00.000Z",
-  updatedAt: "2024-01-01T00:00:00.000Z",
-  name: "Test Team",
-  source: "custom",
-  roster: {
-    schemaVersion: 1,
-    lineup: [makePlayer({ name: "Alice" })],
-    bench: [],
-    pitchers: [],
-  },
-  metadata: { archived: false },
-  ...overrides,
-});
 
 /** Build a valid signed bundle from scratch (for edge-case tests). */
 function makeSignedBundle(

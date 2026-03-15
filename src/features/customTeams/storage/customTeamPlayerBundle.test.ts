@@ -1,20 +1,10 @@
 import { describe, expect, it } from "vitest";
 
 import { fnv1a } from "@storage/hash";
-import type { TeamPlayer } from "@storage/types";
+import { makePlayer } from "@test/helpers/customTeams";
 
 import { exportCustomPlayer, parseExportedCustomPlayer } from "./customTeamPlayerBundle";
 import { buildPlayerSig, PLAYER_EXPORT_KEY } from "./customTeamSignatures";
-
-// ── Fixtures ────────────────────────────────────────────────────────────────
-
-const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
-  id: `p_${Math.random().toString(36).slice(2, 8)}`,
-  name: "Alice",
-  role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
-  ...overrides,
-});
 
 // ── exportCustomPlayer ────────────────────────────────────────────────────────
 
