@@ -5,6 +5,8 @@ import type {
   State,
   TeamCustomPlayerOverrides,
 } from "@feat/gameplay/context/index";
+import type { LogAction } from "@feat/gameplay/context/logReducer";
+import reducerFactory from "@feat/gameplay/context/reducer";
 import { buildResolvedMods } from "@feat/gameplay/context/resolvePlayerMods";
 import * as rngModule from "@shared/utils/rng";
 import { vi } from "vitest";
@@ -141,3 +143,15 @@ export const makeLogs = () => {
 
 /** Mocks rng.random to return a fixed value for all calls. */
 export const mockRandom = (value: number) => vi.spyOn(rngModule, "random").mockReturnValue(value);
+
+/**
+ * Creates a reducer instance wired to an in-memory log dispatcher.
+ * Shared across reducer, battingStats, determinism, and seedRegression tests.
+ */
+export const makeReducer = () => {
+  const logs: string[] = [];
+  const dispatch = (a: LogAction) => {
+    if (a.type === "log") logs.push(a.payload);
+  };
+  return { reducer: reducerFactory(dispatch), logs };
+};
