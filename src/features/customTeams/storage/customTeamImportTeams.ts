@@ -1,55 +1,22 @@
 import { generatePlayerId, generateTeamId } from "@storage/generateId";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
-import { parseExportedCustomTeams } from "./customTeamExportBundles";
+import {
+  type ImportCustomTeamsOptions,
+  type ImportCustomTeamsResult,
+  type ImportIdFactories,
+  preScanForDuplicatePlayers,
+} from "./customTeamImportPrescan";
 import {
   buildPlayerSig,
   buildTeamFingerprint,
   stripTeamPlayerSigs,
   type TeamPlayerWithSig,
 } from "./customTeamSignatures";
+import { parseExportedCustomTeams } from "./customTeamTeamBundle";
 
-export interface ImportCustomTeamsResult {
-  teams: CustomTeamDoc[];
-  created: number;
-  remapped: number;
-  /**
-   * Number of incoming teams that were exact fingerprint duplicates of an existing team
-   * and were silently skipped (not imported) to prevent creating duplicate entries.
-   */
-  skipped: number;
-  /** Team-level duplicate warnings (same team fingerprint already in DB). */
-  duplicateWarnings: string[];
-  /**
-   * Player-level duplicate warnings. Populated when an imported player's signature
-   * matches a player already stored in the local DB, indicating the player may already
-   * exist. The UI should surface these so the user can review before accepting the import.
-   */
-  duplicatePlayerWarnings: string[];
-  /**
-   * When true the import was blocked because one or more players in the incoming
-   * bundle already exist in the local DB (by content fingerprint).
-   * The caller should prompt the user to confirm before re-trying with
-   * `options.allowDuplicatePlayers = true` to proceed despite the duplicates.
-   */
-  requiresDuplicateConfirmation: boolean;
-}
-
-export interface ImportIdFactories {
-  /** Factory for new team IDs on collision. */
-  makeTeamId?: () => string;
-  /** Factory for new player IDs on collision. */
-  makePlayerId?: () => string;
-}
-
-export interface ImportCustomTeamsOptions {
-  /**
-   * When true, imports teams even if some players already exist in the local DB.
-   * When false (the default), the import is blocked and `requiresDuplicateConfirmation`
-   * is set to true so the caller can prompt the user for confirmation.
-   */
-  allowDuplicatePlayers?: boolean;
-}
+// Re-export types so existing `import { ... } from "./customTeamImportTeams"` callers are unaffected.
+export type { ImportCustomTeamsOptions, ImportCustomTeamsResult, ImportIdFactories };
 
 function remapPlayerIds(
   players: TeamPlayer[],
@@ -76,7 +43,7 @@ function remapPlayerIds(
  * Merges incoming teams into the local collection.
  *
  * - ID collisions (team or player): remapped silently with new IDs.
- * - Team fingerprint matches: reported in `duplicateWarnings`.
+ * - Team fingerprint matches: silently skipped and counted in `skipped` (not in `duplicateWarnings`).
  * - Player sig matches: reported in `duplicatePlayerWarnings` so the UI can prompt the user.
  * - Player `sig` fields are stripped from the output so they are not stored in the DB.
  * - When `options.allowDuplicatePlayers` is false (the default) and duplicate players are
@@ -131,35 +98,15 @@ export function importCustomTeams(
     }
   }
 
-  // ── Pre-scan: detect duplicate players in non-fingerprint-skipped teams ────
-  // If any are found and the caller hasn't opted in to allowing duplicates,
-  // block the import and require an explicit confirmation from the user.
+  // ── Pre-scan: detect duplicate players before committing any imports ────────
   const allowDuplicates = options?.allowDuplicatePlayers ?? false;
-  const preScanWarnings: string[] = [];
-  let preScanSkipped = 0;
+  const preScan = preScanForDuplicatePlayers(
+    parsed.payload.teams as CustomTeamDoc[],
+    existingFingerprints,
+    existingPlayerSigs,
+  );
 
-  for (const team of parsed.payload.teams) {
-    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
-    if (existingFingerprints.has(incomingFp)) {
-      preScanSkipped++;
-      continue;
-    }
-    const allPlayers = [
-      ...team.roster.lineup.map((p) => ({ player: p })),
-      ...(team.roster.bench ?? []).map((p) => ({ player: p })),
-      ...(team.roster.pitchers ?? []).map((p) => ({ player: p })),
-    ];
-    for (const { player } of allPlayers) {
-      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
-      if (existingPlayerSigs.has(pSig)) {
-        preScanWarnings.push(
-          `Player "${player.name}" in "${team.name}" may already exist in your teams.`,
-        );
-      }
-    }
-  }
-
-  if (preScanWarnings.length > 0 && !allowDuplicates) {
+  if (preScan.warnings.length > 0 && !allowDuplicates) {
     // Note: `skipped` here only counts fingerprint-matched teams from the pre-scan loop.
     // It does NOT equal the `skipped` count that the main loop would produce (the import
     // is blocked before reaching the main loop). Callers should treat this partial count
@@ -168,9 +115,9 @@ export function importCustomTeams(
       teams: [],
       created: 0,
       remapped: 0,
-      skipped: preScanSkipped,
+      skipped: preScan.skippedCount,
       duplicateWarnings: [],
-      duplicatePlayerWarnings: preScanWarnings,
+      duplicatePlayerWarnings: preScan.warnings,
       requiresDuplicateConfirmation: true,
     };
   }
@@ -186,8 +133,8 @@ export function importCustomTeams(
   for (const team of parsed.payload.teams) {
     // ── Early exact-duplicate check ────────────────────────────────────────────
     // If the incoming team's content fingerprint already exists locally, skip it
-    // entirely to prevent creating a duplicate entry. The fingerprint is content-
-    // based (name + abbreviation + sorted lineup names) so it is stable across
+    // entirely to prevent creating a duplicate entry. The fingerprint is seed-
+    // based (name + abbreviation + teamSeed) so it is stable across
     // re-exports regardless of stored team ID.
     const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
     if (existingFingerprints.has(incomingFp)) {
