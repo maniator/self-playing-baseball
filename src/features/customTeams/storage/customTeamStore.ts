@@ -261,9 +261,7 @@ function buildStore(getDbFn: GetDb) {
       const rawTeamDocs = (await db.customTeams.find().exec()).map(
         (d) => d.toJSON() as CustomTeamDoc,
       );
-      const allPlayerDocs = (await db.players.find().exec()).map(
-        (d) => d.toJSON() as PlayerDoc,
-      );
+      const allPlayerDocs = (await db.players.find().exec()).map((d) => d.toJSON() as PlayerDoc);
       // Assemble rosters read-only: use player docs for modern teams, fall back to
       // embedded roster arrays for legacy teams that have not been backfilled yet.
       const existing: CustomTeamDoc[] = rawTeamDocs.map((team) => {

@@ -81,11 +81,12 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
  *
  * @param section - Roster section name used in the error message (e.g. "lineup", "bench",
  *   "pitchers"). Defaults to "player" for backward-compatible direct calls.
+ * @param index - Zero-based position of the player within the section.
  */
 export function validatePlayerStatCaps(
   player: TeamPlayer,
-  index: number,
   section = "player",
+  index: number,
 ): void {
   if (player.role !== "pitcher") {
     const { contact, power, speed } = player.batting;
@@ -141,7 +142,7 @@ export function sanitizePlayer(player: TeamPlayer, index: number, section = "pla
   };
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
-  validatePlayerStatCaps(sanitized, index, section);
+  validatePlayerStatCaps(sanitized, section, index);
   // Preserve the existing playerSeed or generate a new one at creation time.
   // The seed is stored permanently so the fingerprint can be re-verified.
   const playerSeed = player.playerSeed ?? generateSeed();

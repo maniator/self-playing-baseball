@@ -43,19 +43,32 @@ export async function orchestrateTeamImport(
       bench: team.roster.bench.map(clampAndRefp),
       pitchers: team.roster.pitchers.map(clampAndRefp),
     };
-    clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, i, "lineup"));
-    clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, i, "bench"));
-    clampedRoster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, i, "pitchers"));
+    clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, "lineup", i));
+    clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, "bench", i));
+    clampedRoster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, "pitchers", i));
     const newDocIds = await writePlayerDocs(db, team.id, clampedRoster);
     await removePlayerDocs(db, team.id, newDocIds);
   } catch (err) {
-    await db.customTeams
-      .findOne(team.id)
-      .exec()
-      .then((d) => d?.remove())
-      .catch((rollbackErr) => {
-        appLog.warn(`[importCustomTeams] rollback failed for team ${team.id}:`, rollbackErr);
-      });
+    // Roll back the team doc AND any player docs that were partially written,
+    // so no orphaned players (pointing at a non-existent teamId) are left behind.
+    await Promise.all([
+      db.customTeams
+        .findOne(team.id)
+        .exec()
+        .then((d) => d?.remove())
+        .catch((rollbackErr) => {
+          appLog.warn(
+            `[importCustomTeams] rollback (team doc) failed for team ${team.id}:`,
+            rollbackErr,
+          );
+        }),
+      removePlayerDocs(db, team.id).catch((rollbackErr) => {
+        appLog.warn(
+          `[importCustomTeams] rollback (player docs) failed for team ${team.id}:`,
+          rollbackErr,
+        );
+      }),
+    ]);
     throw err;
   }
 }
