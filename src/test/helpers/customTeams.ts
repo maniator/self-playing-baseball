@@ -9,7 +9,8 @@ import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
  * shape; use `makeCustomTeamStore` + `createCustomTeam` when you need a fully
  * store-validated player with `sanitizePlayer` enforced.
  *
- * Default stats (70 / 60 / 50) are within the valid range: STAT_MIN=0, STAT_MAX=100.
+ * Default stats (50 / 50 / 50) are within the valid range and satisfy the
+ * HITTER_STAT_CAP (contact + power + speed ≤ 150).
  */
 export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
   id: `p_${Math.random().toString(36).slice(2, 8)}`,
