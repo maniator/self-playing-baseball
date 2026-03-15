@@ -1,5 +1,5 @@
 import { type BallgameDb, getDb } from "@storage/db";
-import { generatePlayerId, generateSeed, generateTeamId } from "@storage/generateId";
+import { generateSeed, generateTeamId } from "@storage/generateId";
 import type {
   CreateCustomTeamInput,
   CustomTeamDoc,
@@ -8,6 +8,7 @@ import type {
   UpdateCustomTeamInput,
 } from "@storage/types";
 
+import { buildNewTeamDoc } from "./customTeamDocBuilder";
 import {
   buildTeamFingerprint,
   exportCustomPlayer as exportCustomPlayerJson,
@@ -18,8 +19,7 @@ import {
   type ImportPlayerResult,
   parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
-import { resolvePlayerConflict } from "./customTeamIdentity";
-import { orchestrateTeamImport } from "./customTeamImportOrchestrator";
+import { importPlayerIntoTeam, orchestrateTeamImport } from "./customTeamImportOrchestrator";
 import { removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
 import { populateRoster } from "./customTeamRosterPersistence";
 import {
@@ -28,8 +28,6 @@ import {
   ROSTER_SCHEMA_VERSION,
   sanitizeAbbreviation,
 } from "./customTeamSanitizers";
-
-const SCHEMA_VERSION = 1;
 
 type GetDb = () => Promise<BallgameDb>;
 
@@ -81,33 +79,9 @@ function buildStore(getDbFn: GetDb) {
         );
       }
       const roster = buildRoster(input.roster);
-      const now = new Date().toISOString();
       const id = meta?.id ?? generateTeamId();
       const teamSeed = generateSeed();
-      const sanitizedAbbrev =
-        input.abbreviation !== undefined ? sanitizeAbbreviation(input.abbreviation) : undefined;
-      const doc: CustomTeamDoc = {
-        id,
-        schemaVersion: SCHEMA_VERSION,
-        createdAt: now,
-        updatedAt: now,
-        name,
-        ...(sanitizedAbbrev !== undefined && { abbreviation: sanitizedAbbrev }),
-        ...(input.nickname !== undefined && { nickname: input.nickname }),
-        ...(input.city !== undefined && { city: input.city }),
-        ...(input.slug !== undefined && { slug: input.slug }),
-        source: input.source ?? "custom",
-        // Store empty embedded arrays — players live in the `players` collection.
-        roster: { schemaVersion: ROSTER_SCHEMA_VERSION, lineup: [], bench: [], pitchers: [] },
-        metadata: {
-          ...(input.metadata?.notes !== undefined && { notes: input.metadata.notes }),
-          ...(input.metadata?.tags !== undefined && { tags: input.metadata.tags }),
-          archived: input.metadata?.archived ?? false,
-        },
-        ...(input.statsProfile !== undefined && { statsProfile: input.statsProfile }),
-        teamSeed,
-      };
-      doc.fingerprint = buildTeamFingerprint(doc);
+      const doc = buildNewTeamDoc({ ...input, name }, id, teamSeed);
       const db = await getDbFn();
       await db.customTeams.insert(doc);
       // Write player docs into the dedicated players collection.
@@ -312,38 +286,9 @@ function buildStore(getDbFn: GetDb) {
         targetTeamDoc.toJSON() as unknown as CustomTeamDoc,
       );
 
-      // Cross-team identity check
-      const conflictResult = await resolvePlayerConflict(db, player.globalPlayerId, targetTeamId);
-      if (conflictResult.status === "conflict") {
-        return {
-          status: "conflict",
-          conflictingTeamId: conflictResult.conflictingTeamId,
-          conflictingTeamName: conflictResult.conflictingTeamName,
-        };
-      }
-      if (conflictResult.status === "alreadyOnThisTeam") {
-        return { status: "alreadyOnThisTeam" };
-      }
-
-      // Append to the target section and persist.
-      const allTargetIds = new Set([
-        ...targetTeam.roster.lineup.map((p) => p.id),
-        ...targetTeam.roster.bench.map((p) => p.id),
-        ...targetTeam.roster.pitchers.map((p) => p.id),
-      ]);
-      const playerToInsert: TeamPlayer = allTargetIds.has(player.id)
-        ? { ...player, id: generatePlayerId() }
-        : player;
-      const updatedSection = [...targetTeam.roster[section], playerToInsert];
-      await this.updateCustomTeam(targetTeamId, {
-        roster: {
-          lineup: section === "lineup" ? updatedSection : targetTeam.roster.lineup,
-          bench: section === "bench" ? updatedSection : targetTeam.roster.bench,
-          pitchers: section === "pitchers" ? updatedSection : targetTeam.roster.pitchers,
-        },
-      });
-
-      return { status: "success", finalLocalId: playerToInsert.id };
+      return importPlayerIntoTeam(db, player, targetTeamId, targetTeam, section, (id, updates) =>
+        this.updateCustomTeam(id, updates),
+      );
     },
   };
 }
