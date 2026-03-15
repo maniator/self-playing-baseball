@@ -36,6 +36,34 @@ export function clampStat(value: number): number {
 }
 
 /**
+ * Returns a new player object with all individual stats clamped to [STAT_MIN, STAT_MAX].
+ * Does not validate totals — call `validatePlayerStatCaps` after this if needed.
+ */
+export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
+  return {
+    ...player,
+    batting: {
+      contact: clampStat(player.batting.contact),
+      power: clampStat(player.batting.power),
+      speed: clampStat(player.batting.speed),
+    },
+    ...(player.pitching && {
+      pitching: {
+        ...(player.pitching.velocity !== undefined && {
+          velocity: clampStat(player.pitching.velocity),
+        }),
+        ...(player.pitching.control !== undefined && {
+          control: clampStat(player.pitching.control),
+        }),
+        ...(player.pitching.movement !== undefined && {
+          movement: clampStat(player.pitching.movement),
+        }),
+      },
+    }),
+  };
+}
+
+/**
  * Validates that a player's stat totals do not exceed the enforced caps:
  * - Hitter cap (HITTER_STAT_CAP): contact + power + speed ≤ 150 (non-pitchers)
  * - Pitcher cap (PITCHER_STAT_CAP): velocity + control + movement ≤ 160 (non-batters)

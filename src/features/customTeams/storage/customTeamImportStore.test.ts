@@ -208,4 +208,40 @@ describe("importCustomTeams — stat cap enforcement", () => {
     const json = exportFn([overCapTeam]);
     await expect(store.importCustomTeams(json)).rejects.toThrow(/stat cap/i);
   });
+
+  it("clamps per-stat values above 100 before writing to the DB", async () => {
+    const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
+    const overStatTeam = {
+      id: "ct_overstat_clamp_test",
+      schemaVersion: 1,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      name: "Over Stat Clamp Import",
+      source: "custom" as const,
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "p_overstat_clamp",
+            name: "Over Stat Player",
+            role: "batter" as const,
+            // contact=120 is above STAT_MAX=100; after clamping → 100+20+10=130 ≤ 150
+            batting: { contact: 120, power: 20, speed: 10 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { archived: false },
+    };
+    const json = exportFn([overStatTeam]);
+    await store.importCustomTeams(json);
+    const imported = await store.getCustomTeam("ct_overstat_clamp_test");
+    expect(imported).not.toBeNull();
+    const player = imported!.roster.lineup[0];
+    // contact was clamped from 120 → 100
+    expect(player.batting.contact).toBe(100);
+    expect(player.batting.power).toBe(20);
+    expect(player.batting.speed).toBe(10);
+  });
 });

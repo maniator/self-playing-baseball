@@ -1,4 +1,4 @@
-import type { SaveDoc } from "@feat/saves/storage/types";
+import type { SaveDoc } from "@storage/types";
 
 /**
  * Builds a minimal valid SaveDoc fixture for unit tests.

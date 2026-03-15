@@ -1,3 +1,4 @@
+import { generatePlayerId, generateTeamId } from "@storage/generateId";
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
 /**
@@ -13,7 +14,7 @@ import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
  * HITTER_STAT_CAP (contact + power + speed ≤ 150).
  */
 export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
-  id: `p_${Math.random().toString(36).slice(2, 8)}`,
+  id: generatePlayerId(),
   name: "Alice",
   role: "batter",
   batting: { contact: 50, power: 50, speed: 50 },
@@ -31,7 +32,7 @@ export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => (
  * team with `buildRoster`/`sanitizePlayer` enforced.
  */
 export const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
-  id: `ct_test_${Math.random().toString(36).slice(2, 8)}`,
+  id: generateTeamId(),
   schemaVersion: 1,
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
