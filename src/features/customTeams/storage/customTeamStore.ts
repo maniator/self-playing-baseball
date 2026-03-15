@@ -20,7 +20,7 @@ import {
   parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
 import { importPlayerIntoTeam, orchestrateTeamImport } from "./customTeamImportOrchestrator";
-import { removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
+import { assembleRoster, removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
 import { populateRoster } from "./customTeamRosterPersistence";
 import {
   buildRoster,
@@ -251,14 +251,31 @@ function buildStore(getDbFn: GetDb) {
       json: string,
       options?: ImportCustomTeamsOptions,
     ): Promise<ImportCustomTeamsResult> {
-      // Load with roster hydration so existingPlayerIds/existingPlayerSigs are
-      // populated from the players collection — required for duplicate-player
-      // detection and ID remapping to work correctly in production (embedded
-      // roster arrays on team docs are always empty; players live in db.players).
-      const existing = await this.listCustomTeams({ includeArchived: true });
+      // Query team docs and player docs directly from the DB without calling
+      // listCustomTeams() / populateRoster().  populateRoster() can write to
+      // db.players and patch team docs (legacy backfill) as a side effect, so
+      // even a blocked import (requiresDuplicateConfirmation: true) would mutate
+      // the DB.  By reading collections directly we get the same roster data
+      // without any writes.
+      const db = await getDbFn();
+      const rawTeamDocs = (await db.customTeams.find().exec()).map(
+        (d) => d.toJSON() as CustomTeamDoc,
+      );
+      const allPlayerDocs = (await db.players.find().exec()).map(
+        (d) => d.toJSON() as PlayerDoc,
+      );
+      // Assemble rosters read-only: use player docs for modern teams, fall back to
+      // embedded roster arrays for legacy teams that have not been backfilled yet.
+      const existing: CustomTeamDoc[] = rawTeamDocs.map((team) => {
+        const teamPlayerDocs = allPlayerDocs.filter((p) => p.teamId === team.id);
+        if (teamPlayerDocs.length > 0) {
+          return { ...team, roster: assembleRoster(teamPlayerDocs, team.roster) };
+        }
+        // Legacy team: players still in embedded arrays (no backfill write here).
+        return team;
+      });
       const result = importCustomTeamsParser(json, existing, undefined, options);
       if (!result.requiresDuplicateConfirmation) {
-        const db = await getDbFn();
         for (const team of result.teams) {
           await orchestrateTeamImport(db, team, ROSTER_SCHEMA_VERSION);
         }

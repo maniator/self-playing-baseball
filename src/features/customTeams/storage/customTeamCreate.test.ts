@@ -121,14 +121,14 @@ describe("createCustomTeam", () => {
     const player = makePlayer({ name: "" });
     await expect(
       store.createCustomTeam(makeInput({ roster: { lineup: [player] } })),
-    ).rejects.toThrow("roster player[0].name must be a non-empty string");
+    ).rejects.toThrow("roster lineup[0].name must be a non-empty string");
   });
 
   it("throws on invalid player role", async () => {
     const player = makePlayer({ role: "invalid" as "batter" });
     await expect(
       store.createCustomTeam(makeInput({ roster: { lineup: [player] } })),
-    ).rejects.toThrow('roster player[0].role must be "batter", "pitcher", or "two-way"');
+    ).rejects.toThrow('roster lineup[0].role must be "batter", "pitcher", or "two-way"');
   });
 
   it("stores bench and pitchers arrays", async () => {

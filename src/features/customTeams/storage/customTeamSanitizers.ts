@@ -78,14 +78,21 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
  * Called after individual stats are clamped to 0–100 so that clamping always
  * runs first and the cap is the final gate.
  * Throws an Error with a message containing "stat cap" if the total exceeds the cap.
+ *
+ * @param section - Roster section name used in the error message (e.g. "lineup", "bench",
+ *   "pitchers"). Defaults to "player" for backward-compatible direct calls.
  */
-export function validatePlayerStatCaps(player: TeamPlayer, index: number): void {
+export function validatePlayerStatCaps(
+  player: TeamPlayer,
+  index: number,
+  section = "player",
+): void {
   if (player.role !== "pitcher") {
     const { contact, power, speed } = player.batting;
     const total = contact + power + speed;
     if (total > HITTER_STAT_CAP) {
       throw new Error(
-        `roster player[${index}] batting stat cap exceeded: ` +
+        `roster ${section}[${index}] batting stat cap exceeded: ` +
           `contact(${contact}) + power(${power}) + speed(${speed}) = ${total} > ${HITTER_STAT_CAP}`,
       );
     }
@@ -95,20 +102,20 @@ export function validatePlayerStatCaps(player: TeamPlayer, index: number): void 
     const total = velocity + control + movement;
     if (total > PITCHER_STAT_CAP) {
       throw new Error(
-        `roster player[${index}] pitching stat cap exceeded: ` +
+        `roster ${section}[${index}] pitching stat cap exceeded: ` +
           `velocity(${velocity}) + control(${control}) + movement(${movement}) = ${total} > ${PITCHER_STAT_CAP}`,
       );
     }
   }
 }
 
-export function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
-  const name = requireNonEmpty(player.name, `roster player[${index}].name`);
+export function sanitizePlayer(player: TeamPlayer, index: number, section = "player"): TeamPlayer {
+  const name = requireNonEmpty(player.name, `roster ${section}[${index}].name`);
   if (!["batter", "pitcher", "two-way"].includes(player.role)) {
-    throw new Error(`roster player[${index}].role must be "batter", "pitcher", or "two-way"`);
+    throw new Error(`roster ${section}[${index}].role must be "batter", "pitcher", or "two-way"`);
   }
   if (!player.batting || typeof player.batting !== "object") {
-    throw new Error(`roster player[${index}].batting is required`);
+    throw new Error(`roster ${section}[${index}].batting is required`);
   }
   const sanitized: TeamPlayer = {
     ...player,
@@ -134,7 +141,7 @@ export function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
   };
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
-  validatePlayerStatCaps(sanitized, index);
+  validatePlayerStatCaps(sanitized, index, section);
   // Preserve the existing playerSeed or generate a new one at creation time.
   // The seed is stored permanently so the fingerprint can be re-verified.
   const playerSeed = player.playerSeed ?? generateSeed();
@@ -160,8 +167,8 @@ export function buildRoster(input: {
   }
   return {
     schemaVersion: ROSTER_SCHEMA_VERSION,
-    lineup: input.lineup.map((p, i) => sanitizePlayer(p, i)),
-    bench: (input.bench ?? []).map((p, i) => sanitizePlayer(p, i)),
-    pitchers: (input.pitchers ?? []).map((p, i) => sanitizePlayer(p, i)),
+    lineup: input.lineup.map((p, i) => sanitizePlayer(p, i, "lineup")),
+    bench: (input.bench ?? []).map((p, i) => sanitizePlayer(p, i, "bench")),
+    pitchers: (input.pitchers ?? []).map((p, i) => sanitizePlayer(p, i, "pitchers")),
   };
 }

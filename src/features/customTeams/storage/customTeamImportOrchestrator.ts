@@ -43,9 +43,9 @@ export async function orchestrateTeamImport(
       bench: team.roster.bench.map(clampAndRefp),
       pitchers: team.roster.pitchers.map(clampAndRefp),
     };
-    clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, i));
-    clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, i));
-    clampedRoster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, i));
+    clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, i, "lineup"));
+    clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, i, "bench"));
+    clampedRoster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, i, "pitchers"));
     const newDocIds = await writePlayerDocs(db, team.id, clampedRoster);
     await removePlayerDocs(db, team.id, newDocIds);
   } catch (err) {
