@@ -251,7 +251,11 @@ function buildStore(getDbFn: GetDb) {
       json: string,
       options?: ImportCustomTeamsOptions,
     ): Promise<ImportCustomTeamsResult> {
-      const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
+      // Load with roster hydration so existingPlayerIds/existingPlayerSigs are
+      // populated from the players collection — required for duplicate-player
+      // detection and ID remapping to work correctly in production (embedded
+      // roster arrays on team docs are always empty; players live in db.players).
+      const existing = await this.listCustomTeams({ includeArchived: true });
       const result = importCustomTeamsParser(json, existing, undefined, options);
       if (!result.requiresDuplicateConfirmation) {
         const db = await getDbFn();

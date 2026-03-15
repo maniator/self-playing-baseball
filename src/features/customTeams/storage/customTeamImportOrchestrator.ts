@@ -53,14 +53,14 @@ export async function orchestrateTeamImport(
  */
 export async function importPlayerIntoTeam(
   db: BallgameDb,
-  player: TeamPlayer,
+  player: TeamPlayer & { globalPlayerId: string },
   targetTeamId: string,
   targetTeam: CustomTeamDoc,
   section: "lineup" | "bench" | "pitchers",
   updateFn: (id: string, updates: UpdateCustomTeamInput) => Promise<void>,
 ): Promise<ImportPlayerResult> {
   // Cross-team identity check
-  const conflictResult = await resolvePlayerConflict(db, player.globalPlayerId!, targetTeamId);
+  const conflictResult = await resolvePlayerConflict(db, player.globalPlayerId, targetTeamId);
   if (conflictResult.status === "conflict") {
     return {
       status: "conflict",
