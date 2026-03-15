@@ -264,3 +264,52 @@ describe("createCustomTeam — playerSeed", () => {
     expect(pitcher!.playerSeed!.length).toBeGreaterThan(0);
   });
 });
+
+describe("createCustomTeam — stat cap enforcement", () => {
+  it("throws when a batter's batting total exceeds HITTER_STAT_CAP (150)", async () => {
+    await expect(
+      store.createCustomTeam(
+        makeInput({
+          roster: {
+            lineup: [makePlayer({ batting: { contact: 60, power: 55, speed: 50 } })], // 165 > 150
+            bench: [],
+            pitchers: [],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/stat cap/i);
+  });
+
+  it("throws when a pitcher's pitching total exceeds PITCHER_STAT_CAP (160)", async () => {
+    await expect(
+      store.createCustomTeam(
+        makeInput({
+          roster: {
+            lineup: [
+              makePlayer({
+                role: "pitcher",
+                pitching: { velocity: 70, control: 60, movement: 55 }, // 185 > 160
+              }),
+            ],
+            bench: [],
+            pitchers: [],
+          },
+        }),
+      ),
+    ).rejects.toThrow(/stat cap/i);
+  });
+
+  it("accepts a player with stats exactly at the cap (150 / 160)", async () => {
+    await expect(
+      store.createCustomTeam(
+        makeInput({
+          roster: {
+            lineup: [makePlayer({ batting: { contact: 50, power: 50, speed: 50 } })], // 150 = cap
+            bench: [],
+            pitchers: [],
+          },
+        }),
+      ),
+    ).resolves.toEqual(expect.any(String));
+  });
+});
