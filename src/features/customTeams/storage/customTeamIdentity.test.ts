@@ -2,18 +2,11 @@ import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "@storage/db";
-import type { CreateCustomTeamInput, TeamPlayer } from "@storage/types";
+import type { CreateCustomTeamInput } from "@storage/types";
+import { makePlayer } from "@test/helpers/customTeams";
 
 import { resolvePlayerConflict } from "./customTeamIdentity";
 import { makeCustomTeamStore } from "./customTeamStore";
-
-const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
-  id: `player_${Math.random().toString(36).slice(2, 8)}`,
-  name: "Test Player",
-  role: "batter",
-  batting: { contact: 50, power: 50, speed: 50 },
-  ...overrides,
-});
 
 const makeInput = (overrides: Partial<CreateCustomTeamInput> = {}): CreateCustomTeamInput => ({
   name: "Test Team",

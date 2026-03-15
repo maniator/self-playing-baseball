@@ -116,7 +116,23 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
       if (!Array.isArray(slotValue)) {
         throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
       }
-      (slotValue as TeamPlayerWithSig[]).forEach((player, pi) => {
+      (slotValue as unknown[]).forEach((rawPlayer, pi) => {
+        // Structural validation: each player must be an object with required fields
+        // before calling buildPlayerSig to avoid non-descriptive runtime errors.
+        if (!rawPlayer || typeof rawPlayer !== "object") {
+          throw new Error(`Team[${ti}] ${slot}[${pi}] is not an object — file may be malformed`);
+        }
+        const p = rawPlayer as Record<string, unknown>;
+        if (typeof p["id"] !== "string" || !p["id"])
+          throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: id`);
+        if (typeof p["name"] !== "string" || !p["name"])
+          throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: name`);
+        if (typeof p["role"] !== "string")
+          throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: role`);
+        if (!p["batting"] || typeof p["batting"] !== "object")
+          throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: batting`);
+
+        const player = rawPlayer as TeamPlayerWithSig;
         // Skip sig validation for legacy files that pre-date per-player signatures.
         if (player.sig === undefined) return;
         const expectedPlayerSig = buildPlayerSig(player);

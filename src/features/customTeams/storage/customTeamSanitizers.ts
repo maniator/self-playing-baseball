@@ -31,8 +31,15 @@ export function sanitizeAbbreviation(value: string): string {
   return abbr;
 }
 
+/**
+ * Clamps a stat value to [STAT_MIN, STAT_MAX].
+ * Non-finite inputs (NaN, Infinity, null, undefined coerced via Number) default
+ * to STAT_MIN so a crafted import bundle cannot bypass cap checks with NaN totals.
+ */
 export function clampStat(value: number): number {
-  return Math.max(STAT_MIN, Math.min(STAT_MAX, value));
+  const n = Number(value);
+  const finite = Number.isFinite(n) ? n : STAT_MIN;
+  return Math.max(STAT_MIN, Math.min(STAT_MAX, finite));
 }
 
 /**
@@ -114,13 +121,13 @@ export function sanitizePlayer(player: TeamPlayer, index: number): TeamPlayer {
     ...(player.pitching && {
       pitching: {
         ...(player.pitching.velocity !== undefined && {
-          velocity: clampStat(Number(player.pitching.velocity)),
+          velocity: clampStat(Number(player.pitching.velocity) || 0),
         }),
         ...(player.pitching.control !== undefined && {
-          control: clampStat(Number(player.pitching.control)),
+          control: clampStat(Number(player.pitching.control) || 0),
         }),
         ...(player.pitching.movement !== undefined && {
-          movement: clampStat(Number(player.pitching.movement)),
+          movement: clampStat(Number(player.pitching.movement) || 0),
         }),
       },
     }),

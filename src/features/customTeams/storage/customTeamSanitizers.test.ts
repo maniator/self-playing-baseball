@@ -98,6 +98,17 @@ describe("clampStat", () => {
     expect(clampStat(50)).toBe(50);
     expect(clampStat(100)).toBe(100);
   });
+
+  it("returns STAT_MIN (0) for NaN input", () => {
+    expect(clampStat(NaN)).toBe(0);
+  });
+
+  it("returns STAT_MIN (0) for Infinity input", () => {
+    // Infinity is finite=false → defaults to STAT_MIN, then clamp → 0
+    // (Infinity is not finite)
+    expect(clampStat(Infinity)).toBe(0);
+    expect(clampStat(-Infinity)).toBe(0);
+  });
 });
 
 describe("sanitizePlayer", () => {

@@ -282,6 +282,44 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     const result = parseExportedCustomTeams(exportCustomTeams([team]));
     expect(result.payload.teams[0].roster.lineup[0].name).toBe("Sole Batter");
   });
+
+  it("throws a descriptive error when a lineup player is null", () => {
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [] },
+    });
+    // Manually corrupt: replace lineup[0] with null
+    const bundle = JSON.parse(exportCustomTeams([team]));
+    bundle.payload.teams[0].roster.lineup[0] = null;
+    // Recompute bundle sig so structural validation (not sig check) fires first
+    const { fnv1a: _fnv1a } = { fnv1a };
+    bundle.sig = _fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(bundle.payload));
+    expect(() => parseExportedCustomTeams(JSON.stringify(bundle))).toThrow("is not an object");
+  });
+
+  it("throws a descriptive error when a player is missing required 'name' field", () => {
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [] },
+    });
+    const bundle = JSON.parse(exportCustomTeams([team]));
+    // Remove the name from lineup[0]
+    delete bundle.payload.teams[0].roster.lineup[0].name;
+    bundle.sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(bundle.payload));
+    expect(() => parseExportedCustomTeams(JSON.stringify(bundle))).toThrow(
+      "missing required field: name",
+    );
+  });
+
+  it("throws a descriptive error when a player is missing required 'batting' field", () => {
+    const team = makeTeam({
+      roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [] },
+    });
+    const bundle = JSON.parse(exportCustomTeams([team]));
+    delete bundle.payload.teams[0].roster.lineup[0].batting;
+    bundle.sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(bundle.payload));
+    expect(() => parseExportedCustomTeams(JSON.stringify(bundle))).toThrow(
+      "missing required field: batting",
+    );
+  });
 });
 
 // ── exportCustomTeams — identity fields per player ────────────────────────────
