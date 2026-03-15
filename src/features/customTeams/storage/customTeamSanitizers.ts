@@ -2,7 +2,7 @@ import { generateSeed } from "@storage/generateId";
 import { fnv1a } from "@storage/hash";
 import type { TeamPlayer, TeamRoster } from "@storage/types";
 
-import { buildPlayerSig } from "./customTeamExportImport";
+import { buildPlayerSig } from "./customTeamSignatures";
 
 export const STAT_MIN = 0;
 export const STAT_MAX = 100;
