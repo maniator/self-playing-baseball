@@ -9,7 +9,10 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { makeState } from "@test/testHelpers";
 
 import { advanceRunners } from "./advanceRunners";
-import type { DecisionType, LogAction, ModPreset, State, TeamCustomPlayerOverrides } from "./index";
+import type { DecisionType } from "./decisionTypes";
+import type { State } from "./gameStateTypes";
+import type { LogAction } from "./logReducer";
+import type { ModPreset, TeamCustomPlayerOverrides } from "./playerTypes";
 import { canProcessActionAfterGameOver, detectDecision } from "./reducer";
 import reducerFactory from "./reducer";
 
