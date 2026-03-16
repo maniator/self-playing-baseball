@@ -93,10 +93,22 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
       throw new Error(`Team[${i}] missing required field: name`);
     if (typeof team["source"] !== "string")
       throw new Error(`Team[${i}] missing required field: source`);
+    if (!["custom", "generated"].includes(team["source"] as string))
+      throw new Error(
+        `Team[${i}] invalid source "${team["source"]}" — must be "custom" or "generated"`,
+      );
+    if (
+      !team["metadata"] ||
+      typeof team["metadata"] !== "object" ||
+      Array.isArray(team["metadata"])
+    )
+      throw new Error(`Team[${i}] missing required field: metadata`);
     // fingerprint is optional for legacy files (pre-v2 exports without fingerprints)
     if (!team["roster"] || typeof team["roster"] !== "object")
       throw new Error(`Team[${i}] missing required field: roster`);
     const roster = team["roster"] as Record<string, unknown>;
+    if (typeof roster["schemaVersion"] !== "number")
+      throw new Error(`Team[${i}] roster.schemaVersion must be a number`);
     if (!Array.isArray(roster["lineup"]) || (roster["lineup"] as unknown[]).length === 0)
       throw new Error(`Team[${i}] roster.lineup must be a non-empty array`);
   });

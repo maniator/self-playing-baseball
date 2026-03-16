@@ -132,8 +132,9 @@ describe("parseExportedCustomTeams", () => {
       id: "ct1",
       name: "T",
       source: "custom",
+      metadata: {},
       fingerprint: fp,
-      roster: { lineup: [] },
+      roster: { schemaVersion: 1, lineup: [] },
     };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
@@ -143,7 +144,13 @@ describe("parseExportedCustomTeams", () => {
 
   it("accepts a team without fingerprint (legacy file — fingerprint is optional)", () => {
     const p = makePlayer();
-    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [p] } };
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      metadata: {},
+      roster: { schemaVersion: 1, lineup: [p] },
+    };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -174,7 +181,13 @@ describe("parseExportedCustomTeams", () => {
       role: "batter",
       batting: { contact: 50, power: 50, speed: 50 },
     };
-    const team = { id: "ct1", name: "T", source: "custom", roster: { lineup: [legacyPlayer] } };
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      metadata: {},
+      roster: { schemaVersion: 1, lineup: [legacyPlayer] },
+    };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
@@ -231,13 +244,60 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: source");
   });
 
+  it("throws when a team has an invalid source value", () => {
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "imported",
+      metadata: {},
+      fingerprint: "aabbccdd",
+      roster: { schemaVersion: 1, lineup: [player] },
+    };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow('invalid source "imported"');
+  });
+
+  it("throws when a team is missing required metadata", () => {
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      fingerprint: "aabbccdd",
+      roster: { schemaVersion: 1, lineup: [player] },
+    };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: metadata");
+  });
+
   it("throws when a team is missing required roster", () => {
     const fp = buildTeamFingerprint(makeTeam());
-    const team = { id: "ct1", name: "T", source: "custom", fingerprint: fp };
+    const team = { id: "ct1", name: "T", source: "custom", metadata: {}, fingerprint: fp };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: roster");
+  });
+
+  it("throws when roster.schemaVersion is missing or not a number", () => {
+    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
+    const team = {
+      id: "ct1",
+      name: "T",
+      source: "custom",
+      metadata: {},
+      fingerprint: "aabbccdd",
+      roster: { lineup: [player] }, // no schemaVersion
+    };
+    const payload = { teams: [team] };
+    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
+    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
+    expect(() => parseExportedCustomTeams(bad)).toThrow("schemaVersion must be a number");
   });
 
   it("throws when a team entry is not an object", () => {
@@ -253,8 +313,9 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
       id: "ct1",
       name: "T",
       source: "custom",
+      metadata: {},
       fingerprint: fp,
-      roster: { lineup: [] },
+      roster: { schemaVersion: 1, lineup: [] },
     };
     const payload = { teams: [team] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
