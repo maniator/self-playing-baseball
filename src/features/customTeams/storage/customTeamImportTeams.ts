@@ -7,12 +7,8 @@ import {
   type ImportIdFactories,
   preScanForDuplicatePlayers,
 } from "./customTeamImportPrescan";
-import {
-  buildPlayerSig,
-  buildTeamFingerprint,
-  stripTeamPlayerSigs,
-  type TeamPlayerWithSig,
-} from "./customTeamSignatures";
+import { clampPlayerStats } from "./customTeamSanitizers";
+import { buildPlayerSig, buildTeamFingerprint, stripTeamPlayerSigs } from "./customTeamSignatures";
 import { parseExportedCustomTeams } from "./customTeamTeamBundle";
 
 // Re-export types so existing `import { ... } from "./customTeamImportTeams"` callers are unaffected.
@@ -155,8 +151,10 @@ export function importCustomTeams(
       ...(team.roster.pitchers ?? []).map((p) => ({ player: p, slot: "pitchers" })),
     ];
     for (const { player } of allSlotPlayers) {
-      // Use the sig embedded in the export; fall back to computing it if absent.
-      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
+      // Clamp stats before computing the comparison sig — the storage path always
+      // clamps first and recomputes the fingerprint, so we must compare against the
+      // same clamped shape to avoid missed or spurious duplicate warnings.
+      const pSig = buildPlayerSig(clampPlayerStats(player));
       if (existingPlayerSigs.has(pSig)) {
         duplicatePlayerWarnings.push(
           `Player "${player.name}" in "${team.name}" may already exist in your teams.`,

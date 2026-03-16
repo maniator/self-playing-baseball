@@ -1,10 +1,7 @@
 import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
 
-import {
-  buildPlayerSig,
-  buildTeamFingerprint,
-  type TeamPlayerWithSig,
-} from "./customTeamSignatures";
+import { clampPlayerStats } from "./customTeamSanitizers";
+import { buildPlayerSig, buildTeamFingerprint } from "./customTeamSignatures";
 
 export interface ImportCustomTeamsResult {
   teams: CustomTeamDoc[];
@@ -85,7 +82,10 @@ export function preScanForDuplicatePlayers(
       ...(team.roster.pitchers ?? []),
     ];
     for (const player of allPlayers) {
-      const pSig = (player as TeamPlayerWithSig).sig ?? buildPlayerSig(player);
+      // Clamp stats before computing the comparison sig — the storage path always
+      // clamps first and recomputes the fingerprint, so we must compare against the
+      // same clamped shape to avoid missed or spurious duplicate warnings.
+      const pSig = buildPlayerSig(clampPlayerStats(player));
       if (existingPlayerSigs.has(pSig)) {
         warnings.push(`Player "${player.name}" in "${team.name}" may already exist in your teams.`);
       }
