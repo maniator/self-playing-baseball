@@ -71,6 +71,9 @@ describe("importCustomTeams", () => {
   });
 
   it("counts team as created when no IDs collide", () => {
+    // Teams must have distinct names to have different fingerprints; otherwise the second
+    // would be skipped by intra-bundle deduplication. allowDuplicatePlayers is set because
+    // both teams use a player with the same default name which would otherwise block the import.
     const json = exportCustomTeams([
       makeTeam({ id: "ct_a", name: "Team Alpha" }),
       makeTeam({ id: "ct_b", name: "Team Beta" }),
@@ -110,7 +113,8 @@ describe("importCustomTeams", () => {
 
   it("skips intra-bundle duplicate teams (same team appears twice in same bundle)", () => {
     // Simulates a malformed or hand-crafted export where the same team appears twice.
-    // The second occurrence should be skipped via intra-bundle fingerprint tracking.
+    // The second occurrence should be skipped via intra-bundle fingerprint tracking,
+    // before player-duplicate checks run — so this works with or without allowDuplicatePlayers.
     const team = makeTeam({ id: "ct_a", name: "Alpha" });
     // Export the same team twice (two entries in the bundle, identical fingerprint).
     const result = importCustomTeams(exportCustomTeams([team, team]), [], undefined, {
@@ -119,6 +123,17 @@ describe("importCustomTeams", () => {
     expect(result.teams).toHaveLength(1);
     expect(result.skipped).toBe(1);
     expect(result.created).toBe(1);
+  });
+
+  it("skips intra-bundle duplicate teams even without allowDuplicatePlayers", () => {
+    // Fingerprint-based dedup fires before player-duplicate detection, so the second
+    // occurrence is skipped without ever triggering requiresDuplicateConfirmation.
+    const team = makeTeam({ id: "ct_a", name: "Alpha" });
+    const result = importCustomTeams(exportCustomTeams([team, team]), []);
+    expect(result.teams).toHaveLength(1);
+    expect(result.skipped).toBe(1);
+    expect(result.created).toBe(1);
+    expect(result.requiresDuplicateConfirmation).toBe(false);
   });
 
   it("blocks import and requires confirmation when duplicate players found (default behavior)", () => {
