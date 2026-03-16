@@ -83,11 +83,7 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
  *   "pitchers"). Defaults to "player" for backward-compatible direct calls.
  * @param index - Zero-based position of the player within the section.
  */
-export function validatePlayerStatCaps(
-  player: TeamPlayer,
-  section: string,
-  index: number,
-): void {
+export function validatePlayerStatCaps(player: TeamPlayer, section: string, index: number): void {
   if (player.role !== "pitcher") {
     const { contact, power, speed } = player.batting;
     const total = contact + power + speed;
