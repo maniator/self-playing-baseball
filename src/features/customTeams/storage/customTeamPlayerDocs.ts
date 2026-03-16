@@ -18,10 +18,13 @@ export function toPlayerDoc(
   // Backfill globalPlayerId for players imported from legacy bundles (created before
   // globalPlayerId was added to the schema). The v4 players schema requires this field;
   // without the backfill, bulkUpsert throws a validation error and the whole import fails.
-  // Use playerSeed first (gives the canonical stable identity), fall back to player.id
-  // (always present in TeamPlayer) so every player gets a unique value even if both
-  // playerSeed and globalPlayerId are absent.
-  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? player.id)}`;
+  // Use playerSeed first (gives the canonical stable identity), fall back to a
+  // team-scoped derivation (teamId + player.id) so the generated value cannot collide
+  // across different teams that both happen to have a player with the same local id
+  // (e.g. both have a player with id="p1"). Prepending teamId is safe because teamId
+  // is unique per team in the DB.
+  const globalPlayerId =
+    player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? `${teamId}:${player.id}`)}`;
   // Strip the export-only `sig` field — it is only used in export bundles for bundle
   // integrity verification and must not be persisted to the `players` collection.
   // Duplicate detection always calls `buildPlayerSig(clampPlayerStats(player))` to

@@ -19,6 +19,7 @@
           "archived": false
         },
         "roster": {
+          "schemaVersion": 1,
           "lineup": [
             {
               "id": "e2e_starter_1",
@@ -82,5 +83,5 @@
       }
     ]
   },
-  "sig": "274945fd"
+  "sig": "c9c2552b"
 }

@@ -47,7 +47,10 @@ export function buildTeamFingerprint(
  *   - `playerSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  *
  * The sig serves two purposes:
- *   1. Tamper detection: any post-export mutation of name or stats is detectable on import.
+ *   1. Integrity checksum: detects accidental corruption or truncation of exported bundles
+ *      on round-trip (file system, clipboard, network). This is NOT cryptographic — because
+ *      the signing key is a hard-coded string, a maliciously crafted bundle can be
+ *      re-hashed to produce a matching value.  Do not treat it as tamper-proof.
  *   2. Duplicate detection: a player whose sig matches one already in the DB is a likely
  *      duplicate even if imported to a different team or with a remapped ID.
  */

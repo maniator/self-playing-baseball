@@ -78,10 +78,17 @@ describe("toPlayerDoc", () => {
     expect(doc.globalPlayerId).toMatch(/^pl_/);
   });
 
-  it("falls back to player.id for globalPlayerId when both seed and globalPlayerId are missing", () => {
+  it("falls back to team-scoped id for globalPlayerId when both seed and globalPlayerId are missing", () => {
     const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: undefined });
     const doc = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
     expect(doc.globalPlayerId).toMatch(/^pl_/);
+  });
+
+  it("fallback globalPlayerId is scoped to teamId — same player.id on different teams gets different values", () => {
+    const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: undefined });
+    const doc1 = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
+    const doc2 = toPlayerDoc(player, "team2", { section: "lineup", orderIndex: 0 });
+    expect(doc1.globalPlayerId).not.toBe(doc2.globalPlayerId);
   });
 });
 
