@@ -22,8 +22,13 @@ export function toPlayerDoc(
   // (always present in TeamPlayer) so every player gets a unique value even if both
   // playerSeed and globalPlayerId are absent.
   const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? player.id)}`;
+  // Strip the export-only `sig` field — it is only used in export bundles for bundle
+  // integrity verification and must not be persisted to the `players` collection.
+  // Duplicate detection always calls `buildPlayerSig(clampPlayerStats(player))` to
+  // freshly recompute the comparison signature, so stripping `sig` here is safe.
+  const { sig: _sig, ...playerWithoutSig } = player;
   return {
-    ...player,
+    ...playerWithoutSig,
     globalPlayerId,
     // Use a team-scoped composite primary key to prevent cross-team collisions
     // when two different teams contain a player with the same original ID.
