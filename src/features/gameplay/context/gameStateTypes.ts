@@ -1,4 +1,4 @@
-import { Hit } from "@shared/constants/hitTypes";
+import type { Hit } from "@shared/constants/hitTypes";
 import type * as React from "react";
 
 import type { DecisionType, OnePitchModifier } from "./decisionTypes";

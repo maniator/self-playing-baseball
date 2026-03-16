@@ -261,11 +261,26 @@ function buildStore(getDbFn: GetDb) {
       const rawTeamDocs = (await db.customTeams.find().exec()).map(
         (d) => d.toJSON() as CustomTeamDoc,
       );
-      const allPlayerDocs = (await db.players.find().exec()).map((d) => d.toJSON() as PlayerDoc);
+      // Query only the player docs that belong to our known teams using a $in
+      // selector, then group them by teamId into a Map for O(1) lookup per team.
+      // This avoids fetching free-agent / archived-team player docs and replaces
+      // the previous O(teamCount × playerCount) filter loop.
+      const teamIds = rawTeamDocs.map((t) => t.id);
+      const playersByTeamId = new Map<string, PlayerDoc[]>();
+      if (teamIds.length > 0) {
+        const relevantPlayerDocs = (
+          await db.players.find({ selector: { teamId: { $in: teamIds } } }).exec()
+        ).map((d) => d.toJSON() as PlayerDoc);
+        for (const doc of relevantPlayerDocs) {
+          const bucket = playersByTeamId.get(doc.teamId) ?? [];
+          bucket.push(doc);
+          playersByTeamId.set(doc.teamId, bucket);
+        }
+      }
       // Assemble rosters read-only: use player docs for modern teams, fall back to
       // embedded roster arrays for legacy teams that have not been backfilled yet.
       const existing: CustomTeamDoc[] = rawTeamDocs.map((team) => {
-        const teamPlayerDocs = allPlayerDocs.filter((p) => p.teamId === team.id);
+        const teamPlayerDocs = playersByTeamId.get(team.id) ?? [];
         if (teamPlayerDocs.length > 0) {
           return { ...team, roster: assembleRoster(teamPlayerDocs, team.roster) };
         }
