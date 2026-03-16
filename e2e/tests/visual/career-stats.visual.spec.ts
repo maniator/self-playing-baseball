@@ -71,6 +71,16 @@ test.describe("Visual — seeded history data", () => {
     await loadFixture(page, "sample-save.json");
     await disableAnimations(page);
     await importHistoryFixture(page, "career-stats-history.json");
+    // On WebKit/mobile the RxDB observable pipeline and IndexedDB transaction
+    // durability guarantees can still be settling when page.goto fires.
+    // Without this pause the stats page queries RxDB before the imported rows
+    // are visible and gets empty results it never re-fetches, making the
+    // "J. Slugger" wait time out. Scoped to WebKit only to avoid adding
+    // unnecessary latency on Chromium/Firefox.
+    const browserName = page.context().browser()?.browserType().name();
+    if (browserName === "webkit") {
+      await page.waitForTimeout(1_000);
+    }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");

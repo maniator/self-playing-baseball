@@ -35,6 +35,16 @@ test.describe("Team Summary and Leaders", () => {
     });
     await startGameViaPlayBall(page);
     await importHistoryFixture(page, "team-summary-history.json");
+    // On WebKit/mobile, the RxDB observable pipeline and the underlying IndexedDB
+    // transaction durability guarantees can still be settling when page.goto fires.
+    // Without this pause the stats page queries RxDB before the newly-imported rows
+    // are visible and gets empty results it never re-fetches, keeping summary-wl at
+    // "0-0" for the entire 30 s guard timeout.
+    // Scoped to WebKit only to avoid adding unnecessary latency on Chromium/Firefox.
+    const browserName = page.context().browser()?.browserType().name();
+    if (browserName === "webkit") {
+      await page.waitForTimeout(1_000);
+    }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     const teamSelect = page.getByTestId("career-stats-team-select");
