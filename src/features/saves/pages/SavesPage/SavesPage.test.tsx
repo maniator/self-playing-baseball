@@ -29,7 +29,6 @@ afterAll(() => vi.unstubAllGlobals());
 
 import { SaveStore } from "@feat/saves/storage/saveStore";
 
-import type { SaveDoc } from "@storage/types";
 import { makeSaveDoc } from "@test/helpers/saves";
 
 import SavesPage from "./index";

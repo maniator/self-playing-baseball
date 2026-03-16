@@ -12,7 +12,6 @@ const confirmMock = vi.fn(() => true);
 vi.stubGlobal("confirm", confirmMock);
 afterAll(() => vi.unstubAllGlobals());
 
-import type { SaveDoc } from "@storage/types";
 import { makeSaveDoc } from "@test/helpers/saves";
 
 import { DELETE_SAVE_CONFIRM_MSG } from "./index";

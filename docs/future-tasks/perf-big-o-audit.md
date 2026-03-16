@@ -18,7 +18,7 @@ the same playbook.
 
 ## Issues (ordered high → low impact)
 
-### 1 — `listCustomTeams` roster hydration: N+1 DB queries  ⚡ HIGH
+### 1 — `listCustomTeams` roster hydration: N+1 DB queries ⚡ HIGH
 
 **File:** `src/features/customTeams/storage/customTeamStore.ts:51`
 
@@ -40,11 +40,13 @@ if (teamIds.length > 0) {
   const allPlayerDocs = (
     await db.players.find({ selector: { teamId: { $in: teamIds } } }).exec()
   ).map((d) => d.toJSON() as PlayerDoc);
-  for (const doc of allPlayerDocs) {
-    const bucket = playersByTeamId.get(doc.teamId) ?? [];
+  // alternatively with reduce:
+  const playersByTeamId = allPlayerDocs.reduce<Map<string, PlayerDoc[]>>((map, doc) => {
+    const bucket = map.get(doc.teamId) ?? [];
     bucket.push(doc);
-    playersByTeamId.set(doc.teamId, bucket);
-  }
+    map.set(doc.teamId, bucket);
+    return map;
+  }, new Map());
 }
 return Promise.all(filtered.map((t) => {
   const docs = playersByTeamId.get(t.id) ?? [];
@@ -60,7 +62,7 @@ version.
 
 ---
 
-### 2 — `exportCustomTeams(ids)`: full hydration then filter  ⚡ MEDIUM
+### 2 — `exportCustomTeams(ids)`: full hydration then filter ⚡ MEDIUM
 
 **File:** `src/features/customTeams/storage/customTeamStore.ts:216-218`
 
@@ -87,7 +89,7 @@ const docs = await db.customTeams
 
 ---
 
-### 3 — Name-uniqueness checks: full table scan on every create/update  ⚡ MEDIUM
+### 3 — Name-uniqueness checks: full table scan on every create/update ⚡ MEDIUM
 
 **File:** `src/features/customTeams/storage/customTeamStore.ts:73-75` and `:118-120`
 
@@ -101,26 +103,32 @@ Called on every `createCustomTeam` and `updateCustomTeam`.
 
 **Fix (option A — preferred):** Add a `nameLowercase` field to `CustomTeamDoc`
 and its RxDB schema (with an index), then query:
+
 ```typescript
-const hit = await db.customTeams
-  .findOne({ selector: { nameLowercase: nameLower } })
-  .exec();
+const hit = await db.customTeams.findOne({ selector: { nameLowercase: nameLower } }).exec();
 ```
-Requires a schema migration bump (version + strategy).
+
+Teams already have a unique `id` primary key enforced by RxDB. Adding an
+indexed `nameLowercase` field gives the name-uniqueness check the same
+O(1)-lookup property — `findOne` against an indexed field is effectively a
+primary-key lookup, so the full-table scan disappears entirely. Requires a
+schema migration bump (version + strategy).
 
 **Fix (option B — no schema change):** Use `$regex` with a case-insensitive
 flag:
+
 ```typescript
 const hits = await db.customTeams
   .find({ selector: { name: { $regex: new RegExp(`^${escapeRegex(nameLower)}$`, "i") } } })
   .exec();
 ```
+
 Note: `$regex` is unindexed in RxDB/PouchDB — acceptable for small collections
 but not as clean as option A.
 
 ---
 
-### 4 — `assembleRoster`: three sequential filter passes  ⚡ LOW
+### 4 — `assembleRoster`: three sequential filter passes ⚡ LOW
 
 **File:** `src/features/customTeams/storage/customTeamPlayerDocs.ts:61-72`
 
@@ -131,12 +139,21 @@ const bench    = playerDocs.filter((p) => p.section === "bench")   .sort(...).ma
 const pitchers = playerDocs.filter((p) => p.section === "pitchers").sort(...).map(toTeamPlayer);
 ```
 
-**Fix:** Single partitioning pass:
+**Fix:** Single partitioning pass (or with `reduce`):
+
 ```typescript
 const buckets: Record<string, PlayerDoc[]> = { lineup: [], bench: [], pitchers: [] };
 for (const doc of playerDocs) buckets[doc.section]?.push(doc);
-const lineup   = buckets.lineup.sort(...).map(toTeamPlayer);
-const bench    = buckets.bench.sort(...).map(toTeamPlayer);
+// alternatively:
+const buckets = playerDocs.reduce<Record<string, PlayerDoc[]>>(
+  (acc, doc) => {
+    acc[doc.section]?.push(doc);
+    return acc;
+  },
+  { lineup: [], bench: [], pitchers: [] },
+);
+const lineup = buckets.lineup.sort(...).map(toTeamPlayer);
+const bench = buckets.bench.sort(...).map(toTeamPlayer);
 const pitchers = buckets.pitchers.sort(...).map(toTeamPlayer);
 ```
 
@@ -144,14 +161,14 @@ P is bounded (~25 docs per team) so this is low-priority but trivial to fix.
 
 ---
 
-### 5 — `useGameHistorySync.buildPlayerKey`: repeated linear scans per commit  ⚡ LOW-MEDIUM
+### 5 — `useGameHistorySync.buildPlayerKey`: repeated linear scans per commit ⚡ LOW-MEDIUM
 
 **File:** `src/features/careerStats/hooks/useGameHistorySync.ts:38-45`
 
 ```typescript
 // called once per player for every game-end commit
-const teamDoc = customTeams.find((t) => t.id === customId);  // O(T) — rescanned per player
-const player  = allPlayers.find((p) => p.id === playerId);   // O(P) — rescanned per player
+const teamDoc = customTeams.find((t) => t.id === customId); // O(T) — rescanned per player
+const player = allPlayers.find((p) => p.id === playerId); // O(P) — rescanned per player
 ```
 
 `buildPlayerKey` is called in a loop over all players at game-end. The
@@ -168,7 +185,7 @@ const teamDoc = teamMap.get(customId);
 
 ---
 
-### 6 — `CareerStatsPage`: full stat-collection scan just to extract team IDs  ⚡ LOW-MEDIUM
+### 6 — `CareerStatsPage`: full stat-collection scan just to extract team IDs ⚡ LOW-MEDIUM
 
 **File:** `src/features/careerStats/pages/CareerStatsPage/index.tsx:305-313`
 
@@ -181,26 +198,32 @@ const [batting, pitching] = await Promise.all([
 // then manually iterates to collect distinct teamIds
 ```
 
-**Fix (option A):** Store a dedicated `teamHistory` summary document (one per
-teamId) updated incrementally at game-end by `useGameHistorySync`, so the page
-can query a small metadata collection instead of the full stats collections.
+**Fix (option A — recommended, more future-proof):** Store a dedicated
+`teamHistory` summary document (one per teamId) updated incrementally at
+game-end by `useGameHistorySync`, so the page can query a small metadata
+collection instead of the full stats collections. This is the better option
+because: (1) the summary doc only grows as teams gain games, not proportional
+to total stats records; (2) enables direct O(1) lookup by teamId; (3)
+pre-computed aggregates make the stats page render instantly; (4) supports
+future per-team analytics without re-scanning the full collections.
 
-**Fix (option B — simpler):** Add a separate `teamsWithHistory` index document
-populated by `useGameHistorySync` at commit time, queried with a single
-`findOne`.
+**Fix (option B — simpler, lower schema cost):** Add a separate
+`teamsWithHistory` index document populated by `useGameHistorySync` at commit
+time, queried with a single `findOne`.
 
 ---
 
-### 7 — `decisions.ts` / `reducer.ts`: array `.includes()` and `.filter()` in hot dispatch path  ⚡ LOW
+### 7 — `decisions.ts` / `reducer.ts`: array `.includes()` and `.filter()` in hot dispatch path ⚡ LOW
 
 **Files:**
+
 - `src/features/gameplay/context/handlers/decisions.ts:100,106,112,154`
 - `src/features/gameplay/context/reducer.ts:130`
 
 ```typescript
 // O(subOut.length) per substitution decision
-state.substitutedOut[teamIdx].includes(benchPlayerId)
-state.rosterBench[teamIdx].filter((id) => id !== benchPlayerId)
+state.substitutedOut[teamIdx].includes(benchPlayerId);
+state.rosterBench[teamIdx].filter((id) => id !== benchPlayerId);
 ```
 
 `rosterBench` and `substitutedOut` are `string[]` in `State`, checked with
@@ -216,19 +239,19 @@ minimal — but removes structural misuse of array `.includes()` in a hot path.
 
 ---
 
-### 8 — `saveStore.ts`: N individual `findOne` calls for custom-team validation  ⚡ LOW
+### 8 — `saveStore.ts`: N individual `findOne` calls for custom-team validation ⚡ LOW
 
 **File:** `src/features/saves/storage/saveStore.ts:252`
 
 ```typescript
 // current — one findOne per custom team ID (typically 1–2 IDs)
-await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()))
+await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()));
 ```
 
 **Fix:** Single `$in` query (already the established pattern in the codebase):
 
 ```typescript
-await db.customTeams.find({ selector: { id: { $in: customTeamIds } } }).exec()
+await db.customTeams.find({ selector: { id: { $in: customTeamIds } } }).exec();
 ```
 
 Low priority since `customTeamIds` is at most 2 entries (home + away), but it
@@ -248,6 +271,7 @@ aligns the code with the `$in` convention established elsewhere.
    addition and should be tackled last.
 
 For each fix:
+
 - Add or update unit tests that cover the changed code path.
 - Run `yarn lint` and `yarn test` before committing.
 - Use small, focused commits — one issue per commit.
