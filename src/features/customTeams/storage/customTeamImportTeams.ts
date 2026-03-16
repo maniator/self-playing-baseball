@@ -141,6 +141,9 @@ export function importCustomTeams(
       skipped++;
       continue;
     }
+    // Register this fingerprint immediately so that a later team in the same
+    // bundle with identical content is also skipped (intra-bundle deduplication).
+    existingFingerprints.set(incomingFp, team.name);
 
     let finalTeam = { ...team };
     let anyIdCollision = false;
@@ -166,6 +169,9 @@ export function importCustomTeams(
       finalTeam = { ...finalTeam, id: makeTeamId() };
       anyIdCollision = true;
     }
+    // Register the (possibly-remapped) team ID so later teams in the same bundle
+    // cannot reuse it, preventing intra-bundle team ID collisions.
+    existingTeamIds.add(finalTeam.id);
 
     // ── Player ID collision ────────────────────────────────────────────────────
     const lineupResult = remapPlayerIds(finalTeam.roster.lineup, existingPlayerIds, makePlayerId);

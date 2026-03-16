@@ -71,8 +71,11 @@ describe("importCustomTeams", () => {
   });
 
   it("counts team as created when no IDs collide", () => {
-    const json = exportCustomTeams([makeTeam({ id: "ct_a" }), makeTeam({ id: "ct_b" })]);
-    const result = importCustomTeams(json, []);
+    const json = exportCustomTeams([
+      makeTeam({ id: "ct_a", name: "Team Alpha" }),
+      makeTeam({ id: "ct_b", name: "Team Beta" }),
+    ]);
+    const result = importCustomTeams(json, [], undefined, { allowDuplicatePlayers: true });
     expect(result.created).toBe(2);
     expect(result.remapped).toBe(0);
   });
@@ -101,6 +104,19 @@ describe("importCustomTeams", () => {
     });
     expect(result.teams).toHaveLength(1);
     expect(result.teams[0].name).toBe("Brand New");
+    expect(result.skipped).toBe(1);
+    expect(result.created).toBe(1);
+  });
+
+  it("skips intra-bundle duplicate teams (same team appears twice in same bundle)", () => {
+    // Simulates a malformed or hand-crafted export where the same team appears twice.
+    // The second occurrence should be skipped via intra-bundle fingerprint tracking.
+    const team = makeTeam({ id: "ct_a", name: "Alpha" });
+    // Export the same team twice (two entries in the bundle, identical fingerprint).
+    const result = importCustomTeams(exportCustomTeams([team, team]), [], undefined, {
+      allowDuplicatePlayers: true,
+    });
+    expect(result.teams).toHaveLength(1);
     expect(result.skipped).toBe(1);
     expect(result.created).toBe(1);
   });
