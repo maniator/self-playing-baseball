@@ -41,17 +41,23 @@ describe("PLAYER_SCHEMA_VERSION", () => {
 
 describe("toPlayerDoc", () => {
   it("creates a composite id from teamId and player.id", () => {
-    const doc = toPlayerDoc(makeTeamPlayer({ id: "p42" }), "team99", "lineup", 0);
+    const doc = toPlayerDoc(makeTeamPlayer({ id: "p42" }), "team99", {
+      section: "lineup",
+      orderIndex: 0,
+    });
     expect(doc.id).toBe("team99:p42");
   });
 
   it("stores original player id in playerId", () => {
-    const doc = toPlayerDoc(makeTeamPlayer({ id: "orig-id" }), "team1", "bench", 3);
+    const doc = toPlayerDoc(makeTeamPlayer({ id: "orig-id" }), "team1", {
+      section: "bench",
+      orderIndex: 3,
+    });
     expect(doc.playerId).toBe("orig-id");
   });
 
   it("sets teamId, section, orderIndex, schemaVersion", () => {
-    const doc = toPlayerDoc(makeTeamPlayer(), "myteam", "pitchers", 5);
+    const doc = toPlayerDoc(makeTeamPlayer(), "myteam", { section: "pitchers", orderIndex: 5 });
     expect(doc.teamId).toBe("myteam");
     expect(doc.section).toBe("pitchers");
     expect(doc.orderIndex).toBe(5);
@@ -59,24 +65,22 @@ describe("toPlayerDoc", () => {
   });
 
   it("preserves existing globalPlayerId", () => {
-    const doc = toPlayerDoc(
-      makeTeamPlayer({ globalPlayerId: "pl_existing" }),
-      "team1",
-      "lineup",
-      0,
-    );
+    const doc = toPlayerDoc(makeTeamPlayer({ globalPlayerId: "pl_existing" }), "team1", {
+      section: "lineup",
+      orderIndex: 0,
+    });
     expect(doc.globalPlayerId).toBe("pl_existing");
   });
 
   it("generates globalPlayerId from playerSeed when missing", () => {
     const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: "seed-123" });
-    const doc = toPlayerDoc(player, "team1", "lineup", 0);
+    const doc = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
     expect(doc.globalPlayerId).toMatch(/^pl_/);
   });
 
   it("falls back to player.id for globalPlayerId when both seed and globalPlayerId are missing", () => {
     const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: undefined });
-    const doc = toPlayerDoc(player, "team1", "lineup", 0);
+    const doc = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
     expect(doc.globalPlayerId).toMatch(/^pl_/);
   });
 });

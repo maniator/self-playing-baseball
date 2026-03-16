@@ -43,9 +43,15 @@ export async function orchestrateTeamImport(
       bench: team.roster.bench.map(clampAndRefp),
       pitchers: team.roster.pitchers.map(clampAndRefp),
     };
-    clampedRoster.lineup.forEach((p, i) => validatePlayerStatCaps(p, "lineup", i));
-    clampedRoster.bench.forEach((p, i) => validatePlayerStatCaps(p, "bench", i));
-    clampedRoster.pitchers.forEach((p, i) => validatePlayerStatCaps(p, "pitchers", i));
+    clampedRoster.lineup.forEach((p, i) =>
+      validatePlayerStatCaps(p, { section: "lineup", index: i }),
+    );
+    clampedRoster.bench.forEach((p, i) =>
+      validatePlayerStatCaps(p, { section: "bench", index: i }),
+    );
+    clampedRoster.pitchers.forEach((p, i) =>
+      validatePlayerStatCaps(p, { section: "pitchers", index: i }),
+    );
     const newDocIds = await writePlayerDocs(db, team.id, clampedRoster);
     await removePlayerDocs(db, team.id, newDocIds);
   } catch (err) {
@@ -77,21 +83,25 @@ export async function orchestrateTeamImport(
  * Performs the cross-team identity check and roster-append for a single-player import.
  * Extracted from `CustomTeamStore.importPlayer` to keep the store method thin.
  *
- * @param db          Live DB instance (used for conflict resolution).
- * @param player      The parsed, sig-stripped player to import.
- * @param targetTeamId  ID of the team to import into.
- * @param targetTeam  Fully-hydrated target team doc (roster already populated).
- * @param section     Roster slot to append the player to.
- * @param updateFn    Callback that persists roster updates (injected to avoid coupling
- *                    this pure orchestration function to the store's `this`).
+ * @param db - Live DB instance (used for conflict resolution).
+ * @param options.player - The parsed, sig-stripped player to import.
+ * @param options.targetTeamId - ID of the team to import into.
+ * @param options.targetTeam - Fully-hydrated target team doc (roster already populated).
+ * @param options.section - Roster slot to append the player to.
+ * @param options.updateFn - Callback that persists roster updates (injected to avoid coupling
+ *   this pure orchestration function to the store's `this`).
  */
+export interface ImportPlayerIntoTeamOptions {
+  player: TeamPlayer & { globalPlayerId: string };
+  targetTeamId: string;
+  targetTeam: CustomTeamDoc;
+  section: "lineup" | "bench" | "pitchers";
+  updateFn: (id: string, updates: UpdateCustomTeamInput) => Promise<void>;
+}
+
 export async function importPlayerIntoTeam(
   db: BallgameDb,
-  player: TeamPlayer & { globalPlayerId: string },
-  targetTeamId: string,
-  targetTeam: CustomTeamDoc,
-  section: "lineup" | "bench" | "pitchers",
-  updateFn: (id: string, updates: UpdateCustomTeamInput) => Promise<void>,
+  { player, targetTeamId, targetTeam, section, updateFn }: ImportPlayerIntoTeamOptions,
 ): Promise<ImportPlayerResult> {
   // Cross-team identity check
   const conflictResult = await resolvePlayerConflict(db, player.globalPlayerId, targetTeamId);

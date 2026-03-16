@@ -305,9 +305,13 @@ function buildStore(getDbFn: GetDb) {
         targetTeamDoc.toJSON() as unknown as CustomTeamDoc,
       );
 
-      return importPlayerIntoTeam(db, player, targetTeamId, targetTeam, section, (id, updates) =>
-        this.updateCustomTeam(id, updates),
-      );
+      return importPlayerIntoTeam(db, {
+        player,
+        targetTeamId,
+        targetTeam,
+        section,
+        updateFn: (id, updates) => this.updateCustomTeam(id, updates),
+      });
     },
   };
 }

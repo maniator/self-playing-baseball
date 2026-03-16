@@ -5,11 +5,15 @@ import type { PlayerDoc, TeamPlayer, TeamRoster } from "@storage/types";
 export const PLAYER_SCHEMA_VERSION = 1;
 
 /** Converts a sanitized TeamPlayer into a PlayerDoc for a given team/section/index. */
+export interface ToPlayerDocOptions {
+  section: "lineup" | "bench" | "pitchers";
+  orderIndex: number;
+}
+
 export function toPlayerDoc(
   player: TeamPlayer,
   teamId: string,
-  section: "lineup" | "bench" | "pitchers",
-  orderIndex: number,
+  { section, orderIndex }: ToPlayerDocOptions,
 ): PlayerDoc {
   // Backfill globalPlayerId for players imported from legacy bundles (created before
   // globalPlayerId was added to the schema). The v4 players schema requires this field;
@@ -85,9 +89,11 @@ export async function writePlayerDocs(
   roster: TeamRoster,
 ): Promise<Set<string>> {
   const allDocs = [
-    ...roster.lineup.map((p, i) => toPlayerDoc(p, teamId, "lineup", i)),
-    ...roster.bench.map((p, i) => toPlayerDoc(p, teamId, "bench", i)),
-    ...roster.pitchers.map((p, i) => toPlayerDoc(p, teamId, "pitchers", i)),
+    ...roster.lineup.map((p, i) => toPlayerDoc(p, teamId, { section: "lineup", orderIndex: i })),
+    ...roster.bench.map((p, i) => toPlayerDoc(p, teamId, { section: "bench", orderIndex: i })),
+    ...roster.pitchers.map((p, i) =>
+      toPlayerDoc(p, teamId, { section: "pitchers", orderIndex: i }),
+    ),
   ];
   if (allDocs.length > 0) {
     await db.players.bulkUpsert(allDocs);

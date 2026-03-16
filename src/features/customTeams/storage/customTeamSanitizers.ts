@@ -79,11 +79,19 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
  * runs first and the cap is the final gate.
  * Throws an Error with a message containing "stat cap" if the total exceeds the cap.
  *
- * @param section - Roster section name used in the error message (e.g. "lineup", "bench",
- *   "pitchers"). Defaults to "player" for backward-compatible direct calls.
- * @param index - Zero-based position of the player within the section.
+ * @param options.section - Roster section name used in the error message (e.g. "lineup",
+ *   "bench", "pitchers").
+ * @param options.index - Zero-based position of the player within the section.
  */
-export function validatePlayerStatCaps(player: TeamPlayer, section: string, index: number): void {
+export interface ValidatePlayerStatCapsOptions {
+  section: string;
+  index: number;
+}
+
+export function validatePlayerStatCaps(
+  player: TeamPlayer,
+  { section, index }: ValidatePlayerStatCapsOptions,
+): void {
   if (player.role !== "pitcher") {
     const { contact, power, speed } = player.batting;
     const total = contact + power + speed;
@@ -106,7 +114,15 @@ export function validatePlayerStatCaps(player: TeamPlayer, section: string, inde
   }
 }
 
-export function sanitizePlayer(player: TeamPlayer, index: number, section = "player"): TeamPlayer {
+export interface SanitizePlayerOptions {
+  index: number;
+  section?: string;
+}
+
+export function sanitizePlayer(
+  player: TeamPlayer,
+  { index, section = "player" }: SanitizePlayerOptions,
+): TeamPlayer {
   const name = requireNonEmpty(player.name, `roster ${section}[${index}].name`);
   if (!["batter", "pitcher", "two-way"].includes(player.role)) {
     throw new Error(`roster ${section}[${index}].role must be "batter", "pitcher", or "two-way"`);
@@ -138,7 +154,7 @@ export function sanitizePlayer(player: TeamPlayer, index: number, section = "pla
   };
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
-  validatePlayerStatCaps(sanitized, section, index);
+  validatePlayerStatCaps(sanitized, { section, index });
   // Preserve the existing playerSeed or generate a new one at creation time.
   // The seed is stored permanently so the fingerprint can be re-verified.
   const playerSeed = player.playerSeed ?? generateSeed();
@@ -164,8 +180,10 @@ export function buildRoster(input: {
   }
   return {
     schemaVersion: ROSTER_SCHEMA_VERSION,
-    lineup: input.lineup.map((p, i) => sanitizePlayer(p, i, "lineup")),
-    bench: (input.bench ?? []).map((p, i) => sanitizePlayer(p, i, "bench")),
-    pitchers: (input.pitchers ?? []).map((p, i) => sanitizePlayer(p, i, "pitchers")),
+    lineup: input.lineup.map((p, i) => sanitizePlayer(p, { index: i, section: "lineup" })),
+    bench: (input.bench ?? []).map((p, i) => sanitizePlayer(p, { index: i, section: "bench" })),
+    pitchers: (input.pitchers ?? []).map((p, i) =>
+      sanitizePlayer(p, { index: i, section: "pitchers" }),
+    ),
   };
 }

@@ -113,64 +113,63 @@ describe("clampStat", () => {
 
 describe("sanitizePlayer", () => {
   it("trims player name", () => {
-    const result = sanitizePlayer(makePlayer({ name: "  John Doe  " }), 0);
+    const result = sanitizePlayer(makePlayer({ name: "  John Doe  " }), { index: 0 });
     expect(result.name).toBe("John Doe");
   });
 
   it("throws on empty player name", () => {
-    expect(() => sanitizePlayer(makePlayer({ name: "" }), 0)).toThrow(
+    expect(() => sanitizePlayer(makePlayer({ name: "" }), { index: 0 })).toThrow(
       "roster player[0].name must be a non-empty string",
     );
   });
 
   it("throws on invalid role", () => {
     // @ts-expect-error testing invalid role
-    expect(() => sanitizePlayer(makePlayer({ role: "fielder" }), 2)).toThrow(
+    expect(() => sanitizePlayer(makePlayer({ role: "fielder" }), { index: 2 })).toThrow(
       'roster player[2].role must be "batter", "pitcher", or "two-way"',
     );
   });
 
   it("throws when batting is missing", () => {
     // @ts-expect-error testing missing batting
-    expect(() => sanitizePlayer(makePlayer({ batting: null }), 0)).toThrow(
+    expect(() => sanitizePlayer(makePlayer({ batting: null }), { index: 0 })).toThrow(
       "roster player[0].batting is required",
     );
   });
 
   it("clamps batting stats", () => {
-    const result = sanitizePlayer(
-      makePlayer({ batting: { contact: 150, power: -5, speed: 50 } }),
-      0,
-    );
+    const result = sanitizePlayer(makePlayer({ batting: { contact: 150, power: -5, speed: 50 } }), {
+      index: 0,
+    });
     expect(result.batting.contact).toBe(100);
     expect(result.batting.power).toBe(0);
     expect(result.batting.speed).toBe(50);
   });
 
   it("generates playerSeed when not provided", () => {
-    const result = sanitizePlayer(makePlayer(), 0);
+    const result = sanitizePlayer(makePlayer(), { index: 0 });
     expect(typeof result.playerSeed).toBe("string");
     expect(result.playerSeed!.length).toBeGreaterThan(0);
   });
 
   it("preserves existing playerSeed", () => {
-    const result = sanitizePlayer(makePlayer({ playerSeed: "fixed-seed-123" }), 0);
+    const result = sanitizePlayer(makePlayer({ playerSeed: "fixed-seed-123" }), { index: 0 });
     expect(result.playerSeed).toBe("fixed-seed-123");
   });
 
   it("generates globalPlayerId when not provided", () => {
-    const result = sanitizePlayer(makePlayer(), 0);
+    const result = sanitizePlayer(makePlayer(), { index: 0 });
     expect(typeof result.globalPlayerId).toBe("string");
     expect(result.globalPlayerId!.startsWith("pl_")).toBe(true);
   });
 
   it("preserves existing globalPlayerId", () => {
-    const result = sanitizePlayer(makePlayer({ globalPlayerId: "pl_existing" }), 0);
+    const result = sanitizePlayer(makePlayer({ globalPlayerId: "pl_existing" }), { index: 0 });
     expect(result.globalPlayerId).toBe("pl_existing");
   });
 
   it("generates fingerprint", () => {
-    const result = sanitizePlayer(makePlayer(), 0);
+    const result = sanitizePlayer(makePlayer(), { index: 0 });
     expect(typeof result.fingerprint).toBe("string");
     expect(result.fingerprint!.length).toBeGreaterThan(0);
   });
@@ -181,7 +180,7 @@ describe("sanitizePlayer", () => {
         role: "pitcher",
         pitching: { velocity: 200, control: -10, movement: 55 },
       }),
-      0,
+      { index: 0 },
     );
     expect(result.pitching!.velocity).toBe(100);
     expect(result.pitching!.control).toBe(0);
@@ -189,14 +188,14 @@ describe("sanitizePlayer", () => {
   });
 
   it("omits pitching when not provided", () => {
-    const result = sanitizePlayer(makePlayer({ role: "batter" }), 0);
+    const result = sanitizePlayer(makePlayer({ role: "batter" }), { index: 0 });
     expect(result.pitching).toBeUndefined();
   });
 
   it("accepts two-way role", () => {
     const result = sanitizePlayer(
       makePlayer({ role: "two-way", pitching: { velocity: 60, control: 50, movement: 50 } }),
-      0,
+      { index: 0 },
     );
     expect(result.role).toBe("two-way");
   });
@@ -261,18 +260,22 @@ describe("validatePlayerStatCaps — exported constants", () => {
 describe("validatePlayerStatCaps", () => {
   it("does not throw when batting total equals the cap exactly (150)", () => {
     const player = makePlayer({ batting: { contact: 50, power: 50, speed: 50 } });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("does not throw when batting total is under the cap", () => {
     const player = makePlayer({ batting: { contact: 40, power: 50, speed: 50 } });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("throws with a clear message when batting total > 150 (non-pitcher role)", () => {
     const player = makePlayer({ batting: { contact: 60, power: 50, speed: 50 } }); // 160
-    expect(() => validatePlayerStatCaps(player, "player", 0)).toThrow(/stat cap/i);
-    expect(() => validatePlayerStatCaps(player, "player", 3)).toThrow("roster player[3]");
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).toThrow(
+      /stat cap/i,
+    );
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 3 })).toThrow(
+      "roster player[3]",
+    );
   });
 
   it("does not throw for a pitcher with batting total > 150 (pitchers are exempt)", () => {
@@ -280,7 +283,7 @@ describe("validatePlayerStatCaps", () => {
       role: "pitcher",
       batting: { contact: 60, power: 50, speed: 50 }, // 160 > 150 but role=pitcher
     });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("does not throw when pitching total equals the cap exactly (160)", () => {
@@ -289,7 +292,7 @@ describe("validatePlayerStatCaps", () => {
       batting: { contact: 30, power: 20, speed: 25 },
       pitching: { velocity: 60, control: 50, movement: 50 }, // 160
     });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("throws with a clear message when pitching total > 160 (pitcher/two-way role)", () => {
@@ -298,8 +301,12 @@ describe("validatePlayerStatCaps", () => {
       batting: { contact: 30, power: 20, speed: 25 },
       pitching: { velocity: 70, control: 50, movement: 50 }, // 170 > 160
     });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).toThrow(/stat cap/i);
-    expect(() => validatePlayerStatCaps(player, "player", 5)).toThrow("roster player[5]");
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).toThrow(
+      /stat cap/i,
+    );
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 5 })).toThrow(
+      "roster player[5]",
+    );
   });
 
   it("does not throw for a batter with pitching total > 160 (batters are exempt)", () => {
@@ -308,12 +315,12 @@ describe("validatePlayerStatCaps", () => {
       batting: { contact: 50, power: 50, speed: 50 },
       pitching: { velocity: 70, control: 50, movement: 50 }, // 170 > 160 but role=batter
     });
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("does not throw when pitching is absent (no pitcher cap check)", () => {
     const player = makePlayer({ role: "pitcher" }); // no pitching field
-    expect(() => validatePlayerStatCaps(player, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(player, { section: "player", index: 0 })).not.toThrow();
   });
 
   it("two-way player is subject to both batting and pitching caps", () => {
@@ -322,21 +329,25 @@ describe("validatePlayerStatCaps", () => {
       batting: { contact: 50, power: 50, speed: 50 }, // 150
       pitching: { velocity: 60, control: 50, movement: 50 }, // 160
     });
-    expect(() => validatePlayerStatCaps(valid, "player", 0)).not.toThrow();
+    expect(() => validatePlayerStatCaps(valid, { section: "player", index: 0 })).not.toThrow();
 
     const batOverCap = makePlayer({
       role: "two-way",
       batting: { contact: 60, power: 50, speed: 50 }, // 160 > 150
       pitching: { velocity: 60, control: 50, movement: 50 },
     });
-    expect(() => validatePlayerStatCaps(batOverCap, "player", 0)).toThrow(/stat cap/i);
+    expect(() => validatePlayerStatCaps(batOverCap, { section: "player", index: 0 })).toThrow(
+      /stat cap/i,
+    );
 
     const pitchOverCap = makePlayer({
       role: "two-way",
       batting: { contact: 50, power: 50, speed: 50 },
       pitching: { velocity: 70, control: 50, movement: 50 }, // 170 > 160
     });
-    expect(() => validatePlayerStatCaps(pitchOverCap, "player", 0)).toThrow(/stat cap/i);
+    expect(() => validatePlayerStatCaps(pitchOverCap, { section: "player", index: 0 })).toThrow(
+      /stat cap/i,
+    );
   });
 });
 
@@ -344,13 +355,13 @@ describe("sanitizePlayer — stat cap enforcement (clamp + cap integration)", ()
   it("throws when batting total exceeds cap even after clamping", () => {
     // {100, 0, 55} — all within [0,100], total=155 > 150
     const player = makePlayer({ batting: { contact: 100, power: 0, speed: 55 } });
-    expect(() => sanitizePlayer(player, 0)).toThrow(/stat cap/i);
+    expect(() => sanitizePlayer(player, { index: 0 })).toThrow(/stat cap/i);
   });
 
   it("does not throw when clamping brings total exactly to the cap", () => {
     // {150, -5, 50} → clamps to {100, 0, 50} = 150 ✓
     const player = makePlayer({ batting: { contact: 150, power: -5, speed: 50 } });
-    expect(() => sanitizePlayer(player, 0)).not.toThrow();
+    expect(() => sanitizePlayer(player, { index: 0 })).not.toThrow();
   });
 
   it("throws when pitching total exceeds cap after clamping (pitcher role)", () => {
@@ -360,7 +371,7 @@ describe("sanitizePlayer — stat cap enforcement (clamp + cap integration)", ()
       batting: { contact: 30, power: 20, speed: 25 },
       pitching: { velocity: 100, control: 0, movement: 65 },
     });
-    expect(() => sanitizePlayer(player, 0)).toThrow(/stat cap/i);
+    expect(() => sanitizePlayer(player, { index: 0 })).toThrow(/stat cap/i);
   });
 
   it("does not throw when pitching total is exactly at cap after clamping", () => {
@@ -370,7 +381,7 @@ describe("sanitizePlayer — stat cap enforcement (clamp + cap integration)", ()
       batting: { contact: 30, power: 20, speed: 25 },
       pitching: { velocity: 200, control: -10, movement: 60 },
     });
-    expect(() => sanitizePlayer(player, 0)).not.toThrow();
+    expect(() => sanitizePlayer(player, { index: 0 })).not.toThrow();
   });
 });
 
