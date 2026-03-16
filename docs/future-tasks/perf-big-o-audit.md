@@ -35,18 +35,28 @@ With T teams that is T + 1 total queries.
 
 ```typescript
 const teamIds = filtered.map((t) => t.id);
-const playersByTeamId = new Map<string, PlayerDoc[]>();
 if (teamIds.length > 0) {
   const allPlayerDocs = (
     await db.players.find({ selector: { teamId: { $in: teamIds } } }).exec()
   ).map((d) => d.toJSON() as PlayerDoc);
-  // alternatively with reduce:
-  const playersByTeamId = allPlayerDocs.reduce<Map<string, PlayerDoc[]>>((map, doc) => {
-    const bucket = map.get(doc.teamId) ?? [];
+
+  // for-loop version (explicit, same O(n)):
+  const playersByTeamId = new Map<string, PlayerDoc[]>();
+  for (const doc of allPlayerDocs) {
+    const bucket = playersByTeamId.get(doc.teamId) ?? [];
     bucket.push(doc);
-    map.set(doc.teamId, bucket);
-    return map;
-  }, new Map());
+    playersByTeamId.set(doc.teamId, bucket);
+  }
+  // alternatively, reduce (more functional, same O(n) complexity):
+  // const playersByTeamId = allPlayerDocs.reduce<Map<string, PlayerDoc[]>>(
+  //   (map, doc) => {
+  //     const bucket = map.get(doc.teamId) ?? [];
+  //     bucket.push(doc);
+  //     map.set(doc.teamId, bucket);
+  //     return map;
+  //   },
+  //   new Map(),
+  // );
 }
 return Promise.all(filtered.map((t) => {
   const docs = playersByTeamId.get(t.id) ?? [];
