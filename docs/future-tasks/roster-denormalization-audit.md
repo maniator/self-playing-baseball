@@ -121,13 +121,13 @@ PlayerDoc (proposed) {
 
 ### Current names vs. what they actually are
 
-| Current name | What it actually represents |
-|---|---|
-| `CustomTeamDoc` | A team (custom or generated) |
-| `PlayerDoc` | A player on a team's roster |
-| `TeamPlayer` | An in-memory player view (used in roster/export logic) |
-| `SaveDoc` | A saved game state |
-| `GameHistoryDoc` | A completed game record |
+| Current name     | What it actually represents                            |
+| ---------------- | ------------------------------------------------------ |
+| `CustomTeamDoc`  | A team (custom or generated)                           |
+| `PlayerDoc`      | A player on a team's roster                            |
+| `TeamPlayer`     | An in-memory player view (used in roster/export logic) |
+| `SaveDoc`        | A saved game state                                     |
+| `GameHistoryDoc` | A completed game record                                |
 
 None of these names would make sense to a new contributor looking at the code for the first
 time. The `Custom` prefix on `CustomTeamDoc` was meaningful when only user-created teams were
@@ -135,24 +135,24 @@ stored; now generated teams live in the same collection, making the name mislead
 
 ### Proposed rename targets (starting from v1 of each new schema)
 
-| Proposed name | Replaces | Notes |
-|---|---|---|
-| `TeamDoc` | `CustomTeamDoc` | Covers both custom and generated teams |
-| `PlayerDoc` | `PlayerDoc` (keep name, fix shape) | See Problem 2 — decouple from team |
+| Proposed name   | Replaces                                           | Notes                                                           |
+| --------------- | -------------------------------------------------- | --------------------------------------------------------------- |
+| `TeamDoc`       | `CustomTeamDoc`                                    | Covers both custom and generated teams                          |
+| `PlayerDoc`     | `PlayerDoc` (keep name, fix shape)                 | See Problem 2 — decouple from team                              |
 | `RosterSlotDoc` | _(implicit in `PlayerDoc.section` + `orderIndex`)_ | Could be a separate join table if needed for free-agent support |
-| `GameSaveDoc` | `SaveDoc` | Clarifies this is a saved *game* state, not a generic save |
-| `GameResultDoc` | `GameHistoryDoc` | A completed game result |
+| `GameSaveDoc`   | `SaveDoc`                                          | Clarifies this is a saved _game_ state, not a generic save      |
+| `GameResultDoc` | `GameHistoryDoc`                                   | A completed game result                                         |
 
 ### Future collections to plan for
 
 As leagues and free agents are introduced, the following collections will be needed:
 
-| Future collection | Purpose |
-|---|---|
-| `LeagueDoc` | A league that teams can join |
-| `LeagueTeamDoc` | Join table: which teams are in which league, with standings |
-| `FreeAgentDoc` | A player not currently on any team's roster; references `PlayerDoc.id` |
-| `TradeDoc` _(optional)_ | Audit record of a player moving from one team to another |
+| Future collection       | Purpose                                                                |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `LeagueDoc`             | A league that teams can join                                           |
+| `LeagueTeamDoc`         | Join table: which teams are in which league, with standings            |
+| `FreeAgentDoc`          | A player not currently on any team's roster; references `PlayerDoc.id` |
+| `TradeDoc` _(optional)_ | Audit record of a player moving from one team to another               |
 
 If `PlayerDoc.id` is stable and team-independent (see Problem 2), free agents and trades
 become natural extensions of the same model — a player is simply a `PlayerDoc` with
