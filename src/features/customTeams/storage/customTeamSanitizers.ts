@@ -85,7 +85,7 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
  */
 export function validatePlayerStatCaps(
   player: TeamPlayer,
-  section = "player",
+  section: string,
   index: number,
 ): void {
   if (player.role !== "pitcher") {
