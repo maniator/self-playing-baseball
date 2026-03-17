@@ -27,11 +27,9 @@
                 "power": 27,
                 "speed": 47
               },
-              "playerSeed": "gCa_9lSTH-51kCzP",
-              "fingerprint": "abc874b8",
-              "globalPlayerId": "pl_bd67ebb4",
+              "fingerprint": "03b67711",
               "id": "p_-882756226_L0",
-              "sig": "abc874b8"
+              "sig": "03b67711"
             },
             {
               "name": "Ben Zavala",
@@ -43,11 +41,9 @@
                 "power": 39,
                 "speed": 50
               },
-              "playerSeed": "rgt1YLlxgBJgAxlg",
-              "fingerprint": "415af8aa",
-              "globalPlayerId": "pl_e219d5d6",
+              "fingerprint": "77a6726d",
               "id": "p_-882756226_L1",
-              "sig": "415af8aa"
+              "sig": "77a6726d"
             },
             {
               "name": "Nathan Young",
@@ -59,11 +55,9 @@
                 "power": 31,
                 "speed": 34
               },
-              "playerSeed": "2AGWKhFNnDSvIZL0",
-              "fingerprint": "96d2f864",
-              "globalPlayerId": "pl_fc927fe5",
+              "fingerprint": "cdec26c4",
               "id": "p_-882756226_L2",
-              "sig": "96d2f864"
+              "sig": "cdec26c4"
             },
             {
               "name": "Carlos Reed",
@@ -75,11 +69,9 @@
                 "power": 37,
                 "speed": 29
               },
-              "playerSeed": "Bci4mGP8nYaaovs7",
-              "fingerprint": "a9241b5e",
-              "globalPlayerId": "pl_308fc483",
+              "fingerprint": "57e8c8cc",
               "id": "p_-882756226_L3",
-              "sig": "a9241b5e"
+              "sig": "57e8c8cc"
             },
             {
               "name": "Quinn Zavala",
@@ -91,11 +83,9 @@
                 "power": 26,
                 "speed": 46
               },
-              "playerSeed": "6_i6sPrkud7WiguR",
-              "fingerprint": "90aee14e",
-              "globalPlayerId": "pl_4ddc8895",
+              "fingerprint": "f384d41e",
               "id": "p_-882756226_L4",
-              "sig": "90aee14e"
+              "sig": "f384d41e"
             },
             {
               "name": "Oscar Davis",
@@ -107,11 +97,9 @@
                 "power": 41,
                 "speed": 26
               },
-              "playerSeed": "E4lh1XdhyR-wQ0j2",
-              "fingerprint": "f68c7fb1",
-              "globalPlayerId": "pl_dadd0927",
+              "fingerprint": "a6b35efb",
               "id": "p_-882756226_L5",
-              "sig": "f68c7fb1"
+              "sig": "a6b35efb"
             },
             {
               "name": "Danny Baker",
@@ -123,11 +111,9 @@
                 "power": 39,
                 "speed": 50
               },
-              "playerSeed": "7PSxCsIMeaTL8rZE",
-              "fingerprint": "96b0486d",
-              "globalPlayerId": "pl_4c4f9794",
+              "fingerprint": "76784156",
               "id": "p_-882756226_L6",
-              "sig": "96b0486d"
+              "sig": "76784156"
             },
             {
               "name": "Gary Reed",
@@ -139,11 +125,9 @@
                 "power": 23,
                 "speed": 23
               },
-              "playerSeed": "niLardhbxxrtF2W2",
-              "fingerprint": "ed9269ed",
-              "globalPlayerId": "pl_dcd6bbf0",
+              "fingerprint": "b0341ea2",
               "id": "p_-882756226_L7",
-              "sig": "ed9269ed"
+              "sig": "b0341ea2"
             },
             {
               "name": "Marcus Hill",
@@ -155,11 +139,9 @@
                 "power": 37,
                 "speed": 41
               },
-              "playerSeed": "vrlKgvxFc8vCMDCC",
-              "fingerprint": "22986b84",
-              "globalPlayerId": "pl_38274988",
+              "fingerprint": "a6bf68e7",
               "id": "p_-882756226_L8",
-              "sig": "22986b84"
+              "sig": "a6bf68e7"
             }
           ],
           "bench": [
@@ -173,11 +155,9 @@
                 "power": 31,
                 "speed": 36
               },
-              "playerSeed": "rqPfAOyG2_OfYOrh",
-              "fingerprint": "f63c78ad",
-              "globalPlayerId": "pl_aa366daa",
+              "fingerprint": "e328c7f4",
               "id": "p_-882756226_B0",
-              "sig": "f63c78ad"
+              "sig": "e328c7f4"
             },
             {
               "name": "Henry Young",
@@ -189,11 +169,9 @@
                 "power": 40,
                 "speed": 44
               },
-              "playerSeed": "cGX8cySbgP8Mo6J5",
-              "fingerprint": "62134ffa",
-              "globalPlayerId": "pl_1b8e3f26",
+              "fingerprint": "2f5d11f3",
               "id": "p_-882756226_B1",
-              "sig": "62134ffa"
+              "sig": "2f5d11f3"
             },
             {
               "name": "Ben Grant",
@@ -205,11 +183,9 @@
                 "power": 44,
                 "speed": 48
               },
-              "playerSeed": "nL0pdGYAvmyIbvSM",
-              "fingerprint": "1b083fd1",
-              "globalPlayerId": "pl_78cb97b7",
+              "fingerprint": "7b47488b",
               "id": "p_-882756226_B2",
-              "sig": "1b083fd1"
+              "sig": "7b47488b"
             },
             {
               "name": "Karl Scott",
@@ -221,11 +197,9 @@
                 "power": 45,
                 "speed": 42
               },
-              "playerSeed": "6AJIG7inivb8d1Ym",
-              "fingerprint": "5208eed0",
-              "globalPlayerId": "pl_db207f38",
+              "fingerprint": "04c7be5d",
               "id": "p_-882756226_B3",
-              "sig": "5208eed0"
+              "sig": "04c7be5d"
             }
           ],
           "pitchers": [
@@ -245,11 +219,9 @@
                 "movement": 44
               },
               "pitchingRole": "SP",
-              "playerSeed": "NAOrSGl_idI7YM4-",
-              "fingerprint": "3e536cb6",
-              "globalPlayerId": "pl_cb73fa9a",
+              "fingerprint": "3d6fe7ad",
               "id": "p_-882756226_P0",
-              "sig": "3e536cb6"
+              "sig": "3d6fe7ad"
             },
             {
               "name": "Upton Moore",
@@ -267,11 +239,9 @@
                 "movement": 39
               },
               "pitchingRole": "RP",
-              "playerSeed": "SMMGJtgnnXitwRro",
-              "fingerprint": "29c8664c",
-              "globalPlayerId": "pl_3aa9824f",
+              "fingerprint": "283243ca",
               "id": "p_-882756226_P1",
-              "sig": "29c8664c"
+              "sig": "283243ca"
             },
             {
               "name": "Quinn Davis",
@@ -289,11 +259,9 @@
                 "movement": 40
               },
               "pitchingRole": "RP",
-              "playerSeed": "ra5q2Ad4NxFFg63E",
-              "fingerprint": "8051fd46",
-              "globalPlayerId": "pl_4297e010",
+              "fingerprint": "0ca07f97",
               "id": "p_-882756226_P2",
-              "sig": "8051fd46"
+              "sig": "0ca07f97"
             },
             {
               "name": "Pete Baker",
@@ -311,11 +279,9 @@
                 "movement": 25
               },
               "pitchingRole": "RP",
-              "playerSeed": "uM_W-qfw5KC7Bzlo",
-              "fingerprint": "c349e6e7",
-              "globalPlayerId": "pl_01bc7e5f",
+              "fingerprint": "8a7aba9d",
               "id": "p_-882756226_P3",
-              "sig": "c349e6e7"
+              "sig": "8a7aba9d"
             },
             {
               "name": "Zane Grant",
@@ -333,18 +299,15 @@
                 "movement": 26
               },
               "pitchingRole": "SP/RP",
-              "playerSeed": "vHc-_fbaOvzeFNQe",
-              "fingerprint": "07959372",
-              "globalPlayerId": "pl_2ba44001",
+              "fingerprint": "048ab6b6",
               "id": "p_-882756226_P4",
-              "sig": "07959372"
+              "sig": "048ab6b6"
             }
           ]
         },
         "metadata": {
           "archived": false
         },
-        "teamSeed": "31dzXI-Sgpk19eFu",
         "fingerprint": "da9192a3"
       },
       {
@@ -370,11 +333,9 @@
                 "power": 23,
                 "speed": 23
               },
-              "playerSeed": "jYx_K2TwwCaEa6pe",
-              "fingerprint": "ec34aa6a",
-              "globalPlayerId": "pl_fbf762ad",
+              "fingerprint": "cdfc6662",
               "id": "p_-882756227_L0",
-              "sig": "ec34aa6a"
+              "sig": "cdfc6662"
             },
             {
               "name": "Tom Kent",
@@ -386,11 +347,9 @@
                 "power": 36,
                 "speed": 32
               },
-              "playerSeed": "LlzfSjwtXyzlNKvm",
-              "fingerprint": "8c05dc45",
-              "globalPlayerId": "pl_be5b2a3c",
+              "fingerprint": "d7f55048",
               "id": "p_-882756227_L1",
-              "sig": "8c05dc45"
+              "sig": "d7f55048"
             },
             {
               "name": "Leo Vega",
@@ -402,11 +361,9 @@
                 "power": 32,
                 "speed": 38
               },
-              "playerSeed": "Jdx5NuJu9Kc_xwmq",
-              "fingerprint": "a7ca97da",
-              "globalPlayerId": "pl_c9a0035d",
+              "fingerprint": "25c2eba2",
               "id": "p_-882756227_L2",
-              "sig": "a7ca97da"
+              "sig": "25c2eba2"
             },
             {
               "name": "Oscar Grant",
@@ -418,11 +375,9 @@
                 "power": 40,
                 "speed": 34
               },
-              "playerSeed": "IEECGe9sP-gVNJUT",
-              "fingerprint": "c7896853",
-              "globalPlayerId": "pl_1525f264",
+              "fingerprint": "1dadb860",
               "id": "p_-882756227_L3",
-              "sig": "c7896853"
+              "sig": "1dadb860"
             },
             {
               "name": "Xavier Young",
@@ -434,11 +389,9 @@
                 "power": 21,
                 "speed": 47
               },
-              "playerSeed": "RvP3As9S00Jap-a_",
-              "fingerprint": "32a0e052",
-              "globalPlayerId": "pl_41508cc6",
+              "fingerprint": "2b12a1a5",
               "id": "p_-882756227_L4",
-              "sig": "32a0e052"
+              "sig": "2b12a1a5"
             },
             {
               "name": "Ivan Evans",
@@ -450,11 +403,9 @@
                 "power": 48,
                 "speed": 38
               },
-              "playerSeed": "bGpH8HRTMJxBF8zV",
-              "fingerprint": "a8c52bf8",
-              "globalPlayerId": "pl_1c33327f",
+              "fingerprint": "9ce2fdc6",
               "id": "p_-882756227_L5",
-              "sig": "a8c52bf8"
+              "sig": "9ce2fdc6"
             },
             {
               "name": "Yogi Irwin",
@@ -466,11 +417,9 @@
                 "power": 25,
                 "speed": 38
               },
-              "playerSeed": "ZTNdpzdpUCGuxUC0",
-              "fingerprint": "d4f52596",
-              "globalPlayerId": "pl_61faf993",
+              "fingerprint": "f26a9978",
               "id": "p_-882756227_L6",
-              "sig": "d4f52596"
+              "sig": "f26a9978"
             },
             {
               "name": "Quinn Quinn",
@@ -482,11 +431,9 @@
                 "power": 43,
                 "speed": 38
               },
-              "playerSeed": "zcGGJikRNyBuWYIy",
-              "fingerprint": "9fcb0911",
-              "globalPlayerId": "pl_88578896",
+              "fingerprint": "f12f34fc",
               "id": "p_-882756227_L7",
-              "sig": "9fcb0911"
+              "sig": "f12f34fc"
             },
             {
               "name": "Ray Hill",
@@ -498,11 +445,9 @@
                 "power": 48,
                 "speed": 30
               },
-              "playerSeed": "gn0mNLJjs6CW2p9d",
-              "fingerprint": "59bb4cab",
-              "globalPlayerId": "pl_00f5a299",
+              "fingerprint": "f236b45f",
               "id": "p_-882756227_L8",
-              "sig": "59bb4cab"
+              "sig": "f236b45f"
             }
           ],
           "bench": [
@@ -516,11 +461,9 @@
                 "power": 50,
                 "speed": 24
               },
-              "playerSeed": "E4pn4gpUUergV-Pc",
-              "fingerprint": "be0f6f9e",
-              "globalPlayerId": "pl_03c3bc0d",
+              "fingerprint": "635194d6",
               "id": "p_-882756227_B0",
-              "sig": "be0f6f9e"
+              "sig": "635194d6"
             },
             {
               "name": "Marcus Adams",
@@ -532,11 +475,9 @@
                 "power": 21,
                 "speed": 25
               },
-              "playerSeed": "Kx0RjbGqrNzaK7FD",
-              "fingerprint": "b0d35931",
-              "globalPlayerId": "pl_757fa85d",
+              "fingerprint": "bcaea889",
               "id": "p_-882756227_B1",
-              "sig": "b0d35931"
+              "sig": "bcaea889"
             },
             {
               "name": "Sam Irwin",
@@ -548,11 +489,9 @@
                 "power": 46,
                 "speed": 37
               },
-              "playerSeed": "vZxaGBQIciEieIdO",
-              "fingerprint": "3eb5260d",
-              "globalPlayerId": "pl_d168603c",
+              "fingerprint": "d4980fc6",
               "id": "p_-882756227_B2",
-              "sig": "3eb5260d"
+              "sig": "d4980fc6"
             },
             {
               "name": "Upton Scott",
@@ -564,11 +503,9 @@
                 "power": 20,
                 "speed": 47
               },
-              "playerSeed": "gKLXAyw79vGfMNxg",
-              "fingerprint": "72bc23a9",
-              "globalPlayerId": "pl_5c8f964f",
+              "fingerprint": "c734d95f",
               "id": "p_-882756227_B3",
-              "sig": "72bc23a9"
+              "sig": "c734d95f"
             }
           ],
           "pitchers": [
@@ -588,11 +525,9 @@
                 "movement": 31
               },
               "pitchingRole": "SP",
-              "playerSeed": "cNHMS0HcU29vIbCH",
-              "fingerprint": "b9025d01",
-              "globalPlayerId": "pl_23848bf1",
+              "fingerprint": "e47522bd",
               "id": "p_-882756227_P0",
-              "sig": "b9025d01"
+              "sig": "e47522bd"
             },
             {
               "name": "Jake Kent",
@@ -610,11 +545,9 @@
                 "movement": 43
               },
               "pitchingRole": "RP",
-              "playerSeed": "zca6odQtUaGCPXDh",
-              "fingerprint": "fbf02d13",
-              "globalPlayerId": "pl_36d3cee7",
+              "fingerprint": "ce061831",
               "id": "p_-882756227_P1",
-              "sig": "fbf02d13"
+              "sig": "ce061831"
             },
             {
               "name": "Leo Lane",
@@ -632,11 +565,9 @@
                 "movement": 49
               },
               "pitchingRole": "RP",
-              "playerSeed": "sWN8g7NYCbPold4e",
-              "fingerprint": "dd2cd117",
-              "globalPlayerId": "pl_d40862a1",
+              "fingerprint": "53c9dd9b",
               "id": "p_-882756227_P2",
-              "sig": "dd2cd117"
+              "sig": "53c9dd9b"
             },
             {
               "name": "Frank Quinn",
@@ -654,11 +585,9 @@
                 "movement": 33
               },
               "pitchingRole": "SP/RP",
-              "playerSeed": "b5T2SMbSbpfZsHUv",
-              "fingerprint": "f9e28631",
-              "globalPlayerId": "pl_04dfe4ef",
+              "fingerprint": "665e5f53",
               "id": "p_-882756227_P3",
-              "sig": "f9e28631"
+              "sig": "665e5f53"
             },
             {
               "name": "Carlos Nash",
@@ -676,18 +605,15 @@
                 "movement": 30
               },
               "pitchingRole": "RP",
-              "playerSeed": "2Ov1NcUPKjfZTQCq",
-              "fingerprint": "7dcc2cab",
-              "globalPlayerId": "pl_ab073d43",
+              "fingerprint": "edaf4f15",
               "id": "p_-882756227_P4",
-              "sig": "7dcc2cab"
+              "sig": "edaf4f15"
             }
           ]
         },
         "metadata": {
           "archived": false
         },
-        "teamSeed": "lntEdU5ev9HEXCoA",
         "fingerprint": "ef8f7a3f"
       },
       {
@@ -713,11 +639,9 @@
                 "power": 32,
                 "speed": 30
               },
-              "playerSeed": "20PH5RZMbwBY-tVC",
-              "fingerprint": "04f5be3b",
-              "globalPlayerId": "pl_ee858e29",
+              "fingerprint": "acd5846f",
               "id": "p_-882756229_L0",
-              "sig": "04f5be3b"
+              "sig": "acd5846f"
             },
             {
               "name": "Leo Xiong",
@@ -729,11 +653,9 @@
                 "power": 43,
                 "speed": 37
               },
-              "playerSeed": "AUGvXDgy0-Nf_0ND",
-              "fingerprint": "7c90f058",
-              "globalPlayerId": "pl_c41d6a34",
+              "fingerprint": "8d558de3",
               "id": "p_-882756229_L1",
-              "sig": "7c90f058"
+              "sig": "8d558de3"
             },
             {
               "name": "Sam Scott",
@@ -745,11 +667,9 @@
                 "power": 25,
                 "speed": 31
               },
-              "playerSeed": "qcxsk-80UJb7BfMe",
-              "fingerprint": "2592f02a",
-              "globalPlayerId": "pl_1386812e",
+              "fingerprint": "b98b294b",
               "id": "p_-882756229_L2",
-              "sig": "2592f02a"
+              "sig": "b98b294b"
             },
             {
               "name": "Xavier Scott",
@@ -761,11 +681,9 @@
                 "power": 38,
                 "speed": 42
               },
-              "playerSeed": "WLxqebva7tHRTRBa",
-              "fingerprint": "50be2760",
-              "globalPlayerId": "pl_4c68907d",
+              "fingerprint": "0c25bef8",
               "id": "p_-882756229_L3",
-              "sig": "50be2760"
+              "sig": "0c25bef8"
             },
             {
               "name": "Carlos Nash",
@@ -777,11 +695,9 @@
                 "power": 26,
                 "speed": 20
               },
-              "playerSeed": "2nm4-w9vIsGXDGlI",
-              "fingerprint": "cb8d6076",
-              "globalPlayerId": "pl_e2d42d86",
+              "fingerprint": "2e15e887",
               "id": "p_-882756229_L4",
-              "sig": "cb8d6076"
+              "sig": "2e15e887"
             },
             {
               "name": "Nathan Scott",
@@ -793,11 +709,9 @@
                 "power": 25,
                 "speed": 47
               },
-              "playerSeed": "-OsEV3o6Lc43wBqY",
-              "fingerprint": "28ce88a3",
-              "globalPlayerId": "pl_03750594",
+              "fingerprint": "7a2c3e1e",
               "id": "p_-882756229_L5",
-              "sig": "28ce88a3"
+              "sig": "7a2c3e1e"
             },
             {
               "name": "Jake Vega",
@@ -809,11 +723,9 @@
                 "power": 49,
                 "speed": 28
               },
-              "playerSeed": "f1VQe76glfjWfAfn",
-              "fingerprint": "365edb93",
-              "globalPlayerId": "pl_dcf066be",
+              "fingerprint": "732ee71e",
               "id": "p_-882756229_L6",
-              "sig": "365edb93"
+              "sig": "732ee71e"
             },
             {
               "name": "Wade Scott",
@@ -825,11 +737,9 @@
                 "power": 43,
                 "speed": 24
               },
-              "playerSeed": "FZjhRtiv5EPHacvZ",
-              "fingerprint": "935cd192",
-              "globalPlayerId": "pl_e5bf3aec",
+              "fingerprint": "5b7964a7",
               "id": "p_-882756229_L7",
-              "sig": "935cd192"
+              "sig": "5b7964a7"
             },
             {
               "name": "Wade Vega",
@@ -841,11 +751,9 @@
                 "power": 30,
                 "speed": 42
               },
-              "playerSeed": "unfrxMlxM2dr1glQ",
-              "fingerprint": "17fb2fc6",
-              "globalPlayerId": "pl_1e0cd927",
+              "fingerprint": "a19de934",
               "id": "p_-882756229_L8",
-              "sig": "17fb2fc6"
+              "sig": "a19de934"
             }
           ],
           "bench": [
@@ -859,11 +767,9 @@
                 "power": 20,
                 "speed": 49
               },
-              "playerSeed": "rmdE75Rxi9Hmq419",
-              "fingerprint": "de13d2bf",
-              "globalPlayerId": "pl_315cfbc3",
+              "fingerprint": "5eafa55d",
               "id": "p_-882756229_B0",
-              "sig": "de13d2bf"
+              "sig": "5eafa55d"
             },
             {
               "name": "Victor Quinn",
@@ -875,11 +781,9 @@
                 "power": 50,
                 "speed": 48
               },
-              "playerSeed": "sZ7kr1ehWW59GQ8N",
-              "fingerprint": "93965535",
-              "globalPlayerId": "pl_874e8f04",
+              "fingerprint": "280f66b4",
               "id": "p_-882756229_B1",
-              "sig": "93965535"
+              "sig": "280f66b4"
             },
             {
               "name": "Oscar Walsh",
@@ -891,11 +795,9 @@
                 "power": 20,
                 "speed": 41
               },
-              "playerSeed": "pYpXyOOXEJ_vbwQc",
-              "fingerprint": "69ce5d33",
-              "globalPlayerId": "pl_6b1f0d98",
+              "fingerprint": "bc388170",
               "id": "p_-882756229_B2",
-              "sig": "69ce5d33"
+              "sig": "bc388170"
             },
             {
               "name": "Marcus Kent",
@@ -907,11 +809,9 @@
                 "power": 27,
                 "speed": 26
               },
-              "playerSeed": "llw_JHrhDVUFK6MW",
-              "fingerprint": "5fdad373",
-              "globalPlayerId": "pl_5b2c5317",
+              "fingerprint": "f2de7bf9",
               "id": "p_-882756229_B3",
-              "sig": "5fdad373"
+              "sig": "f2de7bf9"
             }
           ],
           "pitchers": [
@@ -931,11 +831,9 @@
                 "movement": 33
               },
               "pitchingRole": "SP",
-              "playerSeed": "OsBx6RlGb19juR4O",
-              "fingerprint": "e3311ca5",
-              "globalPlayerId": "pl_ea5a787c",
+              "fingerprint": "291b69bc",
               "id": "p_-882756229_P0",
-              "sig": "e3311ca5"
+              "sig": "291b69bc"
             },
             {
               "name": "Yogi Zavala",
@@ -953,11 +851,9 @@
                 "movement": 41
               },
               "pitchingRole": "RP",
-              "playerSeed": "z8wN0MMGT3COpLNK",
-              "fingerprint": "a9c04c61",
-              "globalPlayerId": "pl_07a57ee5",
+              "fingerprint": "fa5808c1",
               "id": "p_-882756229_P1",
-              "sig": "a9c04c61"
+              "sig": "fa5808c1"
             },
             {
               "name": "Eric Vega",
@@ -975,11 +871,9 @@
                 "movement": 42
               },
               "pitchingRole": "RP",
-              "playerSeed": "6FVHnyz7IzY5V14w",
-              "fingerprint": "2c4768d1",
-              "globalPlayerId": "pl_6e893494",
+              "fingerprint": "1807be48",
               "id": "p_-882756229_P2",
-              "sig": "2c4768d1"
+              "sig": "1807be48"
             },
             {
               "name": "Danny Quinn",
@@ -997,11 +891,9 @@
                 "movement": 43
               },
               "pitchingRole": "RP",
-              "playerSeed": "aEtNLi9TYLWuN8On",
-              "fingerprint": "15c467b6",
-              "globalPlayerId": "pl_9ed1d4e9",
+              "fingerprint": "d2e55eaa",
               "id": "p_-882756229_P3",
-              "sig": "15c467b6"
+              "sig": "d2e55eaa"
             },
             {
               "name": "Gary Vega",
@@ -1019,18 +911,15 @@
                 "movement": 49
               },
               "pitchingRole": "SP/RP",
-              "playerSeed": "MGenwoL6I_lx9Dji",
-              "fingerprint": "02c29eca",
-              "globalPlayerId": "pl_fd5b6ff2",
+              "fingerprint": "4dacc571",
               "id": "p_-882756229_P4",
-              "sig": "02c29eca"
+              "sig": "4dacc571"
             }
           ]
         },
         "metadata": {
           "archived": false
         },
-        "teamSeed": "7vPLYG7d24lWoThF",
         "fingerprint": "d96ea9b0"
       },
       {
@@ -1056,11 +945,9 @@
                 "power": 24,
                 "speed": 50
               },
-              "playerSeed": "MEwyDHu6GLPYP6cU",
-              "fingerprint": "97bae296",
-              "globalPlayerId": "pl_4cb201d2",
+              "fingerprint": "bb6cc493",
               "id": "p_-882756230_L0",
-              "sig": "97bae296"
+              "sig": "bb6cc493"
             },
             {
               "name": "Ben Urban",
@@ -1072,11 +959,9 @@
                 "power": 29,
                 "speed": 37
               },
-              "playerSeed": "e_415A20Ye4Rb1AL",
-              "fingerprint": "eff65ae6",
-              "globalPlayerId": "pl_76d6a6b2",
+              "fingerprint": "105e2bd3",
               "id": "p_-882756230_L1",
-              "sig": "eff65ae6"
+              "sig": "105e2bd3"
             },
             {
               "name": "Ivan Owen",
@@ -1088,11 +973,9 @@
                 "power": 25,
                 "speed": 42
               },
-              "playerSeed": "5JUkqNPQZUreWItp",
-              "fingerprint": "a40283ae",
-              "globalPlayerId": "pl_c77e229e",
+              "fingerprint": "267405a7",
               "id": "p_-882756230_L2",
-              "sig": "a40283ae"
+              "sig": "267405a7"
             },
             {
               "name": "Carlos Baker",
@@ -1104,11 +987,9 @@
                 "power": 37,
                 "speed": 22
               },
-              "playerSeed": "h4oV2Tqe9cx1HdFF",
-              "fingerprint": "acef00a6",
-              "globalPlayerId": "pl_dacf4d2b",
+              "fingerprint": "13812984",
               "id": "p_-882756230_L3",
-              "sig": "acef00a6"
+              "sig": "13812984"
             },
             {
               "name": "Aaron Jones",
@@ -1120,11 +1001,9 @@
                 "power": 22,
                 "speed": 21
               },
-              "playerSeed": "jkiYsW6PxgSiSMK4",
-              "fingerprint": "148d1641",
-              "globalPlayerId": "pl_517d1ed2",
+              "fingerprint": "2653fedc",
               "id": "p_-882756230_L4",
-              "sig": "148d1641"
+              "sig": "2653fedc"
             },
             {
               "name": "Danny Ford",
@@ -1136,11 +1015,9 @@
                 "power": 21,
                 "speed": 28
               },
-              "playerSeed": "jFGzRD49MN0i7tKk",
-              "fingerprint": "543ab8d1",
-              "globalPlayerId": "pl_425a224c",
+              "fingerprint": "fcfeefa8",
               "id": "p_-882756230_L5",
-              "sig": "543ab8d1"
+              "sig": "fcfeefa8"
             },
             {
               "name": "Quinn Evans",
@@ -1152,11 +1029,9 @@
                 "power": 37,
                 "speed": 36
               },
-              "playerSeed": "MIc8QSxp13JPG_ce",
-              "fingerprint": "81757c1e",
-              "globalPlayerId": "pl_9ea277ac",
+              "fingerprint": "b6176375",
               "id": "p_-882756230_L6",
-              "sig": "81757c1e"
+              "sig": "b6176375"
             },
             {
               "name": "Victor Turner",
@@ -1168,11 +1043,9 @@
                 "power": 24,
                 "speed": 35
               },
-              "playerSeed": "uUP8pS7jvSx9Tn0I",
-              "fingerprint": "65b055d5",
-              "globalPlayerId": "pl_14588abe",
+              "fingerprint": "702c1928",
               "id": "p_-882756230_L7",
-              "sig": "65b055d5"
+              "sig": "702c1928"
             },
             {
               "name": "Oscar Evans",
@@ -1184,11 +1057,9 @@
                 "power": 24,
                 "speed": 41
               },
-              "playerSeed": "AqLFnqCfUCkE-CH2",
-              "fingerprint": "eca9af19",
-              "globalPlayerId": "pl_2653e1df",
+              "fingerprint": "b3c1e067",
               "id": "p_-882756230_L8",
-              "sig": "eca9af19"
+              "sig": "b3c1e067"
             }
           ],
           "bench": [
@@ -1202,11 +1073,9 @@
                 "power": 49,
                 "speed": 23
               },
-              "playerSeed": "oW-61YRcl2YKq-Ob",
-              "fingerprint": "c591fba8",
-              "globalPlayerId": "pl_5a62f9b0",
+              "fingerprint": "e1f271c5",
               "id": "p_-882756230_B0",
-              "sig": "c591fba8"
+              "sig": "e1f271c5"
             },
             {
               "name": "Yogi Grant",
@@ -1218,11 +1087,9 @@
                 "power": 26,
                 "speed": 47
               },
-              "playerSeed": "Io0x1HMUoO1qD88V",
-              "fingerprint": "2eec091c",
-              "globalPlayerId": "pl_ce39da34",
+              "fingerprint": "08fba7cd",
               "id": "p_-882756230_B1",
-              "sig": "2eec091c"
+              "sig": "08fba7cd"
             },
             {
               "name": "Victor Adams",
@@ -1234,11 +1101,9 @@
                 "power": 40,
                 "speed": 47
               },
-              "playerSeed": "psN3N9jCIuZgEENo",
-              "fingerprint": "cd045894",
-              "globalPlayerId": "pl_3b99d091",
+              "fingerprint": "b8044930",
               "id": "p_-882756230_B2",
-              "sig": "cd045894"
+              "sig": "b8044930"
             },
             {
               "name": "Quinn Irwin",
@@ -1250,11 +1115,9 @@
                 "power": 41,
                 "speed": 30
               },
-              "playerSeed": "dsM6Yij-_u0MS4bw",
-              "fingerprint": "18dcdbcb",
-              "globalPlayerId": "pl_0fbd71d3",
+              "fingerprint": "2d924785",
               "id": "p_-882756230_B3",
-              "sig": "18dcdbcb"
+              "sig": "2d924785"
             }
           ],
           "pitchers": [
@@ -1274,11 +1137,9 @@
                 "movement": 39
               },
               "pitchingRole": "SP",
-              "playerSeed": "Jfqtpxa65SZO9Ovl",
-              "fingerprint": "6f8b46c8",
-              "globalPlayerId": "pl_4af6a0b2",
+              "fingerprint": "07ee7a45",
               "id": "p_-882756230_P0",
-              "sig": "6f8b46c8"
+              "sig": "07ee7a45"
             },
             {
               "name": "Oscar Park",
@@ -1296,11 +1157,9 @@
                 "movement": 39
               },
               "pitchingRole": "RP",
-              "playerSeed": "FjI07QZQOly7MrD3",
-              "fingerprint": "638bb309",
-              "globalPlayerId": "pl_7f1f0ac0",
+              "fingerprint": "446f557e",
               "id": "p_-882756230_P1",
-              "sig": "638bb309"
+              "sig": "446f557e"
             },
             {
               "name": "Leo Reed",
@@ -1318,11 +1177,9 @@
                 "movement": 36
               },
               "pitchingRole": "RP",
-              "playerSeed": "7Xl_7TN-SSfNIz6-",
-              "fingerprint": "2862ff6e",
-              "globalPlayerId": "pl_d72c4405",
+              "fingerprint": "d635602e",
               "id": "p_-882756230_P2",
-              "sig": "2862ff6e"
+              "sig": "d635602e"
             },
             {
               "name": "Ben Grant",
@@ -1340,11 +1197,9 @@
                 "movement": 44
               },
               "pitchingRole": "SP/RP",
-              "playerSeed": "eeuloAtVyHuqutIN",
-              "fingerprint": "91c501ff",
-              "globalPlayerId": "pl_309ea629",
+              "fingerprint": "43de72bb",
               "id": "p_-882756230_P3",
-              "sig": "91c501ff"
+              "sig": "43de72bb"
             },
             {
               "name": "Ben Xiong",
@@ -1362,18 +1217,15 @@
                 "movement": 48
               },
               "pitchingRole": "RP",
-              "playerSeed": "6Isv7SPre7BMD0Ed",
-              "fingerprint": "c3d8447d",
-              "globalPlayerId": "pl_d787cbcd",
+              "fingerprint": "87bf5aa5",
               "id": "p_-882756230_P4",
-              "sig": "c3d8447d"
+              "sig": "87bf5aa5"
             }
           ]
         },
         "metadata": {
           "archived": false
         },
-        "teamSeed": "H8bxCXlsz3EDennd",
         "fingerprint": "353e7bf8"
       },
       {
@@ -1399,11 +1251,9 @@
                 "power": 31,
                 "speed": 40
               },
-              "playerSeed": "3D_kU-UjSaWVX5Nk",
-              "fingerprint": "bb1ffa1d",
-              "globalPlayerId": "pl_46dd5684",
+              "fingerprint": "8b6963aa",
               "id": "p_-882756231_L0",
-              "sig": "bb1ffa1d"
+              "sig": "8b6963aa"
             },
             {
               "name": "Carlos Grant",
@@ -1415,11 +1265,9 @@
                 "power": 48,
                 "speed": 43
               },
-              "playerSeed": "FWVZ0B0o1wovfrFF",
-              "fingerprint": "8e1c77a6",
-              "globalPlayerId": "pl_24395dac",
+              "fingerprint": "42baf423",
               "id": "p_-882756231_L1",
-              "sig": "8e1c77a6"
+              "sig": "42baf423"
             },
             {
               "name": "Marcus Evans",
@@ -1431,11 +1279,9 @@
                 "power": 27,
                 "speed": 32
               },
-              "playerSeed": "x7Nwd0dVNHUyz04b",
-              "fingerprint": "b27218e9",
-              "globalPlayerId": "pl_6ded8b01",
+              "fingerprint": "660f2545",
               "id": "p_-882756231_L2",
-              "sig": "b27218e9"
+              "sig": "660f2545"
             },
             {
               "name": "Frank Davis",
@@ -1447,11 +1293,9 @@
                 "power": 26,
                 "speed": 34
               },
-              "playerSeed": "kZg7_FL07HE4-B-D",
-              "fingerprint": "dc8713a6",
-              "globalPlayerId": "pl_93efe70f",
+              "fingerprint": "4b626e38",
               "id": "p_-882756231_L3",
-              "sig": "dc8713a6"
+              "sig": "4b626e38"
             },
             {
               "name": "Carlos Park",
@@ -1463,11 +1307,9 @@
                 "power": 46,
                 "speed": 22
               },
-              "playerSeed": "fYalMWQjTfX7QyHa",
-              "fingerprint": "4910dd3d",
-              "globalPlayerId": "pl_5c6e7b08",
+              "fingerprint": "5a64ccae",
               "id": "p_-882756231_L4",
-              "sig": "4910dd3d"
+              "sig": "5a64ccae"
             },
             {
               "name": "Upton Reed",
@@ -1479,11 +1321,9 @@
                 "power": 40,
                 "speed": 29
               },
-              "playerSeed": "OArujL7Ua0E5e8ba",
-              "fingerprint": "ac49082c",
-              "globalPlayerId": "pl_2f046a4d",
+              "fingerprint": "3fa4d8d4",
               "id": "p_-882756231_L5",
-              "sig": "ac49082c"
+              "sig": "3fa4d8d4"
             },
             {
               "name": "Leo Kent",
@@ -1495,11 +1335,9 @@
                 "power": 31,
                 "speed": 35
               },
-              "playerSeed": "1aM1sEgQen4u_BMi",
-              "fingerprint": "4c4b5c6a",
-              "globalPlayerId": "pl_a2504e96",
+              "fingerprint": "da2ef699",
               "id": "p_-882756231_L6",
-              "sig": "4c4b5c6a"
+              "sig": "da2ef699"
             },
             {
               "name": "Zane Irwin",
@@ -1511,11 +1349,9 @@
                 "power": 24,
                 "speed": 26
               },
-              "playerSeed": "EaYYOXvAVDwRFNK9",
-              "fingerprint": "83a291f1",
-              "globalPlayerId": "pl_de9f4598",
+              "fingerprint": "ff2f2d50",
               "id": "p_-882756231_L7",
-              "sig": "83a291f1"
+              "sig": "ff2f2d50"
             },
             {
               "name": "Quinn Lane",
@@ -1527,11 +1363,9 @@
                 "power": 33,
                 "speed": 47
               },
-              "playerSeed": "A867UaZpv-rGJhGC",
-              "fingerprint": "51fe3c2a",
-              "globalPlayerId": "pl_74b42595",
+              "fingerprint": "c98c077a",
               "id": "p_-882756231_L8",
-              "sig": "51fe3c2a"
+              "sig": "c98c077a"
             }
           ],
           "bench": [
@@ -1545,11 +1379,9 @@
                 "power": 27,
                 "speed": 34
               },
-              "playerSeed": "JyUiWjpr9BSVzQ5z",
-              "fingerprint": "179c002b",
-              "globalPlayerId": "pl_c06c7109",
+              "fingerprint": "12d4afcf",
               "id": "p_-882756231_B0",
-              "sig": "179c002b"
+              "sig": "12d4afcf"
             },
             {
               "name": "Aaron Vega",
@@ -1561,11 +1393,9 @@
                 "power": 46,
                 "speed": 32
               },
-              "playerSeed": "IQeT4FFxu4__XmO3",
-              "fingerprint": "412eb2ec",
-              "globalPlayerId": "pl_18e73f50",
+              "fingerprint": "a9d4ee71",
               "id": "p_-882756231_B1",
-              "sig": "412eb2ec"
+              "sig": "a9d4ee71"
             },
             {
               "name": "Gary Jones",
@@ -1577,11 +1407,9 @@
                 "power": 47,
                 "speed": 50
               },
-              "playerSeed": "-JRz2T39xyWt2tmE",
-              "fingerprint": "f02be644",
-              "globalPlayerId": "pl_06577d18",
+              "fingerprint": "3c4f4f71",
               "id": "p_-882756231_B2",
-              "sig": "f02be644"
+              "sig": "3c4f4f71"
             },
             {
               "name": "Henry Davis",
@@ -1593,11 +1421,9 @@
                 "power": 34,
                 "speed": 47
               },
-              "playerSeed": "ipIrsiuRWzKfoOMj",
-              "fingerprint": "726ee3a4",
-              "globalPlayerId": "pl_e2507021",
+              "fingerprint": "03997878",
               "id": "p_-882756231_B3",
-              "sig": "726ee3a4"
+              "sig": "03997878"
             }
           ],
           "pitchers": [
@@ -1617,11 +1443,9 @@
                 "movement": 48
               },
               "pitchingRole": "SP",
-              "playerSeed": "XlAufzSzYqb4e0rN",
-              "fingerprint": "ed3f2b37",
-              "globalPlayerId": "pl_c877e073",
+              "fingerprint": "e9543525",
               "id": "p_-882756231_P0",
-              "sig": "ed3f2b37"
+              "sig": "e9543525"
             },
             {
               "name": "Wade Nash",
@@ -1639,11 +1463,9 @@
                 "movement": 28
               },
               "pitchingRole": "RP",
-              "playerSeed": "lVmgPDMOJTrFCvFE",
-              "fingerprint": "25bf276c",
-              "globalPlayerId": "pl_538e6f0d",
+              "fingerprint": "74fb4714",
               "id": "p_-882756231_P1",
-              "sig": "25bf276c"
+              "sig": "74fb4714"
             },
             {
               "name": "Henry Zavala",
@@ -1661,11 +1483,9 @@
                 "movement": 43
               },
               "pitchingRole": "RP",
-              "playerSeed": "EtYrCW4mMSHrr67L",
-              "fingerprint": "d82ce44c",
-              "globalPlayerId": "pl_c5d94ea3",
+              "fingerprint": "34bd17aa",
               "id": "p_-882756231_P2",
-              "sig": "d82ce44c"
+              "sig": "34bd17aa"
             },
             {
               "name": "Henry Reed",
@@ -1683,11 +1503,9 @@
                 "movement": 38
               },
               "pitchingRole": "SP/RP",
-              "playerSeed": "ZuCG5VVFVyoce7od",
-              "fingerprint": "22ebd567",
-              "globalPlayerId": "pl_04279751",
+              "fingerprint": "277a3ee3",
               "id": "p_-882756231_P3",
-              "sig": "22ebd567"
+              "sig": "277a3ee3"
             },
             {
               "name": "Xavier Nash",
@@ -1705,21 +1523,18 @@
                 "movement": 27
               },
               "pitchingRole": "RP",
-              "playerSeed": "qmPoFL8WddckRaCs",
-              "fingerprint": "eb297f35",
-              "globalPlayerId": "pl_b76ccef4",
+              "fingerprint": "b9d77510",
               "id": "p_-882756231_P4",
-              "sig": "eb297f35"
+              "sig": "b9d77510"
             }
           ]
         },
         "metadata": {
           "archived": false
         },
-        "teamSeed": "27UM7h_mywgA0ni7",
         "fingerprint": "e7e19a23"
       }
     ]
   },
-  "sig": "b281fab9"
+  "sig": "eb81aa8c"
 }

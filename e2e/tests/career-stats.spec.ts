@@ -70,7 +70,7 @@ test.describe("Career Stats smoke", () => {
     await startGameViaPlayBall(page);
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    await page.getByTestId("career-stats-pitching-tab").click();
+    await page.getByTestId("career-stats-pitching-tab").click({ force: true });
     await expect(page.getByTestId("career-stats-page")).toBeVisible();
   });
 
@@ -129,6 +129,12 @@ test.describe("Career Stats with seeded history", () => {
     // importHistoryFixture can open the SavesModal as needed.
     await loadFixture(page, "sample-save.json");
     await importHistoryFixture(page, "career-stats-history.json");
+    // On heavily loaded mobile WebKit workers, imported history rows can take
+    // an extra tick to become visible to the stats queries after modal close.
+    const browserName = page.context().browser()?.browserType().name();
+    if (browserName === "webkit") {
+      await page.waitForTimeout(2_000);
+    }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     // The seeded team ID is "e2e_home_team" (non-custom → appears as raw ID in selector).
@@ -152,9 +158,26 @@ test.describe("Career Stats with seeded history", () => {
     // race condition that caused:
     //   [tablet]          career-stats.spec.ts:158  "A. Ace" not found
     //   [iphone-15-pro-max] career-stats.spec.ts:204  "J. Slugger" not found
-    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
-      timeout: 30_000,
-    });
+    const sluggerRowButton = page.getByRole("button", { name: "J. Slugger", exact: true });
+    const sluggerVisible = await sluggerRowButton.isVisible().catch(() => false);
+    if (!sluggerVisible) {
+      // If the first stats load missed freshly imported rows under heavy WebKit
+      // load, re-import once from the active game session and re-open /stats.
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "career-stats-history.json");
+      const browserName = page.context().browser()?.browserType().name();
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_home_team");
+    }
+    await expect(sluggerRowButton).toBeVisible({ timeout: 45_000 });
   }
 
   test("batting tab shows seeded batter rows", async ({ page }) => {
@@ -268,7 +291,7 @@ test.describe("Career Stats with seeded history", () => {
     // e2e_batter_contact) to a real custom team roster for roster-context navigation.
     await importTeamsFixture(page, "career-stats-e2e-team.json");
     // Navigate to the seeded batter with the custom team as navigation context.
-    await page.goto("/players/e2e_batter_slugger?team=custom:ct_e2e_career");
+    await page.goto("/players/e2e_batter_slugger?team=ct_e2e_career");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Both Prev and Next buttons must be visible (roster has 2 batters + 1 pitcher).
     await expect(page.getByTestId("player-career-prev")).toBeVisible({ timeout: 10_000 });

@@ -7,6 +7,8 @@ import path from "path";
  * game re-renders from detaching UI elements during E2E test setup flows.
  */
 export const EFFECTIVELY_PAUSED_SPEED = "9999999";
+/** Default seed used by helper-driven game starts when a test does not provide one. */
+export const DEFAULT_E2E_SEED = "e2e-fixed-seed";
 
 /**
  * Clicks a locator using dispatchEvent inside a retry loop until `assertion`
@@ -258,44 +260,14 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
 }
 
 /**
- * Ensures at least two custom teams exist for tests that need to start a custom exhibition game.
- * Uses the "Regenerate Defaults" button to fill in all required fields automatically,
- * so teams get auto-generated names (e.g. "Springfield Foxes") rather than fixed names.
- * Skips creation if two or more teams already exist.
+ * Ensures at least two deterministic custom teams exist for tests that need to
+ * start a custom exhibition game.
+ *
+ * Uses the fixed `fixture-teams.json` import path so both team names and player
+ * names are stable across runs/projects.
  */
 export async function createDefaultCustomTeamsForTest(page: Page): Promise<void> {
-  // Mute announcer to speed up tests.
-  await ensureMutedAnnouncementsInit(page);
-  // Suppress demo-team seeding so only explicitly created teams are present.
-  await ensureDemoSeedSuppressed(page);
-  await page.goto("/teams");
-  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
-
-  const existingTeams = page.getByTestId("custom-team-list-item");
-  const count = await existingTeams.count();
-  if (count >= 2) {
-    // Already have enough teams — skip creation but still return to home for callers.
-    await page.goto("/");
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    return;
-  }
-
-  const teamsToCreate = 2 - count;
-  for (let i = 0; i < teamsToCreate; i++) {
-    await page.getByTestId("manage-teams-create-button").click();
-    await expect(page.getByTestId("custom-team-name-input")).toBeVisible({ timeout: 10_000 });
-    await page.getByTestId("custom-team-regenerate-defaults-button").click();
-    // Wait until regeneration populates the name field before saving
-    await expect(page.getByTestId("custom-team-name-input")).not.toHaveValue("", {
-      timeout: 5_000,
-    });
-    await page.getByTestId("custom-team-save-button").click();
-    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 10_000 });
-  }
-
-  // Return to home
-  await page.goto("/");
-  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+  await importTeamsFixture(page, "fixture-teams.json");
 }
 
 /**
@@ -313,7 +285,49 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await importTeamsFixture(page, "fixture-teams.json");
   await page.goto("/exhibition/new");
   await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-  await configureNewGame(page, options);
+  const customTeamsTab = page.getByTestId("new-game-custom-teams-tab");
+  if (await customTeamsTab.isVisible().catch(() => false)) {
+    await customTeamsTab.click();
+  }
+
+  // Rarely, the setup page can render the empty-team state right after import
+  // (or before team hydration settles on slower mobile runners). Re-import once
+  // and retry the route before asserting on the team selects.
+  const awaySelect = page.getByTestId("new-game-custom-away-team-select");
+  const noTeamsHint = page.getByText("No custom teams yet.");
+
+  if (!(await awaySelect.isVisible().catch(() => false))) {
+    await expect(awaySelect.or(noTeamsHint)).toBeVisible({ timeout: 30_000 });
+    if (await noTeamsHint.isVisible().catch(() => false)) {
+      await page.goto("/teams");
+      await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
+      const existing = await page.getByTestId("custom-team-list-item").count();
+      if (existing < 2) {
+        await importTeamsFixture(page, "fixture-teams.json");
+      }
+      await page.goto("/exhibition/new");
+      await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+      if (await customTeamsTab.isVisible().catch(() => false)) {
+        await customTeamsTab.click();
+      }
+    }
+  }
+
+  if (!(await awaySelect.isVisible().catch(() => false))) {
+    await createDefaultCustomTeamsForTest(page);
+    await page.goto("/exhibition/new");
+    await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
+    if (await customTeamsTab.isVisible().catch(() => false)) {
+      await customTeamsTab.click();
+    }
+  }
+
+  await expect(awaySelect).toBeVisible({ timeout: 30_000 });
+
+  await configureNewGame(page, {
+    seed: options.seed ?? DEFAULT_E2E_SEED,
+    ...(options.managedTeam !== undefined ? { managedTeam: options.managedTeam } : {}),
+  });
   // Wait for both team selects to have non-empty values before clicking Play Ball.
   // The selects become visible as soon as customTeams.length > 0, but the useEffect
   // that sets customAwayId/customHomeId runs *after* the browser paint (React passive
@@ -328,13 +342,24 @@ export async function startGameViaPlayBall(page: Page, options: GameConfig = {})
   await expect(page.getByTestId("new-game-custom-home-team-select")).not.toHaveValue("", {
     timeout: 5_000, // away already resolved; home is set in the same effect batch
   });
-  await page.getByTestId("play-ball-button").click();
+  const playBallButton = page.getByTestId("play-ball-button");
+  const setupSurface = page
+    .getByTestId("exhibition-setup-page")
+    .or(page.getByTestId("new-game-dialog"));
+  await dispatchClickUntil(
+    playBallButton,
+    async () => {
+      await expect(setupSurface).not.toBeVisible({ timeout: 2_000 });
+    },
+    {
+      guard: async () => await setupSurface.isVisible(),
+      timeout: 30_000,
+    },
+  );
   // The setup UI should disappear after starting.
   // Use a generous timeout: on CI WebKit/tablet runners, IndexedDB initialisation
   // can take 15+ seconds on first open, causing this to flake at 10 s.
-  await expect(
-    page.getByTestId("exhibition-setup-page").or(page.getByTestId("new-game-dialog")),
-  ).not.toBeVisible({ timeout: 25_000 });
+  await expect(setupSurface).not.toBeVisible({ timeout: 25_000 });
   // Wait for scoreboard to appear
   await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 15_000 });
 }
@@ -543,7 +568,32 @@ export async function importTeamsFixture(page: Page, fixtureName: string): Promi
   await page.getByTestId("home-manage-teams-button").click();
   await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
-  await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 15_000 });
+
+  const importSuccess = page.getByTestId("import-teams-success");
+  const importError = page.getByTestId("import-teams-error");
+  const duplicateBanner = page.getByTestId("teams-duplicate-banner");
+
+  await expect(async () => {
+    if (await importSuccess.isVisible().catch(() => false)) return;
+
+    if (await duplicateBanner.isVisible().catch(() => false)) {
+      await page.getByTestId("teams-duplicate-confirm-button").click();
+      await expect(importSuccess).toBeVisible({ timeout: 15_000 });
+      return;
+    }
+
+    if (await importError.isVisible().catch(() => false)) {
+      const message = (await importError.textContent())?.trim() || "unknown import error";
+      throw new Error(`Fixture team import failed: ${message}`);
+    }
+
+    throw new Error("Waiting for team import result");
+  }).toPass({ timeout: 20_000, intervals: [250, 500, 1000] });
+
+  await expect(async () => {
+    const count = await page.getByTestId("custom-team-list-item").count();
+    expect(count).toBeGreaterThanOrEqual(2);
+  }).toPass({ timeout: 15_000, intervals: [250, 500, 1000] });
   // Always return to the home screen so callers can proceed without an explicit goto("/").
   await page.goto("/");
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });

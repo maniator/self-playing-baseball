@@ -111,7 +111,7 @@ test.describe("Player Career page — no raw ID for bench players with no stats 
 
     // Navigate directly to the bench player's career page with the team context.
     // Team id: ct_e2e_career_bench, bench player globalPlayerId: e2e_bench_never_played
-    await page.goto("/players/e2e_bench_never_played?team=custom:ct_e2e_career_bench");
+    await page.goto("/players/e2e_bench_never_played?team=ct_e2e_career_bench");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
 
     // The page heading must show the real name "B. Benchwarmer", NOT the raw ID.

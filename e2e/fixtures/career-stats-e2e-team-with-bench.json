@@ -13,7 +13,6 @@
         "abbreviation": "EBT",
         "city": "E2E City",
         "source": "custom",
-        "teamSeed": "seed_e2e_bench_team",
         "fingerprint": "2c722fe2",
         "metadata": {
           "archived": false
@@ -32,10 +31,8 @@
               },
               "position": "CF",
               "handedness": "R",
-              "playerSeed": "seed_starter_1",
-              "fingerprint": "659e1a87",
-              "sig": "659e1a87",
-              "globalPlayerId": "e2e_starter_1"
+              "fingerprint": "17e1de7e",
+              "sig": "17e1de7e"
             }
           ],
           "bench": [
@@ -50,10 +47,8 @@
               },
               "position": "DH",
               "handedness": "R",
-              "playerSeed": "seed_bench_1",
-              "fingerprint": "ed18ee1e",
-              "sig": "ed18ee1e",
-              "globalPlayerId": "e2e_bench_never_played"
+              "fingerprint": "8a0a0a06",
+              "sig": "8a0a0a06"
             }
           ],
           "pitchers": [
@@ -73,15 +68,13 @@
               },
               "position": "SP",
               "handedness": "R",
-              "playerSeed": "seed_pitcher_bt",
-              "fingerprint": "8571d358",
-              "sig": "8571d358",
-              "globalPlayerId": "e2e_pitcher_bench_test"
+              "fingerprint": "81ac1b20",
+              "sig": "81ac1b20"
             }
           ]
         }
       }
     ]
   },
-  "sig": "c9c2552b"
+  "sig": "84be2afe"
 }

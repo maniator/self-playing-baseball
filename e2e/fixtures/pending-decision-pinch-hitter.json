@@ -4,8 +4,8 @@
     "id": "save_pinch_hitter_visual_fixture",
     "name": "Pinch Hitter Decision",
     "seed": "ph-visual-01",
-    "homeTeamId": "custom:ct_vis_locals",
-    "awayTeamId": "custom:ct_vis_visitors",
+    "homeTeamId": "ct_vis_locals",
+    "awayTeamId": "ct_vis_visitors",
     "createdAt": 1700002000000,
     "updatedAt": 1700002000000,
     "progressIdx": 42,
@@ -293,5 +293,5 @@
     }
   },
   "events": [],
-  "sig": "6528c86e"
+  "sig": "ab162ef8"
 }

@@ -19,13 +19,13 @@ test.describe("Import Save — missing custom team rejection", () => {
 
     // Build a valid signed save JSON with a custom homeTeamId
     const saveDoc = {
-      id: `save_${Date.now()}_e2etest`,
+      id: "save_e2e_missing_team",
       name: "E2E Missing Team Test",
       seed: "abc123",
       homeTeamId: "ct_missing123",
       awayTeamId: "ct_missing_away456",
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
+      createdAt: 1700000000000,
+      updatedAt: 1700000000000,
       progressIdx: -1,
       setup: {
         strategy: "balanced",
