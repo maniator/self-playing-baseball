@@ -8,7 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock RxDB getDb so no real DB is needed.
 vi.mock("@storage/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    playerGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+    batterGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
     pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
   }),
 }));
@@ -58,30 +58,30 @@ vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import CareerStatsPage from "./index";
 
 /**
- * Creates a minimal valid CustomTeamDoc for test mocks.
+ * Creates a minimal valid TeamWithRoster for test mocks.
  * All required fields are filled with safe defaults.
  */
 function makeTeamDoc(
   id: string,
   name: string,
   opts: { city?: string; abbreviation?: string } = {},
-): CustomTeamDoc {
+): TeamWithRoster {
+  // FIXME(cleanup): Cast needed because test uses legacy TeamWithRoster shape (source/roster).
   return {
     id,
     name,
     schemaVersion: 4,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
-    source: "custom",
     roster: { lineup: [], bench: [], pitchers: [] },
     metadata: { notes: "", tags: [], archived: false },
     ...opts,
-  } as CustomTeamDoc;
+  } as unknown as TeamWithRoster;
 }
 
 function renderPage() {
@@ -238,6 +238,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 5,
         saves: 1,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
     ]);
@@ -306,7 +307,7 @@ describe("CareerStatsPage", () => {
     const { getDb } = await import("@storage/db");
     // Return a DB with one batting row from a non-custom team.
     vi.mocked(getDb).mockResolvedValue({
-      playerGameStats: {
+      batterGameStats: {
         find: vi.fn(() => ({
           exec: vi.fn().mockResolvedValue([{ toJSON: () => ({ teamId: "Yankees" }) }]),
         })),
@@ -353,6 +354,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 0,
         saves: 0,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
     ]);
@@ -413,8 +415,8 @@ describe("CareerStatsPage", () => {
     });
 
     // Change the selection to the second team — fires the onChange handler.
-    await user.selectOptions(select, "custom:team2");
-    expect((select as HTMLSelectElement).value).toBe("custom:team2");
+    await user.selectOptions(select, "team2");
+    expect((select as HTMLSelectElement).value).toBe("team2");
   });
 
   it("clicking a player row in pitching table navigates to player page", async () => {
@@ -443,6 +445,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 1,
         saves: 0,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
     ]);
@@ -541,6 +544,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 2,
         saves: 8,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 2,
       },
       {
@@ -557,6 +561,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 11,
         saves: 0,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
     ]);
@@ -586,7 +591,7 @@ describe("CareerStatsPage", () => {
     // not persistent mockResolvedValue implementations).
     const { getDb } = await import("@storage/db");
     vi.mocked(getDb).mockResolvedValue({
-      playerGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+      batterGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
       pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
     } as any);
     renderPage();
@@ -711,7 +716,7 @@ describe("CareerStatsPage", () => {
 
     await user.click(screen.getByTestId("hr-leader-card"));
     // playerKey and teamId must be encoded (colons become %3A)
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_hr?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_hr?team=team1");
   });
 
   it("renders AVG leader card and clicking it navigates with URL-encoded key", async () => {
@@ -742,7 +747,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("avg-leader-card")).toHaveTextContent(".345");
 
     await user.click(screen.getByTestId("avg-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_avg?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_avg?team=team1");
   });
 
   it("renders RBI leader card and clicking it navigates", async () => {
@@ -771,7 +776,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("rbi-leader-card")).toHaveTextContent("RBI Boss");
 
     await user.click(screen.getByTestId("rbi-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_rbi?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_rbi?team=team1");
   });
 
   it("renders ERA leader card and clicking it navigates with URL-encoded pitcherKey", async () => {
@@ -801,7 +806,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("era-leader-card")).toHaveTextContent("2.25");
 
     await user.click(screen.getByTestId("era-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_era?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_era?team=team1");
   });
 
   it("renders SV leader card and clicking it navigates", async () => {
@@ -830,7 +835,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("saves-leader-card")).toHaveTextContent("Save King");
 
     await user.click(screen.getByTestId("saves-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_sv?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_sv?team=team1");
   });
 
   it("renders K (strikeouts) leader card and clicking it navigates", async () => {
@@ -859,7 +864,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("k-leader-card")).toHaveTextContent("K Machine");
 
     await user.click(screen.getByTestId("k-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=custom%3Ateam1");
+    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=team1");
   });
 
   it("renders TeamSummarySection even when gamesPlayed is 0", async () => {
@@ -988,6 +993,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 3,
         saves: 0,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
       {
@@ -1004,6 +1010,7 @@ describe("CareerStatsPage", () => {
         earnedRuns: 14,
         saves: 0,
         holds: 0,
+        pitchesThrown: 0,
         blownSaves: 0,
       },
     ]);

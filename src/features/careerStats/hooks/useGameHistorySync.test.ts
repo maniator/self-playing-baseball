@@ -50,13 +50,13 @@ describe("useGameHistorySync", () => {
 
     it("does NOT commit when gameOver is false", () => {
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: false }));
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
       expect(GameHistoryStore.commitCompletedGame).not.toHaveBeenCalled();
     });
 
     it("commits once when gameOver is true", async () => {
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
-      const { rerender } = renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      const { rerender } = renderHook(() => useGameHistorySync(makeRef("save_1"), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -74,7 +74,7 @@ describe("useGameHistorySync", () => {
       vi.mocked(useGameContext).mockReturnValue(
         makeContextValue({ gameOver: true, gameInstanceId: "game_abc" }),
       );
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -89,7 +89,7 @@ describe("useGameHistorySync", () => {
     it("does NOT commit a second time on re-render", async () => {
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
       const ref = makeRef("save_1");
-      const { rerender } = renderHook(() => useGameHistorySync(ref, false, []));
+      const { rerender } = renderHook(() => useGameHistorySync(ref, false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -119,7 +119,7 @@ describe("useGameHistorySync", () => {
       vi.mocked(useGameContext).mockReturnValue(
         makeContextValue({ gameOver: true, playLog, strikeoutLog }),
       );
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -144,7 +144,7 @@ describe("useGameHistorySync", () => {
         },
       ];
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true, playLog }));
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -159,7 +159,7 @@ describe("useGameHistorySync", () => {
     it("does NOT commit when wasAlreadyFinalOnLoad is true", async () => {
       vi.mocked(GameHistoryStore.commitCompletedGame).mockResolvedValue(undefined);
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
-      renderHook(() => useGameHistorySync(makeRef("save_1"), true, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), true));
       await act(async () => {
         await Promise.resolve();
       });
@@ -171,7 +171,7 @@ describe("useGameHistorySync", () => {
     it("does NOT commit when rxSaveIdRef.current is null AND state has no gameInstanceId", async () => {
       vi.mocked(GameHistoryStore.commitCompletedGame).mockResolvedValue(undefined);
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
-      renderHook(() => useGameHistorySync(makeRef(null), false, []));
+      renderHook(() => useGameHistorySync(makeRef(null), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -186,7 +186,7 @@ describe("useGameHistorySync", () => {
       vi.mocked(useGameContext).mockReturnValue(
         makeContextValue({ gameOver: true, gameInstanceId: "game_instant_race" }),
       );
-      renderHook(() => useGameHistorySync(makeRef(null), false, []));
+      renderHook(() => useGameHistorySync(makeRef(null), false));
       await act(async () => {
         await Promise.resolve();
       });
@@ -206,7 +206,7 @@ describe("useGameHistorySync", () => {
       vi.mocked(GameHistoryStore.commitCompletedGame).mockRejectedValue(error);
       vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true }));
 
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false, []));
+      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
 
       // waitFor polls until the assertion passes, making the test resilient to React's
       // async render scheduling across 4 render cycles (initial + 3 retries = 4 total).

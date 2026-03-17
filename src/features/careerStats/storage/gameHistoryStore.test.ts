@@ -5,7 +5,11 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "@storage/db";
 import { fnv1a } from "@storage/hash";
-import type { GameDoc, PitcherGameStatDoc, PlayerGameStatDoc } from "@storage/types";
+import type {
+  BatterGameStatRecord,
+  CompletedGameRecord,
+  PitcherGameStatRecord,
+} from "@storage/types";
 
 import { GAME_HISTORY_EXPORT_KEY, makeGameHistoryStore } from "./gameHistoryStore";
 
@@ -21,7 +25,7 @@ afterEach(async () => {
   await db.close();
 });
 
-const gameMeta: Omit<GameDoc, "id" | "schemaVersion"> = {
+const gameMeta: Omit<CompletedGameRecord, "id" | "schemaVersion"> = {
   playedAt: Date.now(),
   seed: "abc123",
   rngState: 42,
@@ -35,7 +39,7 @@ const gameMeta: Omit<GameDoc, "id" | "schemaVersion"> = {
 const makeStatRow = (
   gameId: string,
   playerId: string,
-): Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> => ({
+): Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> => ({
   gameId,
   teamId: "Yankees",
   opponentTeamId: "Mets",
@@ -57,16 +61,16 @@ const makeStatRow = (
 });
 
 describe("GameHistoryStore.commitCompletedGame", () => {
-  it("writes a GameDoc and stat rows on first call", async () => {
+  it("writes a CompletedGameRecord and stat rows on first call", async () => {
     await store.commitCompletedGame("game_001", gameMeta, [makeStatRow("game_001", "p1")]);
 
-    const game = await db.games.findOne("game_001").exec();
+    const game = await db.completedGames.findOne("game_001").exec();
     expect(game).not.toBeNull();
     expect(game?.homeScore).toBe(5);
     expect(game?.awayScore).toBe(3);
     expect(game?.innings).toBe(9);
 
-    const stat = await db.playerGameStats.findOne("game_001:Yankees:Yankees:p1").exec();
+    const stat = await db.batterGameStats.findOne("game_001:Yankees:Yankees:p1").exec();
     expect(stat).not.toBeNull();
     expect(stat?.batting.hits).toBe(2);
   });
@@ -76,10 +80,10 @@ describe("GameHistoryStore.commitCompletedGame", () => {
     // Second call with same gameId should be a no-op
     await store.commitCompletedGame("game_002", gameMeta, [makeStatRow("game_002", "p1")]);
 
-    const games = await db.games.find().exec();
+    const games = await db.completedGames.find().exec();
     expect(games.length).toBe(1);
 
-    const stats = await db.playerGameStats.find().exec();
+    const stats = await db.batterGameStats.find().exec();
     expect(stats.length).toBe(1);
   });
 
@@ -87,15 +91,15 @@ describe("GameHistoryStore.commitCompletedGame", () => {
     await store.commitCompletedGame("game_003a", gameMeta, [makeStatRow("game_003a", "p1")]);
     await store.commitCompletedGame("game_003b", gameMeta, [makeStatRow("game_003b", "p1")]);
 
-    const games = await db.games.find().exec();
+    const games = await db.completedGames.find().exec();
     expect(games.length).toBe(2);
   });
 
   it("handles zero stat rows gracefully", async () => {
     await store.commitCompletedGame("game_004", gameMeta, []);
-    const game = await db.games.findOne("game_004").exec();
+    const game = await db.completedGames.findOne("game_004").exec();
     expect(game).not.toBeNull();
-    const stats = await db.playerGameStats.find().exec();
+    const stats = await db.batterGameStats.find().exec();
     expect(stats.length).toBe(0);
   });
 });
@@ -126,7 +130,7 @@ describe("GameHistoryStore.getCareerStats", () => {
 describe("GameHistoryStore export/import", () => {
   it("round-trips batting sacFlies through export/import", async () => {
     const gameId = "game_sacfly_roundtrip";
-    const statRow: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const statRow: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "sf1"),
       batting: {
         ...makeStatRow(gameId, "sf1").batting,
@@ -142,7 +146,7 @@ describe("GameHistoryStore export/import", () => {
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
     await store2.importGameHistory(json, new Set(["Yankees", "Mets"]));
 
-    const stats = await db2.playerGameStats.find().exec();
+    const stats = await db2.batterGameStats.find().exec();
     expect(stats).toHaveLength(1);
     expect(stats[0].batting.sacFlies).toBe(2);
     expect(stats[0].batting.rbi).toBe(3);
@@ -152,7 +156,7 @@ describe("GameHistoryStore export/import", () => {
 
   it("imports legacy stats without sacFlies without error", async () => {
     // Simulate a bundle produced before sacFlies was added — batting has no sacFlies field.
-    const gameDoc: GameDoc = {
+    const gameDoc: CompletedGameRecord = {
       id: "game_legacy_sf",
       playedAt: Date.now(),
       seed: "legacy",
@@ -164,7 +168,7 @@ describe("GameHistoryStore export/import", () => {
       innings: 9,
       schemaVersion: 1,
     };
-    const legacyStat: PlayerGameStatDoc = {
+    const legacyStat: BatterGameStatRecord = {
       id: "game_legacy_sf:Yankees:Yankees:lp1",
       gameId: "game_legacy_sf",
       teamId: "Yankees",
@@ -207,7 +211,7 @@ describe("GameHistoryStore export/import", () => {
     const result = await store2.importGameHistory(bundle, new Set(["Yankees", "Mets"]));
     expect(result.statsCreated).toBe(1);
 
-    const stats = await db2.playerGameStats.find().exec();
+    const stats = await db2.batterGameStats.find().exec();
     // sacFlies may be undefined — callers must use ?? 0.
     expect(stats[0].batting.sacFlies ?? 0).toBe(0);
 
@@ -236,7 +240,7 @@ describe("GameHistoryStore export/import", () => {
 
   it("imports new games from bundle", async () => {
     // Build a bundle manually
-    const gameDoc: GameDoc = {
+    const gameDoc: CompletedGameRecord = {
       id: "game_import_1",
       playedAt: Date.now(),
       seed: "xyz",
@@ -266,7 +270,7 @@ describe("GameHistoryStore export/import", () => {
     expect(result.gamesCreated).toBe(1);
     expect(result.gamesSkipped).toBe(0);
 
-    const game = await db.games.findOne("game_import_1").exec();
+    const game = await db.completedGames.findOne("game_import_1").exec();
     expect(game).not.toBeNull();
   });
 
@@ -324,7 +328,7 @@ describe("GameHistoryStore export/import", () => {
 });
 
 describe("GameHistoryStore — gameInstanceId deduplication across save slots", () => {
-  it("finishing the same game from two different save slots writes only one GameDoc", async () => {
+  it("finishing the same game from two different save slots writes only one CompletedGameRecord", async () => {
     // Two save slots (saveA, saveB) represent mid-game snapshots of the SAME game run.
     // Both carry the same gameInstanceId.
     const sharedGameInstanceId = "game_instance_shared";
@@ -345,11 +349,11 @@ describe("GameHistoryStore — gameInstanceId deduplication across save slots", 
       [makeStatRow(sharedGameInstanceId, "p1")],
     );
 
-    const allGames = await db.games.find().exec();
+    const allGames = await db.completedGames.find().exec();
     expect(allGames.length).toBe(1);
     expect(allGames[0].committedBySaveId).toBe(saveIdA); // first commit wins
 
-    const allStats = await db.playerGameStats.find().exec();
+    const allStats = await db.batterGameStats.find().exec();
     expect(allStats.length).toBe(1); // no duplicate stat row
 
     // Career totals should reflect exactly one game's worth of stats.
@@ -366,8 +370,8 @@ describe("GameHistoryStore — gameInstanceId deduplication across save slots", 
 const makePitcherRow = (
   gameId: string,
   pitcherId: string,
-  overrides: Partial<Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt">> = {},
-): Omit<PitcherGameStatDoc, "id" | "schemaVersion" | "createdAt"> => ({
+  overrides: Partial<Omit<PitcherGameStatRecord, "id" | "schemaVersion" | "createdAt">> = {},
+): Omit<PitcherGameStatRecord, "id" | "schemaVersion" | "createdAt"> => ({
   gameId,
   teamId: "Yankees",
   opponentTeamId: "Mets",
@@ -376,6 +380,7 @@ const makePitcherRow = (
   nameAtGameTime: "Test Pitcher",
   outsPitched: 9,
   battersFaced: 12,
+  pitchesThrown: 30,
   hitsAllowed: 3,
   walksAllowed: 1,
   strikeoutsRecorded: 5,
@@ -647,7 +652,7 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
     const db2 = await _createTestDb(getRxStorageMemory());
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
 
-    const result = await store2.importGameHistory(json, new Set());
+    const result = await store2.importGameHistory(json, new Set(["Yankees", "Mets"]));
     expect(result.pitcherStatsCreated).toBe(1);
     expect(result.pitcherStatsSkipped).toBe(0);
 
@@ -665,8 +670,9 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
     const db2 = await _createTestDb(getRxStorageMemory());
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
 
-    const result1 = await store2.importGameHistory(json, new Set());
-    const result2 = await store2.importGameHistory(json, new Set());
+    const existingTeamIds = new Set(["Yankees", "Mets"]);
+    const result1 = await store2.importGameHistory(json, existingTeamIds);
+    const result2 = await store2.importGameHistory(json, existingTeamIds);
 
     expect(result1.pitcherStatsCreated).toBe(1);
     expect(result2.pitcherStatsCreated).toBe(0); // skipped on second import
@@ -976,12 +982,12 @@ describe("getTeamBattingLeaders", () => {
 
   it("identifies HR leader correctly", async () => {
     const gameId = "leads_hr";
-    const row1: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const row1: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b1"),
       nameAtGameTime: "Homer King",
       batting: { ...makeStatRow(gameId, "b1").batting, homers: 3, rbi: 3 },
     };
-    const row2: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const row2: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b2"),
       playerKey: "Yankees:b2",
       nameAtGameTime: "Single Steve",
@@ -997,13 +1003,13 @@ describe("getTeamBattingLeaders", () => {
   it("excludes AVG leader below minimum AB threshold", async () => {
     const gameId = "leads_avg";
     // p1 has 19 AB (below threshold of 20), high avg
-    const highAvgLowAb: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const highAvgLowAb: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b1"),
       nameAtGameTime: "High AVG",
       batting: { ...makeStatRow(gameId, "b1").batting, atBats: 19, hits: 18 },
     };
     // p2 has 25 AB (above threshold), lower avg
-    const qualifiedPlayer: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const qualifiedPlayer: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b2"),
       playerKey: "Yankees:b2",
       nameAtGameTime: "Qualified",
@@ -1018,7 +1024,7 @@ describe("getTeamBattingLeaders", () => {
 
   it("returns null avgLeader when no player meets AB threshold", async () => {
     const gameId = "leads_avg_none";
-    const row: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const row: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b1"),
       batting: { ...makeStatRow(gameId, "b1").batting, atBats: 5, hits: 3 },
     };
@@ -1032,19 +1038,19 @@ describe("getTeamBattingLeaders", () => {
     // Two players both have 2 HR; p2 has more games played
     const g1 = "leads_tie1";
     const g2 = "leads_tie2";
-    const rowAliceG1: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const rowAliceG1: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g1, "alice"),
       playerKey: "Yankees:alice",
       nameAtGameTime: "Alice",
       batting: { ...makeStatRow(g1, "alice").batting, homers: 2 },
     };
-    const rowBobG1: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const rowBobG1: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g1, "bob"),
       playerKey: "Yankees:bob",
       nameAtGameTime: "Bob",
       batting: { ...makeStatRow(g1, "bob").batting, homers: 2 },
     };
-    const rowAliceG2: Omit<PlayerGameStatDoc, "id" | "schemaVersion" | "createdAt"> = {
+    const rowAliceG2: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g2, "alice"),
       playerKey: "Yankees:alice",
       nameAtGameTime: "Alice",

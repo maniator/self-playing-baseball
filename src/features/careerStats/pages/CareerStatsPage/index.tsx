@@ -19,9 +19,9 @@ import { useNavigate } from "react-router";
 
 import { getDb } from "@storage/db";
 import type {
+  BatterGameStatRecord,
   BattingLeader,
   PitchingLeader,
-  PlayerGameStatDoc,
   TeamCareerSummary,
 } from "@storage/types";
 
@@ -60,7 +60,7 @@ function formatOutsAsIP(outs: number): string {
   return formatIP(outs);
 }
 
-type BattingRow = PlayerGameStatDoc["batting"] & {
+type BattingRow = BatterGameStatRecord["batting"] & {
   playerKey: string;
   nameAtGameTime: string;
   gamesPlayed: number;
@@ -292,7 +292,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
   // Build the full list of selectable team IDs:
   // union of custom teams + any team IDs found in game history.
   const selectableTeamIds = React.useMemo<string[]>(() => {
-    const customIds = customTeams.map((t) => `custom:${t.id}`);
+    const customIds = customTeams.map((t) => t.id);
     const union = new Set([...customIds, ...teamsWithHistory]);
     return Array.from(union);
   }, [customTeams, teamsWithHistory]);
@@ -304,7 +304,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
       try {
         const db = await getDb();
         const [batting, pitching] = await Promise.all([
-          db.playerGameStats.find().exec(),
+          db.batterGameStats.find().exec(),
           db.pitcherGameStats.find().exec(),
         ]);
         if (cancelled) return;

@@ -9,6 +9,10 @@ vi.mock("@shared/hooks/useCustomTeams", () => ({
   useCustomTeams: vi.fn(() => ({ teams: [], loading: false })),
 }));
 
+vi.mock("@shared/hooks/useTeamWithRoster", () => ({
+  useTeamWithRoster: vi.fn(() => null),
+}));
+
 const mockNavigate = vi.fn();
 vi.mock("react-router", async (importOriginal) => {
   const mod = await importOriginal<typeof import("react-router")>();
@@ -26,6 +30,7 @@ vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
 }));
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 
 import PlayerCareerPage from "./index";
 
@@ -78,6 +83,7 @@ function makePitchingRow(overrides = {}) {
     saves: 1,
     holds: 0,
     blownSaves: 0,
+    pitchesThrown: 0,
     createdAt: NOW,
     schemaVersion: 1,
     ...overrides,
@@ -101,6 +107,7 @@ describe("PlayerCareerPage", () => {
     vi.clearAllMocks();
     vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
+    vi.mocked(useTeamWithRoster).mockReturnValue(null);
   });
 
   it("renders the player career page", async () => {
@@ -257,52 +264,39 @@ describe("PlayerCareerPage", () => {
   });
 
   it("shows Prev/Next buttons when ?team= param matches a known custom team", async () => {
-    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
-    vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "ct_1",
-          name: "Aces",
-          abbreviation: "ACE",
-          city: "Springfield",
-          schemaVersion: 4,
-          createdAt: "2024-01-01T00:00:00.000Z",
-          updatedAt: "2024-01-01T00:00:00.000Z",
-          source: "custom" as const,
-          roster: {
-            lineup: [
-              {
-                id: "plyr_1",
-                globalPlayerId: "plyr_1",
-                name: "First Batter",
-                role: "batter" as const,
-                batting: { contact: 50, power: 50, speed: 50 },
-                pitching: { control: 50, velocity: 50, stamina: 50 },
-              },
-              {
-                id: "plyr_2",
-                globalPlayerId: "plyr_2",
-                name: "Second Batter",
-                role: "batter" as const,
-                batting: { contact: 50, power: 50, speed: 50 },
-                pitching: { control: 50, velocity: 50, stamina: 50 },
-              },
-            ],
-            bench: [],
-            pitchers: [],
+    const teamDoc = {
+      id: "ct_1",
+      name: "Aces",
+      abbreviation: "ACE",
+      city: "Springfield",
+      schemaVersion: 4,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "plyr_1",
+            name: "First Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
           },
-          metadata: { notes: "", tags: [], archived: false },
-        },
-      ],
-      loading: false,
-      createTeam: vi.fn(),
-      updateTeam: vi.fn(),
-      deleteTeam: vi.fn(),
-      refresh: vi.fn(),
-    });
+          {
+            id: "plyr_2",
+            name: "Second Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { notes: "", tags: [], archived: false },
+    };
+    vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
 
     render(
-      <MemoryRouter initialEntries={["/players/plyr_1?team=custom:ct_1"]}>
+      <MemoryRouter initialEntries={["/players/plyr_1?team=ct_1"]}>
         <Routes>
           <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
         </Routes>
@@ -321,52 +315,39 @@ describe("PlayerCareerPage", () => {
 
   it("clicking Next navigates to the next player in the roster", async () => {
     const user = userEvent.setup();
-    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
-    vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "ct_1",
-          name: "Aces",
-          abbreviation: "ACE",
-          city: "Springfield",
-          schemaVersion: 4,
-          createdAt: "2024-01-01T00:00:00.000Z",
-          updatedAt: "2024-01-01T00:00:00.000Z",
-          source: "custom" as const,
-          roster: {
-            lineup: [
-              {
-                id: "plyr_1",
-                globalPlayerId: "plyr_1",
-                name: "First Batter",
-                role: "batter" as const,
-                batting: { contact: 50, power: 50, speed: 50 },
-                pitching: { control: 50, velocity: 50, stamina: 50 },
-              },
-              {
-                id: "plyr_2",
-                globalPlayerId: "plyr_2",
-                name: "Second Batter",
-                role: "batter" as const,
-                batting: { contact: 50, power: 50, speed: 50 },
-                pitching: { control: 50, velocity: 50, stamina: 50 },
-              },
-            ],
-            bench: [],
-            pitchers: [],
+    const teamDoc = {
+      id: "ct_1",
+      name: "Aces",
+      abbreviation: "ACE",
+      city: "Springfield",
+      schemaVersion: 4,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "plyr_1",
+            name: "First Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
           },
-          metadata: { notes: "", tags: [], archived: false },
-        },
-      ],
-      loading: false,
-      createTeam: vi.fn(),
-      updateTeam: vi.fn(),
-      deleteTeam: vi.fn(),
-      refresh: vi.fn(),
-    });
+          {
+            id: "plyr_2",
+            name: "Second Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { notes: "", tags: [], archived: false },
+    };
+    vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
 
     render(
-      <MemoryRouter initialEntries={["/players/plyr_1?team=custom:ct_1"]}>
+      <MemoryRouter initialEntries={["/players/plyr_1?team=ct_1"]}>
         <Routes>
           <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
         </Routes>
@@ -440,51 +421,40 @@ describe("PlayerCareerPage", () => {
     });
   });
 
-  // ── Bug regression: player name must not show raw globalPlayerId ─────────────
+  // ── Bug regression: player name must not show raw player ID ─────────────
 
   it("shows player name from roster when player has no game stats (Bug 1 regression)", async () => {
-    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
-    vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [
-        {
-          id: "ct_bench",
-          name: "Rovers",
-          abbreviation: "ROV",
-          city: "Austin",
-          schemaVersion: 4,
-          createdAt: "2024-01-01T00:00:00.000Z",
-          updatedAt: "2024-01-01T00:00:00.000Z",
-          source: "custom" as const,
-          roster: {
-            lineup: [],
-            bench: [
-              {
-                id: "bench_1",
-                globalPlayerId: "pl_d29e3bad",
-                name: "Sandy Rivera",
-                role: "batter" as const,
-                batting: { contact: 40, power: 40, speed: 40 },
-                pitching: { control: 40, velocity: 40, stamina: 40 },
-              },
-            ],
-            pitchers: [],
+    const teamDoc = {
+      id: "ct_bench",
+      name: "Rovers",
+      abbreviation: "ROV",
+      city: "Austin",
+      schemaVersion: 4,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      roster: {
+        schemaVersion: 1,
+        lineup: [],
+        bench: [
+          {
+            id: "pl_d29e3bad",
+            name: "Sandy Rivera",
+            role: "batter" as const,
+            batting: { contact: 40, power: 40, speed: 40 },
           },
-          metadata: { notes: "", tags: [], archived: false },
-        },
-      ],
-      loading: false,
-      createTeam: vi.fn(),
-      updateTeam: vi.fn(),
-      deleteTeam: vi.fn(),
-      refresh: vi.fn(),
-    });
+        ],
+        pitchers: [],
+      },
+      metadata: { notes: "", tags: [], archived: false },
+    };
+    vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
 
     // No batting or pitching history — player never appeared in a game.
     vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={["/players/pl_d29e3bad?team=custom:ct_bench"]}>
+      <MemoryRouter initialEntries={["/players/pl_d29e3bad?team=ct_bench"]}>
         <Routes>
           <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
         </Routes>
@@ -492,7 +462,7 @@ describe("PlayerCareerPage", () => {
     );
 
     await waitFor(() => {
-      // Should show the real name from the roster, NOT the raw globalPlayerId.
+      // Should show the real name from the roster, NOT the raw player ID.
       expect(screen.getByText("Sandy Rivera")).toBeInTheDocument();
       // The raw ID must NOT appear as the heading.
       expect(screen.queryByText("pl_d29e3bad")).toBeNull();
@@ -500,21 +470,12 @@ describe("PlayerCareerPage", () => {
   });
 
   it("shows 'Unknown Player' when player has no stats and is not found in any roster", async () => {
-    // No custom teams loaded — player is completely unknown.
-    const { useCustomTeams } = await import("@shared/hooks/useCustomTeams");
-    vi.mocked(useCustomTeams).mockReturnValue({
-      teams: [],
-      loading: false,
-      createTeam: vi.fn(),
-      updateTeam: vi.fn(),
-      deleteTeam: vi.fn(),
-      refresh: vi.fn(),
-    });
+    // No teams — useTeamWithRoster returns null (default mock).
     vi.mocked(GameHistoryStore.getPlayerCareerBatting).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={["/players/pl_totally_unknown?team=custom:ct_none"]}>
+      <MemoryRouter initialEntries={["/players/pl_totally_unknown?team=ct_none"]}>
         <Routes>
           <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
         </Routes>
