@@ -31,7 +31,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 // ── Fixture loading ────────────────────────────────────────────────────────
 
@@ -122,8 +122,8 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
       teams: [`custom:${awayTeam.id}`, `custom:${homeTeam.id}`],
       teamLabels: [awayTeam.name, homeTeam.name],
       playerOverrides: [
-        customTeamToPlayerOverrides(awayTeam as unknown as CustomTeamDoc),
-        customTeamToPlayerOverrides(homeTeam as unknown as CustomTeamDoc),
+        customTeamToPlayerOverrides(awayTeam as unknown as TeamWithRoster),
+        customTeamToPlayerOverrides(homeTeam as unknown as TeamWithRoster),
       ] as [Record<string, Record<string, number>>, Record<string, Record<string, number>>],
       lineupOrder: [
         awayTeam.roster.lineup.map((p) => p.id),
