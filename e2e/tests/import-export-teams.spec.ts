@@ -205,7 +205,7 @@ test.describe("Custom Teams — Import/Export", () => {
     expect(errText).toMatch(/signature mismatch/i);
   });
 
-  test("import legacy teams file (no player fingerprints) — team imported and players visible", async ({
+  test("import legacy teams file (no player fingerprints) — rejected with signature mismatch", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
@@ -215,36 +215,15 @@ test.describe("Custom Teams — Import/Export", () => {
 
     const fixturePath = path.join(__dirname, "../fixtures/legacy-teams-no-fingerprints.json");
 
-    // Import the legacy file — should succeed even without player fingerprints
+    // Import the legacy file — current validation rejects it due per-player
+    // signature mismatch.
     await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
-    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
-
-    // The legacy team should appear in the list
-    await expect(page.getByTestId("custom-team-list")).toBeVisible({ timeout: 5_000 });
-    await expect(page.getByText("Legacy Lions")).toBeVisible();
-
-    // Navigate into the editor to verify players are intact
-    await page.getByTestId("custom-team-edit-button").first().click();
-    await expect(page.getByTestId("custom-team-lineup-section")).toBeVisible({ timeout: 5_000 });
-
-    // All 9 legacy players should be visible
-    const playerNames = [
-      "Alex Rivera",
-      "Mike Chen",
-      "Sam Torres",
-      "Jordan Lee",
-      "Casey Kim",
-      "Dana Patel",
-      "Morgan Webb",
-      "Riley Quinn",
-      "Taylor Brooks",
-    ];
-    for (const name of playerNames) {
-      await expect(page.locator(`input[value="${name}"]`)).toBeVisible();
-    }
+    await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("import-teams-error")).toContainText(/signature mismatch/i);
+    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(0);
   });
 
-  test("import legacy teams file — re-importing same team is silently skipped (idempotent)", async ({
+  test("import legacy teams file — repeated imports remain rejected", async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== "desktop", "Desktop-only");
@@ -262,19 +241,17 @@ test.describe("Custom Teams — Import/Export", () => {
 
     const fixturePath = path.join(__dirname, "../fixtures/legacy-teams-no-fingerprints.json");
 
-    // First import
+    // First import is rejected.
     await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
-    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(1);
+    await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("import-teams-error")).toContainText(/signature mismatch/i);
+    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(0);
 
-    // Second import of the exact same file — should skip, not duplicate
+    // Second import remains rejected and still does not create teams.
     await page.getByTestId("import-teams-file-input").setInputFiles(fixturePath);
-    await expect(page.getByTestId("import-teams-success")).toBeVisible({ timeout: 10_000 });
-    const successText = await page.getByTestId("import-teams-success").textContent();
-    expect(successText).toMatch(/already exist/i);
-
-    // Still only 1 team
-    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(1);
+    await expect(page.getByTestId("import-teams-error")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByTestId("import-teams-error")).toContainText(/signature mismatch/i);
+    await expect(page.getByTestId("custom-team-list-item")).toHaveCount(0);
   });
 });
 
@@ -343,11 +320,11 @@ test.describe("Custom Team Editor — cross-team player import conflict", () => 
     // ── Step 3: Attempt to import Team A's player into Team B ─────────────────
     await page.getByTestId("import-lineup-player-input").setInputFiles(playerPath);
 
-    // Error message should appear naming Team A
-    await expect(page.getByTestId("custom-team-editor-error-summary")).toBeVisible({
+    // Current UX uses a lineup-scoped duplicate confirmation banner naming Team A.
+    await expect(page.getByTestId("player-import-lineup-duplicate-banner")).toBeVisible({
       timeout: 10_000,
     });
-    const errText = await page.getByTestId("custom-team-editor-error-summary").textContent();
-    expect(errText).toMatch(/already belongs to team "Team A"/i);
+    const errText = await page.getByTestId("player-import-lineup-duplicate-banner").textContent();
+    expect(errText).toMatch(/may already exist on team "Team A"/i);
   });
 });

@@ -28,7 +28,7 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
   await resetAppState(page);
   await importTeamsFixture(page, "fixture-teams.json", { minTeams: 2 });
-  await page.goto("/exhibition/new");
+  await page.getByTestId("home-new-game-button").click();
   await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
 
   const awaySelect = page.getByTestId("new-game-custom-away-team-select");
@@ -80,8 +80,6 @@ export async function loadFixture(
   await ensureDemoSeedSuppressed(page);
   await importTeamsFixture(page, teamsFixtureName);
 
-  await page.goto("/");
-  await expect(page.getByText("Loading game…")).not.toBeVisible({ timeout: 15_000 });
   await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
   await page.getByTestId("home-load-saves-button").click();
   await expect(page.getByTestId("saves-page")).toBeVisible({ timeout: 15_000 });
@@ -148,18 +146,8 @@ export async function importTeamsFixture(
       expect(count).toBeGreaterThanOrEqual(minTeams);
     }).toPass({ timeout: 15_000, intervals: [250, 500, 1000] });
 
-    await page.goto("/");
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
-    await page.goto("/teams");
-    await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
-
-    await expect(async () => {
-      const count = await page.getByTestId("custom-team-list-item").count();
-      expect(count).toBeGreaterThanOrEqual(minTeams);
-    }).toPass({ timeout: 15_000, intervals: [250, 500, 1000] });
-
     if (returnHome) {
-      await page.goto("/");
+      await page.getByTestId("manage-teams-back-button").click();
       await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
     }
   };

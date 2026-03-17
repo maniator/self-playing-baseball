@@ -58,18 +58,22 @@ test.describe("Career Stats smoke", () => {
   });
 
   test("Career Stats page has Batting and Pitching tab buttons", async ({ page }) => {
-    // Start a game so we have at least one team option in the selector.
-    await startGameViaPlayBall(page);
+    // Seed one completed-history team so the stats tabs are rendered.
+    await loadFixture(page, "sample-save.json");
+    await importHistoryFixture(page, "career-stats-history.json");
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("career-stats-team-select")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-batting-tab")).toBeVisible();
     await expect(page.getByTestId("career-stats-pitching-tab")).toBeVisible();
   });
 
   test("Career Stats page — clicking Pitching tab does not crash", async ({ page }) => {
-    await startGameViaPlayBall(page);
+    await loadFixture(page, "sample-save.json");
+    await importHistoryFixture(page, "career-stats-history.json");
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("career-stats-team-select")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("career-stats-pitching-tab").click({ force: true });
     await expect(page.getByTestId("career-stats-page")).toBeVisible();
   });
