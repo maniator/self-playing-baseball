@@ -280,45 +280,17 @@ export async function createDefaultCustomTeamsForTest(page: Page): Promise<void>
  */
 export async function startGameViaPlayBall(page: Page, options: GameConfig = {}): Promise<void> {
   await resetAppState(page);
-  // Import pre-built fixture teams — faster and more reliable than creating through the UI,
-  // especially on mobile WebKit where async save navigation can be slow.
-  await importTeamsFixture(page, "fixture-teams.json");
-  await page.goto("/exhibition/new");
-  await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-  const customTeamsTab = page.getByTestId("new-game-custom-teams-tab");
-  if (await customTeamsTab.isVisible().catch(() => false)) {
-    await customTeamsTab.click();
-  }
-
-  // Rarely, the setup page can render the empty-team state right after import
-  // (or before team hydration settles on slower mobile runners). Re-import once
-  // and retry the route before asserting on the team selects.
+  // Import pre-built fixture teams and retry deterministically until the custom
+  // matchup selectors are rendered.
   const awaySelect = page.getByTestId("new-game-custom-away-team-select");
   const noTeamsHint = page.getByText("No custom teams yet.");
-
-  if (!(await awaySelect.isVisible().catch(() => false))) {
-    await expect(awaySelect.or(noTeamsHint)).toBeVisible({ timeout: 30_000 });
-    if (await noTeamsHint.isVisible().catch(() => false)) {
-      await page.goto("/teams");
-      await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
-      const existing = await page.getByTestId("custom-team-list-item").count();
-      if (existing < 2) {
-        await importTeamsFixture(page, "fixture-teams.json");
-      }
-      await page.goto("/exhibition/new");
-      await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-      if (await customTeamsTab.isVisible().catch(() => false)) {
-        await customTeamsTab.click();
-      }
-    }
-  }
-
-  if (!(await awaySelect.isVisible().catch(() => false))) {
-    await createDefaultCustomTeamsForTest(page);
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await importTeamsFixture(page, "fixture-teams.json", { minTeams: 2 });
     await page.goto("/exhibition/new");
     await expect(page.getByTestId("exhibition-setup-page")).toBeVisible({ timeout: 10_000 });
-    if (await customTeamsTab.isVisible().catch(() => false)) {
-      await customTeamsTab.click();
+    await expect(awaySelect.or(noTeamsHint)).toBeVisible({ timeout: 30_000 });
+    if (await awaySelect.isVisible().catch(() => false)) {
+      break;
     }
   }
 
@@ -557,7 +529,20 @@ export async function loadFixture(
  * The helper always starts from `/` so callers do not need to call
  * `resetAppState` beforehand.
  */
-export async function importTeamsFixture(page: Page, fixtureName: string): Promise<void> {
+export interface ImportTeamsFixtureOptions {
+  /** Minimum number of team rows expected after import (default: 1). */
+  minTeams?: number;
+  /** Whether to navigate back to home after import (default: false). */
+  returnHome?: boolean;
+}
+
+export async function importTeamsFixture(
+  page: Page,
+  fixtureName: string,
+  options: ImportTeamsFixtureOptions = {},
+): Promise<void> {
+  const minTeams = options.minTeams ?? 1;
+  const returnHome = options.returnHome ?? false;
   const fixturePath = path.resolve(__dirname, "../fixtures", fixtureName);
   // Mute announcer to speed up tests.
   await ensureMutedAnnouncementsInit(page);
@@ -592,11 +577,23 @@ export async function importTeamsFixture(page: Page, fixtureName: string): Promi
 
   await expect(async () => {
     const count = await page.getByTestId("custom-team-list-item").count();
-    expect(count).toBeGreaterThanOrEqual(2);
+    expect(count).toBeGreaterThanOrEqual(minTeams);
   }).toPass({ timeout: 15_000, intervals: [250, 500, 1000] });
-  // Always return to the home screen so callers can proceed without an explicit goto("/").
-  await page.goto("/");
-  await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+
+  // Re-open /teams to verify data is visible after a route transition. This
+  // guards against transient timing where import success appears before other
+  // routes can read the imported docs via non-reactive hooks.
+  await page.goto("/teams");
+  await expect(page.getByTestId("manage-teams-screen")).toBeVisible({ timeout: 15_000 });
+  await expect(async () => {
+    const count = await page.getByTestId("custom-team-list-item").count();
+    expect(count).toBeGreaterThanOrEqual(minTeams);
+  }).toPass({ timeout: 30_000, intervals: [250, 500, 1000] });
+
+  if (returnHome) {
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 10_000 });
+  }
 }
 
 /**
