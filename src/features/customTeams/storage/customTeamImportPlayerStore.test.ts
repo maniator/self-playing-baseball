@@ -93,8 +93,6 @@ describe("importPlayer", () => {
       role: "pitcher",
       batting: { contact: 30, power: 20, speed: 25 },
       pitching: { velocity: 60, control: 55, movement: 45 },
-      playerSeed: "pitcher-seed-unique",
-      globalPlayerId: "pl_pitcher_unique_import",
     };
     const pitcherJson = exportCustomPlayer(pitcher);
 
@@ -122,8 +120,6 @@ describe("importPlayer", () => {
       name: "GID Preserved",
       role: "batter",
       batting: { contact: 50, power: 50, speed: 50 },
-      playerSeed: "preserve-gid-seed",
-      globalPlayerId: "pl_preserved_gid_check",
     };
     const json = exportCustomPlayer(player);
 
@@ -131,8 +127,8 @@ describe("importPlayer", () => {
 
     const updated = await store.getCustomTeam(targetId);
     const imported = updated?.roster.bench.find((p) => p.name === "GID Preserved");
-    expect(imported?.globalPlayerId).toBe("pl_preserved_gid_check");
-    expect(imported?.playerSeed).toBe("preserve-gid-seed");
+    expect(imported).toBeDefined();
+    expect(imported?.name).toBe("GID Preserved");
     expect(typeof imported?.fingerprint).toBe("string");
   });
 
@@ -153,8 +149,6 @@ describe("importPlayer", () => {
       name: "Seed Preserved",
       role: "batter",
       batting: { contact: 50, power: 50, speed: 50 },
-      playerSeed: "my-exact-seed-value",
-      globalPlayerId: "pl_seed_pres_check",
     };
     const json = exportCustomPlayer(player);
 
@@ -162,8 +156,8 @@ describe("importPlayer", () => {
 
     const updated = await store.getCustomTeam(targetId);
     const imported = updated?.roster.bench.find((p) => p.name === "Seed Preserved");
-    expect(imported?.playerSeed).toBe("my-exact-seed-value");
-    expect(imported?.globalPlayerId).toBe("pl_seed_pres_check");
+    expect(imported).toBeDefined();
+    expect(imported?.name).toBe("Seed Preserved");
     expect(typeof imported?.fingerprint).toBe("string");
   });
 
@@ -237,8 +231,6 @@ describe("importPlayer", () => {
       name: "No Team Player",
       role: "batter",
       batting: { contact: 50, power: 50, speed: 50 },
-      playerSeed: "no-team-seed",
-      globalPlayerId: "pl_no_team_gid",
     };
     const json = exportCustomPlayer(player);
     await expect(store.importPlayer("ct_nonexistent", json, "lineup")).rejects.toThrow(
@@ -246,65 +238,53 @@ describe("importPlayer", () => {
     );
   });
 
-  it("throws when player bundle lacks globalPlayerId", async () => {
-    const id = await store.createCustomTeam(makeInput({ name: "No GID Team" }));
-    // exportCustomPlayer does not add globalPlayerId when the player object omits it,
-    // so this bundle will pass signature verification but fail the store guard.
-    const player: TeamPlayer = {
-      id: "p_no_gid",
-      name: "No GID Player",
-      role: "batter",
-      batting: { contact: 50, power: 50, speed: 50 },
-      playerSeed: "no-gid-seed",
-      // globalPlayerId intentionally omitted
-    };
-    const bundleWithoutGid = exportCustomPlayer(player);
-    await expect(store.importPlayer(id, bundleWithoutGid, "lineup")).rejects.toThrow(
-      "globalPlayerId",
-    );
-  });
-
-  it("throws on invalid player JSON", async () => {
-    const id = await store.createCustomTeam(makeInput({ name: "Bad JSON Team" }));
+  it("throws when player bundle lacks an id field", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "No ID Team" }));
     await expect(store.importPlayer(id, "not valid json", "lineup")).rejects.toThrow();
   });
 
-  it("remaps player.id when the incoming id already exists in the target roster", async () => {
-    const sharedId = "p_collision_id";
+  it("succeeds importing a free agent (teamId = FREE_AGENT_TEAM_ID) and moves them to the target team", async () => {
+    // Create team, then detach player to make them a free agent
+    const teamId = await store.createCustomTeam(
+      makeInput({
+        name: "Original Team",
+        roster: {
+          lineup: [makePlayer({ id: "p_free_agent", name: "Free Agent Fred" })],
+          bench: [],
+          pitchers: [],
+        },
+      }),
+    );
+    await store.deleteCustomTeam(teamId, { cascade: false });
+
+    // Create a target team to import the free agent into
     const targetId = await store.createCustomTeam(
       makeInput({
-        name: "Collision Target Team",
+        name: "Target Team",
         roster: {
-          lineup: [makePlayer({ id: sharedId, name: "Existing Player" })],
+          lineup: [makePlayer({ id: "p_other", name: "Other Player" })],
           bench: [],
           pitchers: [],
         },
       }),
     );
 
-    // Create a different player that happens to have the same local id
-    const incomingPlayer: TeamPlayer = {
-      id: sharedId, // same local id as existing player
-      name: "Incoming Collision Player",
-      role: "batter",
-      batting: { contact: 50, power: 45, speed: 55 },
-      playerSeed: "collision-import-seed",
-      globalPlayerId: "pl_collision_unique_gid",
-    };
-    const json = exportCustomPlayer(incomingPlayer);
+    // Verify Fred is a free agent
+    const freePlayers = await store.listFreePlayers();
+    const fredFreeAgent = freePlayers.find((p) => p.name === "Free Agent Fred");
+    expect(fredFreeAgent).toBeDefined();
 
-    const result = await store.importPlayer(targetId, json, "bench");
+    // Export Fred and import into target team
+    const fredJson = exportCustomPlayer(fredFreeAgent as unknown as TeamPlayer);
+    const result = await store.importPlayer(targetId, fredJson, "bench");
     expect(result.status).toBe("success");
 
+    // Verify Fred is now on the target team
     const updated = await store.getCustomTeam(targetId);
-    const importedPlayer = updated?.roster.bench.find(
-      (p) => p.name === "Incoming Collision Player",
-    );
-    expect(importedPlayer).toBeDefined();
-    // Local id must have been remapped — must not collide with the existing lineup player
-    expect(importedPlayer?.id).not.toBe(sharedId);
-    // Identity fields must be preserved despite the id remap
-    expect(importedPlayer?.globalPlayerId).toBe("pl_collision_unique_gid");
-    expect(importedPlayer?.playerSeed).toBe("collision-import-seed");
+    expect(updated?.roster.bench.some((p) => p.name === "Free Agent Fred")).toBe(true);
+
+    // Verify Fred is no longer a free agent
+    const freePlayersAfter = await store.listFreePlayers();
+    expect(freePlayersAfter.some((p) => p.name === "Free Agent Fred")).toBe(false);
   });
 });

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fnv1a } from "@storage/hash";
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 import { makePlayer, makeTeam } from "@test/helpers/customTeams";
 
 import { buildPlayerSig, buildTeamFingerprint, TEAMS_EXPORT_KEY } from "./customTeamSignatures";
@@ -116,7 +116,6 @@ describe("parseExportedCustomTeams", () => {
     const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
     const team = {
       name: "No ID",
-      source: "custom",
       fingerprint: "aabbccdd",
       roster: { lineup: [player] },
     };
@@ -131,7 +130,6 @@ describe("parseExportedCustomTeams", () => {
     const team = {
       id: "ct1",
       name: "T",
-      source: "custom",
       metadata: {},
       fingerprint: fp,
       roster: { schemaVersion: 1, lineup: [] },
@@ -140,22 +138,6 @@ describe("parseExportedCustomTeams", () => {
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
     const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
     expect(() => parseExportedCustomTeams(bad)).toThrow("non-empty array");
-  });
-
-  it("accepts a team without fingerprint (legacy file — fingerprint is optional)", () => {
-    const p = makePlayer();
-    const team = {
-      id: "ct1",
-      name: "T",
-      source: "custom",
-      metadata: {},
-      roster: { schemaVersion: 1, lineup: [p] },
-    };
-    const payload = { teams: [team] };
-    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    // Should NOT throw — fingerprint is optional for legacy bundles
-    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when bundle sig is missing", () => {
@@ -172,27 +154,6 @@ describe("parseExportedCustomTeams", () => {
     const obj = JSON.parse(exportCustomTeams([team]));
     obj.payload.teams[0].name = "Tampered";
     expect(() => parseExportedCustomTeams(JSON.stringify(obj))).toThrow("signature mismatch");
-  });
-
-  it("accepts players without sig (legacy file — per-player sig is optional)", () => {
-    const legacyPlayer = {
-      id: "p1",
-      name: "Legacy Player",
-      role: "batter",
-      batting: { contact: 50, power: 50, speed: 50 },
-    };
-    const team = {
-      id: "ct1",
-      name: "T",
-      source: "custom",
-      metadata: {},
-      roster: { schemaVersion: 1, lineup: [legacyPlayer] },
-    };
-    const payload = { teams: [team] };
-    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const legacy = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    // Should NOT throw — missing player sig is treated as a legacy file
-    expect(() => parseExportedCustomTeams(legacy)).not.toThrow();
   });
 
   it("throws when a player sig is wrong (tampered player stats)", () => {
@@ -225,7 +186,6 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
     const team = {
       id: "ct1",
-      source: "custom",
       fingerprint: "aabbccdd",
       roster: { lineup: [player] },
     };
@@ -235,37 +195,11 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: name");
   });
 
-  it("throws when a team is missing required source", () => {
-    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
-    const team = { id: "ct1", name: "T", fingerprint: "aabbccdd", roster: { lineup: [player] } };
-    const payload = { teams: [team] };
-    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: source");
-  });
-
-  it("throws when a team has an invalid source value", () => {
-    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
-    const team = {
-      id: "ct1",
-      name: "T",
-      source: "imported",
-      metadata: {},
-      fingerprint: "aabbccdd",
-      roster: { schemaVersion: 1, lineup: [player] },
-    };
-    const payload = { teams: [team] };
-    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    expect(() => parseExportedCustomTeams(bad)).toThrow('invalid source "imported"');
-  });
-
   it("throws when a team is missing required metadata", () => {
     const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
     const team = {
       id: "ct1",
       name: "T",
-      source: "custom",
       fingerprint: "aabbccdd",
       roster: { schemaVersion: 1, lineup: [player] },
     };
@@ -284,22 +218,6 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     expect(() => parseExportedCustomTeams(bad)).toThrow("missing required field: roster");
   });
 
-  it("throws when roster.schemaVersion is missing or not a number", () => {
-    const player = { ...makePlayer(), sig: buildPlayerSig(makePlayer()) };
-    const team = {
-      id: "ct1",
-      name: "T",
-      source: "custom",
-      metadata: {},
-      fingerprint: "aabbccdd",
-      roster: { lineup: [player] }, // no schemaVersion
-    };
-    const payload = { teams: [team] };
-    const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
-    const bad = JSON.stringify({ type: "customTeams", formatVersion: 1, payload, sig });
-    expect(() => parseExportedCustomTeams(bad)).toThrow("schemaVersion must be a number");
-  });
-
   it("throws when a team entry is not an object", () => {
     const payload = { teams: ["not-an-object"] };
     const sig = fnv1a(TEAMS_EXPORT_KEY + JSON.stringify(payload));
@@ -312,7 +230,6 @@ describe("parseExportedCustomTeams — roster constraint validation", () => {
     const team = {
       id: "ct1",
       name: "T",
-      source: "custom",
       metadata: {},
       fingerprint: fp,
       roster: { schemaVersion: 1, lineup: [] },
@@ -411,62 +328,8 @@ describe("exportCustomTeams — identity fields per player", () => {
     };
   };
 
-  it("preserves globalPlayerId for each player in lineup", () => {
-    const player = makePlayer({ globalPlayerId: "pl_team_gid", playerSeed: "team-gid-seed" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.lineup[0]["globalPlayerId"]).toBe("pl_team_gid");
-  });
-
-  it("preserves globalPlayerId for each player in bench", () => {
-    const player = makePlayer({ globalPlayerId: "pl_bench_gid", playerSeed: "bench-gid-seed" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.bench[0]["globalPlayerId"]).toBe("pl_bench_gid");
-  });
-
-  it("preserves globalPlayerId for each player in pitchers", () => {
-    const player = makePlayer({ globalPlayerId: "pl_pitch_gid", playerSeed: "pitch-gid-seed" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.pitchers[0]["globalPlayerId"]).toBe("pl_pitch_gid");
-  });
-
-  it("preserves playerSeed for each player in lineup", () => {
-    const player = makePlayer({ playerSeed: "team-seed-val" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.lineup[0]["playerSeed"]).toBe("team-seed-val");
-  });
-
-  it("preserves playerSeed for each player in bench", () => {
-    const player = makePlayer({ playerSeed: "bench-seed-val" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.bench[0]["playerSeed"]).toBe("bench-seed-val");
-  });
-
-  it("preserves playerSeed for each player in pitchers", () => {
-    const player = makePlayer({ playerSeed: "pitch-seed-val" });
-    const team = makeTeam({
-      roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
-    });
-    const parsed = JSON.parse(exportCustomTeams([team])) as ParsedTeamsExport;
-    expect(parsed.payload.teams[0].roster.pitchers[0]["playerSeed"]).toBe("pitch-seed-val");
-  });
-
   it("preserves fingerprint for each player in lineup", () => {
-    const player = makePlayer({ fingerprint: "deadbeef", playerSeed: "fp-seed" });
+    const player = makePlayer({ fingerprint: "deadbeef" });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
@@ -475,7 +338,7 @@ describe("exportCustomTeams — identity fields per player", () => {
   });
 
   it("preserves fingerprint for each player in bench", () => {
-    const player = makePlayer({ fingerprint: "cafebabe", playerSeed: "bench-fp-seed" });
+    const player = makePlayer({ fingerprint: "cafebabe" });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [], bench: [player], pitchers: [] },
     });
@@ -484,7 +347,7 @@ describe("exportCustomTeams — identity fields per player", () => {
   });
 
   it("preserves fingerprint for each player in pitchers", () => {
-    const player = makePlayer({ fingerprint: "feedface", playerSeed: "pitch-fp-seed" });
+    const player = makePlayer({ fingerprint: "feedface" });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [player] },
     });

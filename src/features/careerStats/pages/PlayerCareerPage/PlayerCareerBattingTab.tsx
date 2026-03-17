@@ -1,25 +1,21 @@
 /** Batting tab panel for the PlayerCareerPage. */
 import * as React from "react";
 
-import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useTeamDisplayNames } from "@shared/hooks/useTeamDisplayNames";
 
-import type { CustomTeamDoc, PlayerGameStatDoc } from "@storage/types";
+import type { BatterGameStatRecord } from "@storage/types";
 
 import { EmptyState, SectionLabel, StatsTable, TableWrapper, Td, Th, TotalsRow } from "./styles";
 import type { BattingTotals } from "./usePlayerCareerData";
 import { formatAVG, formatDate } from "./usePlayerCareerData";
 
 type Props = {
-  battingRows: PlayerGameStatDoc[];
+  battingRows: BatterGameStatRecord[];
   battingTotals: BattingTotals;
-  customTeams: CustomTeamDoc[];
 };
 
-const PlayerCareerBattingTab: React.FunctionComponent<Props> = ({
-  battingRows,
-  battingTotals,
-  customTeams,
-}) => {
+const PlayerCareerBattingTab: React.FunctionComponent<Props> = ({ battingRows, battingTotals }) => {
+  const teamNameMap = useTeamDisplayNames(battingRows.map((r) => r.opponentTeamId));
   if (battingRows.length === 0) {
     return <EmptyState>No batting data.</EmptyState>;
   }
@@ -83,7 +79,7 @@ const PlayerCareerBattingTab: React.FunctionComponent<Props> = ({
             {battingRows.map((row) => (
               <tr key={row.id}>
                 <Td>{formatDate(row.createdAt)}</Td>
-                <Td>{resolveTeamLabel(row.opponentTeamId, customTeams)}</Td>
+                <Td>{teamNameMap.get(row.opponentTeamId) ?? "Unknown Team"}</Td>
                 <Td>1</Td>
                 <Td>{row.batting.atBats}</Td>
                 <Td>{row.batting.hits}</Td>

@@ -4,8 +4,8 @@
     "id": "save_pending_decision_fixture",
     "name": "Visitors vs Locals",
     "seed": "pd-fixture-01",
-    "homeTeamId": "custom:ct_fixture_home_00",
-    "awayTeamId": "custom:ct_fixture_away_00",
+    "homeTeamId": "ct_fixture_home_00",
+    "awayTeamId": "ct_fixture_away_00",
     "createdAt": 1700001000000,
     "updatedAt": 1700001000000,
     "progressIdx": 28,
@@ -14,8 +14,8 @@
       "strategy": "balanced",
       "managedTeam": 0,
       "managerMode": true,
-      "homeTeam": "custom:ct_fixture_home_00",
-      "awayTeam": "custom:ct_fixture_away_00"
+      "homeTeam": "ct_fixture_home_00",
+      "awayTeam": "ct_fixture_away_00"
     },
     "stateSnapshot": {
       "state": {
@@ -68,8 +68,8 @@
           1
         ],
         "teams": [
-          "custom:ct_fixture_away_00",
-          "custom:ct_fixture_home_00"
+          "ct_fixture_away_00",
+          "ct_fixture_home_00"
         ],
         "baseLayout": [
           0,
@@ -114,5 +114,5 @@
     }
   },
   "events": [],
-  "sig": "c9a361e7"
+  "sig": "df58e877"
 }

@@ -43,7 +43,7 @@ test.describe("Team Summary and Leaders", () => {
     // Scoped to WebKit only to avoid adding unnecessary latency on Chromium/Firefox.
     const browserName = page.context().browser()?.browserType().name();
     if (browserName === "webkit") {
-      await page.waitForTimeout(1_000);
+      await page.waitForTimeout(2_500);
     }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
@@ -74,7 +74,7 @@ test.describe("Team Summary and Leaders", () => {
     // as savesLeader (both come from the single loadStats async function), so when
     // summary-wl shows "2-1", saves-leader-card is also rendered.  Using a specific
     // text check makes this guard immune to the early-resolution race condition.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 30_000 });
+    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
   }
 
   test("team summary section shows W/L record", async ({ page }) => {

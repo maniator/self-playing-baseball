@@ -1,5 +1,5 @@
 import { fnv1a } from "@storage/hash";
-import type { CustomTeamDoc, ExportedCustomTeams, TeamPlayer } from "@storage/types";
+import type { ExportedCustomTeams, TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import {
   buildPlayerSig,
@@ -23,7 +23,7 @@ function signPlayers(players: TeamPlayer[]): TeamPlayer[] {
  *   2. Compute per-player sigs over immutable player identity fields (name, role, stats).
  *   3. Compute the bundle-level sig over the whole payload (which now includes player sigs).
  */
-export function exportCustomTeams(teams: CustomTeamDoc[]): string {
+export function exportCustomTeams(teams: TeamWithRoster[]): string {
   const signedTeams = teams.map((team) => {
     const fingerprint = buildTeamFingerprint(team);
     return {
@@ -91,24 +91,15 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
       throw new Error(`Team[${i}] missing required field: id`);
     if (typeof team["name"] !== "string" || !team["name"])
       throw new Error(`Team[${i}] missing required field: name`);
-    if (typeof team["source"] !== "string")
-      throw new Error(`Team[${i}] missing required field: source`);
-    if (!["custom", "generated"].includes(team["source"] as string))
-      throw new Error(
-        `Team[${i}] invalid source "${team["source"]}" — must be "custom" or "generated"`,
-      );
     if (
       !team["metadata"] ||
       typeof team["metadata"] !== "object" ||
       Array.isArray(team["metadata"])
     )
       throw new Error(`Team[${i}] missing required field: metadata`);
-    // fingerprint is optional for legacy files (pre-v2 exports without fingerprints)
     if (!team["roster"] || typeof team["roster"] !== "object")
       throw new Error(`Team[${i}] missing required field: roster`);
     const roster = team["roster"] as Record<string, unknown>;
-    if (typeof roster["schemaVersion"] !== "number")
-      throw new Error(`Team[${i}] roster.schemaVersion must be a number`);
     if (!Array.isArray(roster["lineup"]) || (roster["lineup"] as unknown[]).length === 0)
       throw new Error(`Team[${i}] roster.lineup must be a non-empty array`);
   });
@@ -129,8 +120,6 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
         throw new Error(`Team[${ti}] roster.${slot} is not an array — file may be malformed`);
       }
       (slotValue as unknown[]).forEach((rawPlayer, pi) => {
-        // Structural validation: each player must be an object with required fields
-        // before calling buildPlayerSig to avoid non-descriptive runtime errors.
         if (!rawPlayer || typeof rawPlayer !== "object") {
           throw new Error(`Team[${ti}] ${slot}[${pi}] is not an object — file may be malformed`);
         }
@@ -147,8 +136,6 @@ export function parseExportedCustomTeams(json: string): ExportedCustomTeams {
           throw new Error(`Team[${ti}] ${slot}[${pi}] missing required field: batting`);
 
         const player = rawPlayer as TeamPlayerWithSig;
-        // Skip sig validation for legacy files that pre-date per-player signatures.
-        if (player.sig === undefined) return;
         const expectedPlayerSig = buildPlayerSig(player);
         if (player.sig !== expectedPlayerSig) {
           throw new Error(

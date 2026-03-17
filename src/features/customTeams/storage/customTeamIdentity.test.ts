@@ -41,7 +41,7 @@ describe("resolvePlayerConflict", () => {
     const team = await store.getCustomTeam(teamId);
     const player = team!.roster.lineup[0];
 
-    const result = await resolvePlayerConflict(db, player.globalPlayerId!, teamId);
+    const result = await resolvePlayerConflict(db, player.id, teamId);
     expect(result.status).toBe("alreadyOnThisTeam");
   });
 
@@ -52,7 +52,7 @@ describe("resolvePlayerConflict", () => {
     const teamA = await store.getCustomTeam(teamAId);
     const playerOnA = teamA!.roster.lineup[0];
 
-    const result = await resolvePlayerConflict(db, playerOnA.globalPlayerId!, teamBId);
+    const result = await resolvePlayerConflict(db, playerOnA.id, teamBId);
     expect(result.status).toBe("conflict");
     if (result.status === "conflict") {
       expect(result.conflictingTeamId).toBe(teamAId);
@@ -60,15 +60,15 @@ describe("resolvePlayerConflict", () => {
     }
   });
 
-  it("returns noConflict when player doc has null teamId (free agent)", async () => {
+  it("returns noConflict when player doc has FREE_AGENT_TEAM_ID (detached free agent)", async () => {
     const teamId = await store.createCustomTeam(makeInput({ name: "Old Team" }));
     const team = await store.getCustomTeam(teamId);
     const player = team!.roster.lineup[0];
 
-    // Delete the team with cascade: false to detach the player
+    // Delete the team with cascade: false to detach the player (sets teamId = FREE_AGENT_TEAM_ID)
     await store.deleteCustomTeam(teamId, { cascade: false });
 
-    const result = await resolvePlayerConflict(db, player.globalPlayerId!, "new-team-id");
+    const result = await resolvePlayerConflict(db, player.id, "new-team-id");
     expect(result.status).toBe("noConflict");
   });
 });

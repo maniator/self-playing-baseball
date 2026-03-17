@@ -146,26 +146,21 @@ describe("sanitizePlayer", () => {
     expect(result.batting.speed).toBe(50);
   });
 
-  it("generates playerSeed when not provided", () => {
+  it("does not include playerSeed in output (legacy field stripped from PlayerRecord)", () => {
     const result = sanitizePlayer(makePlayer(), { index: 0 });
-    expect(typeof result.playerSeed).toBe("string");
-    expect(result.playerSeed!.length).toBeGreaterThan(0);
+    expect("playerSeed" in result).toBe(false);
   });
 
-  it("preserves existing playerSeed", () => {
-    const result = sanitizePlayer(makePlayer({ playerSeed: "fixed-seed-123" }), { index: 0 });
-    expect(result.playerSeed).toBe("fixed-seed-123");
+  it("preserves non-temp player.id in output", () => {
+    const player = makePlayer({ id: "import_player_42" });
+    const result = sanitizePlayer(player, { index: 0 });
+    expect(result.id).toBe("import_player_42");
   });
 
-  it("generates globalPlayerId when not provided", () => {
-    const result = sanitizePlayer(makePlayer(), { index: 0 });
-    expect(typeof result.globalPlayerId).toBe("string");
-    expect(result.globalPlayerId!.startsWith("pl_")).toBe(true);
-  });
-
-  it("preserves existing globalPlayerId", () => {
-    const result = sanitizePlayer(makePlayer({ globalPlayerId: "pl_existing" }), { index: 0 });
-    expect(result.globalPlayerId).toBe("pl_existing");
+  it("remaps editor-temp player IDs", () => {
+    const result = sanitizePlayer(makePlayer({ id: "ep_7" }), { index: 0 });
+    expect(result.id).toMatch(/^p_/);
+    expect(result.id).not.toBe("ep_7");
   });
 
   it("generates fingerprint", () => {
@@ -178,13 +173,24 @@ describe("sanitizePlayer", () => {
     const result = sanitizePlayer(
       makePlayer({
         role: "pitcher",
-        pitching: { velocity: 200, control: -10, movement: 55 },
+        pitching: { velocity: 200, control: -10, movement: 55, stamina: 130 },
       }),
       { index: 0 },
     );
     expect(result.pitching!.velocity).toBe(100);
     expect(result.pitching!.control).toBe(0);
     expect(result.pitching!.movement).toBe(55);
+    expect(result.pitching!.stamina).toBe(100);
+  });
+
+  it("clamps batting stamina when present", () => {
+    const result = sanitizePlayer(
+      makePlayer({ batting: { contact: 50, power: 50, speed: 50, stamina: -20 } }),
+      {
+        index: 0,
+      },
+    );
+    expect(result.batting.stamina).toBe(0);
   });
 
   it("omits pitching when not provided", () => {

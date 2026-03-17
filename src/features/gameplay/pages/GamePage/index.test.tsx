@@ -5,11 +5,13 @@ import { MemoryRouter, Outlet, Route, Routes } from "react-router";
 import { describe, expect, it, vi } from "vitest";
 
 // Provide a controllable useBlocker mock so individual tests can override it.
-const mockUseBlocker = vi.fn(() => ({
-  state: "unblocked" as const,
-  proceed: undefined,
-  reset: undefined,
-}));
+const mockUseBlocker = vi.fn(
+  (): { state: string; proceed: undefined | (() => void); reset: undefined | (() => void) } => ({
+    state: "unblocked",
+    proceed: undefined,
+    reset: undefined,
+  }),
+);
 
 // Mock useBlocker and useBeforeUnload — these require a data router which is
 // not available in MemoryRouter. The GamePage routing logic is what we're
@@ -18,7 +20,7 @@ vi.mock("react-router", async (importOriginal) => {
   const original = await importOriginal<typeof import("react-router")>();
   return {
     ...original,
-    useBlocker: (...args: unknown[]) => mockUseBlocker(...args),
+    useBlocker: (_arg: unknown) => mockUseBlocker(),
     useBeforeUnload: vi.fn(),
   };
 });
@@ -59,6 +61,8 @@ const mockCtx: AppShellOutletContext = {
   onResumeCurrent: vi.fn(),
   onHelp: vi.fn(),
   onBackToHome: vi.fn(),
+  onCareerStats: vi.fn(),
+  onGameOver: vi.fn(),
   hasActiveSession: false,
 };
 
@@ -113,7 +117,11 @@ describe("GamePage", () => {
     });
 
     it("is rendered when blocker state is 'blocked'", () => {
-      mockUseBlocker.mockReturnValueOnce({ state: "blocked", proceed: vi.fn(), reset: vi.fn() });
+      mockUseBlocker.mockReturnValueOnce({
+        state: "blocked",
+        proceed: vi.fn(),
+        reset: vi.fn(),
+      });
       renderGamePage();
       expect(screen.getByTestId("saving-stats-banner")).toBeInTheDocument();
       expect(screen.getByTestId("saving-stats-banner")).toHaveTextContent("Saving stats");

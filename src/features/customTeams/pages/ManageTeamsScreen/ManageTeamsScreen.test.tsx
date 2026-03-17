@@ -63,7 +63,7 @@ import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
 import { downloadJson } from "@storage/saveIO";
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import type { UseImportCustomTeamsReturn } from "../../hooks/useImportCustomTeams";
 import { useImportCustomTeams } from "../../hooks/useImportCustomTeams";
@@ -151,7 +151,7 @@ describe("ManageTeamsScreen", () => {
           roster: { schemaVersion: 1, lineup: [], pitchers: [], bench: [] },
           abbreviation: "TST",
           city: "Testville",
-        } as unknown as CustomTeamDoc,
+        } as unknown as TeamWithRoster,
       ],
       loading: false,
       deleteTeam: vi.fn(),
@@ -240,8 +240,7 @@ describe("ManageTeamsScreen — Import/Export section", () => {
     schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
-    source: "custom" as const,
-  } as unknown as CustomTeamDoc;
+  } as unknown as TeamWithRoster;
 
   it("shows import and export all buttons", () => {
     vi.mocked(useCustomTeams).mockReturnValueOnce({

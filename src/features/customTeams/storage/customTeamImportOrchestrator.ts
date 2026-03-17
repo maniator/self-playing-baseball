@@ -2,11 +2,11 @@ import { appLog } from "@shared/utils/logger";
 
 import type { BallgameDb } from "@storage/db";
 import { generatePlayerId } from "@storage/generateId";
-import type { CustomTeamDoc, TeamPlayer, UpdateCustomTeamInput } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster, UpdateCustomTeamInput } from "@storage/types";
 
 import { type ImportPlayerResult } from "./customTeamExportBundles";
 import { resolvePlayerConflict } from "./customTeamIdentity";
-import { removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
+import { removeTeamPlayerRecords, writePlayerRecords } from "./customTeamPlayerDocs";
 import { clampPlayerStats, validatePlayerStatCaps } from "./customTeamSanitizers";
 import { buildPlayerSig } from "./customTeamSignatures";
 
@@ -18,14 +18,14 @@ import { buildPlayerSig } from "./customTeamSignatures";
  */
 export async function orchestrateTeamImport(
   db: BallgameDb,
-  team: CustomTeamDoc,
+  team: TeamWithRoster,
   rosterSchemaVersion: number,
 ): Promise<void> {
-  const teamDoc: CustomTeamDoc = {
+  const teamDoc: TeamWithRoster = {
     ...team,
     roster: { schemaVersion: rosterSchemaVersion, lineup: [], bench: [], pitchers: [] },
   };
-  await db.customTeams.upsert(teamDoc);
+  await db.teams.upsert(teamDoc);
   try {
     // Clamp per-stat values to [0, 100] first, then enforce total caps.
     // This mirrors what sanitizePlayer does on create/update, preventing crafted
@@ -52,13 +52,13 @@ export async function orchestrateTeamImport(
     clampedRoster.pitchers.forEach((p, i) =>
       validatePlayerStatCaps(p, { section: "pitchers", index: i }),
     );
-    const newDocIds = await writePlayerDocs(db, team.id, clampedRoster);
-    await removePlayerDocs(db, team.id, newDocIds);
+    const newDocIds = await writePlayerRecords(db, team.id, clampedRoster);
+    await removeTeamPlayerRecords(db, team.id, newDocIds);
   } catch (err) {
     // Roll back the team doc AND any player docs that were partially written,
     // so no orphaned players (pointing at a non-existent teamId) are left behind.
     await Promise.all([
-      db.customTeams
+      db.teams
         .findOne(team.id)
         .exec()
         .then((d) => d?.remove())
@@ -68,7 +68,7 @@ export async function orchestrateTeamImport(
             rollbackErr,
           );
         }),
-      removePlayerDocs(db, team.id).catch((rollbackErr) => {
+      removeTeamPlayerRecords(db, team.id).catch((rollbackErr) => {
         appLog.warn(
           `[importCustomTeams] rollback (player docs) failed for team ${team.id}:`,
           rollbackErr,
@@ -92,9 +92,9 @@ export async function orchestrateTeamImport(
  *   this pure orchestration function to the store's `this`).
  */
 export interface ImportPlayerIntoTeamOptions {
-  player: TeamPlayer & { globalPlayerId: string };
+  player: TeamPlayer;
   targetTeamId: string;
-  targetTeam: CustomTeamDoc;
+  targetTeam: TeamWithRoster;
   section: "lineup" | "bench" | "pitchers";
   updateFn: (id: string, updates: UpdateCustomTeamInput) => Promise<void>;
 }
@@ -104,7 +104,7 @@ export async function importPlayerIntoTeam(
   { player, targetTeamId, targetTeam, section, updateFn }: ImportPlayerIntoTeamOptions,
 ): Promise<ImportPlayerResult> {
   // Cross-team identity check
-  const conflictResult = await resolvePlayerConflict(db, player.globalPlayerId, targetTeamId);
+  const conflictResult = await resolvePlayerConflict(db, player.id, targetTeamId);
   if (conflictResult.status === "conflict") {
     return {
       status: "conflict",

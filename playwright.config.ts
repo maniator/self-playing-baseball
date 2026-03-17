@@ -12,7 +12,13 @@ export default defineConfig({
   timeout: 90_000,
   // In CI: each shard writes a blob report; the merge-reports job combines them
   // into a single HTML report (playwright-report-merged artifact, 14-day retention).
-  reporter: isCI ? [["github"], ["blob"]] : "list",
+  // "line" reporter prints each test result immediately as it finishes, so
+  // failures surface during the run rather than only at the end.  This lets
+  // you start fixing the first failing test while remaining shards are still
+  // running, instead of waiting for the full shard to complete.
+  reporter: isCI
+    ? [["github"], ["blob"], ["line"]]
+    : [["line"], ["json", { outputFile: "playwright-report/report.json" }]],
   use: {
     baseURL: "http://localhost:5173",
     trace: "on-first-retry",

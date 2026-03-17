@@ -1,124 +1,117 @@
 import type { BallgameDb } from "@storage/db";
-import { fnv1a } from "@storage/hash";
-import type { PlayerDoc, TeamPlayer, TeamRoster } from "@storage/types";
+import type { PlayerRecord, TeamPlayer, TeamRoster } from "@storage/types";
+
+import { ROSTER_SCHEMA_VERSION } from "./customTeamSanitizers";
 
 export const PLAYER_SCHEMA_VERSION = 1;
 
-/** Converts a sanitized TeamPlayer into a PlayerDoc for a given team/section/index. */
-export interface ToPlayerDocOptions {
-  section: "lineup" | "bench" | "pitchers";
-  orderIndex: number;
+/** Returns all PlayerRecords for a team, sorted by section and orderIndex. */
+export async function fetchTeamPlayers(db: BallgameDb, teamId: string): Promise<PlayerRecord[]> {
+  const docs = await db.players.find({ selector: { teamId } }).exec();
+  return docs.map((d) => d.toJSON() as PlayerRecord);
 }
 
-export function toPlayerDoc(
-  player: TeamPlayer,
-  teamId: string,
-  { section, orderIndex }: ToPlayerDocOptions,
-): PlayerDoc {
-  // Backfill globalPlayerId for players imported from legacy bundles (created before
-  // globalPlayerId was added to the schema). The v4 players schema requires this field;
-  // without the backfill, bulkUpsert throws a validation error and the whole import fails.
-  // Use playerSeed first (gives the canonical stable identity), fall back to a
-  // team-scoped derivation (teamId + player.id) so the generated value cannot collide
-  // across different teams that both happen to have a player with the same local id
-  // (e.g. both have a player with id="p1"). Prepending teamId is safe because teamId
-  // is unique per team in the DB.
-  const globalPlayerId =
-    player.globalPlayerId ?? `pl_${fnv1a(player.playerSeed ?? `${teamId}:${player.id}`)}`;
-  // Strip the export-only `sig` field — it is only used in export bundles for bundle
-  // integrity verification and must not be persisted to the `players` collection.
-  // Duplicate detection always calls `buildPlayerSig(clampPlayerStats(player))` to
-  // freshly recompute the comparison signature, so stripping `sig` here is safe.
-  const { sig: _sig, ...playerWithoutSig } = player;
+/** Strips storage-only fields from a PlayerRecord, returning a TeamPlayer shape. */
+export function toTeamPlayer({
+  teamId: _teamId,
+  section: _section,
+  orderIndex: _orderIndex,
+  schemaVersion: _schemaVersion,
+  createdAt: _createdAt,
+  updatedAt: _updatedAt,
+  ...rest
+}: PlayerRecord): TeamPlayer {
+  return rest as TeamPlayer;
+}
+
+/** Assembles a TeamRoster from a list of PlayerRecords for a team. */
+export function assembleRoster(players: PlayerRecord[]): TeamRoster {
+  // Single-pass grouping instead of 3 separate filter passes (3×O(n) → O(n)).
+  const grouped: Record<"lineup" | "bench" | "pitchers", PlayerRecord[]> = {
+    lineup: [],
+    bench: [],
+    pitchers: [],
+  };
+  for (const p of players) {
+    grouped[p.section].push(p);
+  }
+
+  const sortedMapped = (arr: PlayerRecord[]) =>
+    arr.sort((a, b) => a.orderIndex - b.orderIndex).map(toTeamPlayer);
+
   return {
-    ...playerWithoutSig,
-    globalPlayerId,
-    // Use a team-scoped composite primary key to prevent cross-team collisions
-    // when two different teams contain a player with the same original ID.
-    id: `${teamId}:${player.id}`,
-    playerId: player.id,
-    teamId,
-    section,
-    orderIndex,
-    schemaVersion: PLAYER_SCHEMA_VERSION,
+    schemaVersion: ROSTER_SCHEMA_VERSION,
+    lineup: sortedMapped(grouped.lineup),
+    bench: sortedMapped(grouped.bench),
+    pitchers: sortedMapped(grouped.pitchers),
   };
 }
 
-/** Returns all PlayerDocs for a team. Sorting by section and orderIndex is handled by assembleRoster. */
-export async function fetchPlayerDocs(db: BallgameDb, teamId: string): Promise<PlayerDoc[]> {
-  const docs = await db.players.find({ selector: { teamId } }).exec();
-  return docs.map((d) => d.toJSON() as unknown as PlayerDoc);
-}
-
-/** Assembles a TeamRoster from a list of PlayerDocs for a team. */
-export function assembleRoster(playerDocs: PlayerDoc[], existingRoster: TeamRoster): TeamRoster {
-  const toTeamPlayer = ({
-    teamId: _teamId,
-    section: _section,
-    orderIndex: _orderIndex,
-    schemaVersion: _schemaVersion,
-    playerId,
-    id: compositeId,
-    ...rest
-  }: PlayerDoc): TeamPlayer => ({
-    ...rest,
-    // Reconstruct the original player ID: `playerId` is set on v2 docs;
-    // fall back to `id` for legacy docs that were not migrated yet.
-    id: playerId ?? compositeId,
-  });
-  const lineup = playerDocs
-    .filter((p) => p.section === "lineup")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
-  const bench = playerDocs
-    .filter((p) => p.section === "bench")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
-  const pitchers = playerDocs
-    .filter((p) => p.section === "pitchers")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
+/** Builds a PlayerRecord from a TeamPlayer for a given team/section/index. */
+function toPlayerRecord(
+  player: TeamPlayer,
+  teamId: string,
+  section: "lineup" | "bench" | "pitchers",
+  orderIndex: number,
+  now: string,
+): PlayerRecord {
   return {
-    schemaVersion: existingRoster.schemaVersion,
-    lineup,
-    bench,
-    pitchers,
+    id: player.id, // NOT composite — player.id IS the PK
+    teamId,
+    section,
+    orderIndex,
+    name: player.name,
+    role: player.role,
+    batting: player.batting,
+    pitching: player.pitching,
+    position: player.position,
+    handedness: player.handedness,
+    isBenchEligible: player.isBenchEligible,
+    isPitcherEligible: player.isPitcherEligible,
+    jerseyNumber: player.jerseyNumber,
+    pitchingRole: player.pitchingRole,
+    fingerprint: player.fingerprint,
+    createdAt: now,
+    updatedAt: now,
+    schemaVersion: PLAYER_SCHEMA_VERSION,
   };
 }
 
 /**
  * Writes all players from a roster into the `players` collection using bulkUpsert.
  * Existing docs with matching IDs are updated; new player IDs are inserted.
- * Returns the Set of composite doc IDs that were written, for use with removePlayerDocs.
+ * Returns the Set of player IDs that were written, for use with removeTeamPlayerRecords.
  */
-export async function writePlayerDocs(
+export async function writePlayerRecords(
   db: BallgameDb,
   teamId: string,
   roster: TeamRoster,
 ): Promise<Set<string>> {
-  const allDocs = [
-    ...roster.lineup.map((p, i) => toPlayerDoc(p, teamId, { section: "lineup", orderIndex: i })),
-    ...roster.bench.map((p, i) => toPlayerDoc(p, teamId, { section: "bench", orderIndex: i })),
-    ...roster.pitchers.map((p, i) =>
-      toPlayerDoc(p, teamId, { section: "pitchers", orderIndex: i }),
-    ),
+  const now = new Date().toISOString();
+  const allRecords: PlayerRecord[] = [
+    ...roster.lineup.map((p, i) => toPlayerRecord(p, teamId, "lineup", i, now)),
+    ...roster.bench.map((p, i) => toPlayerRecord(p, teamId, "bench", i, now)),
+    ...roster.pitchers.map((p, i) => toPlayerRecord(p, teamId, "pitchers", i, now)),
   ];
-  if (allDocs.length > 0) {
-    await db.players.bulkUpsert(allDocs);
+  if (allRecords.length > 0) {
+    await db.players.bulkUpsert(allRecords);
   }
-  return new Set(allDocs.map((d) => d.id));
+  return new Set(allRecords.map((r) => r.id));
 }
 
 /**
- * Removes all player docs for a given team from the `players` collection.
- * When `exceptIds` is provided, only docs whose IDs are NOT in that set are removed.
+ * Removes all player records for a given team from the `players` collection.
+ * When `exceptIds` is provided, only records whose IDs are NOT in that set are removed.
  */
-export async function removePlayerDocs(
+export async function removeTeamPlayerRecords(
   db: BallgameDb,
   teamId: string,
   exceptIds?: Set<string>,
 ): Promise<void> {
   const existing = await db.players.find({ selector: { teamId } }).exec();
   const toRemove = exceptIds ? existing.filter((p) => !exceptIds.has(p.id)) : existing;
-  await Promise.all(toRemove.map((p) => p.remove()));
+  if (toRemove.length > 0) {
+    // Single bulk operation instead of N individual remove() calls.
+    await db.players.bulkRemove(toRemove.map((p) => p.id));
+  }
 }

@@ -1,7 +1,6 @@
 import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "@feat/customTeams/statBudget";
 
-import { generateSeed } from "@storage/generateId";
-import { fnv1a } from "@storage/hash";
+import { generatePlayerId } from "@storage/generateId";
 import type { TeamPlayer, TeamRoster } from "@storage/types";
 
 import { buildPlayerSig } from "./customTeamSignatures";
@@ -53,6 +52,9 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
       contact: clampStat(player.batting.contact),
       power: clampStat(player.batting.power),
       speed: clampStat(player.batting.speed),
+      ...(player.batting.stamina !== undefined && {
+        stamina: clampStat(player.batting.stamina),
+      }),
     },
     ...(player.pitching && {
       pitching: {
@@ -64,6 +66,9 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
         }),
         ...(player.pitching.movement !== undefined && {
           movement: clampStat(player.pitching.movement),
+        }),
+        ...(player.pitching.stamina !== undefined && {
+          stamina: clampStat(player.pitching.stamina),
         }),
       },
     }),
@@ -137,6 +142,9 @@ export function sanitizePlayer(
       contact: clampStat(Number(player.batting.contact) || 0),
       power: clampStat(Number(player.batting.power) || 0),
       speed: clampStat(Number(player.batting.speed) || 0),
+      ...(player.batting.stamina !== undefined && {
+        stamina: clampStat(Number(player.batting.stamina) || 0),
+      }),
     },
     ...(player.pitching && {
       pitching: {
@@ -149,25 +157,22 @@ export function sanitizePlayer(
         ...(player.pitching.movement !== undefined && {
           movement: clampStat(Number(player.pitching.movement) || 0),
         }),
+        ...(player.pitching.stamina !== undefined && {
+          stamina: clampStat(Number(player.pitching.stamina) || 0),
+        }),
       },
     }),
   };
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
   validatePlayerStatCaps(sanitized, { section, index });
-  // Preserve the existing playerSeed or generate a new one at creation time.
-  // The seed is stored permanently so the fingerprint can be re-verified.
-  const playerSeed = player.playerSeed ?? generateSeed();
-  // Always persist a content fingerprint so global duplicate detection works
-  // without re-reading all teams. The fingerprint covers the immutable identity
-  // fields (name, role, batting, pitching) plus the per-player seed.
-  const fingerprint = buildPlayerSig({ ...sanitized, playerSeed });
-  // Derive a stable team-independent identity from the player's seed.
-  // "pl_" prefix distinguishes it from team IDs and raw nanoid strings.
-  // Using fnv1a(playerSeed) means the same player always gets the same globalPlayerId
-  // regardless of which team they belong to, enabling cross-team career aggregation.
-  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(playerSeed)}`;
-  return { ...sanitized, playerSeed, fingerprint, globalPlayerId };
+  // Preserve stable imported IDs to keep long-term player identity intact.
+  // Only editor-temporary IDs (ep_*) or empty IDs are remapped to a fresh DB ID.
+  const incomingId = typeof player.id === "string" ? player.id.trim() : "";
+  const resolvedId =
+    incomingId.length > 0 && !incomingId.startsWith("ep_") ? incomingId : generatePlayerId();
+  const fingerprint = buildPlayerSig(sanitized);
+  return { ...sanitized, id: resolvedId, fingerprint };
 }
 
 export function buildRoster(input: {

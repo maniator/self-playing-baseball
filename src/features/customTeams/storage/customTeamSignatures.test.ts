@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 
+import type { TeamPlayer } from "@storage/types";
 import { makePlayer, makeTeam } from "@test/helpers/customTeams";
 
 import { buildPlayerSig, buildTeamFingerprint, stripTeamPlayerSigs } from "./customTeamSignatures";
@@ -16,10 +17,10 @@ describe("buildTeamFingerprint", () => {
     expect(buildTeamFingerprint(team)).toBe(buildTeamFingerprint(team));
   });
 
-  it("does not depend on team id", () => {
+  it("depends on team id (id is used as the entropy source)", () => {
     const team1 = makeTeam({ id: "ct_aaa", name: "X" });
     const team2 = { ...team1, id: "ct_bbb" };
-    expect(buildTeamFingerprint(team1)).toBe(buildTeamFingerprint(team2));
+    expect(buildTeamFingerprint(team1)).not.toBe(buildTeamFingerprint(team2));
   });
 
   it("differs when name changes", () => {
@@ -35,9 +36,9 @@ describe("buildTeamFingerprint", () => {
   });
 
   it("is case-insensitive for name and abbreviation", () => {
-    const a = makeTeam({ name: "Rockets", abbreviation: "ROC" });
-    const b = makeTeam({ name: "rockets", abbreviation: "roc" });
-    expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
+    const base = makeTeam({ id: "ct_case", name: "Rockets", abbreviation: "ROC" });
+    const lowerCase = { ...base, name: "rockets", abbreviation: "roc" };
+    expect(buildTeamFingerprint(base)).toBe(buildTeamFingerprint(lowerCase));
   });
 
   it("does not depend on roster composition", () => {
@@ -52,22 +53,16 @@ describe("buildTeamFingerprint", () => {
     expect(buildTeamFingerprint(base)).toBe(buildTeamFingerprint(differentRoster));
   });
 
-  it("differs when teamSeed changes (same name and abbreviation)", () => {
-    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-aaa" });
-    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "seed-bbb" });
+  it("differs when id changes (same name and abbreviation)", () => {
+    const a = makeTeam({ id: "ct_id_aaa", name: "Rockets", abbreviation: "ROC" });
+    const b = makeTeam({ id: "ct_id_bbb", name: "Rockets", abbreviation: "ROC" });
     expect(buildTeamFingerprint(a)).not.toBe(buildTeamFingerprint(b));
   });
 
-  it("is stable for the same teamSeed, name, and abbreviation", () => {
-    const a = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
-    const b = makeTeam({ name: "Rockets", abbreviation: "ROC", teamSeed: "stableXYZ" });
+  it("is stable for the same id, name, and abbreviation", () => {
+    const a = makeTeam({ id: "ct_stable_xyz", name: "Rockets", abbreviation: "ROC" });
+    const b = { ...a };
     expect(buildTeamFingerprint(a)).toBe(buildTeamFingerprint(b));
-  });
-
-  it("falls back gracefully when teamSeed is absent (legacy bundles)", () => {
-    const team = makeTeam({ name: "Legacy", abbreviation: "LGC" });
-    // No teamSeed — must not throw and must return an 8-char hex string
-    expect(buildTeamFingerprint(team)).toMatch(/^[0-9a-f]{8}$/);
   });
 });
 
@@ -95,48 +90,33 @@ describe("buildPlayerSig", () => {
     expect(buildPlayerSig({ ...p, name: "Bob" })).not.toBe(buildPlayerSig(p));
   });
 
-  it("does NOT depend on player id (id is remapped on import and must not affect dup detection)", () => {
+  it("does NOT depend on player id (sig is content-based for deduplication)", () => {
     const p = makePlayer();
-    expect(
-      buildPlayerSig({ ...p, id: "p_other" } as unknown as Pick<
-        typeof p,
-        "name" | "role" | "batting" | "pitching" | "playerSeed"
-      >),
-    ).toBe(buildPlayerSig(p));
+    const pOther = makePlayer(); // different id, same default content
+    expect(buildPlayerSig(pOther)).toBe(buildPlayerSig(p));
   });
 
-  it("does NOT depend on team (sig is team-independent so players can move between teams)", () => {
+  it("does NOT depend on team assignment (content-based, not identity-based)", () => {
     const p = makePlayer();
-    // Same player in two different teams must produce the same sig
+    // Same player object spread produces the same sig
     expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));
   });
 
   it("does NOT depend on position (position is editable after creation)", () => {
     const p = makePlayer();
-    expect(
-      buildPlayerSig({ ...p, position: "DH" } as unknown as Pick<
-        typeof p,
-        "name" | "role" | "batting" | "pitching" | "playerSeed"
-      >),
-    ).toBe(buildPlayerSig(p));
+    const pWithPos: TeamPlayer = { ...p, position: "DH" };
+    expect(buildPlayerSig(pWithPos)).toBe(buildPlayerSig(p));
   });
 
-  it("differs when playerSeed changes (same content)", () => {
-    const p = makePlayer();
-    expect(buildPlayerSig({ ...p, playerSeed: "seed-aaa" })).not.toBe(
-      buildPlayerSig({ ...p, playerSeed: "seed-bbb" }),
-    );
+  it("is the same when only id changes (same content produces same sig)", () => {
+    const p1 = makePlayer({ id: "id-aaa" });
+    const p2 = makePlayer({ id: "id-bbb" });
+    expect(buildPlayerSig(p1)).toBe(buildPlayerSig(p2));
   });
 
-  it("is stable for the same playerSeed and content", () => {
-    const p = makePlayer({ playerSeed: "stableABC123" });
+  it("is stable for the same content regardless of id", () => {
+    const p = makePlayer({ id: "stable-id-xyz" });
     expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));
-  });
-
-  it("falls back gracefully when playerSeed is absent (legacy bundles)", () => {
-    const p = makePlayer();
-    // No playerSeed — must not throw and must return 8-char hex
-    expect(buildPlayerSig(p)).toMatch(/^[0-9a-f]{8}$/);
   });
 });
 

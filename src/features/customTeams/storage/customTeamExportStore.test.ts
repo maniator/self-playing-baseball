@@ -78,7 +78,7 @@ describe("exportPlayer", () => {
 });
 
 describe("exportPlayer — identity fields", () => {
-  it("exported JSON includes globalPlayerId for a created player", async () => {
+  it("exported JSON includes player id (stable identity in v1)", async () => {
     const id = await store.createCustomTeam(
       makeInput({
         name: "Identity Export Team",
@@ -91,25 +91,9 @@ describe("exportPlayer — identity fields", () => {
     );
     const json = await store.exportPlayer(id, "p_gid");
     const parsed = JSON.parse(json) as { payload: { player: Record<string, unknown> } };
-    expect(typeof parsed.payload.player["globalPlayerId"]).toBe("string");
-    expect((parsed.payload.player["globalPlayerId"] as string).length).toBeGreaterThan(0);
-  });
-
-  it("exported JSON includes playerSeed for a created player", async () => {
-    const id = await store.createCustomTeam(
-      makeInput({
-        name: "PlayerSeed Export Team",
-        roster: {
-          lineup: [makePlayer({ id: "p_seed_export", name: "Seed Export Player" })],
-          bench: [],
-          pitchers: [],
-        },
-      }),
-    );
-    const json = await store.exportPlayer(id, "p_seed_export");
-    const parsed = JSON.parse(json) as { payload: { player: Record<string, unknown> } };
-    expect(typeof parsed.payload.player["playerSeed"]).toBe("string");
-    expect((parsed.payload.player["playerSeed"] as string).length).toBeGreaterThan(0);
+    // In v1, player.id is the stable identity (globalPlayerId concept is merged into id)
+    expect(typeof parsed.payload.player["id"]).toBe("string");
+    expect((parsed.payload.player["id"] as string).length).toBeGreaterThan(0);
   });
 
   it("exported JSON includes fingerprint for a created player", async () => {
@@ -129,7 +113,7 @@ describe("exportPlayer — identity fields", () => {
     expect(parsed.payload.player["fingerprint"]).toMatch(/^[0-9a-f]{8}$/);
   });
 
-  it("globalPlayerId is stable across export round-trips", async () => {
+  it("player id is stable across export round-trips", async () => {
     const id = await store.createCustomTeam(
       makeInput({
         name: "Stable GID Team",
@@ -142,10 +126,8 @@ describe("exportPlayer — identity fields", () => {
     );
     const json1 = await store.exportPlayer(id, "p_stable_gid");
     const json2 = await store.exportPlayer(id, "p_stable_gid");
-    const gid1 = (JSON.parse(json1) as { payload: { player: { globalPlayerId?: string } } }).payload
-      .player.globalPlayerId;
-    const gid2 = (JSON.parse(json2) as { payload: { player: { globalPlayerId?: string } } }).payload
-      .player.globalPlayerId;
-    expect(gid1).toBe(gid2);
+    const pid1 = (JSON.parse(json1) as { payload: { player: { id: string } } }).payload.player.id;
+    const pid2 = (JSON.parse(json2) as { payload: { player: { id: string } } }).payload.player.id;
+    expect(pid1).toBe(pid2);
   });
 });

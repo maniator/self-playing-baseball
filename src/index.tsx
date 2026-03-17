@@ -17,6 +17,6 @@ initSeed();
 createRoot(document.getElementById("game")!).render(
   <ThemeProvider theme={theme}>
     <RouterProvider router={router} />
-    <Analytics />
+    {__IS_VERCEL_BUILD__ && <Analytics />}
   </ThemeProvider>,
 );

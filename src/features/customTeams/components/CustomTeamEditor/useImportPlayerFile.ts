@@ -6,7 +6,7 @@ import {
 } from "@feat/customTeams/storage/customTeamExportImport";
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import type { EditorAction, EditorPlayer } from "./editorState";
 import { makePlayerId } from "./editorState";
@@ -21,7 +21,7 @@ export type PendingPlayerImport = {
 
 type Options = {
   teamId: string | undefined;
-  allTeams: CustomTeamDoc[];
+  allTeams: TeamWithRoster[];
   lineup: EditorPlayer[];
   bench: EditorPlayer[];
   pitchers: EditorPlayer[];
@@ -35,12 +35,11 @@ type Options = {
  * handler for that section's hidden file input.
  *
  * Edit mode (teamId set): delegates to `CustomTeamStore.importPlayer` for the hard
- *   `globalPlayerId` cross-team conflict check and DB persistence.
- * Create mode (no teamId): uses the in-memory allTeams list for the globalPlayerId
+ *   conflict check and DB persistence.
+ * Create mode (no teamId): uses the in-memory allTeams list for the fingerprint
  *   check and dispatches ADD_PLAYER to editor state only.
  *
- * When a player has a `globalPlayerId` the soft fingerprint duplicate warning is
- * skipped entirely — the store's hard check is the authoritative identity gate.
+ * Duplicate detection is fingerprint-based only.
  */
 export function useImportPlayerFile({
   teamId,
@@ -66,8 +65,6 @@ export function useImportPlayerFile({
           const importedPlayer = parseExportedCustomPlayer(playerJson);
 
           // Remap the ID to avoid local roster collisions.
-          // Preserve playerSeed so sanitizePlayer reuses the original seed and
-          // produces the same fingerprint — enabling cross-device duplicate detection.
           const editorPlayer: EditorPlayer = {
             id: makePlayerId(),
             name: importedPlayer.name,
@@ -85,10 +82,6 @@ export function useImportPlayerFile({
               }),
             ...(section === "pitchers" &&
               importedPlayer.pitchingRole && { pitchingRole: importedPlayer.pitchingRole }),
-            ...(importedPlayer.playerSeed && { playerSeed: importedPlayer.playerSeed }),
-            ...(importedPlayer.globalPlayerId && {
-              globalPlayerId: importedPlayer.globalPlayerId,
-            }),
           };
 
           /**
@@ -122,41 +115,24 @@ export function useImportPlayerFile({
                   : { ...editorPlayer, id: result.finalLocalId };
               dispatch({ type: "ADD_PLAYER", section, player: alignedPlayer });
             } else {
-              // Create mode: manual cross-team check against in-memory allTeams.
-              if (importedPlayer.globalPlayerId) {
-                const owningTeam = allTeams.find((t: CustomTeamDoc) =>
-                  [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
-                    (p: TeamPlayer) => p.globalPlayerId === importedPlayer.globalPlayerId,
-                  ),
-                );
-                if (owningTeam) {
-                  dispatch({
-                    type: "SET_ERROR",
-                    error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
-                  });
-                  return;
-                }
+              // Create mode: manual cross-team check using stable player id.
+              const owningTeam = allTeams.find((t: TeamWithRoster) =>
+                [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
+                  (p: TeamPlayer) => p.id === importedPlayer.id,
+                ),
+              );
+              if (owningTeam) {
+                dispatch({
+                  type: "SET_ERROR",
+                  error: `"${importedPlayer.name}" already belongs to team "${owningTeam.name}". Import cancelled. Remove that player from their current team before importing here.`,
+                });
+                return;
               }
               dispatch({ type: "ADD_PLAYER", section, player: editorPlayer });
             }
           };
 
-          // When globalPlayerId is present it is the authoritative identity — the
-          // store's hard check handles all conflicts. Skip the soft fingerprint warning.
-          if (importedPlayer.globalPlayerId) {
-            performImport().catch((error: unknown) => {
-              dispatch({
-                type: "SET_ERROR",
-                error:
-                  error instanceof Error
-                    ? `Import failed: ${error.message}`
-                    : "Import failed due to an unexpected error.",
-              });
-            });
-            return;
-          }
-
-          // Soft fingerprint duplicate check (players without globalPlayerId only).
+          // Soft fingerprint duplicate check.
           const sectionRole: "batter" | "pitcher" = section === "pitchers" ? "pitcher" : "batter";
           const incomingFp = buildPlayerSig({
             name: importedPlayer.name,
@@ -166,7 +142,6 @@ export function useImportPlayerFile({
               sectionRole === "pitcher" && importedPlayer.pitching
                 ? importedPlayer.pitching
                 : undefined,
-            playerSeed: importedPlayer.playerSeed,
           });
 
           const editorPlayerFp = (p: EditorPlayer): string =>
@@ -178,10 +153,9 @@ export function useImportPlayerFile({
                 p.velocity !== undefined
                   ? { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 }
                   : undefined,
-              playerSeed: p.playerSeed,
             });
 
-          const existingTeamWithPlayer = allTeams.find((t: CustomTeamDoc) =>
+          const existingTeamWithPlayer = allTeams.find((t: TeamWithRoster) =>
             [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers].some(
               (p: TeamPlayer) => (p.fingerprint ?? buildPlayerSig(p)) === incomingFp,
             ),

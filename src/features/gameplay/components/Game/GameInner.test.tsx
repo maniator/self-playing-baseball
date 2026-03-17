@@ -7,7 +7,7 @@ import * as savesModule from "@shared/utils/saves";
 import { act, fireEvent, render, renderHook, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 import { makeContextValue, makeState } from "@test/testHelpers";
 
 import Game from ".";
@@ -174,7 +174,7 @@ describe("GameInner — auto-save resume", () => {
   it("auto-restores from rxAutoSave without dialog when snapshot exists", async () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
-      saves: [makeAutoSaveSlot() as SaveDoc],
+      saves: [makeAutoSaveSlot() as SaveRecord],
       createSave: vi.fn().mockResolvedValue("save_abc"),
       appendEvents: vi.fn().mockResolvedValue(undefined),
       updateProgress: vi.fn().mockResolvedValue(undefined),
@@ -200,7 +200,7 @@ describe("GameInner — auto-save resume", () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     const noSnapshotSlot = { ...makeAutoSaveSlot(), stateSnapshot: undefined };
     vi.mocked(useSaveStore).mockReturnValue({
-      saves: [noSnapshotSlot as SaveDoc],
+      saves: [noSnapshotSlot as SaveRecord],
       createSave: vi.fn().mockResolvedValue("save_1"),
       appendEvents: vi.fn().mockResolvedValue(undefined),
       updateProgress: vi.fn().mockResolvedValue(undefined),
@@ -222,7 +222,7 @@ describe("GameInner — auto-save resume", () => {
   it("calls restoreRng when a matched auto-save is present on mount", async () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
     vi.mocked(useSaveStore).mockReturnValue({
-      saves: [makeAutoSaveSlot() as SaveDoc],
+      saves: [makeAutoSaveSlot() as SaveRecord],
       createSave: vi.fn().mockResolvedValue("save_abc"),
       appendEvents: vi.fn().mockResolvedValue(undefined),
       updateProgress: vi.fn().mockResolvedValue(undefined),
@@ -256,6 +256,8 @@ describe("GameInner — auto-save resume", () => {
     const pendingSetup = {
       homeTeam: "Yankees",
       awayTeam: "Mets",
+      homeTeamLabel: "Yankees",
+      awayTeamLabel: "Mets",
       managedTeam: null as null,
       playerOverrides: {
         away: {},
@@ -421,12 +423,14 @@ describe("GameInner — custom team label resolution", () => {
     });
   });
 
-  it("preserves custom: IDs in state.teams so downstream logic can branch on them", async () => {
-    // pendingGameSetup passes custom:<id> strings to handleStart; state should keep them intact.
+  it("preserves ct_* IDs in state.teams (v1 canonical format)", async () => {
+    // pendingGameSetup passes ct_* strings to handleStart; state should keep them intact.
     const dispatch = vi.fn();
     const customPendingSetup = {
-      homeTeam: "custom:ct_abc999",
-      awayTeam: "custom:ct_abc123",
+      homeTeam: "ct_abc999",
+      awayTeam: "ct_abc123",
+      homeTeamLabel: "Home Team",
+      awayTeamLabel: "Away Team",
       managedTeam: null as null,
       playerOverrides: {
         away: {},
@@ -444,22 +448,21 @@ describe("GameInner — custom team label resolution", () => {
     const setTeamsCall = dispatch.mock.calls.find((c) => c[0]?.type === "setTeams");
     expect(setTeamsCall).toBeDefined();
     const teams: [string, string] = setTeamsCall?.[0]?.payload?.teams;
-    // IDs must be preserved as custom:<id> so downstream logic (PlayerStatsPanel, etc.) works
-    expect(teams[0]).toMatch(/^custom:/);
-    expect(teams[1]).toMatch(/^custom:/);
+    // IDs are plain ct_* in v1 (no custom: prefix)
+    expect(teams[0]).toMatch(/^ct_/);
+    expect(teams[1]).toMatch(/^ct_/);
   });
 
-  it("TTS preprocessor in GameProviderWrapper resolves custom: IDs to display names", () => {
-    // Regression: the announcePreprocessor built from customTeams must translate custom: IDs.
+  it("TTS preprocessor in GameProviderWrapper resolves ct_* IDs to display names", () => {
+    // Regression: the announcePreprocessor built from customTeams must translate ct_* IDs.
     const { result } = renderHook(() => useGameContext(), {
       wrapper: ({ children }) => (
         <GameContext.Provider
           value={makeContextValue({
             dispatchLog: vi.fn((action) => {
               if (action.type === "log" && action.preprocessor) {
-                const resolved = action.preprocessor("custom:ct_abc123 are batting!");
+                const resolved = action.preprocessor("ct_abc123 are batting!");
                 expect(resolved).toBe("Austin Eagles are batting!");
-                expect(resolved).not.toContain("custom:");
               }
             }),
           })}
@@ -470,28 +473,28 @@ describe("GameInner — custom team label resolution", () => {
     });
     // Trigger a log dispatch with a preprocessor that mimics the GameProviderWrapper one
     const preprocessor = (msg: string) =>
-      msg.replace(/custom:[^\s"',]+/g, (id) => {
-        const doc = [CUSTOM_TEAM_DOC as any].find((t: any) => `custom:${t.id}` === id);
+      msg.replace(/ct_[^\s"',]+/g, (id) => {
+        const doc = [CUSTOM_TEAM_DOC as any].find((t: any) => t.id === id);
         return doc ? `${doc.city} ${doc.name}` : id;
       });
     act(() => {
       result.current.dispatchLog({
         type: "log",
-        payload: "custom:ct_abc123 are batting!",
+        payload: "ct_abc123 are batting!",
         preprocessor,
       });
     });
   });
 
-  it("auto-resume keeps custom: IDs intact in restored state", async () => {
+  it("auto-resume keeps ct_* IDs intact in restored state", async () => {
     const { useSaveStore } = await import("@feat/saves/hooks/useSaveStore");
-    const snapState = makeState({ teams: ["custom:ct_abc123", "Home"] as [string, string] });
+    const snapState = makeState({ teams: ["ct_abc123", "Home"] as [string, string] });
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [
         {
           ...makeAutoSaveSlot(),
           stateSnapshot: { state: snapState, rngState: null },
-        } as SaveDoc,
+        } as SaveRecord,
       ],
       createSave: vi.fn().mockResolvedValue("save_1"),
       appendEvents: vi.fn().mockResolvedValue(undefined),
@@ -511,8 +514,8 @@ describe("GameInner — custom team label resolution", () => {
     const restoreCall = dispatch.mock.calls.find((c) => c[0]?.type === "restore_game");
     expect(restoreCall).toBeDefined();
     const restoredTeams: [string, string] = restoreCall?.[0]?.payload?.teams;
-    // custom: ID must be preserved intact so downstream logic keeps working
-    expect(restoredTeams[0]).toBe("custom:ct_abc123");
+    // ct_* ID must be preserved intact in v1
+    expect(restoredTeams[0]).toBe("ct_abc123");
     expect(restoredTeams[1]).toBe("Home");
   });
 });
@@ -572,6 +575,8 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
   const pendingSetup = {
     homeTeam: "Yankees",
     awayTeam: "Mets",
+    homeTeamLabel: "Yankees",
+    awayTeamLabel: "Mets",
     managedTeam: null as null,
     playerOverrides: {
       away: {},
@@ -636,7 +641,7 @@ describe("GameInner — pendingGameSetup prop (Exhibition Setup page auto-start)
         state: makeState({ gameOver: true, teams: ["Mets", "Yankees"] as [string, string] }),
         rngState: 99,
       },
-    } as SaveDoc;
+    } as SaveRecord;
     vi.mocked(useSaveStore).mockReturnValue({
       saves: [finishedSave],
       createSave: vi.fn().mockResolvedValue("save_new"),
@@ -721,7 +726,7 @@ describe("GameInner — onGameOver prop", () => {
 
 // ─── Modal save load (handleModalLoad / onLoadSave callback) ──────────────────
 
-const makeModalSaveSlot = (): SaveDoc => ({
+const makeModalSaveSlot = (): SaveRecord => ({
   id: "modal_save_1",
   name: "Modal test save",
   seed: "modalseed",

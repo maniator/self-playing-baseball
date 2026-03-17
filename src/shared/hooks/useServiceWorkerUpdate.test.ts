@@ -38,7 +38,7 @@ describe("useServiceWorkerUpdate", () => {
     if (originalVisibilityStateDescriptor) {
       Object.defineProperty(document, "visibilityState", originalVisibilityStateDescriptor);
     } else {
-      delete (document as Record<string, unknown>).visibilityState;
+      delete (document as unknown as Record<string, unknown>).visibilityState;
     }
   });
 

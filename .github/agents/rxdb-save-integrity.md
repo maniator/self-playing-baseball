@@ -20,11 +20,22 @@ You are a data integrity and persistence expert for `maniator/blipit-legends`. Y
 
 ## RxDB architecture reference
 
-| Collection | Purpose                                                                                                     |
-| ---------- | ----------------------------------------------------------------------------------------------------------- |
-| `saves`    | One header doc per save (`SaveDoc`) — setup, `progressIdx`, `stateSnapshot`. **Current schema version: 1.** |
-| `events`   | Append-only event log (`EventDoc`) — one doc per action, keyed `${saveId}:${idx}`                           |
-| `teams`    | Legacy (removed — was MLB team cache). No longer a collection.                                              |
+| Collection         | Record type             | Purpose                                                                                                            |
+| ------------------ | ----------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `saves`            | `SaveRecord`            | One header doc per save — setup, `progressIdx`, `stateSnapshot`. **Current RxDB schema version: 0 (v1 baseline).** |
+| `events`           | `EventRecord`           | Append-only event log — one doc per action, keyed `${saveId}:${idx}`                                               |
+| `teams`            | `TeamRecord`            | User-created team metadata/identity only. No embedded roster.                                                      |
+| `players`          | `PlayerRecord`          | One doc per player. `teamId` FK → `TeamRecord.id`. Free agents use `FREE_AGENT_TEAM_ID` sentinel.                  |
+| `completedGames`   | `CompletedGameRecord`   | One doc per completed game — result, teams, final score.                                                           |
+| `batterGameStats`  | `BatterGameStatRecord`  | Per-game batter stats keyed by `${gameId}:${batterKey}`.                                                           |
+| `pitcherGameStats` | `PitcherGameStatRecord` | Per-game pitcher stats keyed by `${gameId}:${pitcherKey}`.                                                         |
+
+### Key v1 invariants
+
+- `PlayerRecord.id` IS the stable player identity (e.g. `p_<nanoid>` from `generatePlayerId()`). No separate `globalPlayerId` field.
+- `PlayerRecord.teamId` is a `string` FK — **NOT nullable**. Free agents use `FREE_AGENT_TEAM_ID = "team_free_agents"` sentinel so the field can be indexed.
+- Players are never embedded in team documents. PKs are simple (e.g. `p_<nanoid>`), NOT composite `${teamId}:${playerId}`.
+- No `playerSeed`, no `teamSeed`, no `globalPlayerId` field anywhere.
 
 - `SaveStore` is a singleton backed by `getDb()`. For tests, use `makeSaveStore(_createTestDb(getRxStorageMemory()))`.
 - `_createTestDb` requires `fake-indexeddb/auto` imported at the top of the test file.

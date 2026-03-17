@@ -2,9 +2,9 @@
  * Persisted completed-game document (one per finished game).
  *
  * Written exactly once when a game reaches FINAL. Loading an already-FINAL save
- * must never create a new GameDoc.
+ * must never create a new CompletedGameRecord.
  */
-export interface GameDoc {
+export interface CompletedGameRecord {
   /**
    * Primary key — the `gameInstanceId` stored in `State` for the completed run.
    * Using `gameInstanceId` (not `saveId`) ensures that loading any mid-game
@@ -23,7 +23,7 @@ export interface GameDoc {
   awayScore: number;
   /** Number of innings played (9 normally; more for extras). */
   innings: number;
-  /** The save ID (`SaveDoc.id`) that triggered the commit — for debug/traceability only. */
+  /** The save ID (`SaveRecord.id`) that triggered the commit — for debug/traceability only. */
   committedBySaveId?: string;
   schemaVersion: number;
 }
@@ -42,13 +42,13 @@ export interface GameDoc {
  *   - Future trade/free-agent work can continue using `globalPlayerId` as-is — old
  *     rows keep their original playerKey so existing history remains intact.
  */
-export interface PlayerGameStatDoc {
+export interface BatterGameStatRecord {
   /**
    * Primary key — composite: `${gameId}:${teamId}:${playerKey}`.
    * The composite format ensures global uniqueness without a separate UUID.
    */
   id: string;
-  /** FK → GameDoc.id */
+  /** FK → CompletedGameRecord.id */
   gameId: string;
   teamId: string;
   opponentTeamId: string;
@@ -87,7 +87,7 @@ export interface PlayerGameStatDoc {
 /**
  * Pitching statistics for a single pitcher in a single completed game.
  *
- * playerKey rules match PlayerGameStatDoc — globalPlayerId for custom-team pitchers,
+ * playerKey rules match BatterGameStatRecord — globalPlayerId for custom-team pitchers,
  * `${teamId}:${pitcherId}` for stock/generated-team pitchers.
  *
  * Outs are stored as integers; display IP as `Math.floor(outsPitched/3).Y` where
@@ -95,19 +95,19 @@ export interface PlayerGameStatDoc {
  *
  * v1 simplification: earnedRuns = runsAllowed (error-tracking not yet implemented).
  */
-export interface PitcherGameStatDoc {
+export interface PitcherGameStatRecord {
   /**
    * Primary key — composite: `${gameId}:${teamId}:${pitcherKey}`.
    * Guarantees global uniqueness and idempotent inserts.
    */
   id: string;
-  /** FK → GameDoc.id */
+  /** FK → CompletedGameRecord.id */
   gameId: string;
   teamId: string;
   opponentTeamId: string;
   /**
-   * Stable cross-game identity string (mirrors PlayerGameStatDoc.playerKey rules).
-   * Custom-team pitchers: globalPlayerId when available.
+   * Stable cross-game identity string.
+   * Custom-team pitchers: player `id` (globalPlayerId is no longer a separate field in v1).
    * Stock/generated-team pitchers: `${teamId}:${pitcherId}`.
    */
   pitcherKey: string;
@@ -162,10 +162,10 @@ export interface ExportedGameHistory {
   formatVersion: 1 | 2;
   exportedAt: string;
   payload: {
-    games: GameDoc[];
-    playerGameStats: PlayerGameStatDoc[];
+    games: CompletedGameRecord[];
+    playerGameStats: BatterGameStatRecord[];
     /** Only present in v2+ bundles; undefined for v1 legacy imports. */
-    pitcherGameStats?: PitcherGameStatDoc[];
+    pitcherGameStats?: PitcherGameStatRecord[];
     /** Team IDs referenced by stats rows — must exist locally for import to succeed. */
     requiredTeamIds: string[];
   };

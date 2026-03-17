@@ -39,8 +39,8 @@ describe("initEditorState", () => {
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
       name: "Eagles",
+      nameLowercase: "eagles",
       city: "Austin",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -70,7 +70,7 @@ describe("initEditorState", () => {
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
       name: "Rockets",
-      source: "custom" as const,
+      nameLowercase: "rockets",
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -100,7 +100,7 @@ describe("initEditorState", () => {
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
       name: "Old Team",
-      source: "custom" as const,
+      nameLowercase: "old team",
       roster: {
         schemaVersion: 1,
         lineup: [

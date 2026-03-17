@@ -124,7 +124,6 @@ describe("GameControls", () => {
           name: "Yankees",
           city: "",
           abbreviation: "YNK",
-          source: "custom",
           schemaVersion: 1,
           createdAt: "2024-01-01T00:00:00.000Z",
           updatedAt: "2024-01-01T00:00:00.000Z",
@@ -136,7 +135,6 @@ describe("GameControls", () => {
           name: "Red Sox",
           city: "",
           abbreviation: "RSX",
-          source: "custom",
           schemaVersion: 1,
           createdAt: "2024-01-01T00:00:00.000Z",
           updatedAt: "2024-01-01T00:00:00.000Z",
@@ -152,7 +150,7 @@ describe("GameControls", () => {
     });
     renderWithContext(
       <GameControls gameStarted />,
-      makeContextValue({ teams: ["custom:ct_yankees", "custom:ct_redsox"] }),
+      makeContextValue({ teams: ["ct_yankees", "ct_redsox"] }),
     );
     const selects = screen.getAllByRole("combobox");
     expect(selects.length).toBeGreaterThanOrEqual(1);

@@ -4,8 +4,8 @@
     "id": "save_pinch_hitter_handedness_fixture",
     "name": "Pinch Hitter Handedness Decision",
     "seed": "ph-visual-01",
-    "homeTeamId": "custom:ct_vis_locals",
-    "awayTeamId": "custom:ct_vis_visitors",
+    "homeTeamId": "ct_vis_locals",
+    "awayTeamId": "ct_vis_visitors",
     "createdAt": 1700002000000,
     "updatedAt": 1700002000000,
     "progressIdx": 42,
@@ -297,5 +297,5 @@
     }
   },
   "events": [],
-  "sig": "a6712d74"
+  "sig": "b32f7736"
 }

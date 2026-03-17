@@ -168,25 +168,18 @@ describe("updateCustomTeam — fingerprint", () => {
   });
 });
 
-describe("updateCustomTeam — teamSeed preservation", () => {
-  it("preserves the original teamSeed after name update", async () => {
-    const id = await store.createCustomTeam(makeInput({ name: "Preserve Seed" }));
-    const before = await store.getCustomTeam(id);
-    const originalSeed = before?.teamSeed;
-    expect(originalSeed).toBeTruthy();
-
-    await store.updateCustomTeam(id, { name: "Preserve Seed Renamed" });
+describe("updateCustomTeam — no teamSeed field", () => {
+  it("team has no teamSeed field after name update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "No Seed Team" }));
+    await store.updateCustomTeam(id, { name: "No Seed Team Renamed" });
     const after = await store.getCustomTeam(id);
-    expect(after?.teamSeed).toBe(originalSeed);
+    expect("teamSeed" in (after ?? {})).toBe(false);
   });
 
-  it("preserves the original teamSeed after metadata-only update", async () => {
-    const id = await store.createCustomTeam(makeInput({ name: "Meta Seed Team" }));
-    const before = await store.getCustomTeam(id);
-    const originalSeed = before?.teamSeed;
-
+  it("team has no teamSeed field after metadata-only update", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Meta No Seed" }));
     await store.updateCustomTeam(id, { metadata: { notes: "updated notes" } });
     const after = await store.getCustomTeam(id);
-    expect(after?.teamSeed).toBe(originalSeed);
+    expect("teamSeed" in (after ?? {})).toBe(false);
   });
 });

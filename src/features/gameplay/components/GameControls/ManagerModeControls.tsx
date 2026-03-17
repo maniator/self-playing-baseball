@@ -4,7 +4,7 @@ import type { PitchingRole } from "@feat/gameplay/components/SubstitutionPanel";
 import SubstitutionPanel from "@feat/gameplay/components/SubstitutionPanel";
 import { useGameContext } from "@feat/gameplay/context/index";
 import { Strategy } from "@feat/gameplay/context/index";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 
 import { NotifBadge, Select, SubButton, ToggleLabel } from "./styles";
 
@@ -38,22 +38,19 @@ const SubstitutionButton: React.FunctionComponent<{
     pitcherBattersFaced,
     teams: gameTeams,
   } = useGameContext();
-  const { teams: customTeams } = useCustomTeams();
+  const teamId = gameTeams[managedTeam];
+  const teamDoc = useTeamWithRoster(teamId);
   const [showPanel, setShowPanel] = React.useState(false);
 
-  // Derive pitcher roles from the custom team doc if this is a custom-team game.
+  // Derive pitcher roles from the team doc fetched directly from DB by ID.
   const pitcherRoles = React.useMemo((): Record<string, PitchingRole> => {
-    const teamId = gameTeams[managedTeam];
-    if (!teamId.startsWith("custom:")) return {};
-    const ctId = teamId.slice("custom:".length);
-    const doc = customTeams.find((t) => t.id === ctId);
-    if (!doc) return {};
+    if (!teamDoc) return {};
     const roles: Record<string, PitchingRole> = {};
-    for (const p of doc.roster.pitchers) {
+    for (const p of teamDoc.roster.pitchers) {
       if (p.pitchingRole) roles[p.id] = p.pitchingRole;
     }
     return roles;
-  }, [gameTeams, managedTeam, customTeams]);
+  }, [teamDoc]);
 
   return (
     <>

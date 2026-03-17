@@ -43,7 +43,6 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     prevKey,
     nextKey,
     navigateToPlayer,
-    customTeams,
   } = usePlayerCareerData(playerKey);
 
   // Determine which tabs are available based on history rows.
@@ -140,19 +139,11 @@ const PlayerCareerPage: React.FunctionComponent = () => {
       </TabBar>
 
       {!loading && effectiveActiveTab === "batting" && (
-        <PlayerCareerBattingTab
-          battingRows={battingRows}
-          battingTotals={battingTotals}
-          customTeams={customTeams}
-        />
+        <PlayerCareerBattingTab battingRows={battingRows} battingTotals={battingTotals} />
       )}
 
       {!loading && effectiveActiveTab === "pitching" && (
-        <PlayerCareerPitchingTab
-          pitchingRows={pitchingRows}
-          pitchingTotals={pitchingTotals}
-          customTeams={customTeams}
-        />
+        <PlayerCareerPitchingTab pitchingRows={pitchingRows} pitchingTotals={pitchingTotals} />
       )}
     </PlayerCareerContainer>
   );

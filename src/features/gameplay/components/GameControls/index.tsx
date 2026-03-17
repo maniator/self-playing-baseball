@@ -4,7 +4,7 @@ import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
 import { Strategy } from "@feat/gameplay/context/index";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 import { SPEED_STEP_LABELS, SPEED_STEPS } from "./constants";
 import ManagerModeControls from "./ManagerModeControls";
@@ -29,7 +29,7 @@ const SavesModal = React.lazy(() => import("@feat/saves/components/SavesModal"))
 type Props = {
   onNewGame?: () => void;
   gameStarted?: boolean;
-  onLoadSave?: (slot: SaveDoc) => void;
+  onLoadSave?: (slot: SaveRecord) => void;
   /** Routes back to the Home screen. When provided a "← Home" button is shown. */
   onBackToHome?: () => void;
   /** When true, shows a disabled "Saving…" button instead of "New Game". */
@@ -69,12 +69,12 @@ const GameControls: React.FunctionComponent<Props> = ({
   } = useGameControls({ gameStarted });
 
   const { teams: customTeamDocs } = useCustomTeams();
-  // Resolve display labels for raw game-state team IDs (e.g. `custom:ct_...` → team name)
+  // Resolve display labels for raw game-state team IDs (e.g. `ct_...` -> team name)
   const resolvedTeamLabels: [string, string] = [
     resolveTeamLabel(teams[0], customTeamDocs),
     resolveTeamLabel(teams[1], customTeamDocs),
   ];
-  const speedIndex = Math.max(0, SPEED_STEPS.indexOf(speed));
+  const speedIndex = Math.max(0, (SPEED_STEPS as readonly number[]).indexOf(speed));
 
   return (
     <>
@@ -146,9 +146,13 @@ const GameControls: React.FunctionComponent<Props> = ({
                 max={SPEED_STEPS.length - 1}
                 step={1}
                 value={speedIndex}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSpeed(SPEED_STEPS[parseInt(e.target.value, 10)])
-                }
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const idx = Math.min(
+                    SPEED_STEPS.length - 1,
+                    Math.max(0, parseInt(e.target.value, 10)),
+                  );
+                  setSpeed(SPEED_STEPS[idx]);
+                }}
                 aria-label="Game speed"
                 data-testid="speed-slider"
               />

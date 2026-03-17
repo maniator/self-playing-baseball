@@ -21,14 +21,14 @@ import { useLocalStorage } from "usehooks-ts";
 
 import type { ExhibitionGameSetup } from "@storage/types";
 import type { PlayerOverrides } from "@storage/types";
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
+import type { GameSaveSetup, SaveRecord } from "@storage/types";
 
 import { FieldPanel, GameBody, GameDiv, LogPanel } from "./styles";
 
 /** Finds the best save to auto-resume: prefer seed+snapshot match, fallback to any snapshot. */
-const findMatchedSave = (saves: SaveDoc[]): SaveDoc | null => {
+const findMatchedSave = (saves: SaveRecord[]): SaveRecord | null => {
   const currentSeed = getSeed()?.toString(36);
-  let anySnapshot: SaveDoc | null = null;
+  let anySnapshot: SaveRecord | null = null;
   for (const s of saves) {
     if (s.stateSnapshot == null) continue;
     if (currentSeed != null && s.seed === currentSeed) return s; // best match
@@ -51,7 +51,7 @@ interface Props {
   /** Called after pendingGameSetup is consumed so GamePage can clear it. */
   onConsumeGameSetup?: () => void;
   /** Save loaded from /saves page; auto-restores game state when it arrives. */
-  pendingLoadSave?: SaveDoc | null;
+  pendingLoadSave?: SaveRecord | null;
   /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
   /** Called when the isCommitting state changes (career stats being saved). */
@@ -98,7 +98,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   const [wasAlreadyFinalOnLoad, setWasAlreadyFinalOnLoad] = React.useState(false);
 
   useRxdbGameSync(rxSaveIdRef, actionBufferRef, { wasAlreadyFinalOnLoad });
-  const { isCommitting } = useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad, customTeams);
+  const { isCommitting } = useGameHistorySync(rxSaveIdRef, wasAlreadyFinalOnLoad);
 
   React.useEffect(() => {
     onSavingStateChange?.(isCommitting);
@@ -127,7 +127,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // Also skip when a fresh new game is pending — pendingGameSetup takes precedence over any
   // existing save so the finished-game state is never replayed on top of the new session.
   const restoredRef = React.useRef(pendingGameSetup != null || pendingLoadSave != null);
-  const [rxAutoSave, setRxAutoSave] = React.useState<SaveDoc | null>(null);
+  const [rxAutoSave, setRxAutoSave] = React.useState<SaveRecord | null>(null);
   React.useEffect(() => {
     if (restoredRef.current) return;
     const matched = findMatchedSave(saves);
@@ -138,7 +138,7 @@ const GameInner: React.FunctionComponent<Props> = ({
 
   // Restore state from the RxDB save as soon as it is loaded and auto-activate the session.
   // Guard against double-dispatch if customTeams updates after the initial restore.
-  const prevRxAutoSaveRef = React.useRef<SaveDoc | null>(null);
+  const prevRxAutoSaveRef = React.useRef<SaveRecord | null>(null);
   React.useEffect(() => {
     if (!rxAutoSave || rxAutoSave === prevRxAutoSaveRef.current) return;
     if (customTeamsLoading) return; // defer until custom teams are loaded
@@ -292,7 +292,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   }, [pendingGameSetup, onConsumeGameSetup]);
 
   // Restore game state when AppShell delivers a save loaded from the /saves page.
-  const prevPendingLoad = React.useRef<SaveDoc | null>(null);
+  const prevPendingLoad = React.useRef<SaveRecord | null>(null);
   React.useEffect(() => {
     if (!pendingLoadSave) return;
     if (pendingLoadSave === prevPendingLoad.current) return;
@@ -351,7 +351,7 @@ const GameInner: React.FunctionComponent<Props> = ({
   // false→true gameActive dance needed now that the scheduler no longer reads
   // gameStateRef inside the timeout callback (the stale-ref guard was removed).
   const handleModalLoad = React.useCallback(
-    (slot: SaveDoc) => {
+    (slot: SaveRecord) => {
       const snap = slot.stateSnapshot;
       if (!snap) return;
 

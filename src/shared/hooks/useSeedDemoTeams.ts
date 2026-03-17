@@ -73,7 +73,6 @@ async function seedIfEmpty(): Promise<void> {
           name: def.name,
           city: def.city,
           abbreviation: def.abbreviation,
-          source: "generated",
           roster: {
             lineup: def.lineup.map(mapDemoPlayer),
             bench: def.bench.map(mapDemoPlayer),

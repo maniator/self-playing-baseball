@@ -4,8 +4,6 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { closestCenter, DndContext, useDroppable } from "@dnd-kit/core";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 
-import { generateSeed } from "@storage/generateId";
-
 import type { EditorAction, EditorPlayer } from "./editorState";
 import { makePlayerId } from "./editorState";
 import SortablePlayerRow from "./SortablePlayerRow";
@@ -25,7 +23,6 @@ import type { PendingPlayerImport } from "./useImportPlayerFile";
 
 export const makeBlankBatter = (): EditorPlayer => ({
   id: makePlayerId(),
-  playerSeed: generateSeed(),
   name: "",
   position: "",
   handedness: "R",
@@ -36,7 +33,6 @@ export const makeBlankBatter = (): EditorPlayer => ({
 
 export const makeBlankPitcher = (): EditorPlayer => ({
   id: makePlayerId(),
-  playerSeed: generateSeed(),
   name: "",
   position: "",
   handedness: "R",

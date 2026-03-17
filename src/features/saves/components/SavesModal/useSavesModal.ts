@@ -15,7 +15,7 @@ import { getRngState } from "@shared/utils/rng";
 import { currentSeedStr } from "@shared/utils/saves";
 
 import { downloadJson } from "@storage/saveIO";
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
+import type { GameSaveSetup, SaveRecord } from "@storage/types";
 
 interface Params {
   strategy: Strategy;
@@ -24,12 +24,12 @@ interface Params {
   currentSaveId: string | null;
   onSaveIdChange: (id: string | null) => void;
   /** Called when the user loads a save; GameInner owns the actual restore logic. */
-  onLoadSave?: (slot: SaveDoc) => void;
+  onLoadSave?: (slot: SaveRecord) => void;
 }
 
 export interface SavesModalState {
   ref: React.RefObject<HTMLDialogElement | null>;
-  saves: SaveDoc[];
+  saves: SaveRecord[];
   /** Current paste-JSON textarea value (alias: pasteJson from useImportSave). */
   importText: string;
   importError: string | null;
@@ -39,12 +39,12 @@ export interface SavesModalState {
   open: () => void;
   close: () => void;
   handleSave: () => void;
-  handleLoad: (slot: SaveDoc) => void;
+  handleLoad: (slot: SaveRecord) => void;
   handleDelete: (id: string) => void;
-  handleExport: (slot: SaveDoc) => void;
+  handleExport: (slot: SaveRecord) => void;
   handleImportPaste: () => void;
   handleFileImport: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  /** Replaces any `custom:<id>` fragment in a save name with the resolved display label. */
+  /** Replaces any `ct_*` team ID fragment in a save name with the resolved display label. */
   resolveSaveName: (name: string) => string;
   /** Exports all game history as a signed JSON bundle and downloads it. */
   handleExportHistory: () => void;
@@ -140,7 +140,7 @@ export const useSavesModal = ({
     }
   };
 
-  const handleLoad = (slot: SaveDoc) => {
+  const handleLoad = (slot: SaveRecord) => {
     // Check snapshot availability for the error case.  The actual restore
     // (dispatch, rng, localStorage) is handled by GameInner via onLoadSave so
     // that the /saves-page and in-game-modal paths share identical logic.
@@ -157,7 +157,9 @@ export const useSavesModal = ({
 
     // Enrich the slot so GameInner always receives a snapshot (might be a
     // fallback from a same-seed save when the clicked slot has none).
-    const slotWithSnapshot: SaveDoc = slot.stateSnapshot ? slot : { ...slot, stateSnapshot: snap };
+    const slotWithSnapshot: SaveRecord = slot.stateSnapshot
+      ? slot
+      : { ...slot, stateSnapshot: snap };
 
     onSaveIdChange(slot.id);
     onLoadSave?.(slotWithSnapshot);
@@ -194,9 +196,7 @@ export const useSavesModal = ({
   });
 
   /**
-   * Replaces any `custom:<id>` fragment in a save name with the resolved
-   * display label. Uses a broad token pattern so hyphenated or otherwise
-   * non-alphanumeric-underscore IDs are also matched correctly.
+   * Replaces any `ct_*` team ID token in a save name with the resolved display label.
    */
   const resolveSaveName = (name: string): string => resolveCustomIdsInString(name, customTeams);
 
@@ -228,9 +228,9 @@ export const useSavesModal = ({
       setHistoryImportSuccess(null);
       try {
         const text = await file.text();
-        // Build set of known custom team IDs — stock teams always pass validation.
-        const customTeamIds = new Set(customTeams.map((t) => `custom:${t.id}`));
-        const result = await GameHistoryStore.importGameHistory(text, customTeamIds);
+        // Build set of known team IDs — all teams are v1 ct_* records.
+        const teamIds = new Set(customTeams.map((t) => t.id));
+        const result = await GameHistoryStore.importGameHistory(text, teamIds);
         const msg =
           `Imported ${result.gamesCreated} game(s), ${result.statsCreated} stat row(s). ` +
           (result.gamesSkipped + result.statsSkipped > 0

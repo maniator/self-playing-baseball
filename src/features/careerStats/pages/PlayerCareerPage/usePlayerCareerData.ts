@@ -8,10 +8,10 @@ import * as React from "react";
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { computeERA, computeWHIP } from "@feat/careerStats/utils/computePitcherGameStats";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 import { useNavigate, useSearchParams } from "react-router";
 
-import type { PitcherGameStatDoc, PlayerGameStatDoc, TeamPlayer } from "@storage/types";
+import type { BatterGameStatRecord, PitcherGameStatRecord, TeamPlayer } from "@storage/types";
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 
@@ -73,36 +73,34 @@ export type PitchingTotals = {
 export function usePlayerCareerData(playerKey: string | undefined) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { teams: customTeams } = useCustomTeams();
+
+  // In v1 the ?team= query param carries a plain ct_* team ID.
+  const teamContext = searchParams.get("team") ?? "";
+  // Fetch the team doc directly from DB by its ID — no array scan needed.
+  const teamDoc = useTeamWithRoster(teamContext || undefined);
 
   const [loading, setLoading] = React.useState(true);
-  const [battingRows, setBattingRows] = React.useState<PlayerGameStatDoc[]>([]);
-  const [pitchingRows, setPitchingRows] = React.useState<PitcherGameStatDoc[]>([]);
+  const [battingRows, setBattingRows] = React.useState<BatterGameStatRecord[]>([]);
+  const [pitchingRows, setPitchingRows] = React.useState<PitcherGameStatRecord[]>([]);
 
-  // Build the prev/next context from the ?team= query param + all players in that roster.
-  const teamContext = searchParams.get("team") ?? "";
-
+  // Build the ordered list of player keys from the team's roster for prev/next nav.
   const rosterPlayerKeys = React.useMemo<string[]>(() => {
-    if (!teamContext) return [];
-    const teamId = teamContext.startsWith("custom:") ? teamContext.slice("custom:".length) : "";
-    const team = customTeams.find((t) => t.id === teamId);
-    if (!team) return [];
+    if (!teamDoc) return [];
     const allPlayers = [
-      ...(team.roster.lineup ?? []),
-      ...(team.roster.bench ?? []),
-      ...(team.roster.pitchers ?? []),
+      ...(teamDoc.roster.lineup ?? []),
+      ...(teamDoc.roster.bench ?? []),
+      ...(teamDoc.roster.pitchers ?? []),
     ];
     const seen = new Set<string>();
     const keys: string[] = [];
     for (const p of allPlayers as TeamPlayer[]) {
-      const key = p.globalPlayerId ?? `${teamContext}:${p.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        keys.push(key);
+      if (!seen.has(p.id)) {
+        seen.add(p.id);
+        keys.push(p.id);
       }
     }
     return keys;
-  }, [teamContext, customTeams]);
+  }, [teamDoc]);
 
   const currentIdx = rosterPlayerKeys.indexOf(playerKey ?? "");
   const prevKey = currentIdx > 0 ? rosterPlayerKeys[currentIdx - 1] : null;
@@ -153,26 +151,18 @@ export function usePlayerCareerData(playerKey: string | undefined) {
   const playerName = React.useMemo<string>(() => {
     if (battingRows.length > 0) return battingRows[battingRows.length - 1].nameAtGameTime;
     if (pitchingRows.length > 0) return pitchingRows[pitchingRows.length - 1].nameAtGameTime;
-    // No game history yet — look up the player's name from the current roster so that
-    // bench/reserve players who have never appeared in a game show their real name
-    // instead of their raw globalPlayerId (e.g. "pl_d29e3bad").
-    if (playerKey && teamContext) {
-      const teamId = teamContext.startsWith("custom:") ? teamContext.slice("custom:".length) : "";
-      const team = customTeams.find((t) => t.id === teamId);
-      if (team) {
-        const allPlayers = [
-          ...(team.roster.lineup ?? []),
-          ...(team.roster.bench ?? []),
-          ...(team.roster.pitchers ?? []),
-        ] as TeamPlayer[];
-        const player = allPlayers.find(
-          (p) => (p.globalPlayerId ?? `${teamContext}:${p.id}`) === playerKey,
-        );
-        if (player?.name) return player.name;
-      }
+    // No game history yet — look up the player's name directly from the DB-fetched team doc.
+    if (playerKey && teamDoc) {
+      const allPlayers = [
+        ...(teamDoc.roster.lineup ?? []),
+        ...(teamDoc.roster.bench ?? []),
+        ...(teamDoc.roster.pitchers ?? []),
+      ] as TeamPlayer[];
+      const player = allPlayers.find((p) => p.id === playerKey);
+      if (player?.name) return player.name;
     }
     return "Unknown Player";
-  }, [battingRows, pitchingRows, playerKey, teamContext, customTeams]);
+  }, [battingRows, pitchingRows, playerKey, teamDoc]);
 
   const roleLabel = React.useMemo<string>(() => {
     const hasBatting = battingRows.length > 0;
@@ -255,6 +245,5 @@ export function usePlayerCareerData(playerKey: string | undefined) {
     prevKey,
     nextKey,
     navigateToPlayer,
-    customTeams,
   };
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fnv1a } from "@storage/hash";
+import type { TeamPlayer } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
 
 import { exportCustomPlayer, parseExportedCustomPlayer } from "./customTeamPlayerBundle";
@@ -117,45 +118,30 @@ describe("parseExportedCustomPlayer", () => {
 // ── exportCustomPlayer — identity fields ──────────────────────────────────────
 
 describe("exportCustomPlayer — identity fields", () => {
-  it("preserves globalPlayerId in exported JSON", () => {
-    const p = makePlayer({ globalPlayerId: "pl_abc12345", playerSeed: "seed-xyz" });
-    const parsed = JSON.parse(exportCustomPlayer(p)) as {
-      payload: { player: Record<string, unknown> };
-    };
-    expect(parsed.payload.player["globalPlayerId"]).toBe("pl_abc12345");
-  });
-
-  it("preserves playerSeed in exported JSON", () => {
-    const p = makePlayer({ playerSeed: "my-stable-seed" });
-    const parsed = JSON.parse(exportCustomPlayer(p)) as {
-      payload: { player: Record<string, unknown> };
-    };
-    expect(parsed.payload.player["playerSeed"]).toBe("my-stable-seed");
-  });
-
   it("preserves fingerprint in exported JSON", () => {
-    const p = makePlayer({ fingerprint: "aabbccdd", playerSeed: "fp-seed" });
+    const p = makePlayer({ fingerprint: "aabbccdd" });
     const parsed = JSON.parse(exportCustomPlayer(p)) as {
       payload: { player: Record<string, unknown> };
     };
     expect(parsed.payload.player["fingerprint"]).toBe("aabbccdd");
   });
 
-  it("round-trips globalPlayerId through parseExportedCustomPlayer", () => {
-    const p = makePlayer({ globalPlayerId: "pl_roundtrip", playerSeed: "rt-seed" });
+  it("round-trips fingerprint through parseExportedCustomPlayer (identity preserved)", () => {
+    const fp = buildPlayerSig(makePlayer({ fingerprint: "aabbccdd" }));
+    const p = makePlayer({ fingerprint: fp });
     const result = parseExportedCustomPlayer(exportCustomPlayer(p));
-    expect(result.globalPlayerId).toBe("pl_roundtrip");
+    expect(result.fingerprint).toBe(fp);
   });
 
-  it("round-trips playerSeed through parseExportedCustomPlayer", () => {
-    const p = makePlayer({ playerSeed: "round-trip-seed" });
+  it("round-trips id through parseExportedCustomPlayer", () => {
+    const p = makePlayer({ id: "p_stable_id_123" });
     const result = parseExportedCustomPlayer(exportCustomPlayer(p));
-    expect(result.playerSeed).toBe("round-trip-seed");
+    expect(result.id).toBe("p_stable_id_123");
   });
 
   it("round-trips fingerprint through parseExportedCustomPlayer", () => {
-    const fp = buildPlayerSig(makePlayer({ playerSeed: "fp-rt-seed" }));
-    const p = makePlayer({ fingerprint: fp, playerSeed: "fp-rt-seed" });
+    const fp = buildPlayerSig(makePlayer());
+    const p = makePlayer({ fingerprint: fp });
     const result = parseExportedCustomPlayer(exportCustomPlayer(p));
     expect(result.fingerprint).toBe(fp);
   });
@@ -263,15 +249,12 @@ describe("exportCustomPlayer / parseExportedCustomPlayer — full player field r
       isPitcherEligible: true,
       jerseyNumber: 22,
       pitchingRole: "SP",
-      playerSeed: "full-rt-seed-abc",
       fingerprint: buildPlayerSig({
         name: "Complete Player",
         role: "pitcher",
         batting: { contact: 45, power: 38, speed: 52 },
         pitching: { velocity: 93, control: 87, movement: 82 },
-        playerSeed: "full-rt-seed-abc",
       }),
-      globalPlayerId: "pl_full_rt_gid",
     };
     const result = parseExportedCustomPlayer(exportCustomPlayer(p));
     expect(result.name).toBe("Complete Player");
@@ -284,8 +267,6 @@ describe("exportCustomPlayer / parseExportedCustomPlayer — full player field r
     expect(result.isPitcherEligible).toBe(true);
     expect(result.jerseyNumber).toBe(22);
     expect(result.pitchingRole).toBe("SP");
-    expect(result.playerSeed).toBe("full-rt-seed-abc");
-    expect(result.globalPlayerId).toBe("pl_full_rt_gid");
     // sig must be stripped — export-only metadata
     expect("sig" in result).toBe(false);
   });

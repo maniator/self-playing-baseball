@@ -2,10 +2,16 @@ import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 import { _createTestDb, type BallgameDb } from "@storage/db";
-import type { CreateCustomTeamInput } from "@storage/types";
+import type { CreateCustomTeamInput, TeamWithRoster } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
 
 import { makeCustomTeamStore } from "./customTeamStore";
+
+/** Adds the required `nameLowercase` field to an inline team fixture. */
+const withNL = <T extends { name: string }>(t: T): T & { nameLowercase: string } => ({
+  ...t,
+  nameLowercase: t.name.toLowerCase(),
+});
 
 const makeInput = (overrides: Partial<CreateCustomTeamInput> = {}): CreateCustomTeamInput => ({
   name: "Test Team",
@@ -38,7 +44,6 @@ describe("importCustomTeams", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Import A",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -54,7 +59,7 @@ describe("importCustomTeams", () => {
       },
       metadata: { archived: false },
     };
-    const json = exportFn([teamA]);
+    const json = exportFn([withNL(teamA) as TeamWithRoster]);
     const result = await store.importCustomTeams(json);
     expect(result.created + result.remapped).toBe(1);
     const found = await store.getCustomTeam("ct_import_a");
@@ -69,7 +74,6 @@ describe("importCustomTeams", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Import B",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -85,7 +89,7 @@ describe("importCustomTeams", () => {
       },
       metadata: { archived: false },
     };
-    const json = exportFn([teamB]);
+    const json = exportFn([withNL(teamB) as TeamWithRoster]);
     const result = await store.importCustomTeams(json);
     expect(typeof result.created).toBe("number");
     expect(typeof result.remapped).toBe("number");
@@ -93,25 +97,21 @@ describe("importCustomTeams", () => {
     expect(Array.isArray(result.duplicateWarnings)).toBe(true);
   });
 
-  it("preserves globalPlayerId and playerSeed; recomputes fingerprint on import", async () => {
+  it("recomputes fingerprint from content on import (stale fingerprint is replaced)", async () => {
     const { exportCustomTeams: exportFn } = await import("./customTeamExportImport");
     const { buildPlayerSig } = await import("./customTeamSignatures");
-    const knownGid = "pl_identity_preserved_gid";
-    const knownSeed = "known-identity-seed-value";
     const playerFields = {
       name: "Identity Player",
       role: "batter" as const,
       batting: { contact: 50, power: 50, speed: 50 },
-      playerSeed: knownSeed,
     };
-    // Compute the fingerprint that should be stored after import
+    // In v1, fingerprint is purely content-based (name+role+batting+pitching, no id entropy)
     const expectedFingerprint = buildPlayerSig(playerFields);
-    // Use a stale value that we know differs from the expected fingerprint
+    // Use a stale value that differs from the expected fingerprint
     const staleFingerprint = expectedFingerprint + "_stale";
     const player = {
       id: "p_id_test",
       ...playerFields,
-      globalPlayerId: knownGid,
       fingerprint: staleFingerprint,
     };
     const teamWithIdentity = {
@@ -120,12 +120,11 @@ describe("importCustomTeams", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Identity Team",
-      source: "custom" as const,
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
       metadata: { archived: false },
     };
 
-    const json = exportFn([teamWithIdentity]);
+    const json = exportFn([withNL(teamWithIdentity) as TeamWithRoster]);
 
     // Import into a fresh in-memory DB (simulates a different install)
     const { _createTestDb: createTestDb } = await import("@storage/db");
@@ -135,13 +134,10 @@ describe("importCustomTeams", () => {
 
     try {
       await freshStore.importCustomTeams(json);
-      // Read from DB to verify stored identity fields
       const importedTeam = await freshStore.getCustomTeam("ct_identity_test");
       expect(importedTeam).not.toBeNull();
       const importedPlayer = importedTeam!.roster.lineup[0];
-      expect(importedPlayer.globalPlayerId).toBe(knownGid);
-      expect(importedPlayer.playerSeed).toBe(knownSeed);
-      // Fingerprint is recomputed from stored stats after import (not preserved verbatim)
+      // Fingerprint is recomputed from content on import (not preserved verbatim)
       expect(importedPlayer.fingerprint).toBe(expectedFingerprint);
       // The stale fingerprint must NOT be persisted
       expect(importedPlayer.fingerprint).not.toBe(staleFingerprint);
@@ -160,7 +156,6 @@ describe("importCustomTeams — stat cap enforcement", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Over Cap Bat Import",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -176,7 +171,7 @@ describe("importCustomTeams — stat cap enforcement", () => {
       },
       metadata: { archived: false },
     };
-    const json = exportFn([overCapTeam]);
+    const json = exportFn([withNL(overCapTeam) as TeamWithRoster]);
     await expect(store.importCustomTeams(json)).rejects.toThrow(/stat cap/i);
     // The team must not have been persisted
     const found = await store.getCustomTeam("ct_overcap_bat_test");
@@ -191,7 +186,6 @@ describe("importCustomTeams — stat cap enforcement", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Over Cap Pitch Import",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -208,7 +202,7 @@ describe("importCustomTeams — stat cap enforcement", () => {
       },
       metadata: { archived: false },
     };
-    const json = exportFn([overCapTeam]);
+    const json = exportFn([withNL(overCapTeam) as TeamWithRoster]);
     await expect(store.importCustomTeams(json)).rejects.toThrow(/stat cap/i);
   });
 
@@ -220,7 +214,6 @@ describe("importCustomTeams — stat cap enforcement", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
       updatedAt: "2024-01-01T00:00:00.000Z",
       name: "Over Stat Clamp Import",
-      source: "custom" as const,
       roster: {
         schemaVersion: 1,
         lineup: [
@@ -237,7 +230,7 @@ describe("importCustomTeams — stat cap enforcement", () => {
       },
       metadata: { archived: false },
     };
-    const json = exportFn([overStatTeam]);
+    const json = exportFn([withNL(overStatTeam) as TeamWithRoster]);
     await store.importCustomTeams(json);
     const imported = await store.getCustomTeam("ct_overstat_clamp_test");
     expect(imported).not.toBeNull();

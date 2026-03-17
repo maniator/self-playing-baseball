@@ -1,5 +1,5 @@
 import { generatePlayerId, generateTeamId } from "@storage/generateId";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import {
   type ImportCustomTeamsOptions,
@@ -47,24 +47,21 @@ function remapPlayerIds(
  *   true. Re-call with `{ allowDuplicatePlayers: true }` after the user confirms.
  *
  * **Legacy bundle limitation:** Players in legacy export bundles (pre-v2, no per-player `sig`
- * or `playerSeed`) fall back to `buildPlayerSig(player)` with an empty-string seed, which
- * produces a different hash than the same player already stored in the DB (which has a
- * non-empty `playerSeed`).  As a result, duplicate detection silently misses duplicates for
- * legacy imports.  This is intentional — legacy files lack the seed needed to reproduce the
- * stored fingerprint — and is documented here so callers are aware of the limitation.
+ * or stable `id`-based fingerprint) will have their sig recomputed using the bundle's player
+ * `id` as the entropy source. If the ID was remapped between export and re-import, duplicate
+ * detection will miss the match. This is intentional — legacy files may not have a stable `id`
+ * that matches the stored fingerprint.
  *
  * **Legacy team fingerprint limitation:** Teams in legacy bundles lack a `team.fingerprint`
- * field, so the pre-scan falls back to `buildTeamFingerprint(team)` with an empty `teamSeed`.
- * However, a previously-imported legacy team will have been migrated to v3 and now has a
- * non-empty `teamSeed` in the DB, producing a seed-based fingerprint that will never match
- * the seed-free fallback.  As a result, re-importing a legacy teams bundle after the DB has
- * been migrated to v3 will not be blocked by the pre-scan's team-fingerprint check, and the
- * teams may be duplicated.  The same inherent limitation applies as for legacy player sigs:
- * without the original seed in the bundle, there is no way to reproduce the stored fingerprint.
+ * field, so the pre-scan falls back to `buildTeamFingerprint(team)` using the team's `id`.
+ * A previously-imported legacy team will have been assigned a new `id` on import, so the
+ * stored fingerprint will not match a re-import of the same legacy bundle with different IDs.
+ * As a result, re-importing a legacy teams bundle may not be blocked by the pre-scan's
+ * team-fingerprint check, and teams may be duplicated.
  */
 export function importCustomTeams(
   json: string,
-  existingTeams: CustomTeamDoc[],
+  existingTeams: TeamWithRoster[],
   factories?: ImportIdFactories,
   options?: ImportCustomTeamsOptions,
 ): ImportCustomTeamsResult {
@@ -86,7 +83,7 @@ export function importCustomTeams(
 
   // Pre-compute player sigs for all existing players so we can detect duplicates.
   // Use the stored `fingerprint` when available (canonical, avoids recomputation);
-  // fall back to `buildPlayerSig(p)` for pre-v2 players that lack a stored fingerprint.
+  // fall back to `buildPlayerSig(p)` for players that lack a stored fingerprint.
   const existingPlayerSigs = new Set<string>();
   for (const t of existingTeams) {
     for (const p of [...t.roster.lineup, ...t.roster.bench, ...t.roster.pitchers]) {
@@ -97,7 +94,7 @@ export function importCustomTeams(
   // ── Pre-scan: detect duplicate players before committing any imports ────────
   const allowDuplicates = options?.allowDuplicatePlayers ?? false;
   const preScan = preScanForDuplicatePlayers(
-    parsed.payload.teams as CustomTeamDoc[],
+    parsed.payload.teams as TeamWithRoster[],
     existingFingerprints,
     existingPlayerSigs,
   );
@@ -124,15 +121,15 @@ export function importCustomTeams(
   const duplicateWarnings: string[] = [];
   const duplicatePlayerWarnings: string[] = [];
 
-  const resultTeams: CustomTeamDoc[] = [];
+  const resultTeams: TeamWithRoster[] = [];
 
   for (const team of parsed.payload.teams) {
     // ── Early exact-duplicate check ────────────────────────────────────────────
     // If the incoming team's content fingerprint already exists locally, skip it
-    // entirely to prevent creating a duplicate entry. The fingerprint is seed-
-    // based (name + abbreviation + teamSeed) so it is stable across
-    // re-exports regardless of stored team ID.
-    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as CustomTeamDoc);
+    // entirely to prevent creating a duplicate entry. The fingerprint is id-
+    // based (name + abbreviation + id) so it is stable as long as the same id
+    // is used across re-exports.
+    const incomingFp = team.fingerprint ?? buildTeamFingerprint(team as TeamWithRoster);
     if (existingFingerprints.has(incomingFp)) {
       skipped++;
       continue;

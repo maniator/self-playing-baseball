@@ -1,7 +1,6 @@
 import type { CustomTeamDraft } from "@feat/customTeams/generation/generateDefaultTeam";
 
-import { generateSeed } from "@storage/generateId";
-import type { CreateCustomTeamInput, CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { CreateCustomTeamInput, TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import { DEFAULT_LINEUP_POSITIONS, REQUIRED_FIELD_POSITIONS } from "./playerConstants";
 import { HITTER_STAT_CAP, hitterStatTotal, PITCHER_STAT_CAP, pitcherStatTotal } from "./statBudget";
@@ -22,18 +21,6 @@ export interface EditorPlayer {
   movement?: number;
   /** Pitcher role eligibility. Only meaningful for pitchers. */
   pitchingRole?: "SP" | "RP" | "SP/RP";
-  /**
-   * Preserved from the DB / export bundle so that `sanitizePlayer` reuses the
-   * same seed and produces the same fingerprint after a round-trip through the
-   * editor.  Absent for brand-new players (sanitizePlayer generates a fresh one).
-   */
-  playerSeed?: string;
-  /**
-   * Team-independent stable identity — preserved from DB / export so career
-   * history follows this player if they are moved to another team.
-   * Absent for brand-new players (set by sanitizePlayer at first DB write).
-   */
-  globalPlayerId?: string;
 }
 
 export interface EditorState {
@@ -159,9 +146,6 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
-  // Draft players have no persistent seed yet — assign one now so exports
-  // are stable even before the team is first saved to the DB.
-  playerSeed: generateSeed(),
 });
 
 const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
@@ -178,11 +162,9 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
     movement: p.pitching.movement,
   }),
   ...(p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
-  ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
-  ...(p.globalPlayerId !== undefined && { globalPlayerId: p.globalPlayerId }),
 });
 
-export const initEditorState = (team?: CustomTeamDoc): EditorState => ({
+export const initEditorState = (team?: TeamWithRoster): EditorState => ({
   name: team?.name ?? "",
   abbreviation: team?.abbreviation ?? "",
   city: team?.city ?? "",
@@ -273,7 +255,6 @@ export function editorStateToCreateInput(state: EditorState): CreateCustomTeamIn
     abbreviation: state.abbreviation.trim().toUpperCase(),
     city: state.city.trim() || undefined,
     nickname: state.nickname.trim() || undefined,
-    source: "custom",
     roster: {
       lineup: state.lineup.map(editorToTeamPlayer("batter")),
       bench: state.bench.map(editorToTeamPlayer("batter")),
@@ -296,8 +277,6 @@ const editorToTeamPlayer =
         pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
       }),
     ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
-    ...(p.playerSeed !== undefined && { playerSeed: p.playerSeed }),
-    ...(p.globalPlayerId !== undefined && { globalPlayerId: p.globalPlayerId }),
   });
 
 /**

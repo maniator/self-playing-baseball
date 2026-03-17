@@ -1,8 +1,7 @@
 import react from "@vitejs/plugin-react";
 import path from "path";
-import type { PluginOption } from "vite";
-import { defineConfig } from "vitest/config";
 import { VitePWA } from "vite-plugin-pwa";
+import { defineConfig, type ViteUserConfig } from "vitest/config";
 
 export default defineConfig(({ mode }) => ({
   root: "src",
@@ -49,6 +48,7 @@ export default defineConfig(({ mode }) => ({
   },
   define: {
     "process.env.NODE_ENV": JSON.stringify(process.env.NODE_ENV ?? mode),
+    __IS_VERCEL_BUILD__: JSON.stringify(process.env.VERCEL === "1"),
   },
   plugins: [
     react(),
@@ -62,8 +62,8 @@ export default defineConfig(({ mode }) => ({
         rollupFormat: "es",
         globPatterns: ["**/*.{js,css,html,woff2}", "images/**", "manifest.webmanifest"],
       },
-    }) as PluginOption,
-  ],
+    }),
+  ] as ViteUserConfig["plugins"],
   test: {
     environment: "jsdom",
     globals: true,

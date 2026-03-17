@@ -1,5 +1,5 @@
 import { fnv1a } from "@storage/hash";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamRecord, TeamWithRoster } from "@storage/types";
 
 export const CUSTOM_TEAM_EXPORT_FORMAT_VERSION = 1 as const;
 /** Signing key for custom-teams exports — change alongside CUSTOM_TEAM_EXPORT_FORMAT_VERSION. */
@@ -13,53 +13,44 @@ export const PLAYER_EXPORT_KEY = "ballgame:player:v1";
 export type TeamPlayerWithSig = TeamPlayer & { sig?: string };
 
 /**
- * Builds a stable seed-based fingerprint for a team (excludes id so it survives re-import).
- * Covers only team-identity fields (name + abbreviation, case-insensitive) plus the
- * per-team random seed generated at creation time.
+ * Builds a stable id-based fingerprint for a team.
+ * Covers team-identity fields (name + abbreviation, case-insensitive) plus the
+ * team's stable `id` as the entropy source.
  * Roster changes do NOT affect the fingerprint — the same team remains the same
  * fingerprint after trades, roster edits, or any player moves.
  * Used for team-level duplicate detection on import.
- * The `teamSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  */
 export function buildTeamFingerprint(
-  team: Pick<CustomTeamDoc, "name" | "abbreviation" | "teamSeed">,
+  team: Pick<TeamRecord, "id" | "name" | "abbreviation">,
 ): string {
-  const seed = team.teamSeed ?? "";
   const key = team.name.toLowerCase() + "|" + (team.abbreviation ?? "").toLowerCase();
-  return fnv1a(seed + key);
+  return fnv1a(team.id + key);
 }
 
 /**
- * Computes a seed-based integrity signature for a single player.
- * Covers only the player's immutable identity fields: name, role, and stats
- * (batting for hitters; pitching for pitchers), plus the per-player random seed
- * generated at creation time.
+ * Computes a content-based signature for a single player.
+ * Covers only name, role, and stats (batting for hitters; pitching for pitchers).
+ * The player `id` is intentionally excluded so that duplicate detection and
+ * bundle integrity are both content-driven.
  *
  * Design notes:
- *   - `id` is intentionally excluded: IDs are remapped on import collision and must
- *     not affect duplicate detection — two players with identical stats and name but
- *     different DB IDs are the same person.
  *   - `position`, `handedness`, `jerseyNumber`, `pitchingRole` are intentionally excluded:
  *     these are editable after creation and must not invalidate a previously issued sig.
  *   - For pure hitters `pitching` is `undefined`. `JSON.stringify` omits `undefined` values
  *     consistently on both the export side and the re-import side, so the sig is
  *     deterministic across round-trips with no special normalisation needed.
- *   - `playerSeed ?? ""` fallback ensures legacy bundles without a seed still parse cleanly.
  *
  * The sig serves two purposes:
  *   1. Integrity checksum: detects accidental corruption or truncation of exported bundles
- *      on round-trip (file system, clipboard, network). This is NOT cryptographic — because
- *      the signing key is a hard-coded string, a maliciously crafted bundle can be
- *      re-hashed to produce a matching value.  Do not treat it as tamper-proof.
+ *      on round-trip. This is NOT cryptographic.
  *   2. Duplicate detection: a player whose sig matches one already in the DB is a likely
- *      duplicate even if imported to a different team or with a remapped ID.
+ *      duplicate even if imported with a different ID.
  */
 export function buildPlayerSig(
-  player: Pick<TeamPlayer, "name" | "role" | "batting" | "pitching" | "playerSeed">,
+  player: Pick<TeamPlayer, "name" | "role" | "batting" | "pitching">,
 ): string {
-  const seed = player.playerSeed ?? "";
   const { name, role, batting, pitching } = player;
-  return fnv1a(seed + JSON.stringify({ name, role, batting, pitching }));
+  return fnv1a(JSON.stringify({ name, role, batting, pitching }));
 }
 
 /** Returns a copy of `player` with its `sig` field stripped (export-only metadata). */
@@ -71,7 +62,7 @@ export function stripPlayerSig(player: TeamPlayer): TeamPlayer {
 }
 
 /** Returns a team doc with all player `sig` fields removed from every roster slot. */
-export function stripTeamPlayerSigs(team: CustomTeamDoc): CustomTeamDoc {
+export function stripTeamPlayerSigs(team: TeamWithRoster): TeamWithRoster {
   return {
     ...team,
     roster: {

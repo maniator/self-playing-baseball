@@ -7,9 +7,9 @@ import { useSaveSlotActions } from "@feat/saves/hooks/useSaveSlotActions";
 import { SaveStore } from "@feat/saves/storage/saveStore";
 import { useNavigate, useOutletContext } from "react-router";
 
-import { customTeamsCollection } from "@storage/db";
+import { teamsCollection } from "@storage/db";
 import type { AppShellOutletContext } from "@storage/types";
-import type { CustomTeamDoc, SaveDoc } from "@storage/types";
+import type { SaveRecord, TeamRecord } from "@storage/types";
 
 import {
   ActionBtn,
@@ -39,9 +39,9 @@ const SavesPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const { onLoadSave, hasActiveSession, onResumeCurrent } =
     useOutletContext<AppShellOutletContext>();
-  const [saves, setSaves] = React.useState<SaveDoc[]>([]);
+  const [saves, setSaves] = React.useState<SaveRecord[]>([]);
   const [loading, setLoading] = React.useState(true);
-  const [customTeams, setCustomTeams] = React.useState<CustomTeamDoc[]>([]);
+  const [teams, setTeams] = React.useState<TeamRecord[]>([]);
 
   const {
     pasteJson,
@@ -58,14 +58,14 @@ const SavesPage: React.FunctionComponent = () => {
 
   const loadSaves = React.useCallback(() => {
     setLoading(true);
-    Promise.all([SaveStore.listSaves(), customTeamsCollection().then((col) => col.find().exec())])
-      .then(([saveDocs, teamDocs]) => {
-        setSaves(saveDocs);
-        setCustomTeams(teamDocs);
-      })
-      .catch(() => {
-        setSaves([]);
-        setCustomTeams([]);
+    Promise.allSettled([SaveStore.listSaves(), teamsCollection().then((col) => col.find().exec())])
+      .then(([saveResult, teamsResult]) => {
+        setSaves(saveResult.status === "fulfilled" ? saveResult.value : []);
+        setTeams(
+          teamsResult.status === "fulfilled"
+            ? teamsResult.value.map((d) => d.toJSON() as unknown as TeamRecord)
+            : [],
+        );
       })
       .finally(() => setLoading(false));
   }, []);
@@ -112,7 +112,7 @@ const SavesPage: React.FunctionComponent = () => {
       ) : (
         <SaveSlotList
           saves={saves}
-          resolveName={(name) => resolveCustomIdsInString(name, customTeams)}
+          resolveName={(name) => resolveCustomIdsInString(name, teams)}
           onLoad={onLoadSave}
           onExport={handleExport}
           onDelete={handleDelete}

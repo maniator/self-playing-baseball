@@ -1,1 +1,622 @@
-{"type":"customTeams","formatVersion":1,"exportedAt":"2026-03-02T16:20:21.000Z","payload":{"teams":[{"id":"ct_yKNgI8ydSYiD","schemaVersion":1,"createdAt":"2026-03-02T15:55:15.726Z","updatedAt":"2026-03-02T15:55:15.726Z","name":"Pioneers","abbreviation":"BOP","nickname":"Pioneers","city":"Boston","source":"custom","roster":{"schemaVersion":1,"lineup":[{"name":"Sam Zavala","role":"batter","position":"SS","handedness":"R","batting":{"contact":48,"power":28,"speed":26},"playerSeed":"dpnMCJtecNd6hYe5","fingerprint":"b98aa4bc","id":"p_-1354600163_L0","sig":"b98aa4bc"},{"name":"Upton Ford","role":"batter","position":"DH","handedness":"L","batting":{"contact":41,"power":25,"speed":28},"playerSeed":"1pHzScy2IpSgzHKp","fingerprint":"f4cdec32","id":"p_-1354600163_L1","sig":"f4cdec32"},{"name":"Gary Turner","role":"batter","position":"CF","handedness":"L","batting":{"contact":37,"power":33,"speed":37},"playerSeed":"vNJwTsWa2Rk9JSjU","fingerprint":"b7afc108","id":"p_-1354600163_L2","sig":"b7afc108"},{"name":"Frank Lane","role":"batter","position":"3B","handedness":"S","batting":{"contact":50,"power":50,"speed":33},"playerSeed":"fR16iH_vB6PTx4wu","fingerprint":"b4cb4fc4","id":"p_-1354600163_L3","sig":"b4cb4fc4"},{"name":"Sam Scott","role":"batter","position":"LF","handedness":"L","batting":{"contact":41,"power":25,"speed":42},"playerSeed":"ycVHQP9CNVI9E6Rk","fingerprint":"e10ebb9e","id":"p_-1354600163_L4","sig":"e10ebb9e"},{"name":"Ivan Vega","role":"batter","position":"1B","handedness":"R","batting":{"contact":31,"power":21,"speed":42},"playerSeed":"eLz0Z6GhwPxQfmiL","fingerprint":"c1819701","id":"p_-1354600163_L5","sig":"c1819701"},{"name":"Yogi Owen","role":"batter","position":"2B","handedness":"R","batting":{"contact":46,"power":25,"speed":20},"playerSeed":"4juQYuarsnxL35n2","fingerprint":"a1eee723","id":"p_-1354600163_L6","sig":"a1eee723"},{"name":"Ray Quinn","role":"batter","position":"RF","handedness":"R","batting":{"contact":46,"power":27,"speed":41},"playerSeed":"lXGGkxoHpN6XgCBK","fingerprint":"82a0eabd","id":"p_-1354600163_L7","sig":"82a0eabd"},{"name":"Zane Moore","role":"batter","position":"C","handedness":"L","batting":{"contact":34,"power":28,"speed":47},"playerSeed":"fBfmzVEjvUBmmThY","fingerprint":"9eb1589d","id":"p_-1354600163_L8","sig":"9eb1589d"}],"bench":[{"name":"Yogi Davis","role":"batter","position":"C","handedness":"R","batting":{"contact":39,"power":34,"speed":49},"playerSeed":"6Nw2DU_edPZRSwUn","fingerprint":"2a3685f5","id":"p_-1354600163_B0","sig":"2a3685f5"},{"name":"Jake Davis","role":"batter","position":"LF","handedness":"R","batting":{"contact":20,"power":24,"speed":37},"playerSeed":"lLjqFsl1-xnLJ3p-","fingerprint":"cc2965a3","id":"p_-1354600163_B1","sig":"cc2965a3"},{"name":"Quinn Vega","role":"batter","position":"DH","handedness":"L","batting":{"contact":27,"power":27,"speed":42},"playerSeed":"ZYtStPFbUAAO12QT","fingerprint":"32deb27b","id":"p_-1354600163_B2","sig":"32deb27b"},{"name":"Henry Xiong","role":"batter","position":"3B","handedness":"R","batting":{"contact":22,"power":33,"speed":43},"playerSeed":"_CN7aBXHHbwasAho","fingerprint":"0ef65e68","id":"p_-1354600163_B3","sig":"0ef65e68"}],"pitchers":[{"name":"Xavier Owen","role":"pitcher","position":"SP","handedness":"R","batting":{"contact":47,"power":25,"speed":37},"pitching":{"velocity":41,"control":50,"movement":41},"pitchingRole":"SP","playerSeed":"PiOts869jHpBYBL-","fingerprint":"ee92fd30","id":"p_-1354600163_P0","sig":"ee92fd30"},{"name":"Yogi Xiong","role":"pitcher","position":"RP","handedness":"L","batting":{"contact":24,"power":26,"speed":36},"pitching":{"velocity":39,"control":31,"movement":31},"pitchingRole":"RP","playerSeed":"qrSOUyjFaM-Ho788","fingerprint":"33405ca7","id":"p_-1354600163_P1","sig":"33405ca7"},{"name":"Leo Moore","role":"pitcher","position":"RP","handedness":"R","batting":{"contact":22,"power":21,"speed":49},"pitching":{"velocity":29,"control":40,"movement":27},"pitchingRole":"SP/RP","playerSeed":"DR5nMNfN4lUQNiyS","fingerprint":"9386dd8e","id":"p_-1354600163_P2","sig":"9386dd8e"},{"name":"Carlos Jones","role":"pitcher","position":"RP","handedness":"L","batting":{"contact":40,"power":42,"speed":34},"pitching":{"velocity":44,"control":41,"movement":32},"pitchingRole":"RP","playerSeed":"lEQN-Pcz6tqpuqND","fingerprint":"118befb4","id":"p_-1354600163_P3","sig":"118befb4"},{"name":"Ben Lane","role":"pitcher","position":"RP","handedness":"R","batting":{"contact":33,"power":40,"speed":37},"pitching":{"velocity":37,"control":47,"movement":47},"pitchingRole":"RP","playerSeed":"AfaAjn1caJSD9E4J","fingerprint":"7cdfb68d","id":"p_-1354600163_P4","sig":"7cdfb68d"}]},"metadata":{"archived":false},"teamSeed":"rK0mC8BVWtluqDwT","fingerprint":"2b4a19aa"},{"id":"ct_xG1mk2Gd9hr_","schemaVersion":1,"createdAt":"2026-03-02T15:55:07.450Z","updatedAt":"2026-03-02T15:55:07.450Z","name":"Dynamo","abbreviation":"POD","nickname":"Dynamo","city":"Portland","source":"custom","roster":{"schemaVersion":1,"lineup":[{"name":"Yogi Evans","role":"batter","position":"2B","handedness":"L","batting":{"contact":41,"power":50,"speed":38},"playerSeed":"f8pHxPA8IRBfSna0","fingerprint":"27395811","id":"p_-1354600173_L0","sig":"27395811"},{"name":"Eric Lane","role":"batter","position":"3B","handedness":"R","batting":{"contact":48,"power":35,"speed":24},"playerSeed":"1WAEHLhCvOwR8Zv0","fingerprint":"5a5b9de3","id":"p_-1354600173_L1","sig":"5a5b9de3"},{"name":"Frank Quinn","role":"batter","position":"RF","handedness":"R","batting":{"contact":23,"power":32,"speed":37},"playerSeed":"KqRtTTVDmWQqJoko","fingerprint":"1b7c3573","id":"p_-1354600173_L2","sig":"1b7c3573"},{"name":"Oscar Baker","role":"batter","position":"SS","handedness":"L","batting":{"contact":30,"power":48,"speed":32},"playerSeed":"kuMfd-X65Fp9APlX","fingerprint":"be62e2cb","id":"p_-1354600173_L3","sig":"be62e2cb"},{"name":"Carlos Jones","role":"batter","position":"DH","handedness":"R","batting":{"contact":43,"power":41,"speed":20},"playerSeed":"nKN06QRpg95DLgx7","fingerprint":"0fe58845","id":"p_-1354600173_L4","sig":"0fe58845"},{"name":"Yogi Turner","role":"batter","position":"1B","handedness":"R","batting":{"contact":23,"power":49,"speed":42},"playerSeed":"BrL7Xo0gDduV6xGM","fingerprint":"5d2b7a63","id":"p_-1354600173_L5","sig":"5d2b7a63"},{"name":"Xavier Moore","role":"batter","position":"CF","handedness":"R","batting":{"contact":45,"power":26,"speed":20},"playerSeed":"-0Cfiz4m1XOYagu3","fingerprint":"3631f1f6","id":"p_-1354600173_L6","sig":"3631f1f6"},{"name":"Danny Nash","role":"batter","position":"C","handedness":"R","batting":{"contact":27,"power":46,"speed":29},"playerSeed":"htTddx7CCAXQha4w","fingerprint":"ca274d66","id":"p_-1354600173_L7","sig":"ca274d66"},{"name":"Jake Nash","role":"batter","position":"LF","handedness":"L","batting":{"contact":43,"power":31,"speed":35},"playerSeed":"lPPpN_a3eAre2bvm","fingerprint":"ab4a2822","id":"p_-1354600173_L8","sig":"ab4a2822"}],"bench":[{"name":"Jake Quinn","role":"batter","position":"2B","handedness":"R","batting":{"contact":20,"power":35,"speed":32},"playerSeed":"nFg8gZgN60lfHhp3","fingerprint":"db67294c","id":"p_-1354600173_B0","sig":"db67294c"},{"name":"Marcus Jones","role":"batter","position":"DH","handedness":"R","batting":{"contact":40,"power":43,"speed":25},"playerSeed":"gnrE6epfNEd5T150","fingerprint":"dbe3e19e","id":"p_-1354600173_B1","sig":"dbe3e19e"},{"name":"Upton Young","role":"batter","position":"3B","handedness":"L","batting":{"contact":50,"power":22,"speed":25},"playerSeed":"MhWycHa0HiISBx-O","fingerprint":"0ff998ef","id":"p_-1354600173_B2","sig":"0ff998ef"},{"name":"Carlos Irwin","role":"batter","position":"1B","handedness":"L","batting":{"contact":44,"power":41,"speed":29},"playerSeed":"YXNCiGFxLIIHoex7","fingerprint":"dd8ee3df","id":"p_-1354600173_B3","sig":"dd8ee3df"}],"pitchers":[{"name":"Tom Walsh","role":"pitcher","position":"SP","handedness":"R","batting":{"contact":27,"power":36,"speed":23},"pitching":{"velocity":47,"control":52,"movement":47},"pitchingRole":"SP","playerSeed":"AW3Eo4Jgw81qH5uC","fingerprint":"6b5877dc","id":"p_-1354600173_P0","sig":"6b5877dc"},{"name":"Nathan Davis","role":"pitcher","position":"RP","handedness":"R","batting":{"contact":25,"power":22,"speed":38},"pitching":{"velocity":51,"control":26,"movement":51},"pitchingRole":"SP/RP","playerSeed":"ev45ZRmFk3KBEcb1","fingerprint":"43c9f7c1","id":"p_-1354600173_P1","sig":"43c9f7c1"},{"name":"Danny Zavala","role":"pitcher","position":"RP","handedness":"L","batting":{"contact":20,"power":45,"speed":34},"pitching":{"velocity":43,"control":29,"movement":26},"pitchingRole":"RP","playerSeed":"zGavyjajupZRlj54","fingerprint":"71a09408","id":"p_-1354600173_P2","sig":"71a09408"},{"name":"Quinn Jones","role":"pitcher","position":"RP","handedness":"R","batting":{"contact":28,"power":44,"speed":27},"pitching":{"velocity":25,"control":36,"movement":41},"pitchingRole":"RP","playerSeed":"zI2UQyDbbBAb8h23","fingerprint":"6ac75461","id":"p_-1354600173_P3","sig":"6ac75461"},{"name":"Tom Urban","role":"pitcher","position":"RP","handedness":"L","batting":{"contact":50,"power":43,"speed":32},"pitching":{"velocity":37,"control":33,"movement":33},"pitchingRole":"RP","playerSeed":"wJg1JVmoMtMpT89e","fingerprint":"8eed3411","id":"p_-1354600173_P4","sig":"8eed3411"}]},"metadata":{"archived":false},"teamSeed":"ggZ6V45DjUTQXuto","fingerprint":"5137ab81"}]},"sig":"2a16d70d"}
+{
+  "type": "customTeams",
+  "formatVersion": 1,
+  "exportedAt": "2026-03-02T16:20:21.000Z",
+  "payload": {
+    "teams": [
+      {
+        "id": "ct_yKNgI8ydSYiD",
+        "schemaVersion": 1,
+        "createdAt": "2026-03-02T15:55:15.726Z",
+        "updatedAt": "2026-03-02T15:55:15.726Z",
+        "name": "Pioneers",
+        "abbreviation": "BOP",
+        "nickname": "Pioneers",
+        "city": "Boston",
+        "source": "custom",
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "name": "Sam Zavala",
+              "role": "batter",
+              "position": "SS",
+              "handedness": "R",
+              "batting": {
+                "contact": 48,
+                "power": 28,
+                "speed": 26
+              },
+              "fingerprint": "8112f3b1",
+              "id": "p_-1354600163_L0",
+              "sig": "8112f3b1"
+            },
+            {
+              "name": "Upton Ford",
+              "role": "batter",
+              "position": "DH",
+              "handedness": "L",
+              "batting": {
+                "contact": 41,
+                "power": 25,
+                "speed": 28
+              },
+              "fingerprint": "e01ba4c2",
+              "id": "p_-1354600163_L1",
+              "sig": "e01ba4c2"
+            },
+            {
+              "name": "Gary Turner",
+              "role": "batter",
+              "position": "CF",
+              "handedness": "L",
+              "batting": {
+                "contact": 37,
+                "power": 33,
+                "speed": 37
+              },
+              "fingerprint": "89fb997c",
+              "id": "p_-1354600163_L2",
+              "sig": "89fb997c"
+            },
+            {
+              "name": "Frank Lane",
+              "role": "batter",
+              "position": "3B",
+              "handedness": "S",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "speed": 33
+              },
+              "fingerprint": "2903351b",
+              "id": "p_-1354600163_L3",
+              "sig": "2903351b"
+            },
+            {
+              "name": "Sam Scott",
+              "role": "batter",
+              "position": "LF",
+              "handedness": "L",
+              "batting": {
+                "contact": 41,
+                "power": 25,
+                "speed": 42
+              },
+              "fingerprint": "d05045ed",
+              "id": "p_-1354600163_L4",
+              "sig": "d05045ed"
+            },
+            {
+              "name": "Ivan Vega",
+              "role": "batter",
+              "position": "1B",
+              "handedness": "R",
+              "batting": {
+                "contact": 31,
+                "power": 21,
+                "speed": 42
+              },
+              "fingerprint": "b6ac9fd1",
+              "id": "p_-1354600163_L5",
+              "sig": "b6ac9fd1"
+            },
+            {
+              "name": "Yogi Owen",
+              "role": "batter",
+              "position": "2B",
+              "handedness": "R",
+              "batting": {
+                "contact": 46,
+                "power": 25,
+                "speed": 20
+              },
+              "fingerprint": "d0353483",
+              "id": "p_-1354600163_L6",
+              "sig": "d0353483"
+            },
+            {
+              "name": "Ray Quinn",
+              "role": "batter",
+              "position": "RF",
+              "handedness": "R",
+              "batting": {
+                "contact": 46,
+                "power": 27,
+                "speed": 41
+              },
+              "fingerprint": "45906da4",
+              "id": "p_-1354600163_L7",
+              "sig": "45906da4"
+            },
+            {
+              "name": "Zane Moore",
+              "role": "batter",
+              "position": "C",
+              "handedness": "L",
+              "batting": {
+                "contact": 34,
+                "power": 28,
+                "speed": 47
+              },
+              "fingerprint": "a353aa09",
+              "id": "p_-1354600163_L8",
+              "sig": "a353aa09"
+            }
+          ],
+          "bench": [
+            {
+              "name": "Yogi Davis",
+              "role": "batter",
+              "position": "C",
+              "handedness": "R",
+              "batting": {
+                "contact": 39,
+                "power": 34,
+                "speed": 49
+              },
+              "fingerprint": "5b5aafda",
+              "id": "p_-1354600163_B0",
+              "sig": "5b5aafda"
+            },
+            {
+              "name": "Jake Davis",
+              "role": "batter",
+              "position": "LF",
+              "handedness": "R",
+              "batting": {
+                "contact": 20,
+                "power": 24,
+                "speed": 37
+              },
+              "fingerprint": "96f49b4d",
+              "id": "p_-1354600163_B1",
+              "sig": "96f49b4d"
+            },
+            {
+              "name": "Quinn Vega",
+              "role": "batter",
+              "position": "DH",
+              "handedness": "L",
+              "batting": {
+                "contact": 27,
+                "power": 27,
+                "speed": 42
+              },
+              "fingerprint": "24d30053",
+              "id": "p_-1354600163_B2",
+              "sig": "24d30053"
+            },
+            {
+              "name": "Henry Xiong",
+              "role": "batter",
+              "position": "3B",
+              "handedness": "R",
+              "batting": {
+                "contact": 22,
+                "power": 33,
+                "speed": 43
+              },
+              "fingerprint": "1904c257",
+              "id": "p_-1354600163_B3",
+              "sig": "1904c257"
+            }
+          ],
+          "pitchers": [
+            {
+              "name": "Xavier Owen",
+              "role": "pitcher",
+              "position": "SP",
+              "handedness": "R",
+              "batting": {
+                "contact": 47,
+                "power": 25,
+                "speed": 37
+              },
+              "pitching": {
+                "velocity": 41,
+                "control": 50,
+                "movement": 41
+              },
+              "pitchingRole": "SP",
+              "fingerprint": "4596a2d2",
+              "id": "p_-1354600163_P0",
+              "sig": "4596a2d2"
+            },
+            {
+              "name": "Yogi Xiong",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "L",
+              "batting": {
+                "contact": 24,
+                "power": 26,
+                "speed": 36
+              },
+              "pitching": {
+                "velocity": 39,
+                "control": 31,
+                "movement": 31
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "93eb19ad",
+              "id": "p_-1354600163_P1",
+              "sig": "93eb19ad"
+            },
+            {
+              "name": "Leo Moore",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "R",
+              "batting": {
+                "contact": 22,
+                "power": 21,
+                "speed": 49
+              },
+              "pitching": {
+                "velocity": 29,
+                "control": 40,
+                "movement": 27
+              },
+              "pitchingRole": "SP/RP",
+              "fingerprint": "42a8e283",
+              "id": "p_-1354600163_P2",
+              "sig": "42a8e283"
+            },
+            {
+              "name": "Carlos Jones",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "L",
+              "batting": {
+                "contact": 40,
+                "power": 42,
+                "speed": 34
+              },
+              "pitching": {
+                "velocity": 44,
+                "control": 41,
+                "movement": 32
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "ecbd1d65",
+              "id": "p_-1354600163_P3",
+              "sig": "ecbd1d65"
+            },
+            {
+              "name": "Ben Lane",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "R",
+              "batting": {
+                "contact": 33,
+                "power": 40,
+                "speed": 37
+              },
+              "pitching": {
+                "velocity": 37,
+                "control": 47,
+                "movement": 47
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "c9aa962e",
+              "id": "p_-1354600163_P4",
+              "sig": "c9aa962e"
+            }
+          ]
+        },
+        "metadata": {
+          "archived": false
+        },
+        "fingerprint": "2b4a19aa"
+      },
+      {
+        "id": "ct_xG1mk2Gd9hr_",
+        "schemaVersion": 1,
+        "createdAt": "2026-03-02T15:55:07.450Z",
+        "updatedAt": "2026-03-02T15:55:07.450Z",
+        "name": "Dynamo",
+        "abbreviation": "POD",
+        "nickname": "Dynamo",
+        "city": "Portland",
+        "source": "custom",
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "name": "Yogi Evans",
+              "role": "batter",
+              "position": "2B",
+              "handedness": "L",
+              "batting": {
+                "contact": 41,
+                "power": 50,
+                "speed": 38
+              },
+              "fingerprint": "05a2d921",
+              "id": "p_-1354600173_L0",
+              "sig": "05a2d921"
+            },
+            {
+              "name": "Eric Lane",
+              "role": "batter",
+              "position": "3B",
+              "handedness": "R",
+              "batting": {
+                "contact": 48,
+                "power": 35,
+                "speed": 24
+              },
+              "fingerprint": "e9a80e80",
+              "id": "p_-1354600173_L1",
+              "sig": "e9a80e80"
+            },
+            {
+              "name": "Frank Quinn",
+              "role": "batter",
+              "position": "RF",
+              "handedness": "R",
+              "batting": {
+                "contact": 23,
+                "power": 32,
+                "speed": 37
+              },
+              "fingerprint": "e3b2523a",
+              "id": "p_-1354600173_L2",
+              "sig": "e3b2523a"
+            },
+            {
+              "name": "Oscar Baker",
+              "role": "batter",
+              "position": "SS",
+              "handedness": "L",
+              "batting": {
+                "contact": 30,
+                "power": 48,
+                "speed": 32
+              },
+              "fingerprint": "eab530aa",
+              "id": "p_-1354600173_L3",
+              "sig": "eab530aa"
+            },
+            {
+              "name": "Carlos Jones",
+              "role": "batter",
+              "position": "DH",
+              "handedness": "R",
+              "batting": {
+                "contact": 43,
+                "power": 41,
+                "speed": 20
+              },
+              "fingerprint": "41936566",
+              "id": "p_-1354600173_L4",
+              "sig": "41936566"
+            },
+            {
+              "name": "Yogi Turner",
+              "role": "batter",
+              "position": "1B",
+              "handedness": "R",
+              "batting": {
+                "contact": 23,
+                "power": 49,
+                "speed": 42
+              },
+              "fingerprint": "32798b43",
+              "id": "p_-1354600173_L5",
+              "sig": "32798b43"
+            },
+            {
+              "name": "Xavier Moore",
+              "role": "batter",
+              "position": "CF",
+              "handedness": "R",
+              "batting": {
+                "contact": 45,
+                "power": 26,
+                "speed": 20
+              },
+              "fingerprint": "894adff7",
+              "id": "p_-1354600173_L6",
+              "sig": "894adff7"
+            },
+            {
+              "name": "Danny Nash",
+              "role": "batter",
+              "position": "C",
+              "handedness": "R",
+              "batting": {
+                "contact": 27,
+                "power": 46,
+                "speed": 29
+              },
+              "fingerprint": "5ce09811",
+              "id": "p_-1354600173_L7",
+              "sig": "5ce09811"
+            },
+            {
+              "name": "Jake Nash",
+              "role": "batter",
+              "position": "LF",
+              "handedness": "L",
+              "batting": {
+                "contact": 43,
+                "power": 31,
+                "speed": 35
+              },
+              "fingerprint": "0f741be1",
+              "id": "p_-1354600173_L8",
+              "sig": "0f741be1"
+            }
+          ],
+          "bench": [
+            {
+              "name": "Jake Quinn",
+              "role": "batter",
+              "position": "2B",
+              "handedness": "R",
+              "batting": {
+                "contact": 20,
+                "power": 35,
+                "speed": 32
+              },
+              "fingerprint": "4c7b9e3a",
+              "id": "p_-1354600173_B0",
+              "sig": "4c7b9e3a"
+            },
+            {
+              "name": "Marcus Jones",
+              "role": "batter",
+              "position": "DH",
+              "handedness": "R",
+              "batting": {
+                "contact": 40,
+                "power": 43,
+                "speed": 25
+              },
+              "fingerprint": "528bb641",
+              "id": "p_-1354600173_B1",
+              "sig": "528bb641"
+            },
+            {
+              "name": "Upton Young",
+              "role": "batter",
+              "position": "3B",
+              "handedness": "L",
+              "batting": {
+                "contact": 50,
+                "power": 22,
+                "speed": 25
+              },
+              "fingerprint": "8aeffd61",
+              "id": "p_-1354600173_B2",
+              "sig": "8aeffd61"
+            },
+            {
+              "name": "Carlos Irwin",
+              "role": "batter",
+              "position": "1B",
+              "handedness": "L",
+              "batting": {
+                "contact": 44,
+                "power": 41,
+                "speed": 29
+              },
+              "fingerprint": "395c3fc8",
+              "id": "p_-1354600173_B3",
+              "sig": "395c3fc8"
+            }
+          ],
+          "pitchers": [
+            {
+              "name": "Tom Walsh",
+              "role": "pitcher",
+              "position": "SP",
+              "handedness": "R",
+              "batting": {
+                "contact": 27,
+                "power": 36,
+                "speed": 23
+              },
+              "pitching": {
+                "velocity": 47,
+                "control": 52,
+                "movement": 47
+              },
+              "pitchingRole": "SP",
+              "fingerprint": "6f5bb386",
+              "id": "p_-1354600173_P0",
+              "sig": "6f5bb386"
+            },
+            {
+              "name": "Nathan Davis",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "R",
+              "batting": {
+                "contact": 25,
+                "power": 22,
+                "speed": 38
+              },
+              "pitching": {
+                "velocity": 51,
+                "control": 26,
+                "movement": 51
+              },
+              "pitchingRole": "SP/RP",
+              "fingerprint": "ca827a5e",
+              "id": "p_-1354600173_P1",
+              "sig": "ca827a5e"
+            },
+            {
+              "name": "Danny Zavala",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "L",
+              "batting": {
+                "contact": 20,
+                "power": 45,
+                "speed": 34
+              },
+              "pitching": {
+                "velocity": 43,
+                "control": 29,
+                "movement": 26
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "9d147526",
+              "id": "p_-1354600173_P2",
+              "sig": "9d147526"
+            },
+            {
+              "name": "Quinn Jones",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "R",
+              "batting": {
+                "contact": 28,
+                "power": 44,
+                "speed": 27
+              },
+              "pitching": {
+                "velocity": 25,
+                "control": 36,
+                "movement": 41
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "60175489",
+              "id": "p_-1354600173_P3",
+              "sig": "60175489"
+            },
+            {
+              "name": "Tom Urban",
+              "role": "pitcher",
+              "position": "RP",
+              "handedness": "L",
+              "batting": {
+                "contact": 50,
+                "power": 43,
+                "speed": 32
+              },
+              "pitching": {
+                "velocity": 37,
+                "control": 33,
+                "movement": 33
+              },
+              "pitchingRole": "RP",
+              "fingerprint": "6c7243c6",
+              "id": "p_-1354600173_P4",
+              "sig": "6c7243c6"
+            }
+          ]
+        },
+        "metadata": {
+          "archived": false
+        },
+        "fingerprint": "5137ab81"
+      }
+    ]
+  },
+  "sig": "c540857b"
+}

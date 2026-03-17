@@ -5,7 +5,7 @@ import { useHomeScreenMusic } from "@feat/gameplay/hooks/useHomeScreenMusic";
 import { useVolumeControls } from "@feat/gameplay/hooks/useVolumeControls";
 import { Outlet, useLocation, useNavigate } from "react-router";
 
-import type { AppShellOutletContext, ExhibitionGameSetup, SaveDoc } from "@storage/types";
+import type { AppShellOutletContext, ExhibitionGameSetup, SaveRecord } from "@storage/types";
 
 import { AppVolumeBar } from "./styles";
 
@@ -47,7 +47,7 @@ const AppShell: React.FunctionComponent = () => {
 
   /** Called from the saves page — navigates to /game with the save as location state. */
   const handleLoadSave = React.useCallback(
-    (slot: SaveDoc) => {
+    (slot: SaveRecord) => {
       navigate("/game", { state: { pendingLoadSave: slot, pendingGameSetup: null } });
     },
     [navigate],

@@ -1,7 +1,7 @@
 import * as React from "react";
 
 import { readFileAsText } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 const SIGNATURE_RE = /signature|invalid|corrupt/i;
 /** Errors that are already descriptive and should be shown as-is. */
@@ -17,9 +17,9 @@ export const friendlyImportError = (raw: string): string => {
 
 interface UseImportSaveOptions {
   /** Called to perform the actual import; receives raw JSON string. */
-  importFn: (json: string) => Promise<SaveDoc>;
-  /** Called with the imported SaveDoc on success. */
-  onSuccess: (save: SaveDoc) => void;
+  importFn: (json: string) => Promise<SaveRecord>;
+  /** Called with the imported SaveRecord on success. */
+  onSuccess: (save: SaveRecord) => void;
   /**
    * Optional error message formatter.
    * Defaults to {@link friendlyImportError} (user-facing friendly messages).

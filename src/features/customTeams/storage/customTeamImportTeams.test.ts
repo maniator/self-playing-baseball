@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 import { makePlayer, makeTeam } from "@test/helpers/customTeams";
 
 import { importCustomTeams } from "./customTeamImportTeams";
@@ -287,13 +287,11 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
       role: "pitcher",
       pitching: { velocity: 90, control: 82, movement: 75 },
       pitchingRole: "SP",
-      playerSeed: "sp-seed",
     });
     const rpPitcher = makePlayer({
       role: "pitcher",
       pitching: { velocity: 87, control: 78, movement: 70 },
       pitchingRole: "RP",
-      playerSeed: "rp-seed",
     });
     const team = makeTeam({
       roster: {
@@ -310,13 +308,12 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
   });
 
   it("round-trips handedness for all roster slots through exportCustomTeams → importCustomTeams", () => {
-    const lineupPlayer = makePlayer({ handedness: "L", playerSeed: "l-hand-seed" });
-    const benchPlayer = makePlayer({ handedness: "S", playerSeed: "s-hand-seed" });
+    const lineupPlayer = makePlayer({ handedness: "L" });
+    const benchPlayer = makePlayer({ handedness: "S" });
     const pitcher = makePlayer({
       role: "pitcher",
       handedness: "R",
       pitching: { velocity: 88, control: 80, movement: 70 },
-      playerSeed: "r-hand-seed",
     });
     const team = makeTeam({
       roster: {
@@ -334,13 +331,12 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
   });
 
   it("round-trips position for all roster slots through exportCustomTeams → importCustomTeams", () => {
-    const lineupPlayer = makePlayer({ position: "SS", playerSeed: "pos-ss-seed" });
-    const benchPlayer = makePlayer({ position: "C", playerSeed: "pos-c-seed" });
+    const lineupPlayer = makePlayer({ position: "SS" });
+    const benchPlayer = makePlayer({ position: "C" });
     const pitcher = makePlayer({
       role: "pitcher",
       position: "P",
       pitching: { velocity: 88, control: 80, movement: 70 },
-      playerSeed: "pos-p-seed",
     });
     const team = makeTeam({
       roster: {
@@ -360,11 +356,9 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
   it("round-trips complete batting stats for all lineup players", () => {
     const p1 = makePlayer({
       batting: { contact: 85, power: 70, speed: 90 },
-      playerSeed: "bat-seed-1",
     });
     const p2 = makePlayer({
       batting: { contact: 55, power: 90, speed: 40 },
-      playerSeed: "bat-seed-2",
     });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [p1, p2], bench: [], pitchers: [] },
@@ -379,7 +373,6 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
     const pitcher = makePlayer({
       role: "pitcher",
       pitching: { velocity: 95, control: 88, movement: 80 },
-      playerSeed: "pitch-stats-seed",
     });
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [makePlayer()], bench: [], pitchers: [pitcher] },
@@ -393,13 +386,12 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
     });
   });
 
-  it("round-trips team identity fields: abbreviation, city, nickname, teamSeed through importCustomTeams", () => {
+  it("round-trips team identity fields: abbreviation, city, nickname through importCustomTeams", () => {
     const team = makeTeam({
       name: "River City Rockets",
       abbreviation: "RCR",
       city: "River City",
       nickname: "Rockets",
-      teamSeed: "team-identity-seed-abc",
     });
     const json = exportCustomTeams([team]);
     const result = importCustomTeams(json, []);
@@ -407,20 +399,17 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
     expect(result.teams[0].abbreviation).toBe("RCR");
     expect(result.teams[0].city).toBe("River City");
     expect(result.teams[0].nickname).toBe("Rockets");
-    expect(result.teams[0].teamSeed).toBe("team-identity-seed-abc");
   });
 
   it("round-trips isBenchEligible and isPitcherEligible flags through importCustomTeams", () => {
     const bench = makePlayer({
       isBenchEligible: true,
       isPitcherEligible: false,
-      playerSeed: "bench-elig-seed",
     });
     const twoWay = makePlayer({
       role: "two-way",
       isBenchEligible: true,
       isPitcherEligible: true,
-      playerSeed: "two-way-elig-seed",
       pitching: { velocity: 80, control: 75, movement: 70 },
     });
     const team = makeTeam({
@@ -435,7 +424,7 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
   });
 
   it("strips sig from all players after importCustomTeams — export-only metadata not stored", () => {
-    const player = makePlayer({ playerSeed: "strip-sig-seed" });
+    const player = makePlayer();
     const team = makeTeam({
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
@@ -449,7 +438,6 @@ describe("exportCustomTeams / importCustomTeams — full player and team field r
     const legacyPlayer = makePlayer({
       role: "pitcher",
       pitching: { velocity: 88, control: 80, movement: 72 },
-      playerSeed: "legacy-role-seed",
     });
     // Explicitly ensure no pitchingRole field
     const { pitchingRole: _removed, ...legacyNoRole } = legacyPlayer as TeamPlayer & {

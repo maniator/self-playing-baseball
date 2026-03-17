@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import {
   customTeamToAbbreviation,
@@ -16,14 +16,14 @@ import {
   validateCustomTeamForGame,
 } from "./customTeamAdapter";
 
-const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
+const makeTeam = (overrides: Partial<TeamWithRoster> = {}): TeamWithRoster => ({
   id: "ct_test_001",
   schemaVersion: 1,
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
   name: "Eagles",
+  nameLowercase: "eagles",
   city: "Austin",
-  source: "custom",
   roster: {
     schemaVersion: 1,
     lineup: [
@@ -65,8 +65,8 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
 });
 
 describe("customTeamToGameId", () => {
-  it("prefixes the team id with custom:", () => {
-    expect(customTeamToGameId(makeTeam())).toBe("custom:ct_test_001");
+  it("returns the team id directly (no prefix in v1)", () => {
+    expect(customTeamToGameId(makeTeam())).toBe("ct_test_001");
   });
 
   it("is stable across calls", () => {
@@ -151,6 +151,22 @@ describe("customTeamToPlayerOverrides", () => {
     expect(overrides["p4"].movementMod).toBe(10);
   });
 
+  it("includes staminaMod for pitchers with non-default stamina", () => {
+    const team = makeTeam({
+      roster: {
+        ...makeTeam().roster,
+        pitchers: [
+          {
+            ...makeTeam().roster.pitchers[0],
+            pitching: { velocity: 75, control: 65, movement: 70, stamina: 80 },
+          },
+        ],
+      },
+    });
+    const overrides = customTeamToPlayerOverrides(team);
+    expect(overrides["p4"].staminaMod).toBe(20);
+  });
+
   it("does not include pitching mods for batters", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].velocityMod).toBeUndefined();
@@ -199,12 +215,12 @@ describe("customTeamToHandednessMap", () => {
 describe("customTeamToAbbreviation", () => {
   it("returns stored abbreviation for a custom team game ID", () => {
     const teams = [{ ...makeTeam(), id: "ct_abc", abbreviation: "EAG" }];
-    expect(customTeamToAbbreviation("custom:ct_abc", teams)).toBe("EAG");
+    expect(customTeamToAbbreviation("ct_abc", teams)).toBe("EAG");
   });
 
   it("falls back to first-3-chars of team name when abbreviation is missing", () => {
     const teams = [{ ...makeTeam(), id: "ct_abc", name: "Eagles", abbreviation: undefined }];
-    expect(customTeamToAbbreviation("custom:ct_abc", teams)).toBe("EAG");
+    expect(customTeamToAbbreviation("ct_abc", teams)).toBe("EAG");
   });
 
   it("returns undefined for a non-custom (unrecognized) team string", () => {
@@ -223,40 +239,39 @@ describe("resolveTeamLabel", () => {
 
   it("returns full display name (City + Name) for a known custom team", () => {
     const teams = [{ ...makeTeam(), id: "ct_abc", city: "Austin", name: "Eagles" }];
-    expect(resolveTeamLabel("custom:ct_abc", teams)).toBe("Austin Eagles");
+    expect(resolveTeamLabel("ct_abc", teams)).toBe("Austin Eagles");
   });
 
   it("returns just team name when custom team has no city", () => {
     const teams = [{ ...makeTeam(), id: "ct_abc", city: "", name: "Eagles" }];
-    expect(resolveTeamLabel("custom:ct_abc", teams)).toBe("Eagles");
+    expect(resolveTeamLabel("ct_abc", teams)).toBe("Eagles");
   });
 
-  it("returns safe short fallback (not raw ID) for unknown custom team ID", () => {
-    const result = resolveTeamLabel("custom:ct_unknown123", []);
-    expect(result).not.toContain("custom:");
-    expect(result.length).toBeLessThanOrEqual(8);
+  it("returns 'Unknown Team' for an unknown ct_* ID not in the list", () => {
+    const result = resolveTeamLabel("ct_unknown123", []);
+    expect(result).toBe("Unknown Team");
   });
 
   it("resolves a custom team ID that contains hyphens", () => {
     const teams = [{ ...makeTeam(), id: "ct-hyphen-id", city: "Test", name: "Rockets" }];
-    expect(resolveTeamLabel("custom:ct-hyphen-id", teams)).toBe("Test Rockets");
+    expect(resolveTeamLabel("ct-hyphen-id", teams)).toBe("Test Rockets");
   });
 });
 
 describe("resolveCustomIdsInString", () => {
-  it("replaces a single custom: token with the team display name", () => {
+  it("replaces a single ct_* token with the team display name", () => {
     const teams = [{ ...makeTeam(), id: "ct_abc", city: "Austin", name: "Eagles" }];
-    expect(resolveCustomIdsInString("custom:ct_abc hit a single", teams)).toBe(
+    expect(resolveCustomIdsInString("ct_abc hit a single", teams)).toBe(
       "Austin Eagles hit a single",
     );
   });
 
-  it("replaces multiple custom: tokens in the same string", () => {
+  it("replaces multiple ct_* tokens in the same string", () => {
     const teams = [
       { ...makeTeam(), id: "ct_home", city: "Dallas", name: "Stars" },
       { ...makeTeam(), id: "ct_away", city: "Boston", name: "Reds" },
     ];
-    const result = resolveCustomIdsInString("custom:ct_away at custom:ct_home", teams);
+    const result = resolveCustomIdsInString("ct_away at ct_home", teams);
     expect(result).toBe("Boston Reds at Dallas Stars");
   });
 
@@ -266,17 +281,10 @@ describe("resolveCustomIdsInString", () => {
     );
   });
 
-  it("never emits raw custom: prefix for unknown IDs", () => {
-    const result = resolveCustomIdsInString("Team custom:ct_unknown123 scored", []);
-    expect(result).not.toContain("custom:");
+  it("replaces unknown ct_* IDs with 'Unknown Team'", () => {
+    const result = resolveCustomIdsInString("Team ct_unknown123 scored", []);
+    expect(result).toContain("Unknown Team");
     expect(result).not.toContain("ct_unknown");
-  });
-
-  it("returns a safe short fallback for unknown IDs (not the full internal ID)", () => {
-    const result = resolveCustomIdsInString("custom:ct_verylongidthatshouldbetrimmed scored", []);
-    // The unknown-id fallback must not exceed 8 chars
-    const replacedPart = result.replace(" scored", "").trim();
-    expect(replacedPart.length).toBeLessThanOrEqual(8);
   });
 
   it("handles empty string without error", () => {
@@ -298,7 +306,7 @@ const makeFullLineup = () =>
     position: pos,
   }));
 
-const makeValidTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
+const makeValidTeam = (overrides: Partial<TeamWithRoster> = {}): TeamWithRoster => ({
   ...makeTeam(),
   roster: {
     schemaVersion: 1,

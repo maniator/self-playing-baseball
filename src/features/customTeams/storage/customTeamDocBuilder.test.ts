@@ -16,15 +16,15 @@ const makeInput = (overrides: Partial<CreateCustomTeamInput> = {}): CreateCustom
 // ── buildNewTeamDoc ───────────────────────────────────────────────────────────
 
 describe("buildNewTeamDoc", () => {
-  it("returns a doc with the provided id and teamSeed", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_abc123", "seed-xyz");
+  it("returns a doc with the provided id", () => {
+    const doc = buildNewTeamDoc(makeInput(), "ct_abc123");
     expect(doc.id).toBe("ct_abc123");
-    expect(doc.teamSeed).toBe("seed-xyz");
+    expect("teamSeed" in doc).toBe(false);
   });
 
   it("sets createdAt and updatedAt to the current ISO timestamp", () => {
     const before = Date.now();
-    const doc = buildNewTeamDoc(makeInput(), "ct_ts", "seed-ts");
+    const doc = buildNewTeamDoc(makeInput(), "ct_ts");
     const after = Date.now();
     const createdAt = new Date(doc.createdAt).getTime();
     const updatedAt = new Date(doc.updatedAt).getTime();
@@ -36,71 +36,59 @@ describe("buildNewTeamDoc", () => {
   });
 
   it("sets schemaVersion to 1", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_sv", "seed-sv");
+    const doc = buildNewTeamDoc(makeInput(), "ct_sv");
     expect(doc.schemaVersion).toBe(1);
   });
 
   it("sanitizes abbreviation via sanitizeAbbreviation (trims and uppercases)", () => {
-    const doc = buildNewTeamDoc(makeInput({ abbreviation: " roc " }), "ct_abbr", "seed-abbr");
+    const doc = buildNewTeamDoc(makeInput({ abbreviation: " roc " }), "ct_abbr");
     expect(doc.abbreviation).toBe("ROC");
   });
 
   it("does not include abbreviation when input.abbreviation is omitted", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_no_abbr", "seed-no-abbr");
+    const doc = buildNewTeamDoc(makeInput(), "ct_no_abbr");
     expect("abbreviation" in doc).toBe(false);
   });
 
-  it("sets source to 'custom' when input.source is omitted", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_src", "seed-src");
-    expect(doc.source).toBe("custom");
+  it("sets nameLowercase from input.name", () => {
+    const doc = buildNewTeamDoc(makeInput({ name: "Test Team" }), "ct_src");
+    expect(doc.nameLowercase).toBe("test team");
   });
 
-  it("respects input.source when provided", () => {
-    const doc = buildNewTeamDoc(makeInput({ source: "generated" }), "ct_gen_src", "seed-gen");
-    expect(doc.source).toBe("generated");
+  it("lowercases nameLowercase regardless of input casing", () => {
+    const doc = buildNewTeamDoc(makeInput({ name: "UPPER CASE" }), "ct_gen_src");
+    expect(doc.nameLowercase).toBe("upper case");
   });
 
   it("sets metadata.archived to false when not provided", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_arch_false", "seed-arch");
+    const doc = buildNewTeamDoc(makeInput(), "ct_arch_false");
     expect(doc.metadata.archived).toBe(false);
   });
 
   it("sets metadata.archived to true when provided", () => {
-    const doc = buildNewTeamDoc(
-      makeInput({ metadata: { archived: true } }),
-      "ct_arch_true",
-      "seed-arch2",
-    );
+    const doc = buildNewTeamDoc(makeInput({ metadata: { archived: true } }), "ct_arch_true");
     expect(doc.metadata.archived).toBe(true);
   });
 
   it("includes statsProfile when provided", () => {
-    const doc = buildNewTeamDoc(
-      makeInput({ statsProfile: "aggressive" }),
-      "ct_stats",
-      "seed-stats",
-    );
+    const doc = buildNewTeamDoc(makeInput({ statsProfile: "aggressive" }), "ct_stats");
     expect(doc.statsProfile).toBe("aggressive");
   });
 
   it("omits statsProfile when not provided", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_no_stats", "seed-no-stats");
+    const doc = buildNewTeamDoc(makeInput(), "ct_no_stats");
     expect("statsProfile" in doc).toBe(false);
   });
 
-  it("embeds empty roster arrays (players live in players collection)", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_roster", "seed-roster");
-    expect(doc.roster.lineup).toEqual([]);
-    expect(doc.roster.bench).toEqual([]);
-    expect(doc.roster.pitchers).toEqual([]);
-    expect(doc.roster.schemaVersion).toBe(1);
+  it("does not embed roster (players live in players collection)", () => {
+    const doc = buildNewTeamDoc(makeInput(), "ct_roster");
+    expect((doc as unknown as Record<string, unknown>)["roster"]).toBeUndefined();
   });
 
   it("computes and sets fingerprint via buildTeamFingerprint", () => {
     const doc = buildNewTeamDoc(
       makeInput({ name: "Fingerprint FC", abbreviation: "FFC" }),
       "ct_fp",
-      "seed-fp-abc",
     );
     expect(typeof doc.fingerprint).toBe("string");
     expect(doc.fingerprint).toMatch(/^[0-9a-f]{8}$/);
@@ -110,7 +98,7 @@ describe("buildNewTeamDoc", () => {
   });
 
   it("includes name from input", () => {
-    const doc = buildNewTeamDoc(makeInput({ name: "River City Rockets" }), "ct_name", "seed-name");
+    const doc = buildNewTeamDoc(makeInput({ name: "River City Rockets" }), "ct_name");
     expect(doc.name).toBe("River City Rockets");
   });
 
@@ -118,7 +106,6 @@ describe("buildNewTeamDoc", () => {
     const doc = buildNewTeamDoc(
       makeInput({ nickname: "Rockets", city: "River City", slug: "river-city-rockets" }),
       "ct_extras",
-      "seed-extras",
     );
     expect(doc.nickname).toBe("Rockets");
     expect(doc.city).toBe("River City");
@@ -126,7 +113,7 @@ describe("buildNewTeamDoc", () => {
   });
 
   it("omits optional nickname, city, and slug when not provided", () => {
-    const doc = buildNewTeamDoc(makeInput(), "ct_no_extras", "seed-no-extras");
+    const doc = buildNewTeamDoc(makeInput(), "ct_no_extras");
     expect("nickname" in doc).toBe(false);
     expect("city" in doc).toBe(false);
     expect("slug" in doc).toBe(false);

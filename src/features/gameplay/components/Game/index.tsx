@@ -3,6 +3,7 @@ import * as React from "react";
 import { resolveCustomIdsInString } from "@feat/customTeams/adapters/customTeamAdapter";
 import type { GameAction } from "@feat/gameplay/context/index";
 import { GameProviderWrapper } from "@feat/gameplay/context/index";
+import { cancelAnnouncements } from "@feat/gameplay/utils/announce";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 import { appLog } from "@shared/utils/logger";
 import { RxDatabaseProvider } from "rxdb/plugins/react";
@@ -10,7 +11,7 @@ import { RxDatabaseProvider } from "rxdb/plugins/react";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
 import type { ExhibitionGameSetup } from "@storage/types";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 import GameInner from "./GameInner";
 import { DbResetNotice, LoadingScreen } from "./styles";
@@ -26,7 +27,7 @@ type Props = {
   /** Called after pendingGameSetup is consumed so GamePage can clear it. */
   onConsumeGameSetup?: () => void;
   /** Save loaded from /saves page; consumed by GameInner to restore game state. */
-  pendingLoadSave?: SaveDoc | null;
+  pendingLoadSave?: SaveRecord | null;
   /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
   /** Called when the career stats commit state changes (saving/done). */
@@ -50,8 +51,15 @@ const Game: React.FunctionComponent<Props> = ({
   const [db, setDb] = React.useState<BallgameDb | null>(null);
   const [dbResetNotice, setDbResetNotice] = React.useState(false);
 
+  // Cancel any in-flight TTS when the game page unmounts (e.g. user navigates away).
+  React.useEffect(() => {
+    return () => {
+      cancelAnnouncements();
+    };
+  }, []);
+
   // Load custom teams to build the per-call TTS preprocessor that resolves
-  // `custom:<id>` fragments to human-readable names before speech.
+  // `ct_*` fragments to human-readable names before speech.
   const { teams: customTeams } = useCustomTeams();
   const announcePreprocessor = React.useCallback(
     (msg: string) => resolveCustomIdsInString(msg, customTeams),

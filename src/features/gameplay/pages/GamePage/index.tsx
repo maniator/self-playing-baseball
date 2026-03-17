@@ -13,7 +13,7 @@ import type {
   AppShellOutletContext,
   ExhibitionGameSetup,
   GameLocationState,
-  SaveDoc,
+  SaveRecord,
 } from "@storage/types";
 
 import { SavingBanner } from "./styles";
@@ -28,7 +28,7 @@ const GamePage: React.FunctionComponent = () => {
   const pendingSetupRef = React.useRef<ExhibitionGameSetup | null>(
     gameState?.pendingGameSetup ?? null,
   );
-  const pendingLoadRef = React.useRef<SaveDoc | null>(gameState?.pendingLoadSave ?? null);
+  const pendingLoadRef = React.useRef<SaveRecord | null>(gameState?.pendingLoadSave ?? null);
 
   // Guard prevents re-clearing on subsequent renders if location.state changes.
   const hasClearedStateRef = React.useRef(false);

@@ -2,12 +2,12 @@ import * as React from "react";
 
 import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import { FieldGroup, FieldLabel, SectionLabel, Select } from "../../styles";
 
 type Props = {
-  teams: CustomTeamDoc[];
+  teams: TeamWithRoster[];
   awayTeamId: string;
   homeTeamId: string;
   onAwayChange: (id: string) => void;

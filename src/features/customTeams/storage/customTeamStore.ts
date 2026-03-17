@@ -1,10 +1,11 @@
 import { type BallgameDb, getDb } from "@storage/db";
-import { generateSeed, generateTeamId } from "@storage/generateId";
+import { generateTeamId } from "@storage/generateId";
 import type {
   CreateCustomTeamInput,
-  CustomTeamDoc,
   CustomTeamMetadata,
-  PlayerDoc,
+  PlayerRecord,
+  TeamRecord,
+  TeamWithRoster,
   UpdateCustomTeamInput,
 } from "@storage/types";
 
@@ -20,7 +21,12 @@ import {
   parseExportedCustomPlayer as parseExportedCustomPlayerJson,
 } from "./customTeamExportImport";
 import { importPlayerIntoTeam, orchestrateTeamImport } from "./customTeamImportOrchestrator";
-import { assembleRoster, removePlayerDocs, writePlayerDocs } from "./customTeamPlayerDocs";
+import {
+  assembleRoster,
+  removeTeamPlayerRecords,
+  toTeamPlayer,
+  writePlayerRecords,
+} from "./customTeamPlayerDocs";
 import { populateRoster } from "./customTeamRosterPersistence";
 import {
   buildRoster,
@@ -28,6 +34,7 @@ import {
   ROSTER_SCHEMA_VERSION,
   sanitizeAbbreviation,
 } from "./customTeamSanitizers";
+import { FREE_AGENT_TEAM_ID } from "./schemaV1";
 
 type GetDb = () => Promise<BallgameDb>;
 
@@ -42,21 +49,21 @@ function buildStore(getDbFn: GetDb) {
     async listCustomTeams(filter?: {
       includeArchived?: boolean;
       withRoster?: boolean;
-    }): Promise<CustomTeamDoc[]> {
+    }): Promise<TeamWithRoster[]> {
       const db = await getDbFn();
-      const docs = await db.customTeams.find({ sort: [{ updatedAt: "desc" }] }).exec();
-      const teams = docs.map((d) => d.toJSON() as unknown as CustomTeamDoc);
+      const docs = await db.teams.find({ sort: [{ updatedAt: "desc" }] }).exec();
+      const teams = docs.map((d) => d.toJSON() as unknown as TeamWithRoster);
       const filtered = filter?.includeArchived ? teams : teams.filter((t) => !t.metadata?.archived);
       if (filter?.withRoster === false) return filtered;
-      return Promise.all(filtered.map((t) => populateRoster(db, t)));
+      return Promise.all(filtered.map((t) => populateRoster(db, t as unknown as TeamRecord)));
     },
 
     /** Returns a single custom team by id, or null if not found. */
-    async getCustomTeam(id: string): Promise<CustomTeamDoc | null> {
+    async getCustomTeam(id: string): Promise<TeamWithRoster | null> {
       const db = await getDbFn();
-      const doc = await db.customTeams.findOne(id).exec();
+      const doc = await db.teams.findOne(id).exec();
       if (!doc) return null;
-      const team = doc.toJSON() as unknown as CustomTeamDoc;
+      const team = doc.toJSON() as unknown as TeamRecord;
       return populateRoster(db, team);
     },
 
@@ -68,28 +75,28 @@ function buildStore(getDbFn: GetDb) {
      */
     async createCustomTeam(input: CreateCustomTeamInput, meta?: { id?: string }): Promise<string> {
       const name = requireNonEmpty(input.name, "name");
+      const db = await getDbFn();
 
-      // Enforce unique team names (case-insensitive) across the local install.
-      const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
+      // Enforce unique team names using the indexed `nameLowercase` field — O(log n)
+      // instead of loading the full collection and scanning in JS.
       const nameLower = name.toLowerCase();
-      const duplicate = existing.find((t) => t.name.toLowerCase() === nameLower);
-      if (duplicate) {
-        throw new Error(
-          `A team named "${duplicate.name}" already exists. Team names must be unique.`,
-        );
+      const duplicateDoc = await db.teams
+        .findOne({ selector: { nameLowercase: nameLower } })
+        .exec();
+      if (duplicateDoc) {
+        const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
+        throw new Error(`A team named "${dup.name}" already exists. Team names must be unique.`);
       }
       const roster = buildRoster(input.roster);
       const id = meta?.id ?? generateTeamId();
-      const teamSeed = generateSeed();
-      const doc = buildNewTeamDoc({ ...input, name }, id, teamSeed);
-      const db = await getDbFn();
-      await db.customTeams.insert(doc);
+      const doc = buildNewTeamDoc({ ...input, name }, id);
+      await db.teams.insert(doc);
       // Write player docs into the dedicated players collection.
       // On failure, roll back the team doc so the state remains consistent.
       try {
-        await writePlayerDocs(db, id, roster);
+        await writePlayerRecords(db, id, roster);
       } catch (err) {
-        await db.customTeams
+        await db.teams
           .findOne(id)
           .exec()
           .then((d) => d?.remove())
@@ -105,25 +112,28 @@ function buildStore(getDbFn: GetDb) {
      */
     async updateCustomTeam(id: string, updates: UpdateCustomTeamInput): Promise<void> {
       const db = await getDbFn();
-      const doc = await db.customTeams.findOne(id).exec();
+      const doc = await db.teams.findOne(id).exec();
       if (!doc) throw new Error(`Custom team not found: ${id}`);
 
-      const patch: Partial<CustomTeamDoc> = {
+      const patch: Partial<TeamRecord> = {
         updatedAt: new Date().toISOString(),
       };
 
       if (updates.name !== undefined) {
         const newName = requireNonEmpty(updates.name, "name");
-        // Enforce unique team names (case-insensitive), excluding the current team.
-        const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
+        // Enforce unique team names using the indexed `nameLowercase` field — O(log n)
+        // instead of loading the full collection and scanning in JS.
         const nameLower = newName.toLowerCase();
-        const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
-        if (duplicate) {
-          throw new Error(
-            `A team named "${duplicate.name}" already exists. Team names must be unique.`,
-          );
+        const duplicateDoc = await db.teams
+          .findOne({ selector: { nameLowercase: nameLower } })
+          .exec();
+        if (duplicateDoc && (duplicateDoc.toJSON() as unknown as TeamRecord).id !== id) {
+          const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
+          throw new Error(`A team named "${dup.name}" already exists. Team names must be unique.`);
         }
         patch.name = newName;
+        // Keep nameLowercase in sync for the indexed dedup field.
+        patch.nameLowercase = newName.toLowerCase();
       }
       if (updates.abbreviation !== undefined)
         patch.abbreviation = sanitizeAbbreviation(updates.abbreviation);
@@ -133,37 +143,28 @@ function buildStore(getDbFn: GetDb) {
       if (updates.statsProfile !== undefined) patch.statsProfile = updates.statsProfile;
 
       if (updates.roster !== undefined) {
-        const current = await populateRoster(db, doc.toJSON() as unknown as CustomTeamDoc);
+        const current = await populateRoster(db, doc.toJSON() as unknown as TeamRecord);
         const newRoster = buildRoster({
           lineup: updates.roster.lineup ?? current.roster.lineup,
           bench: updates.roster.bench ?? current.roster.bench,
           pitchers: updates.roster.pitchers ?? current.roster.pitchers,
         });
-        // Keep embedded arrays empty — players live in the `players` collection.
-        patch.roster = {
-          schemaVersion: ROSTER_SCHEMA_VERSION,
-          lineup: [],
-          bench: [],
-          pitchers: [],
-        };
         // Replace player docs: upsert new docs first (safe), then remove any stale
         // docs whose composite IDs no longer appear in the new roster.
-        const newDocIds = await writePlayerDocs(db, id, newRoster);
-        await removePlayerDocs(db, id, newDocIds);
+        const newDocIds = await writePlayerRecords(db, id, newRoster);
+        await removeTeamPlayerRecords(db, id, newDocIds);
       }
 
       if (updates.metadata !== undefined) {
-        const currentMeta = (doc.toJSON() as unknown as CustomTeamDoc).metadata;
+        const currentMeta = (doc.toJSON() as unknown as TeamWithRoster).metadata;
         patch.metadata = { ...currentMeta, ...updates.metadata } as CustomTeamMetadata;
       }
 
       // Recompute fingerprint only when identity fields (name or abbreviation) change.
-      // roster changes do not affect the fingerprint. teamSeed is never part of
-      // UpdateCustomTeamInput and therefore never triggers a recomputation here.
+      // roster changes do not affect the fingerprint.
       if (updates.name !== undefined || updates.abbreviation !== undefined) {
-        const currentDoc = doc.toJSON() as unknown as CustomTeamDoc;
-        // Merge currentDoc with all effective changes so fingerprint uses final values.
-        const merged: CustomTeamDoc = {
+        const currentDoc = doc.toJSON() as unknown as TeamWithRoster;
+        const merged: TeamWithRoster = {
           ...currentDoc,
           ...(patch.name !== undefined && { name: patch.name }),
           ...(patch.abbreviation !== undefined && { abbreviation: patch.abbreviation }),
@@ -184,15 +185,15 @@ function buildStore(getDbFn: GetDb) {
     async deleteCustomTeam(id: string, options?: { cascade?: boolean }): Promise<void> {
       const cascade = options?.cascade ?? true;
       const db = await getDbFn();
-      const doc = await db.customTeams.findOne(id).exec();
+      const doc = await db.teams.findOne(id).exec();
       if (doc) {
         // Clean up / detach players first so we never leave orphaned docs pointing
         // at a now-missing teamId.
         if (cascade) {
-          await removePlayerDocs(db, id);
+          await removeTeamPlayerRecords(db, id);
         } else {
           const existing = await db.players.find({ selector: { teamId: id } }).exec();
-          await Promise.all(existing.map((p) => p.patch({ teamId: null })));
+          await Promise.all(existing.map((p) => p.patch({ teamId: FREE_AGENT_TEAM_ID })));
         }
         await doc.remove();
       }
@@ -200,13 +201,13 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Returns all player docs that are not assigned to any team (free agents).
-     * These are players whose `teamId` is `null` — created when a team is deleted
+     * These are players whose `teamId` is `FREE_AGENT_TEAM_ID` — created when a team is deleted
      * with `{ cascade: false }`.
      */
-    async listFreePlayers(): Promise<PlayerDoc[]> {
+    async listFreePlayers(): Promise<PlayerRecord[]> {
       const db = await getDbFn();
-      const docs = await db.players.find({ selector: { teamId: null } }).exec();
-      return docs.map((d) => d.toJSON() as unknown as PlayerDoc);
+      const docs = await db.players.find({ selector: { teamId: FREE_AGENT_TEAM_ID } }).exec();
+      return docs.map((d) => d.toJSON() as PlayerRecord);
     },
 
     /**
@@ -214,9 +215,20 @@ function buildStore(getDbFn: GetDb) {
      * If `ids` is omitted, all non-archived teams are exported.
      */
     async exportCustomTeams(ids?: string[]): Promise<string> {
-      const all = await this.listCustomTeams(ids ? { includeArchived: true } : undefined);
-      const toExport = ids ? all.filter((t) => ids.includes(t.id)) : all;
-      return exportCustomTeamsJson(toExport);
+      if (ids) {
+        // Use findByIds for O(1)-per-team PK lookups instead of loading all teams
+        // then filtering in JS with ids.includes() which is O(n×m).
+        const db = await getDbFn();
+        const docsMap = await db.teams.findByIds(ids).exec();
+        const teams = await Promise.all(
+          Array.from(docsMap.values()).map((d) =>
+            populateRoster(db, d.toJSON() as unknown as TeamRecord),
+          ),
+        );
+        return exportCustomTeamsJson(teams);
+      }
+      const all = await this.listCustomTeams();
+      return exportCustomTeamsJson(all);
     },
 
     /**
@@ -226,12 +238,19 @@ function buildStore(getDbFn: GetDb) {
      * @throws If the team or player is not found.
      */
     async exportPlayer(teamId: string, playerId: string): Promise<string> {
-      const team = await this.getCustomTeam(teamId);
-      if (!team) throw new Error(`Team not found: ${teamId}`);
-      const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
-      const player = allPlayers.find((p) => p.id === playerId);
-      if (!player) throw new Error(`Player not found: ${playerId} in team ${teamId}`);
-      return exportCustomPlayerJson(player);
+      const db = await getDbFn();
+      // Direct PK lookup — O(1) instead of loading the full team roster and
+      // scanning the array with allPlayers.find().
+      const [teamDoc, playerDoc] = await Promise.all([
+        db.teams.findOne(teamId).exec(),
+        db.players.findOne(playerId).exec(),
+      ]);
+      if (!teamDoc) throw new Error(`Team not found: ${teamId}`);
+      const playerRecord = playerDoc?.toJSON() as PlayerRecord | undefined;
+      if (!playerRecord || playerRecord.teamId !== teamId) {
+        throw new Error(`Player not found: ${playerId} in team ${teamId}`);
+      }
+      return exportCustomPlayerJson(toTeamPlayer(playerRecord));
     },
 
     /**
@@ -242,10 +261,10 @@ function buildStore(getDbFn: GetDb) {
      * anything — the caller should prompt the user and retry with the flag set.
      * @returns A summary of created/remapped counts and duplicate warnings.
      * @note Name-uniqueness is NOT enforced on import. A team imported with the
-     * same name as an existing team (but a different `teamSeed`) will be upserted
+     * same name as an existing team (but a different `id`) will be upserted
      * as a separate team. This is a known limitation of the fingerprint-based
-     * deduplication strategy: fingerprints are seed-scoped, so only the exact
-     * same team (same seed) is detected as a duplicate.
+     * deduplication strategy: fingerprints are id-scoped, so only the exact
+     * same team (same id) is detected as a duplicate.
      */
     async importCustomTeams(
       json: string,
@@ -258,34 +277,28 @@ function buildStore(getDbFn: GetDb) {
       // the DB.  By reading collections directly we get the same roster data
       // without any writes.
       const db = await getDbFn();
-      const rawTeamDocs = (await db.customTeams.find().exec()).map(
-        (d) => d.toJSON() as CustomTeamDoc,
-      );
+      const rawTeamDocs = (await db.teams.find().exec()).map((d) => d.toJSON() as TeamRecord);
       // Query only the player docs that belong to our known teams using a $in
       // selector, then group them by teamId into a Map for O(1) lookup per team.
       // This avoids fetching free-agent / archived-team player docs and replaces
       // the previous O(teamCount × playerCount) filter loop.
       const teamIds = rawTeamDocs.map((t) => t.id);
-      const playersByTeamId = new Map<string, PlayerDoc[]>();
+      const playersByTeamId = new Map<string, PlayerRecord[]>();
       if (teamIds.length > 0) {
         const relevantPlayerDocs = (
           await db.players.find({ selector: { teamId: { $in: teamIds } } }).exec()
-        ).map((d) => d.toJSON() as PlayerDoc);
+        ).map((d) => d.toJSON() as PlayerRecord);
         for (const doc of relevantPlayerDocs) {
+          if (!doc.teamId) continue;
           const bucket = playersByTeamId.get(doc.teamId) ?? [];
           bucket.push(doc);
           playersByTeamId.set(doc.teamId, bucket);
         }
       }
-      // Assemble rosters read-only: use player docs for modern teams, fall back to
-      // embedded roster arrays for legacy teams that have not been backfilled yet.
-      const existing: CustomTeamDoc[] = rawTeamDocs.map((team) => {
-        const teamPlayerDocs = playersByTeamId.get(team.id) ?? [];
-        if (teamPlayerDocs.length > 0) {
-          return { ...team, roster: assembleRoster(teamPlayerDocs, team.roster) };
-        }
-        // Legacy team: players still in embedded arrays (no backfill write here).
-        return team;
+      // Assemble rosters read-only from player records.
+      const existing = rawTeamDocs.map((team) => {
+        const teamPlayerRecords = playersByTeamId.get(team.id) ?? [];
+        return { ...team, roster: assembleRoster(teamPlayerRecords) } as unknown as TeamWithRoster;
       });
       const result = importCustomTeamsParser(json, existing, undefined, options);
       if (!result.requiresDuplicateConfirmation) {
@@ -306,19 +319,15 @@ function buildStore(getDbFn: GetDb) {
     ): Promise<ImportPlayerResult> {
       const player = parseExportedCustomPlayerJson(playerJson);
 
-      if (!player.globalPlayerId) {
-        throw new Error(
-          "Imported player bundle must include a globalPlayerId. Re-export the player from the source team to get a valid bundle.",
-        );
+      // In v1, player.id IS the globalPlayerId.
+      if (!player.id) {
+        throw new Error("Imported player bundle must include a player id.");
       }
 
       const db = await getDbFn();
-      const targetTeamDoc = await db.customTeams.findOne(targetTeamId).exec();
+      const targetTeamDoc = await db.teams.findOne(targetTeamId).exec();
       if (!targetTeamDoc) throw new Error(`Custom team not found: ${targetTeamId}`);
-      const targetTeam = await populateRoster(
-        db,
-        targetTeamDoc.toJSON() as unknown as CustomTeamDoc,
-      );
+      const targetTeam = await populateRoster(db, targetTeamDoc.toJSON() as unknown as TeamRecord);
 
       return importPlayerIntoTeam(db, {
         player,

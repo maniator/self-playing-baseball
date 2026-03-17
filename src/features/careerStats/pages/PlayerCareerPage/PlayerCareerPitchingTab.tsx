@@ -2,25 +2,24 @@
 import * as React from "react";
 
 import { formatIP } from "@feat/careerStats/utils/computePitcherGameStats";
-import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { useTeamDisplayNames } from "@shared/hooks/useTeamDisplayNames";
 
-import type { CustomTeamDoc, PitcherGameStatDoc } from "@storage/types";
+import type { PitcherGameStatRecord } from "@storage/types";
 
 import { EmptyState, SectionLabel, StatsTable, TableWrapper, Td, Th, TotalsRow } from "./styles";
 import type { PitchingTotals } from "./usePlayerCareerData";
 import { formatDate, formatERA, formatWHIP } from "./usePlayerCareerData";
 
 type Props = {
-  pitchingRows: PitcherGameStatDoc[];
+  pitchingRows: PitcherGameStatRecord[];
   pitchingTotals: PitchingTotals;
-  customTeams: CustomTeamDoc[];
 };
 
 const PlayerCareerPitchingTab: React.FunctionComponent<Props> = ({
   pitchingRows,
   pitchingTotals,
-  customTeams,
 }) => {
+  const teamNameMap = useTeamDisplayNames(pitchingRows.map((r) => r.opponentTeamId));
   if (pitchingRows.length === 0) {
     return <EmptyState>No pitching data.</EmptyState>;
   }
@@ -98,7 +97,7 @@ const PlayerCareerPitchingTab: React.FunctionComponent<Props> = ({
             {pitchingRows.map((row) => (
               <tr key={row.id}>
                 <Td>{formatDate(row.createdAt)}</Td>
-                <Td>{resolveTeamLabel(row.opponentTeamId, customTeams)}</Td>
+                <Td>{teamNameMap.get(row.opponentTeamId) ?? "Unknown Team"}</Td>
                 <Td>{formatIP(row.outsPitched)}</Td>
                 <Td>{row.hitsAllowed}</Td>
                 <Td>{row.walksAllowed}</Td>

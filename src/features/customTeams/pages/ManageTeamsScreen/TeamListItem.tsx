@@ -2,12 +2,12 @@ import * as React from "react";
 
 import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import { ActionBtn, TeamActions, TeamInfo, TeamListItemCard, TeamMeta, TeamName } from "./styles";
 
 type Props = {
-  team: CustomTeamDoc;
+  team: TeamWithRoster;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onExport: (id: string) => void;

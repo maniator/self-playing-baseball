@@ -13,7 +13,6 @@
         "abbreviation": "E2E",
         "city": "E2E City",
         "source": "custom",
-        "teamSeed": "seed_e2e_career_team",
         "metadata": {
           "archived": false
         },
@@ -31,10 +30,8 @@
               },
               "position": "LF",
               "handedness": "R",
-              "playerSeed": "seed_e2e_slugger",
-              "sig": "57b6dc12",
-              "fingerprint": "57b6dc12",
-              "globalPlayerId": "e2e_batter_slugger"
+              "sig": "87a59d02",
+              "fingerprint": "87a59d02"
             },
             {
               "id": "e2e_batter_contact",
@@ -47,10 +44,8 @@
               },
               "position": "CF",
               "handedness": "L",
-              "playerSeed": "seed_e2e_contact",
-              "sig": "b603e779",
-              "fingerprint": "b603e779",
-              "globalPlayerId": "e2e_batter_contact"
+              "sig": "0fb77a56",
+              "fingerprint": "0fb77a56"
             }
           ],
           "bench": [],
@@ -72,9 +67,8 @@
               "position": "SP",
               "handedness": "R",
               "pitchingRole": "SP",
-              "playerSeed": "seed_e2e_career_p",
-              "sig": "62096cc0",
-              "fingerprint": "62096cc0"
+              "sig": "ad741f22",
+              "fingerprint": "ad741f22"
             }
           ]
         },
@@ -82,5 +76,5 @@
       }
     ]
   },
-  "sig": "0dcbe0b7"
+  "sig": "005f007a"
 }

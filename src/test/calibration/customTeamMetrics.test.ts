@@ -31,7 +31,7 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import { describe, expect, it } from "vitest";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 // ── Fixture loading ────────────────────────────────────────────────────────
 
@@ -109,7 +109,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   };
 
   const gameReducer = reducerFactory(dispatchLog);
-  let state: State = createFreshGameState([`custom:${awayTeam.id}`, `custom:${homeTeam.id}`]);
+  let state: State = createFreshGameState([awayTeam.id, homeTeam.id]);
 
   const dispatch = (action: GameAction): void => {
     state = gameReducer(state, action);
@@ -119,11 +119,11 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   dispatch({
     type: "setTeams",
     payload: {
-      teams: [`custom:${awayTeam.id}`, `custom:${homeTeam.id}`],
+      teams: [awayTeam.id, homeTeam.id],
       teamLabels: [awayTeam.name, homeTeam.name],
       playerOverrides: [
-        customTeamToPlayerOverrides(awayTeam as unknown as CustomTeamDoc),
-        customTeamToPlayerOverrides(homeTeam as unknown as CustomTeamDoc),
+        customTeamToPlayerOverrides(awayTeam as unknown as TeamWithRoster),
+        customTeamToPlayerOverrides(homeTeam as unknown as TeamWithRoster),
       ] as [Record<string, Record<string, number>>, Record<string, Record<string, number>>],
       lineupOrder: [
         awayTeam.roster.lineup.map((p) => p.id),

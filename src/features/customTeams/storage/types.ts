@@ -3,6 +3,8 @@ export interface TeamPlayerBatting {
   contact: number;
   power: number;
   speed: number;
+  /** Stamina (0–100). Reserved for future batter durability/fatigue mechanics. */
+  stamina?: number;
 }
 
 /** Optional pitching statistics for a custom team player. */
@@ -10,6 +12,8 @@ export interface TeamPlayerPitching {
   velocity?: number;
   control?: number;
   movement?: number;
+  /** Stamina (0–100). Higher values keep pitchers effective for longer before fatigue sets in. */
+  stamina?: number;
 }
 
 /** A single player on a custom team roster. */
@@ -32,13 +36,6 @@ export interface TeamPlayer {
    */
   pitchingRole?: "SP" | "RP" | "SP/RP";
   /**
-   * Random seed generated once at player creation. Stored permanently so the
-   * fingerprint can be re-verified. Travels in export bundles so re-imported
-   * players retain their identity. Absent on documents created before schema v3
-   * (backfilled by the v2→v3 migration).
-   */
-  playerSeed?: string;
-  /**
    * Persistent FNV-1a content fingerprint stored in the DB.
    * Covers the player's immutable identity fields: `name`, `role`, `batting`, and `pitching`.
    * Used for global duplicate detection across all teams in the local install.
@@ -55,50 +52,6 @@ export interface TeamPlayer {
    * Present only in export bundles; stripped before DB storage.
    */
   sig?: string;
-  /**
-   * Team-independent stable identity for this player.
-   * Set once at player creation (`"pl_" + fnv1a(playerSeed)`) and preserved
-   * across team moves, imports, and ID remapping.
-   * Used as the `playerKey` in `PlayerGameStatDoc` for cross-team career aggregation:
-   * if a player moves from Team A to Team B, their career stat rows accumulate under
-   * the same `globalPlayerId` regardless of which team they currently belong to.
-   * Absent on documents created before schema v3 — backfilled by the v2→v3 migration.
-   */
-  globalPlayerId?: string;
-}
-
-/** Persisted player document — stores all TeamPlayer fields plus team foreign key and roster metadata.
- * The `sig` field from `TeamPlayer` is intentionally omitted: it is only used in export bundles
- * and is stripped before any DB storage.
- */
-export interface PlayerDoc extends Omit<TeamPlayer, "sig"> {
-  /** Foreign key: the `id` of the parent `CustomTeamDoc`. Null when the player is a free agent (not assigned to any team). */
-  teamId?: string | null;
-  /** Which roster section this player belongs to. */
-  section: "lineup" | "bench" | "pitchers";
-  /** Zero-based position within the section — used for ordering when assembling the roster. */
-  orderIndex: number;
-  schemaVersion: number;
-  /**
-   * Original player ID (`TeamPlayer.id`). Stored so the composite primary key
-   * (`${teamId}:${playerId}`) can be unwound back to the original player identity
-   * when assembling a `TeamRoster` from `PlayerDoc`s.
-   * Absent on documents created before schema v2 — `id` is used as the fallback.
-   */
-  playerId?: string;
-}
-
-/** Keyed JSON export format for a single player. */
-export interface ExportedCustomPlayer {
-  type: "customPlayer";
-  formatVersion: 1;
-  exportedAt: string;
-  payload: {
-    /** Player data with `sig` field embedded for integrity validation on import. */
-    player: TeamPlayer & { sig: string };
-  };
-  /** FNV-1a 32-bit signature of PLAYER_EXPORT_KEY + JSON.stringify(payload) */
-  sig: string;
 }
 
 /** Roster embedded in a custom team document. */
@@ -116,32 +69,73 @@ export interface CustomTeamMetadata {
   archived?: boolean;
 }
 
-/** Persisted custom team document (one per user-created team). */
-export interface CustomTeamDoc {
+/**
+ * v1 persisted team record — metadata/identity only.
+ * Does NOT store an authoritative embedded roster.
+ * Players belong to teams via PlayerRecord.teamId.
+ */
+export interface TeamRecord {
   id: string;
   schemaVersion: number;
   createdAt: string;
   updatedAt: string;
   name: string;
+  /** Lowercase version of name — stored for O(1) indexed dedup lookup. */
+  nameLowercase: string;
   /** 2–3 char compact label for line score / scoreboard contexts. */
   abbreviation?: string;
   nickname?: string;
   city?: string;
   slug?: string;
-  /** "custom" = user-created; "generated" = future auto-generated use. */
-  source: "custom" | "generated";
-  roster: TeamRoster;
   metadata: CustomTeamMetadata;
   /** Optional future hint for stat generation (e.g. "balanced", "power"). */
   statsProfile?: string;
-  /** FNV-1a fingerprint of name+abbreviation (case-insensitive) — used for duplicate detection on import. Roster changes do not affect the fingerprint so re-importing the same team after roster edits still deduplicates correctly. */
+  /** FNV-1a fingerprint of name+abbreviation+id — used for duplicate detection on import. */
   fingerprint?: string;
+}
+
+/**
+ * v1 persisted player record.
+ * `id` is a stable global player ID (e.g. "pl_<fnv1a(id)>") — NOT team-scoped.
+ * Moving a player between teams updates `teamId` without changing player identity.
+ */
+export interface PlayerRecord {
   /**
-   * Random seed generated once at team creation. Stored permanently so the
-   * fingerprint can be re-verified. Travels in export bundles.
-   * Absent on documents created before schema v3 (backfilled by the v2→v3 migration).
+   * Stable global player ID — e.g. the player's `globalPlayerId`.
+   * Primary key. NOT team-scoped or composite.
+   * This IS the globalPlayerId: no separate globalPlayerId field needed.
    */
-  teamSeed?: string;
+  id: string;
+  /**
+   * FK → TeamRecord.id. Use FREE_AGENT_TEAM_ID for players not assigned to any user team.
+   */
+  teamId: string;
+  section: "lineup" | "bench" | "pitchers";
+  /** Zero-based position within the section — used for ordering when assembling the roster. */
+  orderIndex: number;
+  name: string;
+  role: "batter" | "pitcher" | "two-way";
+  /** Optional when role is "pitcher" — batters always have stats, pitchers may not. */
+  batting?: TeamPlayerBatting;
+  pitching?: TeamPlayerPitching;
+  position?: string;
+  handedness?: "R" | "L" | "S";
+  isBenchEligible?: boolean;
+  isPitcherEligible?: boolean;
+  jerseyNumber?: number | null;
+  pitchingRole?: "SP" | "RP" | "SP/RP";
+  /** Persistent FNV-1a content fingerprint covering immutable identity fields. */
+  fingerprint?: string;
+  createdAt: string;
+  updatedAt: string;
+  schemaVersion: number;
+}
+
+/** View type: TeamRecord with an assembled roster attached. Not a stored document.
+ *  Returned by `populateRoster` and used throughout the adapter/component layer.
+ */
+export interface TeamWithRoster extends TeamRecord {
+  roster: TeamRoster;
 }
 
 /** Input shape for creating a new custom team. */
@@ -152,7 +146,6 @@ export interface CreateCustomTeamInput {
   nickname?: string;
   city?: string;
   slug?: string;
-  source?: "custom" | "generated";
   roster: {
     lineup: TeamPlayer[];
     bench?: TeamPlayer[];
@@ -190,7 +183,7 @@ export interface ExportedCustomTeams {
   exportedAt: string;
   appVersion?: string;
   payload: {
-    teams: CustomTeamDoc[];
+    teams: TeamWithRoster[];
   };
   /** FNV-1a 32-bit signature of TEAMS_EXPORT_KEY + JSON.stringify(payload) */
   sig: string;

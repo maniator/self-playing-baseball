@@ -6,6 +6,7 @@ import type { CreateCustomTeamInput } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
 
 import { makeCustomTeamStore } from "./customTeamStore";
+import { FREE_AGENT_TEAM_ID } from "./schemaV1";
 
 const makeInput = (overrides: Partial<CreateCustomTeamInput> = {}): CreateCustomTeamInput => ({
   name: "Test Team",
@@ -63,7 +64,7 @@ describe("deleteCustomTeam — cascade: false (free agents)", () => {
     await store.deleteCustomTeam(id, { cascade: false });
     const freePlayers = await store.listFreePlayers();
     expect(freePlayers.some((p) => p.name === "Free Agent Fred")).toBe(true);
-    expect(freePlayers.every((p) => p.teamId == null)).toBe(true);
+    expect(freePlayers.every((p) => p.teamId === FREE_AGENT_TEAM_ID)).toBe(true);
   });
 
   it("removes team doc even when cascade is false", async () => {
