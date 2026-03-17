@@ -85,9 +85,7 @@ function buildStore(getDbFn: GetDb) {
         .exec();
       if (duplicateDoc) {
         const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
-        throw new Error(
-          `A team named "${dup.name}" already exists. Team names must be unique.`,
-        );
+        throw new Error(`A team named "${dup.name}" already exists. Team names must be unique.`);
       }
       const roster = buildRoster(input.roster);
       const id = meta?.id ?? generateTeamId();
@@ -131,9 +129,7 @@ function buildStore(getDbFn: GetDb) {
           .exec();
         if (duplicateDoc && (duplicateDoc.toJSON() as unknown as TeamRecord).id !== id) {
           const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
-          throw new Error(
-            `A team named "${dup.name}" already exists. Team names must be unique.`,
-          );
+          throw new Error(`A team named "${dup.name}" already exists. Team names must be unique.`);
         }
         patch.name = newName;
         // Keep nameLowercase in sync for the indexed dedup field.
