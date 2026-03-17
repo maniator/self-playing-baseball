@@ -151,6 +151,22 @@ describe("customTeamToPlayerOverrides", () => {
     expect(overrides["p4"].movementMod).toBe(10);
   });
 
+  it("includes staminaMod for pitchers with non-default stamina", () => {
+    const team = makeTeam({
+      roster: {
+        ...makeTeam().roster,
+        pitchers: [
+          {
+            ...makeTeam().roster.pitchers[0],
+            pitching: { velocity: 75, control: 65, movement: 70, stamina: 80 },
+          },
+        ],
+      },
+    });
+    const overrides = customTeamToPlayerOverrides(team);
+    expect(overrides["p4"].staminaMod).toBe(20);
+  });
+
   it("does not include pitching mods for batters", () => {
     const overrides = customTeamToPlayerOverrides(makeTeam());
     expect(overrides["p1"].velocityMod).toBeUndefined();

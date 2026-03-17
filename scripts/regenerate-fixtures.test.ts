@@ -24,11 +24,14 @@ import {
   parseExportedCustomTeams,
 } from "@feat/customTeams/storage/customTeamTeamBundle";
 import { readdirSync, readFileSync, writeFileSync } from "fs";
-import { join } from "path";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 import { expect, it } from "vitest";
 
 import type { TeamWithRoster } from "@storage/types";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const FIXTURES_DIR = join(__dirname, "../e2e/fixtures");
 
 function regenerateFixture(filePath: string): boolean {

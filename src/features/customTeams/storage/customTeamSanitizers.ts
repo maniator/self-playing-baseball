@@ -52,6 +52,9 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
       contact: clampStat(player.batting.contact),
       power: clampStat(player.batting.power),
       speed: clampStat(player.batting.speed),
+      ...(player.batting.stamina !== undefined && {
+        stamina: clampStat(player.batting.stamina),
+      }),
     },
     ...(player.pitching && {
       pitching: {
@@ -63,6 +66,9 @@ export function clampPlayerStats(player: TeamPlayer): TeamPlayer {
         }),
         ...(player.pitching.movement !== undefined && {
           movement: clampStat(player.pitching.movement),
+        }),
+        ...(player.pitching.stamina !== undefined && {
+          stamina: clampStat(player.pitching.stamina),
         }),
       },
     }),
@@ -136,6 +142,9 @@ export function sanitizePlayer(
       contact: clampStat(Number(player.batting.contact) || 0),
       power: clampStat(Number(player.batting.power) || 0),
       speed: clampStat(Number(player.batting.speed) || 0),
+      ...(player.batting.stamina !== undefined && {
+        stamina: clampStat(Number(player.batting.stamina) || 0),
+      }),
     },
     ...(player.pitching && {
       pitching: {
@@ -148,16 +157,20 @@ export function sanitizePlayer(
         ...(player.pitching.movement !== undefined && {
           movement: clampStat(Number(player.pitching.movement) || 0),
         }),
+        ...(player.pitching.stamina !== undefined && {
+          stamina: clampStat(Number(player.pitching.stamina) || 0),
+        }),
       },
     }),
   };
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
   validatePlayerStatCaps(sanitized, { section, index });
-  // Use the player's existing ID if it is a canonical p_* identifier (stable, DB-safe).
-  // Editor-internal temp IDs (ep_*) are replaced with a fresh generatePlayerId() so the
-  // DB always stores stable, portable player PKs rather than session-local counters.
-  const resolvedId = player.id && player.id.startsWith("p_") ? player.id : generatePlayerId();
+  // Preserve stable imported IDs to keep long-term player identity intact.
+  // Only editor-temporary IDs (ep_*) or empty IDs are remapped to a fresh DB ID.
+  const incomingId = typeof player.id === "string" ? player.id.trim() : "";
+  const resolvedId =
+    incomingId.length > 0 && !incomingId.startsWith("ep_") ? incomingId : generatePlayerId();
   const fingerprint = buildPlayerSig(sanitized);
   return { ...sanitized, id: resolvedId, fingerprint };
 }
