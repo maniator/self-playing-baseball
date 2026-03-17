@@ -109,7 +109,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   };
 
   const gameReducer = reducerFactory(dispatchLog);
-  let state: State = createFreshGameState([`custom:${awayTeam.id}`, `custom:${homeTeam.id}`]);
+  let state: State = createFreshGameState([awayTeam.id, homeTeam.id]);
 
   const dispatch = (action: GameAction): void => {
     state = gameReducer(state, action);
@@ -119,7 +119,7 @@ function runGame(awayTeam: FixtureTeam, homeTeam: FixtureTeam, seedStr: string):
   dispatch({
     type: "setTeams",
     payload: {
-      teams: [`custom:${awayTeam.id}`, `custom:${homeTeam.id}`],
+      teams: [awayTeam.id, homeTeam.id],
       teamLabels: [awayTeam.name, homeTeam.name],
       playerOverrides: [
         customTeamToPlayerOverrides(awayTeam as unknown as TeamWithRoster),

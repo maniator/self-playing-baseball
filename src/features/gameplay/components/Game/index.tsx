@@ -59,7 +59,7 @@ const Game: React.FunctionComponent<Props> = ({
   }, []);
 
   // Load custom teams to build the per-call TTS preprocessor that resolves
-  // `custom:<id>` fragments to human-readable names before speech.
+  // `ct_*` fragments to human-readable names before speech.
   const { teams: customTeams } = useCustomTeams();
   const announcePreprocessor = React.useCallback(
     (msg: string) => resolveCustomIdsInString(msg, customTeams),

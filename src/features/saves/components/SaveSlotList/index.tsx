@@ -9,7 +9,7 @@ export const DELETE_SAVE_CONFIRM_MSG = "Delete this save? This cannot be undone.
 
 interface Props {
   saves: SaveRecord[];
-  /** Optional: transform a save name before display (e.g. resolve custom: IDs). Defaults to identity. */
+  /** Optional: transform a save name before display (e.g. resolve ct_* IDs). Defaults to identity. */
   resolveName?: (name: string) => string;
   onLoad: (slot: SaveRecord) => void;
   onExport: (slot: SaveRecord) => void;

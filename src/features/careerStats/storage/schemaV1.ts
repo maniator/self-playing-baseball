@@ -6,8 +6,8 @@
  * in db.ts wipes the old ballgame IndexedDB before these schemas are applied.
  *
  * The data shapes of CompletedGameRecord / BatterGameStatRecord / PitcherGameStatRecord
- * are identical to the previous CompletedGameRecord / BatterGameStatRecord / PitcherGameStatRecord —
- * only the version, collection names, and migration baggage change.
+ * are unchanged from the previous persisted schemas; only collection wiring,
+ * versioning strategy, and migration baggage changed.
  */
 import type { RxJsonSchema } from "rxdb";
 

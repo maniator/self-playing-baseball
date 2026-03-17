@@ -69,7 +69,7 @@ const GameControls: React.FunctionComponent<Props> = ({
   } = useGameControls({ gameStarted });
 
   const { teams: customTeamDocs } = useCustomTeams();
-  // Resolve display labels for raw game-state team IDs (e.g. `custom:ct_...` → team name)
+  // Resolve display labels for raw game-state team IDs (e.g. `ct_...` -> team name)
   const resolvedTeamLabels: [string, string] = [
     resolveTeamLabel(teams[0], customTeamDocs),
     resolveTeamLabel(teams[1], customTeamDocs),

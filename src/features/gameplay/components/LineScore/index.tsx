@@ -67,14 +67,17 @@ const LineScore: React.FunctionComponent = () => {
     if (label && !label.startsWith("ct_")) return label;
     const doc = teamDocs[team];
     if (doc) return customTeamToDisplayName(doc);
-    if (label && label.startsWith("ct_")) return label;
     return "Unknown Team";
   };
 
   /** Returns the compact abbreviation for a team — always from the DB doc. */
   const compactLabel = (team: 0 | 1): string => {
     const doc = teamDocs[team];
-    if (!doc) return "???";
+    if (!doc) {
+      const label = teamLabels[team];
+      if (label && !label.startsWith("ct_")) return label.trim().toUpperCase().slice(0, 3) || "???";
+      return "???";
+    }
     if (doc.abbreviation) return doc.abbreviation;
     return doc.name.trim().toUpperCase().slice(0, 3) || "???";
   };
