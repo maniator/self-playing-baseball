@@ -71,17 +71,17 @@ function makeTeamDoc(
   name: string,
   opts: { city?: string; abbreviation?: string } = {},
 ): TeamWithRoster {
-  // FIXME(cleanup): Cast needed because test uses legacy TeamWithRoster shape (source/roster).
   return {
     id,
     name,
-    schemaVersion: 4,
+    nameLowercase: name.toLowerCase(),
+    schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
-    roster: { lineup: [], bench: [], pitchers: [] },
-    metadata: { notes: "", tags: [], archived: false },
+    roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
+    metadata: { archived: false },
     ...opts,
-  } as unknown as TeamWithRoster;
+  };
 }
 
 function renderPage() {

@@ -14,9 +14,7 @@ export type {
 export type {
   CreateCustomTeamInput,
   CustomTeamMetadata,
-  ExportedCustomPlayer,
   ExportedCustomTeams,
-  ExportedTeamBundle,
   PlayerRecord,
   TeamPlayer,
   TeamPlayerBatting,

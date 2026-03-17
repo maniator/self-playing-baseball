@@ -54,19 +54,6 @@ export interface TeamPlayer {
   sig?: string;
 }
 
-/** Keyed JSON export format for a single player. */
-export interface ExportedCustomPlayer {
-  type: "customPlayer";
-  formatVersion: 1;
-  exportedAt: string;
-  payload: {
-    /** Player data with `sig` field embedded for integrity validation on import. */
-    player: TeamPlayer & { sig: string };
-  };
-  /** FNV-1a 32-bit signature of PLAYER_EXPORT_KEY + JSON.stringify(payload) */
-  sig: string;
-}
-
 /** Roster embedded in a custom team document. */
 export interface TeamRoster {
   schemaVersion: number;
@@ -150,13 +137,6 @@ export interface PlayerRecord {
 export interface TeamWithRoster extends TeamRecord {
   roster: TeamRoster;
 }
-
-/**
- * Transport-only type for export bundles — TeamRecord with roster included.
- * The roster is NOT stored on the TeamRecord in the DB; it is extracted on import
- * and written to the players collection as individual PlayerRecords.
- */
-export type ExportedTeamBundle = TeamWithRoster;
 
 /** Input shape for creating a new custom team. */
 export interface CreateCustomTeamInput {

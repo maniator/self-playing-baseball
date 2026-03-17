@@ -81,7 +81,6 @@ describe("buildNewTeamDoc", () => {
   });
 
   it("does not embed roster (players live in players collection)", () => {
-    // FIXME(cleanup): In v1, TeamRecord has no embedded roster field.
     const doc = buildNewTeamDoc(makeInput(), "ct_roster");
     expect((doc as unknown as Record<string, unknown>)["roster"]).toBeUndefined();
   });

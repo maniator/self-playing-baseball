@@ -38,8 +38,6 @@ const makeCustomFormatSetup = (overrides: Partial<GameSetup> = {}): GameSetup =>
 });
 
 /** Inserts a minimal TeamRecord into the given DB instance. */
-// FIXME(cleanup): This helper should be updated to also insert player docs into
-// db.players if any tests need to verify player data after loading a save.
 async function insertMinimalTeam(targetDb: BallgameDb, id: string): Promise<void> {
   await targetDb.teams.insert({
     id,
@@ -842,8 +840,6 @@ describe("importRxdbSave — missing custom team rejection", () => {
     const homeTeamId = "ct_existing_team";
     const awayTeamId = "ct_existing_away";
     for (const teamId of [homeTeamId, awayTeamId]) {
-      // FIXME(cleanup): In v1 there is no embedded roster or source field.
-      // This test only needs the team to exist for the save import validation check.
       await db.teams.insert({
         id: teamId,
         schemaVersion: 0,

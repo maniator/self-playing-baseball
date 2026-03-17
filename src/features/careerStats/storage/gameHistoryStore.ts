@@ -37,15 +37,15 @@ function isConflictError(err: unknown): boolean {
 
 type GetDb = () => Promise<BallgameDb>;
 
-/** Batting stats row type returned by `getTeamCareerBattingStats`. */
-export type TeamBattingStatsRow = BatterGameStatRecord["batting"] & {
+/** Batting stats row type used internally by `getTeamCareerBattingStats`. */
+type TeamBattingStatsRow = BatterGameStatRecord["batting"] & {
   playerKey: string;
   nameAtGameTime: string;
   gamesPlayed: number;
 };
 
-/** Pitching stats row type returned by `getTeamCareerPitchingStats`. */
-export type TeamPitchingStatsRow = Omit<
+/** Pitching stats row type used internally by `getTeamCareerPitchingStats`. */
+type TeamPitchingStatsRow = Omit<
   PitcherGameStatRecord,
   "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"
 > & { gamesPlayed: number };
