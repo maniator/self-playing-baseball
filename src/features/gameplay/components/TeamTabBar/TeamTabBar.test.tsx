@@ -16,7 +16,6 @@ const mockTeams = [
     name: "Mets",
     city: "",
     abbreviation: "MET",
-    source: "custom",
     schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
@@ -28,7 +27,6 @@ const mockTeams = [
     name: "Yankees",
     city: "",
     abbreviation: "YNK",
-    source: "custom",
     schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00.000Z",
     updatedAt: "2024-01-01T00:00:00.000Z",
@@ -48,7 +46,7 @@ const renderTabBar = (activeTeam: 0 | 1 = 0, onSelect = vi.fn()) => {
   });
   return render(
     <TeamTabBar
-      teams={["custom:ct_away_team", "custom:ct_home_team"]}
+      teams={["ct_away_team", "ct_home_team"]}
       activeTeam={activeTeam}
       onSelect={onSelect}
     />,

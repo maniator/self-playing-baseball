@@ -160,8 +160,8 @@ describe("ExhibitionSetupPage", () => {
 
     expect(mockOnStartGame).toHaveBeenCalledWith(
       expect.objectContaining({
-        homeTeam: "custom:ct_home",
-        awayTeam: "custom:ct_away",
+        homeTeam: "ct_home",
+        awayTeam: "ct_away",
         managedTeam: null,
         playerOverrides: expect.objectContaining({
           awayOrder: expect.any(Array),

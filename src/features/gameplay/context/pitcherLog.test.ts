@@ -27,6 +27,7 @@ function makeEntry(overrides: Partial<PitcherLogEntry> = {}): PitcherLogEntry {
     scoreOnEntry: [0, 0],
     outsPitched: 0,
     battersFaced: 0,
+    pitchesThrown: 0,
     hitsAllowed: 0,
     walksAllowed: 0,
     strikeoutsRecorded: 0,

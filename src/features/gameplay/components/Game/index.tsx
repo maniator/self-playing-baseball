@@ -10,7 +10,7 @@ import { RxDatabaseProvider } from "rxdb/plugins/react";
 import type { BallgameDb } from "@storage/db";
 import { getDb, wasDbReset } from "@storage/db";
 import type { ExhibitionGameSetup } from "@storage/types";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 import GameInner from "./GameInner";
 import { DbResetNotice, LoadingScreen } from "./styles";
@@ -26,7 +26,7 @@ type Props = {
   /** Called after pendingGameSetup is consumed so GamePage can clear it. */
   onConsumeGameSetup?: () => void;
   /** Save loaded from /saves page; consumed by GameInner to restore game state. */
-  pendingLoadSave?: SaveDoc | null;
+  pendingLoadSave?: SaveRecord | null;
   /** Called after pendingLoadSave is consumed so GamePage can clear it. */
   onConsumePendingLoad?: () => void;
   /** Called when the career stats commit state changes (saving/done). */

@@ -11,6 +11,10 @@ import { makeContextValue } from "@test/testHelpers";
 
 import PlayerStatsPanel from "./index";
 
+vi.mock("@shared/hooks/useTeamWithRoster", () => ({
+  useTeamWithRoster: vi.fn().mockReturnValue(null),
+}));
+
 const renderWithContext = (overrides = {}, activeTeam: 0 | 1 = 0) => {
   const ctx = makeContextValue(overrides);
   return render(
@@ -114,18 +118,17 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("shows player names from the roster instead of slot numbers", () => {
-    // teams default to ["Away","Home"]; generateRoster("Away") batter slot 1 = "Catcher"
-    renderWithContext();
+    // In v1, player names come from playerOverrides keyed by player ID via lineupOrder.
+    const lineupOrder: [string[], string[]] = [["p_c1"], []];
+    const playerOverrides = [{ p_c1: { nickname: "Catcher" } }, {}] as never;
+    renderWithContext({ lineupOrder, playerOverrides });
     expect(screen.getByText("Catcher")).toBeInTheDocument();
   });
 
   it("shows nickname from playerOverrides when set", () => {
-    // away slug = "away", batter 0 id = "away_b0"
-    const playerOverrides: [Record<string, { nickname: string }>, Record<string, never>] = [
-      { away_b0: { nickname: "Slugger" } },
-      {},
-    ];
-    renderWithContext({ playerOverrides: playerOverrides as never });
+    const lineupOrder: [string[], string[]] = [["p_slugger"], []];
+    const playerOverrides = [{ p_slugger: { nickname: "Slugger" } }, {}] as never;
+    renderWithContext({ lineupOrder, playerOverrides });
     expect(screen.getByText("Slugger")).toBeInTheDocument();
   });
   it("collapses and hides the table when toggle is clicked", () => {
@@ -226,8 +229,14 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("shows position abbreviations for each lineup slot (generated roster)", () => {
-    // Generated roster assigns standard positions: C, 1B, 2B, 3B, SS, LF, CF, RF, DH
-    renderWithContext();
+    // In v1, positions come from lineupPositions set at game-start.
+    const ids = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"];
+    const lineupOrder: [string[], string[]] = [ids, []];
+    const lineupPositions: [string[], string[]] = [
+      ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"],
+      [],
+    ];
+    renderWithContext({ lineupOrder, lineupPositions });
     // Slot 1 → Catcher (C)
     expect(screen.getByText("C")).toBeInTheDocument();
     // Slot 5 → Shortstop (SS)
@@ -235,9 +244,15 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("shows position in Player Details SubLabel when a batter is selected", () => {
-    renderWithContext();
+    const ids = ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"];
+    const lineupOrder: [string[], string[]] = [ids, []];
+    const lineupPositions: [string[], string[]] = [
+      ["C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH"],
+      [],
+    ];
+    renderWithContext({ lineupOrder, lineupPositions });
     fireEvent.click(screen.getByTestId("batter-row-1"));
-    // Slot 1 is Catcher (C) for the generated roster
+    // Slot 1 is Catcher (C)
     expect(screen.getByText(/C · #1 in lineup · This game/i)).toBeInTheDocument();
   });
 });
@@ -500,7 +515,7 @@ describe("PlayerStatsPanel — career RBI regression", () => {
     // Regression: prior-game career RBIs should appear as soon as the career stats
     // are fetched from the DB — they must NOT require a current-game RBI event to trigger.
     mockCareerStats({
-      "Away:p_alice": {
+      p_alice: {
         atBats: 20,
         hits: 5,
         walks: 2,
@@ -511,8 +526,8 @@ describe("PlayerStatsPanel — career RBI regression", () => {
         triples: 0,
         homers: 0,
         sacFlies: 1,
-        gamesPlayed: 3,
-        teamId: "Away",
+        gamesPlayed: 5,
+        teamId: "ct_test",
       },
     });
 
@@ -547,7 +562,7 @@ describe("PlayerStatsPanel — career RBI regression", () => {
     // Regression: careerStats merge must preserve persistedCareerStats entries for
     // players who have not yet had a plate appearance in the current game.
     mockCareerStats({
-      "Away:p_alice": {
+      p_alice: {
         atBats: 10,
         hits: 3,
         walks: 1,
@@ -558,11 +573,10 @@ describe("PlayerStatsPanel — career RBI regression", () => {
         triples: 0,
         homers: 0,
         sacFlies: 0,
-        gamesPlayed: 2,
-        teamId: "Away",
+        gamesPlayed: 3,
+        teamId: "ct_test",
       },
     });
-
     const lineupOrder: [string[], string[]] = [["p_alice", "p_bob"], []];
     const { unmount } = renderWithContext({
       lineupOrder,
@@ -588,7 +602,7 @@ describe("PlayerStatsPanel — career RBI regression", () => {
 
   it("career RBIs are additive: prior-game RBIs plus current-game RBIs sum correctly", async () => {
     mockCareerStats({
-      "Away:p_alice": {
+      p_alice: {
         atBats: 10,
         hits: 3,
         walks: 1,
@@ -600,7 +614,7 @@ describe("PlayerStatsPanel — career RBI regression", () => {
         homers: 0,
         sacFlies: 0,
         gamesPlayed: 2,
-        teamId: "Away",
+        teamId: "ct_test",
       },
     });
 

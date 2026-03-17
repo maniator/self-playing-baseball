@@ -2,11 +2,10 @@
 import * as React from "react";
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
-import { resolveTeamLabel } from "@feat/customTeams/adapters/customTeamAdapter";
+import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useGameContext } from "@feat/gameplay/context/index";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 import { appLog } from "@shared/utils/logger";
-import { generateRoster } from "@shared/utils/roster";
 import {
   computeBattingStatsFromLogs,
   emptyBatterStat,
@@ -62,14 +61,14 @@ const warnBattingStatsInvariant = (
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
   const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides, lineupPositions } =
     useGameContext();
-  const { teams: customTeams } = useCustomTeams();
+  const teamDoc = useTeamWithRoster(teams[activeTeam]);
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
   const [statsMode, setStatsMode] = React.useState<"game" | "career">("game");
   const [persistedCareerStats, setPersistedCareerStats] = React.useState<
     Record<string, BatterStat>
   >({});
-  const teamDisplayName = resolveTeamLabel(teams[activeTeam], customTeams);
+  const teamDisplayName = teamDoc ? customTeamToDisplayName(teamDoc) : "";
 
   React.useEffect(() => {
     setSelectedSlot(null);
@@ -78,14 +77,14 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   const gameStats = computeBattingStatsFromLogs(activeTeam, playLog, strikeoutLog, outLog);
   warnBattingStatsInvariant(gameStats, activeTeam, teamDisplayName);
 
-  // Build the roster order and player-to-name map for this team.
-  const roster = React.useMemo(() => generateRoster(teams[activeTeam]), [teams, activeTeam]);
+  // Build the lineup ID list — always sourced from lineupOrder in v1 (populated at game-start).
+  // Falls back to the teamDoc roster order if lineupOrder isn't populated yet.
   const lineupIds = React.useMemo(
     () =>
       lineupOrder[activeTeam].length > 0
         ? lineupOrder[activeTeam]
-        : roster.batters.map((p) => p.id),
-    [lineupOrder, activeTeam, roster],
+        : (teamDoc?.roster.lineup ?? []).map((p) => p.id),
+    [lineupOrder, activeTeam, teamDoc],
   );
 
   // Fetch persisted career stats (from previously COMPLETED games, NOT the current game)
@@ -95,40 +94,16 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
   React.useEffect(() => {
     if (statsMode !== "career") return;
     let cancelled = false;
-    const teamId = teams[activeTeam];
 
-    // Build per-player career query keys.
-    // For custom team players: use globalPlayerId (team-independent) when available,
-    // so career stats follow the player across team moves.
-    // For stock team players: fall back to "${teamId}:${playerId}" (team-scoped).
-    let customTeamDoc: (typeof customTeams)[number] | undefined;
-    if (teamId.startsWith("custom:")) {
-      const customId = teamId.slice("custom:".length);
-      customTeamDoc = customTeams.find((t) => t.id === customId);
-    }
-    const allRosterPlayers = customTeamDoc
-      ? [
-          ...customTeamDoc.roster.lineup,
-          ...customTeamDoc.roster.bench,
-          ...customTeamDoc.roster.pitchers,
-        ]
-      : [];
-
-    const playerKeys = lineupIds.slice(0, 9).map((id) => {
-      const player = allRosterPlayers.find((p) => p.id === id);
-      return player?.globalPlayerId ?? `${teamId}:${id}`;
-    });
+    // In v1 all players have stable PlayerRecord.id values — use them directly as career keys.
+    const playerKeys = lineupIds.slice(0, 9);
 
     GameHistoryStore.getCareerStats(playerKeys)
       .then((results) => {
         if (cancelled) return;
-        // Re-key by lineup player ID for consistent slot lookup.
-        // The career result is keyed by playerKey (globalPlayerId or teamId:playerId).
-        // Build a reverse lookup: playerKey → lineup player ID.
         const byPlayerId: Record<string, BatterStat> = {};
-        lineupIds.slice(0, 9).forEach((id, idx) => {
-          const pk = playerKeys[idx];
-          if (results[pk]) byPlayerId[id] = results[pk];
+        playerKeys.forEach((id) => {
+          if (results[id]) byPlayerId[id] = results[id] as BatterStat;
         });
         setPersistedCareerStats(byPlayerId);
       })
@@ -139,7 +114,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     return () => {
       cancelled = true;
     };
-  }, [statsMode, teams, activeTeam, lineupIds, customTeams]);
+  }, [statsMode, lineupIds]);
 
   // Career mode = persisted history (prior completed games) + current game so far.
   // This updates live during gameplay (gameStats re-computes on every playLog change)
@@ -182,16 +157,14 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     }
   };
 
-  // Build slot→name map for the active team
+  // Build slot→name map — names come from playerOverrides (set at game-start from PlayerRecord.name).
   const slotNames = React.useMemo(() => {
-    const idToPlayer = new Map(roster.batters.map((p) => [p.id, p]));
     const overrides = playerOverrides[activeTeam];
     return lineupIds.slice(0, 9).map((id, idx) => {
-      const player = idToPlayer.get(id);
       const nickname = overrides[id]?.nickname?.trim();
-      return nickname || player?.name || `Batter ${idx + 1}`;
+      return nickname || `Batter ${idx + 1}`;
     });
-  }, [roster, activeTeam, lineupIds, playerOverrides]);
+  }, [activeTeam, lineupIds, playerOverrides]);
 
   // Build slot→position map for the active team.
   // lineupPositions holds the in-game defensive slot assignment set at game-start
@@ -203,24 +176,12 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     if (storedPositions.length > 0) {
       return storedPositions.slice(0, 9);
     }
-    // Fallback: derive from roster natural positions (stock teams / older saves).
-    const teamId = teams[activeTeam];
-    const idToGenerated = new Map(roster.batters.map((p) => [p.id, p.position]));
+    // Fallback: derive positions from the team doc (already fetched by useTeamWithRoster).
+    const all = [...(teamDoc?.roster.lineup ?? []), ...(teamDoc?.roster.bench ?? [])];
+    const customPositions = new Map(all.map((p) => [p.id, p.position ?? ""]));
 
-    let customPositions: Map<string, string> | undefined;
-    if (teamId.startsWith("custom:")) {
-      const customId = teamId.slice("custom:".length);
-      const doc = customTeams.find((t) => t.id === customId);
-      if (doc) {
-        const all = [...doc.roster.lineup, ...(doc.roster.bench ?? [])];
-        customPositions = new Map(all.map((p) => [p.id, p.position ?? ""]));
-      }
-    }
-
-    return lineupIds
-      .slice(0, 9)
-      .map((id) => customPositions?.get(id) ?? idToGenerated.get(id) ?? "");
-  }, [lineupPositions, teams, activeTeam, lineupIds, roster, customTeams]);
+    return lineupIds.slice(0, 9).map((id) => customPositions.get(id) ?? "");
+  }, [lineupPositions, activeTeam, lineupIds, teamDoc]);
 
   // Look up stats for a slot by player ID falling back to slot-number string key
   // (legacy saves where playerId was not recorded). Always returns a defined BatterStat.

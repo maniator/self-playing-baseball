@@ -1,12 +1,9 @@
 import * as React from "react";
 
-import {
-  customTeamToAbbreviation,
-  resolveTeamLabel,
-} from "@feat/customTeams/adapters/customTeamAdapter";
+import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
 import { useGameContext } from "@feat/gameplay/context/index";
 import { Hit } from "@shared/constants/hitTypes";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 
 import {
   BsoGroup,
@@ -56,28 +53,29 @@ const LineScore: React.FunctionComponent = () => {
     strikes,
     outs,
   } = useGameContext();
-  const { teams: customTeams } = useCustomTeams();
+  const awayTeamDoc = useTeamWithRoster(teams[0]);
+  const homeTeamDoc = useTeamWithRoster(teams[1]);
+  const teamDocs = [awayTeamDoc, homeTeamDoc] as const;
 
   /**
-   * Returns the full display name for a team. Prefers `teamLabels` from state
-   * (always set to a human-readable name when a game starts or a save is restored)
-   * and falls back to `resolveTeamLabel` only for legacy saves where teamLabels
-   * may still be raw `custom:` IDs.
+   * Returns the full display name for a team. Always sourced from the DB-fetched doc.
+   * `teamLabels` from state is used first (set at game-start and on save restore).
+   * Falls back to the doc name while state is being hydrated.
    */
   const fullLabel = (team: 0 | 1): string => {
     const label = teamLabels[team];
-    return label && !label.startsWith("custom:")
-      ? label
-      : resolveTeamLabel(teams[team], customTeams);
+    if (label && !label.startsWith("ct_")) return label;
+    const doc = teamDocs[team];
+    return doc ? customTeamToDisplayName(doc) : "";
   };
 
-  /** Returns the compact label for a team, preferring custom abbreviation. */
-  const compactLabel = (teamStr: string): string =>
-    customTeamToAbbreviation(teamStr, customTeams) ??
-    teamStr
-      .replace(/^custom:/, "")
-      .slice(0, 3)
-      .toUpperCase();
+  /** Returns the compact abbreviation for a team — always from the DB doc. */
+  const compactLabel = (team: 0 | 1): string => {
+    const doc = teamDocs[team];
+    if (!doc) return "";
+    if (doc.abbreviation) return doc.abbreviation;
+    return doc.name.trim().toUpperCase().slice(0, 3) || "???";
+  };
 
   const displayInnings = gameOver && atBat === 0 ? inning - 1 : inning;
   const totalInnings = Math.max(9, displayInnings);
@@ -105,7 +103,7 @@ const LineScore: React.FunctionComponent = () => {
           {([0, 1] as const).map((team) => (
             <tr key={team}>
               <TeamTd $active={atBat === team} title={fullLabel(team)}>
-                <TeamMobileLabel>{compactLabel(teams[team])}</TeamMobileLabel>
+                <TeamMobileLabel>{compactLabel(team)}</TeamMobileLabel>
                 <TeamFullLabel>{fullLabel(team)}</TeamFullLabel>
               </TeamTd>
               {inningCols.map((n) => {

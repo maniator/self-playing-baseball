@@ -45,7 +45,7 @@ export type StrikeoutEntry = {
 
 /**
  * One entry per pitcher-appearance in the current game.
- * Tracked incrementally in state and used to compute PitcherGameStatDoc rows at FINAL.
+ * Tracked incrementally in state and used to compute PitcherGameStatRecord rows at FINAL.
  *
  * `teamIdx` is the PITCHING team (fielding), not the batting team.
  * The corresponding fielding team is: `1 - state.atBat` when the entry is updated.

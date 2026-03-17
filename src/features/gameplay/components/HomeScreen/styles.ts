@@ -210,6 +210,6 @@ export const AttributionLink = styled.a`
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
     outline-offset: 2px;
-    border-radius: ${({ theme }) => theme.radii.xs};
+    border-radius: ${({ theme }) => theme.radii.sm};
   }
 `;

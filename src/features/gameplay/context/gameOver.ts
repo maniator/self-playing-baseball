@@ -30,10 +30,10 @@ export const nextHalfInning = (state: State, log: (msg: string) => void): State 
     defensiveShift: false,
     defensiveShiftOffered: false,
   };
-  let newHalfInning = newState.atBat + 1;
+  let newHalfInning: 0 | 1 = newState.atBat + 1 > 1 ? 0 : ((newState.atBat + 1) as 0 | 1);
   let newInning = newState.inning;
 
-  if (newHalfInning > 1) {
+  if (newState.atBat + 1 > 1) {
     newHalfInning = 0;
     newInning += 1;
   }

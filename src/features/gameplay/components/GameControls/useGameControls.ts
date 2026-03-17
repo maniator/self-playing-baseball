@@ -13,7 +13,7 @@ import {
   setAnnouncementVolume,
   setSpeechRate,
 } from "@feat/gameplay/utils/announce";
-import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
 import { useLocalStorage } from "usehooks-ts";
 
 import { SPEED_FAST, SPEED_INSTANT, SPEED_NORMAL, SPEED_SLOW } from "./constants";
@@ -78,19 +78,16 @@ export const useGameControls = ({
     pendingDecision,
   });
 
-  const { teams: customTeams } = useCustomTeams();
+  const awayTeamDoc = useTeamWithRoster(teams[0]);
+  const homeTeamDoc = useTeamWithRoster(teams[1]);
 
-  // Derive pitcher roles for both teams from custom team docs.
+  // Derive pitcher roles for both teams — fetched directly from DB by team ID.
   // Used by the AI manager to respect SP/RP role restrictions when making pitching changes.
   const allTeamPitcherRoles = React.useMemo((): [
     Record<string, PitchingRole>,
     Record<string, PitchingRole>,
   ] => {
-    return [0, 1].map((idx) => {
-      const teamId = teams[idx as 0 | 1];
-      if (!teamId || !teamId.startsWith("custom:")) return {};
-      const ctId = teamId.slice("custom:".length);
-      const doc = customTeams.find((t) => t.id === ctId);
+    return [awayTeamDoc, homeTeamDoc].map((doc) => {
       if (!doc) return {};
       const roles: Record<string, PitchingRole> = {};
       for (const p of doc.roster.pitchers) {
@@ -98,7 +95,7 @@ export const useGameControls = ({
       }
       return roles;
     }) as [Record<string, PitchingRole>, Record<string, PitchingRole>];
-  }, [teams, customTeams]);
+  }, [awayTeamDoc, homeTeamDoc]);
 
   useGameAudio(inning, atBat, gameOver, dispatchLog);
 

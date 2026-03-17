@@ -15,9 +15,9 @@ export interface State {
   /**
    * Stable identity for the current game run — generated once when a new game
    * starts (via the `reset` action) and carried in every subsequent save snapshot
-   * of that run. Used as `GameDoc.id` to deduplicate career-history commits across
+   * of that run. Used as `CompletedGameRecord.id` to deduplicate career-history commits across
    * multiple mid-game save slots: finishing from Save A or Save B of the same run
-   * both resolve to the same `gameInstanceId`, so only one `GameDoc` is ever written.
+   * both resolve to the same `gameInstanceId`, so only one `CompletedGameRecord` is ever written.
    *
    * Absent on saves created before this field was introduced — `useGameHistorySync`
    * falls back to `saveId` (legacy behaviour, same as before) for those saves.
@@ -105,7 +105,7 @@ export interface State {
   /**
    * Per-game pitcher appearance log. Each entry accumulates stats for one pitcher appearance.
    * Indexed by [teamIdx][entryIndex] where teamIdx is the PITCHING team.
-   * Updated incrementally during play; used to build PitcherGameStatDoc rows at FINAL.
+   * Updated incrementally during play; used to build PitcherGameStatRecord rows at FINAL.
    * Outer array: [away team pitchers (index 0), home team pitchers (index 1)].
    * Falls back to [[],[]] for older saves (backfilled by backfillRestoredState).
    */
