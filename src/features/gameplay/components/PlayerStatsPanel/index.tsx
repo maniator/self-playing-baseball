@@ -59,8 +59,16 @@ const warnBattingStatsInvariant = (
 };
 
 const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ activeTeam = 0 }) => {
-  const { playLog, strikeoutLog, outLog, teams, lineupOrder, playerOverrides, lineupPositions } =
-    useGameContext();
+  const {
+    playLog,
+    strikeoutLog,
+    outLog,
+    teams,
+    lineupOrder,
+    playerOverrides,
+    lineupPositions,
+    gameInstanceId,
+  } = useGameContext();
   const teamDoc = useTeamWithRoster(teams[activeTeam]);
   const [collapsed, setCollapsed] = React.useState(false);
   const [selectedSlot, setSelectedSlot] = React.useState<number | null>(null);
@@ -98,7 +106,9 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     // In v1 all players have stable PlayerRecord.id values — use them directly as career keys.
     const playerKeys = lineupIds.slice(0, 9);
 
-    GameHistoryStore.getCareerStats(playerKeys)
+    // Exclude the current game so that live gameStats can always be merged on top
+    // without double-counting after game-over commit finishes writing to DB.
+    GameHistoryStore.getCareerStats(playerKeys, { excludeGameId: gameInstanceId ?? undefined })
       .then((results) => {
         if (cancelled) return;
         const byPlayerId: Record<string, BatterStat> = {};
@@ -114,7 +124,7 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     return () => {
       cancelled = true;
     };
-  }, [statsMode, lineupIds]);
+  }, [statsMode, lineupIds, gameInstanceId]);
 
   // Career mode = persisted history (prior completed games) + current game so far.
   // This updates live during gameplay (gameStats re-computes on every playLog change)

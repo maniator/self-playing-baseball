@@ -128,6 +128,7 @@ function buildStore(getDbFn: GetDb) {
    */
   async function getCareerStats(
     playerKeys: string[],
+    options?: { excludeGameId?: string },
   ): Promise<
     Record<string, BatterGameStatRecord["batting"] & { gamesPlayed: number; teamId: string }>
   > {
@@ -145,6 +146,9 @@ function buildStore(getDbFn: GetDb) {
 
     for (const row of allRows) {
       const doc = row.toJSON() as BatterGameStatRecord;
+      // Exclude the current (in-progress) game so that live gameStats can be
+      // merged on top without double-counting after game-over commit.
+      if (options?.excludeGameId && doc.gameId === options.excludeGameId) continue;
       const existing = results[doc.playerKey];
       if (!existing) {
         results[doc.playerKey] = {
