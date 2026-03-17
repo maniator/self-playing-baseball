@@ -11,36 +11,39 @@ export async function fetchTeamPlayers(db: BallgameDb, teamId: string): Promise<
   return docs.map((d) => d.toJSON() as PlayerRecord);
 }
 
+/** Strips storage-only fields from a PlayerRecord, returning a TeamPlayer shape. */
+export function toTeamPlayer({
+  teamId: _teamId,
+  section: _section,
+  orderIndex: _orderIndex,
+  schemaVersion: _schemaVersion,
+  createdAt: _createdAt,
+  updatedAt: _updatedAt,
+  ...rest
+}: PlayerRecord): TeamPlayer {
+  return rest as TeamPlayer;
+}
+
 /** Assembles a TeamRoster from a list of PlayerRecords for a team. */
 export function assembleRoster(players: PlayerRecord[]): TeamRoster {
-  const toTeamPlayer = ({
-    teamId: _teamId,
-    section: _section,
-    orderIndex: _orderIndex,
-    schemaVersion: _schemaVersion,
-    createdAt: _createdAt,
-    updatedAt: _updatedAt,
-    ...rest
-  }: PlayerRecord): TeamPlayer => rest as TeamPlayer;
+  // Single-pass grouping instead of 3 separate filter passes (3×O(n) → O(n)).
+  const grouped: Record<"lineup" | "bench" | "pitchers", PlayerRecord[]> = {
+    lineup: [],
+    bench: [],
+    pitchers: [],
+  };
+  for (const p of players) {
+    grouped[p.section].push(p);
+  }
 
-  const lineup = players
-    .filter((p) => p.section === "lineup")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
-  const bench = players
-    .filter((p) => p.section === "bench")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
-  const pitchers = players
-    .filter((p) => p.section === "pitchers")
-    .sort((a, b) => a.orderIndex - b.orderIndex)
-    .map(toTeamPlayer);
+  const sortedMapped = (arr: PlayerRecord[]) =>
+    arr.sort((a, b) => a.orderIndex - b.orderIndex).map(toTeamPlayer);
 
   return {
     schemaVersion: ROSTER_SCHEMA_VERSION,
-    lineup,
-    bench,
-    pitchers,
+    lineup: sortedMapped(grouped.lineup),
+    bench: sortedMapped(grouped.bench),
+    pitchers: sortedMapped(grouped.pitchers),
   };
 }
 
@@ -107,5 +110,8 @@ export async function removeTeamPlayerRecords(
 ): Promise<void> {
   const existing = await db.players.find({ selector: { teamId } }).exec();
   const toRemove = exceptIds ? existing.filter((p) => !exceptIds.has(p.id)) : existing;
-  await Promise.all(toRemove.map((p) => p.remove()));
+  if (toRemove.length > 0) {
+    // Single bulk operation instead of N individual remove() calls.
+    await db.players.bulkRemove(toRemove.map((p) => p.id));
+  }
 }

@@ -526,11 +526,16 @@ function buildStore(getDbFn: GetDb) {
       streak = last + count;
     }
 
-    // Compute last-10 record.
+    // Compute last-10 record — single pass instead of three filter() passes.
     const last10Games = gameResults.slice(-10);
-    const last10Wins = last10Games.filter((r) => r === "W").length;
-    const last10Losses = last10Games.filter((r) => r === "L").length;
-    const last10Ties = last10Games.filter((r) => r === "T").length;
+    let last10Wins = 0;
+    let last10Losses = 0;
+    let last10Ties = 0;
+    for (const r of last10Games) {
+      if (r === "W") last10Wins++;
+      else if (r === "L") last10Losses++;
+      else last10Ties++;
+    }
 
     return {
       gamesPlayed,

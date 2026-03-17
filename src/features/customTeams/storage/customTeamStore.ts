@@ -24,6 +24,7 @@ import { importPlayerIntoTeam, orchestrateTeamImport } from "./customTeamImportO
 import {
   assembleRoster,
   removeTeamPlayerRecords,
+  toTeamPlayer,
   writePlayerRecords,
 } from "./customTeamPlayerDocs";
 import { populateRoster } from "./customTeamRosterPersistence";
@@ -74,20 +75,23 @@ function buildStore(getDbFn: GetDb) {
      */
     async createCustomTeam(input: CreateCustomTeamInput, meta?: { id?: string }): Promise<string> {
       const name = requireNonEmpty(input.name, "name");
+      const db = await getDbFn();
 
-      // Enforce unique team names (case-insensitive) across the local install.
-      const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
+      // Enforce unique team names using the indexed `nameLowercase` field — O(log n)
+      // instead of loading the full collection and scanning in JS.
       const nameLower = name.toLowerCase();
-      const duplicate = existing.find((t) => t.name.toLowerCase() === nameLower);
-      if (duplicate) {
+      const duplicateDoc = await db.teams
+        .findOne({ selector: { nameLowercase: nameLower } })
+        .exec();
+      if (duplicateDoc) {
+        const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
         throw new Error(
-          `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+          `A team named "${dup.name}" already exists. Team names must be unique.`,
         );
       }
       const roster = buildRoster(input.roster);
       const id = meta?.id ?? generateTeamId();
       const doc = buildNewTeamDoc({ ...input, name }, id);
-      const db = await getDbFn();
       await db.teams.insert(doc);
       // Write player docs into the dedicated players collection.
       // On failure, roll back the team doc so the state remains consistent.
@@ -119,13 +123,16 @@ function buildStore(getDbFn: GetDb) {
 
       if (updates.name !== undefined) {
         const newName = requireNonEmpty(updates.name, "name");
-        // Enforce unique team names (case-insensitive), excluding the current team.
-        const existing = await this.listCustomTeams({ includeArchived: true, withRoster: false });
+        // Enforce unique team names using the indexed `nameLowercase` field — O(log n)
+        // instead of loading the full collection and scanning in JS.
         const nameLower = newName.toLowerCase();
-        const duplicate = existing.find((t) => t.id !== id && t.name.toLowerCase() === nameLower);
-        if (duplicate) {
+        const duplicateDoc = await db.teams
+          .findOne({ selector: { nameLowercase: nameLower } })
+          .exec();
+        if (duplicateDoc && (duplicateDoc.toJSON() as unknown as TeamRecord).id !== id) {
+          const dup = duplicateDoc.toJSON() as unknown as TeamRecord;
           throw new Error(
-            `A team named "${duplicate.name}" already exists. Team names must be unique.`,
+            `A team named "${dup.name}" already exists. Team names must be unique.`,
           );
         }
         patch.name = newName;
@@ -212,9 +219,20 @@ function buildStore(getDbFn: GetDb) {
      * If `ids` is omitted, all non-archived teams are exported.
      */
     async exportCustomTeams(ids?: string[]): Promise<string> {
-      const all = await this.listCustomTeams(ids ? { includeArchived: true } : undefined);
-      const toExport = ids ? all.filter((t) => ids.includes(t.id)) : all;
-      return exportCustomTeamsJson(toExport);
+      if (ids) {
+        // Use findByIds for O(1)-per-team PK lookups instead of loading all teams
+        // then filtering in JS with ids.includes() which is O(n×m).
+        const db = await getDbFn();
+        const docsMap = await db.teams.findByIds(ids).exec();
+        const teams = await Promise.all(
+          Array.from(docsMap.values()).map((d) =>
+            populateRoster(db, d.toJSON() as unknown as TeamRecord),
+          ),
+        );
+        return exportCustomTeamsJson(teams);
+      }
+      const all = await this.listCustomTeams();
+      return exportCustomTeamsJson(all);
     },
 
     /**
@@ -224,12 +242,19 @@ function buildStore(getDbFn: GetDb) {
      * @throws If the team or player is not found.
      */
     async exportPlayer(teamId: string, playerId: string): Promise<string> {
-      const team = await this.getCustomTeam(teamId);
-      if (!team) throw new Error(`Team not found: ${teamId}`);
-      const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
-      const player = allPlayers.find((p) => p.id === playerId);
-      if (!player) throw new Error(`Player not found: ${playerId} in team ${teamId}`);
-      return exportCustomPlayerJson(player);
+      const db = await getDbFn();
+      // Direct PK lookup — O(1) instead of loading the full team roster and
+      // scanning the array with allPlayers.find().
+      const [teamDoc, playerDoc] = await Promise.all([
+        db.teams.findOne(teamId).exec(),
+        db.players.findOne(playerId).exec(),
+      ]);
+      if (!teamDoc) throw new Error(`Team not found: ${teamId}`);
+      const playerRecord = playerDoc?.toJSON() as PlayerRecord | undefined;
+      if (!playerRecord || playerRecord.teamId !== teamId) {
+        throw new Error(`Player not found: ${playerId} in team ${teamId}`);
+      }
+      return exportCustomPlayerJson(toTeamPlayer(playerRecord));
     },
 
     /**
