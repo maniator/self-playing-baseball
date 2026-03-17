@@ -59,7 +59,15 @@ export type BallgameDb = RxDatabase<DbCollections>;
  */
 async function resetIfEpochChanged(storage: RxStorage<unknown, unknown>): Promise<boolean> {
   if (typeof localStorage === "undefined") return false;
-  const stored = localStorage.getItem(BETA_EPOCH_KEY);
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(BETA_EPOCH_KEY);
+  } catch (err: unknown) {
+    // localStorage can throw in restricted/privacy contexts. Treat as
+    // "unknown epoch" and continue without blocking DB initialization.
+    appLog.warn("[db] Failed to read schema epoch from localStorage; skipping epoch gate:", err);
+    return false;
+  }
   if (stored === BETA_SCHEMA_EPOCH) return false;
 
   let wasReset = false;
@@ -80,7 +88,12 @@ async function resetIfEpochChanged(storage: RxStorage<unknown, unknown>): Promis
     }
   }
 
-  localStorage.setItem(BETA_EPOCH_KEY, BETA_SCHEMA_EPOCH);
+  try {
+    localStorage.setItem(BETA_EPOCH_KEY, BETA_SCHEMA_EPOCH);
+  } catch (err: unknown) {
+    // Non-fatal: DB can still run without persisting the epoch marker.
+    appLog.warn("[db] Failed to persist schema epoch to localStorage:", err);
+  }
   return wasReset;
 }
 

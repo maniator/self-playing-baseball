@@ -35,8 +35,8 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Creates a new save header document.
      * @returns The generated saveId.
-     * Callers MUST pass plain `ct_*` team IDs for homeTeamId/awayTeamId.
-     * GameInner always sources these from customTeamToGameId() which returns team.id directly.
+     * Team IDs are stored as provided and validated on import by DB existence checks.
+     * GameInner sources these from customTeamToGameId() which returns team.id directly.
      */
     async createSave(setup: GameSetup, meta?: { name?: string }): Promise<string> {
       const db = await getDbFn();

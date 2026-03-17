@@ -201,7 +201,7 @@ function buildStore(getDbFn: GetDb) {
 
     /**
      * Returns all player docs that are not assigned to any team (free agents).
-     * These are players whose `teamId` is `null` — created when a team is deleted
+     * These are players whose `teamId` is `FREE_AGENT_TEAM_ID` — created when a team is deleted
      * with `{ cascade: false }`.
      */
     async listFreePlayers(): Promise<PlayerRecord[]> {
