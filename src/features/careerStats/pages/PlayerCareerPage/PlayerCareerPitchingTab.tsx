@@ -2,20 +2,13 @@
 import * as React from "react";
 
 import { formatIP } from "@feat/careerStats/utils/computePitcherGameStats";
-import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
-import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
+import { useTeamDisplayNames } from "@shared/hooks/useTeamDisplayNames";
 
 import type { PitcherGameStatRecord } from "@storage/types";
 
 import { EmptyState, SectionLabel, StatsTable, TableWrapper, Td, Th, TotalsRow } from "./styles";
 import type { PitchingTotals } from "./usePlayerCareerData";
 import { formatDate, formatERA, formatWHIP } from "./usePlayerCareerData";
-
-/** Renders a team name cell by fetching the team directly from DB. */
-const TeamNameCell: React.FunctionComponent<{ teamId: string }> = ({ teamId }) => {
-  const doc = useTeamWithRoster(teamId);
-  return <Td>{doc ? customTeamToDisplayName(doc) : ""}</Td>;
-};
 
 type Props = {
   pitchingRows: PitcherGameStatRecord[];
@@ -26,6 +19,7 @@ const PlayerCareerPitchingTab: React.FunctionComponent<Props> = ({
   pitchingRows,
   pitchingTotals,
 }) => {
+  const teamNameMap = useTeamDisplayNames(pitchingRows.map((r) => r.opponentTeamId));
   if (pitchingRows.length === 0) {
     return <EmptyState>No pitching data.</EmptyState>;
   }
@@ -103,7 +97,7 @@ const PlayerCareerPitchingTab: React.FunctionComponent<Props> = ({
             {pitchingRows.map((row) => (
               <tr key={row.id}>
                 <Td>{formatDate(row.createdAt)}</Td>
-                <TeamNameCell teamId={row.opponentTeamId} />
+                <Td>{teamNameMap.get(row.opponentTeamId) ?? "Unknown Team"}</Td>
                 <Td>{formatIP(row.outsPitched)}</Td>
                 <Td>{row.hitsAllowed}</Td>
                 <Td>{row.walksAllowed}</Td>

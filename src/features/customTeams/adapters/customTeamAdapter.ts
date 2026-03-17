@@ -1,7 +1,7 @@
 import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import { BATTING_POSITIONS } from "@shared/utils/roster";
 
-import type { TeamWithRoster } from "@storage/types";
+import type { TeamRecord, TeamWithRoster } from "@storage/types";
 
 /**
  * Returns the stable game-session ID for a team.
@@ -52,10 +52,13 @@ export function customTeamToAbbreviation(
  * @param gameId  - The game-session team string (e.g. `"ct_123"`).
  * @param teams   - Known custom team docs for lookup.
  */
-export function resolveTeamLabel(gameId: string, teams: TeamWithRoster[]): string {
+export function resolveTeamLabel(
+  gameId: string,
+  teams: Pick<TeamRecord, "id" | "name" | "city" | "abbreviation">[],
+): string {
   const doc = teams.find((t) => t.id === gameId);
   if (!doc) return "Unknown Team";
-  return customTeamToDisplayName(doc);
+  return doc.city ? `${doc.city} ${doc.name}` : doc.name;
 }
 
 /**
@@ -63,7 +66,10 @@ export function resolveTeamLabel(gameId: string, teams: TeamWithRoster[]): strin
  * Used to sanitize free-text fields (save names, TTS strings) that may contain
  * raw `ct_*` team IDs.
  */
-export function resolveCustomIdsInString(text: string, teams: TeamWithRoster[]): string {
+export function resolveCustomIdsInString(
+  text: string,
+  teams: Pick<TeamRecord, "id" | "name" | "city" | "abbreviation">[],
+): string {
   return text.replace(/ct_[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
 }
 

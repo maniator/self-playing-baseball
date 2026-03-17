@@ -96,7 +96,7 @@ describe("buildPlayerSig", () => {
     expect(buildPlayerSig(pOther)).toBe(buildPlayerSig(p));
   });
 
-  it("does NOT depend on team (sig uses stable id so players can move between teams)", () => {
+  it("does NOT depend on team assignment (content-based, not identity-based)", () => {
     const p = makePlayer();
     // Same player object spread produces the same sig
     expect(buildPlayerSig(p)).toBe(buildPlayerSig({ ...p }));

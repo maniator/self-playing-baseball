@@ -220,14 +220,9 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
-      // Validate team ID fields are ct_* strings (v1 format).
+      // Validate team ID fields are strings.
       if (typeof header.homeTeamId !== "string" || typeof header.awayTeamId !== "string") {
         throw new Error("Invalid save data: missing or non-string team identifiers");
-      }
-      if (!header.homeTeamId.startsWith("ct_") || !header.awayTeamId.startsWith("ct_")) {
-        throw new Error(
-          "Cannot import save: this save uses a legacy team format that is no longer supported. Start a new game using your custom teams.",
-        );
       }
 
       // Reject saves that reference teams that don't exist locally.

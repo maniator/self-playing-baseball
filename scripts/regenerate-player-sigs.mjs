@@ -76,15 +76,15 @@ function processFile(filePath) {
   }
 
   // Only process files that look like team-export bundles
-  if (!data.teams || !Array.isArray(data.teams)) {
-    console.log(`  skip (no .teams array): ${filePath}`);
+  if (!data.payload?.teams || !Array.isArray(data.payload.teams)) {
+    console.log(`  skip (no .payload.teams array): ${filePath}`);
     return;
   }
 
   let changed = false;
 
   // 1. Recompute player sigs for every player in every section
-  for (const team of data.teams) {
+  for (const team of data.payload.teams) {
     for (const section of ["lineup", "bench", "pitchers"]) {
       const players = team.roster?.[section];
       if (!Array.isArray(players)) continue;
@@ -111,7 +111,7 @@ function processFile(filePath) {
   // 3. Recompute the top-level bundle sig (covers teams array with updated player sigs)
   if ("sig" in data) {
     // The bundle sig covers { teams } — build a payload with just the teams list
-    const payload = { teams: data.teams };
+    const payload = { teams: data.payload.teams };
     const newBundleSig = buildBundleSig(payload);
     if (data.sig !== newBundleSig) {
       data.sig = newBundleSig;

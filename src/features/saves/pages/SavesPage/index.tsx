@@ -112,12 +112,7 @@ const SavesPage: React.FunctionComponent = () => {
       ) : (
         <SaveSlotList
           saves={saves}
-          resolveName={(name) =>
-            resolveCustomIdsInString(
-              name,
-              teams as unknown as import("@storage/types").TeamWithRoster[],
-            )
-          }
+          resolveName={(name) => resolveCustomIdsInString(name, teams)}
           onLoad={onLoadSave}
           onExport={handleExport}
           onDelete={handleDelete}

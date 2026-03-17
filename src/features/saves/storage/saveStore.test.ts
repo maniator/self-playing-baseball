@@ -854,20 +854,6 @@ describe("importRxdbSave — missing custom team rejection", () => {
     await expect(store.importRxdbSave(json)).resolves.not.toThrow();
   });
 
-  it("throws when team IDs use the legacy format (non-custom: prefix)", async () => {
-    const { json } = makeCustomSave("New York Yankees", "New York Mets");
-    await expect(store.importRxdbSave(json)).rejects.toThrow(
-      "Cannot import save: this save uses a legacy team format",
-    );
-  });
-
-  it("throws when team IDs use legacy numeric team IDs", async () => {
-    const { json } = makeCustomSave("147", "121");
-    await expect(store.importRxdbSave(json)).rejects.toThrow(
-      "Cannot import save: this save uses a legacy team format",
-    );
-  });
-
   it("throws with a controlled error when team ID fields are non-string", async () => {
     const { json } = makeCustomSave("ct_fixture_away_00", "ct_fixture_home_00");
     const envelope = JSON.parse(json) as Record<string, unknown> & {
