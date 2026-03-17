@@ -1,5 +1,5 @@
 import { generatePlayerId, generateTeamId } from "@storage/generateId";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 /**
  * Creates a minimal `TeamPlayer` for unit tests with optional field overrides.
@@ -22,22 +22,22 @@ export const makePlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => (
 });
 
 /**
- * Creates a minimal `CustomTeamDoc` for unit tests with optional field overrides.
+ * Creates a minimal `TeamWithRoster` for unit tests with optional field overrides.
  * The generated `id` is random so each call produces a distinct team.
  *
  * This is an intentionally minimal fixture — it contains one lineup player and no
  * pitchers, which would fail store validation but is sufficient for tests that only
- * need a `CustomTeamDoc` shape (export/import, fingerprint, prescan, etc.).
+ * need a `TeamWithRoster` shape (export/import, fingerprint, prescan, etc.).
  * Use `makeCustomTeamStore` + `createCustomTeam` when you need a fully validated
  * team with `buildRoster`/`sanitizePlayer` enforced.
  */
-export const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc => ({
+export const makeTeam = (overrides: Partial<TeamWithRoster> = {}): TeamWithRoster => ({
   id: generateTeamId(),
   schemaVersion: 1,
   createdAt: "2024-01-01T00:00:00.000Z",
   updatedAt: "2024-01-01T00:00:00.000Z",
   name: "Test Team",
-  source: "custom",
+  nameLowercase: "test team",
   roster: {
     schemaVersion: 1,
     lineup: [makePlayer({ name: "Alice" })],

@@ -2,15 +2,15 @@ import { type BallgameDb, getDb } from "@storage/db";
 import { generateSaveId } from "@storage/generateId";
 import { fnv1a } from "@storage/hash";
 import type {
-  EventDoc,
+  EventRecord,
   GameEvent,
   GameSetup,
   ProgressSummary,
   RxdbExportedSave,
-  SaveDoc,
+  SaveRecord,
 } from "@storage/types";
 
-// DOC_SCHEMA_VERSION is the schemaVersion field on SaveDoc/EventDoc rows —
+// DOC_SCHEMA_VERSION is the schemaVersion field on SaveRecord/EventRecord rows —
 // it is independent of the RxDB collection schema version (saves collection is v2).
 const DOC_SCHEMA_VERSION = 1;
 const MAX_SAVES = 3;
@@ -35,8 +35,8 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Creates a new save header document.
      * @returns The generated saveId.
-     * Callers MUST pass canonical `custom:<teamId>` values for homeTeamId/awayTeamId.
-     * GameInner always sources these from customTeamToGameId() which guarantees the prefix.
+     * Callers MUST pass plain `ct_*` team IDs for homeTeamId/awayTeamId.
+     * GameInner always sources these from customTeamToGameId() which returns team.id directly.
      */
     async createSave(setup: GameSetup, meta?: { name?: string }): Promise<string> {
       const db = await getDbFn();
@@ -53,7 +53,7 @@ function buildStore(getDbFn: GetDb) {
         const staleEvents = await db.events.find({ selector: { saveId: oldest.id } }).exec();
         await Promise.all(staleEvents.map((d) => d.remove()));
       }
-      const doc: SaveDoc = {
+      const doc: SaveRecord = {
         id,
         name: meta?.name ?? `${setup.homeTeamId} vs ${setup.awayTeamId}`,
         seed: setup.seed,
@@ -102,7 +102,7 @@ function buildStore(getDbFn: GetDb) {
         nextIdxMap.set(saveId, startIdx + events.length);
 
         const now = Date.now();
-        const docs: EventDoc[] = events.map((ev, i) => ({
+        const docs: EventRecord[] = events.map((ev, i) => ({
           id: `${saveId}:${startIdx + i}`,
           saveId,
           idx: startIdx + i,
@@ -170,10 +170,10 @@ function buildStore(getDbFn: GetDb) {
     },
 
     /** Returns all save headers ordered by most recently updated. */
-    async listSaves(): Promise<SaveDoc[]> {
+    async listSaves(): Promise<SaveRecord[]> {
       const db = await getDbFn();
       const docs = await db.saves.find({ sort: [{ updatedAt: "desc" }] }).exec();
-      return docs.map((d) => d.toJSON() as unknown as SaveDoc);
+      return docs.map((d) => d.toJSON() as unknown as SaveRecord);
     },
 
     /**
@@ -185,11 +185,11 @@ function buildStore(getDbFn: GetDb) {
       const db = await getDbFn();
       const headerDoc = await db.saves.findOne(saveId).exec();
       if (!headerDoc) throw new Error(`Save not found: ${saveId}`);
-      const header = headerDoc.toJSON() as unknown as SaveDoc;
+      const header = headerDoc.toJSON() as unknown as SaveRecord;
       const eventDocs = await db.events
         .find({ selector: { saveId }, sort: [{ idx: "asc" }] })
         .exec();
-      const events = eventDocs.map((d) => d.toJSON() as unknown as EventDoc);
+      const events = eventDocs.map((d) => d.toJSON() as unknown as EventRecord);
       const sig = fnv1a(RXDB_EXPORT_KEY + JSON.stringify({ header, events }));
       const payload: RxdbExportedSave = { version: RXDB_EXPORT_VERSION, header, events, sig };
       return JSON.stringify(payload, null, 2);
@@ -198,9 +198,9 @@ function buildStore(getDbFn: GetDb) {
     /**
      * Imports a save from a JSON string produced by `exportRxdbSave`.
      * Verifies the signature, upserts the header, and bulk-upserts the events.
-     * @returns The restored SaveDoc.
+     * @returns The restored SaveRecord.
      */
-    async importRxdbSave(json: string): Promise<SaveDoc> {
+    async importRxdbSave(json: string): Promise<SaveRecord> {
       let parsed: unknown;
       try {
         parsed = JSON.parse(json);
@@ -220,90 +220,39 @@ function buildStore(getDbFn: GetDb) {
       if (sig !== expectedSig)
         throw new Error("Save signature mismatch — file may be corrupted or from a different app");
 
-      // Validate team ID fields are strings before calling .startsWith.
+      // Validate team ID fields are ct_* strings (v1 format).
       if (typeof header.homeTeamId !== "string" || typeof header.awayTeamId !== "string") {
         throw new Error("Invalid save data: missing or non-string team identifiers");
       }
-
-      // Normalize bare ct_* IDs to the canonical custom: prefix AFTER sig verification.
-      // The sig was verified over the original bytes; normalization must happen before
-      // the missing-team check and before upsert so all stored values use one format.
-      const toCanonical = (id: string): string => (id.startsWith("ct_") ? `custom:${id}` : id);
-      const canonicalHomeId = toCanonical(header.homeTeamId);
-      const canonicalAwayId = toCanonical(header.awayTeamId);
-
-      // Reject saves that use a legacy team format (no custom: prefix after normalization).
-      for (const field of [canonicalHomeId, canonicalAwayId]) {
-        if (!field.startsWith("custom:")) {
-          throw new Error(
-            "Cannot import save: this save uses a legacy team format that is no longer supported. Start a new game using your custom teams.",
-          );
-        }
+      if (!header.homeTeamId.startsWith("ct_") || !header.awayTeamId.startsWith("ct_")) {
+        throw new Error(
+          "Cannot import save: this save uses a legacy team format that is no longer supported. Start a new game using your custom teams.",
+        );
       }
 
-      // Reject saves that reference custom teams that don't exist locally.
-      // De-dup so a self-matchup counts as 1 missing team, not 2.
-      const customTeamIds: string[] = Array.from(
-        new Set([canonicalHomeId, canonicalAwayId].map((f) => f.slice("custom:".length))),
-      );
+      // Reject saves that reference teams that don't exist locally.
       const db = await getDbFn();
-      if (customTeamIds.length > 0) {
-        const missingCount = (
-          await Promise.all(customTeamIds.map((id) => db.customTeams.findOne(id).exec()))
-        ).filter((doc) => doc === null).length;
-        if (missingCount > 0) {
-          const teamWord = missingCount === 1 ? "team" : "teams";
-          throw new Error(
-            `Cannot import save: ${missingCount} custom ${teamWord} used by this save ${missingCount === 1 ? "is" : "are"} not installed on this device. Import the missing ${teamWord} first via the Teams page, then retry the save import.`,
-          );
-        }
+      const uniqueTeamIds = [...new Set([header.homeTeamId, header.awayTeamId])];
+      const teamDocs = await Promise.all(uniqueTeamIds.map((id) => db.teams.findOne(id).exec()));
+      const missingCount = teamDocs.filter((d) => d === null).length;
+      if (missingCount > 0) {
+        const teamWord = missingCount === 1 ? "custom team" : "custom teams";
+        const genericWord = missingCount === 1 ? "team" : "teams";
+        throw new Error(
+          `Cannot import save: ${missingCount} ${teamWord} used by this save ${missingCount === 1 ? "is" : "are"} not installed on this device. Import the missing ${genericWord} first via the Teams page, then retry the save import.`,
+        );
       }
-      // Strip legacy fields and store canonical team IDs so the UI can always
-      // resolve team labels without special-casing bare ct_* identifiers.
-      const { matchupMode: _drop, ...headerRest } = header as Record<string, unknown>;
-      const existingSetup = headerRest.setup as Record<string, unknown> | undefined;
-      // Also normalize bare ct_* IDs inside stateSnapshot.state.teams so restored
-      // game state uses canonical custom: prefixes for all resolveTeamLabel lookups.
-      const existingSnapshot = headerRest.stateSnapshot as
-        | { state?: { teams?: string[] } }
-        | undefined;
-      const cleanHeader = {
-        ...headerRest,
-        homeTeamId: canonicalHomeId,
-        awayTeamId: canonicalAwayId,
-        ...(existingSetup && {
-          setup: {
-            ...existingSetup,
-            homeTeam:
-              typeof existingSetup.homeTeam === "string"
-                ? toCanonical(existingSetup.homeTeam)
-                : existingSetup.homeTeam,
-            awayTeam:
-              typeof existingSetup.awayTeam === "string"
-                ? toCanonical(existingSetup.awayTeam)
-                : existingSetup.awayTeam,
-          },
-        }),
-        ...(existingSnapshot?.state &&
-          Array.isArray(existingSnapshot.state.teams) && {
-            stateSnapshot: {
-              ...existingSnapshot,
-              state: {
-                ...existingSnapshot.state,
-                teams: existingSnapshot.state.teams.map(toCanonical),
-              },
-            },
-          }),
-      };
-      await db.saves.upsert(cleanHeader as SaveDoc);
+
+      const { matchupMode: _drop, ...headerRest } = header as unknown as Record<string, unknown>;
+      const cleanHeader = { ...headerRest } as unknown as SaveRecord;
+      await db.saves.upsert(cleanHeader);
       if (Array.isArray(events) && events.length > 0) {
         await db.events.bulkUpsert(events);
       }
-      // Force counter re-initialization on next append so it reads the imported
-      // event count rather than using a stale in-memory value.
-      nextIdxMap.delete(cleanHeader.id as string);
-      appendQueues.delete(cleanHeader.id as string);
-      return cleanHeader as SaveDoc;
+      const cleanId = (cleanHeader as unknown as Record<string, unknown>).id as string;
+      nextIdxMap.delete(cleanId);
+      appendQueues.delete(cleanId);
+      return cleanHeader;
     },
   };
 }

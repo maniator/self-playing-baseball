@@ -3,10 +3,10 @@ import * as React from "react";
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { appLog } from "@shared/utils/logger";
 
-import type { CreateCustomTeamInput, CustomTeamDoc, UpdateCustomTeamInput } from "@storage/types";
+import type { CreateCustomTeamInput, TeamWithRoster, UpdateCustomTeamInput } from "@storage/types";
 
 export interface CustomTeamsHook {
-  teams: CustomTeamDoc[];
+  teams: TeamWithRoster[];
   loading: boolean;
   createTeam: (input: CreateCustomTeamInput) => Promise<string>;
   updateTeam: (id: string, updates: UpdateCustomTeamInput) => Promise<void>;
@@ -25,7 +25,7 @@ export interface CustomTeamsHook {
  * gracefully in test environments where IndexedDB is unavailable.
  */
 export function useCustomTeams(): CustomTeamsHook {
-  const [teams, setTeams] = React.useState<CustomTeamDoc[]>([]);
+  const [teams, setTeams] = React.useState<TeamWithRoster[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [tick, setTick] = React.useState(0);
   // Only show the loading spinner on the very first fetch.  Subsequent

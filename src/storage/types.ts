@@ -2,44 +2,46 @@
 // All public @storage/types imports remain valid through these re-exports.
 
 export type {
+  BatterGameStatRecord,
   BattingLeader,
+  CompletedGameRecord,
   ExportedGameHistory,
-  GameDoc,
   ImportGameHistoryResult,
-  PitcherGameStatDoc,
+  PitcherGameStatRecord,
   PitchingLeader,
-  PlayerGameStatDoc,
   TeamCareerSummary,
 } from "@feat/careerStats/storage/types";
 export type {
   CreateCustomTeamInput,
-  CustomTeamDoc,
   CustomTeamMetadata,
   ExportedCustomPlayer,
   ExportedCustomTeams,
-  PlayerDoc,
+  ExportedTeamBundle,
+  PlayerRecord,
   TeamPlayer,
   TeamPlayerBatting,
   TeamPlayerPitching,
+  TeamRecord,
   TeamRoster,
+  TeamWithRoster,
   UpdateCustomTeamInput,
 } from "@feat/customTeams/storage/types";
 export type {
-  EventDoc,
+  EventRecord,
   GameEvent,
   GameSaveSetup,
   GameSetup,
   InningSnapshot,
   ProgressSummary,
   RxdbExportedSave,
-  SaveDoc,
+  SaveRecord,
   ScoreSnapshot,
   StateSnapshot,
 } from "@feat/saves/storage/types";
 
 // Cross-feature / app-shell types (genuinely shared)
 import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
-import type { SaveDoc } from "@feat/saves/storage/types";
+import type { SaveRecord } from "@feat/saves/storage/types";
 
 export type PlayerOverrides = {
   away: TeamCustomPlayerOverrides;
@@ -77,7 +79,7 @@ export type ExhibitionGameSetup = {
 export type AppShellOutletContext = {
   onStartGame: (setup: ExhibitionGameSetup) => void;
   /** Called from the saves page when the user picks a save to load. */
-  onLoadSave: (slot: SaveDoc) => void;
+  onLoadSave: (slot: SaveRecord) => void;
   /** Called by GamePage when a game session starts, to update hasActiveSession. */
   onGameSessionStarted: () => void;
   // Navigation callbacks consumed by route-level page components
@@ -97,5 +99,5 @@ export type AppShellOutletContext = {
 /** Shape of the React Router location state used when navigating to /game. */
 export type GameLocationState = {
   pendingGameSetup: ExhibitionGameSetup | null;
-  pendingLoadSave: SaveDoc | null;
+  pendingLoadSave: SaveRecord | null;
 } | null;

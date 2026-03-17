@@ -7,7 +7,7 @@ import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { downloadJson } from "@storage/saveIO";
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import CustomTeamEditor from "./index";
 
@@ -276,10 +276,10 @@ describe("CustomTeamEditor — edit mode", () => {
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     name: "Existing Eagles",
+    nameLowercase: "existing eagles",
     abbreviation: "EXE",
     city: "Austin",
     nickname: "Eagles",
-    source: "custom" as const,
     roster: {
       schemaVersion: 1 as const,
       lineup: [
@@ -354,10 +354,10 @@ describe("CustomTeamEditor — edit mode identity immutability", () => {
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     name: "Lock Eagles",
+    nameLowercase: "lock eagles",
     abbreviation: "LCK",
     city: "Portland",
     nickname: "Eagles",
-    source: "custom" as const,
     roster: {
       schemaVersion: 1 as const,
       lineup: [
@@ -597,14 +597,14 @@ describe("CustomTeamEditor — export, import-button, and DnD handlers", () => {
 
 describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", () => {
   /** Minimal team fixture for edit-mode tests. */
-  const editTeam: CustomTeamDoc = {
+  const editTeam: TeamWithRoster = {
     id: "ct_edit_import",
     schemaVersion: 1,
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-01T00:00:00Z",
     name: "Import Test Team",
+    nameLowercase: "import test team",
     abbreviation: "IMP",
-    source: "custom",
     roster: {
       schemaVersion: 1,
       lineup: [
@@ -628,8 +628,6 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
       name: "Imported Batter",
       role: "batter",
       batting: { contact: 70, power: 60, speed: 55 },
-      playerSeed: "import-test-seed",
-      globalPlayerId: "pl_import_global",
       ...overrides,
     };
     return exportCustomPlayer(player);
@@ -712,7 +710,7 @@ describe("CustomTeamEditor — importPlayer cross-team conflict (edit mode)", ()
 describe("CustomTeamEditor — soft fingerprint duplicate banner (create mode)", () => {
   const dupPlayerStats = { contact: 60, power: 50, speed: 40 };
 
-  /** A player JSON WITHOUT globalPlayerId so the soft-fingerprint check fires. */
+  /** A player JSON without fingerprint override so the soft-fingerprint check fires. */
   const makeNogidJson = (overrides: Partial<TeamPlayer> = {}) => {
     const player: TeamPlayer = {
       id: "p_nogid_src",
@@ -738,7 +736,6 @@ describe("CustomTeamEditor — soft fingerprint duplicate banner (create mode)",
           updatedAt: "2024-01-01T00:00:00Z",
           name: "Dup Team",
           abbreviation: "DUP",
-          source: "custom",
           roster: {
             schemaVersion: 1,
             lineup: [

@@ -1,13 +1,18 @@
+/**
+ * v1 clean schemas for the `saves` and `events` collections.
+ *
+ * version is 0 and there are NO migration strategies — the epoch-based reset
+ * in db.ts wipes the old ballgame IndexedDB before these schemas are applied.
+ *
+ * The data shape of SaveRecord / EventRecord is identical to the previous
+ * SaveRecord / EventRecord — only the version and migration baggage change.
+ */
 import type { RxJsonSchema } from "rxdb";
 
-import type { EventDoc, SaveDoc } from "@storage/types";
+import type { EventRecord, SaveRecord } from "./types";
 
-const savesSchema: RxJsonSchema<SaveDoc> = {
-  // Version 0: original schema with plain additionalProperties objects.
-  // Version 1: explicit nested properties definitions for setup/snapshots.
-  // Version 2: removed matchupMode (legacy field, never used for game restore).
-  //   Migration drops the field; all other fields remain unchanged.
-  version: 2,
+const savesSchemaV1: RxJsonSchema<SaveRecord> = {
+  version: 0,
   primaryKey: "id",
   type: "object",
   properties: {
@@ -47,12 +52,6 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
         atBat: { type: "number" },
       },
     },
-    /**
-     * stateSnapshot: full game State blob + seeded PRNG state.
-     * `state` is stored as an opaque object and backfilled via
-     * `backfillRestoredState` on load to handle schema evolution.
-     * `rngState` is null for saves predating PRNG persistence.
-     */
     stateSnapshot: {
       type: "object",
       additionalProperties: true,
@@ -78,7 +77,12 @@ const savesSchema: RxJsonSchema<SaveDoc> = {
   indexes: ["updatedAt"],
 };
 
-const eventsSchema: RxJsonSchema<EventDoc> = {
+/** v1 collection config for the `saves` collection. No migration strategies. */
+export const savesV1CollectionConfig = {
+  schema: savesSchemaV1,
+};
+
+const eventsSchemaV1: RxJsonSchema<EventRecord> = {
   version: 0,
   primaryKey: "id",
   type: "object",
@@ -96,20 +100,7 @@ const eventsSchema: RxJsonSchema<EventDoc> = {
   indexes: ["saveId", ["saveId", "idx"]],
 };
 
-export const savesCollectionConfig = {
-  schema: savesSchema,
-  migrationStrategies: {
-    // Identity migration: all new schema fields were optional; existing
-    // docs are already valid against the new schema.
-    1: (oldDoc: Record<string, unknown>) => oldDoc,
-    // Drop matchupMode (legacy field removed in v2). All other fields unchanged.
-    2: (oldDoc: Record<string, unknown>) => {
-      const { matchupMode: _drop, ...rest } = oldDoc;
-      return rest;
-    },
-  },
-};
-
-export const eventsCollectionConfig = {
-  schema: eventsSchema,
+/** v1 collection config for the `events` collection. No migration strategies. */
+export const eventsV1CollectionConfig = {
+  schema: eventsSchemaV1,
 };

@@ -37,28 +37,17 @@ const makeCustomFormatSetup = (overrides: Partial<GameSetup> = {}): GameSetup =>
   ...overrides,
 });
 
-/** Inserts a minimal CustomTeamDoc into the given DB instance. */
+/** Inserts a minimal TeamRecord into the given DB instance. */
+// FIXME(cleanup): This helper should be updated to also insert player docs into
+// db.players if any tests need to verify player data after loading a save.
 async function insertMinimalTeam(targetDb: BallgameDb, id: string): Promise<void> {
-  await targetDb.customTeams.insert({
+  await targetDb.teams.insert({
     id,
-    schemaVersion: 1,
+    schemaVersion: 0,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     name: "Test Team",
-    source: "custom",
-    roster: {
-      schemaVersion: 1,
-      lineup: [
-        {
-          id: `${id}_p1`,
-          name: "Player",
-          role: "batter",
-          batting: { contact: 70, power: 60, speed: 50 },
-        },
-      ],
-      bench: [],
-      pitchers: [],
-    },
+    nameLowercase: "test team",
     metadata: { archived: false },
   });
 }
@@ -396,11 +385,10 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     await db2.close();
   });
 
-  it("importRxdbSave normalizes bare ct_* team IDs to canonical custom: prefix", async () => {
-    // Build a save bundle using the legacy bare ct_* format (no custom: prefix).
-    // The signature must be computed over the original header.
+  it("importRxdbSave preserves ct_* team IDs unchanged (v1 canonical format)", async () => {
+    // In v1, ct_* is the canonical format — IDs are preserved as-is without any prefix normalization.
     const RXDB_EXPORT_KEY_LOCAL = "ballgame:rxdb:v1";
-    const legacyHeader: Record<string, unknown> = {
+    const header: Record<string, unknown> = {
       id: "test-norm-save-id",
       name: "ct_norm_away vs ct_norm_home",
       seed: "abc",
@@ -419,8 +407,8 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
       },
     };
     const events: unknown[] = [];
-    const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header: legacyHeader, events }));
-    const bundle = JSON.stringify({ version: 1, header: legacyHeader, events, sig });
+    const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header, events }));
+    const bundle = JSON.stringify({ version: 1, header, events, sig });
 
     const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_norm_home");
@@ -430,74 +418,20 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     );
     const restored = await store2.importRxdbSave(bundle);
 
-    // Top-level IDs must be normalized to canonical custom: format.
-    expect(restored.homeTeamId).toBe("custom:ct_norm_home");
-    expect(restored.awayTeamId).toBe("custom:ct_norm_away");
-    // Nested setup team fields must also be normalized.
-    expect(restored.setup.homeTeam).toBe("custom:ct_norm_home");
-    expect(restored.setup.awayTeam).toBe("custom:ct_norm_away");
+    // ct_* IDs are the canonical v1 format — preserved as-is.
+    expect(restored.homeTeamId).toBe("ct_norm_home");
+    expect(restored.awayTeamId).toBe("ct_norm_away");
+    expect(restored.setup.homeTeam).toBe("ct_norm_home");
+    expect(restored.setup.awayTeam).toBe("ct_norm_away");
     await db2.close();
   });
 
-  it("importRxdbSave preserves already-canonical custom: team IDs unchanged", async () => {
-    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "alreadycanon" }));
-    // Build a bundle with already-canonical custom:ct_* IDs to verify
-    // importRxdbSave does not double-prefix them (e.g. custom:custom:ct_*).
-    const RXDB_EXPORT_KEY_LOCAL = "ballgame:rxdb:v1";
-    const canonicalHeader: Record<string, unknown> = {
-      id: `${saveId}-canon`,
-      name: "custom:ct_c_away vs custom:ct_c_home",
-      seed: "alreadycanon",
-      homeTeamId: "custom:ct_c_home",
-      awayTeamId: "custom:ct_c_away",
-      createdAt: 0,
-      updatedAt: 0,
-      progressIdx: -1,
-      schemaVersion: 1,
-      setup: {
-        strategy: "balanced",
-        managedTeam: null,
-        managerMode: false,
-        homeTeam: "custom:ct_c_home",
-        awayTeam: "custom:ct_c_away",
-      },
-    };
-    const events: unknown[] = [];
-    const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header: canonicalHeader, events }));
-    const bundle = JSON.stringify({ version: 1, header: canonicalHeader, events, sig });
-
-    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
-    await insertMinimalTeam(db2, "ct_c_home");
-    await insertMinimalTeam(db2, "ct_c_away");
-    const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
-      Promise.resolve(db2),
-    );
-    const restored = await store2.importRxdbSave(bundle);
-
-    // Already-canonical IDs must be kept as-is (not double-prefixed).
-    expect(restored.homeTeamId).toBe("custom:ct_c_home");
-    expect(restored.awayTeamId).toBe("custom:ct_c_away");
-    await db2.close();
-  });
-
-  it("importRxdbSave strips legacy matchupMode from old save bundles", async () => {
-    // Simulate a save bundle exported before the v2 schema change that still
-    // carries matchupMode in the header. The signature must cover the original
-    // header (including matchupMode) — importRxdbSave verifies sig THEN strips.
-    const RXDB_EXPORT_KEY = "ballgame:rxdb:v1";
-    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "legacy" }));
+  it("importRxdbSave preserves v1 ct_* team IDs on round-trip", async () => {
+    // Verify that ct_* IDs round-trip cleanly through export/import.
+    const saveId = await store.createSave(makeCustomFormatSetup({ seed: "roundtrip2" }));
+    await insertMinimalTeam(db, "ct_rt_home");
+    await insertMinimalTeam(db, "ct_rt_away");
     const json = await store.exportRxdbSave(saveId);
-    const envelope = JSON.parse(json) as {
-      version: number;
-      header: Record<string, unknown>;
-      events: unknown[];
-      sig: string;
-    };
-    // Inject matchupMode as a legacy field and recompute the sig.
-    envelope.header.matchupMode = "mlb";
-    envelope.sig = fnv1a(
-      RXDB_EXPORT_KEY + JSON.stringify({ header: envelope.header, events: envelope.events }),
-    );
 
     const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
@@ -505,9 +439,9 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
       Promise.resolve(db2),
     );
-    const restored = await store2.importRxdbSave(JSON.stringify(envelope));
-    expect(restored.id).toBe(saveId);
-    expect((restored as Record<string, unknown>).matchupMode).toBeUndefined();
+    const restored = await store2.importRxdbSave(json);
+    expect(restored.homeTeamId).toBe("ct_rt_home");
+    expect(restored.awayTeamId).toBe("ct_rt_away");
     await db2.close();
   });
 });
@@ -908,21 +842,15 @@ describe("importRxdbSave — missing custom team rejection", () => {
     const homeTeamId = "ct_existing_team";
     const awayTeamId = "ct_existing_away";
     for (const teamId of [homeTeamId, awayTeamId]) {
-      await db.customTeams.insert({
+      // FIXME(cleanup): In v1 there is no embedded roster or source field.
+      // This test only needs the team to exist for the save import validation check.
+      await db.teams.insert({
         id: teamId,
-        schemaVersion: 1,
+        schemaVersion: 0,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         name: "My Team",
-        source: "custom",
-        roster: {
-          schemaVersion: 1,
-          lineup: [
-            { id: "p1", name: "P", role: "batter", batting: { contact: 70, power: 60, speed: 50 } },
-          ],
-          bench: [],
-          pitchers: [],
-        },
+        nameLowercase: "my team",
         metadata: { archived: false },
       });
     }

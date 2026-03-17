@@ -3,17 +3,17 @@ import * as React from "react";
 import { SaveStore } from "@feat/saves/storage/saveStore";
 import { useLiveRxQuery } from "rxdb/plugins/react";
 
-import type { GameEvent, GameSetup, ProgressSummary, SaveDoc } from "@storage/types";
+import type { GameEvent, GameSetup, ProgressSummary, SaveRecord } from "@storage/types";
 
 export interface SaveStoreHook {
   /** Reactively-updated list of all saves, sorted by most recently updated. */
-  saves: SaveDoc[];
+  saves: SaveRecord[];
   createSave: (setup: GameSetup, meta?: { name?: string }) => Promise<string>;
   appendEvents: (saveId: string, events: GameEvent[]) => Promise<void>;
   updateProgress: (saveId: string, progressIdx: number, summary?: ProgressSummary) => Promise<void>;
   deleteSave: (saveId: string) => Promise<void>;
   exportRxdbSave: (saveId: string) => Promise<string>;
-  importRxdbSave: (json: string) => Promise<SaveDoc>;
+  importRxdbSave: (json: string) => Promise<SaveRecord>;
 }
 
 const SAVES_QUERY = { selector: {}, sort: [{ updatedAt: "desc" as const }] };
@@ -29,13 +29,13 @@ const SAVES_QUERY = { selector: {}, sort: [{ updatedAt: "desc" as const }] };
  * All write operations are stable `useCallback` wrappers around `SaveStore`.
  */
 export const useSaveStore = (): SaveStoreHook => {
-  const { results } = useLiveRxQuery<SaveDoc>({
+  const { results } = useLiveRxQuery<SaveRecord>({
     collection: "saves",
     query: SAVES_QUERY,
   });
 
   const saves = React.useMemo(
-    () => results.map((d) => d.toJSON() as unknown as SaveDoc),
+    () => results.map((d) => d.toJSON() as unknown as SaveRecord),
     [results],
   );
 

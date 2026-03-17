@@ -15,7 +15,7 @@ describe("preScanForDuplicatePlayers", () => {
   });
 
   it("skips fingerprint-matched teams and does not emit player warnings for them", () => {
-    const team = makeTeam({ name: "Existing Team", teamSeed: "seed-abc" });
+    const team = makeTeam({ name: "Existing Team" });
     const fp = buildTeamFingerprint(team);
     const teamWithFp = { ...team, fingerprint: fp };
     const existingFingerprints = new Map([[fp, team.id]]);
@@ -33,10 +33,9 @@ describe("preScanForDuplicatePlayers", () => {
   });
 
   it("emits a warning when a player sig matches an existing player sig", () => {
-    const player = makePlayer({ name: "Bob", playerSeed: "player-seed-bob" });
+    const player = makePlayer({ name: "Bob" });
     const team = makeTeam({
       name: "Fresh Team",
-      teamSeed: "fresh-seed",
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
 
@@ -53,10 +52,9 @@ describe("preScanForDuplicatePlayers", () => {
   });
 
   it("does not emit a warning when player sig is not in existing sigs", () => {
-    const player = makePlayer({ name: "Charlie", playerSeed: "player-seed-charlie" });
+    const player = makePlayer({ name: "Charlie" });
     const team = makeTeam({
       name: "New Team",
-      teamSeed: "new-seed",
       roster: { schemaVersion: 1, lineup: [player], bench: [], pitchers: [] },
     });
     const existingFingerprints = new Map<string, string>();
@@ -68,8 +66,8 @@ describe("preScanForDuplicatePlayers", () => {
   });
 
   it("counts skipped correctly when multiple teams are fingerprint-matched", () => {
-    const team1 = makeTeam({ name: "Team One", teamSeed: "seed-one" });
-    const team2 = makeTeam({ name: "Team Two", teamSeed: "seed-two" });
+    const team1 = makeTeam({ name: "Team One" });
+    const team2 = makeTeam({ name: "Team Two" });
     const fp1 = buildTeamFingerprint(team1);
     const fp2 = buildTeamFingerprint(team2);
     const team1WithFp = { ...team1, fingerprint: fp1 };
@@ -107,12 +105,11 @@ describe("preScanForDuplicatePlayers", () => {
   });
 
   it("emits one warning per duplicate player across all roster slots", () => {
-    const lineup = makePlayer({ name: "Eve", playerSeed: "eve-seed" });
-    const bench = makePlayer({ name: "Frank", playerSeed: "frank-seed" });
-    const pitcher = makePlayer({ name: "Grace", role: "pitcher", playerSeed: "grace-seed" });
+    const lineup = makePlayer({ name: "Eve" });
+    const bench = makePlayer({ name: "Frank" });
+    const pitcher = makePlayer({ name: "Grace", role: "pitcher" });
     const team = makeTeam({
       name: "All Slots Team",
-      teamSeed: "all-slots-seed",
       roster: { schemaVersion: 1, lineup: [lineup], bench: [bench], pitchers: [pitcher] },
     });
     const existingPlayerSigs = new Set([

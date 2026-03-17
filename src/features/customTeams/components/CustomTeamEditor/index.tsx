@@ -3,7 +3,7 @@ import * as React from "react";
 import { closestCenter, DndContext } from "@dnd-kit/core";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import {
   editorReducer,
@@ -21,7 +21,7 @@ import { usePlayerExport } from "./usePlayerExport";
 
 type Props = {
   /** Existing team to edit. Undefined means create-new mode. */
-  team?: CustomTeamDoc;
+  team?: TeamWithRoster;
   onSave: (id: string) => void;
   onCancel: () => void;
 };

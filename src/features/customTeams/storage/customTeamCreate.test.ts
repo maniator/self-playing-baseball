@@ -40,12 +40,12 @@ describe("createCustomTeam", () => {
     const id = await store.createCustomTeam(
       makeInput({ name: "Rockets", city: "Houston", nickname: "Rox", slug: "rockets" }),
     );
-    const doc = await db.customTeams.findOne(id).exec();
+    const doc = await db.teams.findOne(id).exec();
     expect(doc?.name).toBe("Rockets");
     expect(doc?.city).toBe("Houston");
     expect(doc?.nickname).toBe("Rox");
     expect(doc?.slug).toBe("rockets");
-    expect(doc?.source).toBe("custom");
+    expect(doc?.nameLowercase).toBe("rockets");
     expect(doc?.schemaVersion).toBe(1);
     expect(typeof doc?.createdAt).toBe("string");
     expect(typeof doc?.updatedAt).toBe("string");
@@ -54,25 +54,25 @@ describe("createCustomTeam", () => {
   it("uses provided id when given via meta", async () => {
     const id = await store.createCustomTeam(makeInput(), { id: "my-custom-id" });
     expect(id).toBe("my-custom-id");
-    const doc = await db.customTeams.findOne("my-custom-id").exec();
+    const doc = await db.teams.findOne("my-custom-id").exec();
     expect(doc).not.toBeNull();
   });
 
-  it("defaults source to 'custom'", async () => {
-    const id = await store.createCustomTeam(makeInput());
-    const doc = await db.customTeams.findOne(id).exec();
-    expect(doc?.source).toBe("custom");
+  it("stores nameLowercase for indexed dedup", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "Test Team" }));
+    const doc = await db.teams.findOne(id).exec();
+    expect(doc?.nameLowercase).toBe("test team");
   });
 
-  it("accepts source 'generated'", async () => {
-    const id = await store.createCustomTeam(makeInput({ source: "generated" }));
-    const doc = await db.customTeams.findOne(id).exec();
-    expect(doc?.source).toBe("generated");
+  it("stores nameLowercase in lowercase", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "UPPERCASE NAME" }));
+    const doc = await db.teams.findOne(id).exec();
+    expect(doc?.nameLowercase).toBe("uppercase name");
   });
 
   it("trims team name whitespace", async () => {
     const id = await store.createCustomTeam(makeInput({ name: "  Padres  " }));
-    const doc = await db.customTeams.findOne(id).exec();
+    const doc = await db.teams.findOne(id).exec();
     expect(doc?.name).toBe("Padres");
   });
 
@@ -144,18 +144,23 @@ describe("createCustomTeam", () => {
     expect(team?.roster.pitchers[0].name).toBe("Pitcher Joe");
   });
 
-  it("stores roster schemaVersion", async () => {
-    const id = await store.createCustomTeam(makeInput());
-    const doc = await db.customTeams.findOne(id).exec();
-    const stored = doc?.toJSON() as unknown as { roster: { schemaVersion: number } };
-    expect(stored.roster.schemaVersion).toBe(1);
+  it("players are stored in the players collection (no embedded roster)", async () => {
+    const id = await store.createCustomTeam(
+      makeInput({ roster: { lineup: [makePlayer()], bench: [], pitchers: [] } }),
+    );
+    const doc = await db.teams.findOne(id).exec();
+    // In v1, TeamRecord has no embedded roster field.
+    expect((doc?.toJSON() as Record<string, unknown>)["roster"]).toBeUndefined();
+    // Player is in the players collection.
+    const players = await db.players.find({ selector: { teamId: id } }).exec();
+    expect(players).toHaveLength(1);
   });
 
   it("stores metadata fields", async () => {
     const id = await store.createCustomTeam(
       makeInput({ metadata: { notes: "note", tags: ["fast"], archived: false } }),
     );
-    const doc = await db.customTeams.findOne(id).exec();
+    const doc = await db.teams.findOne(id).exec();
     const stored = doc?.toJSON() as unknown as { metadata: { notes: string; tags: string[] } };
     expect(stored.metadata.notes).toBe("note");
     expect(stored.metadata.tags).toEqual(["fast"]);
@@ -163,7 +168,7 @@ describe("createCustomTeam", () => {
 
   it("stores statsProfile when provided", async () => {
     const id = await store.createCustomTeam(makeInput({ statsProfile: "power" }));
-    const doc = await db.customTeams.findOne(id).exec();
+    const doc = await db.teams.findOne(id).exec();
     expect(doc?.statsProfile).toBe("power");
   });
 
@@ -219,35 +224,26 @@ describe("createCustomTeam — name uniqueness", () => {
   });
 });
 
-describe("createCustomTeam — teamSeed", () => {
-  it("sets a non-empty teamSeed on create", async () => {
-    const id = await store.createCustomTeam(makeInput({ name: "Seeded Team" }));
+describe("createCustomTeam — no teamSeed stored", () => {
+  it("does not store a teamSeed field on the created team", async () => {
+    const id = await store.createCustomTeam(makeInput({ name: "No-Seed Team" }));
     const team = await store.getCustomTeam(id);
-    expect(typeof team?.teamSeed).toBe("string");
-    expect(team!.teamSeed!.length).toBeGreaterThan(0);
-  });
-
-  it("generates a unique teamSeed for each team", async () => {
-    const id1 = await store.createCustomTeam(makeInput({ name: "Seed Team 1" }));
-    const id2 = await store.createCustomTeam(makeInput({ name: "Seed Team 2" }));
-    const t1 = await store.getCustomTeam(id1);
-    const t2 = await store.getCustomTeam(id2);
-    expect(t1?.teamSeed).not.toBe(t2?.teamSeed);
+    expect("teamSeed" in (team ?? {})).toBe(false);
   });
 });
 
-describe("createCustomTeam — playerSeed", () => {
-  it("sets a non-empty playerSeed on each player when team is created", async () => {
+describe("createCustomTeam — no playerSeed stored", () => {
+  it("does not store playerSeed on players when team is created", async () => {
     const id = await store.createCustomTeam(
       makeInput({
-        name: "Player Seed Team",
+        name: "No Player Seed Team",
         roster: {
-          lineup: [makePlayer({ id: "p_s1", name: "Seeded Batter" })],
+          lineup: [makePlayer({ id: "p_s1", name: "Batter No Seed" })],
           bench: [],
           pitchers: [
             makePlayer({
               id: "p_s2",
-              name: "Seeded Pitcher",
+              name: "Pitcher No Seed",
               role: "pitcher",
               pitching: { velocity: 55, control: 55, movement: 50 },
             }),
@@ -258,10 +254,8 @@ describe("createCustomTeam — playerSeed", () => {
     const team = await store.getCustomTeam(id);
     const batter = team?.roster.lineup[0];
     const pitcher = team?.roster.pitchers[0];
-    expect(typeof batter?.playerSeed).toBe("string");
-    expect(batter!.playerSeed!.length).toBeGreaterThan(0);
-    expect(typeof pitcher?.playerSeed).toBe("string");
-    expect(pitcher!.playerSeed!.length).toBeGreaterThan(0);
+    expect("playerSeed" in (batter ?? {})).toBe(false);
+    expect("playerSeed" in (pitcher ?? {})).toBe(false);
   });
 });
 

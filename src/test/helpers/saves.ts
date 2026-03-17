@@ -1,10 +1,10 @@
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 /**
- * Builds a minimal valid SaveDoc fixture for unit tests.
+ * Builds a minimal valid SaveRecord fixture for unit tests.
  * Pass `overrides` to adjust any field from the defaults.
  */
-export const makeSaveDoc = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
+export const makeSaveDoc = (overrides: Partial<SaveRecord> = {}): SaveRecord =>
   ({
     id: "save_1",
     name: "Test Save",
@@ -23,4 +23,4 @@ export const makeSaveDoc = (overrides: Partial<SaveDoc> = {}): SaveDoc =>
       awayTeam: "Away",
     },
     ...overrides,
-  }) as SaveDoc;
+  }) as SaveRecord;

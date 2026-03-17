@@ -1,31 +1,20 @@
-import { describe, expect, it } from "vitest";
+import "fake-indexeddb/auto";
 
-import type { PlayerDoc, TeamPlayer, TeamRoster } from "@storage/types";
+import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { assembleRoster, PLAYER_SCHEMA_VERSION, toPlayerDoc } from "./customTeamPlayerDocs";
+import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { PlayerRecord, TeamPlayer, TeamRoster } from "@storage/types";
+import { makePlayer } from "@test/helpers/customTeams";
 
-const makePlayerDoc = (overrides: Partial<PlayerDoc> = {}): PlayerDoc => ({
-  id: "team1:p1",
-  playerId: "p1",
-  teamId: "team1",
-  section: "lineup",
-  orderIndex: 0,
-  schemaVersion: PLAYER_SCHEMA_VERSION,
-  name: "Test Player",
-  role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
-  globalPlayerId: "pl_abc123",
-  ...overrides,
-});
-
-const makeTeamPlayer = (overrides: Partial<TeamPlayer> = {}): TeamPlayer => ({
-  id: "p1",
-  name: "Test Player",
-  role: "batter",
-  batting: { contact: 70, power: 60, speed: 50 },
-  globalPlayerId: "pl_abc123",
-  ...overrides,
-});
+import {
+  assembleRoster,
+  fetchTeamPlayers,
+  PLAYER_SCHEMA_VERSION,
+  removeTeamPlayerRecords,
+  writePlayerRecords,
+} from "./customTeamPlayerDocs";
+import { makeCustomTeamStore } from "./customTeamStore";
 
 const makeRoster = (overrides: Partial<TeamRoster> = {}): TeamRoster => ({
   schemaVersion: 1,
@@ -35,106 +24,146 @@ const makeRoster = (overrides: Partial<TeamRoster> = {}): TeamRoster => ({
   ...overrides,
 });
 
+let db: BallgameDb;
+let store: ReturnType<typeof makeCustomTeamStore>;
+
+beforeEach(async () => {
+  db = await _createTestDb(getRxStorageMemory());
+  store = makeCustomTeamStore(() => Promise.resolve(db));
+});
+
+afterEach(async () => {
+  await db.close();
+});
+
 describe("PLAYER_SCHEMA_VERSION", () => {
   it("is 1", () => expect(PLAYER_SCHEMA_VERSION).toBe(1));
 });
 
-describe("toPlayerDoc", () => {
-  it("creates a composite id from teamId and player.id", () => {
-    const doc = toPlayerDoc(makeTeamPlayer({ id: "p42" }), "team99", {
-      section: "lineup",
-      orderIndex: 0,
+describe("fetchTeamPlayers", () => {
+  it("returns empty array when no players exist for team", async () => {
+    const players = await fetchTeamPlayers(db, "nonexistent-team");
+    expect(players).toEqual([]);
+  });
+
+  it("returns player records for a team", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Fetch Test Team",
+      roster: {
+        lineup: [makePlayer({ name: "Alice" })],
+        bench: [makePlayer({ name: "Bob" })],
+        pitchers: [],
+      },
     });
-    expect(doc.id).toBe("team99:p42");
-  });
-
-  it("stores original player id in playerId", () => {
-    const doc = toPlayerDoc(makeTeamPlayer({ id: "orig-id" }), "team1", {
-      section: "bench",
-      orderIndex: 3,
-    });
-    expect(doc.playerId).toBe("orig-id");
-  });
-
-  it("sets teamId, section, orderIndex, schemaVersion", () => {
-    const doc = toPlayerDoc(makeTeamPlayer(), "myteam", { section: "pitchers", orderIndex: 5 });
-    expect(doc.teamId).toBe("myteam");
-    expect(doc.section).toBe("pitchers");
-    expect(doc.orderIndex).toBe(5);
-    expect(doc.schemaVersion).toBe(PLAYER_SCHEMA_VERSION);
-  });
-
-  it("preserves existing globalPlayerId", () => {
-    const doc = toPlayerDoc(makeTeamPlayer({ globalPlayerId: "pl_existing" }), "team1", {
-      section: "lineup",
-      orderIndex: 0,
-    });
-    expect(doc.globalPlayerId).toBe("pl_existing");
-  });
-
-  it("generates globalPlayerId from playerSeed when missing", () => {
-    const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: "seed-123" });
-    const doc = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
-    expect(doc.globalPlayerId).toMatch(/^pl_/);
-  });
-
-  it("falls back to team-scoped id for globalPlayerId when both seed and globalPlayerId are missing", () => {
-    const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: undefined });
-    const doc = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
-    expect(doc.globalPlayerId).toMatch(/^pl_/);
-  });
-
-  it("fallback globalPlayerId is scoped to teamId — same player.id on different teams gets different values", () => {
-    const player = makeTeamPlayer({ globalPlayerId: undefined, playerSeed: undefined });
-    const doc1 = toPlayerDoc(player, "team1", { section: "lineup", orderIndex: 0 });
-    const doc2 = toPlayerDoc(player, "team2", { section: "lineup", orderIndex: 0 });
-    expect(doc1.globalPlayerId).not.toBe(doc2.globalPlayerId);
+    const players = await fetchTeamPlayers(db, teamId);
+    expect(players.length).toBe(2);
+    const names = players.map((p) => p.name);
+    expect(names).toContain("Alice");
+    expect(names).toContain("Bob");
   });
 });
 
 describe("assembleRoster", () => {
-  it("groups docs by section and sorts by orderIndex", () => {
-    const playerDocs: PlayerDoc[] = [
-      makePlayerDoc({ id: "t1:p2", playerId: "p2", section: "lineup", orderIndex: 1 }),
-      makePlayerDoc({ id: "t1:p1", playerId: "p1", section: "lineup", orderIndex: 0 }),
-      makePlayerDoc({ id: "t1:p3", playerId: "p3", section: "bench", orderIndex: 0 }),
-    ];
-    const roster = assembleRoster(playerDocs, makeRoster());
-    expect(roster.lineup.map((p) => p.id)).toEqual(["p1", "p2"]);
-    expect(roster.bench.map((p) => p.id)).toEqual(["p3"]);
+  it("groups and sorts players correctly by section and orderIndex", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Assemble Team",
+      roster: {
+        lineup: [makePlayer({ name: "L1" }), makePlayer({ name: "L2" })],
+        bench: [makePlayer({ name: "B1" })],
+        pitchers: [makePlayer({ name: "P1", role: "pitcher" })],
+      },
+    });
+    const players = await fetchTeamPlayers(db, teamId);
+    const roster = assembleRoster(players);
+    expect(roster.lineup.map((p) => p.name)).toEqual(["L1", "L2"]);
+    expect(roster.bench.map((p) => p.name)).toEqual(["B1"]);
+    expect(roster.pitchers.map((p) => p.name)).toEqual(["P1"]);
+  });
+
+  it("returns empty sections when players array is empty", () => {
+    const roster = assembleRoster([]);
+    expect(roster.lineup).toEqual([]);
+    expect(roster.bench).toEqual([]);
     expect(roster.pitchers).toEqual([]);
   });
 
-  it("preserves schemaVersion from existingRoster", () => {
-    const roster = assembleRoster([], makeRoster({ schemaVersion: 42 }));
-    expect(roster.schemaVersion).toBe(42);
-  });
-
-  it("reconstructs original player id from playerId field", () => {
-    const playerDocs: PlayerDoc[] = [
-      makePlayerDoc({ id: "team1:p1", playerId: "p1", section: "lineup", orderIndex: 0 }),
-    ];
-    const roster = assembleRoster(playerDocs, makeRoster());
-    expect(roster.lineup[0].id).toBe("p1");
-  });
-
-  it("strips teamId, section, orderIndex, schemaVersion from team player", () => {
-    const playerDocs: PlayerDoc[] = [makePlayerDoc({ section: "lineup", orderIndex: 0 })];
-    const roster = assembleRoster(playerDocs, makeRoster());
+  it("strips teamId, section, orderIndex, schemaVersion, createdAt, updatedAt from TeamPlayer", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Strip Fields Team",
+      roster: { lineup: [makePlayer({ name: "X" })], bench: [], pitchers: [] },
+    });
+    const players = await fetchTeamPlayers(db, teamId);
+    const roster = assembleRoster(players);
     const player = roster.lineup[0];
     expect("teamId" in player).toBe(false);
     expect("section" in player).toBe(false);
     expect("orderIndex" in player).toBe(false);
     expect("schemaVersion" in player).toBe(false);
+    expect("createdAt" in player).toBe(false);
+    expect("updatedAt" in player).toBe(false);
+  });
+});
+
+describe("writePlayerRecords", () => {
+  it("uses simple player IDs (not composite)", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Write Test Team",
+      roster: { lineup: [makePlayer({ name: "Alice" })], bench: [], pitchers: [] },
+    });
+    const players = await fetchTeamPlayers(db, teamId);
+    // IDs should be plain p_xxx IDs, not composite "${teamId}:${playerId}"
+    for (const p of players) {
+      expect(p.id).not.toContain(":");
+      expect(p.id).toMatch(/^p_/);
+    }
   });
 
-  it("handles pitchers section", () => {
-    const playerDocs: PlayerDoc[] = [
-      makePlayerDoc({ id: "t1:p10", playerId: "p10", section: "pitchers", orderIndex: 0 }),
-    ];
-    const roster = assembleRoster(playerDocs, makeRoster());
-    expect(roster.pitchers.map((p) => p.id)).toEqual(["p10"]);
-    expect(roster.lineup).toEqual([]);
-    expect(roster.bench).toEqual([]);
+  it("upserts player records and returns their IDs", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Upsert Team",
+      roster: {
+        lineup: [makePlayer({ name: "A" }), makePlayer({ name: "B" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const roster = makeRoster({
+      lineup: [makePlayer({ name: "C" }), makePlayer({ name: "D" })],
+    });
+    const writtenIds = await writePlayerRecords(db, teamId, roster);
+    expect(writtenIds.size).toBe(2);
+  });
+});
+
+describe("removeTeamPlayerRecords", () => {
+  it("removes all player records for a team", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Remove Team",
+      roster: {
+        lineup: [makePlayer({ name: "A" }), makePlayer({ name: "B" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    await removeTeamPlayerRecords(db, teamId);
+    const remaining = await fetchTeamPlayers(db, teamId);
+    expect(remaining).toEqual([]);
+  });
+
+  it("only removes records not in exceptIds", async () => {
+    const teamId = await store.createCustomTeam({
+      name: "Partial Remove Team",
+      roster: {
+        lineup: [makePlayer({ name: "Keep" }), makePlayer({ name: "Remove" })],
+        bench: [],
+        pitchers: [],
+      },
+    });
+    const players = await fetchTeamPlayers(db, teamId);
+    const keepId = players.find((p) => p.name === "Keep")!.id;
+    await removeTeamPlayerRecords(db, teamId, new Set([keepId]));
+    const remaining = await fetchTeamPlayers(db, teamId);
+    expect(remaining.length).toBe(1);
+    expect(remaining[0].name).toBe("Keep");
   });
 });

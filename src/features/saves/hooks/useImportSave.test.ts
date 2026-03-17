@@ -10,7 +10,7 @@ vi.mock("@storage/saveIO", () => ({
 }));
 
 import { readFileAsText } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 import { makeSaveDoc } from "@test/helpers/saves";
 
 import { friendlyImportError, useImportSave } from "./useImportSave";
@@ -37,8 +37,8 @@ describe("friendlyImportError", () => {
 });
 
 describe("useImportSave", () => {
-  const mockImportFn = vi.fn<(json: string) => Promise<SaveDoc>>();
-  const mockOnSuccess = vi.fn<(save: SaveDoc) => void>();
+  const mockImportFn = vi.fn<(json: string) => Promise<SaveRecord>>();
+  const mockOnSuccess = vi.fn<(save: SaveRecord) => void>();
 
   const renderImportHook = (overrides: Partial<Parameters<typeof useImportSave>[0]> = {}) =>
     renderHook(() =>
@@ -83,7 +83,7 @@ describe("useImportSave", () => {
     });
 
     it("sets importing=true while in-flight", async () => {
-      let resolve!: (s: SaveDoc) => void;
+      let resolve!: (s: SaveRecord) => void;
       mockImportFn.mockReturnValue(new Promise((r) => (resolve = r)));
       const { result } = renderImportHook();
       act(() => result.current.setPasteJson('{"v":1}'));

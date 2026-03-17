@@ -1,5 +1,7 @@
 import type { BallgameDb } from "@storage/db";
-import type { CustomTeamDoc, PlayerDoc } from "@storage/types";
+import type { PlayerRecord, TeamRecord } from "@storage/types";
+
+import { FREE_AGENT_TEAM_ID } from "./schemaV1";
 
 export type PlayerConflictResult =
   | { status: "conflict"; conflictingTeamId: string; conflictingTeamName: string }
@@ -20,23 +22,29 @@ export async function resolvePlayerConflict(
   globalPlayerId: string,
   targetTeamId: string,
 ): Promise<PlayerConflictResult> {
-  const matchingDocs = await db.players.find({ selector: { globalPlayerId } }).exec();
+  // In v1, the player's `id` IS the globalPlayerId — look up directly.
+  const matchingDoc = await db.players.findOne(globalPlayerId).exec();
 
-  if (matchingDocs.length === 0) {
+  if (!matchingDoc) {
     return { status: "noConflict" };
   }
 
-  const matchingPlayerDocs = matchingDocs.map((doc) => doc.toJSON() as unknown as PlayerDoc);
+  const matchingPlayerDoc = matchingDoc.toJSON() as unknown as PlayerRecord;
+  const matchingPlayerDocs = [matchingPlayerDoc];
 
   const conflictingMatch = matchingPlayerDocs.find(
-    (doc) => doc.teamId !== null && doc.teamId !== undefined && doc.teamId !== targetTeamId,
+    (doc) =>
+      doc.teamId !== null &&
+      doc.teamId !== undefined &&
+      doc.teamId !== FREE_AGENT_TEAM_ID &&
+      doc.teamId !== targetTeamId,
   );
   if (conflictingMatch) {
     const owningTeamDoc = conflictingMatch.teamId
-      ? await db.customTeams.findOne(conflictingMatch.teamId).exec()
+      ? await db.teams.findOne(conflictingMatch.teamId).exec()
       : null;
     const owningTeamName =
-      (owningTeamDoc?.toJSON() as unknown as CustomTeamDoc | undefined)?.name ?? "another team";
+      (owningTeamDoc?.toJSON() as unknown as TeamRecord | undefined)?.name ?? "another team";
     return {
       status: "conflict",
       conflictingTeamId: conflictingMatch.teamId ?? "",
@@ -44,7 +52,7 @@ export async function resolvePlayerConflict(
     };
   }
 
-  const alreadyOnThisTeam = matchingPlayerDocs.some((doc) => doc.teamId === targetTeamId);
+  const alreadyOnThisTeam = matchingPlayerDoc.teamId === targetTeamId;
   if (alreadyOnThisTeam) {
     return { status: "alreadyOnThisTeam" };
   }

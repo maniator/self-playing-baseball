@@ -5,7 +5,7 @@ import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import type { EditorAction, EditorPlayer } from "./editorState";
 import type { PendingPlayerImport } from "./useImportPlayerFile";
@@ -44,21 +44,19 @@ const makePlayerJson = (overrides: Partial<TeamPlayer> = {}): string => {
     name: "Imported Batter",
     role: "batter",
     batting: { contact: 70, power: 60, speed: 55 },
-    playerSeed: "import-seed",
-    globalPlayerId: "pl_import_gid",
     ...overrides,
   };
   return exportCustomPlayer(player);
 };
 
-const makeTeamDoc = (id: string, name: string, players: TeamPlayer[] = []): CustomTeamDoc => ({
+const makeTeamDoc = (id: string, name: string, players: TeamPlayer[] = []): TeamWithRoster => ({
   id,
   schemaVersion: 1,
   createdAt: "2024-01-01T00:00:00Z",
   updatedAt: "2024-01-01T00:00:00Z",
   name,
+  nameLowercase: name.toLowerCase(),
   abbreviation: "TST",
-  source: "custom",
   roster: { schemaVersion: 1, lineup: players, bench: [], pitchers: [] },
   metadata: { archived: false },
 });
@@ -75,7 +73,7 @@ const makeChangeEvent = (content: string): React.ChangeEvent<HTMLInputElement> =
 
 type HookOptions = {
   teamId?: string;
-  allTeams?: CustomTeamDoc[];
+  allTeams?: TeamWithRoster[];
   lineup?: EditorPlayer[];
   bench?: EditorPlayer[];
   pitchers?: EditorPlayer[];
@@ -175,44 +173,6 @@ describe("useImportPlayerFile — edit mode (teamId set)", () => {
       );
     });
   });
-
-  it("skips the soft fingerprint check when globalPlayerId is present", async () => {
-    // allTeams contains a team with the same fingerprint — if the soft check ran,
-    // setPendingPlayerImport would be called. It should NOT be called because
-    // globalPlayerId is present and routes straight to performImport.
-    vi.mocked(CustomTeamStore.importPlayer).mockResolvedValue({
-      status: "success",
-      finalLocalId: "mock-player-id",
-    });
-    const playerJson = makePlayerJson({ name: "Alice" });
-    _fileContent = playerJson;
-
-    const teamWithSamePlayer = makeTeamDoc("ct_other", "Other Team", [
-      {
-        id: "p_alice",
-        name: "Alice",
-        role: "batter",
-        batting: { contact: 70, power: 60, speed: 55 },
-        playerSeed: "import-seed",
-        globalPlayerId: "pl_different_gid",
-        fingerprint: "anything",
-      },
-    ]);
-
-    const { result, dispatch, setPendingPlayerImport } = renderImportHook({
-      teamId: "ct_edit",
-      allTeams: [teamWithSamePlayer],
-    });
-    act(() => {
-      result.current("lineup")(makeChangeEvent(playerJson));
-    });
-
-    await waitFor(() => {
-      expect(CustomTeamStore.importPlayer).toHaveBeenCalled();
-    });
-    expect(setPendingPlayerImport).not.toHaveBeenCalled();
-    expect(dispatch).toHaveBeenCalledWith(expect.objectContaining({ type: "ADD_PLAYER" }));
-  });
 });
 
 describe("useImportPlayerFile — create mode (no teamId)", () => {
@@ -237,43 +197,13 @@ describe("useImportPlayerFile — create mode (no teamId)", () => {
     expect(CustomTeamStore.importPlayer).not.toHaveBeenCalled();
   });
 
-  it("dispatches SET_ERROR when globalPlayerId matches a player on another team", async () => {
-    const playerJson = makePlayerJson({ name: "Owned Player", globalPlayerId: "pl_owned" });
-    _fileContent = playerJson;
-
-    const owningTeam = makeTeamDoc("ct_owner", "Owner Team", [
-      {
-        id: "p_owned",
-        name: "Owned Player",
-        role: "batter",
-        batting: { contact: 70, power: 60, speed: 55 },
-        globalPlayerId: "pl_owned",
-      },
-    ]);
-
-    const { result, dispatch } = renderImportHook({ allTeams: [owningTeam] });
-    act(() => {
-      result.current("lineup")(makeChangeEvent(playerJson));
-    });
-
-    await waitFor(() => {
-      expect(dispatch).toHaveBeenCalledWith(
-        expect.objectContaining({
-          type: "SET_ERROR",
-          error: expect.stringContaining('"Owner Team"'),
-        }),
-      );
-    });
-  });
-
-  it("shows soft fingerprint warning when player lacks globalPlayerId and fingerprint matches", async () => {
-    // A player without globalPlayerId that has the same stats as an existing player.
+  it("shows soft fingerprint warning when fingerprint matches", async () => {
+    // A player that has the same stats as an existing player.
     const playerWithoutGid: TeamPlayer = {
       id: "p_nogid",
       name: "No GID Player",
       role: "batter",
       batting: { contact: 60, power: 50, speed: 40 },
-      // no globalPlayerId, no playerSeed → fingerprint computed from stats
     };
     const playerJson = exportCustomPlayer(playerWithoutGid);
     _fileContent = playerJson;
@@ -326,9 +256,11 @@ describe("useImportPlayerFile — create mode (no teamId)", () => {
     ]);
 
     let capturedPending: PendingPlayerImport | null = null;
-    const setPendingPlayerImport = vi.fn((val: PendingPlayerImport | null) => {
-      capturedPending = typeof val === "function" ? val(null) : val;
-    });
+    const setPendingPlayerImport = vi.fn(
+      (val: React.SetStateAction<PendingPlayerImport | null>) => {
+        capturedPending = typeof val === "function" ? val(null) : val;
+      },
+    );
     const dispatch = vi.fn();
     const { result } = renderHook(() =>
       useImportPlayerFile({

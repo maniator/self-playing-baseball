@@ -1,29 +1,29 @@
 import type { Handedness, TeamCustomPlayerOverrides } from "@feat/gameplay/context/index";
 import { BATTING_POSITIONS } from "@shared/utils/roster";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 /**
- * Returns a stable game-session ID for a custom team.
- * Uses the `custom:` prefix to distinguish it from other string team identifiers.
+ * Returns the stable game-session ID for a team.
+ * In v1 all teams use their plain `ct_*` ID — no namespace prefix.
  */
-export function customTeamToGameId(team: CustomTeamDoc): string {
-  return `custom:${team.id}`;
+export function customTeamToGameId(team: TeamWithRoster): string {
+  return team.id;
 }
 
 /**
  * Returns the display name for a custom team (city + name, or just name).
  */
-export function customTeamToDisplayName(team: CustomTeamDoc): string {
+export function customTeamToDisplayName(team: TeamWithRoster): string {
   if (team.city) return `${team.city} ${team.name}`;
   return team.name;
 }
 
 /**
- * Maps the lineup section of a CustomTeamDoc into the ordered array of
+ * Maps the lineup section of a TeamWithRoster into the ordered array of
  * player IDs expected by the game's `lineupOrder` setup field.
  */
-export function customTeamToLineupOrder(team: CustomTeamDoc): string[] {
+export function customTeamToLineupOrder(team: TeamWithRoster): string[] {
   return team.roster.lineup.map((p) => p.id);
 }
 
@@ -31,16 +31,14 @@ export function customTeamToLineupOrder(team: CustomTeamDoc): string[] {
  * Returns the abbreviation for a custom team, or a safe short fallback.
  * Used by compact UI surfaces like the line score.
  *
- * @param gameId - The game-session team string (e.g. `"custom:ct_123"`).
+ * @param gameId - The game-session team string (e.g. `"ct_123"`).
  * @param teams  - List of known custom team docs for lookup.
  */
 export function customTeamToAbbreviation(
   gameId: string,
-  teams: CustomTeamDoc[],
+  teams: TeamWithRoster[],
 ): string | undefined {
-  if (!gameId.startsWith("custom:")) return undefined;
-  const id = gameId.slice("custom:".length);
-  const doc = teams.find((t) => t.id === id);
+  const doc = teams.find((t) => t.id === gameId);
   if (!doc) return undefined;
   if (doc.abbreviation) return doc.abbreviation;
   // Fallback: first 3 chars of team name (uppercase)
@@ -48,41 +46,25 @@ export function customTeamToAbbreviation(
 }
 
 /**
- * Returns the full display label for any team string (`custom:<id>`).
- * Used in non-compact UI surfaces (tabs, selectors, hit-log entries).
+ * Returns the full display label for a team.
+ * In v1 all team IDs are plain `ct_*` strings — looked up directly by ID.
  *
- * All team IDs must now use the `custom:` prefix. Any ID that does not start
- * with `custom:` is treated as an unknown/legacy identifier and returns a
- * safe placeholder rather than echoing the raw ID into the UI.
- *
- * @param gameId  - The game-session team string (e.g. `"custom:ct_123"`).
+ * @param gameId  - The game-session team string (e.g. `"ct_123"`).
  * @param teams   - Known custom team docs for lookup.
  */
-export function resolveTeamLabel(gameId: string, teams: CustomTeamDoc[]): string {
-  if (!gameId.startsWith("custom:")) return "Unknown Team";
-  const id = gameId.slice("custom:".length);
-  const doc = teams.find((t) => t.id === id);
-  // Safe short fallback: strip the `custom:` prefix and show the first 8 chars of the
-  // internal ID so the user sees something recognizable, never the full raw ID.
-  if (!doc) return gameId.replace(/^custom:/, "").slice(0, 8);
+export function resolveTeamLabel(gameId: string, teams: TeamWithRoster[]): string {
+  const doc = teams.find((t) => t.id === gameId);
+  if (!doc) return "Unknown Team";
   return customTeamToDisplayName(doc);
 }
 
 /**
- * Replaces all `custom:<id>` tokens in a string with their resolved display
- * labels.  Used to sanitize free-text fields that may contain raw team IDs —
- * specifically: save names (displayed in SavesModal / SavesPage) and TTS
- * announcement strings (Game/index.tsx).  These surfaces receive opaque strings
- * from legacy saves, so a regex scan is the correct approach here.
- *
- * The in-game play-by-play log (Announcements component) does NOT use this
- * function — it uses the structured `teamLabels` from `State` directly via
- * `String.replaceAll` on the two known team IDs, which is both faster and
- * type-safe.  Do not add new callers of this function for structured data;
- * prefer `teamLabels`-based substitution for those surfaces instead.
+ * Replaces all team ID tokens in a string with their resolved display labels.
+ * Used to sanitize free-text fields (save names, TTS strings) that may contain
+ * raw `ct_*` team IDs.
  */
-export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): string {
-  return text.replace(/custom:[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
+export function resolveCustomIdsInString(text: string, teams: TeamWithRoster[]): string {
+  return text.replace(/ct_[^\s"',]+/g, (id) => resolveTeamLabel(id, teams));
 }
 
 /**
@@ -101,14 +83,12 @@ export function resolveCustomIdsInString(text: string, teams: CustomTeamDoc[]): 
  */
 export function resolveRestoreLabels(
   state: { teams: [string, string]; teamLabels?: [string, string] },
-  customTeams: CustomTeamDoc[],
+  customTeams: TeamWithRoster[],
 ): [string, string] {
   const existing = state.teamLabels;
   const needsResolution =
     !existing ||
-    existing.some(
-      (l, i) => typeof l === "string" && l === state.teams[i] && l.startsWith("custom:"),
-    );
+    existing.some((l, i) => typeof l === "string" && l === state.teams[i] && l.startsWith("ct_"));
   return needsResolution
     ? [resolveTeamLabel(state.teams[0], customTeams), resolveTeamLabel(state.teams[1], customTeams)]
     : existing;
@@ -123,7 +103,7 @@ function clampMod(offset: number): ModPreset {
 }
 
 /**
- * Maps a CustomTeamDoc's batting stats into the `TeamCustomPlayerOverrides`
+ * Maps a TeamWithRoster's batting stats into the `TeamCustomPlayerOverrides`
  * shape consumed by the game's `setTeams` action.
  *
  * Stat modifier scale: the game uses ModPreset offsets (-20…+20) relative to
@@ -131,7 +111,7 @@ function clampMod(offset: number): ModPreset {
  * by expressing each stat as an offset from 60 (the midpoint of 40–80 typical
  * range), clamped to valid ModPreset values.
  */
-export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlayerOverrides {
+export function customTeamToPlayerOverrides(team: TeamWithRoster): TeamCustomPlayerOverrides {
   const overrides: TeamCustomPlayerOverrides = {};
   const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
   for (const player of allPlayers) {
@@ -146,6 +126,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
         velocityMod: clampMod((player.pitching.velocity ?? 60) - 60),
         controlMod: clampMod((player.pitching.control ?? 60) - 60),
         movementMod: clampMod((player.pitching.movement ?? 60) - 60),
+        staminaMod: clampMod((player.pitching.stamina ?? 60) - 60),
       }),
     };
   }
@@ -157,7 +138,7 @@ export function customTeamToPlayerOverrides(team: CustomTeamDoc): TeamCustomPlay
  * Players missing explicit handedness are omitted and resolved later via
  * deterministic fallback in gameplay.
  */
-export function customTeamToHandednessMap(team: CustomTeamDoc): Record<string, Handedness> {
+export function customTeamToHandednessMap(team: TeamWithRoster): Record<string, Handedness> {
   const handednessByPlayer: Record<string, Handedness> = {};
   const allPlayers = [...team.roster.lineup, ...team.roster.bench, ...team.roster.pitchers];
   for (const player of allPlayers) {
@@ -170,7 +151,7 @@ export function customTeamToHandednessMap(team: CustomTeamDoc): Record<string, H
  * Returns the ordered list of bench player IDs for a custom team.
  * Used to populate `rosterBench` when a custom team game is started.
  */
-export function customTeamToBenchRoster(team: CustomTeamDoc): string[] {
+export function customTeamToBenchRoster(team: TeamWithRoster): string[] {
   return team.roster.bench.map((p) => p.id);
 }
 
@@ -178,7 +159,7 @@ export function customTeamToBenchRoster(team: CustomTeamDoc): string[] {
  * Returns the ordered list of pitcher IDs for a custom team.
  * Used to populate `rosterPitchers` when a custom team game is started.
  */
-export function customTeamToPitcherRoster(team: CustomTeamDoc): string[] {
+export function customTeamToPitcherRoster(team: TeamWithRoster): string[] {
   return team.roster.pitchers.map((p) => p.id);
 }
 
@@ -188,7 +169,7 @@ export function customTeamToPitcherRoster(team: CustomTeamDoc): string[] {
  *
  * Used by NewGameDialog to block game start with invalid (including legacy) teams.
  */
-export function validateCustomTeamForGame(team: CustomTeamDoc): string | null {
+export function validateCustomTeamForGame(team: TeamWithRoster): string | null {
   if (!team.name || !team.name.trim()) {
     return `Team has no name. Please edit it before starting a game.`;
   }

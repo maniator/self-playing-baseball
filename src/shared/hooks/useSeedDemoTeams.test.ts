@@ -133,13 +133,12 @@ describe("useSeedDemoTeams", () => {
 
     DEMO_TEAMS.forEach((def, i) => {
       const [input, meta] = mockStore.createCustomTeam.mock.calls[i] as [
-        { name: string; city: string; abbreviation: string; source: string },
+        { name: string; city: string; abbreviation: string },
         { id: string },
       ];
       expect(input.name).toBe(def.name);
       expect(input.city).toBe(def.city);
       expect(input.abbreviation).toBe(def.abbreviation);
-      expect(input.source).toBe("generated");
       expect(meta.id).toBe(def.demoId);
     });
   });

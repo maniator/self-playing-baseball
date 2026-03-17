@@ -1,130 +1,183 @@
 /// <reference types="vite/client" />
 import {
-  gamesCollectionConfig,
-  pitcherGameStatsCollectionConfig,
-  playerGameStatsCollectionConfig,
-  playersCollectionConfig,
-} from "@feat/careerStats/storage/schema";
-import { customTeamsCollectionConfig } from "@feat/customTeams/storage/schema";
-import { eventsCollectionConfig, savesCollectionConfig } from "@feat/saves/storage/schema";
+  batterGameStatsV1CollectionConfig,
+  completedGamesV1CollectionConfig,
+  pitcherGameStatsV1CollectionConfig,
+} from "@feat/careerStats/storage/schemaV1";
+import {
+  playersV1CollectionConfig,
+  teamsV1CollectionConfig,
+} from "@feat/customTeams/storage/schemaV1";
+import { eventsV1CollectionConfig, savesV1CollectionConfig } from "@feat/saves/storage/schemaV1";
 import { appLog } from "@shared/utils/logger";
 import {
-  addRxPlugin,
   createRxDatabase,
   removeRxDatabase,
   type RxCollection,
   type RxDatabase,
-  RxError,
   type RxStorage,
 } from "rxdb";
-import { RxDBMigrationSchemaPlugin } from "rxdb/plugins/migration-schema";
 import { getRxStorageDexie } from "rxdb/plugins/storage-dexie";
 
 import type {
-  CustomTeamDoc,
-  EventDoc,
-  GameDoc,
-  PitcherGameStatDoc,
-  PlayerDoc,
-  PlayerGameStatDoc,
-  SaveDoc,
+  BatterGameStatRecord,
+  CompletedGameRecord,
+  EventRecord,
+  PitcherGameStatRecord,
+  PlayerRecord,
+  SaveRecord,
+  TeamRecord,
 } from "./types";
 
+// ── v1 schema epoch ───────────────────────────────────────────────────────────
+// Bump BETA_SCHEMA_EPOCH whenever the v1 schema family is replaced with a new
+// incompatible version. Changing this value triggers a deliberate wipe-and-recreate
+// of the local ballgame IndexedDB on the user's next app load.
+const BETA_SCHEMA_EPOCH = "v1.1";
+const BETA_EPOCH_KEY = "ballgame:schemaEpoch";
+
 type DbCollections = {
-  saves: RxCollection<SaveDoc>;
-  events: RxCollection<EventDoc>;
-  customTeams: RxCollection<CustomTeamDoc>;
-  players: RxCollection<PlayerDoc>;
-  games: RxCollection<GameDoc>;
-  playerGameStats: RxCollection<PlayerGameStatDoc>;
-  pitcherGameStats: RxCollection<PitcherGameStatDoc>;
+  saves: RxCollection<SaveRecord>;
+  events: RxCollection<EventRecord>;
+  teams: RxCollection<TeamRecord>;
+  players: RxCollection<PlayerRecord>;
+  completedGames: RxCollection<CompletedGameRecord>;
+  batterGameStats: RxCollection<BatterGameStatRecord>;
+  pitcherGameStats: RxCollection<PitcherGameStatRecord>;
 };
 
 export type BallgameDb = RxDatabase<DbCollections>;
+
+/**
+ * Checks whether the locally stored schema epoch matches the current BETA_SCHEMA_EPOCH.
+ * When the epoch is stale (an old epoch string is present in localStorage), the existing
+ * `ballgame` IndexedDB is removed so it can be recreated with the v1 schemas.
+ * When no epoch has been stored yet (first install), the epoch is recorded without
+ * removing anything — there is no old data to wipe.
+ *
+ * Returns true if a DB removal was performed (caller should set dbWasReset).
+ */
+async function resetIfEpochChanged(storage: RxStorage<unknown, unknown>): Promise<boolean> {
+  if (typeof localStorage === "undefined") return false;
+  const stored = localStorage.getItem(BETA_EPOCH_KEY);
+  if (stored === BETA_SCHEMA_EPOCH) return false;
+
+  let wasReset = false;
+  if (stored !== null) {
+    // An old epoch is recorded — the DB belongs to an obsolete schema family.
+    // Wipe it before recreating with the new v1 schemas.
+    appLog.log(
+      `[db] Schema epoch changed (${stored} → ${BETA_SCHEMA_EPOCH}); wiping local ballgame DB.`,
+    );
+    try {
+      await removeRxDatabase("ballgame", storage as RxStorage<object, object>);
+      wasReset = true;
+    } catch (err: unknown) {
+      // Removal failure is non-fatal: initDb will attempt creation regardless.
+      // If the old DB somehow persists, RxDB may surface a schema-mismatch error
+      // which the existing schema-failure recovery path handles below.
+      appLog.warn("[db] Failed to remove old ballgame DB during epoch reset:", err);
+    }
+  }
+
+  localStorage.setItem(BETA_EPOCH_KEY, BETA_SCHEMA_EPOCH);
+  return wasReset;
+}
 
 async function initDb(
   storage: RxStorage<unknown, unknown>,
   name = "ballgame",
 ): Promise<BallgameDb> {
-  addRxPlugin(RxDBMigrationSchemaPlugin);
-
   const db = await createRxDatabase<DbCollections>({
     name,
     storage: storage as RxStorage<object, object>,
     multiInstance: false,
   });
   await db.addCollections({
-    saves: savesCollectionConfig,
-    events: eventsCollectionConfig,
-    customTeams: customTeamsCollectionConfig,
-    players: playersCollectionConfig,
-    games: gamesCollectionConfig,
-    playerGameStats: playerGameStatsCollectionConfig,
-    pitcherGameStats: pitcherGameStatsCollectionConfig,
+    saves: savesV1CollectionConfig,
+    events: eventsV1CollectionConfig,
+    teams: teamsV1CollectionConfig,
+    players: playersV1CollectionConfig,
+    completedGames: completedGamesV1CollectionConfig,
+    batterGameStats: batterGameStatsV1CollectionConfig,
+    pitcherGameStats: pitcherGameStatsV1CollectionConfig,
   });
   return db;
 }
 
 let dbPromise: Promise<BallgameDb> | null = null;
 
-/** True if the database was wiped and recreated during this session due to an init error. */
+/** True if the database was wiped and recreated during this session. */
 let dbWasReset = false;
 /** Returns true if the database was reset during this session. */
 export const wasDbReset = (): boolean => dbWasReset;
 
 /**
- * Returns true when an error represents a migration failure:
- * - DB6: schema hash mismatch at the same version (schema changed without bumping version)
- * - DM4: migration strategy execution failed (strategy was run but returned an error)
- * Transient errors (quota exceeded, blocked IndexedDB, etc.) are NOT included so we
- * never silently wipe user data for non-schema faults.
+ * Returns true when an error represents a schema failure that warrants a last-resort
+ * DB wipe-and-recreate as emergency recovery:
+ * - DB6: schema hash mismatch (schema changed without bumping version)
+ * - DM4: migration strategy execution failed
+ *
+ * Transient errors (quota exceeded, blocked IndexedDB, etc.) are NOT included so
+ * we never silently wipe user data for non-schema faults.
  */
-const isMigrationFailure = (err: unknown): boolean =>
-  err instanceof RxError && (err.code === "DB6" || err.code === "DM4");
+const isSchemaFailure = (err: unknown): boolean => {
+  if (!err || typeof err !== "object") return false;
+  const code = (err as { code?: string }).code;
+  return code === "DB6" || code === "DM4";
+};
 
 /** Returns the singleton IndexedDB-backed database instance (lazy-initialized). */
 export const getDb = (): Promise<BallgameDb> => {
   if (!dbPromise) {
-    dbPromise = initDb(getRxStorageDexie()).catch(async (err: unknown) => {
-      // Only attempt recovery when migration itself failed — either a schema hash
-      // mismatch (DB6) or a migration strategy execution error (DM4). All other
-      // errors are rethrown so the app can surface the failure without silently
-      // wiping user data.
-      if (!isMigrationFailure(err)) throw err;
+    dbPromise = (async () => {
+      const storage = getRxStorageDexie();
 
-      appLog.warn("DB migration failed; resetting local database for recovery:", err);
-      // Only mark the DB as reset if removal actually succeeds; if removal also
-      // fails we still attempt a fresh init but don't show the reset notice.
-      let resetSucceeded = false;
+      // Check for a stale schema epoch and wipe the old DB when found.
+      // This is the deliberate beta reset path — no migration strategies needed.
+      const epochReset = await resetIfEpochChanged(storage);
+      if (epochReset) dbWasReset = true;
+
       try {
-        await removeRxDatabase("ballgame", getRxStorageDexie());
-        resetSucceeded = true;
-      } catch (removalErr: unknown) {
-        appLog.warn("DB removal also failed during recovery:", removalErr);
+        return await initDb(storage);
+      } catch (err: unknown) {
+        // Last-resort recovery: if the DB still fails to open (e.g. epoch removal
+        // failed and the old DB persists), attempt one final wipe.
+        if (!isSchemaFailure(err)) throw err;
+
+        appLog.warn("[db] Schema mismatch after epoch check; attempting emergency DB reset:", err);
+        let resetSucceeded = false;
+        try {
+          await removeRxDatabase("ballgame", storage as RxStorage<object, object>);
+          resetSucceeded = true;
+        } catch (removalErr: unknown) {
+          appLog.warn("[db] Emergency DB removal also failed:", removalErr);
+        }
+        if (resetSucceeded) dbWasReset = true;
+        return initDb(storage);
       }
-      dbWasReset = resetSucceeded;
-      return initDb(getRxStorageDexie());
-    });
+    })();
   }
   return dbPromise;
 };
 
-export const savesCollection = async (): Promise<RxCollection<SaveDoc>> => (await getDb()).saves;
+export const savesCollection = async (): Promise<RxCollection<SaveRecord>> => (await getDb()).saves;
 
-export const eventsCollection = async (): Promise<RxCollection<EventDoc>> => (await getDb()).events;
+export const eventsCollection = async (): Promise<RxCollection<EventRecord>> =>
+  (await getDb()).events;
 
-export const customTeamsCollection = async (): Promise<RxCollection<CustomTeamDoc>> =>
-  (await getDb()).customTeams;
+export const teamsCollection = async (): Promise<RxCollection<TeamRecord>> => (await getDb()).teams;
 
-export const playersCollection = async (): Promise<RxCollection<PlayerDoc>> =>
+export const playersCollection = async (): Promise<RxCollection<PlayerRecord>> =>
   (await getDb()).players;
 
-export const gamesCollection = async (): Promise<RxCollection<GameDoc>> => (await getDb()).games;
+export const completedGamesCollection = async (): Promise<RxCollection<CompletedGameRecord>> =>
+  (await getDb()).completedGames;
 
-export const playerGameStatsCollection = async (): Promise<RxCollection<PlayerGameStatDoc>> =>
-  (await getDb()).playerGameStats;
+export const batterGameStatsCollection = async (): Promise<RxCollection<BatterGameStatRecord>> =>
+  (await getDb()).batterGameStats;
 
-export const pitcherGameStatsCollection = async (): Promise<RxCollection<PitcherGameStatDoc>> =>
+export const pitcherGameStatsCollection = async (): Promise<RxCollection<PitcherGameStatRecord>> =>
   (await getDb()).pitcherGameStats;
 
 /**
@@ -132,6 +185,7 @@ export const pitcherGameStatsCollection = async (): Promise<RxCollection<Pitcher
  * Uses a random name by default so concurrent test files sharing the same
  * in-memory RxDB storage never produce COL23 name collisions.
  * Callers are responsible for calling `db.close()` when finished.
+ * The epoch check is intentionally skipped for test DBs.
  */
 export const _createTestDb = (
   storage: RxStorage<unknown, unknown>,
@@ -148,8 +202,15 @@ export const _resetDbForTest = (): void => {
 };
 
 /**
- * Exposes the internal `isMigrationFailure` predicate for unit testing.
- * Returns true for DB6 (schema hash mismatch) and DM4 (strategy execution
- * failure) RxErrors; false for all other error types.
+ * Exposes the internal `isSchemaFailure` predicate for unit testing.
+ * Returns true for DB6 (schema hash mismatch) and DM4 (strategy execution failure).
  */
-export const _isMigrationFailureForTest = (err: unknown): boolean => isMigrationFailure(err);
+export const _isSchemaFailureForTest = (err: unknown): boolean => isSchemaFailure(err);
+
+/**
+ * Exposes the internal epoch-reset logic for unit testing.
+ * Returns true if a DB removal was performed (stale epoch detected and DB wiped).
+ */
+export const _resetIfEpochChangedForTest = (
+  storage: RxStorage<unknown, unknown>,
+): Promise<boolean> => resetIfEpochChanged(storage);

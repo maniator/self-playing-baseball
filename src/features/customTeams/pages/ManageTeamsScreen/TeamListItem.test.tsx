@@ -11,11 +11,11 @@ vi.mock("@feat/customTeams/adapters/customTeamAdapter", () => ({
 const confirmMock = vi.fn(() => true);
 vi.stubGlobal("confirm", confirmMock);
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 import TeamListItem from "./TeamListItem";
 
-const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc =>
+const makeTeam = (overrides: Partial<TeamWithRoster> = {}): TeamWithRoster =>
   ({
     id: "ct_test1",
     name: "Test Team",
@@ -33,7 +33,7 @@ const makeTeam = (overrides: Partial<CustomTeamDoc> = {}): CustomTeamDoc =>
       bench: [{ id: "p10", name: "Bench", position: "OF", contactMod: 0, powerMod: 0 }],
     },
     ...overrides,
-  }) as unknown as CustomTeamDoc;
+  }) as unknown as TeamWithRoster;
 
 describe("TeamListItem", () => {
   beforeEach(() => {

@@ -29,7 +29,7 @@ export interface StateSnapshot {
 }
 
 /** Persisted save-header document (one per save game). */
-export interface SaveDoc {
+export interface SaveRecord {
   id: string;
   name: string;
   seed: string;
@@ -37,7 +37,7 @@ export interface SaveDoc {
   awayTeamId: string;
   createdAt: number;
   updatedAt: number;
-  /** Highest pitchKey (EventDoc.at) that has been stored; acts as a progress cursor. */
+  /** Highest pitchKey (EventRecord.at) that has been stored; acts as a progress cursor. */
   progressIdx: number;
   /** Small immutable setup blob used to reconstruct the game deterministically. */
   setup: GameSaveSetup;
@@ -49,7 +49,7 @@ export interface SaveDoc {
 }
 
 /** Append-only event document (one per game event). */
-export interface EventDoc {
+export interface EventRecord {
   /** Deterministic primary key: `${saveId}:${idx}` */
   id: string;
   saveId: string;
@@ -90,8 +90,8 @@ export interface ProgressSummary {
 /** Portable export format: save header + full event log, signed for integrity. */
 export interface RxdbExportedSave {
   version: 1;
-  header: SaveDoc;
-  events: EventDoc[];
+  header: SaveRecord;
+  events: EventRecord[];
   /** FNV-1a 32-bit signature of RXDB_EXPORT_KEY + JSON.stringify({header, events}) */
   sig: string;
 }

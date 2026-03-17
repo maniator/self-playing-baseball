@@ -146,26 +146,15 @@ describe("sanitizePlayer", () => {
     expect(result.batting.speed).toBe(50);
   });
 
-  it("generates playerSeed when not provided", () => {
+  it("does not include playerSeed in output (legacy field stripped from PlayerRecord)", () => {
     const result = sanitizePlayer(makePlayer(), { index: 0 });
-    expect(typeof result.playerSeed).toBe("string");
-    expect(result.playerSeed!.length).toBeGreaterThan(0);
+    expect("playerSeed" in result).toBe(false);
   });
 
-  it("preserves existing playerSeed", () => {
-    const result = sanitizePlayer(makePlayer({ playerSeed: "fixed-seed-123" }), { index: 0 });
-    expect(result.playerSeed).toBe("fixed-seed-123");
-  });
-
-  it("generates globalPlayerId when not provided", () => {
-    const result = sanitizePlayer(makePlayer(), { index: 0 });
-    expect(typeof result.globalPlayerId).toBe("string");
-    expect(result.globalPlayerId!.startsWith("pl_")).toBe(true);
-  });
-
-  it("preserves existing globalPlayerId", () => {
-    const result = sanitizePlayer(makePlayer({ globalPlayerId: "pl_existing" }), { index: 0 });
-    expect(result.globalPlayerId).toBe("pl_existing");
+  it("preserves player.id in output", () => {
+    const player = makePlayer({ id: "p_known_id" });
+    const result = sanitizePlayer(player, { index: 0 });
+    expect(result.id).toBe("p_known_id");
   });
 
   it("generates fingerprint", () => {

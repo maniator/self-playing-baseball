@@ -15,9 +15,9 @@ vi.mock("@feat/saves/storage/saveStore", () => ({
   },
 }));
 
-// Mock customTeamsCollection so tests don't need IndexedDB
+// Mock teamsCollection so tests don't need IndexedDB
 vi.mock("@storage/db", () => ({
-  customTeamsCollection: vi.fn().mockResolvedValue({
+  teamsCollection: vi.fn().mockResolvedValue({
     find: () => ({ exec: () => Promise.resolve([]) }),
   }),
 }));

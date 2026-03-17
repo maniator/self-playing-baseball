@@ -1,10 +1,10 @@
-import type { CustomTeamDoc, TeamPlayer } from "@storage/types";
+import type { TeamPlayer, TeamWithRoster } from "@storage/types";
 
 import { clampPlayerStats } from "./customTeamSanitizers";
 import { buildPlayerSig, buildTeamFingerprint } from "./customTeamSignatures";
 
 export interface ImportCustomTeamsResult {
-  teams: CustomTeamDoc[];
+  teams: TeamWithRoster[];
   created: number;
   remapped: number;
   /**
@@ -63,7 +63,7 @@ export interface PreScanResult {
  * This is a pure, side-effect-free function — it does not mutate any of its arguments.
  */
 export function preScanForDuplicatePlayers(
-  teams: CustomTeamDoc[],
+  teams: TeamWithRoster[],
   existingFingerprints: Map<string, string>,
   existingPlayerSigs: Set<string>,
 ): PreScanResult {

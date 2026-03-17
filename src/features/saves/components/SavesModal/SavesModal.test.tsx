@@ -5,7 +5,7 @@ import { GameContext } from "@feat/gameplay/context/index";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GameSaveSetup, SaveDoc } from "@storage/types";
+import type { GameSaveSetup, SaveRecord } from "@storage/types";
 import { makeSaveDoc } from "@test/helpers/saves";
 import { makeContextValue, makeState } from "@test/testHelpers";
 
@@ -42,7 +42,7 @@ const makeMockStore = (
     ReturnType<(typeof import("@feat/saves/hooks/useSaveStore"))["useSaveStore"]>
   > = {},
 ) => ({
-  saves: [] as SaveDoc[],
+  saves: [] as SaveRecord[],
   createSave: vi.fn().mockResolvedValue("save_1"),
   updateProgress: vi.fn().mockResolvedValue(undefined),
   deleteSave: vi.fn().mockResolvedValue(undefined),
@@ -482,7 +482,7 @@ describe("SavesModal", () => {
     renderModal({ onLoadSave });
     await openPanel();
     fireEvent.click(screen.getAllByRole("button", { name: /^load$/i })[0]);
-    const calledSlot = onLoadSave.mock.calls[0]?.[0] as SaveDoc;
+    const calledSlot = onLoadSave.mock.calls[0]?.[0] as SaveRecord;
     expect(calledSlot).toBeDefined();
     const teams: [string, string] = calledSlot.stateSnapshot?.state?.teams as [string, string];
     // custom: ID must be preserved so GameInner can resolve it at restore time

@@ -1,7 +1,7 @@
 import { appLog } from "@shared/utils/logger";
 
 import { downloadJson, saveFilename } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 interface Params {
   /** Async function that deletes a save by ID. */
@@ -16,7 +16,7 @@ interface Params {
 
 export interface SaveSlotActionsResult {
   handleDelete: (id: string) => void;
-  handleExport: (slot: SaveDoc) => void;
+  handleExport: (slot: SaveRecord) => void;
 }
 
 /**
@@ -38,7 +38,7 @@ export const useSaveSlotActions = ({
       .catch((err: unknown) => reportError("Failed to delete save", err));
   };
 
-  const handleExport = (slot: SaveDoc) => {
+  const handleExport = (slot: SaveRecord) => {
     exportSave(slot.id)
       .then((json) => downloadJson(json, saveFilename(slot.name)))
       .catch((err: unknown) => reportError("Failed to export save", err));

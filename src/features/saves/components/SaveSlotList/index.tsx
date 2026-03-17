@@ -1,18 +1,18 @@
 import * as React from "react";
 
 import { formatSaveDate } from "@storage/saveIO";
-import type { SaveDoc } from "@storage/types";
+import type { SaveRecord } from "@storage/types";
 
 import { ActionBtn, SaveActions, SaveCard, SaveDate, SaveInfo, SaveList, SaveName } from "./styles";
 
 export const DELETE_SAVE_CONFIRM_MSG = "Delete this save? This cannot be undone.";
 
 interface Props {
-  saves: SaveDoc[];
+  saves: SaveRecord[];
   /** Optional: transform a save name before display (e.g. resolve custom: IDs). Defaults to identity. */
   resolveName?: (name: string) => string;
-  onLoad: (slot: SaveDoc) => void;
-  onExport: (slot: SaveDoc) => void;
+  onLoad: (slot: SaveRecord) => void;
+  onExport: (slot: SaveRecord) => void;
   onDelete: (id: string) => void;
   /** data-testid for the <ul> element. Default: "saves-list" */
   listTestId?: string;

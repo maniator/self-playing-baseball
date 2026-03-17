@@ -3,7 +3,7 @@ import * as React from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { CustomTeamDoc } from "@storage/types";
+import type { TeamWithRoster } from "@storage/types";
 
 // Mock the CustomTeamStore so tests run without IndexedDB.
 vi.mock("@feat/customTeams/storage/customTeamStore", () => {
@@ -27,17 +27,17 @@ const mockStore = CustomTeamStore as unknown as {
   deleteCustomTeam: ReturnType<typeof vi.fn>;
 };
 
-const makeTeam = (id: string, name = "Test Team"): CustomTeamDoc =>
+const makeTeam = (id: string, name = "Test Team"): TeamWithRoster =>
   ({
     id,
     name,
+    nameLowercase: name.toLowerCase(),
     schemaVersion: 1,
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-    source: "custom",
     roster: { schemaVersion: 1, lineup: [], bench: [], pitchers: [] },
     metadata: { archived: false },
-  }) as CustomTeamDoc;
+  }) as TeamWithRoster;
 
 describe("useCustomTeams", () => {
   beforeEach(() => {

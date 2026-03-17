@@ -1,7 +1,6 @@
 import { HITTER_STAT_CAP, PITCHER_STAT_CAP } from "@feat/customTeams/statBudget";
 
-import { generateSeed } from "@storage/generateId";
-import { fnv1a } from "@storage/hash";
+import { generatePlayerId } from "@storage/generateId";
 import type { TeamPlayer, TeamRoster } from "@storage/types";
 
 import { buildPlayerSig } from "./customTeamSignatures";
@@ -155,19 +154,12 @@ export function sanitizePlayer(
   // Enforce stat caps AFTER clamping so individual-stat clamping always runs first.
   // e.g. {contact:150, power:0, speed:50} → clamps to {100,0,50} = 150 (valid).
   validatePlayerStatCaps(sanitized, { section, index });
-  // Preserve the existing playerSeed or generate a new one at creation time.
-  // The seed is stored permanently so the fingerprint can be re-verified.
-  const playerSeed = player.playerSeed ?? generateSeed();
-  // Always persist a content fingerprint so global duplicate detection works
-  // without re-reading all teams. The fingerprint covers the immutable identity
-  // fields (name, role, batting, pitching) plus the per-player seed.
-  const fingerprint = buildPlayerSig({ ...sanitized, playerSeed });
-  // Derive a stable team-independent identity from the player's seed.
-  // "pl_" prefix distinguishes it from team IDs and raw nanoid strings.
-  // Using fnv1a(playerSeed) means the same player always gets the same globalPlayerId
-  // regardless of which team they belong to, enabling cross-team career aggregation.
-  const globalPlayerId = player.globalPlayerId ?? `pl_${fnv1a(playerSeed)}`;
-  return { ...sanitized, playerSeed, fingerprint, globalPlayerId };
+  // Use the player's existing ID if it is a canonical p_* identifier (stable, DB-safe).
+  // Editor-internal temp IDs (ep_*) are replaced with a fresh generatePlayerId() so the
+  // DB always stores stable, portable player PKs rather than session-local counters.
+  const resolvedId = player.id && player.id.startsWith("p_") ? player.id : generatePlayerId();
+  const fingerprint = buildPlayerSig(sanitized);
+  return { ...sanitized, id: resolvedId, fingerprint };
 }
 
 export function buildRoster(input: {
