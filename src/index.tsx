@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 
 import { theme } from "@shared/theme";
 import { initSeed } from "@shared/utils/rng";
+import { Analytics } from "@vercel/analytics/react";
 import { RouterProvider } from "react-router";
 import { ThemeProvider } from "styled-components";
 
@@ -16,5 +17,6 @@ initSeed();
 createRoot(document.getElementById("game")!).render(
   <ThemeProvider theme={theme}>
     <RouterProvider router={router} />
+    <Analytics />
   </ThemeProvider>,
 );
