@@ -58,14 +58,14 @@ const SavesPage: React.FunctionComponent = () => {
 
   const loadSaves = React.useCallback(() => {
     setLoading(true);
-    Promise.all([SaveStore.listSaves(), teamsCollection().then((col) => col.find().exec())])
-      .then(([saveDocs, teamDocs]) => {
-        setSaves(saveDocs);
-        setTeams(teamDocs.map((d) => d.toJSON() as unknown as TeamRecord));
-      })
-      .catch(() => {
-        setSaves([]);
-        setTeams([]);
+    Promise.allSettled([SaveStore.listSaves(), teamsCollection().then((col) => col.find().exec())])
+      .then(([saveResult, teamsResult]) => {
+        setSaves(saveResult.status === "fulfilled" ? saveResult.value : []);
+        setTeams(
+          teamsResult.status === "fulfilled"
+            ? teamsResult.value.map((d) => d.toJSON() as unknown as TeamRecord)
+            : [],
+        );
       })
       .finally(() => setLoading(false));
   }, []);

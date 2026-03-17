@@ -93,8 +93,7 @@ export function resolveRestoreLabels(
 ): [string, string] {
   const existing = state.teamLabels;
   const needsResolution =
-    !existing ||
-    existing.some((l, i) => typeof l === "string" && l === state.teams[i] && l.startsWith("ct_"));
+    !existing || existing.some((l, i) => typeof l === "string" && l === state.teams[i]);
   return needsResolution
     ? [resolveTeamLabel(state.teams[0], customTeams), resolveTeamLabel(state.teams[1], customTeams)]
     : existing;

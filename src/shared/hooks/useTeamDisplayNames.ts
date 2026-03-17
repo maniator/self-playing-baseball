@@ -1,15 +1,15 @@
 import * as React from "react";
 
-import { customTeamToDisplayName } from "@feat/customTeams/adapters/customTeamAdapter";
-import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { appLog } from "@shared/utils/logger";
+
+import { teamsCollection } from "@storage/db";
+import type { TeamRecord } from "@storage/types";
 
 /**
  * Fetches display names for a set of team IDs in a single batch.
  *
- * Deduplicates the input IDs and fires one `CustomTeamStore.getCustomTeam()`
- * call per unique ID in parallel (via `Promise.all`), avoiding the N-per-row
- * pattern of calling `useTeamWithRoster` inside a render loop.
+ * Deduplicates the input IDs and fetches TeamRecord docs in one batched
+ * `findByIds` call, avoiding per-row roster hydration work.
  *
  * Returns a `Map<id, displayName>`. Missing / null teams fall back to
  * `"Unknown Team"`. The map is stable (same reference) until the set of
@@ -28,22 +28,28 @@ export function useTeamDisplayNames(teamIds: string[]): Map<string, string> {
       return;
     }
     let cancelled = false;
-    Promise.all(
-      uniqueIds.map((id) =>
-        CustomTeamStore.getCustomTeam(id).catch((err) => {
-          appLog.warn("useTeamDisplayNames: failed to fetch team", id, err);
-          return null;
-        }),
-      ),
-    ).then((results) => {
-      if (cancelled) return;
-      const map = new Map<string, string>();
-      uniqueIds.forEach((id, i) => {
-        const doc = results[i];
-        map.set(id, doc ? customTeamToDisplayName(doc) : "Unknown Team");
+    teamsCollection()
+      .then((collection) => collection.findByIds(uniqueIds).exec())
+      .then((docsMap) => {
+        if (cancelled) return;
+        const map = new Map<string, string>();
+        uniqueIds.forEach((id) => {
+          const doc = docsMap.get(id);
+          const team = doc?.toJSON() as TeamRecord | undefined;
+          map.set(
+            id,
+            team ? (team.city ? `${team.city} ${team.name}` : team.name) : "Unknown Team",
+          );
+        });
+        setNameMap(map);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        appLog.warn("useTeamDisplayNames: failed to batch-fetch team names", err);
+        const map = new Map<string, string>();
+        uniqueIds.forEach((id) => map.set(id, "Unknown Team"));
+        setNameMap(map);
       });
-      setNameMap(map);
-    });
     return () => {
       cancelled = true;
     };
