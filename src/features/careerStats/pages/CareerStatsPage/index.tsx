@@ -48,6 +48,7 @@ import {
   TabBtn,
   TableWrapper,
   Td,
+  TeamEditorLinkBtn,
   TeamSelect,
   TeamSelectLabel,
   TeamSelectorRow,
@@ -388,6 +389,11 @@ const CareerStatsPage: React.FunctionComponent = () => {
   const isEmpty =
     !dataLoading && selectedTeamId !== "" && battingRows.length === 0 && pitchingRows.length === 0;
 
+  const selectedCustomTeam = React.useMemo(
+    () => customTeams.find((team) => team.id === selectedTeamId),
+    [customTeams, selectedTeamId],
+  );
+
   // When there are no teams at all (fresh install, no history) show a special message.
   const noTeams = !teamsLoading && selectableTeamIds.length === 0;
 
@@ -421,6 +427,15 @@ const CareerStatsPage: React.FunctionComponent = () => {
                 </option>
               ))}
             </TeamSelect>
+            {selectedCustomTeam && (
+              <TeamEditorLinkBtn
+                type="button"
+                data-testid="career-stats-edit-team-button"
+                onClick={() => navigate(`/teams/${selectedCustomTeam.id}/edit`)}
+              >
+                Edit This Team
+              </TeamEditorLinkBtn>
+            )}
           </TeamSelectorRow>
 
           {/* Team Summary + Leaders panel */}

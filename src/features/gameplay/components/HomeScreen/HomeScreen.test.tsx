@@ -97,6 +97,48 @@ describe("HomeScreen", () => {
     expect(onHelp).toHaveBeenCalled();
   });
 
+  it("does NOT show Career Stats button when onCareerStats is not provided", () => {
+    render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
+    expect(screen.queryByTestId("home-career-stats-button")).not.toBeInTheDocument();
+  });
+
+  it("shows Career Stats button when onCareerStats is provided", () => {
+    render(
+      <HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onCareerStats={noop} />,
+    );
+    expect(screen.getByTestId("home-career-stats-button")).toBeInTheDocument();
+  });
+
+  it("calls onCareerStats when Career Stats button is clicked", () => {
+    const onCareerStats = vi.fn();
+    render(
+      <HomeScreen
+        onNewGame={noop}
+        onLoadSaves={noop}
+        onManageTeams={noop}
+        onCareerStats={onCareerStats}
+      />,
+    );
+    fireEvent.click(screen.getByTestId("home-career-stats-button"));
+    expect(onCareerStats).toHaveBeenCalled();
+  });
+
+  it("renders Career Stats above Manage Teams when available", () => {
+    const { container } = render(
+      <HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} onCareerStats={noop} />,
+    );
+    const allButtons = Array.from(container.querySelectorAll("button"));
+    const careerIndex = allButtons.findIndex(
+      (btn) => btn.dataset.testid === "home-career-stats-button",
+    );
+    const manageIndex = allButtons.findIndex(
+      (btn) => btn.dataset.testid === "home-manage-teams-button",
+    );
+    expect(careerIndex).toBeGreaterThanOrEqual(0);
+    expect(manageIndex).toBeGreaterThanOrEqual(0);
+    expect(careerIndex).toBeLessThan(manageIndex);
+  });
+
   it("does NOT show Contact button when onContact is not provided", () => {
     render(<HomeScreen onNewGame={noop} onLoadSaves={noop} onManageTeams={noop} />);
     expect(screen.queryByTestId("home-contact-button")).not.toBeInTheDocument();

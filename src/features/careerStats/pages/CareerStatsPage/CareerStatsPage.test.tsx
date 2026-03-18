@@ -91,6 +91,7 @@ function renderPage() {
         <Route path="/stats" element={<CareerStatsPage />} />
         <Route path="/" element={<div data-testid="home-screen" />} />
         <Route path="/players/:playerKey" element={<div data-testid="player-page" />} />
+        <Route path="/teams/:teamId/edit" element={<div data-testid="team-editor-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -150,6 +151,36 @@ describe("CareerStatsPage", () => {
     await waitFor(() => {
       expect(screen.getByTestId("career-stats-team-select")).toBeInTheDocument();
     });
+  });
+
+  it("shows Edit This Team button for a selected custom team", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Custom Team", { city: "Test", abbreviation: "TST" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    expect(await screen.findByTestId("career-stats-edit-team-button")).toBeInTheDocument();
+  });
+
+  it("navigates to team editor when Edit This Team is clicked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Custom Team", { city: "Test", abbreviation: "TST" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    await user.click(await screen.findByTestId("career-stats-edit-team-button"));
+    expect(mockNavigate).toHaveBeenCalledWith("/teams/team1/edit");
   });
 
   it("back button navigates to home", async () => {
