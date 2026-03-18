@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Attribution, AttributionLink, GhostBtn, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuDivider, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { Attribution, AttributionLink, GhostBtn, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuDivider, MenuGroup, PrimaryBtn, SecondaryBtn, SecondaryQuietBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -51,9 +51,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
         Manage Teams
       </SecondaryBtn>
       {onHelp && (
-        <SecondaryBtn onClick={onHelp} data-testid="home-help-button">
+        <SecondaryQuietBtn onClick={onHelp} data-testid="home-help-button">
           How to Play
-        </SecondaryBtn>
+        </SecondaryQuietBtn>
       )}
       {onContact && (
         <>
