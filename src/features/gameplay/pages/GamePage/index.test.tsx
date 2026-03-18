@@ -62,7 +62,6 @@ const mockCtx: AppShellOutletContext = {
   onHelp: vi.fn(),
   onBackToHome: vi.fn(),
   onCareerStats: vi.fn(),
-  hasCareerStats: false,
   onGameOver: vi.fn(),
   hasActiveSession: false,
 };

@@ -36,9 +36,9 @@ const HomeScreen: React.FunctionComponent<Props> = ({
           ▶ Resume Current Game
         </PrimaryBtn>
       )}
-      <SecondaryBtn onClick={onNewGame} data-testid="home-new-game-button">
+      <PrimaryBtn onClick={onNewGame} data-testid="home-new-game-button">
         New Game
-      </SecondaryBtn>
+      </PrimaryBtn>
       <SecondaryBtn onClick={onLoadSaves} data-testid="home-load-saves-button">
         Load Saved Game
       </SecondaryBtn>
