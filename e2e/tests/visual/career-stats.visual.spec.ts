@@ -54,6 +54,14 @@ test.describe("Visual — empty states", () => {
 // ── Seeded data ─────────────────────────────────────────────────────────────
 
 test.describe("Visual — seeded history data", () => {
+  function playerRow(page: Page, name: string) {
+    return page.locator("tbody tr", { hasText: name }).first();
+  }
+
+  function playerRowButton(page: Page, name: string) {
+    return playerRow(page, name).getByRole("button", { name, exact: true });
+  }
+
   /**
    * Seed the DB (via SavesModal import) and navigate to /stats, selecting
    * the e2e_home_team in the dropdown.
@@ -96,18 +104,14 @@ test.describe("Visual — seeded history data", () => {
     // team-summary-section, which can appear for ANY team (including the
     // auto-selected sample-save team) and would resolve immediately for the wrong
     // team, causing the subsequent 5 s batting-tab check to time out.
-    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
-      timeout: 30_000,
-    });
+    await expect(playerRowButton(page, "J. Slugger")).toBeVisible({ timeout: 30_000 });
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
     // Use exact role to target the table-row PlayerLink, not the HR/RBI leader cards.
-    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
-      timeout: 5_000,
-    });
+    await expect(playerRowButton(page, "J. Slugger")).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-batting-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -118,9 +122,7 @@ test.describe("Visual — seeded history data", () => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
     // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
-    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-pitching-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -186,9 +188,7 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await seedSummaryAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
     // J. Qualify is in all three batting leader cards AND the batting table; use exact role to target table row.
-    await expect(page.getByRole("button", { name: "J. Qualify", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "J. Qualify")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-batting.png",
       { maxDiffPixelRatio: 0.05 },
@@ -200,9 +200,7 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await page.getByTestId("career-stats-pitching-tab").click();
     // A. Starter appears in both ERA and K leader cards AND the pitching table.
     // Use exact role to target the table-row PlayerLink button only.
-    await expect(page.getByRole("button", { name: "A. Starter", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "A. Starter")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-pitching.png",
       { maxDiffPixelRatio: 0.05 },

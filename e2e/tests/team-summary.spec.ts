@@ -23,6 +23,20 @@ import {
 // ── Team Summary + Leaders ────────────────────────────────────────────────────
 
 test.describe("Team Summary and Leaders", () => {
+  async function clickWithRetry(locator: ReturnType<Page["locator"]>, attempts = 3) {
+    let lastError: unknown;
+    for (let i = 0; i < attempts; i += 1) {
+      try {
+        await locator.click({ timeout: 20_000 });
+        return;
+      } catch (error) {
+        lastError = error;
+        await locator.waitFor({ state: "visible", timeout: 20_000 });
+      }
+    }
+    throw lastError;
+  }
+
   /**
    * Seeds the team-summary-history fixture and opens /stats with e2e_summary_team selected.
    * The fixture has 3 games: W/L/W → streak=W1, W/L=2-1, RS=16, RA=10, DIFF=+6.
@@ -146,7 +160,7 @@ test.describe("Team Summary and Leaders", () => {
     await seedSummaryAndOpen(page);
     const hrCard = page.getByTestId("hr-leader-card");
     await expect(hrCard).toBeVisible({ timeout: 10_000 });
-    await hrCard.click();
+    await clickWithRetry(hrCard);
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     expect(page.url()).toContain("/players/e2e_batter_qualify");
     expect(page.url()).toContain("team=e2e_summary_team");
