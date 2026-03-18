@@ -13,7 +13,8 @@ import {
  * E2E smoke tests for the Career Stats hub.
  *
  * Two describe blocks:
- *  1. Smoke — navigation + empty-state (no seeded history needed, fast).
+ *  1. Smoke — navigation + empty-state, with some tests seeding history
+ *     directly as needed.
  *  2. Seeded history — imports `career-stats-history.json` fixture via the
  *     SavesModal and verifies that batting/pitching tables render real rows.
  *
@@ -24,7 +25,7 @@ import {
  *                       C. Closer (1.0 IP, SV=1)
  */
 
-// ── 1. Smoke (empty state) ──────────────────────────────────────────────────
+// ── 1. Smoke (navigation + empty / seeded state) ────────────────────────────
 
 test.describe("Career Stats smoke", () => {
   test.beforeEach(async ({ page }) => {
