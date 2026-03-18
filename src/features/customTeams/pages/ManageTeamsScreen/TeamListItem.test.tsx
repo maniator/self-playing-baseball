@@ -43,14 +43,26 @@ describe("TeamListItem", () => {
 
   it("renders the team name", () => {
     render(
-      <TeamListItem team={makeTeam()} onEdit={vi.fn()} onDelete={vi.fn()} onExport={vi.fn()} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+      />,
     );
     expect(screen.getByText("Test Team")).toBeInTheDocument();
   });
 
   it("renders player count metadata", () => {
     render(
-      <TeamListItem team={makeTeam()} onEdit={vi.fn()} onDelete={vi.fn()} onExport={vi.fn()} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+      />,
     );
     expect(screen.getByText(/8 batters/i)).toBeInTheDocument();
     expect(screen.getByText(/1 pitchers/i)).toBeInTheDocument();
@@ -60,7 +72,13 @@ describe("TeamListItem", () => {
   it("calls onEdit with team id when Edit is clicked", () => {
     const onEdit = vi.fn();
     render(
-      <TeamListItem team={makeTeam()} onEdit={onEdit} onDelete={vi.fn()} onExport={vi.fn()} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={onEdit}
+        onDelete={vi.fn()}
+        onExport={vi.fn()}
+      />,
     );
     fireEvent.click(screen.getByTestId("custom-team-edit-button"));
     expect(onEdit).toHaveBeenCalledWith("ct_test1");
@@ -69,7 +87,13 @@ describe("TeamListItem", () => {
   it("calls onExport with team id when Export is clicked", () => {
     const onExport = vi.fn();
     render(
-      <TeamListItem team={makeTeam()} onEdit={vi.fn()} onDelete={vi.fn()} onExport={onExport} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onExport={onExport}
+      />,
     );
     fireEvent.click(screen.getByTestId("export-team-button"));
     expect(onExport).toHaveBeenCalledWith("ct_test1");
@@ -78,7 +102,13 @@ describe("TeamListItem", () => {
   it("calls onDelete when Delete is clicked and confirm returns true", () => {
     const onDelete = vi.fn();
     render(
-      <TeamListItem team={makeTeam()} onEdit={vi.fn()} onDelete={onDelete} onExport={vi.fn()} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={onDelete}
+        onExport={vi.fn()}
+      />,
     );
     fireEvent.click(screen.getByTestId("custom-team-delete-button"));
     expect(confirmMock).toHaveBeenCalled();
@@ -89,7 +119,13 @@ describe("TeamListItem", () => {
     confirmMock.mockReturnValue(false);
     const onDelete = vi.fn();
     render(
-      <TeamListItem team={makeTeam()} onEdit={vi.fn()} onDelete={onDelete} onExport={vi.fn()} />,
+      <TeamListItem
+        team={makeTeam()}
+        onCareerStats={vi.fn()}
+        onEdit={vi.fn()}
+        onDelete={onDelete}
+        onExport={vi.fn()}
+      />,
     );
     fireEvent.click(screen.getByTestId("custom-team-delete-button"));
     expect(onDelete).not.toHaveBeenCalled();
