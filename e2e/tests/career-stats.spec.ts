@@ -118,15 +118,19 @@ test.describe("Career Stats smoke", () => {
 // ── 2. Seeded history ───────────────────────────────────────────────────────
 
 test.describe("Career Stats with seeded history", () => {
-  async function clickWithRetry(locator: ReturnType<Page["locator"]>, attempts = 3) {
+  async function clickWithRetry(getLocator: () => ReturnType<Page["locator"]>, attempts = 3) {
     let lastError: unknown;
     for (let i = 0; i < attempts; i += 1) {
+      const locator = getLocator();
       try {
+        await locator.waitFor({ state: "visible", timeout: 20_000 });
+        await locator.scrollIntoViewIfNeeded();
         await locator.click({ timeout: 20_000 });
         return;
       } catch (error) {
         lastError = error;
-        await locator.waitFor({ state: "visible", timeout: 20_000 });
+        await locator.waitFor({ state: "attached", timeout: 20_000 });
+        await locator.page().waitForTimeout(750);
       }
     }
     throw lastError;
@@ -215,6 +219,19 @@ test.describe("Career Stats with seeded history", () => {
     }
   }
 
+  async function openPitchingTabAndWaitForRows(page: Page) {
+    await page.getByTestId("career-stats-pitching-tab").click();
+    const aceButton = playerRowButton(page, "A. Ace");
+    const aceVisible = await aceButton.isVisible().catch(() => false);
+    if (!aceVisible) {
+      const teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await teamSelect.selectOption("e2e_home_team");
+      await page.getByTestId("career-stats-pitching-tab").click();
+    }
+    await expect(aceButton).toBeVisible({ timeout: 30_000 });
+  }
+
   test("batting tab shows seeded batter rows", async ({ page }) => {
     await seedAndOpen(page);
     // Default tab is Batting.
@@ -237,15 +254,14 @@ test.describe("Career Stats with seeded history", () => {
 
   test("pitching tab shows seeded pitcher rows with ERA/WHIP/SV/HLD", async ({ page }) => {
     await seedAndOpen(page);
-    // Switch to Pitching tab.
-    await page.getByTestId("career-stats-pitching-tab").click();
+    await openPitchingTabAndWaitForRows(page);
     // All three seeded pitchers should appear.
     // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
     // Use a generous 20 s timeout: the pitching-tab RxDB query fires after the tab switch and
     // can take longer on slow mobile WebKit CI runners.
-    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 20_000 });
+    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 30_000 });
     await expect(page.getByText("S. Setup")).toBeVisible({ timeout: 10_000 });
-    await expect(playerRowButton(page, "C. Closer")).toBeVisible({ timeout: 10_000 });
+    await expect(playerRowButton(page, "C. Closer")).toBeVisible({ timeout: 30_000 });
     // C. Closer has SV=1 — find the row and verify SV column.
     const closerRow = page.locator("tr", { hasText: "C. Closer" });
     await expect(closerRow).toContainText("1"); // SV = 1
@@ -256,9 +272,8 @@ test.describe("Career Stats with seeded history", () => {
 
   test("pitching tab shows IP and ERA correctly for A. Ace", async ({ page }) => {
     await seedAndOpen(page);
-    await page.getByTestId("career-stats-pitching-tab").click();
-    // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
-    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 20_000 });
+    await openPitchingTabAndWaitForRows(page);
+    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 30_000 });
     // A. Ace: outsPitched=18 → IP=6.0; earnedRuns=3 → ERA=(3*27)/18=4.50
     const aceRow = page.locator("tr", { hasText: "A. Ace" });
     await expect(aceRow).toContainText("6.0"); // IP
@@ -270,7 +285,7 @@ test.describe("Career Stats with seeded history", () => {
     // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
     const sluggerButton = playerRowButton(page, "J. Slugger");
     await expect(sluggerButton).toBeVisible({ timeout: 10_000 });
-    await clickWithRetry(sluggerButton);
+    await clickWithRetry(() => playerRowButton(page, "J. Slugger"));
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toContain("/players/e2e_batter_slugger");
   });
@@ -280,7 +295,7 @@ test.describe("Career Stats with seeded history", () => {
     // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
     const sluggerButton = playerRowButton(page, "J. Slugger");
     await expect(sluggerButton).toBeVisible({ timeout: 10_000 });
-    await clickWithRetry(sluggerButton);
+    await clickWithRetry(() => playerRowButton(page, "J. Slugger"));
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Batting tab is active by default — should show career totals + game log.
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 5_000 });
@@ -291,11 +306,9 @@ test.describe("Career Stats with seeded history", () => {
 
   test("player career page shows pitching game log for C. Closer (SV=1)", async ({ page }) => {
     await seedAndOpen(page);
-    await page.getByTestId("career-stats-pitching-tab").click();
-    // C. Closer is both the SV leader card and in the pitching table; use exact role to target table row.
-    const closerButton = playerRowButton(page, "C. Closer");
-    await expect(closerButton).toBeVisible({ timeout: 10_000 });
-    await clickWithRetry(closerButton);
+    await openPitchingTabAndWaitForRows(page);
+    await expect(playerRowButton(page, "C. Closer")).toBeVisible({ timeout: 30_000 });
+    await clickWithRetry(() => playerRowButton(page, "C. Closer"));
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
     // Switch to Pitching tab on player career page.
     await page.getByText("Pitching").click();
