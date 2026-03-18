@@ -6,15 +6,15 @@
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
     "strict": true,
-    "types": ["vitest/globals", "vite-plugin-pwa/react"],
-    "baseUrl": ".",
+    "skipLibCheck": true,
+    "types": ["vitest/globals", "react", "vite/client"],
     "paths": {
-      "@storage/*": ["src/storage/*"],
-      "@test/*": ["src/test/*"],
-      "@feat/*": ["src/features/*"],
-      "@shared/*": ["src/shared/*"]
+      "@storage/*": ["./src/storage/*"],
+      "@test/*": ["./src/test/*"],
+      "@feat/*": ["./src/features/*"],
+      "@shared/*": ["./src/shared/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts"],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "vite.config.ts"],
   "exclude": ["node_modules", "dist"]
 }

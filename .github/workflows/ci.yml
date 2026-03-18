@@ -33,6 +33,12 @@ jobs:
       - name: Install dependencies
         run: yarn install
 
+      - name: Typecheck source files
+        run: yarn typecheck
+
+      - name: Typecheck E2E tests
+        run: yarn typecheck:e2e
+
       - name: Test
         run: yarn test:coverage
 
