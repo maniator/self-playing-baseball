@@ -42,7 +42,11 @@ test.describe("Career Stats smoke", () => {
   });
 
   test("Career Stats button navigates to Career Stats page", async ({ page }) => {
+    await loadFixture(page, "sample-save.json");
+    await importHistoryFixture(page, "career-stats-history.json");
+    await page.goto("/");
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("home-career-stats-button")).toBeVisible({ timeout: 10_000 });
     await page.getByTestId("home-career-stats-button").click();
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 10_000 });
     expect(page.url()).toContain("/stats");
