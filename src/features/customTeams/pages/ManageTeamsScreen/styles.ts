@@ -185,6 +185,12 @@ export const EditorShellHeader = styled.div`
   }
 `;
 
+export const HeaderActions = styled.div`
+  display: flex;
+  gap: ${({ theme }) => theme.spacing.sm};
+  margin-left: auto;
+`;
+
 export const EditorLoading = styled.p`
   color: ${({ theme }) => theme.colors.textHint};
   font-size: ${({ theme }) => theme.fontSizes.body};
