@@ -57,7 +57,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.1.4",
-    "@vitest/coverage-v8": "3.0.7",
+    "@vitest/coverage-v8": "3.2.4",
     "eslint": "^9",
     "eslint-config-prettier": "^10",
     "eslint-plugin-prettier": "^5",
@@ -75,7 +75,7 @@
     "typescript-eslint": "^8",
     "vite": "^7.3.1",
     "vite-plugin-pwa": "^1.2.0",
-    "vitest": "3.0.7",
+    "vitest": "3.2.4",
     "workbox-core": "^7.4.0",
     "workbox-precaching": "^7.4.0",
     "workbox-routing": "^7.4.0"
