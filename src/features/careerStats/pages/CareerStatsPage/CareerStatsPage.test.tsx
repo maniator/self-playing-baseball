@@ -84,9 +84,9 @@ function makeTeamDoc(
   };
 }
 
-function renderPage() {
+function renderPage(initialEntry = "/stats") {
   return render(
-    <MemoryRouter initialEntries={["/stats"]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/stats" element={<CareerStatsPage />} />
         <Route path="/" element={<div data-testid="home-screen" />} />
