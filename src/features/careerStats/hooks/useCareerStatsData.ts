@@ -10,7 +10,7 @@ import type { TeamCareerSummary } from "@storage/types";
 import type { BattingRow, PitchingRow } from "./careerStatsShared";
 
 export function useCareerStatsData() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const { teams: customTeams, loading: teamsLoading } = useCustomTeams();
 
   const [selectedTeamId, setSelectedTeamId] = React.useState<string>("");
@@ -94,16 +94,6 @@ export function useCareerStatsData() {
       setSelectedTeamId(selectableTeamIds[0]);
     }
   }, [requestedTeamId, selectableTeamIds, selectedTeamId, teamsLoading]);
-
-  React.useEffect(() => {
-    if (!selectedTeamId || requestedTeamId === selectedTeamId) {
-      return;
-    }
-
-    const nextSearchParams = new URLSearchParams(searchParams);
-    nextSearchParams.set("team", selectedTeamId);
-    setSearchParams(nextSearchParams, { replace: true });
-  }, [requestedTeamId, searchParams, selectedTeamId, setSearchParams]);
 
   React.useEffect(() => {
     if (!selectedTeamId) {
