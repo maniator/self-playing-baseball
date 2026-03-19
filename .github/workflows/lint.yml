@@ -4,12 +4,10 @@ on:
   push:
     branches:
       - master
-      - 'feat/**'
   pull_request:
     branches:
       - master
       - 'feat/**'
-      - copilot/handle-quirks-and-issues
 
 jobs:
   lint:
