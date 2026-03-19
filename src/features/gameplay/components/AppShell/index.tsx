@@ -18,7 +18,7 @@ const AppShell: React.FunctionComponent = () => {
 
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
-  // True once at least one completed game has been persisted — gates Career Stats.
+  // True once at least one completed game has been persisted or a game just ended — gates Career Stats.
   const [hasCareerStats, setHasCareerStats] = React.useState(false);
 
   const isGameRoute = location.pathname === "/game";
@@ -49,10 +49,7 @@ const AppShell: React.FunctionComponent = () => {
           setHasCareerStats((prev) => prev || Boolean(anyCompletedGame));
         }
       } catch {
-        if (!cancelled) {
-          // On error, preserve any true value already set (e.g. by handleGameOver).
-          setHasCareerStats((prev) => prev);
-        }
+        // On DB error, leave hasCareerStats unchanged (don't hide it if it was already true).
       }
     }
 
