@@ -33,7 +33,7 @@ import type {
 // Bump BETA_SCHEMA_EPOCH whenever the v1 schema family is replaced with a new
 // incompatible version. Changing this value triggers a deliberate wipe-and-recreate
 // of the local ballgame IndexedDB on the user's next app load.
-const BETA_SCHEMA_EPOCH = "v1.1";
+const BETA_SCHEMA_EPOCH = "v1.2";
 const BETA_EPOCH_KEY = "ballgame:schemaEpoch";
 
 type DbCollections = {

@@ -8,7 +8,7 @@ describe("useCareerStatsSorting", () => {
   it("sorts batting rows by games played descending by default", () => {
     const battingRows = [
       {
-        playerKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "A",
         gamesPlayed: 2,
         atBats: 4,
@@ -22,7 +22,7 @@ describe("useCareerStatsSorting", () => {
         singles: 1,
       },
       {
-        playerKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "B",
         gamesPlayed: 10,
         atBats: 20,
@@ -39,6 +39,6 @@ describe("useCareerStatsSorting", () => {
 
     const { result } = renderHook(() => useCareerStatsSorting(battingRows, []));
 
-    expect(result.current.sortedBattingRows[0]?.playerKey).toBe("p2");
+    expect(result.current.sortedBattingRows[0]?.playerId).toBe("p2");
   });
 });

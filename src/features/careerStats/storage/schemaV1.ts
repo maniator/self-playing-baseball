@@ -59,8 +59,7 @@ const batterGameStatsSchemaV1: RxJsonSchema<BatterGameStatRecord> = {
     gameId: { type: "string", maxLength: 128 },
     teamId: { type: "string", maxLength: 128 },
     opponentTeamId: { type: "string", maxLength: 128 },
-    playerKey: { type: "string", maxLength: 256 },
-    playerId: { type: "string" },
+    playerId: { type: "string", maxLength: 256 },
     nameAtGameTime: { type: "string" },
     role: { type: "string", enum: ["batter", "pitcher"], maxLength: 8 },
     batting: { type: "object", additionalProperties: true },
@@ -72,7 +71,6 @@ const batterGameStatsSchemaV1: RxJsonSchema<BatterGameStatRecord> = {
     "gameId",
     "teamId",
     "opponentTeamId",
-    "playerKey",
     "playerId",
     "nameAtGameTime",
     "role",
@@ -80,7 +78,7 @@ const batterGameStatsSchemaV1: RxJsonSchema<BatterGameStatRecord> = {
     "createdAt",
     "schemaVersion",
   ],
-  indexes: ["gameId", ["playerKey", "createdAt"], ["teamId", "createdAt"]],
+  indexes: ["gameId", ["playerId", "createdAt"], ["teamId", "createdAt"]],
 };
 
 /** v1 collection config for the `batterGameStats` collection. No migration strategies. */
@@ -97,8 +95,7 @@ const pitcherGameStatsSchemaV1: RxJsonSchema<PitcherGameStatRecord> = {
     gameId: { type: "string", maxLength: 128 },
     teamId: { type: "string", maxLength: 128 },
     opponentTeamId: { type: "string", maxLength: 128 },
-    pitcherKey: { type: "string", maxLength: 256 },
-    pitcherId: { type: "string" },
+    playerId: { type: "string", maxLength: 256 },
     nameAtGameTime: { type: "string" },
     outsPitched: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
     battersFaced: { type: "number", minimum: 0, maximum: 99999, multipleOf: 1 },
@@ -120,8 +117,7 @@ const pitcherGameStatsSchemaV1: RxJsonSchema<PitcherGameStatRecord> = {
     "gameId",
     "teamId",
     "opponentTeamId",
-    "pitcherKey",
-    "pitcherId",
+    "playerId",
     "nameAtGameTime",
     "outsPitched",
     "battersFaced",
@@ -138,7 +134,7 @@ const pitcherGameStatsSchemaV1: RxJsonSchema<PitcherGameStatRecord> = {
     "createdAt",
     "schemaVersion",
   ],
-  indexes: ["gameId", ["pitcherKey", "createdAt"], ["teamId", "createdAt"]],
+  indexes: ["gameId", ["playerId", "createdAt"], ["teamId", "createdAt"]],
 };
 
 /** v1 collection config for the `pitcherGameStats` collection. No migration strategies. */

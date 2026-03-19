@@ -197,9 +197,9 @@ const CareerStatsPitchingTable: React.FunctionComponent<Props> = ({
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.pitcherKey}>
+          <tr key={row.playerId}>
             <Td>
-              <PlayerLink type="button" onClick={() => onPlayerSelect(row.pitcherKey)}>
+              <PlayerLink type="button" onClick={() => onPlayerSelect(row.playerId)}>
                 {row.nameAtGameTime}
               </PlayerLink>
             </Td>

@@ -220,7 +220,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "custom:ct_1:p1",
+        playerId: "custom:ct_1:p1",
         nameAtGameTime: "John Smith",
         gamesPlayed: 5,
         atBats: 20,
@@ -256,7 +256,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "custom:ct_1:p1",
         nameAtGameTime: "Bob Pitcher",
         gamesPlayed: 3,
         outsPitched: 27,
@@ -372,7 +372,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "custom:ct_1:p1",
         nameAtGameTime: "Zero IP Pitcher",
         gamesPlayed: 1,
         outsPitched: 0, // 0 IP → ERA and WHIP should display "—"
@@ -463,7 +463,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "custom:ct_1:p1",
         nameAtGameTime: "Click Pitcher",
         gamesPlayed: 1,
         outsPitched: 9,
@@ -503,7 +503,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Aaron",
         gamesPlayed: 5,
         atBats: 20,
@@ -517,7 +517,7 @@ describe("CareerStatsPage", () => {
         singles: 5,
       },
       {
-        playerKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Bob",
         gamesPlayed: 3,
         atBats: 10,
@@ -562,7 +562,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "ZebraCloser",
         gamesPlayed: 10,
         outsPitched: 27,
@@ -579,7 +579,7 @@ describe("CareerStatsPage", () => {
         blownSaves: 2,
       },
       {
-        pitcherKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "AcePitcher",
         gamesPlayed: 15,
         outsPitched: 135,
@@ -724,7 +724,7 @@ describe("CareerStatsPage", () => {
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: {
-        playerKey: "custom:ct_1:p_hr",
+        playerId: "custom:ct_1:p_hr",
         nameAtGameTime: "Homer King",
         value: 12,
         gamesPlayed: 5,
@@ -756,7 +756,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: null,
       avgLeader: {
-        playerKey: "custom:ct_1:p_avg",
+        playerId: "custom:ct_1:p_avg",
         nameAtGameTime: "Avg Queen",
         value: 0.345,
         gamesPlayed: 5,
@@ -788,7 +788,7 @@ describe("CareerStatsPage", () => {
       hrLeader: null,
       avgLeader: null,
       rbiLeader: {
-        playerKey: "custom:ct_1:p_rbi",
+        playerId: "custom:ct_1:p_rbi",
         nameAtGameTime: "RBI Boss",
         value: 30,
         gamesPlayed: 5,
@@ -820,7 +820,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
       eraLeader: {
-        pitcherKey: "custom:ct_1:p_era",
+        playerId: "custom:ct_1:p_era",
         nameAtGameTime: "Ace Starter",
         value: 2.25,
         gamesPlayed: 5,
@@ -851,7 +851,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
       eraLeader: null,
       savesLeader: {
-        pitcherKey: "custom:ct_1:p_sv",
+        playerId: "custom:ct_1:p_sv",
         nameAtGameTime: "Save King",
         value: 15,
         gamesPlayed: 5,
@@ -881,7 +881,7 @@ describe("CareerStatsPage", () => {
       eraLeader: null,
       savesLeader: null,
       strikeoutsLeader: {
-        pitcherKey: "custom:ct_1:p_k",
+        playerId: "custom:ct_1:p_k",
         nameAtGameTime: "K Machine",
         value: 88,
         gamesPlayed: 5,
@@ -954,7 +954,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Alpha",
         gamesPlayed: 10,
         atBats: 30,
@@ -968,7 +968,7 @@ describe("CareerStatsPage", () => {
         singles: 5,
       },
       {
-        playerKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Zeta",
         gamesPlayed: 5,
         atBats: 15,
@@ -1011,7 +1011,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Alpha",
         gamesPlayed: 5,
         outsPitched: 27,
@@ -1028,7 +1028,7 @@ describe("CareerStatsPage", () => {
         blownSaves: 0,
       },
       {
-        pitcherKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Zeta",
         gamesPlayed: 10,
         outsPitched: 90,

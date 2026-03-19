@@ -78,17 +78,13 @@ export function useCareerStatsData() {
     };
   }, []);
 
-  // Applied at most once — prevents the URL param from overriding user's manual selection.
-  const didInitFromQueryRef = React.useRef(false);
-
   React.useEffect(() => {
     if (teamsLoading || selectableTeamIds.length === 0) {
       return;
     }
 
     if (requestedTeamId && selectableTeamIds.includes(requestedTeamId)) {
-      if (!didInitFromQueryRef.current) {
-        didInitFromQueryRef.current = true;
+      if (selectedTeamId !== requestedTeamId) {
         setSelectedTeamId(requestedTeamId);
       }
       return;

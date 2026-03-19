@@ -3,13 +3,13 @@ import { computeERA, computeWHIP, formatIP } from "@feat/careerStats/utils/compu
 import type { BatterGameStatRecord } from "@storage/types";
 
 export type BattingRow = BatterGameStatRecord["batting"] & {
-  playerKey: string;
+  playerId: string;
   nameAtGameTime: string;
   gamesPlayed: number;
 };
 
 export type PitchingRow = {
-  pitcherKey: string;
+  playerId: string;
   nameAtGameTime: string;
   gamesPlayed: number;
   outsPitched: number;
