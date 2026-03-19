@@ -14,7 +14,12 @@
 
 import { expect, type Page, test } from "@playwright/test";
 
-import { EFFECTIVELY_PAUSED_SPEED, importHistoryFixture, loadFixture, startGameViaPlayBall } from "../utils/helpers";
+import {
+  EFFECTIVELY_PAUSED_SPEED,
+  importHistoryFixture,
+  loadFixture,
+  startGameViaPlayBall,
+} from "../utils/helpers";
 
 // ── Team Summary + Leaders ────────────────────────────────────────────────────
 

@@ -25,7 +25,7 @@ import {
  *                       C. Closer (1.0 IP, SV=1)
  */
 
-// ── 1. Smoke (navigation + empty / seeded state) ────────────────────────────
+// ── 1. Smoke (navigation + empty state, plus one seeded nav check) ───────────
 
 test.describe("Career Stats smoke", () => {
   test.beforeEach(async ({ page }) => {
@@ -173,7 +173,7 @@ test.describe("Career Stats with seeded history", () => {
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
     // The seeded team ID is "e2e_home_team" (non-custom → appears as raw ID in selector).
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     // Wait for the e2e_home_team option to appear in the dropdown before selecting
     // it.  On slow CI/mobile WebKit runners the one-shot loadTeamIds effect that
@@ -185,6 +185,7 @@ test.describe("Career Stats with seeded history", () => {
       timeout: 15_000,
     });
     await teamSelect.selectOption("e2e_home_team");
+    await page.getByTestId("career-stats-batting-tab").click();
     // Wait for the batting stats to finish loading before returning.
     // The async RxDB query fires when the team changes, but seedAndOpen returns
     // immediately after selectOption — on slow CI/mobile runners the 10 s
@@ -207,10 +208,13 @@ test.describe("Career Stats with seeded history", () => {
       }
       await page.goto("/stats");
       await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
       await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
         timeout: 15_000,
       });
       await teamSelect.selectOption("e2e_home_team");
+      await page.getByTestId("career-stats-batting-tab").click();
     }
     await expect(sluggerRowButton).toBeVisible({ timeout: 45_000 });
     if (browserName === "webkit") {

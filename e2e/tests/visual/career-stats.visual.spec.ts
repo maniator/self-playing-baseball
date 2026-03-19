@@ -91,7 +91,7 @@ test.describe("Visual — seeded history data", () => {
     }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     // Wait for the e2e_home_team option to be in the DOM before selecting — the
     // one-shot loadTeamIds effect may still be in-flight when the page mounts on
@@ -104,7 +104,34 @@ test.describe("Visual — seeded history data", () => {
     // team-summary-section, which can appear for ANY team (including the
     // auto-selected sample-save team) and would resolve immediately for the wrong
     // team, causing the subsequent 5 s batting-tab check to time out.
-    await expect(playerRowButton(page, "J. Slugger")).toBeVisible({ timeout: 30_000 });
+    const sluggerButton = playerRowButton(page, "J. Slugger");
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const sluggerVisible = await sluggerButton.isVisible().catch(() => false);
+      if (sluggerVisible) {
+        break;
+      }
+      // Re-seed fallback for slower CI/mobile WebKit runners where imported
+      // history can still be in-flight when /stats first queries RxDB.
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "career-stats-history.json");
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_home_team");
+      await page.getByTestId("career-stats-batting-tab").click();
+    }
+    await expect(sluggerButton).toBeVisible({ timeout: 45_000 });
+    if (browserName === "webkit") {
+      await page.waitForTimeout(500);
+    }
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
@@ -162,15 +189,27 @@ test.describe("Visual — seeded history data", () => {
 // ── Team Summary + Leaders ───────────────────────────────────────────────────
 
 test.describe("Visual — Team Summary and Leaders", () => {
+  function playerRow(page: Page, name: string) {
+    return page.locator("tbody tr", { hasText: name }).first();
+  }
+
+  function playerRowButton(page: Page, name: string) {
+    return playerRow(page, name).getByRole("button", { name, exact: true });
+  }
+
   async function seedSummaryAndOpen(page: Page) {
     await page.addInitScript(() => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
     await loadFixture(page, "sample-save.json");
     await importHistoryFixture(page, "team-summary-history.json");
+    const browserName = page.context().browser()?.browserType().name();
+    if (browserName === "webkit") {
+      await page.waitForTimeout(2_500);
+    }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
       timeout: 15_000,
@@ -178,9 +217,30 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await teamSelect.selectOption("e2e_summary_team");
     // Use a data-specific guard (W/L = "2-1") instead of team-summary-section,
     // which renders for any team and can resolve immediately for the wrong team.
-    // Use a generous 45 s timeout: on slow CI desktop runners the RxDB query
-    // that aggregates the three imported games can take longer than 30 s.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
+    // Use a generous 45 s timeout: on slow CI/mobile runners the RxDB query
+    // that aggregates imported games can take longer than 30 s.
+    const summaryWL = page.getByTestId("summary-wl");
+    const loaded = await summaryWL
+      .filter({ hasText: "2-1" })
+      .isVisible()
+      .catch(() => false);
+    if (!loaded) {
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "team-summary-history.json");
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_summary_team");
+    }
+    await expect(summaryWL).toHaveText("2-1", { timeout: 45_000 });
     await disableAnimations(page);
   }
 
