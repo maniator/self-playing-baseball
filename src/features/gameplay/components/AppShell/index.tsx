@@ -11,12 +11,19 @@ import { AppVolumeBar } from "./styles";
 
 export type { AppShellOutletContext, ExhibitionGameSetup, GameLocationState } from "@storage/types";
 
+const CAREER_STATS_AVAILABLE_KEY = "careerStatsAvailable";
+
 const AppShell: React.FunctionComponent = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
   // True only once a real game session has been started or loaded — gates Resume.
   const [hasActiveSession, setHasActiveSession] = React.useState(false);
+
+  // True once a game has completed at least once; persisted across sessions via localStorage.
+  const [hasCareerStats, setHasCareerStats] = React.useState(
+    () => localStorage.getItem(CAREER_STATS_AVAILABLE_KEY) === "true",
+  );
 
   const isGameRoute = location.pathname === "/game";
 
@@ -30,6 +37,8 @@ const AppShell: React.FunctionComponent = () => {
 
   const handleGameOver = React.useCallback(() => {
     setHasActiveSession(false);
+    setHasCareerStats(true);
+    localStorage.setItem(CAREER_STATS_AVAILABLE_KEY, "true");
   }, []);
 
   const handleResumeCurrent = React.useCallback(() => {
