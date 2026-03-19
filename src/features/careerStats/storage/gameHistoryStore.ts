@@ -343,7 +343,7 @@ function buildStore(getDbFn: GetDb) {
 
   /**
    * Imports a signed game-history bundle.
-   * - Validates signature and format version (accepts v1 and v2).
+   * - Validates signature and format version (only v2 is accepted).
    * - Validates that all required team IDs exist locally.
    * - Merges idempotently: skips any game or stat row whose ID already exists.
    */
@@ -362,7 +362,7 @@ function buildStore(getDbFn: GetDb) {
     if (bundle.type !== "gameHistory") {
       throw new Error(`Unexpected bundle type: ${String(bundle.type ?? "(none)")}`);
     }
-    if (bundle.formatVersion !== 1 && bundle.formatVersion !== 2) {
+    if (bundle.formatVersion !== 2) {
       throw new Error(`Unsupported game history format version: ${String(bundle.formatVersion)}`);
     }
     if (!bundle.payload || typeof bundle.payload !== "object") {
@@ -377,7 +377,7 @@ function buildStore(getDbFn: GetDb) {
       );
     }
 
-    // All team IDs in v1 are ct_* — validate every requiredTeamId exists locally.
+    // Validate that all required team IDs exist locally.
     const requiredTeamIds = bundle.payload.requiredTeamIds ?? [];
     const missingTeamIds = requiredTeamIds.filter((id) => !existingTeamIds.has(id));
     if (missingTeamIds.length > 0) {
@@ -389,7 +389,6 @@ function buildStore(getDbFn: GetDb) {
     }
 
     const db = await getDbFn();
-    const now = Date.now();
 
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
@@ -426,7 +425,6 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.batterGameStats.bulkInsert(
         statsToInsert.map((s) => ({
           ...s,
-          createdAt: s.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
       );
@@ -447,8 +445,6 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.pitcherGameStats.bulkInsert(
         pitchersToInsert.map((p) => ({
           ...p,
-          pitchesThrown: p.pitchesThrown ?? 0,
-          createdAt: p.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
       );

@@ -114,21 +114,15 @@ export interface PitcherGameStatRecord {
   schemaVersion: number;
 }
 
-/** Portable signed export format for completed-game history.
- *
- * formatVersion 1 — original format (no pitcherGameStats).
- * formatVersion 2 — adds pitcherGameStats to the payload.
- * The import function accepts both versions; the export function always produces v2.
- */
+/** Portable signed export format for completed-game history. */
 export interface ExportedGameHistory {
   type: "gameHistory";
-  formatVersion: 1 | 2;
+  formatVersion: 2;
   exportedAt: string;
   payload: {
     games: CompletedGameRecord[];
     playerGameStats: BatterGameStatRecord[];
-    /** Only present in v2+ bundles; undefined for v1 legacy imports. */
-    pitcherGameStats?: PitcherGameStatRecord[];
+    pitcherGameStats: PitcherGameStatRecord[];
     /** Team IDs referenced by stats rows — must exist locally for import to succeed. */
     requiredTeamIds: string[];
   };

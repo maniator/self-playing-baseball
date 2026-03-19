@@ -15,6 +15,11 @@ vi.mock("@shared/hooks/useTeamWithRoster", () => ({
   useTeamWithRoster: vi.fn().mockReturnValue(null),
 }));
 
+const TEST_LINEUP: [string[], string[]] = [
+  ["p_slot1", "p_slot2", "p_slot3", "p_slot4", "p_slot5", "p_slot6", "p_slot7", "p_slot8", "p_slot9"],
+  [],
+];
+
 const renderWithContext = (overrides = {}, activeTeam: 0 | 1 = 0) => {
   const ctx = makeContextValue(overrides);
   return render(
@@ -47,9 +52,10 @@ describe("PlayerStatsPanel", () => {
 
   it("shows the stats table when there are play log entries", () => {
     const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 },
+      { inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Single, runs: 0 },
     ] as const;
-    renderWithContext({ playLog: [...playLog] });
+    renderWithContext({ playLog: [...playLog] , lineupOrder: TEST_LINEUP });
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByText("AB")).toBeInTheDocument();
     expect(screen.getByText("H")).toBeInTheDocument();
@@ -60,18 +66,21 @@ describe("PlayerStatsPanel", () => {
 
   it("counts hits for the correct batter", () => {
     const playLog = [
-      { inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Single, runs: 0 },
-      { inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Double, runs: 1 },
+      { inning: 1, half: 0, batterNum: 3,
+        playerId: "p_slot3", team: 0, event: Hit.Single, runs: 0 },
+      { inning: 1, half: 0, batterNum: 3,
+        playerId: "p_slot3", team: 0, event: Hit.Double, runs: 1 },
     ];
-    renderWithContext({ playLog });
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     // batter #3 should show 2 hits (rows[0] = header, rows[3] = slot 3)
     const rows = screen.getAllByRole("row");
     expect(rows[3]?.textContent).toContain("2");
   });
 
   it("counts walks separately from hits", () => {
-    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Walk, runs: 0 }];
-    renderWithContext({ playLog });
+    const playLog = [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Walk, runs: 0 }];
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     // batter #1: 0 hits (–), 1 walk (rows[0] = header, rows[1] = slot 1)
     const rows = screen.getAllByRole("row");
     const row1 = rows[1];
@@ -81,9 +90,9 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("counts strikeouts from the strikeoutLog", () => {
-    const strikeoutLog = [{ team: 0, batterNum: 2 }];
-    const outLog = [{ team: 0 as const, batterNum: 2 }];
-    renderWithContext({ strikeoutLog, outLog });
+    const strikeoutLog = [{ team: 0, batterNum: 2, playerId: "p_slot2" }];
+    const outLog = [{ team: 0 as const, batterNum: 2, playerId: "p_slot2" }];
+    renderWithContext({ strikeoutLog, outLog , lineupOrder: TEST_LINEUP });
     expect(screen.getByRole("table")).toBeInTheDocument();
     // batter #2 has 1 K (rows[0] = header, rows[2] = slot 2)
     const rows = screen.getAllByRole("row");
@@ -92,9 +101,10 @@ describe("PlayerStatsPanel", () => {
 
   it("counts at-bats from outLog (includes K and regular outs)", () => {
     // batter #3: 1 hit + 1 groundout entry in outLog = 2 AB
-    const playLog = [{ inning: 1, half: 0, batterNum: 3, team: 0, event: Hit.Single, runs: 0 }];
-    const outLog = [{ team: 0 as const, batterNum: 3 }];
-    renderWithContext({ playLog, outLog });
+    const playLog = [{ inning: 1, half: 0, batterNum: 3,
+        playerId: "p_slot3", team: 0, event: Hit.Single, runs: 0 }];
+    const outLog = [{ team: 0 as const, batterNum: 3, playerId: "p_slot3" }];
+    renderWithContext({ playLog, outLog , lineupOrder: TEST_LINEUP });
     const rows = screen.getAllByRole("row");
     // row[3] = batter slot 3; text should contain "2" for AB and "1" for H
     expect(rows[3]?.textContent).toContain("2"); // AB
@@ -102,7 +112,8 @@ describe("PlayerStatsPanel", () => {
   });
 
   it("does not mix team stats — away stats excluded when viewing home team", () => {
-    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
+    const playLog = [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Single, runs: 0 }];
     renderWithContext({ playLog, teams: ["Mets", "Yankees"] as [string, string] }, 1);
     // Home table shows all dashes (no activity for home team)
     const rows = screen.getAllByRole("row");
@@ -132,8 +143,9 @@ describe("PlayerStatsPanel", () => {
     expect(screen.getByText("Slugger")).toBeInTheDocument();
   });
   it("collapses and hides the table when toggle is clicked", () => {
-    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0 }];
-    renderWithContext({ playLog });
+    const playLog = [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Single, runs: 0 }];
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     fireEvent.click(screen.getByRole("button", { name: /collapse batting stats/i }));
     expect(screen.queryByRole("table")).not.toBeInTheDocument();
   });
@@ -158,9 +170,10 @@ describe("PlayerStatsPanel", () => {
 
   it("shows Player Details for selected batter after clicking a row", () => {
     const playLog = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1, rbi: 1 },
+      { inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Single, runs: 1, rbi: 1 },
     ];
-    renderWithContext({ playLog });
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     fireEvent.click(screen.getByTestId("batter-row-1"));
     expect(screen.getByText("Player Details")).toBeInTheDocument();
     expect(screen.getAllByText(/this game/i).length).toBeGreaterThan(0);
@@ -264,9 +277,9 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
     const warnSpy = vi.spyOn(loggerModule.appLog, "warn");
     // batter #1: 3 Ks in strikeoutLog but 0 outLog entries → AB=0, K=3 (impossible)
     const strikeoutLog = [
-      { team: 0 as const, batterNum: 1 },
-      { team: 0 as const, batterNum: 1 },
-      { team: 0 as const, batterNum: 1 },
+      { team: 0 as const, batterNum: 1, playerId: "p_slot1" },
+      { team: 0 as const, batterNum: 1, playerId: "p_slot1" },
+      { team: 0 as const, batterNum: 1, playerId: "p_slot1" },
     ];
     const ctx = makeContextValue({ strikeoutLog, outLog: [], playLog: [] });
     render(
@@ -286,29 +299,30 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
     //   slots 4-9: 2 outs each  → PA=2, AB=2
     // All PA ordering pairs are equal (≥) and K<=AB throughout — no warning expected.
     const playLog = [
-      { inning: 1, half: 0 as const, batterNum: 2, team: 0 as const, event: Hit.Walk, runs: 0 },
+      { inning: 1, half: 0 as const, batterNum: 2,
+        playerId: "p_slot2", team: 0 as const, event: Hit.Walk, runs: 0 },
     ];
     const outLog = [
       // slot 1
-      { team: 0 as const, batterNum: 1 },
-      { team: 0 as const, batterNum: 1 },
+      { team: 0 as const, batterNum: 1, playerId: "p_slot1" },
+      { team: 0 as const, batterNum: 1, playerId: "p_slot1" },
       // slot 2 (only 1 out — the other PA is a walk above)
-      { team: 0 as const, batterNum: 2 },
+      { team: 0 as const, batterNum: 2, playerId: "p_slot2" },
       // slots 3-9
-      { team: 0 as const, batterNum: 3 },
-      { team: 0 as const, batterNum: 3 },
-      { team: 0 as const, batterNum: 4 },
-      { team: 0 as const, batterNum: 4 },
-      { team: 0 as const, batterNum: 5 },
-      { team: 0 as const, batterNum: 5 },
-      { team: 0 as const, batterNum: 6 },
-      { team: 0 as const, batterNum: 6 },
-      { team: 0 as const, batterNum: 7 },
-      { team: 0 as const, batterNum: 7 },
-      { team: 0 as const, batterNum: 8 },
-      { team: 0 as const, batterNum: 8 },
-      { team: 0 as const, batterNum: 9 },
-      { team: 0 as const, batterNum: 9 },
+      { team: 0 as const, batterNum: 3, playerId: "p_slot3" },
+      { team: 0 as const, batterNum: 3, playerId: "p_slot3" },
+      { team: 0 as const, batterNum: 4, playerId: "p_slot4" },
+      { team: 0 as const, batterNum: 4, playerId: "p_slot4" },
+      { team: 0 as const, batterNum: 5, playerId: "p_slot5" },
+      { team: 0 as const, batterNum: 5, playerId: "p_slot5" },
+      { team: 0 as const, batterNum: 6, playerId: "p_slot6" },
+      { team: 0 as const, batterNum: 6, playerId: "p_slot6" },
+      { team: 0 as const, batterNum: 7, playerId: "p_slot7" },
+      { team: 0 as const, batterNum: 7, playerId: "p_slot7" },
+      { team: 0 as const, batterNum: 8, playerId: "p_slot8" },
+      { team: 0 as const, batterNum: 8, playerId: "p_slot8" },
+      { team: 0 as const, batterNum: 9, playerId: "p_slot9" },
+      { team: 0 as const, batterNum: 9, playerId: "p_slot9" },
     ];
     const ctx = makeContextValue({ playLog, outLog, strikeoutLog: [] });
     render(
@@ -322,10 +336,12 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
 
   it("counts RBI from playLog entries with rbi field", () => {
     const playLog = [
-      { inning: 1, half: 0, batterNum: 2, team: 0, event: Hit.Single, runs: 1, rbi: 1 },
-      { inning: 1, half: 0, batterNum: 2, team: 0, event: Hit.Double, runs: 1, rbi: 1 },
+      { inning: 1, half: 0, batterNum: 2,
+        playerId: "p_slot2", team: 0, event: Hit.Single, runs: 1, rbi: 1 },
+      { inning: 1, half: 0, batterNum: 2,
+        playerId: "p_slot2", team: 0, event: Hit.Double, runs: 1, rbi: 1 },
     ];
-    renderWithContext({ playLog });
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     // batter #2 should show 2 RBI — target the RBI cell (last td) in slot-2 row
     const rows = screen.getAllByRole("row");
     const cells = rows[2]?.querySelectorAll("td");
@@ -335,8 +351,9 @@ describe("warnBattingStatsInvariant (dev-mode invariant)", () => {
 
   it("defaults RBI to 0 (shown as –) for playLog entries without rbi field", () => {
     // entries without rbi field simulate older saved data
-    const playLog = [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1 }];
-    renderWithContext({ playLog });
+    const playLog = [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p_slot1", team: 0, event: Hit.Single, runs: 1 }];
+    renderWithContext({ playLog , lineupOrder: TEST_LINEUP });
     // batter #1 row: rbi defaults to 0, shown as "–" — target the RBI cell (last td)
     const rows = screen.getAllByRole("row");
     const cells = rows[1]?.querySelectorAll("td");
@@ -410,33 +427,6 @@ describe("PlayerStatsPanel — player-ID stat tracking", () => {
     expect(hitCell?.textContent).toBe("–");
   });
 
-  it("legacy entries (no playerId) fall back to slot-based lookup", () => {
-    // Old-format entry without playerId — batterNum 1 → key "slot:1"
-    const playLog = [
-      {
-        inning: 1,
-        half: 0 as const,
-        batterNum: 1,
-        team: 0 as const,
-        event: Hit.Homerun,
-        runs: 1,
-        rbi: 1,
-      },
-    ];
-    // lineupOrder is empty (stock team save) → getSlotStats falls back to slot:1 key
-    const ctx = makeContextValue({ playLog, lineupOrder: [[], []] as [string[], string[]] });
-    render(
-      <GameContext.Provider value={ctx}>
-        <PlayerStatsPanel />
-      </GameContext.Provider>,
-    );
-    // slot 1 should show 1 homer and 1 RBI from the legacy entry
-    const rows = screen.getAllByRole("row");
-    const hitCell = rows[1]?.querySelectorAll("td")[3];
-    const rbiCell = rows[1]?.querySelectorAll("td")[rows[1].querySelectorAll("td").length - 1];
-    expect(hitCell?.textContent).toBe("1");
-    expect(rbiCell?.textContent).toBe("1");
-  });
 });
 
 // ---------------------------------------------------------------------------

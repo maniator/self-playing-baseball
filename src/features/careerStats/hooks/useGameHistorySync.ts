@@ -22,9 +22,9 @@ const MAX_COMMIT_RETRIES = 3;
  *      failure the `retryCount` state is incremented (up to 3) so the effect
  *      re-fires without requiring a page reload.
  *   2. DB-level: `GameHistoryStore.commitCompletedGame` uses `gameInstanceId`
- *      (or legacy `saveId`) as the CompletedGameRecord primary key — any concurrent insert
- *      of the same key is treated as "already committed", and missing stat rows
- *      are still written so a partial prior write never permanently loses stats.
+ *      as the CompletedGameRecord primary key — any concurrent insert of the same
+ *      key is treated as "already committed", and missing stat rows are still written
+ *      so a partial prior write never permanently loses stats.
  *
  * Loading an already-FINAL save must NOT trigger a new commit. The hook guards
  * against this by checking `wasAlreadyFinalOnLoad` — set when the save is
@@ -69,11 +69,6 @@ export const useGameHistorySync = (
     inFlightRef.current = true;
     setIsCommitting(true);
 
-    // Prefer the stable gameInstanceId from state (generated once at game start,
-    // carried in every save snapshot of that run) so that multiple save slots of
-    // the same run all resolve to the same CompletedGameRecord.id — preventing double-counts.
-    // Fall back to saveId for pre-gameInstanceId saves (legacy behaviour).
-
     // Build stat rows for both teams.
     const statRows: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt">[] = [];
 
@@ -87,16 +82,11 @@ export const useGameHistorySync = (
         state.outLog,
       );
 
-      // In v1 all teams are custom — lineup order is set from PlayerRecord.id values.
+      // Lineup order is set from PlayerRecord.id values.
       const order = state.lineupOrder[teamIdx].length > 0 ? state.lineupOrder[teamIdx] : [];
 
       for (const [key, batting] of Object.entries(teamStats)) {
         const playerId = key;
-
-        // Skip legacy slot-based keys (e.g. "slot:1") that arise when old play-log
-        // entries lack a real playerId. Committing them would create permanent stat
-        // rows keyed by non-real IDs and pollute Career Stats navigation.
-        if (playerId.startsWith("slot:")) continue;
 
         // Name comes from playerOverrides (nickname set at game-start from PlayerRecord.name).
         const slotIdx = order.indexOf(playerId);

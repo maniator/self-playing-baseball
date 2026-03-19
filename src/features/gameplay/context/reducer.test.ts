@@ -24,6 +24,16 @@ const dispatchAction = (state: State, type: string, payload?: any) => {
 
 const mockRandom = (value: number) => vi.spyOn(rngModule, "random").mockReturnValue(value);
 
+/** Lineup with 9 named players — p1…p9 for away, ph1…ph9 for home. */
+const NINE_AWAY: [string[], string[]] = [
+  ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"],
+  [],
+];
+const NINE_HOME: [string[], string[]] = [
+  [],
+  ["ph1", "ph2", "ph3", "ph4", "ph5", "ph6", "ph7", "ph8", "ph9"],
+];
+
 // triple scoring (bug fix)
 describe("hit - triple runner scoring", () => {
   it("runner on 3rd scores on triple", () => {
@@ -1189,12 +1199,12 @@ describe("defensive_shift decision", () => {
 describe("strikeout tracking", () => {
   it("strike on 2-strike count appends to strikeoutLog", () => {
     const { state } = dispatchAction(
-      makeState({ strikes: 2, atBat: 0, batterIndex: [2, 0] }),
+      makeState({ strikes: 2, atBat: 0, batterIndex: [2, 0], lineupOrder: NINE_AWAY }),
       "strike",
       { swung: true },
     );
     expect(state.strikeoutLog).toHaveLength(1);
-    expect(state.strikeoutLog[0]).toEqual({ team: 0, batterNum: 3 });
+    expect(state.strikeoutLog[0]).toEqual({ team: 0, batterNum: 3, playerId: "p3" });
   });
 
   it("strike on 0-strike count does NOT append to strikeoutLog", () => {
@@ -1208,11 +1218,11 @@ describe("strikeout tracking", () => {
     // Force a strike outcome by making random always return a value in strike range
     vi.spyOn(rngModule, "random").mockReturnValue(0); // 0/1000 < 500 → strike
     const { state } = dispatchAction(
-      makeState({ strikes: 2, atBat: 1, batterIndex: [0, 4] }),
+      makeState({ strikes: 2, atBat: 1, batterIndex: [0, 4], lineupOrder: NINE_HOME }),
       "wait",
     );
     expect(state.strikeoutLog).toHaveLength(1);
-    expect(state.strikeoutLog[0]).toEqual({ team: 1, batterNum: 5 });
+    expect(state.strikeoutLog[0]).toEqual({ team: 1, batterNum: 5, playerId: "ph5" });
   });
 
   it("wait resulting in a walk (ball 4) on 2-strike count does NOT add a K", () => {
@@ -1228,7 +1238,7 @@ describe("strikeout tracking", () => {
 
   it("reset clears strikeoutLog", () => {
     const { state } = dispatchAction(
-      makeState({ strikeoutLog: [{ team: 0, batterNum: 1 }] }),
+      makeState({ strikeoutLog: [{ team: 0, batterNum: 1, playerId: "p1" }] }),
       "reset",
     );
     expect(state.strikeoutLog).toHaveLength(0);
@@ -1238,8 +1248,10 @@ describe("strikeout tracking", () => {
 describe("restore_game — RBI backfill for older saves", () => {
   it("backfills rbi from runs on playLog entries that lack rbi", () => {
     const oldPlayLog = [
-      { inning: 1, half: 0 as const, batterNum: 1, team: 0 as const, event: Hit.Single, runs: 1 },
-      { inning: 2, half: 0 as const, batterNum: 3, team: 0 as const, event: Hit.Homerun, runs: 4 },
+      { inning: 1, half: 0 as const, batterNum: 1,
+        playerId: "p1", team: 0 as const, event: Hit.Single, runs: 1 },
+      { inning: 2, half: 0 as const, batterNum: 3,
+        playerId: "p3", team: 0 as const, event: Hit.Homerun, runs: 4 },
     ];
     const { state } = dispatchAction(
       makeState({ playLog: oldPlayLog }),
@@ -1256,6 +1268,7 @@ describe("restore_game — RBI backfill for older saves", () => {
         inning: 1,
         half: 0 as const,
         batterNum: 2,
+        playerId: "p2",
         team: 0 as const,
         event: Hit.Double,
         runs: 2,
@@ -1277,7 +1290,8 @@ describe("restore_game — RBI backfill for older saves", () => {
 
   it("zero-runs entry gets rbi=0 after backfill", () => {
     const oldPlayLog = [
-      { inning: 1, half: 0 as const, batterNum: 1, team: 0 as const, event: Hit.Single, runs: 0 },
+      { inning: 1, half: 0 as const, batterNum: 1,
+        playerId: "p1", team: 0 as const, event: Hit.Single, runs: 0 },
     ];
     const { state } = dispatchAction(
       makeState({ playLog: oldPlayLog }),
@@ -1393,8 +1407,10 @@ describe("restore_game when current game is already over (load-over-finished reg
       score: [2, 1],
       pitchKey: 30,
       playLog: [
-        { inning: 2, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 },
-        { inning: 4, half: 1, batterNum: 3, team: 1, event: Hit.Homerun, runs: 1, rbi: 1 },
+        { inning: 2, half: 0, batterNum: 1,
+        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 },
+        { inning: 4, half: 1, batterNum: 3,
+        playerId: "p3", team: 1, event: Hit.Homerun, runs: 1, rbi: 1 },
       ],
     });
     const { state: afterSecondLoad } = dispatchAction(
@@ -1469,6 +1485,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 1,
         half: 0 as const,
         batterNum: 1,
+        playerId: "p1",
         team: 0 as const,
         event: Hit.Single,
         runs: 0,
@@ -1478,6 +1495,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 2,
         half: 0 as const,
         batterNum: 2,
+        playerId: "p2",
         team: 0 as const,
         event: Hit.Double,
         runs: 1,
@@ -1487,6 +1505,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 3,
         half: 1 as const,
         batterNum: 4,
+        playerId: "p4",
         team: 1 as const,
         event: Hit.Homerun,
         runs: 2,
@@ -1496,6 +1515,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 4,
         half: 0 as const,
         batterNum: 1,
+        playerId: "p1",
         team: 0 as const,
         event: Hit.Walk,
         runs: 0,
@@ -1533,6 +1553,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 1,
         half: 0 as const,
         batterNum: 3,
+        playerId: "p3",
         team: 0 as const,
         event: Hit.Single,
         runs: 0,
@@ -1542,6 +1563,7 @@ describe("restore_game hit log consistency after load", () => {
         inning: 2,
         half: 0 as const,
         batterNum: 3,
+        playerId: "p3",
         team: 0 as const,
         event: Hit.Double,
         runs: 1,
@@ -1584,7 +1606,8 @@ describe("save → load → save round-trip scenarios", () => {
       gameOver: true,
       inning: 9,
       score: [5, 3],
-      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+      playLog: [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
     });
     const { state: loaded } = dispatchAction(makeState(), "restore_game", finished);
     expect(loaded.gameOver).toBe(true);
@@ -1601,15 +1624,18 @@ describe("save → load → save round-trip scenarios", () => {
       inning: 3,
       score: [1, 0],
       teams: ["Red Sox", "Yankees"],
-      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+      playLog: [{ inning: 1, half: 0, batterNum: 1,
+        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
     });
     const saveB = makeState({
       inning: 7,
       score: [4, 2],
       teams: ["Mets", "Cubs"],
       playLog: [
-        { inning: 2, half: 0, batterNum: 2, team: 0, event: Hit.Homerun, runs: 1, rbi: 1 },
-        { inning: 5, half: 1, batterNum: 1, team: 1, event: Hit.Double, runs: 0, rbi: 0 },
+        { inning: 2, half: 0, batterNum: 2,
+        playerId: "p2", team: 0, event: Hit.Homerun, runs: 1, rbi: 1 },
+        { inning: 5, half: 1, batterNum: 1,
+        playerId: "p1", team: 1, event: Hit.Double, runs: 0, rbi: 0 },
       ],
     });
     const { state: afterA } = dispatchAction(makeState(), "restore_game", saveA);

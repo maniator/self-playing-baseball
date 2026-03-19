@@ -28,6 +28,7 @@ const makeEntry = (overrides: Partial<PlayLogEntry> = {}): PlayLogEntry => ({
   inning: 1,
   half: 0,
   batterNum: 1,
+  playerId: "test_player",
   team: 0,
   event: Hit.Single,
   runs: 0,

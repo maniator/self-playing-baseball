@@ -87,7 +87,8 @@ describe("createFreshGameState", () => {
 
 describe("backfillRestoredState", () => {
   it("backfills rbi from runs when rbi is missing", () => {
-    const entry: PlayLogEntry = { inning: 1, half: 0, batterNum: 1, team: 0, event: 1, runs: 2 };
+    const entry: PlayLogEntry = { inning: 1, half: 0, batterNum: 1,
+        playerId: "p1", team: 0, event: 1, runs: 2 };
     const restored = makeState({ playLog: [entry] });
     const result = backfillRestoredState(restored);
     expect(result.playLog[0].rbi).toBe(2);
@@ -98,6 +99,7 @@ describe("backfillRestoredState", () => {
       inning: 1,
       half: 0,
       batterNum: 1,
+        playerId: "p1",
       team: 0,
       event: 1,
       runs: 2,
@@ -262,9 +264,12 @@ describe("backfillRestoredState", () => {
   // -------------------------------------------------------------------------
   it("preserves all playLog entries in a mid-game save (hit log regression)", () => {
     const entries: PlayLogEntry[] = [
-      { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 0, rbi: 0 },
-      { inning: 2, half: 0, batterNum: 3, team: 0, event: Hit.Double, runs: 1, rbi: 1 },
-      { inning: 3, half: 1, batterNum: 2, team: 1, event: Hit.Homerun, runs: 2, rbi: 2 },
+      { inning: 1, half: 0, batterNum: 1,
+        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 },
+      { inning: 2, half: 0, batterNum: 3,
+        playerId: "p3", team: 0, event: Hit.Double, runs: 1, rbi: 1 },
+      { inning: 3, half: 1, batterNum: 2,
+        playerId: "p2", team: 1, event: Hit.Homerun, runs: 2, rbi: 2 },
     ];
     const restored = makeState({ inning: 6, playLog: entries });
     const result = backfillRestoredState(restored);
