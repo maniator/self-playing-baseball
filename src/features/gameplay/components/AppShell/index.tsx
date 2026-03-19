@@ -45,11 +45,13 @@ const AppShell: React.FunctionComponent = () => {
         const db = await getDb();
         const anyCompletedGame = await db.completedGames.findOne().exec();
         if (!cancelled) {
-          setHasCareerStats(Boolean(anyCompletedGame));
+          // Use functional update so a true set by handleGameOver is never cleared.
+          setHasCareerStats((prev) => prev || Boolean(anyCompletedGame));
         }
       } catch {
         if (!cancelled) {
-          setHasCareerStats(false);
+          // On error, preserve any true value already set (e.g. by handleGameOver).
+          setHasCareerStats((prev) => prev);
         }
       }
     }
