@@ -56,14 +56,15 @@ function GameRoute() {
  * Route tree:
  *   / (RootLayout – ErrorBoundary wrapper)
  *     AppShell – layout; provides outlet context for child routes
- *       /                    → HomeRoute        → HomeScreen
- *       /game                → GameRoute        → GamePage → Game
- *       /teams               → TeamsRoute       → ManageTeamsScreen (list)
- *       /teams/new           → TeamsRoute       → ManageTeamsScreen (create editor)
- *       /teams/:teamId/edit  → TeamsRoute       → ManageTeamsScreen (edit editor)
- *       /stats               → CareerStatsPage
- *       /career-stats        → redirect to /stats
- *       /players/:playerKey  → PlayerCareerPage
+ *       /                         → HomeRoute        → HomeScreen
+ *       /game                     → GameRoute        → GamePage → Game
+ *       /teams                    → TeamsRoute       → ManageTeamsScreen (list)
+ *       /teams/new                → TeamsRoute       → ManageTeamsScreen (create editor)
+ *       /teams/:teamId/edit       → TeamsRoute       → ManageTeamsScreen (edit editor)
+ *       /stats                    → CareerStatsPage  (redirects to /stats/:firstTeam)
+ *       /stats/:teamId            → CareerStatsPage
+ *       /stats/:teamId/players/:playerId → PlayerCareerPage
+ *       /career-stats             → redirect to /stats
  */
 export const router = createBrowserRouter([
   {
@@ -129,7 +130,15 @@ export const router = createBrowserRouter([
             ),
           },
           {
-            path: "players/:playerKey",
+            path: "stats/:teamId",
+            element: (
+              <React.Suspense fallback={null}>
+                <CareerStatsPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "stats/:teamId/players/:playerId",
             element: (
               <React.Suspense fallback={null}>
                 <PlayerCareerPage />

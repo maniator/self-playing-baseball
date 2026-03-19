@@ -457,10 +457,7 @@ describe("getTeamCareerPitchingStats", () => {
       gameId,
       { ...gameMeta },
       [],
-      [
-        makePitcherRow(gameId, "p1"),
-        makePitcherRow(gameId, "p2", { playerId: "p2" }),
-      ],
+      [makePitcherRow(gameId, "p1"), makePitcherRow(gameId, "p2", { playerId: "p2" })],
     );
 
     const result = await store.getTeamCareerPitchingStats("Yankees");

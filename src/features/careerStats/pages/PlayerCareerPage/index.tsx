@@ -1,5 +1,5 @@
 /**
- * PlayerCareerPage — /players/:playerKey
+ * PlayerCareerPage — /stats/:teamId/players/:playerId
  *
  * Route shell: delegates data-loading to `usePlayerCareerData` and
  * renders layout + tab-panel subcomponents.
@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
-import { createSearchParams, useNavigate, useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import PlayerCareerBattingTab from "./PlayerCareerBattingTab";
 import PlayerCareerPitchingTab from "./PlayerCareerPitchingTab";
@@ -26,9 +26,7 @@ type Tab = "batting" | "pitching";
 
 const PlayerCareerPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
-  const { playerKey } = useParams<{ playerKey: string }>();
-  const [searchParams] = useSearchParams();
-  const teamParam = searchParams.get("team");
+  const { teamId, playerId } = useParams<{ teamId?: string; playerId?: string }>();
   const [activeTab, setActiveTab] = React.useState<Tab>("batting");
 
   const {
@@ -43,7 +41,7 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     prevKey,
     nextKey,
     navigateToPlayer,
-  } = usePlayerCareerData(playerKey);
+  } = usePlayerCareerData(playerId);
 
   // Determine which tabs are available based on history rows.
   const hasBatting = battingRows.length > 0;
@@ -74,13 +72,7 @@ const PlayerCareerPage: React.FunctionComponent = () => {
       <PageHeader>
         <BackBtn
           type="button"
-          onClick={() =>
-            navigate(
-              teamParam
-                ? { pathname: "/stats", search: createSearchParams({ team: teamParam }).toString() }
-                : "/stats",
-            )
-          }
+          onClick={() => navigate(teamId ? `/stats/${teamId}` : "/stats")}
           aria-label="Go back"
         >
           ← Back

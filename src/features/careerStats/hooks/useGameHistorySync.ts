@@ -12,7 +12,6 @@ import type { BatterGameStatRecord, PitcherGameStatRecord } from "@storage/types
 /** Maximum number of automatic retry attempts after a transient commit failure. */
 const MAX_COMMIT_RETRIES = 3;
 
-
 /**
  * Hooks into the game's gameOver state and commits a completed game to RxDB
  * exactly once per game session.

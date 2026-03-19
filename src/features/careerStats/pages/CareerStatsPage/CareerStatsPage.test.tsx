@@ -84,13 +84,17 @@ function makeTeamDoc(
   };
 }
 
-function renderPage(initialEntry = "/stats") {
+function renderPage(initialEntry = "/stats/team1") {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/stats" element={<CareerStatsPage />} />
+        <Route path="/stats/:teamId" element={<CareerStatsPage />} />
         <Route path="/" element={<div data-testid="home-screen" />} />
-        <Route path="/players/:playerKey" element={<div data-testid="player-page" />} />
+        <Route
+          path="/stats/:teamId/players/:playerId"
+          element={<div data-testid="player-page" />}
+        />
         <Route path="/teams/:teamId/edit" element={<div data-testid="team-editor-page" />} />
       </Routes>
     </MemoryRouter>,
@@ -445,9 +449,9 @@ describe("CareerStatsPage", () => {
       expect((select as HTMLSelectElement).value).not.toBe("");
     });
 
-    // Change the selection to the second team — fires the onChange handler.
+    // Change the selection to the second team — onChange calls navigate('/stats/team2').
     await user.selectOptions(select, "team2");
-    expect((select as HTMLSelectElement).value).toBe("team2");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team2");
   });
 
   it("clicking a player row in pitching table navigates to player page", async () => {
@@ -488,7 +492,7 @@ describe("CareerStatsPage", () => {
 
     // Clicking the pitcher name fires the onClick at line 293.
     await user.click(screen.getByText("Click Pitcher"));
-    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/players/"));
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/stats/team1/players/"));
   });
 
   it("clicking a batting column header sorts rows by that column", async () => {
@@ -747,7 +751,7 @@ describe("CareerStatsPage", () => {
 
     await user.click(screen.getByTestId("hr-leader-card"));
     // playerKey and teamId must be encoded (colons become %3A)
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_hr?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_hr");
   });
 
   it("renders AVG leader card and clicking it navigates with URL-encoded key", async () => {
@@ -778,7 +782,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("avg-leader-card")).toHaveTextContent(".345");
 
     await user.click(screen.getByTestId("avg-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_avg?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_avg");
   });
 
   it("renders RBI leader card and clicking it navigates", async () => {
@@ -807,10 +811,10 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("rbi-leader-card")).toHaveTextContent("RBI Boss");
 
     await user.click(screen.getByTestId("rbi-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_rbi?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_rbi");
   });
 
-  it("renders ERA leader card and clicking it navigates with URL-encoded pitcherKey", async () => {
+  it("renders ERA leader card and clicking it navigates with URL-encoded playerId", async () => {
     const user = userEvent.setup();
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
@@ -837,7 +841,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("era-leader-card")).toHaveTextContent("2.25");
 
     await user.click(screen.getByTestId("era-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_era?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_era");
   });
 
   it("renders SV leader card and clicking it navigates", async () => {
@@ -866,7 +870,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("saves-leader-card")).toHaveTextContent("Save King");
 
     await user.click(screen.getByTestId("saves-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_sv?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_sv");
   });
 
   it("renders K (strikeouts) leader card and clicking it navigates", async () => {
@@ -895,7 +899,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("k-leader-card")).toHaveTextContent("K Machine");
 
     await user.click(screen.getByTestId("k-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/custom%3Act_1%3Ap_k");
   });
 
   it("renders TeamSummarySection even when gamesPlayed is 0", async () => {

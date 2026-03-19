@@ -41,7 +41,6 @@ const CareerStatsPage: React.FunctionComponent = () => {
     selectableTeamIds,
     selectedCustomTeam,
     selectedTeamId,
-    setSelectedTeamId,
     strikeoutsLeader,
     teamSummary,
   } = useCareerStatsData();
@@ -58,9 +57,9 @@ const CareerStatsPage: React.FunctionComponent = () => {
   } = useCareerStatsSorting(battingRows, pitchingRows);
 
   const openPlayerCareer = React.useCallback(
-    (playerKey: string) => {
+    (playerId: string) => {
       navigate(
-        `/players/${encodeURIComponent(playerKey)}?team=${encodeURIComponent(selectedTeamId)}`,
+        `/stats/${encodeURIComponent(selectedTeamId)}/players/${encodeURIComponent(playerId)}`,
       );
     },
     [navigate, selectedTeamId],
@@ -88,7 +87,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
               id="career-stats-team-select"
               data-testid="career-stats-team-select"
               value={selectedTeamId}
-              onChange={(event) => setSelectedTeamId(event.target.value)}
+              onChange={(event) => navigate(`/stats/${event.target.value}`)}
             >
               {selectableTeamIds.map((id) => (
                 <option key={id} value={id}>
