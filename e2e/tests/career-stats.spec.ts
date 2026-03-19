@@ -83,13 +83,13 @@ test.describe("Career Stats smoke", () => {
     await expect(page.getByTestId("career-stats-page")).toBeVisible();
   });
 
-  test("Player Career page loads at /players/:playerKey", async ({ page }) => {
-    await page.goto("/players/test_player_key");
+  test("Player Career page loads at /stats/:teamId/players/:playerId", async ({ page }) => {
+    await page.goto("/stats/test_team/players/test_player_key");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
   });
 
   test("Player Career page shows empty state for unknown player", async ({ page }) => {
-    await page.goto("/players/unknown_player_key_abc");
+    await page.goto("/stats/test_team/players/unknown_player_key_abc");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText(/no batting data/i)).toBeVisible({ timeout: 10_000 });
   });
@@ -284,14 +284,15 @@ test.describe("Career Stats with seeded history", () => {
     await expect(aceRow).toContainText("4.50"); // ERA
   });
 
-  test("clicking a batter row navigates to /players/:playerKey", async ({ page }) => {
+  test("clicking a batter row navigates to /stats/:teamId/players/:playerId", async ({ page }) => {
     await seedAndOpen(page);
     // Use exact role to click the table-row PlayerLink, not the HR/RBI leader cards.
     const sluggerButton = playerRowButton(page, "J. Slugger");
     await expect(sluggerButton).toBeVisible({ timeout: 10_000 });
     await clickWithRetry(() => playerRowButton(page, "J. Slugger"));
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
-    expect(page.url()).toContain("/players/e2e_batter_slugger");
+    expect(page.url()).toContain("/stats/");
+    expect(page.url()).toContain("e2e_batter_slugger");
   });
 
   test("player career page shows batting game log for J. Slugger", async ({ page }) => {
@@ -329,7 +330,7 @@ test.describe("Career Stats with seeded history", () => {
     // e2e_batter_contact) to a real custom team roster for roster-context navigation.
     await importTeamsFixture(page, "career-stats-e2e-team.json");
     // Navigate to the seeded batter with the custom team as navigation context.
-    await page.goto("/players/e2e_batter_slugger?team=ct_e2e_career");
+    await page.goto("/stats/ct_e2e_career/players/e2e_batter_slugger");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Both Prev and Next buttons must be visible (roster has 2 batters + 1 pitcher).
     await expect(page.getByTestId("player-career-prev")).toBeVisible({ timeout: 10_000 });
@@ -337,7 +338,7 @@ test.describe("Career Stats with seeded history", () => {
     // Click Next — navigates to the second player in the roster (M. Contact).
     await page.getByTestId("player-career-next").click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 10_000 });
-    expect(page.url()).toContain("/players/e2e_batter_contact");
+    expect(page.url()).toContain("e2e_batter_contact");
   });
 });
 
