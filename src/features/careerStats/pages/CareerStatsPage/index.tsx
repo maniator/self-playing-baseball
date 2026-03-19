@@ -87,7 +87,7 @@ const CareerStatsPage: React.FunctionComponent = () => {
               id="career-stats-team-select"
               data-testid="career-stats-team-select"
               value={selectedTeamId}
-              onChange={(event) => navigate(`/stats/${event.target.value}`)}
+              onChange={(event) => navigate(`/stats/${encodeURIComponent(event.target.value)}`)}
             >
               {selectableTeamIds.map((id) => (
                 <option key={id} value={id}>

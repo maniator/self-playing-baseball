@@ -25,7 +25,7 @@ type Props = {
   sort: { key: PitchingSortKey; dir: SortDir };
   onHeaderClick: (event: React.MouseEvent<HTMLTableCellElement>) => void;
   onHeaderKeyDown: (event: React.KeyboardEvent<HTMLTableCellElement>) => void;
-  onPlayerSelect: (playerKey: string) => void;
+  onPlayerSelect: (playerId: string) => void;
 };
 
 const CareerStatsPitchingTable: React.FunctionComponent<Props> = ({

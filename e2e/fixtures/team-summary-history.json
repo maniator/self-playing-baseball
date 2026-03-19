@@ -47,8 +47,7 @@
         "gameId": "sum_game_001",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "playerKey": "e2e_batter_qualify",
-        "playerId": "batter_qualify",
+        "playerId": "e2e_batter_qualify",
         "nameAtGameTime": "J. Qualify",
         "role": "batter",
         "batting": {
@@ -60,7 +59,8 @@
           "singles": 1,
           "doubles": 1,
           "triples": 0,
-          "homers": 1
+          "homers": 1,
+          "sacFlies": 0
         },
         "createdAt": 1700000001000,
         "schemaVersion": 1
@@ -70,8 +70,7 @@
         "gameId": "sum_game_002",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "playerKey": "e2e_batter_qualify",
-        "playerId": "batter_qualify",
+        "playerId": "e2e_batter_qualify",
         "nameAtGameTime": "J. Qualify",
         "role": "batter",
         "batting": {
@@ -83,7 +82,8 @@
           "singles": 2,
           "doubles": 0,
           "triples": 0,
-          "homers": 0
+          "homers": 0,
+          "sacFlies": 0
         },
         "createdAt": 1700000002000,
         "schemaVersion": 1
@@ -93,8 +93,7 @@
         "gameId": "sum_game_003",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "playerKey": "e2e_batter_qualify",
-        "playerId": "batter_qualify",
+        "playerId": "e2e_batter_qualify",
         "nameAtGameTime": "J. Qualify",
         "role": "batter",
         "batting": {
@@ -106,7 +105,8 @@
           "singles": 1,
           "doubles": 1,
           "triples": 1,
-          "homers": 0
+          "homers": 0,
+          "sacFlies": 0
         },
         "createdAt": 1700000003000,
         "schemaVersion": 1
@@ -116,8 +116,7 @@
         "gameId": "sum_game_001",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "playerKey": "e2e_batter_noqual",
-        "playerId": "batter_noqual",
+        "playerId": "e2e_batter_noqual",
         "nameAtGameTime": "P. NoQualify",
         "role": "batter",
         "batting": {
@@ -129,7 +128,8 @@
           "singles": 4,
           "doubles": 0,
           "triples": 0,
-          "homers": 0
+          "homers": 0,
+          "sacFlies": 0
         },
         "createdAt": 1700000001000,
         "schemaVersion": 1
@@ -141,8 +141,6 @@
         "gameId": "sum_game_001",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "pitcherKey": "e2e_pitcher_starter",
-        "pitcherId": "pitcher_starter",
         "nameAtGameTime": "A. Starter",
         "outsPitched": 18,
         "battersFaced": 22,
@@ -157,15 +155,14 @@
         "blownSaves": 0,
         "createdAt": 1700000001000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_starter"
       },
       {
         "id": "sum_game_002:e2e_summary_team:e2e_pitcher_starter",
         "gameId": "sum_game_002",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "pitcherKey": "e2e_pitcher_starter",
-        "pitcherId": "pitcher_starter",
         "nameAtGameTime": "A. Starter",
         "outsPitched": 18,
         "battersFaced": 24,
@@ -180,15 +177,14 @@
         "blownSaves": 0,
         "createdAt": 1700000002000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_starter"
       },
       {
         "id": "sum_game_003:e2e_summary_team:e2e_pitcher_reliever",
         "gameId": "sum_game_003",
         "teamId": "e2e_summary_team",
         "opponentTeamId": "e2e_opp_team",
-        "pitcherKey": "e2e_pitcher_reliever",
-        "pitcherId": "pitcher_reliever",
         "nameAtGameTime": "R. Reliever",
         "outsPitched": 3,
         "battersFaced": 3,
@@ -203,10 +199,11 @@
         "blownSaves": 0,
         "createdAt": 1700000003000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_reliever"
       }
     ],
     "requiredTeamIds": []
   },
-  "sig": "580c4afd"
+  "sig": "bcfd2e70"
 }

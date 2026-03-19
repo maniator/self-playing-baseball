@@ -93,6 +93,11 @@ export const useGameHistorySync = (
       for (const [key, batting] of Object.entries(teamStats)) {
         const playerId = key;
 
+        // Skip legacy slot-based keys (e.g. "slot:1") that arise when old play-log
+        // entries lack a real playerId. Committing them would create permanent stat
+        // rows keyed by non-real IDs and pollute Career Stats navigation.
+        if (playerId.startsWith("slot:")) continue;
+
         // Name comes from playerOverrides (nickname set at game-start from PlayerRecord.name).
         const slotIdx = order.indexOf(playerId);
         const nameAtGameTime =

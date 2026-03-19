@@ -447,6 +447,7 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.pitcherGameStats.bulkInsert(
         pitchersToInsert.map((p) => ({
           ...p,
+          pitchesThrown: p.pitchesThrown ?? 0,
           createdAt: p.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
