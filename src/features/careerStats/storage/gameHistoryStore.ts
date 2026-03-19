@@ -161,7 +161,7 @@ function buildStore(getDbFn: GetDb) {
           doubles: doc.batting.doubles,
           triples: doc.batting.triples,
           homers: doc.batting.homers,
-          sacFlies: doc.batting.sacFlies ?? 0,
+          sacFlies: doc.batting.sacFlies,
           gamesPlayed: 1,
           teamId: doc.teamId,
         };
@@ -175,7 +175,7 @@ function buildStore(getDbFn: GetDb) {
         existing.doubles += doc.batting.doubles;
         existing.triples += doc.batting.triples;
         existing.homers += doc.batting.homers;
-        existing.sacFlies = (existing.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
+        existing.sacFlies += doc.batting.sacFlies;
         existing.gamesPlayed++;
       }
     }
@@ -247,7 +247,7 @@ function buildStore(getDbFn: GetDb) {
       agg.doubles += doc.batting.doubles;
       agg.triples += doc.batting.triples;
       agg.homers += doc.batting.homers;
-      agg.sacFlies = (agg.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
+      agg.sacFlies += doc.batting.sacFlies;
     }
 
     return Object.values(aggregated);

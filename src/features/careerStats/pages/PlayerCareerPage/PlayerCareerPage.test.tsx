@@ -55,6 +55,7 @@ function makeBattingRow(overrides = {}) {
       doubles: 1,
       triples: 0,
       homers: 0,
+      sacFlies: 0,
     },
     createdAt: NOW,
     schemaVersion: 1,

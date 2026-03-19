@@ -56,6 +56,7 @@ const makeStatRow = (
     doubles: 1,
     triples: 0,
     homers: 0,
+    sacFlies: 0,
   },
 });
 
@@ -214,7 +215,7 @@ describe("GameHistoryStore export/import", () => {
       games: [],
       playerGameStats: [],
       // Only custom: team IDs are validated; stock teams always pass.
-      requiredTeamIds: ["custom:ct_missingteam"],
+      requiredTeamIds: ["ct_missingteam"],
     };
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
