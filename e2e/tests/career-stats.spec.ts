@@ -32,9 +32,11 @@ test.describe("Career Stats smoke", () => {
     await resetAppState(page);
   });
 
-  test("Career Stats button is visible on the Home screen", async ({ page }) => {
+  test("Career Stats button is not present on the Home screen on a fresh install", async ({
+    page,
+  }) => {
     await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("home-career-stats-button")).toBeVisible();
+    await expect(page.getByTestId("home-career-stats-button")).not.toBeAttached();
   });
 
   test("Career Stats page loads at /stats", async ({ page }) => {

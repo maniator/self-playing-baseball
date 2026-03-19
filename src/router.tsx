@@ -27,7 +27,7 @@ function HomeRoute() {
       onResumeCurrent={ctx.hasActiveSession ? ctx.onResumeCurrent : undefined}
       onHelp={ctx.onHelp}
       onContact={ctx.onContact}
-      onCareerStats={ctx.onCareerStats}
+      onCareerStats={ctx.hasCareerStats ? ctx.onCareerStats : undefined}
     />
   );
 }
