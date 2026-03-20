@@ -80,8 +80,15 @@ describe("handleLifecycleAction — reset", () => {
 describe("handleLifecycleAction — restore_game", () => {
   it("backfills rbi from runs on playLog entries that lack rbi", () => {
     const oldPlayLog = [
-      { inning: 1, half: 0 as const, batterNum: 1,
-        playerId: "p1", team: 0 as const, event: Hit.Single, runs: 1 },
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p1",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 1,
+      },
     ];
     const restored = makeState({ playLog: oldPlayLog });
     const next = handleLifecycleAction(makeState(), { type: "restore_game", payload: restored });

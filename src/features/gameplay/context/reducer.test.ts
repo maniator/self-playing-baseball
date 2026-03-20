@@ -1248,10 +1248,24 @@ describe("strikeout tracking", () => {
 describe("restore_game — RBI backfill for older saves", () => {
   it("backfills rbi from runs on playLog entries that lack rbi", () => {
     const oldPlayLog = [
-      { inning: 1, half: 0 as const, batterNum: 1,
-        playerId: "p1", team: 0 as const, event: Hit.Single, runs: 1 },
-      { inning: 2, half: 0 as const, batterNum: 3,
-        playerId: "p3", team: 0 as const, event: Hit.Homerun, runs: 4 },
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p1",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 1,
+      },
+      {
+        inning: 2,
+        half: 0 as const,
+        batterNum: 3,
+        playerId: "p3",
+        team: 0 as const,
+        event: Hit.Homerun,
+        runs: 4,
+      },
     ];
     const { state } = dispatchAction(
       makeState({ playLog: oldPlayLog }),
@@ -1290,8 +1304,15 @@ describe("restore_game — RBI backfill for older saves", () => {
 
   it("zero-runs entry gets rbi=0 after backfill", () => {
     const oldPlayLog = [
-      { inning: 1, half: 0 as const, batterNum: 1,
-        playerId: "p1", team: 0 as const, event: Hit.Single, runs: 0 },
+      {
+        inning: 1,
+        half: 0 as const,
+        batterNum: 1,
+        playerId: "p1",
+        team: 0 as const,
+        event: Hit.Single,
+        runs: 0,
+      },
     ];
     const { state } = dispatchAction(
       makeState({ playLog: oldPlayLog }),
@@ -1407,10 +1428,26 @@ describe("restore_game when current game is already over (load-over-finished reg
       score: [2, 1],
       pitchKey: 30,
       playLog: [
-        { inning: 2, half: 0, batterNum: 1,
-        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 },
-        { inning: 4, half: 1, batterNum: 3,
-        playerId: "p3", team: 1, event: Hit.Homerun, runs: 1, rbi: 1 },
+        {
+          inning: 2,
+          half: 0,
+          batterNum: 1,
+          playerId: "p1",
+          team: 0,
+          event: Hit.Single,
+          runs: 0,
+          rbi: 0,
+        },
+        {
+          inning: 4,
+          half: 1,
+          batterNum: 3,
+          playerId: "p3",
+          team: 1,
+          event: Hit.Homerun,
+          runs: 1,
+          rbi: 1,
+        },
       ],
     });
     const { state: afterSecondLoad } = dispatchAction(
@@ -1606,8 +1643,18 @@ describe("save → load → save round-trip scenarios", () => {
       gameOver: true,
       inning: 9,
       score: [5, 3],
-      playLog: [{ inning: 1, half: 0, batterNum: 1,
-        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+      playLog: [
+        {
+          inning: 1,
+          half: 0,
+          batterNum: 1,
+          playerId: "p1",
+          team: 0,
+          event: Hit.Single,
+          runs: 0,
+          rbi: 0,
+        },
+      ],
     });
     const { state: loaded } = dispatchAction(makeState(), "restore_game", finished);
     expect(loaded.gameOver).toBe(true);
@@ -1624,18 +1671,44 @@ describe("save → load → save round-trip scenarios", () => {
       inning: 3,
       score: [1, 0],
       teams: ["Red Sox", "Yankees"],
-      playLog: [{ inning: 1, half: 0, batterNum: 1,
-        playerId: "p1", team: 0, event: Hit.Single, runs: 0, rbi: 0 }],
+      playLog: [
+        {
+          inning: 1,
+          half: 0,
+          batterNum: 1,
+          playerId: "p1",
+          team: 0,
+          event: Hit.Single,
+          runs: 0,
+          rbi: 0,
+        },
+      ],
     });
     const saveB = makeState({
       inning: 7,
       score: [4, 2],
       teams: ["Mets", "Cubs"],
       playLog: [
-        { inning: 2, half: 0, batterNum: 2,
-        playerId: "p2", team: 0, event: Hit.Homerun, runs: 1, rbi: 1 },
-        { inning: 5, half: 1, batterNum: 1,
-        playerId: "p1", team: 1, event: Hit.Double, runs: 0, rbi: 0 },
+        {
+          inning: 2,
+          half: 0,
+          batterNum: 2,
+          playerId: "p2",
+          team: 0,
+          event: Hit.Homerun,
+          runs: 1,
+          rbi: 1,
+        },
+        {
+          inning: 5,
+          half: 1,
+          batterNum: 1,
+          playerId: "p1",
+          team: 1,
+          event: Hit.Double,
+          runs: 0,
+          rbi: 0,
+        },
       ],
     });
     const { state: afterA } = dispatchAction(makeState(), "restore_game", saveA);
