@@ -121,7 +121,7 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
         city: action.draft.city,
         nickname: action.draft.nickname,
         lineup: action.draft.roster.lineup.map(draftPlayerToEditor),
-        bench: action.draft.roster.bench.map(draftPlayerToEditor),
+        bench: (action.draft.roster.bench ?? []).map(draftPlayerToEditor),
         pitchers: action.draft.roster.pitchers.map(draftPlayerToEditor),
         error: "",
       };
@@ -137,9 +137,9 @@ const draftPlayerToEditor = (p: CustomTeamDraft["roster"]["lineup"][number]): Ed
   name: p.name,
   position: p.position ?? "",
   handedness: p.handedness ?? "R",
-  contact: p.batting.contact,
-  power: p.batting.power,
-  speed: p.batting.speed,
+  contact: p.role === "pitcher" ? 40 : p.batting.contact,
+  power: p.role === "pitcher" ? 40 : p.batting.power,
+  speed: p.role === "pitcher" ? 40 : p.batting.speed,
   ...(p.pitching && {
     velocity: p.pitching.velocity,
     control: p.pitching.control,
@@ -153,9 +153,9 @@ const docPlayerToEditor = (p: TeamPlayer): EditorPlayer => ({
   name: p.name,
   position: p.position ?? "",
   handedness: p.handedness ?? "R",
-  contact: p.batting.contact,
-  power: p.batting.power,
-  speed: p.batting.speed,
+  contact: p.role === "pitcher" ? 40 : p.batting.contact,
+  power: p.role === "pitcher" ? 40 : p.batting.power,
+  speed: p.role === "pitcher" ? 40 : p.batting.speed,
   ...(p.pitching && {
     velocity: p.pitching.velocity,
     control: p.pitching.control,
@@ -170,7 +170,7 @@ export const initEditorState = (team?: TeamWithRoster): EditorState => ({
   city: team?.city ?? "",
   nickname: team?.nickname ?? "",
   lineup: team?.roster.lineup.map(docPlayerToEditor) ?? [],
-  bench: team?.roster.bench.map(docPlayerToEditor) ?? [],
+  bench: team?.roster.bench?.map(docPlayerToEditor) ?? [],
   pitchers: team?.roster.pitchers.map(docPlayerToEditor) ?? [],
   error: "",
 });
@@ -239,7 +239,14 @@ export function validateEditorState(state: EditorState): string {
 
   // Check pitcher stat cap (velocity + control + movement ≤ PITCHER_STAT_CAP).
   for (const player of state.pitchers) {
-    const total = pitcherStatTotal(player.velocity ?? 0, player.control ?? 0, player.movement ?? 0);
+    if (
+      player.velocity === undefined ||
+      player.control === undefined ||
+      player.movement === undefined
+    ) {
+      return `${player.name || "A pitcher"} is missing pitching stats.`;
+    }
+    const total = pitcherStatTotal(player.velocity, player.control, player.movement);
     if (total > PITCHER_STAT_CAP) {
       return `${player.name || "A pitcher"} is over the stat cap (${total} / ${PITCHER_STAT_CAP}).`;
     }
@@ -265,19 +272,44 @@ export function editorStateToCreateInput(state: EditorState): CreateCustomTeamIn
 
 const editorToTeamPlayer =
   (role: "batter" | "pitcher") =>
-  (p: EditorPlayer): TeamPlayer => ({
-    id: p.id,
-    name: p.name.trim(),
-    role,
-    position: p.position || undefined,
-    handedness: p.handedness || undefined,
-    batting: { contact: p.contact, power: p.power, speed: p.speed },
-    ...(role === "pitcher" &&
-      p.velocity !== undefined && {
-        pitching: { velocity: p.velocity, control: p.control ?? 60, movement: p.movement ?? 60 },
-      }),
-    ...(role === "pitcher" && p.pitchingRole !== undefined && { pitchingRole: p.pitchingRole }),
-  });
+  (p: EditorPlayer): TeamPlayer => {
+    const trimmedPosition = p.position.trim();
+    const pitcherRoleFromPosition =
+      trimmedPosition === "SP" || trimmedPosition === "RP" || trimmedPosition === "SP/RP"
+        ? trimmedPosition
+        : undefined;
+    const normalizedPitchingRole = p.pitchingRole ?? pitcherRoleFromPosition ?? "SP/RP";
+
+    if (role === "pitcher") {
+      if (p.velocity === undefined || p.control === undefined || p.movement === undefined) {
+        throw new Error("Pitcher is missing pitching stats.");
+      }
+
+      return {
+        id: p.id,
+        name: p.name.trim(),
+        role: "pitcher",
+        position: normalizedPitchingRole,
+        handedness: p.handedness,
+        pitching: {
+          velocity: p.velocity,
+          control: p.control,
+          movement: p.movement,
+          stamina: 60,
+        },
+        pitchingRole: normalizedPitchingRole,
+      };
+    }
+
+    return {
+      id: p.id,
+      name: p.name.trim(),
+      role: "batter",
+      position: trimmedPosition || "DH",
+      handedness: p.handedness,
+      batting: { contact: p.contact, power: p.power, speed: p.speed, stamina: 50 },
+    };
+  };
 
 /**
  * Converts a single `EditorPlayer` to a `TeamPlayer` with the given role.
