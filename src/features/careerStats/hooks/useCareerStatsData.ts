@@ -47,7 +47,7 @@ export function useCareerStatsData() {
     >(null);
 
   const selectableTeamIds = React.useMemo<string[]>(() => {
-    const customIds = customTeams.map((team) => team.id);
+    const customIds = customTeams.map((team) => team.id).sort((a, b) => a.localeCompare(b));
     const historyIds = [...teamsWithHistory].sort((a, b) => a.localeCompare(b));
     return Array.from(new Set([...customIds, ...historyIds]));
   }, [customTeams, teamsWithHistory]);

@@ -1,10 +1,13 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import {
+  clickWithRetry,
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   importTeamsFixture,
   loadFixture,
+  playerRow,
+  playerRowButton,
   resetAppState,
   startGameViaPlayBall,
 } from "../utils/helpers";
@@ -42,17 +45,6 @@ test.describe("Career Stats smoke", () => {
   test("Career Stats page loads at /stats", async ({ page }) => {
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-  });
-
-  test("Career Stats button navigates to Career Stats page", async ({ page }) => {
-    await loadFixture(page, "sample-save.json");
-    await importHistoryFixture(page, "career-stats-history.json");
-    await page.goto("/");
-    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
-    await expect(page.getByTestId("home-career-stats-button")).toBeVisible({ timeout: 10_000 });
-    await page.getByTestId("home-career-stats-button").click();
-    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 10_000 });
-    expect(page.url()).toContain("/stats");
   });
 
   test("Career Stats page shows no-teams empty state on fresh install", async ({ page }) => {
@@ -120,32 +112,6 @@ test.describe("Career Stats smoke", () => {
 // ── 2. Seeded history ───────────────────────────────────────────────────────
 
 test.describe("Career Stats with seeded history", () => {
-  async function clickWithRetry(getLocator: () => ReturnType<Page["locator"]>, attempts = 3) {
-    let lastError: unknown;
-    for (let i = 0; i < attempts; i += 1) {
-      const locator = getLocator();
-      try {
-        await locator.waitFor({ state: "visible", timeout: 20_000 });
-        await locator.scrollIntoViewIfNeeded();
-        await locator.click({ timeout: 20_000 });
-        return;
-      } catch (error) {
-        lastError = error;
-        await locator.waitFor({ state: "attached", timeout: 20_000 });
-        await locator.page().waitForTimeout(750);
-      }
-    }
-    throw lastError;
-  }
-
-  function playerRow(page: Page, name: string) {
-    return page.locator("tbody tr", { hasText: name }).first();
-  }
-
-  function playerRowButton(page: Page, name: string) {
-    return playerRow(page, name).getByRole("button", { name, exact: true });
-  }
-
   /**
    * Seed helper: starts a game (to get SavesModal access), imports the
    * career-stats-history.json fixture, then navigates to /stats and selects
@@ -237,6 +203,19 @@ test.describe("Career Stats with seeded history", () => {
     }
     await expect(aceButton).toBeVisible({ timeout: 30_000 });
   }
+
+  test("Career Stats button navigates to Career Stats page when history exists", async ({
+    page,
+  }) => {
+    await loadFixture(page, "sample-save.json");
+    await importHistoryFixture(page, "career-stats-history.json");
+    await page.goto("/");
+    await expect(page.getByTestId("home-screen")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("home-career-stats-button")).toBeVisible({ timeout: 10_000 });
+    await page.getByTestId("home-career-stats-button").click();
+    await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 10_000 });
+    expect(page.url()).toContain("/stats");
+  });
 
   test("batting tab shows seeded batter rows", async ({ page }) => {
     await seedAndOpen(page);

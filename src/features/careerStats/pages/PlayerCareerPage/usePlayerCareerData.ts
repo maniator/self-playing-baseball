@@ -2,7 +2,8 @@
  * usePlayerCareerData — data-loading hook for PlayerCareerPage.
  *
  * Fetches batting/pitching game rows, computes career totals, and derives
- * the prev/next roster navigation keys from the ?team= query param.
+ * the prev/next roster navigation keys from the :teamId URL parameter
+ * (route: /stats/:teamId/players/:playerId).
  */
 import * as React from "react";
 

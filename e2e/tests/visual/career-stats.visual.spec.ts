@@ -5,6 +5,8 @@ import {
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   loadFixture,
+  playerRow,
+  playerRowButton,
   resetAppState,
 } from "../../utils/helpers";
 
@@ -54,14 +56,6 @@ test.describe("Visual — empty states", () => {
 // ── Seeded data ─────────────────────────────────────────────────────────────
 
 test.describe("Visual — seeded history data", () => {
-  function playerRow(page: Page, name: string) {
-    return page.locator("tbody tr", { hasText: name }).first();
-  }
-
-  function playerRowButton(page: Page, name: string) {
-    return playerRow(page, name).getByRole("button", { name, exact: true });
-  }
-
   /**
    * Seed the DB (via SavesModal import) and navigate to /stats, selecting
    * the e2e_home_team in the dropdown.
@@ -189,14 +183,6 @@ test.describe("Visual — seeded history data", () => {
 // ── Team Summary + Leaders ───────────────────────────────────────────────────
 
 test.describe("Visual — Team Summary and Leaders", () => {
-  function playerRow(page: Page, name: string) {
-    return page.locator("tbody tr", { hasText: name }).first();
-  }
-
-  function playerRowButton(page: Page, name: string) {
-    return playerRow(page, name).getByRole("button", { name, exact: true });
-  }
-
   async function seedSummaryAndOpen(page: Page) {
     await page.addInitScript(() => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);

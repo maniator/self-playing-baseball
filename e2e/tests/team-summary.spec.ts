@@ -15,6 +15,7 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import {
+  clickWithRetry,
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   loadFixture,
@@ -24,24 +25,6 @@ import {
 // ── Team Summary + Leaders ────────────────────────────────────────────────────
 
 test.describe("Team Summary and Leaders", () => {
-  async function clickWithRetry(getLocator: () => ReturnType<Page["locator"]>, attempts = 3) {
-    let lastError: unknown;
-    for (let i = 0; i < attempts; i += 1) {
-      const locator = getLocator();
-      try {
-        await locator.waitFor({ state: "visible", timeout: 20_000 });
-        await locator.scrollIntoViewIfNeeded();
-        await locator.click({ timeout: 20_000 });
-        return;
-      } catch (error) {
-        lastError = error;
-        await locator.waitFor({ state: "attached", timeout: 20_000 });
-        await locator.page().waitForTimeout(750);
-      }
-    }
-    throw lastError;
-  }
-
   /**
    * Seeds the team-summary-history fixture and opens /stats with e2e_summary_team selected.
    * The fixture has 3 games: W/L/W → streak=W1, W/L=2-1, RS=16, RA=10, DIFF=+6.
