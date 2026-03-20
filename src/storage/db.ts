@@ -105,17 +105,31 @@ async function initDb(
     name,
     storage: storage as RxStorage<object, object>,
     multiInstance: false,
+    // Close any stale DB instance with the same name that might still be
+    // registered in RxDB's in-process registry from a previous render cycle
+    // (e.g., during PWA updates when the old epoch is still in memory while
+    // the new JS initializes). Without this, RxDB can throw DB8, causing
+    // initialization to fail and blocking DB usage until a subsequent retry
+    // succeeds.
+    closeDuplicates: true,
   });
-  await db.addCollections({
-    saves: savesV1CollectionConfig,
-    events: eventsV1CollectionConfig,
-    teams: teamsV1CollectionConfig,
-    players: playersV1CollectionConfig,
-    completedGames: completedGamesV1CollectionConfig,
-    batterGameStats: batterGameStatsV1CollectionConfig,
-    pitcherGameStats: pitcherGameStatsV1CollectionConfig,
-  });
-  return db;
+  try {
+    await db.addCollections({
+      saves: savesV1CollectionConfig,
+      events: eventsV1CollectionConfig,
+      teams: teamsV1CollectionConfig,
+      players: playersV1CollectionConfig,
+      completedGames: completedGamesV1CollectionConfig,
+      batterGameStats: batterGameStatsV1CollectionConfig,
+      pitcherGameStats: pitcherGameStatsV1CollectionConfig,
+    });
+    return db;
+  } catch (err) {
+    // Best-effort cleanup: close partially initialized instances so retries do
+    // not inherit stale in-process handles.
+    await db.close().catch(() => undefined);
+    throw err;
+  }
 }
 
 let dbPromise: Promise<BallgameDb> | null = null;
@@ -169,7 +183,12 @@ export const getDb = (): Promise<BallgameDb> => {
         if (resetSucceeded) dbWasReset = true;
         return initDb(storage);
       }
-    })();
+    })().catch((err) => {
+      // If overall initialization fails, clear the cached promise so a future
+      // call to getDb() can retry instead of reusing a rejected promise.
+      dbPromise = null;
+      throw err;
+    });
   }
   return dbPromise;
 };

@@ -1,7 +1,7 @@
 import "fake-indexeddb/auto";
 
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createTestDb } from "@test/helpers/db";
 
@@ -98,6 +98,35 @@ describe("db collections", () => {
     });
     const results = await db.events.find({ selector: { saveId: "save_a" } }).exec();
     expect(results).toHaveLength(3);
+  });
+});
+
+describe("getDb schema recovery behavior", () => {
+  it("does not treat DB8 as schema-failure reset path", async () => {
+    const removeRxDatabaseMock = vi.fn();
+    const createRxDatabaseMock = vi.fn().mockRejectedValue({ code: "DB8" });
+
+    vi.resetModules();
+    vi.doMock("rxdb", async (importActual) => {
+      const actual = await importActual<typeof import("rxdb")>();
+      return {
+        ...actual,
+        createRxDatabase: createRxDatabaseMock,
+        removeRxDatabase: removeRxDatabaseMock,
+      };
+    });
+    vi.doMock("rxdb/plugins/storage-dexie", () => ({
+      getRxStorageDexie: vi.fn(() => ({})),
+    }));
+
+    const dbModule = await import("./db");
+
+    await expect(dbModule.getDb()).rejects.toMatchObject({ code: "DB8" });
+    expect(removeRxDatabaseMock).not.toHaveBeenCalled();
+
+    vi.resetModules();
+    vi.doUnmock("rxdb");
+    vi.doUnmock("rxdb/plugins/storage-dexie");
   });
 });
 
