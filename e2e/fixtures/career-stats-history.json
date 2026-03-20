@@ -1,6 +1,6 @@
 {
   "type": "gameHistory",
-  "formatVersion": 2,
+  "formatVersion": 1,
   "exportedAt": "2023-11-14T21:33:20.000Z",
   "payload": {
     "games": [
