@@ -230,12 +230,14 @@ test.describe("Role-aware Player Career tabs", () => {
     });
   });
 
-  test("player with no history shows both tabs (empty state)", async ({ page }) => {
+  test("player with no history shows only the tab matching their roster role", async ({ page }) => {
     await seedForRoleAware(page);
     await page.goto("/stats/e2e_summary_team/players/e2e_unknown_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    // Both tabs present in the empty state
+    // e2e_unknown_player is a batter in the fixture — only Batting tab should appear
     await expect(page.getByRole("button", { name: /^batting$/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("button", { name: /^pitching$/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible({
+      timeout: 5_000,
+    });
   });
 });

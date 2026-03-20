@@ -161,6 +161,20 @@ export function usePlayerCareerData(playerId: string | undefined) {
     return "Unknown Player";
   }, [battingRows, pitchingRows, playerId, teamDoc]);
 
+  /**
+   * The player's declared role from the team roster, if known.
+   * Used to determine which stat tabs to show when no game history exists yet.
+   */
+  const rosterRole = React.useMemo<TeamPlayer["role"] | null>(() => {
+    if (!playerId || !teamDoc) return null;
+    const allPlayers = [
+      ...(teamDoc.roster.lineup ?? []),
+      ...(teamDoc.roster.bench ?? []),
+      ...(teamDoc.roster.pitchers ?? []),
+    ] as TeamPlayer[];
+    return allPlayers.find((p) => p.id === playerId)?.role ?? null;
+  }, [playerId, teamDoc]);
+
   const roleLabel = React.useMemo<string>(() => {
     const hasBatting = battingRows.length > 0;
     const hasPitching = pitchingRows.length > 0;
@@ -239,6 +253,7 @@ export function usePlayerCareerData(playerId: string | undefined) {
     battingTotals,
     pitchingTotals,
     rosterPlayerKeys,
+    rosterRole,
     prevKey,
     nextKey,
     navigateToPlayer,

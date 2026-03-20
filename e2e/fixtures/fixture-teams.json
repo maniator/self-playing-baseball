@@ -339,8 +339,43 @@
             }
           ]
         }
+      },
+      {
+        "id": "e2e_summary_team",
+        "schemaVersion": 1,
+        "createdAt": "2025-01-01T00:00:00.000Z",
+        "updatedAt": "2025-01-01T00:00:00.000Z",
+        "name": "E2E Summary Team",
+        "abbreviation": "E2E",
+        "city": "",
+        "source": "custom",
+        "fingerprint": "287e51d3",
+        "metadata": {
+          "archived": false
+        },
+        "roster": {
+          "schemaVersion": 1,
+          "lineup": [
+            {
+              "id": "e2e_unknown_player",
+              "name": "E. Unknown",
+              "role": "batter",
+              "batting": {
+                "contact": 50,
+                "power": 50,
+                "speed": 50
+              },
+              "position": "CF",
+              "handedness": "R",
+              "sig": "cc064f0d",
+              "fingerprint": "cc064f0d"
+            }
+          ],
+          "bench": [],
+          "pitchers": []
+        }
       }
     ]
   },
-  "sig": "89f40769"
+  "sig": "7417bb7e"
 }
