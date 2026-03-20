@@ -148,8 +148,8 @@ test.describe("Team Summary and Leaders", () => {
     await expect(hrCard).toBeVisible({ timeout: 10_000 });
     await hrCard.click();
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    expect(page.url()).toContain("/players/e2e_batter_qualify");
-    expect(page.url()).toContain("team=e2e_summary_team");
+    expect(page.url()).toContain("/stats/");
+    expect(page.url()).toContain("e2e_batter_qualify");
   });
 });
 
@@ -166,7 +166,7 @@ test.describe("Role-aware Player Career tabs", () => {
 
   test("batter-only player (no pitching history) does NOT show Pitching tab", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_batter_qualify");
+    await page.goto("/stats/e2e_summary_team/players/e2e_batter_qualify");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Wait for player name (only rendered after loading completes) to avoid checking
     // not.toBeVisible() while loading=true shows both tabs as placeholders.
@@ -179,7 +179,7 @@ test.describe("Role-aware Player Career tabs", () => {
 
   test("pitcher-only player (no batting history) does NOT show Batting tab", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_pitcher_starter");
+    await page.goto("/stats/e2e_summary_team/players/e2e_pitcher_starter");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Wait for player name (only rendered after loading completes) to avoid checking
     // not.toBeVisible() while loading=true shows both tabs as placeholders.
@@ -190,12 +190,14 @@ test.describe("Role-aware Player Career tabs", () => {
     });
   });
 
-  test("player with no history shows both tabs (empty state)", async ({ page }) => {
+  test("player with no history shows only the tab matching their roster role", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_unknown_player");
+    await page.goto("/stats/e2e_summary_team/players/e2e_unknown_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    // Both tabs present in the empty state
+    // e2e_unknown_player is a batter in the fixture — only Batting tab should appear
     await expect(page.getByRole("button", { name: /^batting$/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("button", { name: /^pitching$/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible({
+      timeout: 5_000,
+    });
   });
 });

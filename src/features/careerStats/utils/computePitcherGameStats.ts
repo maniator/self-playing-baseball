@@ -122,7 +122,7 @@ export const computePitcherGameStats = (
           strikeoutsRecorded: entry.strikeoutsRecorded,
           runsAllowed: entry.runsAllowed,
           homersAllowed: entry.homersAllowed,
-          earnedRuns: entry.runsAllowed, // v1: earnedRuns = runsAllowed
+          earnedRuns: entry.runsAllowed,
           saves: svhb.saves,
           holds: svhb.holds,
           blownSaves: svhb.blownSaves,

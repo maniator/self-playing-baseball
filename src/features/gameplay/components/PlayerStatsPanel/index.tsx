@@ -193,14 +193,11 @@ const PlayerStatsPanel: React.FunctionComponent<{ activeTeam?: 0 | 1 }> = ({ act
     return lineupIds.slice(0, 9).map((id) => customPositions.get(id) ?? "");
   }, [lineupPositions, activeTeam, lineupIds, teamDoc]);
 
-  // Look up stats for a slot by player ID falling back to slot-number string key
-  // (legacy saves where playerId was not recorded). Always returns a defined BatterStat.
+  // Look up stats for a slot by player ID. Always returns a defined BatterStat.
   const getSlotStats = React.useCallback(
     (slotNum: number): BatterStat => {
       const playerId = lineupIds[slotNum - 1];
-      return (
-        (playerId ? stats[playerId] : undefined) ?? stats[`slot:${slotNum}`] ?? emptyBatterStat()
-      );
+      return (playerId ? stats[playerId] : undefined) ?? emptyBatterStat();
     },
     [stats, lineupIds],
   );

@@ -84,13 +84,18 @@ function makeTeamDoc(
   };
 }
 
-function renderPage() {
+function renderPage(initialEntry = "/stats/team1") {
   return render(
-    <MemoryRouter initialEntries={["/stats"]}>
+    <MemoryRouter initialEntries={[initialEntry]}>
       <Routes>
         <Route path="/stats" element={<CareerStatsPage />} />
+        <Route path="/stats/:teamId" element={<CareerStatsPage />} />
         <Route path="/" element={<div data-testid="home-screen" />} />
-        <Route path="/players/:playerKey" element={<div data-testid="player-page" />} />
+        <Route
+          path="/stats/:teamId/players/:playerId"
+          element={<div data-testid="player-page" />}
+        />
+        <Route path="/teams/:teamId/edit" element={<div data-testid="team-editor-page" />} />
       </Routes>
     </MemoryRouter>,
   );
@@ -152,6 +157,36 @@ describe("CareerStatsPage", () => {
     });
   });
 
+  it("shows Edit This Team button for a selected custom team", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Custom Team", { city: "Test", abbreviation: "TST" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    expect(await screen.findByTestId("career-stats-edit-team-button")).toBeInTheDocument();
+  });
+
+  it("navigates to team editor when Edit This Team is clicked", async () => {
+    const user = userEvent.setup();
+    vi.mocked(useCustomTeams).mockReturnValue({
+      teams: [makeTeamDoc("team1", "Custom Team", { city: "Test", abbreviation: "TST" })],
+      loading: false,
+      createTeam: vi.fn(),
+      updateTeam: vi.fn(),
+      deleteTeam: vi.fn(),
+      refresh: vi.fn(),
+    });
+
+    renderPage();
+    await user.click(await screen.findByTestId("career-stats-edit-team-button"));
+    expect(mockNavigate).toHaveBeenCalledWith("/teams/team1/edit");
+  });
+
   it("back button navigates to home", async () => {
     const user = userEvent.setup();
     renderPage();
@@ -189,7 +224,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "custom:ct_1:p1",
+        playerId: "plyr_p1",
         nameAtGameTime: "John Smith",
         gamesPlayed: 5,
         atBats: 20,
@@ -197,6 +232,7 @@ describe("CareerStatsPage", () => {
         doubles: 2,
         triples: 0,
         homers: 1,
+        sacFlies: 0,
         walks: 3,
         strikeouts: 4,
         rbi: 4,
@@ -225,7 +261,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "plyr_p1",
         nameAtGameTime: "Bob Pitcher",
         gamesPlayed: 3,
         outsPitched: 27,
@@ -341,7 +377,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "plyr_p1",
         nameAtGameTime: "Zero IP Pitcher",
         gamesPlayed: 1,
         outsPitched: 0, // 0 IP → ERA and WHIP should display "—"
@@ -414,9 +450,9 @@ describe("CareerStatsPage", () => {
       expect((select as HTMLSelectElement).value).not.toBe("");
     });
 
-    // Change the selection to the second team — fires the onChange handler.
+    // Change the selection to the second team — onChange calls navigate('/stats/team2').
     await user.selectOptions(select, "team2");
-    expect((select as HTMLSelectElement).value).toBe("team2");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team2");
   });
 
   it("clicking a player row in pitching table navigates to player page", async () => {
@@ -432,7 +468,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "custom:ct_1:p1",
+        playerId: "plyr_p1",
         nameAtGameTime: "Click Pitcher",
         gamesPlayed: 1,
         outsPitched: 9,
@@ -457,7 +493,7 @@ describe("CareerStatsPage", () => {
 
     // Clicking the pitcher name fires the onClick at line 293.
     await user.click(screen.getByText("Click Pitcher"));
-    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/players/"));
+    expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("/stats/team1/players/"));
   });
 
   it("clicking a batting column header sorts rows by that column", async () => {
@@ -472,7 +508,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Aaron",
         gamesPlayed: 5,
         atBats: 20,
@@ -480,13 +516,14 @@ describe("CareerStatsPage", () => {
         doubles: 1,
         triples: 0,
         homers: 2,
+        sacFlies: 0,
         walks: 3,
         strikeouts: 4,
         rbi: 5,
         singles: 5,
       },
       {
-        playerKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Bob",
         gamesPlayed: 3,
         atBats: 10,
@@ -494,6 +531,7 @@ describe("CareerStatsPage", () => {
         doubles: 0,
         triples: 0,
         homers: 0,
+        sacFlies: 0,
         walks: 1,
         strikeouts: 2,
         rbi: 1,
@@ -531,7 +569,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "ZebraCloser",
         gamesPlayed: 10,
         outsPitched: 27,
@@ -548,7 +586,7 @@ describe("CareerStatsPage", () => {
         blownSaves: 2,
       },
       {
-        pitcherKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "AcePitcher",
         gamesPlayed: 15,
         outsPitched: 135,
@@ -688,12 +726,12 @@ describe("CareerStatsPage", () => {
     expect(screen.getByText("K — no data")).toBeInTheDocument();
   });
 
-  it("renders HR leader card and clicking it navigates with URL-encoded key", async () => {
+  it("renders HR leader card and clicking it navigates to player career page", async () => {
     const user = userEvent.setup();
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: {
-        playerKey: "custom:ct_1:p_hr",
+        playerId: "plyr_hr",
         nameAtGameTime: "Homer King",
         value: 12,
         gamesPlayed: 5,
@@ -715,17 +753,17 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("hr-leader-card")).toHaveTextContent("12");
 
     await user.click(screen.getByTestId("hr-leader-card"));
-    // playerKey and teamId must be encoded (colons become %3A)
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_hr?team=team1");
+
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_hr");
   });
 
-  it("renders AVG leader card and clicking it navigates with URL-encoded key", async () => {
+  it("renders AVG leader card and clicking it navigates to player career page", async () => {
     const user = userEvent.setup();
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
       hrLeader: null,
       avgLeader: {
-        playerKey: "custom:ct_1:p_avg",
+        playerId: "plyr_avg",
         nameAtGameTime: "Avg Queen",
         value: 0.345,
         gamesPlayed: 5,
@@ -747,7 +785,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("avg-leader-card")).toHaveTextContent(".345");
 
     await user.click(screen.getByTestId("avg-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_avg?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_avg");
   });
 
   it("renders RBI leader card and clicking it navigates", async () => {
@@ -757,7 +795,7 @@ describe("CareerStatsPage", () => {
       hrLeader: null,
       avgLeader: null,
       rbiLeader: {
-        playerKey: "custom:ct_1:p_rbi",
+        playerId: "plyr_rbi",
         nameAtGameTime: "RBI Boss",
         value: 30,
         gamesPlayed: 5,
@@ -776,10 +814,10 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("rbi-leader-card")).toHaveTextContent("RBI Boss");
 
     await user.click(screen.getByTestId("rbi-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_rbi?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_rbi");
   });
 
-  it("renders ERA leader card and clicking it navigates with URL-encoded pitcherKey", async () => {
+  it("renders ERA leader card and clicking it navigates to player career page", async () => {
     const user = userEvent.setup();
     setupTeamWithSummary();
     vi.mocked(GameHistoryStore.getTeamBattingLeaders).mockResolvedValue({
@@ -789,7 +827,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
       eraLeader: {
-        pitcherKey: "custom:ct_1:p_era",
+        playerId: "plyr_era",
         nameAtGameTime: "Ace Starter",
         value: 2.25,
         gamesPlayed: 5,
@@ -806,7 +844,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("era-leader-card")).toHaveTextContent("2.25");
 
     await user.click(screen.getByTestId("era-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_era?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_era");
   });
 
   it("renders SV leader card and clicking it navigates", async () => {
@@ -820,7 +858,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamPitchingLeaders).mockResolvedValue({
       eraLeader: null,
       savesLeader: {
-        pitcherKey: "custom:ct_1:p_sv",
+        playerId: "plyr_sv",
         nameAtGameTime: "Save King",
         value: 15,
         gamesPlayed: 5,
@@ -835,7 +873,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("saves-leader-card")).toHaveTextContent("Save King");
 
     await user.click(screen.getByTestId("saves-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_sv?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_sv");
   });
 
   it("renders K (strikeouts) leader card and clicking it navigates", async () => {
@@ -850,7 +888,7 @@ describe("CareerStatsPage", () => {
       eraLeader: null,
       savesLeader: null,
       strikeoutsLeader: {
-        pitcherKey: "custom:ct_1:p_k",
+        playerId: "plyr_k",
         nameAtGameTime: "K Machine",
         value: 88,
         gamesPlayed: 5,
@@ -864,7 +902,7 @@ describe("CareerStatsPage", () => {
     expect(screen.getByTestId("k-leader-card")).toHaveTextContent("K Machine");
 
     await user.click(screen.getByTestId("k-leader-card"));
-    expect(mockNavigate).toHaveBeenCalledWith("/players/custom%3Act_1%3Ap_k?team=team1");
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1/players/plyr_k");
   });
 
   it("renders TeamSummarySection even when gamesPlayed is 0", async () => {
@@ -923,7 +961,7 @@ describe("CareerStatsPage", () => {
     });
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([
       {
-        playerKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Alpha",
         gamesPlayed: 10,
         atBats: 30,
@@ -931,13 +969,14 @@ describe("CareerStatsPage", () => {
         doubles: 2,
         triples: 0,
         homers: 3,
+        sacFlies: 0,
         walks: 4,
         strikeouts: 5,
         rbi: 8,
         singles: 5,
       },
       {
-        playerKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Zeta",
         gamesPlayed: 5,
         atBats: 15,
@@ -945,6 +984,7 @@ describe("CareerStatsPage", () => {
         doubles: 0,
         triples: 0,
         homers: 0,
+        sacFlies: 0,
         walks: 1,
         strikeouts: 2,
         rbi: 2,
@@ -980,7 +1020,7 @@ describe("CareerStatsPage", () => {
     vi.mocked(GameHistoryStore.getTeamCareerBattingStats).mockResolvedValue([]);
     vi.mocked(GameHistoryStore.getTeamCareerPitchingStats).mockResolvedValue([
       {
-        pitcherKey: "p1",
+        playerId: "p1",
         nameAtGameTime: "Alpha",
         gamesPlayed: 5,
         outsPitched: 27,
@@ -997,7 +1037,7 @@ describe("CareerStatsPage", () => {
         blownSaves: 0,
       },
       {
-        pitcherKey: "p2",
+        playerId: "p2",
         nameAtGameTime: "Zeta",
         gamesPlayed: 10,
         outsPitched: 90,

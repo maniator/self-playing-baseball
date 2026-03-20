@@ -94,8 +94,8 @@ test.describe("Player Career page — no raw ID for bench players with no stats 
     await importTeamsFixture(page, "career-stats-e2e-team-with-bench.json");
 
     // Navigate directly to the bench player's career page with the team context.
-    // Team id: ct_e2e_career_bench, bench player globalPlayerId: e2e_bench_never_played
-    await page.goto("/players/e2e_bench_never_played?team=ct_e2e_career_bench");
+    // Team id: ct_e2e_career_bench, bench player id: e2e_bench_never_played
+    await page.goto("/stats/ct_e2e_career_bench/players/e2e_bench_never_played");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
 
     // The page heading must show the real name "B. Benchwarmer", NOT the raw ID.
@@ -103,7 +103,7 @@ test.describe("Player Career page — no raw ID for bench players with no stats 
       timeout: 5_000,
     });
 
-    // The raw globalPlayerId must NOT appear anywhere as a heading.
+    // The raw player ID must NOT appear anywhere as a heading.
     await expect(page.getByRole("heading", { name: "e2e_bench_never_played" })).not.toBeVisible();
   });
 
@@ -113,7 +113,7 @@ test.describe("Player Career page — no raw ID for bench players with no stats 
     await resetAppState(page);
 
     // Navigate to a player that does not exist in any team and has no stats.
-    await page.goto("/players/pl_totally_nonexistent_id_xyz");
+    await page.goto("/stats/unknown_team/players/pl_totally_nonexistent_id_xyz");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
 
     // Must show "Unknown Player", not the raw key.

@@ -41,7 +41,7 @@ test.describe("Visual — empty states", () => {
   });
 
   test("Player Career page — empty state", async ({ page }) => {
-    await page.goto("/players/smoke_test_player");
+    await page.goto("/stats/unknown_team/players/smoke_test_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
@@ -130,7 +130,7 @@ test.describe("Visual — seeded history data", () => {
   test("Player Career page — batting log for seeded player", async ({ page }) => {
     await seedAndOpen(page);
     // Navigate to the seeded batter's player career page.
-    await page.goto("/players/e2e_batter_slugger");
+    await page.goto("/stats/e2e_home_team/players/e2e_batter_slugger");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Use a generous timeout for Career Totals on slower mobile WebKit viewports.
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 10_000 });
@@ -143,7 +143,7 @@ test.describe("Visual — seeded history data", () => {
 
   test("Player Career page — pitching log for C. Closer (SV=1)", async ({ page }) => {
     await seedAndOpen(page);
-    await page.goto("/players/e2e_pitcher_closer");
+    await page.goto("/stats/e2e_home_team/players/e2e_pitcher_closer");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Switch to the Pitching tab.
     await page.getByText("Pitching").click();
@@ -224,7 +224,7 @@ test.describe("Visual — Role-aware Player Career tabs", () => {
 
   test("Player Career page — batter-only (no Pitching tab)", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_batter_qualify");
+    await page.goto("/stats/e2e_summary_team/players/e2e_batter_qualify");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);
@@ -236,7 +236,7 @@ test.describe("Visual — Role-aware Player Career tabs", () => {
 
   test("Player Career page — pitcher-only (no Batting tab)", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_pitcher_starter");
+    await page.goto("/stats/e2e_summary_team/players/e2e_pitcher_starter");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);
