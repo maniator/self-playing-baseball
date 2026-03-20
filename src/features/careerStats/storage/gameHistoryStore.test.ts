@@ -3,13 +3,14 @@ import "fake-indexeddb/auto";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
 import { fnv1a } from "@storage/hash";
 import type {
   BatterGameStatRecord,
   CompletedGameRecord,
   PitcherGameStatRecord,
 } from "@storage/types";
+import { createTestDb } from "@test/helpers/db";
 
 import { GAME_HISTORY_EXPORT_KEY, makeGameHistoryStore } from "./gameHistoryStore";
 
@@ -17,7 +18,7 @@ let db: BallgameDb;
 let store: ReturnType<typeof makeGameHistoryStore>;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
   store = makeGameHistoryStore(() => Promise.resolve(db));
 });
 
@@ -142,7 +143,7 @@ describe("GameHistoryStore export/import", () => {
 
     const json = await store.exportGameHistory();
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
     await store2.importGameHistory(json, new Set(["Yankees", "Mets"]));
 
@@ -583,7 +584,7 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
     const json = await store.exportGameHistory();
 
     // Fresh DB for import.
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
 
     const result = await store2.importGameHistory(json, new Set(["Yankees", "Mets"]));
@@ -601,7 +602,7 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
     await store.commitCompletedGame(gameId, { ...gameMeta }, [], [makePitcherRow(gameId, "p1")]);
     const json = await store.exportGameHistory();
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
 
     const existingTeamIds = new Set(["Yankees", "Mets"]);

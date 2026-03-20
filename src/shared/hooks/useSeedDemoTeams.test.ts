@@ -24,8 +24,6 @@ vi.mock("@shared/utils/logger", () => ({
 import { CustomTeamStore } from "@feat/customTeams/storage/customTeamStore";
 import { appLog } from "@shared/utils/logger";
 
-import { _resetForTest, DEMO_SEED_DONE_KEY, useSeedDemoTeams } from "./useSeedDemoTeams";
-
 const mockStore = CustomTeamStore as unknown as {
   listCustomTeams: ReturnType<typeof vi.fn>;
   createCustomTeam: ReturnType<typeof vi.fn>;
@@ -35,9 +33,16 @@ const mockLog = appLog as unknown as {
   warn: ReturnType<typeof vi.fn>;
 };
 
-beforeEach(() => {
+let useSeedDemoTeamsFn: () => void;
+let demoSeedDoneKey = "ballgame:demoSeedDone";
+
+beforeEach(async () => {
   vi.clearAllMocks();
-  _resetForTest(); // resets _seedPromise and removes the localStorage flag
+  vi.resetModules();
+  const mod = await import("./useSeedDemoTeams");
+  useSeedDemoTeamsFn = mod.useSeedDemoTeams;
+  demoSeedDoneKey = mod.DEMO_SEED_DONE_KEY;
+  localStorage.removeItem(demoSeedDoneKey);
   mockStore.createCustomTeam.mockResolvedValue("ct_some_id");
 });
 
@@ -49,7 +54,7 @@ describe("useSeedDemoTeams", () => {
   it("does nothing when custom teams already exist", async () => {
     mockStore.listCustomTeams.mockResolvedValue([{ id: "ct_existing", name: "Some Team" }]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() => expect(mockStore.listCustomTeams).toHaveBeenCalledOnce());
     expect(mockStore.createCustomTeam).not.toHaveBeenCalled();
@@ -60,7 +65,7 @@ describe("useSeedDemoTeams", () => {
       { id: "ct_archived", name: "Old Team", metadata: { archived: true } },
     ]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() => expect(mockStore.listCustomTeams).toHaveBeenCalledOnce());
     expect(mockStore.createCustomTeam).not.toHaveBeenCalled();
@@ -74,7 +79,7 @@ describe("useSeedDemoTeams", () => {
   it("creates all demo teams when the collection is empty", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
@@ -84,18 +89,18 @@ describe("useSeedDemoTeams", () => {
   it("sets the localStorage done-flag after seeding", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
     );
-    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBe("1");
+    expect(localStorage.getItem(demoSeedDoneKey)).toBe("1");
   });
 
   it("skips seeding when the localStorage done-flag is already set (E2E suppression)", async () => {
-    localStorage.setItem(DEMO_SEED_DONE_KEY, "1");
+    localStorage.setItem(demoSeedDoneKey, "1");
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     // Use waitFor (which wraps in act) so React effects are fully flushed before
     // asserting. Avoids the flakiness of a fixed-duration setTimeout.
@@ -112,7 +117,7 @@ describe("useSeedDemoTeams", () => {
     });
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     // Should still fall through to the DB check and seed the teams.
     await waitFor(() =>
@@ -125,7 +130,7 @@ describe("useSeedDemoTeams", () => {
   it("passes correct team info and deterministic ID to createCustomTeam", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
@@ -146,7 +151,7 @@ describe("useSeedDemoTeams", () => {
   it("forwards position, handedness, and pitchingRole to every roster player", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
@@ -195,13 +200,13 @@ describe("useSeedDemoTeams", () => {
   it("does not re-seed when the hook mounts a second time in the same page load", async () => {
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
     );
 
     // Second mount — must reuse the in-flight promise and not trigger more calls.
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
     await new Promise((r) => setTimeout(r, 0));
     expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length);
   });
@@ -213,14 +218,14 @@ describe("useSeedDemoTeams", () => {
       .mockRejectedValueOnce(new Error(`A team named "${DEMO_TEAMS[0].name}" already exists`))
       .mockResolvedValue("ct_some_id");
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
     );
     expect(mockLog.warn).toHaveBeenCalled();
     // At least one succeeded → done-flag must be set.
-    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBe("1");
+    expect(localStorage.getItem(demoSeedDoneKey)).toBe("1");
   });
 
   it("does NOT set the done-flag and clears _seedPromise when ALL inserts fail", async () => {
@@ -228,34 +233,34 @@ describe("useSeedDemoTeams", () => {
     const dbError = new Error("transient DB error");
     mockStore.createCustomTeam.mockRejectedValue(dbError);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
 
     await waitFor(() => expect(mockLog.warn).toHaveBeenCalled());
     // All inserts failed → done-flag must NOT be set so the next mount can retry.
-    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBeNull();
+    expect(localStorage.getItem(demoSeedDoneKey)).toBeNull();
     // _seedPromise was cleared by the catch handler — a new mount retries seeding.
     mockStore.createCustomTeam.mockResolvedValue("ct_some_id");
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(
         DEMO_TEAMS.length * 2, // first round (all failed) + second round (all succeed)
       ),
     );
-    expect(localStorage.getItem(DEMO_SEED_DONE_KEY)).toBe("1");
+    expect(localStorage.getItem(demoSeedDoneKey)).toBe("1");
   });
 
   it("clears the in-flight promise on transient listCustomTeams failure so the next mount retries", async () => {
     // First mount: DB unavailable — the catch handler automatically clears _seedPromise.
     mockStore.listCustomTeams.mockRejectedValueOnce(new Error("DB unavailable"));
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
     await waitFor(() => expect(mockLog.warn).toHaveBeenCalled());
 
     // No manual reset needed — the catch handler already cleared _seedPromise.
     // Second mount: DB recovered — should now seed teams.
     mockStore.listCustomTeams.mockResolvedValue([]);
 
-    renderHook(() => useSeedDemoTeams());
+    renderHook(() => useSeedDemoTeamsFn());
     await waitFor(() =>
       expect(mockStore.createCustomTeam).toHaveBeenCalledTimes(DEMO_TEAMS.length),
     );

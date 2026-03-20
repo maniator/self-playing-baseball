@@ -1,9 +1,10 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
 import type { CreateCustomTeamInput, TeamRecord } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
+import { createTestDb } from "@test/helpers/db";
 
 import { populateRoster } from "./customTeamRosterPersistence";
 import { makeCustomTeamStore } from "./customTeamStore";
@@ -22,7 +23,7 @@ let db: BallgameDb;
 let store: ReturnType<typeof makeCustomTeamStore>;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
   store = makeCustomTeamStore(() => Promise.resolve(db));
 });
 

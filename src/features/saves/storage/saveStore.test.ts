@@ -3,9 +3,10 @@ import { Hit } from "@shared/constants/hitTypes";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
 import { fnv1a } from "@storage/hash";
 import type { GameSetup } from "@storage/types";
+import { createTestDb } from "@test/helpers/db";
 import { makeState } from "@test/testHelpers";
 
 const makeSetup = (overrides: Partial<GameSetup> = {}): GameSetup => ({
@@ -54,7 +55,7 @@ let db: BallgameDb;
 let store: ReturnType<typeof makeSaveStore>;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
   store = makeSaveStore(() => Promise.resolve(db));
 });
 
@@ -320,7 +321,7 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     await store.appendEvents(saveId, [{ type: "hit", at: 0, payload: {} }]);
     const json = await store.exportRxdbSave(saveId);
     // Import into a fresh db
-    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     // Insert the teams so importRxdbSave does not reject them as missing.
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
@@ -372,7 +373,7 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
   it("importRxdbSave handles saves with no events", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup());
     const json = await store.exportRxdbSave(saveId);
-    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
@@ -408,7 +409,7 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     const sig = fnv1a(RXDB_EXPORT_KEY_LOCAL + JSON.stringify({ header, events }));
     const bundle = JSON.stringify({ version: 1, header, events, sig });
 
-    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_norm_home");
     await insertMinimalTeam(db2, "ct_norm_away");
     const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
@@ -431,7 +432,7 @@ describe("SaveStore.exportRxdbSave / importRxdbSave", () => {
     await insertMinimalTeam(db, "ct_rt_away");
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await (await import("@storage/db"))._createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = (await import("@feat/saves/storage/saveStore")).makeSaveStore(() =>
@@ -491,7 +492,7 @@ describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -516,7 +517,7 @@ describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -551,7 +552,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -576,7 +577,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -604,7 +605,7 @@ describe("SaveStore — manager decision state in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -622,7 +623,7 @@ describe("SaveStore — manager decision state in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -640,7 +641,7 @@ describe("SaveStore — manager decision state in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -658,7 +659,7 @@ describe("SaveStore — manager decision state in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));
@@ -676,7 +677,7 @@ describe("SaveStore — manager decision state in stateSnapshot export/import", 
     });
     const json = await store.exportRxdbSave(saveId);
 
-    const db2 = await _createTestDb(getRxStorageMemory());
+    const db2 = await createTestDb(getRxStorageMemory());
     await insertMinimalTeam(db2, "ct_rt_home");
     await insertMinimalTeam(db2, "ct_rt_away");
     const store2 = makeSaveStore(() => Promise.resolve(db2));

@@ -36,7 +36,7 @@ import type {
 const BETA_SCHEMA_EPOCH = "v1.2";
 const BETA_EPOCH_KEY = "ballgame:schemaEpoch";
 
-type DbCollections = {
+export type DbCollections = {
   saves: RxCollection<SaveRecord>;
   events: RxCollection<EventRecord>;
   teams: RxCollection<TeamRecord>;
@@ -192,38 +192,3 @@ export const batterGameStatsCollection = async (): Promise<RxCollection<BatterGa
 
 export const pitcherGameStatsCollection = async (): Promise<RxCollection<PitcherGameStatRecord>> =>
   (await getDb()).pitcherGameStats;
-
-/**
- * Creates a fresh database with the given storage — intended for tests only.
- * Uses a random name by default so concurrent test files sharing the same
- * in-memory RxDB storage never produce COL23 name collisions.
- * Callers are responsible for calling `db.close()` when finished.
- * The epoch check is intentionally skipped for test DBs.
- */
-export const _createTestDb = (
-  storage: RxStorage<unknown, unknown>,
-  name = `ballgame_test_${Math.random().toString(36).slice(2, 14)}`,
-): Promise<BallgameDb> => initDb(storage, name);
-
-/**
- * Resets module-level singleton state so `getDb()` can be re-exercised in tests.
- * Call this in `afterEach` / `beforeEach` when testing the `getDb()` recovery path.
- */
-export const _resetDbForTest = (): void => {
-  dbPromise = null;
-  dbWasReset = false;
-};
-
-/**
- * Exposes the internal `isSchemaFailure` predicate for unit testing.
- * Returns true for DB6 (schema hash mismatch) and DM4 (strategy execution failure).
- */
-export const _isSchemaFailureForTest = (err: unknown): boolean => isSchemaFailure(err);
-
-/**
- * Exposes the internal epoch-reset logic for unit testing.
- * Returns true if a DB removal was performed (stale epoch detected and DB wiped).
- */
-export const _resetIfEpochChangedForTest = (
-  storage: RxStorage<unknown, unknown>,
-): Promise<boolean> => resetIfEpochChanged(storage);

@@ -1,9 +1,10 @@
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
 import type { CreateCustomTeamInput, TeamWithRoster } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
+import { createTestDb } from "@test/helpers/db";
 
 import { makeCustomTeamStore } from "./customTeamStore";
 
@@ -27,7 +28,7 @@ let db: BallgameDb;
 let store: ReturnType<typeof makeCustomTeamStore>;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
   store = makeCustomTeamStore(() => Promise.resolve(db));
 });
 
@@ -127,9 +128,7 @@ describe("importCustomTeams", () => {
     const json = exportFn([withNL(teamWithIdentity) as TeamWithRoster]);
 
     // Import into a fresh in-memory DB (simulates a different install)
-    const { _createTestDb: createTestDb } = await import("@storage/db");
-    const { getRxStorageMemory: getMemStorage } = await import("rxdb/plugins/storage-memory");
-    const freshDb = await createTestDb(getMemStorage());
+    const freshDb = await createTestDb(getRxStorageMemory());
     const freshStore = makeCustomTeamStore(() => Promise.resolve(freshDb));
 
     try {

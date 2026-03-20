@@ -8,7 +8,8 @@ import { RxDatabaseProvider } from "rxdb/plugins/react";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
+import { createTestDb } from "@test/helpers/db";
 
 import { useSaveStore } from "./useSaveStore";
 
@@ -17,7 +18,7 @@ describe("useSaveStore", () => {
   let testStore: ReturnType<typeof makeSaveStore>;
 
   beforeEach(async () => {
-    db = await _createTestDb(getRxStorageMemory());
+    db = await createTestDb(getRxStorageMemory());
     testStore = makeSaveStore(async () => db);
   });
 
