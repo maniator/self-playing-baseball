@@ -110,6 +110,14 @@ describe("AppShell", () => {
     expect(screen.queryByTestId("career-stats-mock")).not.toBeInTheDocument();
   });
 
+  it("does NOT call getDb when the initial route is not /", async () => {
+    const { getDb } = await import("@storage/db");
+    renderAppShell("/game");
+    // Allow any microtasks to flush
+    await new Promise((r) => setTimeout(r, 0));
+    expect(getDb).not.toHaveBeenCalled();
+  });
+
   it("shows Career Stats on home when completed games exist", async () => {
     const { getDb } = await import("@storage/db");
     vi.mocked(getDb).mockResolvedValueOnce({

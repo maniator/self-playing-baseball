@@ -37,7 +37,11 @@ const AppShell: React.FunctionComponent = () => {
     setHasCareerStats(true);
   }, []);
 
+  // Only probe the DB when the user is on the home route to avoid initializing
+  // RxDB on every deep-link (e.g. /game, /help).
   React.useEffect(() => {
+    if (location.pathname !== "/") return;
+
     let cancelled = false;
 
     async function loadCareerStatsAvailability() {
@@ -58,7 +62,7 @@ const AppShell: React.FunctionComponent = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [location.pathname]);
 
   const handleResumeCurrent = React.useCallback(() => {
     navigate("/game");
