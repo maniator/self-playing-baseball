@@ -2,14 +2,15 @@
  * usePlayerCareerData — data-loading hook for PlayerCareerPage.
  *
  * Fetches batting/pitching game rows, computes career totals, and derives
- * the prev/next roster navigation keys from the ?team= query param.
+ * the prev/next roster navigation keys from the :teamId URL parameter
+ * (route: /stats/:teamId/players/:playerId).
  */
 import * as React from "react";
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { computeERA, computeWHIP } from "@feat/careerStats/utils/computePitcherGameStats";
 import { useTeamWithRoster } from "@shared/hooks/useTeamWithRoster";
-import { useNavigate, useSearchParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import type { BatterGameStatRecord, PitcherGameStatRecord, TeamPlayer } from "@storage/types";
 
@@ -70,14 +71,12 @@ export type PitchingTotals = {
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-export function usePlayerCareerData(playerKey: string | undefined) {
+export function usePlayerCareerData(playerId: string | undefined) {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const { teamId } = useParams<{ teamId?: string }>();
 
-  // In v1 the ?team= query param carries a plain ct_* team ID.
-  const teamContext = searchParams.get("team") ?? "";
   // Fetch the team doc directly from DB by its ID — no array scan needed.
-  const teamDoc = useTeamWithRoster(teamContext || undefined);
+  const teamDoc = useTeamWithRoster(teamId || undefined);
 
   const [loading, setLoading] = React.useState(true);
   const [battingRows, setBattingRows] = React.useState<BatterGameStatRecord[]>([]);
@@ -102,7 +101,7 @@ export function usePlayerCareerData(playerKey: string | undefined) {
     return keys;
   }, [teamDoc]);
 
-  const currentIdx = rosterPlayerKeys.indexOf(playerKey ?? "");
+  const currentIdx = rosterPlayerKeys.indexOf(playerId ?? "");
   const prevKey = currentIdx > 0 ? rosterPlayerKeys[currentIdx - 1] : null;
   const nextKey =
     currentIdx >= 0 && currentIdx < rosterPlayerKeys.length - 1
@@ -110,15 +109,18 @@ export function usePlayerCareerData(playerKey: string | undefined) {
       : null;
 
   const navigateToPlayer = React.useCallback(
-    (key: string) => {
-      const params = teamContext ? `?team=${encodeURIComponent(teamContext)}` : "";
-      navigate(`/players/${encodeURIComponent(key)}${params}`);
+    (id: string) => {
+      if (teamId) {
+        navigate(`/stats/${encodeURIComponent(teamId)}/players/${encodeURIComponent(id)}`);
+        return;
+      }
+      navigate(`/stats/players/${encodeURIComponent(id)}`);
     },
-    [navigate, teamContext],
+    [navigate, teamId],
   );
 
   React.useEffect(() => {
-    if (!playerKey) {
+    if (!playerId) {
       setLoading(false);
       return;
     }
@@ -127,8 +129,8 @@ export function usePlayerCareerData(playerKey: string | undefined) {
     async function loadData() {
       try {
         const [batting, pitching] = await Promise.all([
-          GameHistoryStore.getPlayerCareerBatting(playerKey!),
-          GameHistoryStore.getPlayerCareerPitching(playerKey!),
+          GameHistoryStore.getPlayerCareerBatting(playerId!),
+          GameHistoryStore.getPlayerCareerPitching(playerId!),
         ]);
         if (cancelled) return;
         setBattingRows(batting);
@@ -146,23 +148,37 @@ export function usePlayerCareerData(playerKey: string | undefined) {
     return () => {
       cancelled = true;
     };
-  }, [playerKey]);
+  }, [playerId]);
 
   const playerName = React.useMemo<string>(() => {
     if (battingRows.length > 0) return battingRows[battingRows.length - 1].nameAtGameTime;
     if (pitchingRows.length > 0) return pitchingRows[pitchingRows.length - 1].nameAtGameTime;
     // No game history yet — look up the player's name directly from the DB-fetched team doc.
-    if (playerKey && teamDoc) {
+    if (playerId && teamDoc) {
       const allPlayers = [
         ...(teamDoc.roster.lineup ?? []),
         ...(teamDoc.roster.bench ?? []),
         ...(teamDoc.roster.pitchers ?? []),
       ] as TeamPlayer[];
-      const player = allPlayers.find((p) => p.id === playerKey);
+      const player = allPlayers.find((p) => p.id === playerId);
       if (player?.name) return player.name;
     }
     return "Unknown Player";
-  }, [battingRows, pitchingRows, playerKey, teamDoc]);
+  }, [battingRows, pitchingRows, playerId, teamDoc]);
+
+  /**
+   * The player's declared role from the team roster, if known.
+   * Used to determine which stat tabs to show when no game history exists yet.
+   */
+  const rosterRole = React.useMemo<TeamPlayer["role"] | null>(() => {
+    if (!playerId || !teamDoc) return null;
+    const allPlayers = [
+      ...(teamDoc.roster.lineup ?? []),
+      ...(teamDoc.roster.bench ?? []),
+      ...(teamDoc.roster.pitchers ?? []),
+    ] as TeamPlayer[];
+    return allPlayers.find((p) => p.id === playerId)?.role ?? null;
+  }, [playerId, teamDoc]);
 
   const roleLabel = React.useMemo<string>(() => {
     const hasBatting = battingRows.length > 0;
@@ -242,6 +258,7 @@ export function usePlayerCareerData(playerKey: string | undefined) {
     battingTotals,
     pitchingTotals,
     rosterPlayerKeys,
+    rosterRole,
     prevKey,
     nextKey,
     navigateToPlayer,

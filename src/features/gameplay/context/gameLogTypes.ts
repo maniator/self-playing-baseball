@@ -3,10 +3,10 @@ import { Hit } from "@shared/constants/hitTypes";
 export type PlayLogEntry = {
   inning: number;
   half: 0 | 1; // 0 = top (away bats), 1 = bottom (home bats)
-  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
-  /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
-  playerId?: string;
-  /** Display name of the batter at the time of the hit. Absent in older saves; UI falls back to #N slot. */
+  batterNum: number; // 1–9 (batting-order slot)
+  /** Player ID of the batter (roster player ID). */
+  playerId: string;
+  /** Display name of the batter at the time of the hit. */
   batterName?: string;
   team: 0 | 1;
   event: Hit; // hit type (includes Walk)
@@ -17,19 +17,15 @@ export type PlayLogEntry = {
    * (including bases-loaded walks). Sac bunts and fielder's choice plays
    * are not credited with RBI in this simulator (simplified rule — those
    * plays resolve through outLog, not playLog).
-   * Field is optional for backward compatibility with older saved data:
-   * `restore_game` backfills missing `rbi` from `runs` when a save is
-   * loaded, and stat aggregation then uses `entry.rbi ?? 0` so that only
-   * entries that still lack an explicit value default to 0.
    */
   rbi?: number;
 };
 
 export type StrikeoutEntry = {
   team: 0 | 1;
-  batterNum: number; // 1–9 (batting-order slot; kept for backward compat with older saves)
-  /** Player ID of the batter. Present for all events since player tracking was added; absent in older saves. */
-  playerId?: string;
+  batterNum: number; // 1–9 (batting-order slot)
+  /** Player ID of the batter (roster player ID). */
+  playerId: string;
   /**
    * Set to `true` when this out was a sacrifice fly (runner on 3rd tagged up after the catch and scored).
    * Sac flies count as a plate appearance but NOT as an at-bat, and the batter earns RBI.
@@ -38,7 +34,7 @@ export type StrikeoutEntry = {
   isSacFly?: boolean;
   /**
    * RBI credited on this play. Only set when `isSacFly` is true (run scored on the fly out).
-   * Omitted for all other out types. Optional for backward compatibility.
+   * Omitted for all other out types.
    */
   rbi?: number;
 };

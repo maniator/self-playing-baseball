@@ -39,25 +39,59 @@ describe("wasStrikeout", () => {
 
 describe("makeStrikeoutEntry", () => {
   it("uses atBat as team and adds 1 to batterIndex", () => {
-    const state = makeState({ atBat: 0, batterIndex: [3, 0] });
+    const lineupOrder: [string[], string[]] = [
+      ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"],
+      [],
+    ];
+    const state = makeState({ atBat: 0, batterIndex: [3, 0], lineupOrder });
     const entry = makeStrikeoutEntry(state);
-    expect(entry).toEqual({ team: 0, batterNum: 4 });
+    expect(entry).toEqual({ team: 0, batterNum: 4, playerId: "p4" });
   });
 
   it("works for the home team (atBat = 1)", () => {
-    const state = makeState({ atBat: 1, batterIndex: [0, 7] });
+    const lineupOrder: [string[], string[]] = [
+      [],
+      ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"],
+    ];
+    const state = makeState({ atBat: 1, batterIndex: [0, 7], lineupOrder });
     const entry = makeStrikeoutEntry(state);
-    expect(entry).toEqual({ team: 1, batterNum: 8 });
+    expect(entry).toEqual({ team: 1, batterNum: 8, playerId: "p8" });
+  });
+
+  it("falls back to generated roster player ID when lineupOrder is empty", () => {
+    const state = makeState({
+      teams: ["New York Yankees", "New York Mets"],
+      atBat: 0,
+      batterIndex: [0, 0],
+      lineupOrder: [[], []],
+    });
+    const entry = makeStrikeoutEntry(state);
+    expect(entry).toEqual({ team: 0, batterNum: 1, playerId: "new_york_yankees_b0" });
+  });
+
+  it("falls back using batter slot index when lineupOrder is empty for home", () => {
+    const state = makeState({
+      teams: ["New York Yankees", "New York Mets"],
+      atBat: 1,
+      batterIndex: [0, 4],
+      lineupOrder: [[], []],
+    });
+    const entry = makeStrikeoutEntry(state);
+    expect(entry).toEqual({ team: 1, batterNum: 5, playerId: "new_york_mets_b4" });
   });
 });
 
 describe("withStrikeoutLog", () => {
   it("appends a strikeout entry when a strikeout occurred", () => {
-    const prev = makeState({ strikes: 2, atBat: 0, batterIndex: [2, 0] });
+    const lineupOrder: [string[], string[]] = [
+      ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"],
+      [],
+    ];
+    const prev = makeState({ strikes: 2, atBat: 0, batterIndex: [2, 0], lineupOrder });
     const next = makeState({ strikes: 0, hitType: undefined, strikeoutLog: [] });
     const result = withStrikeoutLog(prev, next);
     expect(result.strikeoutLog).toHaveLength(1);
-    expect(result.strikeoutLog[0]).toEqual({ team: 0, batterNum: 3 });
+    expect(result.strikeoutLog[0]).toEqual({ team: 0, batterNum: 3, playerId: "p3" });
   });
 
   it("does not modify strikeoutLog when no strikeout occurred", () => {
@@ -69,12 +103,16 @@ describe("withStrikeoutLog", () => {
   });
 
   it("preserves existing strikeoutLog entries", () => {
-    const existing = [{ team: 1 as const, batterNum: 5 }];
-    const prev = makeState({ strikes: 2, atBat: 0, batterIndex: [0, 0] });
+    const lineupOrder: [string[], string[]] = [
+      ["p1", "p2", "p3", "p4", "p5", "p6", "p7", "p8", "p9"],
+      [],
+    ];
+    const existing = [{ team: 1 as const, batterNum: 5, playerId: "p5" }];
+    const prev = makeState({ strikes: 2, atBat: 0, batterIndex: [0, 0], lineupOrder });
     const next = makeState({ strikes: 0, hitType: undefined, strikeoutLog: existing });
     const result = withStrikeoutLog(prev, next);
     expect(result.strikeoutLog).toHaveLength(2);
-    expect(result.strikeoutLog[0]).toEqual({ team: 1, batterNum: 5 });
+    expect(result.strikeoutLog[0]).toEqual({ team: 1, batterNum: 5, playerId: "p5" });
   });
 });
 

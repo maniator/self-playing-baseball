@@ -129,30 +129,6 @@ describe("useGameHistorySync", () => {
         .calls[0][2] as StatRowShape[];
       expect(statRows.some((r) => r.playerId === "p1")).toBe(true);
     });
-
-    it("skips slot-fallback entries (no playerId) in stat rows", async () => {
-      // Entry without playerId uses slot:N key — must be skipped.
-      const playLog = [
-        {
-          inning: 1,
-          half: 0 as const,
-          batterNum: 3,
-          team: 0 as const,
-          event: Hit.Single,
-          runs: 0,
-          rbi: 0,
-        },
-      ];
-      vi.mocked(useGameContext).mockReturnValue(makeContextValue({ gameOver: true, playLog }));
-      renderHook(() => useGameHistorySync(makeRef("save_1"), false));
-      await act(async () => {
-        await Promise.resolve();
-      });
-      const statRows = vi.mocked(GameHistoryStore.commitCompletedGame).mock
-        .calls[0][2] as StatRowShape[];
-      // No stat row should have a slot-prefixed playerId — those entries are skipped.
-      expect(statRows.some((r) => r.playerId.startsWith("slot:"))).toBe(false);
-    });
   });
 
   describe("wasAlreadyFinalOnLoad guard", () => {

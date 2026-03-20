@@ -42,7 +42,6 @@ function makeBattingRow(overrides = {}) {
     gameId: "game1",
     teamId: "team1",
     opponentTeamId: "team2",
-    playerKey: "team1:p1",
     playerId: "p1",
     nameAtGameTime: "Test Batter",
     role: "batter" as const,
@@ -56,6 +55,7 @@ function makeBattingRow(overrides = {}) {
       doubles: 1,
       triples: 0,
       homers: 0,
+      sacFlies: 0,
     },
     createdAt: NOW,
     schemaVersion: 1,
@@ -69,8 +69,7 @@ function makePitchingRow(overrides = {}) {
     gameId: "game1",
     teamId: "team1",
     opponentTeamId: "team2",
-    pitcherKey: "team1:p1",
-    pitcherId: "p1",
+    playerId: "p1",
     nameAtGameTime: "Test Pitcher",
     outsPitched: 18,
     battersFaced: 24,
@@ -90,12 +89,13 @@ function makePitchingRow(overrides = {}) {
   };
 }
 
-function renderPage(playerKey = "team1:p1") {
+function renderPage(playerId = "p1", teamId = "team1") {
   return render(
-    <MemoryRouter initialEntries={[`/players/${playerKey}`]}>
+    <MemoryRouter initialEntries={[`/stats/${teamId}/players/${playerId}`]}>
       <Routes>
-        <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+        <Route path="/stats/:teamId/players/:playerId" element={<PlayerCareerPage />} />
         <Route path="/" element={<div data-testid="home-screen" />} />
+        <Route path="/stats/:teamId" element={<div data-testid="stats-page" />} />
         <Route path="/stats" element={<div data-testid="stats-page" />} />
       </Routes>
     </MemoryRouter>,
@@ -129,32 +129,13 @@ describe("PlayerCareerPage", () => {
     expect(screen.getByRole("button", { name: /back/i })).toBeInTheDocument();
   });
 
-  it("back button navigates to /stats when no team param", async () => {
+  it("back button navigates to /stats/:teamId", async () => {
     const user = userEvent.setup();
     renderPage();
     await act(async () => {});
     const backBtn = screen.getByRole("button", { name: /back/i });
     await user.click(backBtn);
-    expect(mockNavigate).toHaveBeenCalledWith("/stats");
-  });
-
-  it("back button navigates to /stats?team=X when team param is present", async () => {
-    const user = userEvent.setup();
-    render(
-      <MemoryRouter initialEntries={["/players/team1:p1?team=custom:ct_1"]}>
-        <Routes>
-          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
-          <Route path="/stats" element={<div data-testid="stats-page" />} />
-        </Routes>
-      </MemoryRouter>,
-    );
-    await act(async () => {});
-    const backBtn = screen.getByRole("button", { name: /back/i });
-    await user.click(backBtn);
-    expect(mockNavigate).toHaveBeenCalledWith({
-      pathname: "/stats",
-      search: "team=custom%3Act_1",
-    });
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/team1");
   });
 
   it("shows 'No batting data.' when no batting rows", async () => {
@@ -213,24 +194,20 @@ describe("PlayerCareerPage", () => {
     });
   });
 
-  it("fetches data for the playerKey from the URL", async () => {
-    renderPage("custom:ct_abc:plyr_xyz");
+  it("fetches data for the playerId from the URL", async () => {
+    renderPage("plyr_xyz", "ct_abc");
     await waitFor(() => {
-      expect(GameHistoryStore.getPlayerCareerBatting).toHaveBeenCalledWith(
-        "custom:ct_abc:plyr_xyz",
-      );
-      expect(GameHistoryStore.getPlayerCareerPitching).toHaveBeenCalledWith(
-        "custom:ct_abc:plyr_xyz",
-      );
+      expect(GameHistoryStore.getPlayerCareerBatting).toHaveBeenCalledWith("plyr_xyz");
+      expect(GameHistoryStore.getPlayerCareerPitching).toHaveBeenCalledWith("plyr_xyz");
     });
   });
 
-  it("handles missing playerKey param gracefully (no fetch, page still renders)", async () => {
-    // Render without a matching param — useParams returns { playerKey: undefined }.
+  it("handles missing playerId param gracefully (no fetch, page still renders)", async () => {
+    // Render at /stats with no playerId param — useParams returns { playerId: undefined }.
     render(
-      <MemoryRouter initialEntries={["/players/"]}>
+      <MemoryRouter initialEntries={["/stats/team1"]}>
         <Routes>
-          <Route path="/players/" element={<PlayerCareerPage />} />
+          <Route path="/stats/:teamId" element={<PlayerCareerPage />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -296,9 +273,9 @@ describe("PlayerCareerPage", () => {
     vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
 
     render(
-      <MemoryRouter initialEntries={["/players/plyr_1?team=ct_1"]}>
+      <MemoryRouter initialEntries={["/stats/ct_1/players/plyr_1"]}>
         <Routes>
-          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+          <Route path="/stats/:teamId/players/:playerId" element={<PlayerCareerPage />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -347,9 +324,9 @@ describe("PlayerCareerPage", () => {
     vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
 
     render(
-      <MemoryRouter initialEntries={["/players/plyr_1?team=ct_1"]}>
+      <MemoryRouter initialEntries={["/stats/ct_1/players/plyr_1"]}>
         <Routes>
-          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+          <Route path="/stats/:teamId/players/:playerId" element={<PlayerCareerPage />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -359,7 +336,53 @@ describe("PlayerCareerPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("plyr_2"));
   });
 
-  it("does not render Prev/Next when no ?team= param is provided", async () => {
+  it("clicking Next on team-independent route navigates to /stats/players/:playerId", async () => {
+    const user = userEvent.setup();
+    const teamDoc = {
+      id: "ct_1",
+      name: "Aces",
+      abbreviation: "ACE",
+      city: "Springfield",
+      schemaVersion: 4,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "plyr_1",
+            name: "First Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+          {
+            id: "plyr_2",
+            name: "Second Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { notes: "", tags: [], archived: false },
+    };
+    vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
+
+    render(
+      <MemoryRouter initialEntries={["/stats/players/plyr_1"]}>
+        <Routes>
+          <Route path="/stats/players/:playerId" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {});
+    await user.click(screen.getByTestId("player-career-next"));
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/players/plyr_2");
+  });
+
+  it("does not render Prev/Next when team has no roster loaded", async () => {
     renderPage("test_player_no_team");
     await act(async () => {});
     expect(screen.queryByTestId("player-career-prev")).toBeNull();
@@ -454,9 +477,9 @@ describe("PlayerCareerPage", () => {
     vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={["/players/pl_d29e3bad?team=ct_bench"]}>
+      <MemoryRouter initialEntries={["/stats/ct_bench/players/pl_d29e3bad"]}>
         <Routes>
-          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+          <Route path="/stats/:teamId/players/:playerId" element={<PlayerCareerPage />} />
         </Routes>
       </MemoryRouter>,
     );
@@ -475,9 +498,9 @@ describe("PlayerCareerPage", () => {
     vi.mocked(GameHistoryStore.getPlayerCareerPitching).mockResolvedValue([]);
 
     render(
-      <MemoryRouter initialEntries={["/players/pl_totally_unknown?team=ct_none"]}>
+      <MemoryRouter initialEntries={["/stats/ct_none/players/pl_totally_unknown"]}>
         <Routes>
-          <Route path="/players/:playerKey" element={<PlayerCareerPage />} />
+          <Route path="/stats/:teamId/players/:playerId" element={<PlayerCareerPage />} />
         </Routes>
       </MemoryRouter>,
     );

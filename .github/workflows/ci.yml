@@ -7,7 +7,7 @@ on:
   pull_request:
     branches:
       - master
-      - copilot/handle-quirks-and-issues
+      - 'feat/**'
   workflow_dispatch:
 
 jobs:

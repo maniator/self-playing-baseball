@@ -1,5 +1,6 @@
 import type { StrikeoutEntry } from "./gameLogTypes";
 import type { GameAction, State } from "./gameStateTypes";
+import { resolveBatterPlayerId } from "./resolveBatterPlayerId";
 
 /** Shared logger context passed to handlers that emit play-by-play messages. */
 export interface ReducerCtx {
@@ -41,11 +42,11 @@ export const wasStrikeout = (prev: State, next: State): boolean =>
 export const makeStrikeoutEntry = (state: State): StrikeoutEntry => {
   const battingTeam = state.atBat as 0 | 1;
   const slotIdx = state.batterIndex[battingTeam];
-  const playerId = state.lineupOrder[battingTeam][slotIdx] || undefined;
+  const playerId = resolveBatterPlayerId(state, battingTeam, slotIdx);
   return {
     team: battingTeam,
     batterNum: slotIdx + 1,
-    ...(playerId ? { playerId } : {}),
+    playerId,
   };
 };
 

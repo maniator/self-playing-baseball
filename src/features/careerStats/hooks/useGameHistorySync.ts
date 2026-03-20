@@ -13,16 +13,6 @@ import type { BatterGameStatRecord, PitcherGameStatRecord } from "@storage/types
 const MAX_COMMIT_RETRIES = 3;
 
 /**
- * Returns the stable cross-game player key for career stat identity.
- *
- * v1 rules: ALL players have a stable `PlayerRecord.id` as their primary key.
- * The lineupOrder in game state is populated from `customTeamToLineupOrder`,
- * which sets player IDs directly from `PlayerRecord.id`. So `playerId` is
- * already the stable global identity — no team lookup required.
- */
-const buildPlayerKey = (playerId: string): string => playerId;
-
-/**
  * Hooks into the game's gameOver state and commits a completed game to RxDB
  * exactly once per game session.
  *
@@ -32,9 +22,9 @@ const buildPlayerKey = (playerId: string): string => playerId;
  *      failure the `retryCount` state is incremented (up to 3) so the effect
  *      re-fires without requiring a page reload.
  *   2. DB-level: `GameHistoryStore.commitCompletedGame` uses `gameInstanceId`
- *      (or legacy `saveId`) as the CompletedGameRecord primary key — any concurrent insert
- *      of the same key is treated as "already committed", and missing stat rows
- *      are still written so a partial prior write never permanently loses stats.
+ *      as the CompletedGameRecord primary key — any concurrent insert of the same
+ *      key is treated as "already committed", and missing stat rows are still written
+ *      so a partial prior write never permanently loses stats.
  *
  * Loading an already-FINAL save must NOT trigger a new commit. The hook guards
  * against this by checking `wasAlreadyFinalOnLoad` — set when the save is
@@ -71,19 +61,13 @@ export const useGameHistorySync = (
     const saveId = rxSaveIdRef.current;
     const state = gameStateRef.current;
 
-    // gameInstanceId is always present in modern game state (set in createFreshGameState
-    // via generateGameInstanceId). Legacy saves (pre-gameInstanceId schema) will not have
-    // it in the stateSnapshot, so fall back to saveId for those. If both are absent bail out.
+    // gameInstanceId is always present (set in createFreshGameState via generateGameInstanceId).
+    // Fall back to saveId as a safeguard. If both are absent bail out.
     const gameId = state.gameInstanceId ?? saveId;
     if (!gameId) return;
 
     inFlightRef.current = true;
     setIsCommitting(true);
-
-    // Prefer the stable gameInstanceId from state (generated once at game start,
-    // carried in every save snapshot of that run) so that multiple save slots of
-    // the same run all resolve to the same CompletedGameRecord.id — preventing double-counts.
-    // Fall back to saveId for pre-gameInstanceId saves (legacy behaviour).
 
     // Build stat rows for both teams.
     const statRows: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt">[] = [];
@@ -98,14 +82,11 @@ export const useGameHistorySync = (
         state.outLog,
       );
 
-      // In v1 all teams are custom — lineup order is set from PlayerRecord.id values.
+      // Lineup order is set from PlayerRecord.id values.
       const order = state.lineupOrder[teamIdx].length > 0 ? state.lineupOrder[teamIdx] : [];
 
       for (const [key, batting] of Object.entries(teamStats)) {
-        // Skip slot-fallback keys (no playerKey available for legacy entries).
-        if (key.startsWith("slot:")) continue;
         const playerId = key;
-        const playerKey = buildPlayerKey(playerId);
 
         // Name comes from playerOverrides (nickname set at game-start from PlayerRecord.name).
         const slotIdx = order.indexOf(playerId);
@@ -117,7 +98,6 @@ export const useGameHistorySync = (
           gameId,
           teamId,
           opponentTeamId,
-          playerKey,
           playerId,
           nameAtGameTime,
           role: "batter",
@@ -156,16 +136,14 @@ export const useGameHistorySync = (
     for (const { teamIdx, result } of pitcherResults) {
       const teamId = state.teams[teamIdx];
       const opponentTeamId = state.teams[teamIdx === 0 ? 1 : 0];
-      const pitcherId = result.pitcherId;
-      const pitcherKey = buildPlayerKey(pitcherId);
-      const nameAtGameTime = pitcherNameMaps[teamIdx].get(pitcherId) ?? pitcherId;
+      const playerId = result.pitcherId;
+      const nameAtGameTime = pitcherNameMaps[teamIdx].get(playerId) ?? playerId;
 
       pitcherRows.push({
         gameId,
         teamId,
         opponentTeamId,
-        pitcherKey,
-        pitcherId,
+        playerId,
         nameAtGameTime,
         outsPitched: result.outsPitched,
         battersFaced: result.battersFaced,

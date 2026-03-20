@@ -76,6 +76,28 @@ export const TeamSelect = styled.select`
   }
 `;
 
+export const TeamEditorLinkBtn = styled.button`
+  background: transparent;
+  color: ${({ theme }) => theme.colors.textLink};
+  border: 1px solid ${({ theme }) => theme.colors.borderForm};
+  border-radius: ${({ theme }) => theme.radii.md};
+  padding: ${({ theme }) => theme.spacing.sm} ${({ theme }) => theme.spacing.md};
+  font-size: ${({ theme }) => theme.fontSizes.sm};
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSurface};
+    color: ${({ theme }) => theme.colors.textBody};
+    border-color: ${({ theme }) => theme.colors.textSecondaryLink};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.accentPrimary};
+    outline-offset: 2px;
+  }
+`;
+
 /** Page header title. */
 export const PageTitle = styled.h1`
   color: ${({ theme }) => theme.colors.accentPrimary};

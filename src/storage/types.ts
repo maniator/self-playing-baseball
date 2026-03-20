@@ -9,6 +9,8 @@ export type {
   ImportGameHistoryResult,
   PitcherGameStatRecord,
   PitchingLeader,
+  TeamCareerBattingStatsRow,
+  TeamCareerPitchingStatsRow,
   TeamCareerSummary,
 } from "@feat/careerStats/storage/types";
 export type {
@@ -88,6 +90,8 @@ export type AppShellOutletContext = {
   onHelp: () => void;
   onContact?: () => void;
   onCareerStats: () => void;
+  /** True once at least one completed game has been persisted or a game just ended — gates the Career Stats entry. */
+  hasCareerStats: boolean;
   onBackToHome: () => void;
   hasActiveSession: boolean;
   /** Called by GameInner (via GamePage/Game) when a game reaches FINAL, so AppShell clears hasActiveSession. */

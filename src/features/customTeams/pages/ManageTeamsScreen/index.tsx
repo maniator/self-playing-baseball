@@ -23,6 +23,7 @@ import {
   EmptyState,
   ErrorMessage,
   FileInput,
+  HeaderActions,
   ImportExportBtn,
   ImportExportRow,
   ImportExportSection,
@@ -114,6 +115,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const isCreating = location.pathname === "/teams/new";
   const isEditing = Boolean(teamId);
   const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
+  const navigateToTeamCareerStats = (id: string) => navigate(`/stats/${encodeURIComponent(id)}`);
 
   const editorHeader = (
     <EditorShellHeader>
@@ -124,6 +126,17 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
       >
         ← Team List
       </BackBtn>
+      {editingTeam && (
+        <HeaderActions>
+          <ImportExportBtn
+            type="button"
+            onClick={() => navigateToTeamCareerStats(editingTeam.id)}
+            data-testid="manage-teams-editor-career-stats-button"
+          >
+            Career Stats
+          </ImportExportBtn>
+        </HeaderActions>
+      )}
     </EditorShellHeader>
   );
 
@@ -211,6 +224,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
             <TeamListItem
               key={team.id}
               team={team}
+              onCareerStats={navigateToTeamCareerStats}
               onEdit={(id) => navigate(`/teams/${id}/edit`)}
               onDelete={deleteTeam}
               onExport={handleExportTeam}

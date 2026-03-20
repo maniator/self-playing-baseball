@@ -43,7 +43,6 @@ const makeStatRow = (
   gameId,
   teamId: "Yankees",
   opponentTeamId: "Mets",
-  playerKey: `Yankees:${playerId}`,
   playerId,
   nameAtGameTime: "Test Player",
   role: "batter",
@@ -57,6 +56,7 @@ const makeStatRow = (
     doubles: 1,
     triples: 0,
     homers: 0,
+    sacFlies: 0,
   },
 });
 
@@ -70,7 +70,7 @@ describe("GameHistoryStore.commitCompletedGame", () => {
     expect(game?.awayScore).toBe(3);
     expect(game?.innings).toBe(9);
 
-    const stat = await db.batterGameStats.findOne("game_001:Yankees:Yankees:p1").exec();
+    const stat = await db.batterGameStats.findOne("game_001:Yankees:p1").exec();
     expect(stat).not.toBeNull();
     expect(stat?.batting.hits).toBe(2);
   });
@@ -106,7 +106,7 @@ describe("GameHistoryStore.commitCompletedGame", () => {
 
 describe("GameHistoryStore.getCareerStats", () => {
   it("returns empty object when no history exists", async () => {
-    const result = await store.getCareerStats(["Yankees:p1"]);
+    const result = await store.getCareerStats(["p1"]);
     expect(result).toEqual({});
   });
 
@@ -114,16 +114,16 @@ describe("GameHistoryStore.getCareerStats", () => {
     await store.commitCompletedGame("game_c1", gameMeta, [makeStatRow("game_c1", "p1")]);
     await store.commitCompletedGame("game_c2", gameMeta, [makeStatRow("game_c2", "p1")]);
 
-    const result = await store.getCareerStats(["Yankees:p1"]);
-    expect(result["Yankees:p1"]).toBeDefined();
-    expect(result["Yankees:p1"].hits).toBe(4); // 2 + 2
-    expect(result["Yankees:p1"].atBats).toBe(8); // 4 + 4
-    expect(result["Yankees:p1"].gamesPlayed).toBe(2);
+    const result = await store.getCareerStats(["p1"]);
+    expect(result["p1"]).toBeDefined();
+    expect(result["p1"].hits).toBe(4); // 2 + 2
+    expect(result["p1"].atBats).toBe(8); // 4 + 4
+    expect(result["p1"].gamesPlayed).toBe(2);
   });
 
   it("returns empty for player keys with no rows", async () => {
-    const result = await store.getCareerStats(["Yankees:nobody"]);
-    expect(result["Yankees:nobody"]).toBeUndefined();
+    const result = await store.getCareerStats(["nobody"]);
+    expect(result["nobody"]).toBeUndefined();
   });
 });
 
@@ -150,70 +150,6 @@ describe("GameHistoryStore export/import", () => {
     expect(stats).toHaveLength(1);
     expect(stats[0].batting.sacFlies).toBe(2);
     expect(stats[0].batting.rbi).toBe(3);
-
-    await db2.close();
-  });
-
-  it("imports legacy stats without sacFlies without error", async () => {
-    // Simulate a bundle produced before sacFlies was added — batting has no sacFlies field.
-    const gameDoc: CompletedGameRecord = {
-      id: "game_legacy_sf",
-      playedAt: Date.now(),
-      seed: "legacy",
-      rngState: null,
-      homeTeamId: "Yankees",
-      awayTeamId: "Mets",
-      homeScore: 3,
-      awayScore: 1,
-      innings: 9,
-      schemaVersion: 1,
-    };
-    const legacyStat: BatterGameStatRecord = {
-      id: "game_legacy_sf:Yankees:Yankees:lp1",
-      gameId: "game_legacy_sf",
-      teamId: "Yankees",
-      opponentTeamId: "Mets",
-      playerKey: "Yankees:lp1",
-      playerId: "lp1",
-      nameAtGameTime: "Legacy Player",
-      role: "batter",
-      batting: {
-        atBats: 4,
-        hits: 1,
-        walks: 0,
-        strikeouts: 2,
-        rbi: 0,
-        singles: 1,
-        doubles: 0,
-        triples: 0,
-        homers: 0,
-      },
-      createdAt: Date.now(),
-      schemaVersion: 1,
-    };
-    const payload = {
-      games: [gameDoc],
-      playerGameStats: [legacyStat],
-      pitcherGameStats: [],
-      requiredTeamIds: ["Yankees", "Mets"],
-    };
-    const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
-    const bundle = JSON.stringify({
-      type: "gameHistory",
-      formatVersion: 2,
-      exportedAt: new Date().toISOString(),
-      payload,
-      sig,
-    });
-
-    const db2 = await _createTestDb(getRxStorageMemory());
-    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
-    const result = await store2.importGameHistory(bundle, new Set(["Yankees", "Mets"]));
-    expect(result.statsCreated).toBe(1);
-
-    const stats = await db2.batterGameStats.find().exec();
-    // sacFlies may be undefined — callers must use ?? 0.
-    expect(stats[0].batting.sacFlies ?? 0).toBe(0);
 
     await db2.close();
   });
@@ -255,6 +191,7 @@ describe("GameHistoryStore export/import", () => {
     const payload = {
       games: [gameDoc],
       playerGameStats: [],
+      pitcherGameStats: [],
       requiredTeamIds: ["Yankees", "Mets"],
     };
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
@@ -278,8 +215,9 @@ describe("GameHistoryStore export/import", () => {
     const payload = {
       games: [],
       playerGameStats: [],
+      pitcherGameStats: [],
       // Only custom: team IDs are validated; stock teams always pass.
-      requiredTeamIds: ["custom:ct_missingteam"],
+      requiredTeamIds: ["ct_missingteam"],
     };
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
@@ -300,7 +238,7 @@ describe("GameHistoryStore export/import", () => {
       type: "gameHistory",
       formatVersion: 1,
       exportedAt: "x",
-      payload: { games: [], playerGameStats: [], requiredTeamIds: [] },
+      payload: { games: [], playerGameStats: [], pitcherGameStats: [], requiredTeamIds: [] },
       sig: "00000000",
     });
     await expect(store.importGameHistory(bundle, new Set())).rejects.toThrow(
@@ -357,9 +295,9 @@ describe("GameHistoryStore — gameInstanceId deduplication across save slots", 
     expect(allStats.length).toBe(1); // no duplicate stat row
 
     // Career totals should reflect exactly one game's worth of stats.
-    const career = await store.getCareerStats(["Yankees:p1"]);
-    expect(career["Yankees:p1"].gamesPlayed).toBe(1);
-    expect(career["Yankees:p1"].hits).toBe(2); // not 4 (would be 4 if double-counted)
+    const career = await store.getCareerStats(["p1"]);
+    expect(career["p1"].gamesPlayed).toBe(1);
+    expect(career["p1"].hits).toBe(2); // not 4 (would be 4 if double-counted)
   });
 });
 
@@ -375,8 +313,7 @@ const makePitcherRow = (
   gameId,
   teamId: "Yankees",
   opponentTeamId: "Mets",
-  pitcherKey: `Yankees:${pitcherId}`,
-  pitcherId,
+  playerId: pitcherId,
   nameAtGameTime: "Test Pitcher",
   outsPitched: 9,
   battersFaced: 12,
@@ -409,7 +346,7 @@ describe("commitCompletedGame — pitcher stats", () => {
 
     const pitchers = await db.pitcherGameStats.find().exec();
     expect(pitchers).toHaveLength(1);
-    expect(pitchers[0].pitcherId).toBe("p1");
+    expect(pitchers[0].playerId).toBe("p1");
     expect(pitchers[0].outsPitched).toBe(9);
     expect(pitchers[0].saves).toBe(0);
   });
@@ -438,7 +375,7 @@ describe("commitCompletedGame — pitcher stats", () => {
         makePitcherRow(gameId, "p2", {
           teamId: "Mets",
           opponentTeamId: "Yankees",
-          pitcherKey: "Mets:p2",
+          playerId: "Mets:p2",
         }),
       ],
     );
@@ -523,10 +460,7 @@ describe("getTeamCareerPitchingStats", () => {
       gameId,
       { ...gameMeta },
       [],
-      [
-        makePitcherRow(gameId, "p1"),
-        makePitcherRow(gameId, "p2", { pitcherKey: "Yankees:p2", pitcherId: "p2" }),
-      ],
+      [makePitcherRow(gameId, "p1"), makePitcherRow(gameId, "p2", { playerId: "p2" })],
     );
 
     const result = await store.getTeamCareerPitchingStats("Yankees");
@@ -540,7 +474,7 @@ describe("getTeamCareerPitchingStats", () => {
 
 describe("getPlayerCareerBatting", () => {
   it("returns empty array when player has no history", async () => {
-    const result = await store.getPlayerCareerBatting("Yankees:nobody");
+    const result = await store.getPlayerCareerBatting("nobody");
     expect(result).toHaveLength(0);
   });
 
@@ -554,7 +488,7 @@ describe("getPlayerCareerBatting", () => {
       makeStatRow(game2, "p1"),
     ]);
 
-    const result = await store.getPlayerCareerBatting("Yankees:p1");
+    const result = await store.getPlayerCareerBatting("p1");
     expect(result).toHaveLength(2);
     expect(result[0].gameId).toBe(game1);
     expect(result[1].gameId).toBe(game2);
@@ -563,7 +497,7 @@ describe("getPlayerCareerBatting", () => {
 
 describe("getPlayerCareerPitching", () => {
   it("returns empty array when pitcher has no history", async () => {
-    const result = await store.getPlayerCareerPitching("Yankees:nobody");
+    const result = await store.getPlayerCareerPitching("nobody");
     expect(result).toHaveLength(0);
   });
 
@@ -576,7 +510,7 @@ describe("getPlayerCareerPitching", () => {
       [makePitcherRow(game1, "p1", { saves: 1, outsPitched: 9 })],
     );
 
-    const result = await store.getPlayerCareerPitching("Yankees:p1");
+    const result = await store.getPlayerCareerPitching("p1");
     expect(result).toHaveLength(1);
     expect(result[0].saves).toBe(1);
     expect(result[0].outsPitched).toBe(9);
@@ -636,7 +570,7 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
 
     const json = await store.exportGameHistory();
     const parsed = JSON.parse(json);
-    expect(parsed.formatVersion).toBe(2);
+    expect(parsed.formatVersion).toBe(1);
     expect(Array.isArray(parsed.payload.pitcherGameStats)).toBe(true);
     expect(parsed.payload.pitcherGameStats).toHaveLength(1);
     expect(parsed.payload.pitcherGameStats[0].saves).toBe(1);
@@ -680,45 +614,6 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
 
     const pitchers = await db2.pitcherGameStats.find().exec();
     expect(pitchers).toHaveLength(1); // no duplicates
-
-    await db2.close();
-  });
-
-  it("backfills pitchesThrown=0 when importing legacy bundle without that field", async () => {
-    // Simulate a pre-v1-schema bundle whose pitcher rows lack pitchesThrown.
-    const gameId = "game_import_legacy_pitcher";
-    const pitcherRow = makePitcherRow(gameId, "p_legacy");
-    const { pitchesThrown: _omit, ...rowWithoutPitchesThrown } = {
-      ...pitcherRow,
-      id: `${gameId}:Yankees:Yankees:p_legacy`,
-      schemaVersion: 0,
-      createdAt: Date.now(),
-      pitchesThrown: 0, // present only so we can destructure it off
-    };
-
-    const payload = {
-      games: [],
-      playerGameStats: [],
-      pitcherGameStats: [rowWithoutPitchesThrown],
-      requiredTeamIds: [],
-    };
-    const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
-    const bundle = JSON.stringify({
-      type: "gameHistory",
-      formatVersion: 2,
-      exportedAt: new Date().toISOString(),
-      payload,
-      sig,
-    });
-
-    const db2 = await _createTestDb(getRxStorageMemory());
-    const store2 = makeGameHistoryStore(() => Promise.resolve(db2));
-
-    const result = await store2.importGameHistory(bundle, new Set());
-    expect(result.pitcherStatsCreated).toBe(1);
-
-    const [imported] = await db2.pitcherGameStats.find().exec();
-    expect(imported.pitchesThrown).toBe(0);
 
     await db2.close();
   });
@@ -989,7 +884,7 @@ describe("getTeamBattingLeaders", () => {
     };
     const row2: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b2"),
-      playerKey: "Yankees:b2",
+      playerId: "Yankees:b2",
       nameAtGameTime: "Single Steve",
       batting: { ...makeStatRow(gameId, "b2").batting, homers: 1, rbi: 1 },
     };
@@ -1011,7 +906,7 @@ describe("getTeamBattingLeaders", () => {
     // p2 has 25 AB (above threshold), lower avg
     const qualifiedPlayer: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(gameId, "b2"),
-      playerKey: "Yankees:b2",
+      playerId: "Yankees:b2",
       nameAtGameTime: "Qualified",
       batting: { ...makeStatRow(gameId, "b2").batting, atBats: 25, hits: 10 },
     };
@@ -1040,19 +935,19 @@ describe("getTeamBattingLeaders", () => {
     const g2 = "leads_tie2";
     const rowAliceG1: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g1, "alice"),
-      playerKey: "Yankees:alice",
+      playerId: "Yankees:alice",
       nameAtGameTime: "Alice",
       batting: { ...makeStatRow(g1, "alice").batting, homers: 2 },
     };
     const rowBobG1: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g1, "bob"),
-      playerKey: "Yankees:bob",
+      playerId: "Yankees:bob",
       nameAtGameTime: "Bob",
       batting: { ...makeStatRow(g1, "bob").batting, homers: 2 },
     };
     const rowAliceG2: Omit<BatterGameStatRecord, "id" | "schemaVersion" | "createdAt"> = {
       ...makeStatRow(g2, "alice"),
-      playerKey: "Yankees:alice",
+      playerId: "Yankees:alice",
       nameAtGameTime: "Alice",
       batting: { ...makeStatRow(g2, "alice").batting, homers: 0 },
     };
@@ -1081,7 +976,7 @@ describe("getTeamPitchingLeaders", () => {
     const gameId = "leads_sv";
     const closerRow = makePitcherRow(gameId, "closer", { saves: 2, nameAtGameTime: "Closer C" });
     const starterRow = makePitcherRow(gameId, "starter", {
-      pitcherKey: "Yankees:starter",
+      playerId: "Yankees:starter",
       saves: 0,
       nameAtGameTime: "Starter S",
     });
@@ -1099,7 +994,7 @@ describe("getTeamPitchingLeaders", () => {
       nameAtGameTime: "K King",
     });
     const lowKRow = makePitcherRow(gameId, "lowk", {
-      pitcherKey: "Yankees:lowk",
+      playerId: "Yankees:lowk",
       strikeoutsRecorded: 3,
       nameAtGameTime: "Low K",
     });
@@ -1120,7 +1015,7 @@ describe("getTeamPitchingLeaders", () => {
     });
     // p2 has 35 outs (above threshold), decent ERA
     const qualifiedPitcher = makePitcherRow(gameId, "p2", {
-      pitcherKey: "Yankees:p2",
+      playerId: "Yankees:p2",
       outsPitched: 35,
       earnedRuns: 4,
       nameAtGameTime: "Qualified Pitcher",

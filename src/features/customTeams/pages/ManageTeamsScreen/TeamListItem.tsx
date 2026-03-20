@@ -8,12 +8,19 @@ import { ActionBtn, TeamActions, TeamInfo, TeamListItemCard, TeamMeta, TeamName 
 
 type Props = {
   team: TeamWithRoster;
+  onCareerStats: (id: string) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
   onExport: (id: string) => void;
 };
 
-const TeamListItem: React.FunctionComponent<Props> = ({ team, onEdit, onDelete, onExport }) => {
+const TeamListItem: React.FunctionComponent<Props> = ({
+  team,
+  onCareerStats,
+  onEdit,
+  onDelete,
+  onExport,
+}) => {
   const displayName = customTeamToDisplayName(team);
   const lineupCount = team.roster.lineup.length;
   const pitcherCount = team.roster.pitchers.length;
@@ -34,6 +41,13 @@ const TeamListItem: React.FunctionComponent<Props> = ({ team, onEdit, onDelete, 
         </TeamMeta>
       </TeamInfo>
       <TeamActions>
+        <ActionBtn
+          type="button"
+          onClick={() => onCareerStats(team.id)}
+          data-testid="custom-team-career-stats-button"
+        >
+          Career Stats
+        </ActionBtn>
         <ActionBtn
           type="button"
           onClick={() => onEdit(team.id)}

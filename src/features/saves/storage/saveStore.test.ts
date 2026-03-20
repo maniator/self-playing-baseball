@@ -484,7 +484,7 @@ describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", 
   it("round-trips outLog entries with isSacFly and rbi through export/import", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup({ seed: "sacflysave" }));
     const stateWithSacFly = makeState({
-      outLog: [{ team: 0, batterNum: 2, isSacFly: true, rbi: 1 }],
+      outLog: [{ team: 0, batterNum: 2, playerId: "p2", isSacFly: true, rbi: 1 }],
     });
     await store.updateProgress(saveId, 6, {
       stateSnapshot: { state: stateWithSacFly, rngState: 42 },
@@ -509,7 +509,7 @@ describe("SaveStore — sac-fly outLog entries in stateSnapshot export/import", 
   it("round-trips outLog entries without isSacFly (legacy saves)", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup({ seed: "legacyout" }));
     const legacyState = makeState({
-      outLog: [{ team: 0, batterNum: 1 }],
+      outLog: [{ team: 0, batterNum: 1, playerId: "p1" }],
     });
     await store.updateProgress(saveId, 2, {
       stateSnapshot: { state: legacyState, rngState: null },
@@ -533,7 +533,18 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
   it("round-trips a stateSnapshot containing playLog entries with rbi", async () => {
     const saveId = await store.createSave(makeCustomFormatSetup({ seed: "rbisave" }));
     const stateWithRbi = makeState({
-      playLog: [{ inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1, rbi: 1 }],
+      playLog: [
+        {
+          inning: 1,
+          half: 0,
+          batterNum: 1,
+          playerId: "p1",
+          team: 0,
+          event: Hit.Single,
+          runs: 1,
+          rbi: 1,
+        },
+      ],
     });
     await store.updateProgress(saveId, 5, {
       stateSnapshot: { state: stateWithRbi, rngState: 42 },
@@ -557,7 +568,7 @@ describe("SaveStore — RBI in stateSnapshot export/import compatibility", () =>
     const oldState = makeState({
       playLog: [
         // Simulate old data: no rbi field
-        { inning: 1, half: 0, batterNum: 1, team: 0, event: Hit.Single, runs: 1 },
+        { inning: 1, half: 0, batterNum: 1, playerId: "p1", team: 0, event: Hit.Single, runs: 1 },
       ],
     });
     await store.updateProgress(saveId, 3, {

@@ -5,6 +5,8 @@ import {
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
   loadFixture,
+  playerRow,
+  playerRowButton,
   resetAppState,
 } from "../../utils/helpers";
 
@@ -41,7 +43,7 @@ test.describe("Visual — empty states", () => {
   });
 
   test("Player Career page — empty state", async ({ page }) => {
-    await page.goto("/players/smoke_test_player");
+    await page.goto("/stats/unknown_team/players/smoke_test_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await disableAnimations(page);
     await expect(page.getByTestId("player-career-page")).toHaveScreenshot(
@@ -83,7 +85,7 @@ test.describe("Visual — seeded history data", () => {
     }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     // Wait for the e2e_home_team option to be in the DOM before selecting — the
     // one-shot loadTeamIds effect may still be in-flight when the page mounts on
@@ -96,18 +98,41 @@ test.describe("Visual — seeded history data", () => {
     // team-summary-section, which can appear for ANY team (including the
     // auto-selected sample-save team) and would resolve immediately for the wrong
     // team, causing the subsequent 5 s batting-tab check to time out.
-    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
-      timeout: 30_000,
-    });
+    const sluggerButton = playerRowButton(page, "J. Slugger");
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const sluggerVisible = await sluggerButton.isVisible().catch(() => false);
+      if (sluggerVisible) {
+        break;
+      }
+      // Re-seed fallback for slower CI/mobile WebKit runners where imported
+      // history can still be in-flight when /stats first queries RxDB.
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "career-stats-history.json");
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await expect(teamSelect.locator('option[value="e2e_home_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_home_team");
+      await page.getByTestId("career-stats-batting-tab").click();
+    }
+    await expect(sluggerButton).toBeVisible({ timeout: 45_000 });
+    if (browserName === "webkit") {
+      await page.waitForTimeout(500);
+    }
   }
 
   test("Career Stats page — batting tab with real rows", async ({ page }) => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
     // Use exact role to target the table-row PlayerLink, not the HR/RBI leader cards.
-    await expect(page.getByRole("button", { name: "J. Slugger", exact: true })).toBeVisible({
-      timeout: 5_000,
-    });
+    await expect(playerRowButton(page, "J. Slugger")).toBeVisible({ timeout: 5_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-batting-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -118,9 +143,7 @@ test.describe("Visual — seeded history data", () => {
     await seedAndOpen(page);
     await page.getByTestId("career-stats-pitching-tab").click();
     // A. Ace is both the K leader card and in the pitching table; use exact role to target table row.
-    await expect(page.getByRole("button", { name: "A. Ace", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "A. Ace")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-pitching-data.png",
       { maxDiffPixelRatio: 0.05 },
@@ -130,7 +153,7 @@ test.describe("Visual — seeded history data", () => {
   test("Player Career page — batting log for seeded player", async ({ page }) => {
     await seedAndOpen(page);
     // Navigate to the seeded batter's player career page.
-    await page.goto("/players/e2e_batter_slugger");
+    await page.goto("/stats/e2e_home_team/players/e2e_batter_slugger");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Use a generous timeout for Career Totals on slower mobile WebKit viewports.
     await expect(page.getByText("Career Totals")).toBeVisible({ timeout: 10_000 });
@@ -143,7 +166,7 @@ test.describe("Visual — seeded history data", () => {
 
   test("Player Career page — pitching log for C. Closer (SV=1)", async ({ page }) => {
     await seedAndOpen(page);
-    await page.goto("/players/e2e_pitcher_closer");
+    await page.goto("/stats/e2e_home_team/players/e2e_pitcher_closer");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Switch to the Pitching tab.
     await page.getByText("Pitching").click();
@@ -166,9 +189,13 @@ test.describe("Visual — Team Summary and Leaders", () => {
     });
     await loadFixture(page, "sample-save.json");
     await importHistoryFixture(page, "team-summary-history.json");
+    const browserName = page.context().browser()?.browserType().name();
+    if (browserName === "webkit") {
+      await page.waitForTimeout(2_500);
+    }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
       timeout: 15_000,
@@ -176,9 +203,30 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await teamSelect.selectOption("e2e_summary_team");
     // Use a data-specific guard (W/L = "2-1") instead of team-summary-section,
     // which renders for any team and can resolve immediately for the wrong team.
-    // Use a generous 45 s timeout: on slow CI desktop runners the RxDB query
-    // that aggregates the three imported games can take longer than 30 s.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
+    // Use a generous 45 s timeout: on slow CI/mobile runners the RxDB query
+    // that aggregates imported games can take longer than 30 s.
+    const summaryWL = page.getByTestId("summary-wl");
+    const loaded = await summaryWL
+      .filter({ hasText: "2-1" })
+      .isVisible()
+      .catch(() => false);
+    if (!loaded) {
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "team-summary-history.json");
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_summary_team");
+    }
+    await expect(summaryWL).toHaveText("2-1", { timeout: 45_000 });
     await disableAnimations(page);
   }
 
@@ -186,9 +234,7 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await seedSummaryAndOpen(page);
     await page.getByTestId("career-stats-batting-tab").click();
     // J. Qualify is in all three batting leader cards AND the batting table; use exact role to target table row.
-    await expect(page.getByRole("button", { name: "J. Qualify", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "J. Qualify")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-batting.png",
       { maxDiffPixelRatio: 0.05 },
@@ -200,9 +246,7 @@ test.describe("Visual — Team Summary and Leaders", () => {
     await page.getByTestId("career-stats-pitching-tab").click();
     // A. Starter appears in both ERA and K leader cards AND the pitching table.
     // Use exact role to target the table-row PlayerLink button only.
-    await expect(page.getByRole("button", { name: "A. Starter", exact: true })).toBeVisible({
-      timeout: 10_000,
-    });
+    await expect(playerRowButton(page, "A. Starter")).toBeVisible({ timeout: 10_000 });
     await expect(page.getByTestId("career-stats-page")).toHaveScreenshot(
       "career-stats-team-summary-pitching.png",
       { maxDiffPixelRatio: 0.05 },
@@ -224,7 +268,7 @@ test.describe("Visual — Role-aware Player Career tabs", () => {
 
   test("Player Career page — batter-only (no Pitching tab)", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_batter_qualify");
+    await page.goto("/stats/e2e_summary_team/players/e2e_batter_qualify");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("J. Qualify")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);
@@ -236,7 +280,7 @@ test.describe("Visual — Role-aware Player Career tabs", () => {
 
   test("Player Career page — pitcher-only (no Batting tab)", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_pitcher_starter");
+    await page.goto("/stats/e2e_summary_team/players/e2e_pitcher_starter");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByText("A. Starter")).toBeVisible({ timeout: 10_000 });
     await disableAnimations(page);

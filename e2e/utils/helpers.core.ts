@@ -192,3 +192,51 @@ export async function configureNewGame(page: Page, options: GameConfig = {}): Pr
     await page.locator(`input[name="managed"][value="${options.managedTeam}"]`).check();
   }
 }
+
+/**
+ * Clicks a locator with retries (for transient visibility issues on slow browsers).
+ * Waits for element to be visible, scrolls into view, and clicks. Retries on failure.
+ */
+export async function clickWithRetry(
+  getLocator: () => ReturnType<Page["locator"]>,
+  attempts = 3,
+): Promise<void> {
+  if (attempts < 1) {
+    throw new Error(`clickWithRetry requires attempts >= 1 (received ${attempts})`);
+  }
+
+  let lastError: unknown;
+  for (let i = 0; i < attempts; i += 1) {
+    const locator = getLocator();
+    try {
+      await locator.waitFor({ state: "visible", timeout: 20_000 });
+      await locator.scrollIntoViewIfNeeded();
+      await locator.click({ timeout: 20_000 });
+      return;
+    } catch (error) {
+      lastError = error;
+      try {
+        await locator.waitFor({ state: "attached", timeout: 20_000 });
+      } catch {
+        // Best effort: keep retrying even if the element does not reattach in time.
+      }
+      await locator.page().waitForTimeout(750);
+    }
+  }
+  throw lastError;
+}
+
+/**
+ * Locates the first table row that contains the provided player-name text.
+ */
+export function playerRow(page: Page, name: string) {
+  return page.locator("tbody tr", { hasText: name }).first();
+}
+
+/**
+ * Locates the player-link button inside the first matching player row.
+ * The button must have an exact accessible name match to `name`.
+ */
+export function playerRowButton(page: Page, name: string) {
+  return playerRow(page, name).getByRole("button", { name, exact: true });
+}

@@ -1,6 +1,6 @@
 {
   "type": "gameHistory",
-  "formatVersion": 2,
+  "formatVersion": 1,
   "exportedAt": "2023-11-14T21:33:20.000Z",
   "payload": {
     "games": [
@@ -23,8 +23,7 @@
         "gameId": "e2e_career_game_001",
         "teamId": "e2e_home_team",
         "opponentTeamId": "e2e_away_team",
-        "playerKey": "e2e_batter_slugger",
-        "playerId": "batter_slugger",
+        "playerId": "e2e_batter_slugger",
         "nameAtGameTime": "J. Slugger",
         "role": "batter",
         "batting": {
@@ -36,7 +35,8 @@
           "singles": 0,
           "doubles": 1,
           "triples": 0,
-          "homers": 1
+          "homers": 1,
+          "sacFlies": 0
         },
         "createdAt": 1700000001000,
         "schemaVersion": 1
@@ -46,8 +46,7 @@
         "gameId": "e2e_career_game_001",
         "teamId": "e2e_home_team",
         "opponentTeamId": "e2e_away_team",
-        "playerKey": "e2e_batter_contact",
-        "playerId": "batter_contact",
+        "playerId": "e2e_batter_contact",
         "nameAtGameTime": "M. Contact",
         "role": "batter",
         "batting": {
@@ -59,7 +58,8 @@
           "singles": 3,
           "doubles": 0,
           "triples": 0,
-          "homers": 0
+          "homers": 0,
+          "sacFlies": 0
         },
         "createdAt": 1700000001000,
         "schemaVersion": 1
@@ -71,8 +71,6 @@
         "gameId": "e2e_career_game_001",
         "teamId": "e2e_home_team",
         "opponentTeamId": "e2e_away_team",
-        "pitcherKey": "e2e_pitcher_ace",
-        "pitcherId": "pitcher_ace",
         "nameAtGameTime": "A. Ace",
         "outsPitched": 18,
         "battersFaced": 22,
@@ -87,15 +85,14 @@
         "blownSaves": 0,
         "createdAt": 1700000001000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_ace"
       },
       {
         "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_setup",
         "gameId": "e2e_career_game_001",
         "teamId": "e2e_home_team",
         "opponentTeamId": "e2e_away_team",
-        "pitcherKey": "e2e_pitcher_setup",
-        "pitcherId": "pitcher_setup",
         "nameAtGameTime": "S. Setup",
         "outsPitched": 6,
         "battersFaced": 6,
@@ -110,15 +107,14 @@
         "blownSaves": 0,
         "createdAt": 1700000001000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_setup"
       },
       {
         "id": "e2e_career_game_001:e2e_home_team:e2e_pitcher_closer",
         "gameId": "e2e_career_game_001",
         "teamId": "e2e_home_team",
         "opponentTeamId": "e2e_away_team",
-        "pitcherKey": "e2e_pitcher_closer",
-        "pitcherId": "pitcher_closer",
         "nameAtGameTime": "C. Closer",
         "outsPitched": 3,
         "battersFaced": 3,
@@ -133,10 +129,11 @@
         "blownSaves": 0,
         "createdAt": 1700000001000,
         "schemaVersion": 1,
-        "pitchesThrown": 0
+        "pitchesThrown": 0,
+        "playerId": "e2e_pitcher_closer"
       }
     ],
     "requiredTeamIds": []
   },
-  "sig": "11cd59ec"
+  "sig": "419715f5"
 }

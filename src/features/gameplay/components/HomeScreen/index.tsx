@@ -1,6 +1,6 @@
 import * as React from "react";
 
-import { Attribution, AttributionLink, GhostBtn, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuDivider, MenuGroup, PrimaryBtn, SecondaryBtn } from "./styles"; // prettier-ignore
+import { Attribution, AttributionLink, GhostBtn, HomeContainer, HomeLogo, HomeSubtitle, LeagueTeaserBox, LeagueTeaserSub, LeagueTeaserTitle, MenuDivider, MenuGroup, PrimaryBtn, SecondaryBtn, SecondaryQuietBtn } from "./styles"; // prettier-ignore
 
 type Props = {
   onNewGame: () => void;
@@ -39,21 +39,21 @@ const HomeScreen: React.FunctionComponent<Props> = ({
       <PrimaryBtn onClick={onNewGame} data-testid="home-new-game-button">
         New Game
       </PrimaryBtn>
-      <PrimaryBtn onClick={onLoadSaves} data-testid="home-load-saves-button">
+      <SecondaryBtn onClick={onLoadSaves} data-testid="home-load-saves-button">
         Load Saved Game
-      </PrimaryBtn>
-      <SecondaryBtn onClick={onManageTeams} data-testid="home-manage-teams-button">
-        Manage Teams
       </SecondaryBtn>
-      {onHelp && (
-        <SecondaryBtn onClick={onHelp} data-testid="home-help-button">
-          How to Play
-        </SecondaryBtn>
-      )}
       {onCareerStats && (
         <SecondaryBtn onClick={onCareerStats} data-testid="home-career-stats-button">
           Career Stats
         </SecondaryBtn>
+      )}
+      <SecondaryBtn onClick={onManageTeams} data-testid="home-manage-teams-button">
+        Manage Teams
+      </SecondaryBtn>
+      {onHelp && (
+        <SecondaryQuietBtn onClick={onHelp} data-testid="home-help-button">
+          How to Play
+        </SecondaryQuietBtn>
       )}
       {onContact && (
         <>

@@ -15,8 +15,10 @@
 import { expect, type Page, test } from "@playwright/test";
 
 import {
+  clickWithRetry,
   EFFECTIVELY_PAUSED_SPEED,
   importHistoryFixture,
+  loadFixture,
   startGameViaPlayBall,
 } from "../utils/helpers";
 
@@ -33,7 +35,7 @@ test.describe("Team Summary and Leaders", () => {
     await page.addInitScript(() => {
       localStorage.setItem("speed", EFFECTIVELY_PAUSED_SPEED);
     });
-    await startGameViaPlayBall(page);
+    await loadFixture(page, "sample-save.json");
     await importHistoryFixture(page, "team-summary-history.json");
     // On WebKit/mobile, the RxDB observable pipeline and the underlying IndexedDB
     // transaction durability guarantees can still be settling when page.goto fires.
@@ -47,7 +49,7 @@ test.describe("Team Summary and Leaders", () => {
     }
     await page.goto("/stats");
     await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
-    const teamSelect = page.getByTestId("career-stats-team-select");
+    let teamSelect = page.getByTestId("career-stats-team-select");
     await expect(teamSelect).toBeVisible({ timeout: 5_000 });
     // Wait for the e2e_summary_team option to appear in the dropdown before
     // selecting it.  On slow CI/mobile WebKit runners the one-shot loadTeamIds
@@ -74,7 +76,28 @@ test.describe("Team Summary and Leaders", () => {
     // as savesLeader (both come from the single loadStats async function), so when
     // summary-wl shows "2-1", saves-leader-card is also rendered.  Using a specific
     // text check makes this guard immune to the early-resolution race condition.
-    await expect(page.getByTestId("summary-wl")).toHaveText("2-1", { timeout: 45_000 });
+    const summaryWL = page.getByTestId("summary-wl");
+    const loaded = await summaryWL
+      .filter({ hasText: "2-1" })
+      .isVisible()
+      .catch(() => false);
+    if (!loaded) {
+      await page.goto("/game");
+      await expect(page.getByTestId("scoreboard")).toBeVisible({ timeout: 10_000 });
+      await importHistoryFixture(page, "team-summary-history.json");
+      if (browserName === "webkit") {
+        await page.waitForTimeout(2_000);
+      }
+      await page.goto("/stats");
+      await expect(page.getByTestId("career-stats-page")).toBeVisible({ timeout: 15_000 });
+      teamSelect = page.getByTestId("career-stats-team-select");
+      await expect(teamSelect).toBeVisible({ timeout: 10_000 });
+      await expect(teamSelect.locator('option[value="e2e_summary_team"]')).toBeAttached({
+        timeout: 15_000,
+      });
+      await teamSelect.selectOption("e2e_summary_team");
+    }
+    await expect(summaryWL).toHaveText("2-1", { timeout: 45_000 });
   }
 
   test("team summary section shows W/L record", async ({ page }) => {
@@ -146,10 +169,10 @@ test.describe("Team Summary and Leaders", () => {
     await seedSummaryAndOpen(page);
     const hrCard = page.getByTestId("hr-leader-card");
     await expect(hrCard).toBeVisible({ timeout: 10_000 });
-    await hrCard.click();
+    await clickWithRetry(() => page.getByTestId("hr-leader-card"));
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    expect(page.url()).toContain("/players/e2e_batter_qualify");
-    expect(page.url()).toContain("team=e2e_summary_team");
+    expect(page.url()).toContain("/stats/");
+    expect(page.url()).toContain("e2e_batter_qualify");
   });
 });
 
@@ -166,7 +189,7 @@ test.describe("Role-aware Player Career tabs", () => {
 
   test("batter-only player (no pitching history) does NOT show Pitching tab", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_batter_qualify");
+    await page.goto("/stats/e2e_summary_team/players/e2e_batter_qualify");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Wait for player name (only rendered after loading completes) to avoid checking
     // not.toBeVisible() while loading=true shows both tabs as placeholders.
@@ -179,7 +202,7 @@ test.describe("Role-aware Player Career tabs", () => {
 
   test("pitcher-only player (no batting history) does NOT show Batting tab", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_pitcher_starter");
+    await page.goto("/stats/e2e_summary_team/players/e2e_pitcher_starter");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
     // Wait for player name (only rendered after loading completes) to avoid checking
     // not.toBeVisible() while loading=true shows both tabs as placeholders.
@@ -190,12 +213,14 @@ test.describe("Role-aware Player Career tabs", () => {
     });
   });
 
-  test("player with no history shows both tabs (empty state)", async ({ page }) => {
+  test("player with no history shows only the tab matching their roster role", async ({ page }) => {
     await seedForRoleAware(page);
-    await page.goto("/players/e2e_unknown_player");
+    await page.goto("/stats/e2e_summary_team/players/e2e_unknown_player");
     await expect(page.getByTestId("player-career-page")).toBeVisible({ timeout: 15_000 });
-    // Both tabs present in the empty state
+    // e2e_unknown_player is a batter in the fixture — only Batting tab should appear
     await expect(page.getByRole("button", { name: /^batting$/i })).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole("button", { name: /^pitching$/i })).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByRole("button", { name: /^pitching$/i })).not.toBeVisible({
+      timeout: 5_000,
+    });
   });
 });

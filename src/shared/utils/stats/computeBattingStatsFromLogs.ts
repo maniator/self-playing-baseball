@@ -31,18 +31,9 @@ export const emptyBatterStat = (): BatterStat => ({
 });
 
 /**
- * Returns the stat key for a log entry.
- *
- * Entries carry `playerId` so stats are grouped by player rather than
- * by batting-order slot. This means a substitute's stat line starts at zero and
- * the replaced player's stats stay under their own ID.
- *
- * Older entries (no `playerId`) fall back to a slot-number string key
- * (`"slot:1"` … `"slot:9"`) so the legacy slot-based grouping still works for
- * older saves.
+ * Returns the stat key for a log entry — always the batter's player ID.
  */
-export const statKey = (entry: { playerId?: string; batterNum: number }): string =>
-  entry.playerId ?? `slot:${entry.batterNum}`;
+export const statKey = (entry: { playerId: string }): string => entry.playerId;
 
 /**
  * Computes per-player batting statistics from the game's play logs.

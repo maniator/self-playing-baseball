@@ -3,6 +3,7 @@ import { checkGameOver, nextHalfInning } from "./gameOver";
 import type { State } from "./gameStateTypes";
 import { updateActivePitcherLog } from "./pitcherLog";
 import type { Strategy } from "./playerTypes";
+import { resolveBatterPlayerId } from "./resolveBatterPlayerId";
 
 /**
  * Increments the pitching team's pitch count.
@@ -23,7 +24,7 @@ export const incrementPitchCount = (state: State): State => {
     pitcherGameLog: updateActivePitcherLog(
       state.pitcherGameLog ?? [[], []],
       pitchingTeam,
-      (entry) => ({ ...entry, pitchesThrown: (entry.pitchesThrown ?? 0) + 1 }),
+      (entry) => ({ ...entry, pitchesThrown: entry.pitchesThrown + 1 }),
     ),
   };
 };
@@ -73,12 +74,12 @@ export const playerOut = (
   // Record this batter's completed plate appearance in outLog (covers K, pop-outs, groundouts, FC, bunts, sac flies).
   const battingTeam = state.atBat as 0 | 1;
   const slotIdx = state.batterIndex[battingTeam];
-  const playerId = state.lineupOrder[battingTeam][slotIdx] || undefined;
+  const playerId = resolveBatterPlayerId(state, battingTeam, slotIdx);
   const outEntry: StrikeoutEntry | null = batterCompleted
     ? {
         team: battingTeam,
         batterNum: slotIdx + 1,
-        ...(playerId ? { playerId } : {}),
+        playerId,
         ...(isSacFly ? { isSacFly: true, rbi: rbi ?? 1 } : {}),
       }
     : null;
