@@ -33,3 +33,6 @@ venv/
 
 #docker tmp files
 .docker*/
+
+# temporary scan directories
+tmp-*/
