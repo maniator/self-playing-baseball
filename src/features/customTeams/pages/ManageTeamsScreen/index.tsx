@@ -115,8 +115,7 @@ const ManageTeamsScreen: React.FunctionComponent<Props> = ({ onBack, hasActiveGa
   const isCreating = location.pathname === "/teams/new";
   const isEditing = Boolean(teamId);
   const editingTeam = isEditing ? teams.find((t) => t.id === teamId) : undefined;
-  const navigateToTeamCareerStats = (id: string) =>
-    navigate(`/stats?team=${encodeURIComponent(id)}`);
+  const navigateToTeamCareerStats = (id: string) => navigate(`/stats/${encodeURIComponent(id)}`);
 
   const editorHeader = (
     <EditorShellHeader>

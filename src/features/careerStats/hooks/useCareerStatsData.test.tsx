@@ -43,11 +43,11 @@ function Probe() {
 }
 
 describe("useCareerStatsData", () => {
-  it("preselects team from query string", async () => {
+  it("reads selectedTeamId from the :teamId path param", async () => {
     render(
-      <MemoryRouter initialEntries={["/stats?team=team2"]}>
+      <MemoryRouter initialEntries={["/stats/team2"]}>
         <Routes>
-          <Route path="/stats" element={<Probe />} />
+          <Route path="/stats/:teamId" element={<Probe />} />
         </Routes>
       </MemoryRouter>,
     );

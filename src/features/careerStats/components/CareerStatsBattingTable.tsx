@@ -19,7 +19,7 @@ type Props = {
   sort: { key: BattingSortKey; dir: SortDir };
   onHeaderClick: (event: React.MouseEvent<HTMLTableCellElement>) => void;
   onHeaderKeyDown: (event: React.KeyboardEvent<HTMLTableCellElement>) => void;
-  onPlayerSelect: (playerKey: string) => void;
+  onPlayerSelect: (playerId: string) => void;
 };
 
 const CareerStatsBattingTable: React.FunctionComponent<Props> = ({
@@ -158,9 +158,9 @@ const CareerStatsBattingTable: React.FunctionComponent<Props> = ({
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={row.playerKey}>
+          <tr key={row.playerId}>
             <Td>
-              <PlayerLink type="button" onClick={() => onPlayerSelect(row.playerKey)}>
+              <PlayerLink type="button" onClick={() => onPlayerSelect(row.playerId)}>
                 {row.nameAtGameTime}
               </PlayerLink>
             </Td>

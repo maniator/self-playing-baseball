@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { GameHistoryStore } from "@feat/careerStats/storage/gameHistoryStore";
 import { useCustomTeams } from "@shared/hooks/useCustomTeams";
-import { useSearchParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import { getDb } from "@storage/db";
 import type { TeamCareerSummary } from "@storage/types";
@@ -10,10 +10,12 @@ import type { TeamCareerSummary } from "@storage/types";
 import type { BattingRow, PitchingRow } from "./careerStatsShared";
 
 export function useCareerStatsData() {
-  const [searchParams] = useSearchParams();
+  const { teamId: routeTeamId } = useParams<{ teamId?: string }>();
+  const navigate = useNavigate();
   const { teams: customTeams, loading: teamsLoading } = useCustomTeams();
 
-  const [selectedTeamId, setSelectedTeamId] = React.useState<string>("");
+  const selectedTeamId = routeTeamId ?? "";
+
   const [teamsWithHistory, setTeamsWithHistory] = React.useState<string[]>([]);
   const [battingRows, setBattingRows] = React.useState<BattingRow[]>([]);
   const [pitchingRows, setPitchingRows] = React.useState<PitchingRow[]>([]);
@@ -43,8 +45,6 @@ export function useCareerStatsData() {
     React.useState<
       Awaited<ReturnType<typeof GameHistoryStore.getTeamPitchingLeaders>>["strikeoutsLeader"]
     >(null);
-
-  const requestedTeamId = searchParams.get("team") ?? "";
 
   const selectableTeamIds = React.useMemo<string[]>(() => {
     const customIds = customTeams.map((team) => team.id);
@@ -78,22 +78,11 @@ export function useCareerStatsData() {
     };
   }, []);
 
+  // When there's no teamId in the URL yet and teams are available, redirect to the first team.
   React.useEffect(() => {
-    if (teamsLoading || selectableTeamIds.length === 0) {
-      return;
-    }
-
-    if (requestedTeamId && selectableTeamIds.includes(requestedTeamId)) {
-      if (selectedTeamId !== requestedTeamId) {
-        setSelectedTeamId(requestedTeamId);
-      }
-      return;
-    }
-
-    if (selectedTeamId === "") {
-      setSelectedTeamId(selectableTeamIds[0]);
-    }
-  }, [requestedTeamId, selectableTeamIds, selectedTeamId, teamsLoading]);
+    if (teamsLoading || selectableTeamIds.length === 0 || selectedTeamId) return;
+    navigate(`/stats/${selectableTeamIds[0]}`, { replace: true });
+  }, [teamsLoading, selectableTeamIds, selectedTeamId, navigate]);
 
   React.useEffect(() => {
     if (!selectedTeamId) {
@@ -178,7 +167,6 @@ export function useCareerStatsData() {
     selectableTeamIds,
     selectedCustomTeam,
     selectedTeamId,
-    setSelectedTeamId,
     strikeoutsLeader,
     teamSummary,
   };

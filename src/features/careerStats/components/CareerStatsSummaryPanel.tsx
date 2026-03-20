@@ -33,7 +33,7 @@ type Props = {
   eraLeader: PitchingLeader | null;
   savesLeader: PitchingLeader | null;
   strikeoutsLeader: PitchingLeader | null;
-  onOpenPlayer: (playerKey: string) => void;
+  onOpenPlayer: (playerId: string) => void;
 };
 
 const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
@@ -118,7 +118,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="hr-leader-card"
-            onClick={() => onOpenPlayer(hrLeader.playerKey)}
+            onClick={() => onOpenPlayer(hrLeader.playerId)}
           >
             <LeaderStatLabel>HR</LeaderStatLabel>
             <LeaderValue>{hrLeader.value}</LeaderValue>
@@ -133,7 +133,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="avg-leader-card"
-            onClick={() => onOpenPlayer(avgLeader.playerKey)}
+            onClick={() => onOpenPlayer(avgLeader.playerId)}
           >
             <LeaderStatLabel>
               AVG{" "}
@@ -153,7 +153,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="rbi-leader-card"
-            onClick={() => onOpenPlayer(rbiLeader.playerKey)}
+            onClick={() => onOpenPlayer(rbiLeader.playerId)}
           >
             <LeaderStatLabel>RBI</LeaderStatLabel>
             <LeaderValue>{rbiLeader.value}</LeaderValue>
@@ -172,7 +172,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="era-leader-card"
-            onClick={() => onOpenPlayer(eraLeader.pitcherKey)}
+            onClick={() => onOpenPlayer(eraLeader.playerId)}
           >
             <LeaderStatLabel>
               ERA (min {formatOutsAsIP(MIN_OUTS_FOR_ERA_LEADER)} IP)
@@ -189,7 +189,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="saves-leader-card"
-            onClick={() => onOpenPlayer(savesLeader.pitcherKey)}
+            onClick={() => onOpenPlayer(savesLeader.playerId)}
           >
             <LeaderStatLabel>SV</LeaderStatLabel>
             <LeaderValue>{savesLeader.value}</LeaderValue>
@@ -204,7 +204,7 @@ const CareerStatsSummaryPanel: React.FunctionComponent<Props> = ({
           <LeaderCard
             type="button"
             data-testid="k-leader-card"
-            onClick={() => onOpenPlayer(strikeoutsLeader.pitcherKey)}
+            onClick={() => onOpenPlayer(strikeoutsLeader.playerId)}
           >
             <LeaderStatLabel>K</LeaderStatLabel>
             <LeaderValue>{strikeoutsLeader.value}</LeaderValue>

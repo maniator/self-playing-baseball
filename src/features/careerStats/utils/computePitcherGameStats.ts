@@ -99,7 +99,7 @@ export const computePitcherGameStats = (
         const existing = byPitcher[entry.pitcherId];
         existing.outsPitched += entry.outsPitched;
         existing.battersFaced += entry.battersFaced;
-        existing.pitchesThrown = (existing.pitchesThrown ?? 0) + (entry.pitchesThrown ?? 0);
+        existing.pitchesThrown = existing.pitchesThrown + entry.pitchesThrown;
         existing.hitsAllowed += entry.hitsAllowed;
         existing.walksAllowed += entry.walksAllowed;
         existing.strikeoutsRecorded += entry.strikeoutsRecorded;
@@ -116,13 +116,13 @@ export const computePitcherGameStats = (
           pitcherId: entry.pitcherId,
           outsPitched: entry.outsPitched,
           battersFaced: entry.battersFaced,
-          pitchesThrown: entry.pitchesThrown ?? 0,
+          pitchesThrown: entry.pitchesThrown,
           hitsAllowed: entry.hitsAllowed,
           walksAllowed: entry.walksAllowed,
           strikeoutsRecorded: entry.strikeoutsRecorded,
           runsAllowed: entry.runsAllowed,
           homersAllowed: entry.homersAllowed,
-          earnedRuns: entry.runsAllowed, // v1: earnedRuns = runsAllowed
+          earnedRuns: entry.runsAllowed,
           saves: svhb.saves,
           holds: svhb.holds,
           blownSaves: svhb.blownSaves,

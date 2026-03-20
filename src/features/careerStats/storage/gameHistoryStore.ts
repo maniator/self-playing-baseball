@@ -39,7 +39,7 @@ type GetDb = () => Promise<BallgameDb>;
 
 /** Batting stats row type used internally by `getTeamCareerBattingStats`. */
 type TeamBattingStatsRow = BatterGameStatRecord["batting"] & {
-  playerKey: string;
+  playerId: string;
   nameAtGameTime: string;
   gamesPlayed: number;
 };
@@ -47,7 +47,7 @@ type TeamBattingStatsRow = BatterGameStatRecord["batting"] & {
 /** Pitching stats row type used internally by `getTeamCareerPitchingStats`. */
 type TeamPitchingStatsRow = Omit<
   PitcherGameStatRecord,
-  "id" | "gameId" | "teamId" | "opponentTeamId" | "pitcherId" | "createdAt" | "schemaVersion"
+  "id" | "gameId" | "teamId" | "opponentTeamId" | "createdAt" | "schemaVersion"
 > & { gamesPlayed: number };
 
 function buildStore(getDbFn: GetDb) {
@@ -87,7 +87,7 @@ function buildStore(getDbFn: GetDb) {
     if (statRows.length > 0) {
       const statDocs: BatterGameStatRecord[] = statRows.map((row) => ({
         ...row,
-        id: `${gameInstanceId}:${row.teamId}:${row.playerKey}`,
+        id: `${gameInstanceId}:${row.teamId}:${row.playerId}`,
         createdAt: now,
         schemaVersion: HISTORY_SCHEMA_VERSION,
       }));
@@ -106,7 +106,7 @@ function buildStore(getDbFn: GetDb) {
     if (pitcherRows.length > 0) {
       const pitcherDocs: PitcherGameStatRecord[] = pitcherRows.map((row) => ({
         ...row,
-        id: `${gameInstanceId}:${row.teamId}:${row.pitcherKey}`,
+        id: `${gameInstanceId}:${row.teamId}:${row.playerId}`,
         createdAt: now,
         schemaVersion: HISTORY_SCHEMA_VERSION,
       }));
@@ -123,20 +123,20 @@ function buildStore(getDbFn: GetDb) {
   }
 
   /**
-   * Returns cumulative career batting totals for a set of playerKeys.
+   * Returns cumulative career batting totals for a set of player IDs.
    * Performs a single bulk query and aggregates in memory.
    */
   async function getCareerStats(
-    playerKeys: string[],
+    playerIds: string[],
     options?: { excludeGameId?: string },
   ): Promise<
     Record<string, BatterGameStatRecord["batting"] & { gamesPlayed: number; teamId: string }>
   > {
-    if (playerKeys.length === 0) return {};
+    if (playerIds.length === 0) return {};
     const db = await getDbFn();
 
     const allRows = await db.batterGameStats
-      .find({ selector: { playerKey: { $in: playerKeys } } })
+      .find({ selector: { playerId: { $in: playerIds } } })
       .exec();
 
     const results: Record<
@@ -149,9 +149,9 @@ function buildStore(getDbFn: GetDb) {
       // Exclude the current (in-progress) game so that live gameStats can be
       // merged on top without double-counting after game-over commit.
       if (options?.excludeGameId && doc.gameId === options.excludeGameId) continue;
-      const existing = results[doc.playerKey];
+      const existing = results[doc.playerId];
       if (!existing) {
-        results[doc.playerKey] = {
+        results[doc.playerId] = {
           atBats: doc.batting.atBats,
           hits: doc.batting.hits,
           walks: doc.batting.walks,
@@ -161,7 +161,7 @@ function buildStore(getDbFn: GetDb) {
           doubles: doc.batting.doubles,
           triples: doc.batting.triples,
           homers: doc.batting.homers,
-          sacFlies: doc.batting.sacFlies ?? 0, // ?? 0 for legacy docs written before sacFlies field existed
+          sacFlies: doc.batting.sacFlies,
           gamesPlayed: 1,
           teamId: doc.teamId,
         };
@@ -175,7 +175,7 @@ function buildStore(getDbFn: GetDb) {
         existing.doubles += doc.batting.doubles;
         existing.triples += doc.batting.triples;
         existing.homers += doc.batting.homers;
-        existing.sacFlies = (existing.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
+        existing.sacFlies += doc.batting.sacFlies;
         existing.gamesPlayed++;
       }
     }
@@ -183,25 +183,25 @@ function buildStore(getDbFn: GetDb) {
   }
 
   /**
-   * Returns all batting stat rows for a single playerKey, ordered by createdAt ascending.
+   * Returns all batting stat rows for a single player ID, ordered by createdAt ascending.
    * Used for the player career page game-by-game log.
    */
-  async function getPlayerCareerBatting(playerKey: string): Promise<BatterGameStatRecord[]> {
+  async function getPlayerCareerBatting(playerId: string): Promise<BatterGameStatRecord[]> {
     const db = await getDbFn();
     const rows = await db.batterGameStats
-      .find({ selector: { playerKey }, sort: [{ createdAt: "asc" }] })
+      .find({ selector: { playerId }, sort: [{ createdAt: "asc" }] })
       .exec();
     return rows.map((r) => r.toJSON() as BatterGameStatRecord);
   }
 
   /**
-   * Returns all pitching stat rows for a single pitcherKey, ordered by createdAt ascending.
+   * Returns all pitching stat rows for a single pitcher ID, ordered by createdAt ascending.
    * Used for the player career page game-by-game log.
    */
-  async function getPlayerCareerPitching(pitcherKey: string): Promise<PitcherGameStatRecord[]> {
+  async function getPlayerCareerPitching(playerId: string): Promise<PitcherGameStatRecord[]> {
     const db = await getDbFn();
     const rows = await db.pitcherGameStats
-      .find({ selector: { pitcherKey }, sort: [{ createdAt: "asc" }] })
+      .find({ selector: { playerId }, sort: [{ createdAt: "asc" }] })
       .exec();
     return rows.map((r) => r.toJSON() as PitcherGameStatRecord);
   }
@@ -218,10 +218,10 @@ function buildStore(getDbFn: GetDb) {
 
     for (const row of rows) {
       const doc = row.toJSON() as BatterGameStatRecord;
-      const key = doc.playerKey;
+      const key = doc.playerId;
       if (!aggregated[key]) {
         aggregated[key] = {
-          playerKey: key,
+          playerId: key,
           nameAtGameTime: doc.nameAtGameTime,
           gamesPlayed: 0,
           atBats: 0,
@@ -247,7 +247,7 @@ function buildStore(getDbFn: GetDb) {
       agg.doubles += doc.batting.doubles;
       agg.triples += doc.batting.triples;
       agg.homers += doc.batting.homers;
-      agg.sacFlies = (agg.sacFlies ?? 0) + (doc.batting.sacFlies ?? 0);
+      agg.sacFlies += doc.batting.sacFlies;
     }
 
     return Object.values(aggregated);
@@ -265,10 +265,10 @@ function buildStore(getDbFn: GetDb) {
 
     for (const row of rows) {
       const doc = row.toJSON() as PitcherGameStatRecord;
-      const key = doc.pitcherKey;
+      const key = doc.playerId;
       if (!aggregated[key]) {
         aggregated[key] = {
-          pitcherKey: key,
+          playerId: key,
           nameAtGameTime: doc.nameAtGameTime,
           gamesPlayed: 0,
           outsPitched: 0,
@@ -332,7 +332,7 @@ function buildStore(getDbFn: GetDb) {
 
     const bundle: ExportedGameHistory = {
       type: "gameHistory",
-      formatVersion: 2,
+      formatVersion: 1,
       exportedAt: new Date().toISOString(),
       payload,
       sig,
@@ -343,7 +343,7 @@ function buildStore(getDbFn: GetDb) {
 
   /**
    * Imports a signed game-history bundle.
-   * - Validates signature and format version (accepts v1 and v2).
+   * - Validates signature and format version (only v1 is accepted).
    * - Validates that all required team IDs exist locally.
    * - Merges idempotently: skips any game or stat row whose ID already exists.
    */
@@ -362,7 +362,7 @@ function buildStore(getDbFn: GetDb) {
     if (bundle.type !== "gameHistory") {
       throw new Error(`Unexpected bundle type: ${String(bundle.type ?? "(none)")}`);
     }
-    if (bundle.formatVersion !== 1 && bundle.formatVersion !== 2) {
+    if (bundle.formatVersion !== 1) {
       throw new Error(`Unsupported game history format version: ${String(bundle.formatVersion)}`);
     }
     if (!bundle.payload || typeof bundle.payload !== "object") {
@@ -377,7 +377,7 @@ function buildStore(getDbFn: GetDb) {
       );
     }
 
-    // All team IDs in v1 are ct_* — validate every requiredTeamId exists locally.
+    // Validate that all required team IDs exist locally.
     const requiredTeamIds = bundle.payload.requiredTeamIds ?? [];
     const missingTeamIds = requiredTeamIds.filter((id) => !existingTeamIds.has(id));
     if (missingTeamIds.length > 0) {
@@ -389,7 +389,6 @@ function buildStore(getDbFn: GetDb) {
     }
 
     const db = await getDbFn();
-    const now = Date.now();
 
     const games = bundle.payload.games ?? [];
     const stats = bundle.payload.playerGameStats ?? [];
@@ -426,7 +425,6 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.batterGameStats.bulkInsert(
         statsToInsert.map((s) => ({
           ...s,
-          createdAt: s.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
       );
@@ -447,9 +445,6 @@ function buildStore(getDbFn: GetDb) {
       const result = await db.pitcherGameStats.bulkInsert(
         pitchersToInsert.map((p) => ({
           ...p,
-          // Backfill pitchesThrown for older bundles that pre-date the v1 schema field.
-          pitchesThrown: (p as { pitchesThrown?: number }).pitchesThrown ?? 0,
-          createdAt: p.createdAt ?? now,
           schemaVersion: HISTORY_SCHEMA_VERSION,
         })),
       );
@@ -589,7 +584,7 @@ function buildStore(getDbFn: GetDb) {
       });
       const top = sorted[0];
       return {
-        playerKey: top.playerKey,
+        playerId: top.playerId,
         nameAtGameTime: top.nameAtGameTime,
         value: valueFn(top),
         gamesPlayed: top.gamesPlayed,
@@ -643,7 +638,7 @@ function buildStore(getDbFn: GetDb) {
       });
       const top = sorted[0];
       return {
-        pitcherKey: top.pitcherKey,
+        playerId: top.playerId,
         nameAtGameTime: top.nameAtGameTime,
         value: valueFn(top),
         gamesPlayed: top.gamesPlayed,

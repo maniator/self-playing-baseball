@@ -1,5 +1,5 @@
 /**
- * PlayerCareerPage — /players/:playerKey
+ * PlayerCareerPage — /stats/:teamId/players/:playerId
  *
  * Route shell: delegates data-loading to `usePlayerCareerData` and
  * renders layout + tab-panel subcomponents.
@@ -7,7 +7,7 @@
 import * as React from "react";
 
 import { BackBtn, PageHeader } from "@shared/components/PageLayout/styles";
-import { createSearchParams, useNavigate, useParams, useSearchParams } from "react-router";
+import { useNavigate, useParams } from "react-router";
 
 import PlayerCareerBattingTab from "./PlayerCareerBattingTab";
 import PlayerCareerPitchingTab from "./PlayerCareerPitchingTab";
@@ -26,9 +26,7 @@ type Tab = "batting" | "pitching";
 
 const PlayerCareerPage: React.FunctionComponent = () => {
   const navigate = useNavigate();
-  const { playerKey } = useParams<{ playerKey: string }>();
-  const [searchParams] = useSearchParams();
-  const teamParam = searchParams.get("team");
+  const { teamId, playerId } = useParams<{ teamId?: string; playerId?: string }>();
   const [activeTab, setActiveTab] = React.useState<Tab>("batting");
 
   const {
@@ -40,18 +38,22 @@ const PlayerCareerPage: React.FunctionComponent = () => {
     battingTotals,
     pitchingTotals,
     rosterPlayerKeys,
+    rosterRole,
     prevKey,
     nextKey,
     navigateToPlayer,
-  } = usePlayerCareerData(playerKey);
+  } = usePlayerCareerData(playerId);
 
-  // Determine which tabs are available based on history rows.
+  // Determine which tabs are available.
+  // Priority: game history rows → roster role → show both (unknown).
   const hasBatting = battingRows.length > 0;
   const hasPitching = pitchingRows.length > 0;
-  // Show batting tab when: loading (unknown yet), has batting rows, or neither has rows (empty state).
-  const showBattingTab = loading || hasBatting || (!hasBatting && !hasPitching);
-  // Show pitching tab when: loading (unknown yet), has pitching rows, or neither has rows (empty state).
-  const showPitchingTab = loading || hasPitching || (!hasBatting && !hasPitching);
+  const hasAnyHistory = hasBatting || hasPitching;
+  // When loading, show both tabs as placeholders to avoid layout shift.
+  // Once loaded: use history rows when available, else fall back to roster role.
+  // If role is unknown (no team context), show both tabs.
+  const showBattingTab = loading || hasBatting || (!hasAnyHistory && rosterRole !== "pitcher");
+  const showPitchingTab = loading || hasPitching || (!hasAnyHistory && rosterRole !== "batter");
 
   // Derive the effective tab synchronously so the correct panel renders on the very
   // first frame after loading completes — no transient wrong-panel flash from useEffect.
@@ -74,13 +76,7 @@ const PlayerCareerPage: React.FunctionComponent = () => {
       <PageHeader>
         <BackBtn
           type="button"
-          onClick={() =>
-            navigate(
-              teamParam
-                ? { pathname: "/stats", search: createSearchParams({ team: teamParam }).toString() }
-                : "/stats",
-            )
-          }
+          onClick={() => navigate(teamId ? `/stats/${teamId}` : "/stats")}
           aria-label="Go back"
         >
           ← Back

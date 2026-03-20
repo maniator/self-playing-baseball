@@ -225,7 +225,7 @@ const processConfirmedHit = (
   const battingTeam = base.atBat as 0 | 1;
   const pitchingTeam = (1 - (base.atBat as number)) as 0 | 1;
   const batterSlotIdx = base.batterIndex[battingTeam];
-  const playerId = base.lineupOrder[battingTeam][batterSlotIdx] || undefined;
+  const playerId = base.lineupOrder[battingTeam][batterSlotIdx];
 
   // ── Speed-based + strategy-based runner advancement ───────────────────────
   // Apply probabilistic advancement BEFORE calling advanceRunners so that
@@ -326,25 +326,21 @@ const processConfirmedHit = (
           ? 2
           : null; // HR: batter scores, no base
 
-  if (batterBase !== null && playerId) {
+  if (batterBase !== null) {
     finalRunnerIds[batterBase] = playerId;
   }
 
   // Record this at-bat in the play log (batter reached base).
   const batterNum = batterSlotIdx + 1;
-  const overrideNickname = playerId
-    ? base.playerOverrides[battingTeam]?.[playerId]?.nickname?.trim()
-    : undefined;
+  const overrideNickname = base.playerOverrides[battingTeam]?.[playerId]?.nickname?.trim();
   const batterName: string | undefined =
     (overrideNickname && overrideNickname.length > 0 ? overrideNickname : undefined) ??
-    (playerId
-      ? generateRoster(base.teams[battingTeam]).batters.find((p) => p.id === playerId)?.name
-      : undefined);
+    generateRoster(base.teams[battingTeam]).batters.find((p) => p.id === playerId)?.name;
   const playEntry: PlayLogEntry = {
     inning: base.inning,
     half: battingTeam,
     batterNum,
-    ...(playerId ? { playerId } : {}),
+    playerId,
     ...(batterName ? { batterName } : {}),
     team: battingTeam,
     event: type,
@@ -543,7 +539,7 @@ export const hitBall = (
   // Batter overrides
   const battingTeam = state.atBat as 0 | 1;
   const batterSlotIdx = state.batterIndex[battingTeam];
-  const playerId = state.lineupOrder[battingTeam][batterSlotIdx] || undefined;
+  const playerId = state.lineupOrder[battingTeam][batterSlotIdx];
   const batterMods = playerId
     ? (state.resolvedMods?.[battingTeam]?.[playerId] ?? ZERO_MODS)
     : ZERO_MODS;

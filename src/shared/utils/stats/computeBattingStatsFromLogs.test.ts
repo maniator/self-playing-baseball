@@ -25,12 +25,8 @@ describe("emptyBatterStat", () => {
 });
 
 describe("statKey", () => {
-  it("returns playerId when present", () => {
-    expect(statKey({ playerId: "p1", batterNum: 3 })).toBe("p1");
-  });
-
-  it("falls back to slot key when playerId is absent", () => {
-    expect(statKey({ batterNum: 5 })).toBe("slot:5");
+  it("returns the playerId", () => {
+    expect(statKey({ playerId: "p1" })).toBe("p1");
   });
 });
 
@@ -39,11 +35,11 @@ describe("computeBattingStatsFromLogs", () => {
     team: 0 | 1,
     event: Hit,
     batterNum: number,
-    playerId?: string,
+    playerId: string,
     rbi = 0,
   ): PlayLogEntry => ({ inning: 1, half: team, batterNum, team, event, runs: rbi, rbi, playerId });
 
-  const makeStrikeout = (team: 0 | 1, batterNum: number, playerId?: string): StrikeoutEntry => ({
+  const makeStrikeout = (team: 0 | 1, batterNum: number, playerId: string): StrikeoutEntry => ({
     batterNum,
     team,
     playerId,
@@ -52,7 +48,7 @@ describe("computeBattingStatsFromLogs", () => {
   const makeSacFlyOut = (
     team: 0 | 1,
     batterNum: number,
-    playerId?: string,
+    playerId: string,
     rbi = 1,
   ): StrikeoutEntry => ({
     team,
@@ -114,21 +110,6 @@ describe("computeBattingStatsFromLogs", () => {
     const homeResult = computeBattingStatsFromLogs(1, [awayHit, homeHit], [], [awayHit, homeHit]);
     expect(homeResult["p2"]).toBeDefined();
     expect(homeResult["p1"]).toBeUndefined();
-  });
-
-  it("uses slot key for entries without playerId", () => {
-    const entry: PlayLogEntry = {
-      inning: 1,
-      half: 0,
-      batterNum: 5,
-      team: 0,
-      event: Hit.Single,
-      runs: 0,
-      rbi: 0,
-    };
-    const result = computeBattingStatsFromLogs(0, [entry], [], [entry]);
-    expect(result["slot:5"]).toBeDefined();
-    expect(result["slot:5"].singles).toBe(1);
   });
 
   it("AB = hits + outLog (not including walks)", () => {
