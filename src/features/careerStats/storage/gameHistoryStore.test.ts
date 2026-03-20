@@ -191,12 +191,13 @@ describe("GameHistoryStore export/import", () => {
     const payload = {
       games: [gameDoc],
       playerGameStats: [],
+      pitcherGameStats: [],
       requiredTeamIds: ["Yankees", "Mets"],
     };
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: new Date().toISOString(),
       payload,
       sig,
@@ -214,13 +215,14 @@ describe("GameHistoryStore export/import", () => {
     const payload = {
       games: [],
       playerGameStats: [],
+      pitcherGameStats: [],
       // Only custom: team IDs are validated; stock teams always pass.
       requiredTeamIds: ["ct_missingteam"],
     };
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: "x",
       payload,
       sig,
@@ -234,9 +236,9 @@ describe("GameHistoryStore export/import", () => {
   it("rejects tampered bundles", async () => {
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 1,
+      formatVersion: 2,
       exportedAt: "x",
-      payload: { games: [], playerGameStats: [], requiredTeamIds: [] },
+      payload: { games: [], playerGameStats: [], pitcherGameStats: [], requiredTeamIds: [] },
       sig: "00000000",
     });
     await expect(store.importGameHistory(bundle, new Set())).rejects.toThrow(
