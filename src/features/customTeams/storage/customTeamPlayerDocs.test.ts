@@ -3,9 +3,10 @@ import "fake-indexeddb/auto";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import { _createTestDb, type BallgameDb } from "@storage/db";
+import type { BallgameDb } from "@storage/db";
 import type { PlayerRecord, TeamPlayer, TeamRoster } from "@storage/types";
 import { makePlayer } from "@test/helpers/customTeams";
+import { createTestDb } from "@test/helpers/db";
 
 import {
   assembleRoster,
@@ -28,7 +29,7 @@ let db: BallgameDb;
 let store: ReturnType<typeof makeCustomTeamStore>;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
   store = makeCustomTeamStore(() => Promise.resolve(db));
 });
 

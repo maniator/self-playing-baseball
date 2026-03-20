@@ -133,16 +133,6 @@ function getSeedPromise(): Promise<void> {
   return _seedPromise;
 }
 
-/** @internal Resets module-level seeding state — for use in tests only. */
-export function _resetForTest(): void {
-  _seedPromise = null;
-  try {
-    localStorage.removeItem(DEMO_SEED_DONE_KEY);
-  } catch {
-    /* ignore */
-  }
-}
-
 /**
  * Seeds the demo teams from `DEMO_TEAMS` into the custom-teams collection the
  * first time a brand-new user opens the app (empty IndexedDB). Subsequent calls

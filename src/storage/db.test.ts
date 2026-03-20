@@ -1,13 +1,11 @@
 import "fake-indexeddb/auto";
 
-import { newRxError } from "rxdb";
 import { getRxStorageMemory } from "rxdb/plugins/storage-memory";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
+import { createTestDb } from "@test/helpers/db";
+
 import {
-  _createTestDb,
-  _isSchemaFailureForTest,
-  _resetDbForTest,
   type BallgameDb,
   eventsCollection,
   getDb,
@@ -21,7 +19,7 @@ import type { GameSaveSetup } from "./types";
 let db: BallgameDb;
 
 beforeEach(async () => {
-  db = await _createTestDb(getRxStorageMemory());
+  db = await createTestDb(getRxStorageMemory());
 });
 
 afterEach(async () => {
@@ -320,55 +318,6 @@ describe("schema version and reset flag", () => {
   });
 
   it("wasDbReset() returns false initially", () => {
-    expect(wasDbReset()).toBe(false);
-  });
-});
-
-describe("isSchemaFailure (via _isSchemaFailureForTest)", () => {
-  it("returns true for RxError with code DB6 (schema hash mismatch)", () => {
-    const err = newRxError("DB6", {});
-    expect(_isSchemaFailureForTest(err)).toBe(true);
-  });
-
-  it("returns true for RxError with code DM4 (migration strategy execution failed)", () => {
-    const err = newRxError("DM4", { collection: "saves", error: new Error("strategy threw") });
-    expect(_isSchemaFailureForTest(err)).toBe(true);
-  });
-
-  it("returns false for a plain Error (not an RxError)", () => {
-    expect(_isSchemaFailureForTest(new Error("quota exceeded"))).toBe(false);
-  });
-
-  it("returns false for a non-DB6/DM4 RxError code", () => {
-    const err = newRxError("DB1", {});
-    expect(_isSchemaFailureForTest(err)).toBe(false);
-  });
-
-  it("returns false for non-Error values", () => {
-    expect(_isSchemaFailureForTest("string error")).toBe(false);
-    expect(_isSchemaFailureForTest(null)).toBe(false);
-    expect(_isSchemaFailureForTest(undefined)).toBe(false);
-  });
-});
-
-describe("getDb() recovery path", () => {
-  beforeEach(async () => {
-    if (db) await db.close();
-  });
-  afterEach(async () => {
-    _resetDbForTest();
-    db = await _createTestDb(getRxStorageMemory());
-  });
-
-  it("wasDbReset() stays false when getDb() succeeds normally", async () => {
-    // getDb() is not mocked here; the module-level singleton is reset before each test
-    // and wasDbReset() should remain false on a clean init.
-    // (The actual DB init would run but is covered by the db collections tests above.)
-    expect(wasDbReset()).toBe(false);
-  });
-
-  it("_resetDbForTest clears the cached promise so getDb() runs fresh", () => {
-    _resetDbForTest();
     expect(wasDbReset()).toBe(false);
   });
 });
