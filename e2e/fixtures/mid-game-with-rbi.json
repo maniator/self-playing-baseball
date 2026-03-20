@@ -34,7 +34,8 @@
             "team": 0,
             "event": 0,
             "runs": 1,
-            "rbi": 1
+            "rbi": 1,
+            "playerId": "p_fix_away_2"
           },
           {
             "inning": 1,
@@ -43,7 +44,8 @@
             "team": 0,
             "event": 0,
             "runs": 1,
-            "rbi": 1
+            "rbi": 1,
+            "playerId": "p_fix_away_4"
           },
           {
             "inning": 3,
@@ -52,7 +54,8 @@
             "team": 0,
             "event": 0,
             "runs": 1,
-            "rbi": 1
+            "rbi": 1,
+            "playerId": "p_fix_away_6"
           },
           {
             "inning": 2,
@@ -61,7 +64,8 @@
             "team": 1,
             "event": 1,
             "runs": 1,
-            "rbi": 1
+            "rbi": 1,
+            "playerId": "p_fix_home_3"
           },
           {
             "inning": 4,
@@ -70,7 +74,8 @@
             "team": 1,
             "event": 0,
             "runs": 1,
-            "rbi": 1
+            "rbi": 1,
+            "playerId": "p_fix_home_5"
           }
         ],
         "strikeoutLog": [],
@@ -151,8 +156,28 @@
           {}
         ],
         "lineupOrder": [
-          [],
-          []
+          [
+            "p_fix_away_1",
+            "p_fix_away_2",
+            "p_fix_away_3",
+            "p_fix_away_4",
+            "p_fix_away_5",
+            "p_fix_away_6",
+            "p_fix_away_7",
+            "p_fix_away_8",
+            "p_fix_away_9"
+          ],
+          [
+            "p_fix_home_1",
+            "p_fix_home_2",
+            "p_fix_home_3",
+            "p_fix_home_4",
+            "p_fix_home_5",
+            "p_fix_home_6",
+            "p_fix_home_7",
+            "p_fix_home_8",
+            "p_fix_home_9"
+          ]
         ]
       },
       "rngState": 5566778899
