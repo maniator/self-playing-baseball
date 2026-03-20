@@ -64,6 +64,7 @@ function GameRoute() {
  *       /stats                    → CareerStatsPage  (redirects to /stats/:firstTeam)
  *       /stats/:teamId            → CareerStatsPage
  *       /stats/:teamId/players/:playerId → PlayerCareerPage
+ *       /stats/players/:playerId  → PlayerCareerPage (no team context)
  *       /career-stats             → redirect to /stats
  */
 export const router = createBrowserRouter([
@@ -139,6 +140,14 @@ export const router = createBrowserRouter([
           },
           {
             path: "stats/:teamId/players/:playerId",
+            element: (
+              <React.Suspense fallback={null}>
+                <PlayerCareerPage />
+              </React.Suspense>
+            ),
+          },
+          {
+            path: "stats/players/:playerId",
             element: (
               <React.Suspense fallback={null}>
                 <PlayerCareerPage />
