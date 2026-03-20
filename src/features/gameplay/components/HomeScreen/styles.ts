@@ -130,6 +130,22 @@ export const SecondaryBtn = styled.button`
   }
 `;
 
+export const SecondaryQuietBtn = styled(SecondaryBtn)`
+  color: ${({ theme }) => theme.colors.textSecondaryLink};
+  border-color: ${({ theme }) => theme.colors.borderPanel};
+  background: ${({ theme }) => theme.colors.bgSubtle};
+
+  &:hover {
+    background: ${({ theme }) => theme.colors.bgSurface};
+    border-color: ${({ theme }) => theme.colors.borderForm};
+    color: ${({ theme }) => theme.colors.textLink};
+  }
+
+  &:active {
+    background: ${({ theme }) => theme.colors.bgGameDeep};
+  }
+`;
+
 /** Muted ghost button — used for low-priority utility actions like Contact / Report Bug. */
 export const GhostBtn = styled.button`
   background: transparent;
