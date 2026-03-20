@@ -6,8 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 
 vi.mock("@storage/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    batterGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
-    pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+    completedGames: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
   }),
 }));
 
@@ -20,6 +19,15 @@ vi.mock("@shared/hooks/useCustomTeams", () => ({
     loading: false,
   })),
 }));
+
+const mockNavigate = vi.fn();
+vi.mock("react-router", async (importOriginal) => {
+  const mod = await importOriginal<typeof import("react-router")>();
+  return {
+    ...mod,
+    useNavigate: vi.fn(() => mockNavigate),
+  };
+});
 
 vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
   GameHistoryStore: {
@@ -34,6 +42,10 @@ vi.mock("@feat/careerStats/storage/gameHistoryStore", () => ({
       .mockResolvedValue({ eraLeader: null, savesLeader: null, strikeoutsLeader: null }),
   },
 }));
+
+import { useCustomTeams } from "@shared/hooks/useCustomTeams";
+
+import { getDb } from "@storage/db";
 
 import { useCareerStatsData } from "./useCareerStatsData";
 
@@ -54,6 +66,33 @@ describe("useCareerStatsData", () => {
 
     await waitFor(() => {
       expect(screen.getByTestId("selected-team-id")).toHaveTextContent("team2");
+    });
+  });
+
+  it("redirects /stats deterministically when only history team IDs exist", async () => {
+    vi.mocked(useCustomTeams).mockReturnValue({ teams: [], loading: false } as any);
+    vi.mocked(getDb).mockResolvedValue({
+      completedGames: {
+        find: vi.fn(() => ({
+          exec: vi
+            .fn()
+            .mockResolvedValue([
+              { toJSON: () => ({ homeTeamId: "z_team", awayTeamId: "a_team" }) },
+            ]),
+        })),
+      },
+    } as any);
+
+    render(
+      <MemoryRouter initialEntries={["/stats"]}>
+        <Routes>
+          <Route path="/stats" element={<Probe />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/stats/a_team", { replace: true });
     });
   });
 });

@@ -336,6 +336,52 @@ describe("PlayerCareerPage", () => {
     expect(mockNavigate).toHaveBeenCalledWith(expect.stringContaining("plyr_2"));
   });
 
+  it("clicking Next on team-independent route navigates to /stats/players/:playerId", async () => {
+    const user = userEvent.setup();
+    const teamDoc = {
+      id: "ct_1",
+      name: "Aces",
+      abbreviation: "ACE",
+      city: "Springfield",
+      schemaVersion: 4,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: "2024-01-01T00:00:00.000Z",
+      roster: {
+        schemaVersion: 1,
+        lineup: [
+          {
+            id: "plyr_1",
+            name: "First Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+          {
+            id: "plyr_2",
+            name: "Second Batter",
+            role: "batter" as const,
+            batting: { contact: 50, power: 50, speed: 50 },
+          },
+        ],
+        bench: [],
+        pitchers: [],
+      },
+      metadata: { notes: "", tags: [], archived: false },
+    };
+    vi.mocked(useTeamWithRoster).mockReturnValue(teamDoc as any);
+
+    render(
+      <MemoryRouter initialEntries={["/stats/players/plyr_1"]}>
+        <Routes>
+          <Route path="/stats/players/:playerId" element={<PlayerCareerPage />} />
+        </Routes>
+      </MemoryRouter>,
+    );
+
+    await act(async () => {});
+    await user.click(screen.getByTestId("player-career-next"));
+    expect(mockNavigate).toHaveBeenCalledWith("/stats/players/plyr_2");
+  });
+
   it("does not render Prev/Next when team has no roster loaded", async () => {
     renderPage("test_player_no_team");
     await act(async () => {});

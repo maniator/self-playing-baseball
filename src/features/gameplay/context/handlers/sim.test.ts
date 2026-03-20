@@ -122,7 +122,8 @@ describe("handleSimAction — strike", () => {
     const state = makeState({ strikes: 2, outs: 0, atBat: 0, batterIndex: [3, 0] });
     const next = handleSimAction(state, { type: "strike", payload: { swung: false } }, { log });
     expect(next?.strikeoutLog).toHaveLength(1);
-    expect(next?.strikeoutLog[0]).toEqual({ team: 0, batterNum: 4 });
+    expect(next?.strikeoutLog[0]).toMatchObject({ team: 0, batterNum: 4 });
+    expect(next?.strikeoutLog[0]?.playerId).toEqual(expect.any(String));
   });
 
   it("non-strikeout does NOT append to strikeoutLog", () => {
@@ -192,7 +193,8 @@ describe("handleSimAction — wait", () => {
     );
     expect(next?.outs).toBe(1);
     expect(next?.strikeoutLog).toHaveLength(1);
-    expect(next?.strikeoutLog[0]).toEqual({ team: 0, batterNum: 2 });
+    expect(next?.strikeoutLog[0]).toMatchObject({ team: 0, batterNum: 2 });
+    expect(next?.strikeoutLog[0]?.playerId).toEqual(expect.any(String));
   });
 
   it("wait resulting in ball increments ball count", () => {

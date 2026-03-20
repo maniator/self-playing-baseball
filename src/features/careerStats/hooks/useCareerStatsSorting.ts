@@ -89,13 +89,25 @@ export function useCareerStatsSorting(battingRows: BattingRow[], pitchingRows: P
   const sortedBattingRows = React.useMemo(() => {
     const { key, dir } = battingSort;
     return [...battingRows].sort((a, b) => {
+      if (key === "avg") {
+        const aHasAB = a.atBats > 0;
+        const bHasAB = b.atBats > 0;
+        // Keep no-AB rows at the bottom for both directions; AVG is undefined for them.
+        if (!aHasAB && !bHasAB) return 0;
+        if (!aHasAB) return 1;
+        if (!bHasAB) return -1;
+
+        const aAvg = a.hits / a.atBats;
+        const bAvg = b.hits / b.atBats;
+        if (aAvg < bAvg) return dir === "asc" ? -1 : 1;
+        if (aAvg > bAvg) return dir === "asc" ? 1 : -1;
+        return 0;
+      }
+
       let aVal: number | string;
       let bVal: number | string;
 
-      if (key === "avg") {
-        aVal = a.atBats === 0 ? -1 : a.hits / a.atBats;
-        bVal = b.atBats === 0 ? -1 : b.hits / b.atBats;
-      } else if (key === "nameAtGameTime") {
+      if (key === "nameAtGameTime") {
         aVal = a.nameAtGameTime;
         bVal = b.nameAtGameTime;
       } else {
@@ -112,18 +124,32 @@ export function useCareerStatsSorting(battingRows: BattingRow[], pitchingRows: P
   const sortedPitchingRows = React.useMemo(() => {
     const { key, dir } = pitchingSort;
     return [...pitchingRows].sort((a, b) => {
+      if (key === "era" || key === "whip") {
+        const aHasIP = a.outsPitched > 0;
+        const bHasIP = b.outsPitched > 0;
+        // Keep 0-IP rows at the bottom for both directions; ERA/WHIP are undefined for them.
+        if (!aHasIP && !bHasIP) return 0;
+        if (!aHasIP) return 1;
+        if (!bHasIP) return -1;
+
+        const aMetric =
+          key === "era"
+            ? (a.earnedRuns * 27) / a.outsPitched
+            : ((a.walksAllowed + a.hitsAllowed) * 3) / a.outsPitched;
+        const bMetric =
+          key === "era"
+            ? (b.earnedRuns * 27) / b.outsPitched
+            : ((b.walksAllowed + b.hitsAllowed) * 3) / b.outsPitched;
+
+        if (aMetric < bMetric) return dir === "asc" ? -1 : 1;
+        if (aMetric > bMetric) return dir === "asc" ? 1 : -1;
+        return 0;
+      }
+
       let aVal: number | string;
       let bVal: number | string;
 
-      if (key === "era") {
-        aVal = a.outsPitched === 0 ? Infinity : (a.earnedRuns * 27) / a.outsPitched;
-        bVal = b.outsPitched === 0 ? Infinity : (b.earnedRuns * 27) / b.outsPitched;
-      } else if (key === "whip") {
-        aVal =
-          a.outsPitched === 0 ? Infinity : ((a.walksAllowed + a.hitsAllowed) * 3) / a.outsPitched;
-        bVal =
-          b.outsPitched === 0 ? Infinity : ((b.walksAllowed + b.hitsAllowed) * 3) / b.outsPitched;
-      } else if (key === "nameAtGameTime") {
+      if (key === "nameAtGameTime") {
         aVal = a.nameAtGameTime;
         bVal = b.nameAtGameTime;
       } else {

@@ -9,6 +9,8 @@ export type {
   ImportGameHistoryResult,
   PitcherGameStatRecord,
   PitchingLeader,
+  TeamCareerBattingStatsRow,
+  TeamCareerPitchingStatsRow,
   TeamCareerSummary,
 } from "@feat/careerStats/storage/types";
 export type {

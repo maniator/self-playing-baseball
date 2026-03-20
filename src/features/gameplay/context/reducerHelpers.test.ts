@@ -57,6 +57,28 @@ describe("makeStrikeoutEntry", () => {
     const entry = makeStrikeoutEntry(state);
     expect(entry).toEqual({ team: 1, batterNum: 8, playerId: "p8" });
   });
+
+  it("falls back to generated roster player ID when lineupOrder is empty", () => {
+    const state = makeState({
+      teams: ["New York Yankees", "New York Mets"],
+      atBat: 0,
+      batterIndex: [0, 0],
+      lineupOrder: [[], []],
+    });
+    const entry = makeStrikeoutEntry(state);
+    expect(entry).toEqual({ team: 0, batterNum: 1, playerId: "new_york_yankees_b0" });
+  });
+
+  it("falls back using batter slot index when lineupOrder is empty for home", () => {
+    const state = makeState({
+      teams: ["New York Yankees", "New York Mets"],
+      atBat: 1,
+      batterIndex: [0, 4],
+      lineupOrder: [[], []],
+    });
+    const entry = makeStrikeoutEntry(state);
+    expect(entry).toEqual({ team: 1, batterNum: 5, playerId: "new_york_mets_b4" });
+  });
 });
 
 describe("withStrikeoutLog", () => {

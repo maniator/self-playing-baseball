@@ -1,29 +1,10 @@
 import { computeERA, computeWHIP, formatIP } from "@feat/careerStats/utils/computePitcherGameStats";
 
-import type { BatterGameStatRecord } from "@storage/types";
+import type { TeamCareerBattingStatsRow, TeamCareerPitchingStatsRow } from "@storage/types";
 
-export type BattingRow = BatterGameStatRecord["batting"] & {
-  playerId: string;
-  nameAtGameTime: string;
-  gamesPlayed: number;
-};
+export type BattingRow = TeamCareerBattingStatsRow;
 
-export type PitchingRow = {
-  playerId: string;
-  nameAtGameTime: string;
-  gamesPlayed: number;
-  outsPitched: number;
-  battersFaced: number;
-  hitsAllowed: number;
-  walksAllowed: number;
-  strikeoutsRecorded: number;
-  homersAllowed: number;
-  runsAllowed: number;
-  earnedRuns: number;
-  saves: number;
-  holds: number;
-  blownSaves: number;
-};
+export type PitchingRow = TeamCareerPitchingStatsRow;
 
 export type CareerStatsTab = "batting" | "pitching";
 export type SortDir = "asc" | "desc";

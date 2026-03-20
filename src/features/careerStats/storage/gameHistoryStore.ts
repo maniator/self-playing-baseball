@@ -21,6 +21,8 @@ import type {
   ImportGameHistoryResult,
   PitcherGameStatRecord,
   PitchingLeader,
+  TeamCareerBattingStatsRow,
+  TeamCareerPitchingStatsRow,
   TeamCareerSummary,
 } from "@storage/types";
 
@@ -36,19 +38,6 @@ function isConflictError(err: unknown): boolean {
 }
 
 type GetDb = () => Promise<BallgameDb>;
-
-/** Batting stats row type used internally by `getTeamCareerBattingStats`. */
-type TeamBattingStatsRow = BatterGameStatRecord["batting"] & {
-  playerId: string;
-  nameAtGameTime: string;
-  gamesPlayed: number;
-};
-
-/** Pitching stats row type used internally by `getTeamCareerPitchingStats`. */
-type TeamPitchingStatsRow = Omit<
-  PitcherGameStatRecord,
-  "id" | "gameId" | "teamId" | "opponentTeamId" | "createdAt" | "schemaVersion"
-> & { gamesPlayed: number };
 
 function buildStore(getDbFn: GetDb) {
   /**
@@ -210,11 +199,11 @@ function buildStore(getDbFn: GetDb) {
    * Returns cumulative career batting stats for all players associated with a team.
    * Queries by teamId.
    */
-  async function getTeamCareerBattingStats(teamId: string): Promise<TeamBattingStatsRow[]> {
+  async function getTeamCareerBattingStats(teamId: string): Promise<TeamCareerBattingStatsRow[]> {
     const db = await getDbFn();
     const rows = await db.batterGameStats.find({ selector: { teamId } }).exec();
 
-    const aggregated: Record<string, TeamBattingStatsRow> = {};
+    const aggregated: Record<string, TeamCareerBattingStatsRow> = {};
 
     for (const row of rows) {
       const doc = row.toJSON() as BatterGameStatRecord;
@@ -257,11 +246,11 @@ function buildStore(getDbFn: GetDb) {
    * Returns cumulative career pitching stats for all pitchers associated with a team.
    * Queries by teamId.
    */
-  async function getTeamCareerPitchingStats(teamId: string): Promise<TeamPitchingStatsRow[]> {
+  async function getTeamCareerPitchingStats(teamId: string): Promise<TeamCareerPitchingStatsRow[]> {
     const db = await getDbFn();
     const rows = await db.pitcherGameStats.find({ selector: { teamId } }).exec();
 
-    const aggregated: Record<string, TeamPitchingStatsRow> = {};
+    const aggregated: Record<string, TeamCareerPitchingStatsRow> = {};
 
     for (const row of rows) {
       const doc = row.toJSON() as PitcherGameStatRecord;
@@ -387,8 +376,8 @@ function buildStore(getDbFn: GetDb) {
     if (missingTeamIds.length > 0) {
       throw new Error(
         `Cannot import game history: the following teams are missing from your local install. ` +
-        `Please import those teams first, then re-import this history bundle.\n` +
-        `Missing team IDs: ${missingTeamIds.join(", ")}`,
+          `Please import those teams first, then re-import this history bundle.\n` +
+          `Missing team IDs: ${missingTeamIds.join(", ")}`,
       );
     }
 
@@ -564,7 +553,7 @@ function buildStore(getDbFn: GetDb) {
     teamId: string,
     options: {
       minAbForAvg?: number;
-      rows?: TeamBattingStatsRow[];
+      rows?: TeamCareerBattingStatsRow[];
     } = {},
   ): Promise<{
     hrLeader: BattingLeader | null;
@@ -575,8 +564,8 @@ function buildStore(getDbFn: GetDb) {
     const rows = options.rows ?? (await getTeamCareerBattingStats(teamId));
 
     const pickLeader = (
-      candidates: TeamBattingStatsRow[],
-      valueFn: (r: TeamBattingStatsRow) => number,
+      candidates: TeamCareerBattingStatsRow[],
+      valueFn: (r: TeamCareerBattingStatsRow) => number,
     ): BattingLeader | null => {
       if (candidates.length === 0) return null;
       const sorted = [...candidates].sort((a, b) => {
@@ -615,7 +604,7 @@ function buildStore(getDbFn: GetDb) {
     teamId: string,
     options: {
       minOutsForEra?: number;
-      rows?: TeamPitchingStatsRow[];
+      rows?: TeamCareerPitchingStatsRow[];
     } = {},
   ): Promise<{
     eraLeader: PitchingLeader | null;
@@ -626,8 +615,8 @@ function buildStore(getDbFn: GetDb) {
     const rows = options.rows ?? (await getTeamCareerPitchingStats(teamId));
 
     const pickPitchingLeader = (
-      candidates: TeamPitchingStatsRow[],
-      valueFn: (r: TeamPitchingStatsRow) => number,
+      candidates: TeamCareerPitchingStatsRow[],
+      valueFn: (r: TeamCareerPitchingStatsRow) => number,
       sortAsc = false,
     ): PitchingLeader | null => {
       if (candidates.length === 0) return null;

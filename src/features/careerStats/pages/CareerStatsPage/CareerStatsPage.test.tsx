@@ -8,8 +8,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 // Mock RxDB getDb so no real DB is needed.
 vi.mock("@storage/db", () => ({
   getDb: vi.fn().mockResolvedValue({
-    batterGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
-    pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+    completedGames: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
   }),
 }));
 
@@ -341,16 +340,13 @@ describe("CareerStatsPage", () => {
 
   it("loads teams from game history (non-custom teamIds) into the selector", async () => {
     const { getDb } = await import("@storage/db");
-    // Return a DB with one batting row from a non-custom team.
+    // Return completed games with non-custom team IDs.
     vi.mocked(getDb).mockResolvedValue({
-      batterGameStats: {
+      completedGames: {
         find: vi.fn(() => ({
-          exec: vi.fn().mockResolvedValue([{ toJSON: () => ({ teamId: "Yankees" }) }]),
-        })),
-      },
-      pitcherGameStats: {
-        find: vi.fn(() => ({
-          exec: vi.fn().mockResolvedValue([{ toJSON: () => ({ teamId: "Mets" }) }]),
+          exec: vi
+            .fn()
+            .mockResolvedValue([{ toJSON: () => ({ homeTeamId: "Yankees", awayTeamId: "Mets" }) }]),
         })),
       },
     } as any);
@@ -358,9 +354,10 @@ describe("CareerStatsPage", () => {
     renderPage();
     await waitFor(() => {
       const select = screen.getByTestId("career-stats-team-select");
-      // Yankees and Mets were found in DB history and should appear as options.
+      // Yankees and Mets were found in completed games and should appear as options.
       const options = Array.from(select.querySelectorAll("option")).map((o) => o.value);
       expect(options).toContain("Yankees");
+      expect(options).toContain("Mets");
     });
   });
 
@@ -623,14 +620,13 @@ describe("CareerStatsPage", () => {
   });
 
   it("shows no-teams empty state when there are no teams and no history", async () => {
-    // Ensure getDb returns empty collections so the loadTeamIds effect
+    // Ensure getDb returns empty completedGames so the loadTeamIds effect
     // doesn't populate teamsWithHistory with non-custom team IDs from a
     // prior test's overridden mock (clearAllMocks only resets call counts,
     // not persistent mockResolvedValue implementations).
     const { getDb } = await import("@storage/db");
     vi.mocked(getDb).mockResolvedValue({
-      batterGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
-      pitcherGameStats: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
+      completedGames: { find: vi.fn(() => ({ exec: vi.fn().mockResolvedValue([]) })) },
     } as any);
     renderPage();
     // Wait for the async loadTeamIds effect to settle (empty → noTeams = true).

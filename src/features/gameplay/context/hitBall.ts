@@ -11,6 +11,7 @@ import type { BattedBallType } from "./pitchSimulation";
 import { computeFatigueFactor } from "./pitchSimulation";
 import { incrementPitcherFatigue, nextBatter, playerOut } from "./playerOut";
 import type { Strategy } from "./playerTypes";
+import { resolveBatterPlayerId } from "./resolveBatterPlayerId";
 import { ZERO_MODS } from "./resolvePlayerMods";
 import { stratMod } from "./strategy";
 
@@ -52,7 +53,7 @@ const handleGrounder = (state: State, log: (msg: string) => void, pitchKey: numb
   // Batter identity — needed to assign runner ID when batter reaches on FC.
   const battingTeam = state.atBat as 0 | 1;
   const batterSlotIdx = state.batterIndex[battingTeam];
-  const batterId = state.lineupOrder[battingTeam][batterSlotIdx] || null;
+  const batterId = resolveBatterPlayerId(state, battingTeam, batterSlotIdx);
 
   if (baseLayout[0] && outs < 2) {
     // Context-aware DP probability: base 55%, adjusted by batter and runner speed.
@@ -225,7 +226,7 @@ const processConfirmedHit = (
   const battingTeam = base.atBat as 0 | 1;
   const pitchingTeam = (1 - (base.atBat as number)) as 0 | 1;
   const batterSlotIdx = base.batterIndex[battingTeam];
-  const playerId = base.lineupOrder[battingTeam][batterSlotIdx];
+  const playerId = resolveBatterPlayerId(base, battingTeam, batterSlotIdx);
 
   // ── Speed-based + strategy-based runner advancement ───────────────────────
   // Apply probabilistic advancement BEFORE calling advanceRunners so that
@@ -539,7 +540,7 @@ export const hitBall = (
   // Batter overrides
   const battingTeam = state.atBat as 0 | 1;
   const batterSlotIdx = state.batterIndex[battingTeam];
-  const playerId = state.lineupOrder[battingTeam][batterSlotIdx];
+  const playerId = resolveBatterPlayerId(state, battingTeam, batterSlotIdx);
   const batterMods = playerId
     ? (state.resolvedMods?.[battingTeam]?.[playerId] ?? ZERO_MODS)
     : ZERO_MODS;

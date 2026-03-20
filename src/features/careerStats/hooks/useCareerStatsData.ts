@@ -48,7 +48,8 @@ export function useCareerStatsData() {
 
   const selectableTeamIds = React.useMemo<string[]>(() => {
     const customIds = customTeams.map((team) => team.id);
-    return Array.from(new Set([...customIds, ...teamsWithHistory]));
+    const historyIds = [...teamsWithHistory].sort((a, b) => a.localeCompare(b));
+    return Array.from(new Set([...customIds, ...historyIds]));
   }, [customTeams, teamsWithHistory]);
 
   React.useEffect(() => {
@@ -57,15 +58,15 @@ export function useCareerStatsData() {
     async function loadTeamIds() {
       try {
         const db = await getDb();
-        const [batting, pitching] = await Promise.all([
-          db.batterGameStats.find().exec(),
-          db.pitcherGameStats.find().exec(),
-        ]);
+        const completedGames = await db.completedGames.find().exec();
         if (cancelled) return;
 
         const ids = new Set<string>();
-        for (const row of batting) ids.add(row.toJSON().teamId);
-        for (const row of pitching) ids.add(row.toJSON().teamId);
+        for (const game of completedGames) {
+          const row = game.toJSON();
+          ids.add(row.homeTeamId);
+          ids.add(row.awayTeamId);
+        }
         setTeamsWithHistory(Array.from(ids));
       } catch {
         // Silently degrade — history just won't include non-custom teams.

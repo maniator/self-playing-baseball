@@ -182,3 +182,16 @@ export interface PitchingLeader {
   value: number;
   gamesPlayed: number;
 }
+
+/** Team career batting row shape consumed by career stats views. */
+export type TeamCareerBattingStatsRow = BatterGameStatRecord["batting"] & {
+  playerId: string;
+  nameAtGameTime: string;
+  gamesPlayed: number;
+};
+
+/** Team career pitching row shape consumed by career stats views. */
+export type TeamCareerPitchingStatsRow = Omit<
+  PitcherGameStatRecord,
+  "id" | "gameId" | "teamId" | "opponentTeamId" | "createdAt" | "schemaVersion"
+> & { gamesPlayed: number };

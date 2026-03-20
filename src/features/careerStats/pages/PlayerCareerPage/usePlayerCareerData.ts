@@ -109,7 +109,11 @@ export function usePlayerCareerData(playerId: string | undefined) {
 
   const navigateToPlayer = React.useCallback(
     (id: string) => {
-      navigate(`/stats/${encodeURIComponent(teamId ?? "")}/players/${encodeURIComponent(id)}`);
+      if (teamId) {
+        navigate(`/stats/${encodeURIComponent(teamId)}/players/${encodeURIComponent(id)}`);
+        return;
+      }
+      navigate(`/stats/players/${encodeURIComponent(id)}`);
     },
     [navigate, teamId],
   );
