@@ -332,7 +332,7 @@ function buildStore(getDbFn: GetDb) {
 
     const bundle: ExportedGameHistory = {
       type: "gameHistory",
-      formatVersion: 2,
+      formatVersion: 1,
       exportedAt: new Date().toISOString(),
       payload,
       sig,
@@ -343,7 +343,7 @@ function buildStore(getDbFn: GetDb) {
 
   /**
    * Imports a signed game-history bundle.
-   * - Validates signature and format version (only v2 is accepted).
+   * - Validates signature and format version (only v1 is accepted).
    * - Validates that all required team IDs exist locally.
    * - Merges idempotently: skips any game or stat row whose ID already exists.
    */
@@ -362,7 +362,7 @@ function buildStore(getDbFn: GetDb) {
     if (bundle.type !== "gameHistory") {
       throw new Error(`Unexpected bundle type: ${String(bundle.type ?? "(none)")}`);
     }
-    if (bundle.formatVersion !== 2) {
+    if (bundle.formatVersion !== 1) {
       throw new Error(`Unsupported game history format version: ${String(bundle.formatVersion)}`);
     }
     if (!bundle.payload || typeof bundle.payload !== "object") {

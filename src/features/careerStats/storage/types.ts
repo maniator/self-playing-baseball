@@ -117,7 +117,7 @@ export interface PitcherGameStatRecord {
 /** Portable signed export format for completed-game history. */
 export interface ExportedGameHistory {
   type: "gameHistory";
-  formatVersion: 2;
+  formatVersion: 1;
   exportedAt: string;
   payload: {
     games: CompletedGameRecord[];

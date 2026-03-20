@@ -197,7 +197,7 @@ describe("GameHistoryStore export/import", () => {
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 2,
+      formatVersion: 1,
       exportedAt: new Date().toISOString(),
       payload,
       sig,
@@ -222,7 +222,7 @@ describe("GameHistoryStore export/import", () => {
     const sig = fnv1a(GAME_HISTORY_EXPORT_KEY + JSON.stringify(payload));
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 2,
+      formatVersion: 1,
       exportedAt: "x",
       payload,
       sig,
@@ -236,7 +236,7 @@ describe("GameHistoryStore export/import", () => {
   it("rejects tampered bundles", async () => {
     const bundle = JSON.stringify({
       type: "gameHistory",
-      formatVersion: 2,
+      formatVersion: 1,
       exportedAt: "x",
       payload: { games: [], playerGameStats: [], pitcherGameStats: [], requiredTeamIds: [] },
       sig: "00000000",
@@ -570,7 +570,7 @@ describe("exportGameHistory / importGameHistory — pitcher stats", () => {
 
     const json = await store.exportGameHistory();
     const parsed = JSON.parse(json);
-    expect(parsed.formatVersion).toBe(2);
+    expect(parsed.formatVersion).toBe(1);
     expect(Array.isArray(parsed.payload.pitcherGameStats)).toBe(true);
     expect(parsed.payload.pitcherGameStats).toHaveLength(1);
     expect(parsed.payload.pitcherGameStats[0].saves).toBe(1);
