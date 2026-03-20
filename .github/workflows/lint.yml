@@ -39,5 +39,9 @@ jobs:
       - name: Check E2E spec sizes
         run: node scripts/check-spec-sizes.mjs
 
+      - name: Check for circular dependencies
+        run: yarn check:circular-deps
+        continue-on-error: true
+
       - name: Typecheck E2E tests
         run: yarn typecheck:e2e
